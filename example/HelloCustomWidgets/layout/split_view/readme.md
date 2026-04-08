@@ -7,7 +7,7 @@
 - 对应组件名：`SplitView`
 - 保留状态：标准态、compact pane、read-only 对照
 - 删除效果：Acrylic、阴影扩散、Reveal/Hover 光效、系统级转场动画、真实图标资源
-- EGUI 适配说明：保留“左侧 pane + 右侧 content + 可折叠 pane”语义，压缩到 `240 x 320` 页面内；compact 版本改为更轻的窄侧栏，read-only 版本仅保留结构和静态视觉反馈
+- EGUI 适配说明：保留“左侧 pane + 右侧 content + 可折叠 pane”语义，压缩到 `480 x 480` 页面内；compact 版本改为更轻的窄侧栏，read-only 版本仅保留结构和静态视觉反馈
 
 ## 1. 为什么需要这个控件
 `split_view` 用来表达“左侧可折叠导航/列表面板，右侧显示当前内容”的标准双栏结构。它适合文件浏览、设置分类、内容导航、工作区面板等场景，重点不是复杂拖拽，而是稳定的 pane 展开/收起语义。
@@ -30,7 +30,7 @@
 - `example/HelloCustomWidgets/layout/split_view/`
 
 ## 4. 视觉与布局规格
-- 画布：`240 x 320`
+- 画布：`480 x 480`
 - 根布局：`224 x 296`
 - 页面结构：标题 -> guide -> `Standard` -> 主卡 -> 状态文案 -> 分隔线 -> `Compact / Read Only`
 - 主卡尺寸：`194 x 104`
@@ -48,9 +48,7 @@
 | --- | --- | ---: | --- | --- |
 | `root_layout` | `egui_view_linearlayout_t` | 224 x 296 | enabled | 页面根容器 |
 | `title_label` | `egui_view_label_t` | 224 x 18 | `Split View` | 页面标题 |
-| `guide_label` | `egui_view_label_t` | 224 x 12 | 可点击 | 切换主卡 pane 展开态 |
 | `panel_primary` | `egui_view_split_view_t` | 194 x 104 | pane open | 标准 split view |
-| `status_label` | `egui_view_label_t` | 224 x 12 | `Overview board: Pane open` | 当前状态反馈 |
 | `panel_compact` | `egui_view_split_view_t` | 108 x 74 | pane compact | compact 预览 |
 | `panel_read_only` | `egui_view_split_view_t` | 108 x 74 | read-only | 只读对照 |
 
@@ -122,7 +120,7 @@
 - 不做拖拽式 resizer，只保留 toggle 式 pane 语义
 
 ## 14. EGUI 适配时的简化点与约束
-- 固定在 `240 x 320` 下调优，优先保证小屏可读性
+- 固定在 `480 x 480` 下调优，优先保证小屏可读性
 - pane 项数量限制为 `5`
 - compact 版本以窄 rail 表达，不复制完整桌面交互细节
 - 颜色与圆角维持低噪音浅色 Fluent 方向，避免回到旧 showcase 语法

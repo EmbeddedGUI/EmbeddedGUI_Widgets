@@ -24,7 +24,7 @@
 
 ## 4. 视觉与布局规格
 
-- 屏幕基准：240 x 320。
+- 屏幕基准：480 x 480。
 - 根布局：`220 x 304`，垂直居中摆放。
 - 主波形条：`176 x 132`，重点展示波形形态、播放头位置和 cue 提示。
 - 中部状态文案：`220 x 14`，用于反馈当前主区或 compact 状态。
@@ -42,9 +42,7 @@
 | --- | --- | ---: | --- | --- |
 | `root_layout` | `egui_view_linearlayout_t` | 220 x 304 | enabled | 页面根容器 |
 | `title_label` | `egui_view_label_t` | 220 x 18 | `Waveform Strip` | 标题 |
-| `guide_label` | `egui_view_label_t` | 220 x 12 | `Tap strips to rotate cue` | 交互提示 |
 | `waveform_primary` | `egui_view_waveform_strip_t` | 176 x 132 | `Track A` | 主波形条 |
-| `status_label` | `egui_view_label_t` | 220 x 14 | `Track A cue` | 中部状态反馈 |
 | `waveform_compact` | `egui_view_waveform_strip_t` | 106 x 92 | `Compact A` | 紧凑预览 |
 | `waveform_locked` | `egui_view_waveform_strip_t` | 106 x 92 | disabled | 只读预览 |
 

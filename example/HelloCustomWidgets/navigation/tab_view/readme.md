@@ -29,7 +29,7 @@
 - `example/HelloCustomWidgets/navigation/tab_view/`
 
 ## 4. 视觉与布局规格
-- 画布：`240 x 320`
+- 画布：`480 x 480`
 - 根布局：`224 x 300`
 - 主 `tab_view`：`198 x 128`
 - 底部双预览：`216 x 90`
@@ -46,9 +46,7 @@
 | --- | --- | ---: | --- | --- |
 | `root_layout` | `egui_view_linearlayout_t` | `224 x 300` | enabled | 页面根布局 |
 | `title_label` | `egui_view_label_t` | `224 x 18` | `Tab View` | 页面标题 |
-| `guide_label` | `egui_view_label_t` | `224 x 12` | clickable | 切换主 snapshot |
 | `tab_view_primary` | `egui_view_tab_view_t` | `196 x 126` | `Docs workspace` | 主控件 |
-| `status_label` | `egui_view_label_t` | `224 x 12` | 当前页签状态 | 底部状态文案 |
 | `tab_view_compact` | `egui_view_tab_view_t` | `104 x 72` | compact | 紧凑预览 |
 | `tab_view_locked` | `egui_view_tab_view_t` | `104 x 72` | read only | 只读预览 |
 
@@ -117,6 +115,6 @@ python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub navigati
 
 ## 14. EGUI 适配时的简化点与约束
 - 以轻量 `closed_mask` 完成关闭语义，避免复杂容器重排
-- 所有状态在 `240 x 320` 中优先保证可审阅性
+- 所有状态在 `480 x 480` 中优先保证可审阅性
 - 维持浅色低噪音方向，避免退回 showcase 风格
 - 当前先作为 `HelloCustomWidgets` 示例控件推进，不下沉到 `src/widget/`

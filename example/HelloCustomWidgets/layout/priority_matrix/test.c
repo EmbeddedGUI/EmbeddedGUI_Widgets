@@ -2,6 +2,7 @@
 
 #include "egui.h"
 #include "uicode.h"
+#include "demo_scaffold.h"
 #include "egui_view_priority_matrix.h"
 
 #if EGUI_CONFIG_RECORDING_TEST
@@ -31,7 +32,7 @@ static const egui_view_priority_matrix_snapshot_t locked_snapshots[] = {
 void test_init_ui(void)
 {
     egui_view_priority_matrix_init(EGUI_VIEW_OF(&priority_matrix_dashboard));
-    egui_view_set_size(EGUI_VIEW_OF(&priority_matrix_dashboard), 240, 280);
+    egui_view_set_size(EGUI_VIEW_OF(&priority_matrix_dashboard), HELLO_CUSTOM_WIDGETS_CANVAS_WIDTH, HELLO_CUSTOM_WIDGETS_CANVAS_HEIGHT);
     egui_view_priority_matrix_set_primary_snapshots(EGUI_VIEW_OF(&priority_matrix_dashboard), primary_snapshots, 3);
     egui_view_priority_matrix_set_compact_snapshots(EGUI_VIEW_OF(&priority_matrix_dashboard), compact_snapshots, 3);
     egui_view_priority_matrix_set_locked_snapshots(EGUI_VIEW_OF(&priority_matrix_dashboard), locked_snapshots, 3);
@@ -44,12 +45,12 @@ void test_init_ui(void)
 bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_action)
 {
     static const egui_sim_action_t actions[] = {
-            EGUI_SIM_WAIT(400), EGUI_SIM_CLICK(120, 95, 700),
-            EGUI_SIM_WAIT(300), EGUI_SIM_CLICK(64, 234, 700),
-            EGUI_SIM_WAIT(300), EGUI_SIM_CLICK(176, 234, 700),
-            EGUI_SIM_WAIT(300), EGUI_SIM_CLICK(120, 95, 700),
-            EGUI_SIM_WAIT(300), EGUI_SIM_CLICK(64, 234, 700),
-            EGUI_SIM_WAIT(300), EGUI_SIM_CLICK(176, 234, 700),
+            EGUI_SIM_WAIT(400), EGUI_SIM_CLICK(240, 166, 700),
+            EGUI_SIM_WAIT(300), EGUI_SIM_CLICK(126, 386, 700),
+            EGUI_SIM_WAIT(300), EGUI_SIM_CLICK(354, 386, 700),
+            EGUI_SIM_WAIT(300), EGUI_SIM_CLICK(240, 166, 700),
+            EGUI_SIM_WAIT(300), EGUI_SIM_CLICK(126, 386, 700),
+            EGUI_SIM_WAIT(300), EGUI_SIM_CLICK(354, 386, 700),
             EGUI_SIM_WAIT(800), EGUI_SIM_END(),
     };
 

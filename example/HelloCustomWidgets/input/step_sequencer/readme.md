@@ -39,10 +39,7 @@
 | --- | --- | --- | --- | --- |
 | `root_layout` | `egui_view_linearlayout_t` | `220 x 306` | 垂直布局 | 根容器 |
 | `title_label` | `egui_view_label_t` | `220 x 18` | `Step Sequencer` | 标题 |
-| `guide_label` | `egui_view_label_t` | `220 x 11` | `Tap panels to rotate groove scenes` | 说明文 |
 | `sequencer_primary` | `egui_view_step_sequencer_t` | `192 x 118` | snapshot 0 | 主节拍卡 |
-| `status_label` | `egui_view_label_t` | `220 x 12` | `Primary groove live` | 当前状态反馈 |
-| `section_divider` | `egui_view_line_t` | `142 x 2` | 常显 | 分割层级 |
 | `bottom_row` | `egui_view_linearlayout_t` | `212 x 86` | 水平布局 | 承载下方两张 compact 卡 |
 | `sequencer_preview` | `egui_view_step_sequencer_t` | `108 x 80` | compact snapshot 0 | 预备 pattern |
 | `sequencer_locked` | `egui_view_step_sequencer_t` | `100 x 80` | locked snapshot 0 | 锁定 pattern |

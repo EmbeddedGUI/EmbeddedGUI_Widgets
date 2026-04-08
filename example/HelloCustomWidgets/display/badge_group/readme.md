@@ -7,7 +7,7 @@
 - 对应组件名：`Badge`
 - 本次保留状态：`standard`、`compact`、`read only`、`accent`、`success`、`warning`、`neutral`、`mixed group`
 - 删除效果：真实图标、复杂阴影、拖拽排序、hover/focus ring、长列表滚动、桌面级动画
-- EGUI 适配说明：保留多 badge 组合、tone 混合、focus badge 和 footer summary，在 `240 x 320` 页面内优先保证结构稳定和对照阅读
+- EGUI 适配说明：保留多 badge 组合、tone 混合、focus badge 和 footer summary，在 `480 x 480` 页面内优先保证结构稳定和对照阅读
 
 ## 1. 为什么需要这个控件？
 `badge_group` 用来展示一组语义相关的 badge，并让其中一个 focus badge 驱动整张卡片的 tone 和 footer summary。它适合出现在概览页、审阅页和状态面板里，表达“这一组标签是同一条信息的多个维度”，而不是单个数字提醒或交互筛选器。
@@ -30,7 +30,7 @@
 - `D:\workspace\gitee\EmbeddedGUI\example\HelloCustomWidgets\display\badge_group\`
 
 ## 4. 视觉与布局规格
-- 画布：`240 x 320`
+- 画布：`480 x 480`
 - 根布局：`224 x 286`
 - 页面结构：标题 -> 引导文案 -> 主 `badge_group` -> 状态文案 -> 分隔线 -> `Compact / Read only` 双预览
 - 主卡区域：`196 x 118`
@@ -49,13 +49,8 @@
 | --- | --- | ---: | --- | --- |
 | `root_layout` | `egui_view_linearlayout_t` | 224 x 286 | enabled | 页面根布局 |
 | `title_label` | `egui_view_label_t` | 224 x 18 | `Badge Group` | 页面标题 |
-| `guide_label` | `egui_view_label_t` | 224 x 12 | `Tap groups to review states` | 引导文案 |
 | `group_primary` | `egui_view_badge_group_t` | 196 x 118 | `accent` | 标准 badge 组合卡 |
-| `status_label` | `egui_view_label_t` | 224 x 12 | `Accent focus badge active` | 当前 focus tone 说明 |
-| `section_divider` | `egui_view_line_t` | 148 x 2 | visible | 分隔主区和底部预览 |
-| `compact_label` | `egui_view_label_t` | 104 x 11 | `Compact` | compact 标题 |
 | `group_compact` | `egui_view_badge_group_t` | 104 x 84 | `accent compact` | 紧凑预览 |
-| `locked_label` | `egui_view_label_t` | 104 x 11 | `Read only` | 只读标题 |
 | `group_locked` | `egui_view_badge_group_t` | 104 x 84 | `neutral locked` | 只读静态预览 |
 
 ## 6. 状态覆盖矩阵

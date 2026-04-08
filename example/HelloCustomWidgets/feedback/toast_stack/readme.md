@@ -7,7 +7,7 @@
 - 对应组件名：`Toast / Snackbar`
 - 本次保留状态：`info`、`success`、`warning`、`error`、`compact`、`read only`
 - 删除效果：系统级阴影、Acrylic、自动入场/退场动画、真实图标资源、复杂手势关闭
-- EGUI 适配说明：保留轻量叠卡、左侧 severity accent、标题/正文/动作/时间层级，在 `240 x 320` 下优先保证页内预览和双列对照的可读性
+- EGUI 适配说明：保留轻量叠卡、左侧 severity accent、标题/正文/动作/时间层级，在 `480 x 480` 下优先保证页内预览和双列对照的可读性
 
 ## 1. 为什么需要这个控件？
 `toast_stack` 用来表达页内临时通知的叠卡语义，适合设置页、同步页、桌面入口页里展示最近 2 到 3 条轻量反馈。它不是全屏弹窗，也不是单条横幅，而是更接近 Fluent 的轻量 toast / snackbar 组合。
@@ -30,7 +30,7 @@
 - `example/HelloCustomWidgets/feedback/toast_stack/`
 
 ## 4. 视觉与布局规格
-- 画布：`240 x 320`
+- 画布：`480 x 480`
 - 根布局：`224 x 284`
 - 页面结构：标题 -> 引导文案 -> 主 `toast_stack` -> 状态文案 -> 分隔线 -> `Compact / Read only` 双预览
 - 主卡区域：`196 x 106`
@@ -49,13 +49,8 @@
 | --- | --- | ---: | --- | --- |
 | `root_layout` | `egui_view_linearlayout_t` | 224 x 284 | enabled | 页面根布局 |
 | `title_label` | `egui_view_label_t` | 224 x 18 | `Toast Stack` | 页面标题 |
-| `guide_label` | `egui_view_label_t` | 224 x 12 | `Tap stacks to rotate snapshots` | 引导文案 |
 | `stack_primary` | `egui_view_toast_stack_t` | 196 x 106 | `info` | 标准 toast stack |
-| `status_label` | `egui_view_label_t` | 224 x 12 | `Info toast active` | 当前状态说明 |
-| `section_divider` | `egui_view_line_t` | 144 x 2 | visible | 分隔主区和底部预览 |
-| `compact_label` | `egui_view_label_t` | 104 x 11 | `Compact` | compact 标题 |
 | `stack_compact` | `egui_view_toast_stack_t` | 104 x 82 | `warning` | 紧凑预览 |
-| `locked_label` | `egui_view_label_t` | 104 x 11 | `Read only` | 只读标题 |
 | `stack_locked` | `egui_view_toast_stack_t` | 104 x 82 | `locked` | 只读静态预览 |
 
 ## 6. 状态覆盖矩阵
@@ -127,7 +122,7 @@ python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub feedback
 - 不做队列计数、堆叠折叠、复杂 hover 状态
 
 ## 14. EGUI 适配时的简化点与约束
-- 使用固定叠卡偏移量，优先保证 `240 x 320` 下的可审阅性
+- 使用固定叠卡偏移量，优先保证 `480 x 480` 下的可审阅性
 - 用低噪音边框和少量色彩混合表达层级，避免回到 HMI / showcase 风格
 - `Compact` 与 `Read only` 统一放在底部双列，方便和主卡直接对照
 - 先完成示例级 `toast_stack`，后续再决定是否沉入通用框架控件

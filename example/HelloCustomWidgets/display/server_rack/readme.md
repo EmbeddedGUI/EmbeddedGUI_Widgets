@@ -26,11 +26,9 @@
 
 ## 4. 视觉与布局规格
 
-- 画布为 `240 x 320`。
+- 画布为 `480 x 480`。
 - 根布局 `root_layout` 为 `220 x 304`，整体垂直居中摆放。
 - 主机架卡 `rack_primary` 为 `176 x 132`，包含机架标题、5 个槽位、负载条和状态灯。
-- 状态文本 `status_label` 为 `220 x 14`，位于主卡下方并与主卡保持 4px 间距。
-- 分隔线 `section_divider` 为 `148 x 2`，用于切开主卡与底部双卡区域。
 - 底部双列各为 `106 x 108`，上方标题 12px，高度与左右边距保持平衡。
 - `Rack A / Rack B`、`Compact A / Compact B`、`Locked` 这类短词必须检查视觉居中，不能出现左右留白不均或文字贴边。
 - 机架内缩写标签如 `GW`、`API`、`DB`、`AUTH`、`IDX`、`JOB` 需要保证与负载条、状态灯之间留有安全距离。
@@ -41,14 +39,9 @@
 | --- | --- | ---: | --- | --- |
 | `root_layout` | `egui_view_linearlayout_t` | 220 x 304 | enabled | 页面根布局 |
 | `title_label` | `egui_view_label_t` | 220 x 18 | `Server Rack` | 页面标题 |
-| `guide_label` | `egui_view_label_t` | 220 x 12 | `Tap racks to rotate load` | 引导说明 |
 | `rack_primary` | `egui_view_server_rack_t` | 176 x 132 | `Rack A` | 主机架卡 |
-| `status_label` | `egui_view_label_t` | 220 x 14 | `Rack A load` | 当前状态摘要 |
-| `section_divider` | `egui_view_line_t` | 148 x 2 | visible | 主卡与底部区域分隔 |
 | `bottom_row` | `egui_view_linearlayout_t` | 220 x 104 | enabled | 底部双列容器 |
-| `compact_label` | `egui_view_label_t` | 106 x 12 | `Compact A` | compact 标题 |
 | `rack_compact` | `egui_view_server_rack_t` | 106 x 92 | `Compact A` | compact 机架预览 |
-| `locked_label` | `egui_view_label_t` | 106 x 12 | `Locked` | locked 标题 |
 | `rack_locked` | `egui_view_server_rack_t` | 106 x 92 | disabled | 只读机架预览 |
 
 ## 6. 状态覆盖矩阵

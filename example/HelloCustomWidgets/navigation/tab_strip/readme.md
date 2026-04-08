@@ -8,7 +8,7 @@
 - 对应组件名：`TabView` / `TabStrip`
 - 本次保留状态：`standard`、`compact`、`read only`
 - 删减效果：hover 动画、关闭按钮、拖拽重排、Acrylic、图标页签和复杂阴影
-- EGUI 适配说明：使用纯文本页签、固定宽度容器和轻量 underline 指示器，在 `240 x 320` 下优先保证页内导航的可读性
+- EGUI 适配说明：使用纯文本页签、固定宽度容器和轻量 underline 指示器，在 `480 x 480` 下优先保证页内导航的可读性
 
 ## 1. 为什么需要这个控件
 
@@ -36,7 +36,7 @@
 
 ## 4. 视觉与布局规格
 
-- 画布：`240 x 320`
+- 画布：`480 x 480`
 - 根布局：`224 x 284`
 - 页面结构：标题 -> 引导文案 -> `Standard` 标签 -> 主标签条 -> 当前 section 文案 -> 分隔线 -> `Compact / Read only` 双预览
 - 主标签条：`204 x 46`
@@ -56,14 +56,8 @@
 | --- | --- | ---: | --- | --- |
 | `root_layout` | `egui_view_linearlayout_t` | 224 x 284 | enabled | 页面根布局 |
 | `title_label` | `egui_view_label_t` | 224 x 18 | `Tab Strip` | 页面标题 |
-| `guide_label` | `egui_view_label_t` | 224 x 12 | `Tap tabs to switch focus` | 引导文案 |
-| `primary_label` | `egui_view_label_t` | 224 x 11 | `Standard` | 主标签条标签 |
 | `bar_primary` | `egui_view_tab_strip_t` | 204 x 46 | `Overview` | 标准标签条 |
-| `status_label` | `egui_view_label_t` | 224 x 12 | `Overview pane ready` | 当前主 section 状态文案 |
-| `section_divider` | `egui_view_line_t` | 144 x 2 | visible | 分隔主区与预览区 |
-| `compact_label` | `egui_view_label_t` | 106 x 11 | `Compact` | 紧凑预览标签 |
 | `bar_compact` | `egui_view_tab_strip_t` | 106 x 36 | `Home` | 窄宽度标签条 |
-| `locked_label` | `egui_view_label_t` | 106 x 11 | `Read only` | 只读预览标签 |
 | `bar_locked` | `egui_view_tab_strip_t` | 106 x 36 | `Usage` | 只读弱化标签条 |
 
 ## 6. 状态覆盖矩阵
@@ -136,7 +130,7 @@ python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub navigati
 
 ## 14. EGUI 适配时的简化点与约束
 
-- 使用纯文本 tab 和轻量 underline，优先保证 `240 x 320` 下的审阅效率
+- 使用纯文本 tab 和轻量 underline，优先保证 `480 x 480` 下的审阅效率
 - 通过近似字符宽度和省略号控制 tab 宽度，不引入复杂布局系统
 - 保持浅色低噪音 reference 方向，避免回到 showcase 风格
 - 先完成示例级页内导航条，再决定是否上升到框架公共控件

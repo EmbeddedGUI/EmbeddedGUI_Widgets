@@ -2,6 +2,7 @@
 #include <string.h>
 
 #include "egui_view_knob_cluster_panel.h"
+#include "demo_scaffold.h"
 
 typedef struct knob_palette knob_palette_t;
 struct knob_palette
@@ -107,43 +108,20 @@ void egui_view_knob_cluster_panel_set_font(egui_view_t *self, const egui_font_t 
 static void get_zone_rects_local(egui_view_t *self, egui_region_t *main_rect, egui_region_t *left_rect, egui_region_t *right_rect)
 {
     egui_region_t region;
+
     egui_view_get_work_region(self, &region);
-
-    main_rect->location.x = region.location.x + 30;
-    main_rect->location.y = region.location.y + 56;
-    main_rect->size.width = 180;
-    main_rect->size.height = 162;
-
-    left_rect->location.x = region.location.x + 2;
-    left_rect->location.y = region.location.y + 88;
-    left_rect->size.width = 42;
-    left_rect->size.height = 104;
-
-    right_rect->location.x = region.location.x + 196;
-    right_rect->location.y = region.location.y + 88;
-    right_rect->size.width = 42;
-    right_rect->size.height = 104;
+    hello_custom_widgets_demo_get_triptych_rects(&region, HELLO_CUSTOM_WIDGETS_TITLE_TOP_INSET, main_rect, left_rect, right_rect);
 }
 
 static void get_zone_rects_screen(egui_view_t *self, egui_region_t *main_rect, egui_region_t *left_rect, egui_region_t *right_rect)
 {
-    egui_dim_t ox = self->region_screen.location.x + self->padding.left;
-    egui_dim_t oy = self->region_screen.location.y + self->padding.top;
+    egui_region_t region;
 
-    main_rect->location.x = ox + 30;
-    main_rect->location.y = oy + 56;
-    main_rect->size.width = 180;
-    main_rect->size.height = 162;
-
-    left_rect->location.x = ox + 2;
-    left_rect->location.y = oy + 88;
-    left_rect->size.width = 42;
-    left_rect->size.height = 104;
-
-    right_rect->location.x = ox + 196;
-    right_rect->location.y = oy + 88;
-    right_rect->size.width = 42;
-    right_rect->size.height = 104;
+    region.location.x = self->region_screen.location.x + self->padding.left;
+    region.location.y = self->region_screen.location.y + self->padding.top;
+    region.size.width = self->region.size.width - self->padding.left - self->padding.right;
+    region.size.height = self->region.size.height - self->padding.top - self->padding.bottom;
+    hello_custom_widgets_demo_get_triptych_rects(&region, HELLO_CUSTOM_WIDGETS_TITLE_TOP_INSET, main_rect, left_rect, right_rect);
 }
 
 static int egui_view_knob_cluster_panel_on_touch_event(egui_view_t *self, egui_motion_event_t *event)
@@ -265,12 +243,14 @@ static void egui_view_knob_cluster_panel_on_draw(egui_view_t *self)
     text_region.size.height = 20;
     draw_round_fill_safe(region.location.x + 66, region.location.y + 19, 108, 2, 1, accent_color, egui_color_alpha_mix(self->alpha, 14));
     egui_canvas_draw_text_in_rect(title_font, "Knob Cluster Panel", &text_region, EGUI_ALIGN_CENTER, accent_color, self->alpha);
+    goto draw_cards;
 
     text_region.location.y = region.location.y + 27;
     text_region.size.height = 12;
     egui_canvas_draw_text_in_rect(body_font, "Tap edges or panel to step focus", &text_region, EGUI_ALIGN_CENTER,
                                   egui_rgb_mix(knob_palette.text, knob_palette.muted, 34), self->alpha);
 
+draw_cards:
     get_zone_rects_local(self, &main_rect, &left_rect, &right_rect);
     draw_side_preview(self, left_state, left_rect.location.x, left_rect.location.y, left_rect.size.width, left_rect.size.height, 0);
     draw_side_preview(self, right_state, right_rect.location.x, right_rect.location.y, right_rect.size.width, right_rect.size.height, 1);
@@ -350,6 +330,8 @@ static void egui_view_knob_cluster_panel_on_draw(egui_view_t *self)
     text_region.size.width = main_rect.size.width - 72;
     text_region.size.height = 14;
     egui_canvas_draw_text_in_rect(body_font, current->footer, &text_region, EGUI_ALIGN_CENTER, egui_rgb_mix(knob_palette.text, accent_color, 18), self->alpha);
+
+    return;
 
     if (local->last_zone == 0)
     {

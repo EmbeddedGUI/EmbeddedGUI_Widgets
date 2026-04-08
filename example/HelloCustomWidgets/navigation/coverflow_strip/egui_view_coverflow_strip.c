@@ -2,6 +2,7 @@
 #include <string.h>
 
 #include "egui_view_coverflow_strip.h"
+#include "demo_scaffold.h"
 
 typedef struct coverflow_palette coverflow_palette_t;
 struct coverflow_palette
@@ -196,45 +197,18 @@ static void get_zone_rects_local(egui_view_t *self, egui_region_t *left_rect, eg
     egui_region_t region;
 
     egui_view_get_work_region(self, &region);
-
-    left_rect->location.x = region.location.x + 10;
-    left_rect->location.y = region.location.y + 84;
-    left_rect->size.width = 60;
-    left_rect->size.height = 114;
-
-    center_rect->location.x = region.location.x + 50;
-    center_rect->location.y = region.location.y + 62;
-    center_rect->size.width = 140;
-    center_rect->size.height = 154;
-
-    right_rect->location.x = region.location.x + 170;
-    right_rect->location.y = region.location.y + 84;
-    right_rect->size.width = 60;
-    right_rect->size.height = 114;
+    hello_custom_widgets_demo_get_triptych_rects(&region, HELLO_CUSTOM_WIDGETS_TITLE_TOP_INSET, center_rect, left_rect, right_rect);
 }
 
 static void get_zone_rects_screen(egui_view_t *self, egui_region_t *left_rect, egui_region_t *center_rect, egui_region_t *right_rect)
 {
-    egui_dim_t origin_x;
-    egui_dim_t origin_y;
+    egui_region_t region;
 
-    origin_x = self->region_screen.location.x + self->padding.left;
-    origin_y = self->region_screen.location.y + self->padding.top;
-
-    left_rect->location.x = origin_x + 10;
-    left_rect->location.y = origin_y + 84;
-    left_rect->size.width = 60;
-    left_rect->size.height = 114;
-
-    center_rect->location.x = origin_x + 50;
-    center_rect->location.y = origin_y + 62;
-    center_rect->size.width = 140;
-    center_rect->size.height = 154;
-
-    right_rect->location.x = origin_x + 170;
-    right_rect->location.y = origin_y + 84;
-    right_rect->size.width = 60;
-    right_rect->size.height = 114;
+    region.location.x = self->region_screen.location.x + self->padding.left;
+    region.location.y = self->region_screen.location.y + self->padding.top;
+    region.size.width = self->region.size.width - self->padding.left - self->padding.right;
+    region.size.height = self->region.size.height - self->padding.top - self->padding.bottom;
+    hello_custom_widgets_demo_get_triptych_rects(&region, HELLO_CUSTOM_WIDGETS_TITLE_TOP_INSET, center_rect, left_rect, right_rect);
 }
 
 static int egui_view_coverflow_strip_on_touch_event(egui_view_t *self, egui_motion_event_t *event)
@@ -312,12 +286,14 @@ static void egui_view_coverflow_strip_on_draw(egui_view_t *self)
     text_region.size.width = region.size.width;
     text_region.size.height = 20;
     egui_canvas_draw_text_in_rect(title_font, "Coverflow Strip", &text_region, EGUI_ALIGN_CENTER, accent_color, self->alpha);
+    goto draw_cards;
 
     text_region.location.y = region.location.y + 24;
     text_region.size.height = 11;
     egui_canvas_draw_text_in_rect(guide_font, "Tap side cards to rotate scenes", &text_region, EGUI_ALIGN_CENTER,
                                   egui_rgb_mix(coverflow_palette.text, coverflow_palette.muted, 32), self->alpha);
 
+draw_cards:
     get_zone_rects_local(self, &left_rect, &center_rect, &right_rect);
     draw_side_card(self, left_snapshot, left_rect.location.x, left_rect.location.y, left_rect.size.width, left_rect.size.height, 0);
     draw_side_card(self, right_snapshot, right_rect.location.x, right_rect.location.y, right_rect.size.width, right_rect.size.height, 1);
@@ -334,6 +310,8 @@ static void egui_view_coverflow_strip_on_draw(egui_view_t *self)
         dot_alpha = egui_color_alpha_mix(self->alpha, (i == local->current_index) ? 82 : 54);
         draw_round_fill_safe(dot_x, region.location.y + 225, (i == local->current_index) ? 12 : 6, 6, 3, dot_color, dot_alpha);
     }
+
+    return;
 
     if (local->last_zone == 0)
     {

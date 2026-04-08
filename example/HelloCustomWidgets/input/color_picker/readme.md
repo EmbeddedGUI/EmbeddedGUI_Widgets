@@ -8,7 +8,7 @@
 - 对应组件名：`ColorPicker`
 - 本次保留状态：`standard`、`compact`、`read only`、`tone palette`、`hue rail`、`keyboard / touch`
 - 删减效果：弹出式高级编辑器、透明度通道、文本框数值录入、桌面 hover 动画、主题同步特效
-- EGUI 适配说明：保留标准颜色选择器的色板 + hue rail + 当前色预览语义，在 `240 x 320` 下优先保证色块可辨识、hex 文本可读与 compact / read-only 对照成立
+- EGUI 适配说明：保留标准颜色选择器的色板 + hue rail + 当前色预览语义，在 `480 x 480` 下优先保证色块可辨识、hex 文本可读与 compact / read-only 对照成立
 
 ## 1. 为什么需要这个控件
 
@@ -35,7 +35,7 @@
 
 ## 4. 视觉与布局规格
 
-- 画布：`240 x 320`
+- 画布：`480 x 480`
 - 根布局：`224 x 286`
 - 页面结构：标题 -> guide -> `Standard` -> 主 `color_picker` -> 状态文案 -> 分隔线 -> `Compact / Read only`
 - 主色彩选择器：`196 x 112`
@@ -53,9 +53,7 @@
 | --- | --- | ---: | --- | --- |
 | `root_layout` | `egui_view_linearlayout_t` | 224 x 286 | enabled | 页面根布局 |
 | `title_label` | `egui_view_label_t` | 224 x 18 | `Color Picker` | 页面标题 |
-| `guide_label` | `egui_view_label_t` | 224 x 12 | 可点击 | 切换主 preset |
 | `picker_primary` | `egui_view_color_picker_t` | 196 x 112 | `Ocean` preset | 标准颜色选择器 |
-| `status_label` | `egui_view_label_t` | 224 x 12 | `Ocean #xxxxxx` | 当前颜色摘要 |
 | `picker_compact` | `egui_view_color_picker_t` | 104 x 52 | `Mint` preset | 紧凑预览 |
 | `picker_locked` | `egui_view_color_picker_t` | 104 x 52 | `Locked` preset | 只读预览 |
 
@@ -130,6 +128,6 @@ output\main.exe
 
 ## 14. EGUI 适配时的简化点与约束
 
-- 优先保证 `240 x 320` 下的色块可辨识和 hex 文本可读
+- 优先保证 `480 x 480` 下的色块可辨识和 hex 文本可读
 - 只保留单层 tone palette + hue rail，不引入浮层面板
 - 用离散步进键盘闭环代替桌面端连续拖拽与文本框混合输入

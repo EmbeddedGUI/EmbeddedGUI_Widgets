@@ -24,7 +24,7 @@
 
 ## 4. 视觉与布局规格
 
-- 屏幕基准：240 x 320。
+- 屏幕基准：480 x 480。
 - 页面结构：标题 -> 引导文案 -> 主骨架卡 -> 状态文案 -> 分割线 -> 底部双卡。
 - 主骨架卡尺寸：176 x 132，顶部显示布局名称，底部显示 `Loading layout`。
 - 底部双卡尺寸：106 x 92，分别用于紧凑预览和锁定预览。
@@ -38,7 +38,6 @@
 | loader_primary | egui_view_skeleton_loader_t | 176 x 132 | Layout A | 主骨架卡 |
 | loader_compact | egui_view_skeleton_loader_t | 106 x 92 | Compact A | 紧凑预览 |
 | loader_locked | egui_view_skeleton_loader_t | 106 x 92 | disabled | 只读预览 |
-| status_label | egui_view_label_t | 220 x 14 | Layout A phase | 中部状态反馈 |
 
 ## 6. 状态覆盖矩阵
 

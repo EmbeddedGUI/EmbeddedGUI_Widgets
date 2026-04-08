@@ -7,7 +7,7 @@
 - 对应组件名：`Card`
 - 本次保留状态：`standard`、`compact`、`read only`、`accent`、`success`、`warning`、`neutral`
 - 删除效果：Acrylic、复杂阴影、系统级 hover、真实图标资源、桌面级过渡动画
-- EGUI 适配说明：保留结构化卡片、右侧 summary slot、底部 detail strip 和轻量 action pill，在 `240 x 320` 里优先保证页内排版稳定和主/副卡对照可读
+- EGUI 适配说明：保留结构化卡片、右侧 summary slot、底部 detail strip 和轻量 action pill，在 `480 x 480` 里优先保证页内排版稳定和主/副卡对照可读
 
 ## 1. 为什么需要这个控件？
 `card_panel` 用来承载一张结构化信息卡：顶部 badge、主标题、正文摘要、右侧 summary slot、底部 detail strip，以及可选 action pill。它适合放在设置页、概览页、详情页里，作为比纯 `card` 更完整的信息块。
@@ -30,7 +30,7 @@
 - `example/HelloCustomWidgets/display/card_panel/`
 
 ## 4. 视觉与布局规格
-- 画布：`240 x 320`
+- 画布：`480 x 480`
 - 根布局：`224 x 292`
 - 页面结构：标题 -> 引导文案 -> 主 `card_panel` -> 状态文案 -> 分隔线 -> `Compact / Read only` 双预览
 - 主卡区域：`196 x 122`
@@ -49,13 +49,8 @@
 | --- | --- | ---: | --- | --- |
 | `root_layout` | `egui_view_linearlayout_t` | 224 x 292 | enabled | 页面根布局 |
 | `title_label` | `egui_view_label_t` | 224 x 18 | `Card Panel` | 页面标题 |
-| `guide_label` | `egui_view_label_t` | 224 x 12 | `Tap cards to review states` | 引导文案 |
 | `panel_primary` | `egui_view_card_panel_t` | 196 x 122 | `accent` | 标准结构化卡片 |
-| `status_label` | `egui_view_label_t` | 224 x 12 | `Accent card active` | 当前状态说明 |
-| `section_divider` | `egui_view_line_t` | 148 x 2 | visible | 分隔主区和底部预览 |
-| `compact_label` | `egui_view_label_t` | 104 x 11 | `Compact` | compact 标题 |
 | `panel_compact` | `egui_view_card_panel_t` | 104 x 90 | `accent compact` | 紧凑预览 |
-| `locked_label` | `egui_view_label_t` | 104 x 11 | `Read only` | 只读标题 |
 | `panel_locked` | `egui_view_card_panel_t` | 104 x 90 | `neutral locked` | 只读静态预览 |
 
 ## 6. 状态覆盖矩阵
@@ -128,7 +123,7 @@ python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub display/
 - 不做多列内容模板和任意嵌套布局
 
 ## 14. EGUI 适配时的简化点与约束
-- 使用固定 summary slot 和 detail strip，先保证 `240 x 320` 可审阅性
+- 使用固定 summary slot 和 detail strip，先保证 `480 x 480` 可审阅性
 - 用少量 tone 混色表达层级，不回到旧 showcase 的花哨装饰
 - `Compact` 与 `Read only` 固定放底部双列，便于和主卡直接对照
 - 先完成示例级 `card_panel`，后续再决定是否沉入通用框架控件

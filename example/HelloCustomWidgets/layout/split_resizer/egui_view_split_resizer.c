@@ -2,6 +2,7 @@
 #include <string.h>
 
 #include "egui_view_split_resizer.h"
+#include "demo_scaffold.h"
 
 typedef struct split_palette split_palette_t;
 struct split_palette
@@ -390,45 +391,18 @@ static void get_zone_rects_local(egui_view_t *self, egui_region_t *main_rect, eg
     egui_region_t region;
 
     egui_view_get_work_region(self, &region);
-
-    main_rect->location.x = region.location.x + 10;
-    main_rect->location.y = region.location.y + 33;
-    main_rect->size.width = 220;
-    main_rect->size.height = 125;
-
-    left_rect->location.x = region.location.x + 11;
-    left_rect->location.y = region.location.y + 181;
-    left_rect->size.width = 102;
-    left_rect->size.height = 87;
-
-    right_rect->location.x = region.location.x + 127;
-    right_rect->location.y = region.location.y + 181;
-    right_rect->size.width = 102;
-    right_rect->size.height = 87;
+    hello_custom_widgets_demo_get_triptych_rects(&region, HELLO_CUSTOM_WIDGETS_TITLE_TOP_INSET, main_rect, left_rect, right_rect);
 }
 
 static void get_zone_rects_screen(egui_view_t *self, egui_region_t *main_rect, egui_region_t *left_rect, egui_region_t *right_rect)
 {
-    egui_dim_t origin_x;
-    egui_dim_t origin_y;
+    egui_region_t region;
 
-    origin_x = self->region_screen.location.x + self->padding.left;
-    origin_y = self->region_screen.location.y + self->padding.top;
-
-    main_rect->location.x = origin_x + 10;
-    main_rect->location.y = origin_y + 33;
-    main_rect->size.width = 220;
-    main_rect->size.height = 125;
-
-    left_rect->location.x = origin_x + 11;
-    left_rect->location.y = origin_y + 181;
-    left_rect->size.width = 102;
-    left_rect->size.height = 87;
-
-    right_rect->location.x = origin_x + 127;
-    right_rect->location.y = origin_y + 181;
-    right_rect->size.width = 102;
-    right_rect->size.height = 87;
+    region.location.x = self->region_screen.location.x + self->padding.left;
+    region.location.y = self->region_screen.location.y + self->padding.top;
+    region.size.width = self->region.size.width - self->padding.left - self->padding.right;
+    region.size.height = self->region.size.height - self->padding.top - self->padding.bottom;
+    hello_custom_widgets_demo_get_triptych_rects(&region, HELLO_CUSTOM_WIDGETS_TITLE_TOP_INSET, main_rect, left_rect, right_rect);
 }
 
 static int egui_view_split_resizer_on_touch_event(egui_view_t *self, egui_motion_event_t *event)
@@ -505,15 +479,19 @@ static void egui_view_split_resizer_on_draw(egui_view_t *self)
     text_region.size.width = region.size.width;
     text_region.size.height = 18;
     egui_canvas_draw_text_in_rect(title_font, "Split Resizer", &text_region, EGUI_ALIGN_CENTER, primary_palette.accent, self->alpha);
+    goto draw_cards;
 
     text_region.location.y = region.location.y + 21;
     text_region.size.height = 11;
     egui_canvas_draw_text_in_rect(guide_font, "Tap cards to cycle layouts", &text_region, EGUI_ALIGN_CENTER, EGUI_COLOR_HEX(0x687D95), self->alpha);
 
+draw_cards:
     get_zone_rects_local(self, &main_rect, &left_rect, &right_rect);
     draw_card(self, &primary_palette, primary, main_rect.location.x, main_rect.location.y, main_rect.size.width, main_rect.size.height, 0, 0);
     draw_card(self, &column_palette, column, left_rect.location.x, left_rect.location.y, left_rect.size.width, left_rect.size.height, 1, 0);
     draw_card(self, &locked_palette, locked, right_rect.location.x, right_rect.location.y, right_rect.size.width, right_rect.size.height, 1, 1);
+
+    return;
 
     if (local->last_zone == 1)
     {

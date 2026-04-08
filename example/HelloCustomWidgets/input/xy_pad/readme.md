@@ -40,10 +40,7 @@
 | --- | --- | --- | --- | --- |
 | `root_layout` | `egui_view_linearlayout_t` | `220 x 306` | 垂直布局 | 页面骨架 |
 | `title_label` | `egui_view_label_t` | `220 x 18` | `XY Pad` | 页面标题 |
-| `guide_label` | `egui_view_label_t` | `220 x 11` | `Tap panels to rotate motion scenes` | 页面说明 |
 | `xy_primary` | `egui_view_xy_pad_t` | `192 x 118` | snapshot 0 | 主二维控制卡 |
-| `status_label` | `egui_view_label_t` | `220 x 12` | `Primary field live` | 主卡状态说明 |
-| `section_divider` | `egui_view_line_t` | `142 x 2` | 静态 | 分隔上下区域 |
 | `bottom_row` | `egui_view_linearlayout_t` | `212 x 86` | 横向布局 | 承载两个 compact 卡 |
 | `xy_macro` | `egui_view_xy_pad_t` | `108 x 80` | compact snapshot 0 | macro 预备卡 |
 | `xy_latch` | `egui_view_xy_pad_t` | `100 x 80` | locked snapshot 0 | latch 锁定卡 |

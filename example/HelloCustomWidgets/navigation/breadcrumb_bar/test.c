@@ -3,6 +3,7 @@
 #include "egui.h"
 #include "egui_view_breadcrumb_bar.h"
 #include "uicode.h"
+#include "demo_scaffold.h"
 
 #if EGUI_CONFIG_RECORDING_TEST
 #include "core/egui_input_simulator.h"
@@ -193,6 +194,28 @@ void test_init_ui(void)
                                          EGUI_COLOR_HEX(0x8B98A7), EGUI_COLOR_HEX(0x9AA7B5));
     egui_view_breadcrumb_bar_set_locked_mode(EGUI_VIEW_OF(&bar_locked), 1);
     egui_view_group_add_child(EGUI_VIEW_OF(&locked_column), EGUI_VIEW_OF(&bar_locked));
+
+    {
+
+        egui_view_t *chrome_views[] = {
+
+                EGUI_VIEW_OF(&guide_label),
+
+                EGUI_VIEW_OF(&primary_label),
+
+                EGUI_VIEW_OF(&status_label),
+
+                EGUI_VIEW_OF(&compact_label),
+
+                EGUI_VIEW_OF(&locked_label),
+
+                EGUI_VIEW_OF(&section_divider),
+
+        };
+
+        hello_custom_widgets_demo_apply_title_only_scaffold(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label), chrome_views,
+                                                            EGUI_ARRAY_SIZE(chrome_views));
+    }
 
     egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&compact_column));
     egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&locked_column));

@@ -8,7 +8,7 @@
 - 对应组件名：`PasswordBox`
 - 本次保留状态：`standard`、`compact`、`read only`、`reveal toggle`、`keyboard cursor`
 - 删减效果：Acrylic、系统级 reveal 动画、caps lock 提示、复杂校验态、桌面 hover 细节
-- EGUI 适配说明：保留标准密码遮罩字段、右侧 reveal 按钮和 compact / read-only 对照；在 `240 x 320` 下优先保证字段留白、图标居中、光标与遮罩文本可读
+- EGUI 适配说明：保留标准密码遮罩字段、右侧 reveal 按钮和 compact / read-only 对照；在 `480 x 480` 下优先保证字段留白、图标居中、光标与遮罩文本可读
 
 ## 1. 为什么需要这个控件
 
@@ -35,7 +35,7 @@
 
 ## 4. 视觉与布局规格
 
-- 画布：`240 x 320`
+- 画布：`480 x 480`
 - 根布局：`224 x 278`
 - 页面结构：标题 -> guide -> `Standard` -> 主密码框 -> 状态文案 -> 分隔线 -> `Compact / Read only`
 - 主密码框：`196 x 70`
@@ -53,9 +53,7 @@
 | --- | --- | ---: | --- | --- |
 | `root_layout` | `egui_view_linearlayout_t` | 224 x 278 | enabled | 页面根布局 |
 | `title_label` | `egui_view_label_t` | 224 x 18 | `Password Box` | 页面标题 |
-| `guide_label` | `egui_view_label_t` | 224 x 12 | 可点击 | 切换主 snapshot |
 | `box_primary` | `egui_view_password_box_t` | 196 x 70 | `studio-24` | 标准密码框 |
-| `status_label` | `egui_view_label_t` | 224 x 12 | `Wi-Fi 9 chars hidden` | 当前状态摘要 |
 | `box_compact` | `egui_view_password_box_t` | 106 x 44 | `7429` | 紧凑密码框 |
 | `box_locked` | `egui_view_password_box_t` | 106 x 44 | `fleet-admin` | 只读遮罩预览 |
 
@@ -130,6 +128,6 @@ output\main.exe
 
 ## 14. EGUI 适配时的简化点与约束
 
-- 优先保证 `240 x 320` 下的视觉居中与留白
+- 优先保证 `480 x 480` 下的视觉居中与留白
 - reveal 只保留单个右侧图标入口
 - 用简化键盘事件闭环代替桌面完整输入法行为

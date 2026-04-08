@@ -37,7 +37,7 @@
 
 ## 4. 视觉与布局规格
 
-- 页面尺寸：`240 x 320`
+- 页面尺寸：`480 x 480`
 - 根布局：`224 x 280`
 - 页面结构：标题 -> guide -> `Standard` -> 主建议框 -> 状态文案 -> 分隔线 -> `Compact / Read Only`
 - 主控件尺寸：`208 x 34`
@@ -57,9 +57,7 @@
 | --- | --- | ---: | --- | --- |
 | `root_layout` | `egui_view_linearlayout_t` | 224 x 280 | enabled | 页面根容器 |
 | `title_label` | `egui_view_label_t` | 224 x 18 | `AutoSuggest Box` | 页面标题 |
-| `guide_label` | `egui_view_label_t` | 224 x 12 | 可点击 | 切换主 snapshot |
 | `control_primary` | `egui_view_autocomplete_t` | 208 x 34 | 标准 suggestions | 主建议框 |
-| `status_label` | `egui_view_label_t` | 224 x 12 | 回显当前选择 | 当前选中态文案 |
 | `control_compact` | `egui_view_autocomplete_t` | 104 x 28 | 紧凑 suggestions | 紧凑预览 |
 | `control_read_only` | `egui_view_autocomplete_t` | 104 x 28 | 禁用对照态 | 只读预览 |
 

@@ -8,7 +8,7 @@
 - 对应组件名：`Skeleton`
 - 本次保留状态：`wave`、`pulse`、`static`
 - 删减效果：复杂渐变、Acrylic、真实内容切换动画、长列表无限骨架
-- EGUI 适配说明：使用固定骨架块模板、轻量定时 shimmer 和静态快照切换，在 `240 x 320` 下先保证结构可读与低噪音表达
+- EGUI 适配说明：使用固定骨架块模板、轻量定时 shimmer 和静态快照切换，在 `480 x 480` 下先保证结构可读与低噪音表达
 
 ## 1. 为什么需要这个控件
 
@@ -36,7 +36,7 @@
 
 ## 4. 视觉与布局规格
 
-- 画布：`240 x 320`
+- 画布：`480 x 480`
 - 根布局：`224 x 284`
 - 页面结构：标题 -> 引导文案 -> `Wave` 标签 -> 主骨架卡 -> 分隔线 -> `Pulse / Static` 双预览
 - 主骨架卡：`196 x 124`
@@ -55,10 +55,7 @@
 | --- | --- | ---: | --- | --- |
 | `root_layout` | `egui_view_linearlayout_t` | 224 x 284 | enabled | 页面根布局 |
 | `title_label` | `egui_view_label_t` | 224 x 18 | `Skeleton` | 页面标题 |
-| `guide_label` | `egui_view_label_t` | 224 x 12 | `Tap cards to switch loading` | 引导文案 |
-| `primary_label` | `egui_view_label_t` | 224 x 11 | `Wave` | 主骨架标签 |
 | `skeleton_primary` | `egui_view_skeleton_t` | 196 x 124 | `Feed` | 主 `wave` 骨架 |
-| `section_divider` | `egui_view_line_t` | 132 x 2 | visible | 主区与预览区分隔线 |
 | `pulse_label` | `egui_view_label_t` | 106 x 11 | `Pulse` | 脉冲预览标签 |
 | `skeleton_pulse` | `egui_view_skeleton_t` | 106 x 60 | `Pulse tile` | 紧凑脉冲预览 |
 | `static_label` | `egui_view_label_t` | 106 x 11 | `Static` | 静态预览标签 |
@@ -131,7 +128,7 @@ python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub feedback
 
 ## 14. EGUI 适配时的简化点与约束
 
-- 使用固定骨架块模板，优先保证 `240 x 320` 下的审阅效率
+- 使用固定骨架块模板，优先保证 `480 x 480` 下的审阅效率
 - shimmer 用轻量定时刷新实现，避免引入重型动画系统
 - 骨架块使用统一浅灰白配色，保持 Fluent 风格的低噪音参考页
 - 先完成示例级 reference 版，再决定是否上升到框架公共控件

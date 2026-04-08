@@ -2,6 +2,7 @@
 
 #include "egui.h"
 #include "uicode.h"
+#include "demo_scaffold.h"
 #include "egui_view_split_flap_board.h"
 
 #if EGUI_CONFIG_RECORDING_TEST
@@ -173,6 +174,22 @@ void test_init_ui(void)
     egui_view_set_margin(EGUI_VIEW_OF(&board_standby), 3, 0, 0, 0);
     egui_view_set_on_click_listener(EGUI_VIEW_OF(&board_standby), on_standby_click);
     egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&board_standby));
+
+    {
+
+        egui_view_t *chrome_views[] = {
+
+                EGUI_VIEW_OF(&guide_label),
+
+                EGUI_VIEW_OF(&status_label),
+
+                EGUI_VIEW_OF(&section_divider),
+
+        };
+
+        hello_custom_widgets_demo_apply_title_only_scaffold(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label), chrome_views,
+                                                            EGUI_ARRAY_SIZE(chrome_views));
+    }
 
     egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&bottom_row));
     egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&root_layout));

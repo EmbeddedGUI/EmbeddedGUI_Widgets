@@ -2,6 +2,7 @@
 
 #include "egui.h"
 #include "uicode.h"
+#include "demo_scaffold.h"
 #include "egui_view_radial_menu.h"
 
 #if EGUI_CONFIG_RECORDING_TEST
@@ -179,6 +180,28 @@ void test_init_ui(void)
     egui_view_label_set_font(EGUI_VIEW_OF(&disabled_label), (const egui_font_t *)&egui_res_font_montserrat_10_4);
     egui_view_label_set_font_color(EGUI_VIEW_OF(&disabled_label), EGUI_COLOR_HEX(0xCBD5E1), EGUI_ALPHA_80);
     egui_view_group_add_child(EGUI_VIEW_OF(&disabled_column), EGUI_VIEW_OF(&disabled_label));
+
+    {
+
+        egui_view_t *chrome_views[] = {
+
+                EGUI_VIEW_OF(&guide_label),
+
+                EGUI_VIEW_OF(&hint_label),
+
+                EGUI_VIEW_OF(&variants_label),
+
+                EGUI_VIEW_OF(&compact_label),
+
+                EGUI_VIEW_OF(&disabled_label),
+
+                EGUI_VIEW_OF(&variants_divider),
+
+        };
+
+        hello_custom_widgets_demo_apply_title_only_scaffold(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label), chrome_views,
+                                                            EGUI_ARRAY_SIZE(chrome_views));
+    }
 
     egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&compact_column));
     egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&disabled_column));

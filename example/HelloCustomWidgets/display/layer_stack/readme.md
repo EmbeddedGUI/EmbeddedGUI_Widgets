@@ -38,10 +38,7 @@
 | --- | --- | --- | --- | --- |
 | `root_layout` | `egui_view_linearlayout_t` | `220 x 306` | 垂直布局 | 页面骨架 |
 | `title_label` | `egui_view_label_t` | `220 x 18` | `Layer Stack` | 页面标题 |
-| `guide_label` | `egui_view_label_t` | `220 x 11` | `Tap stacks to cycle layers` | 操作提示 |
 | `stack_primary` | `egui_view_layer_stack_t` | `194 x 126` | snapshot 0 | 主图层总览 |
-| `status_label` | `egui_view_label_t` | `220 x 12` | `Primary layer ready` | 外部状态反馈 |
-| `section_divider` | `egui_view_line_t` | `154 x 2` | 静态 | 分隔上下区域 |
 | `bottom_row` | `egui_view_linearlayout_t` | `216 x 90` | 横向布局 | 承载两个 compact |
 | `stack_masked` | `egui_view_layer_stack_t` | `105 x 84` | snapshot 0 | mask 层组 |
 | `stack_output` | `egui_view_layer_stack_t` | `105 x 84` | locked snapshot 0 | render 层组 |

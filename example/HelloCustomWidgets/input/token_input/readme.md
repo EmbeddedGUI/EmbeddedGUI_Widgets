@@ -37,7 +37,7 @@
 
 ## 4. 视觉与布局规格
 
-- 画布：`240 x 320`
+- 画布：`480 x 480`
 - 根布局：控制在 `224 x 292`
 - 页面结构：标题 -> guide -> `Standard` -> 主 token 卡 -> 状态行 -> 分隔线 -> `Compact / Read only`
 - 主卡建议尺寸：`196 x 92`
@@ -56,9 +56,7 @@
 | --- | --- | ---: | --- | --- |
 | `root_layout` | `egui_view_linearlayout_t` | 224 x 292 | enabled | 页面根布局 |
 | `title_label` | `egui_view_label_t` | 224 x 18 | `Token Input` | 页面标题 |
-| `guide_label` | `egui_view_label_t` | 224 x 12 | 可点击 | 切换主场景 |
 | `editor_primary` | `egui_view_token_input_t` | 196 x 92 | `Recipients` | 标准 token 编辑器 |
-| `status_label` | `egui_view_label_t` | 224 x 12 | `Recipients 3` | 当前编辑状态说明 |
 | `editor_compact` | `egui_view_token_input_t` | 106 x 48 | `Compact` | 紧凑态对照与 overflow summary 预览 |
 | `editor_locked` | `egui_view_token_input_t` | 106 x 48 | read only | 只读态对照与 overflow summary 预览 |
 
@@ -155,7 +153,7 @@ output\main.exe
 ## 14. EGUI 适配时的简化点与约束
 
 - 优先保留 token 提交、回删、左右导航和只读弱化这些核心表单语义
-- 首版聚焦 `240 x 320` 下稳定排版，不追求超长 token 的复杂折叠策略
+- 首版聚焦 `480 x 480` 下稳定排版，不追求超长 token 的复杂折叠策略
 - 尽量复用现有 `chips` / `textinput` / `linearlayout` 的视觉和交互能力，而不是造一套完全孤立的新体系
 - 已布局后优先保证焦点、pressed 状态与可见 token 同步，不让隐藏 input / token 残留为当前 part
 - 主页示例保持干净、低噪音、标准表单风格

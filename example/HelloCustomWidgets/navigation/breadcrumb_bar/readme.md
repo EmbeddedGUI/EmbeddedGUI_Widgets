@@ -8,7 +8,7 @@
 - 对应组件名：`Breadcrumb`
 - 本次保留状态：`standard`、`narrow`、`read only`
 - 删减效果：hover 动效、下拉溢出菜单、Acrylic、阴影与复杂图标
-- EGUI 适配说明：使用固定尺寸、文字截断和静态折叠策略，在 `240 x 320` 下先保证可读性
+- EGUI 适配说明：使用固定尺寸、文字截断和静态折叠策略，在 `480 x 480` 下先保证可读性
 
 ## 1. 为什么需要这个控件
 
@@ -36,7 +36,7 @@
 
 ## 4. 视觉与布局规格
 
-- 画布：`240 x 320`
+- 画布：`480 x 480`
 - 根布局：`224 x 284`
 - 页面结构：标题 -> 引导文案 -> standard 标签 -> 主路径条 -> 状态文案 -> 分隔线 -> narrow / read only 双预览
 - 主路径条：`196 x 48`
@@ -56,14 +56,8 @@
 | --- | --- | ---: | --- | --- |
 | `root_layout` | `egui_view_linearlayout_t` | 224 x 284 | enabled | 页面根布局 |
 | `title_label` | `egui_view_label_t` | 224 x 18 | `Breadcrumb Bar` | 页面标题 |
-| `guide_label` | `egui_view_label_t` | 224 x 12 | `Tap bars to switch paths` | 引导文案 |
-| `primary_label` | `egui_view_label_t` | 224 x 11 | `Standard` | 主路径条标签 |
 | `bar_primary` | `egui_view_breadcrumb_bar_t` | 196 x 48 | docs path | 标准 breadcrumb |
-| `status_label` | `egui_view_label_t` | 224 x 12 | `Docs path` | 当前上下文状态文案 |
-| `section_divider` | `egui_view_line_t` | 144 x 2 | visible | 分隔主区与预览区 |
-| `compact_label` | `egui_view_label_t` | 106 x 11 | `Narrow` | 窄宽度预览标签 |
 | `bar_compact` | `egui_view_breadcrumb_bar_t` | 106 x 36 | bills path | 窄宽度折叠预览 |
-| `locked_label` | `egui_view_label_t` | 106 x 11 | `Read only` | 只读预览标签 |
 | `bar_locked` | `egui_view_breadcrumb_bar_t` | 106 x 36 | audit path | 只读弱化预览 |
 
 ## 6. 状态覆盖矩阵
@@ -138,7 +132,7 @@ python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub navigati
 
 ## 14. EGUI 适配时的简化点与约束
 
-- 使用固定尺寸和静态路径样本，优先保证 `240 x 320` 下的审阅效率
+- 使用固定尺寸和静态路径样本，优先保证 `480 x 480` 下的审阅效率
 - 用近似字符宽度和省略号做轻量级截断，不引入复杂测量逻辑
 - 保持白底浅边框的低噪音视觉，避免回到旧 showcase 风格
 - 先完成 reference 版路径条核心语义，再决定是否上升到框架层

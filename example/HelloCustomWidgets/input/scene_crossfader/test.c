@@ -2,6 +2,7 @@
 
 #include "egui.h"
 #include "uicode.h"
+#include "demo_scaffold.h"
 #include "egui_view_scene_crossfader.h"
 
 #if EGUI_CONFIG_RECORDING_TEST
@@ -20,7 +21,7 @@ static const egui_view_scene_crossfader_state_t states[] = {
 void test_init_ui(void)
 {
     egui_view_scene_crossfader_init(EGUI_VIEW_OF(&scene_crossfader));
-    egui_view_set_size(EGUI_VIEW_OF(&scene_crossfader), 240, 280);
+    egui_view_set_size(EGUI_VIEW_OF(&scene_crossfader), HELLO_CUSTOM_WIDGETS_CANVAS_WIDTH, HELLO_CUSTOM_WIDGETS_CANVAS_HEIGHT);
     egui_view_scene_crossfader_set_states(EGUI_VIEW_OF(&scene_crossfader), states, 4);
 
     egui_core_add_user_root_view(EGUI_VIEW_OF(&scene_crossfader));
@@ -31,9 +32,9 @@ void test_init_ui(void)
 bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_action)
 {
     static const egui_sim_action_t actions[] = {
-            EGUI_SIM_WAIT(400), EGUI_SIM_CLICK(219, 142, 700), EGUI_SIM_WAIT(300), EGUI_SIM_CLICK(21, 142, 700),
-            EGUI_SIM_WAIT(300), EGUI_SIM_CLICK(118, 138, 700), EGUI_SIM_WAIT(300), EGUI_SIM_CLICK(219, 142, 700),
-            EGUI_SIM_WAIT(300), EGUI_SIM_CLICK(219, 142, 700), EGUI_SIM_WAIT(500), EGUI_SIM_END(),
+            EGUI_SIM_WAIT(400), EGUI_SIM_CLICK(354, 386, 700), EGUI_SIM_WAIT(300), EGUI_SIM_CLICK(126, 386, 700),
+            EGUI_SIM_WAIT(300), EGUI_SIM_CLICK(240, 166, 700), EGUI_SIM_WAIT(300), EGUI_SIM_CLICK(354, 386, 700),
+            EGUI_SIM_WAIT(300), EGUI_SIM_CLICK(354, 386, 700), EGUI_SIM_WAIT(500), EGUI_SIM_END(),
     };
 
     if (actions[action_index].type == EGUI_SIM_ACTION_NONE)

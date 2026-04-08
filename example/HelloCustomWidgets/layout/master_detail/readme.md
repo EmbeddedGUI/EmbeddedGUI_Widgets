@@ -8,7 +8,7 @@
 - 对应组件名：`MasterDetail` / `MasterDetails`
 - 保留状态：标准态、`compact`、`read-only`
 - 删除效果：Acrylic、阴影、复杂 hover、系统级转场动画
-- EGUI 适配说明：保留左侧 master 列表驱动右侧 detail 面板的核心语义，压缩到 `240 x 320` 页面内；compact 预览改为更轻量的 detail 摘要，避免小尺寸面板信息过载
+- EGUI 适配说明：保留左侧 master 列表驱动右侧 detail 面板的核心语义，压缩到 `480 x 480` 页面内；compact 预览改为更轻量的 detail 摘要，避免小尺寸面板信息过载
 
 ## 1. 为什么需要这个控件
 
@@ -37,7 +37,7 @@
 
 ## 4. 视觉与布局规格
 
-- 页面尺寸：`240 x 320`
+- 页面尺寸：`480 x 480`
 - 根布局：`224 x 292`
 - 页面结构：标题 -> guide -> `Standard` -> 主卡 -> 状态文案 -> 分隔线 -> `Compact / Read Only`
 - 主卡尺寸：`194 x 96`
@@ -56,9 +56,7 @@
 | --- | --- | ---: | --- | --- |
 | `root_layout` | `egui_view_linearlayout_t` | 224 x 292 | enabled | 页面根容器 |
 | `title_label` | `egui_view_label_t` | 224 x 18 | `Master Detail` | 页面标题 |
-| `guide_label` | `egui_view_label_t` | 224 x 12 | 可点击 | 引导切换主卡状态 |
 | `panel_primary` | `egui_view_master_detail_t` | 194 x 96 | `Files` | 标准 master-detail 主卡 |
-| `status_label` | `egui_view_label_t` | 224 x 12 | `Files library: Open` | 当前选择状态回显 |
 | `panel_compact` | `egui_view_master_detail_t` | 108 x 72 | `Files` | 紧凑态预览 |
 | `panel_readonly` | `egui_view_master_detail_t` | 108 x 72 | `Archive` | 只读态对照 |
 
@@ -135,7 +133,7 @@
 
 ## 14. EGUI 适配时的简化点与约束
 
-- 使用固定尺寸和手工布局，保证 `240 x 320` 下稳定呈现
+- 使用固定尺寸和手工布局，保证 `480 x 480` 下稳定呈现
 - master 项数量限制为 `4`
 - compact 模式下不再完整复制标准 detail 结构，而是摘要化显示
 - 颜色与圆角使用轻量混色，避免 HMI / showcase 风格的重装饰

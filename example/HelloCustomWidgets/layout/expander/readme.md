@@ -8,7 +8,7 @@
 - 对应组件名：`Expander` / `CardExpander`
 - 保留状态：标准展开态、折叠态、`compact` 对照、`read-only` 对照
 - 删除效果：Acrylic、投影、Reveal/Hover 光效、系统级转场动画、真实图标资源
-- EGUI 适配说明：保留“标题行 disclosure + 展开 body”的核心语义，压缩到 `240 x 320` 页面内；主卡展示标准 accordion 节奏，底部保留更轻量的 compact / read-only 对照
+- EGUI 适配说明：保留“标题行 disclosure + 展开 body”的核心语义，压缩到 `480 x 480` 页面内；主卡展示标准 accordion 节奏，底部保留更轻量的 compact / read-only 对照
 
 ## 1. 为什么需要这个控件
 
@@ -35,7 +35,7 @@
 
 ## 4. 视觉与布局规格
 
-- 页面尺寸：`240 x 320`
+- 页面尺寸：`480 x 480`
 - 根布局：`224 x 296`
 - 页面结构：标题 -> guide -> `Standard` -> 主卡 -> 状态文案 -> 分隔线 -> `Compact / Read Only`
 - 主卡尺寸：`194 x 110`
@@ -54,9 +54,7 @@
 | --- | --- | ---: | --- | --- |
 | `root_layout` | `egui_view_linearlayout_t` | 224 x 296 | enabled | 页面根容器 |
 | `title_label` | `egui_view_label_t` | 224 x 18 | `Expander` | 页面标题 |
-| `guide_label` | `egui_view_label_t` | 224 x 12 | 可点击 | 推进主卡演示状态 |
 | `panel_primary` | `egui_view_expander_t` | 194 x 110 | 第 1 项展开 | 标准 expander 主卡 |
-| `status_label` | `egui_view_label_t` | 224 x 12 | `Workspace policy: Expanded` | 当前状态反馈 |
 | `panel_compact` | `egui_view_expander_t` | 108 x 72 | 第 1 项展开 | 紧凑态预览 |
 | `panel_read_only` | `egui_view_expander_t` | 108 x 72 | 第 2 项展开 | 只读态对照 |
 
@@ -136,7 +134,7 @@
 
 ## 14. EGUI 适配时的简化点与约束
 
-- 固定在 `240 x 320` 下调优，优先保证标题行与 body 可读性
+- 固定在 `480 x 480` 下调优，优先保证标题行与 body 可读性
 - item 数量限制为 `4`
 - compact 版本只保留一行正文，避免小卡片过载
 - 颜色和圆角维持 Fluent 方向的低噪音表达，不再引入 showcase 装饰零件

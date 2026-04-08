@@ -20,7 +20,7 @@
 
 ## 4. 视觉与布局规格
 
-- 目标屏幕：240 x 320。
+- 目标屏幕：480 x 480。
 - 根布局：`230 x 308`，整体垂直居中。
 - 主卡：`188 x 142`，包含阴影、外描边、内描边、居中 header pill 和居中 footer pill。
 - 底部双卡：每列 `108 x 110`，内部箱线图卡 `108 x 94`。
@@ -38,9 +38,6 @@
 | `boxplot_primary` | `egui_view_boxplot_chart_t` | 188 x 142 | `Profile A` | 主箱线图卡片 |
 | `boxplot_compact` | `egui_view_boxplot_chart_t` | 108 x 94 | `A` | 紧凑预览卡 |
 | `boxplot_locked` | `egui_view_boxplot_chart_t` | 108 x 94 | `LK` / disabled | 只读预览卡 |
-| `status_label` | `egui_view_label_t` | 230 x 13 | `Core A` | 外部状态反馈 |
-| `compact_label` | `egui_view_label_t` | 108 x 13 | `Compact` | 紧凑卡标题 |
-| `locked_label` | `egui_view_label_t` | 108 x 13 | `Locked` | 只读卡标题 |
 
 ## 6. 状态覆盖矩阵
 

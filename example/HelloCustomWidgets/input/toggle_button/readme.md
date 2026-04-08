@@ -11,7 +11,7 @@
   - WinUI ToggleButton API：[https://learn.microsoft.com/en-us/windows/windows-app-sdk/api/winrt/microsoft.ui.xaml.controls.primitives.togglebutton](https://learn.microsoft.com/en-us/windows/windows-app-sdk/api/winrt/microsoft.ui.xaml.controls.primitives.togglebutton)
 - 本次保留状态：`on / off`、图标 + 文本、页内单入口切换、`compact / read-only` 对照
 - 删减效果：Acrylic、阴影扩散、复杂 hover/pressed 动画、命令栏级别组合布局、多段 split 结构
-- EGUI 适配说明：保留标准单按钮切换语义，用 icon + label + tone color 表达状态；在 `240 x 320` 里优先保证文字可读、主按钮居中与底部双预览对照，不引入复杂焦点环和系统动画
+- EGUI 适配说明：保留标准单按钮切换语义，用 icon + label + tone color 表达状态；在 `480 x 480` 里优先保证文字可读、主按钮居中与底部双预览对照，不引入复杂焦点环和系统动画
 
 ## 1. 为什么需要这个控件？
 
@@ -36,7 +36,7 @@
 
 ## 4. 视觉与布局规格
 
-- 画布：`240 x 320`
+- 画布：`480 x 480`
 - 根布局：`224 x 254`
 - 页面结构：标题 -> guide -> `Standard` -> 主按钮 -> 状态文案 -> 分割线 -> `Compact / Read only`
 - 主按钮尺寸：`184 x 54`
@@ -53,9 +53,7 @@
 | --- | --- | ---: | --- | --- |
 | `root_layout` | `egui_view_linearlayout_t` | 224 x 254 | enabled | 页面根布局 |
 | `title_label` | `egui_view_label_t` | 224 x 16 | `Toggle Button` | 页面标题 |
-| `guide_label` | `egui_view_label_t` | 224 x 10 | 可点击 | 切换主按钮 snapshot |
 | `button_primary` | `egui_view_toggle_button_t` | 184 x 54 | `Alerts / On` | 标准主按钮 |
-| `status_label` | `egui_view_label_t` | 224 x 9 | `Alerts: On` | 当前状态回显 |
 | `button_compact` | `egui_view_toggle_button_t` | 100 x 54 | `Compact alerts / Off` | 紧凑预览 |
 | `button_readonly` | `egui_view_toggle_button_t` | 100 x 54 | `Pinned / On` | 只读预览 |
 

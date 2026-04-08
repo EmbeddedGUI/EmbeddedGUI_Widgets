@@ -23,7 +23,7 @@
 
 ## 4. 视觉与布局规格
 
-- 设计分辨率：240 x 320
+- 设计分辨率：480 x 480
 - 页面结构：标题 -> 引导文案 -> 主矩阵 -> 状态文本 -> 分隔线 -> compact / locked 双卡
 - 主卡尺寸：194 x 126
 - 紧凑卡尺寸：108 x 84
@@ -50,10 +50,7 @@
 | --- | --- | ---: | --- | --- |
 | `root_layout` | `egui_view_linearlayout_t` | 224 x 306 | enabled | 整体纵向布局 |
 | `title_label` | `egui_view_label_t` | 224 x 18 | `Clip Launcher` | 页面标题 |
-| `guide_label` | `egui_view_label_t` | 224 x 11 | `Tap panels to rotate queued scenes` | 引导文案 |
 | `grid_primary` | `egui_view_clip_launcher_grid_t` | 194 x 126 | `LIVE` | 主触发矩阵 |
-| `status_label` | `egui_view_label_t` | 224 x 12 | `Primary scene live` | 当前动作反馈 |
-| `section_divider` | `egui_view_line_t` | 146 x 2 | visible | 分隔上下区域 |
 | `grid_compact` | `egui_view_clip_launcher_grid_t` | 108 x 84 | `ARM` | 紧凑预览 |
 | `grid_locked` | `egui_view_clip_launcher_grid_t` | 100 x 84 | `HOLD` | 锁定预览 |
 

@@ -37,7 +37,7 @@
 
 ## 4. 视觉与布局规格
 
-- 页面尺寸：`240 x 320`
+- 页面尺寸：`480 x 480`
 - 根布局：`224 x 280`
 - 页面结构：标题 -> guide -> `Standard` -> 主 segmented control -> 状态文案 -> 分隔线 -> `Compact / Read Only`
 - 主控件尺寸：`196 x 38`
@@ -57,10 +57,7 @@
 | --- | --- | ---: | --- | --- |
 | `root_layout` | `egui_view_linearlayout_t` | 224 x 280 | enabled | 页面根容器 |
 | `title_label` | `egui_view_label_t` | 224 x 18 | `Segmented Control` | 页面标题 |
-| `guide_label` | `egui_view_label_t` | 224 x 12 | 可点击 | 切换主 snapshot |
-| `primary_label` | `egui_view_label_t` | 224 x 11 | `Standard` | 主控件标签 |
 | `control_primary` | `egui_view_segmented_control_t` | 196 x 38 | `Overview / Team / Usage / Access` | 标准态主控件 |
-| `status_label` | `egui_view_label_t` | 224 x 12 | `Workspace team filter active` | 当前选中态回显 |
 | `control_compact` | `egui_view_segmented_control_t` | 104 x 30 | `Day / Week` | 紧凑预览 |
 | `control_read_only` | `egui_view_segmented_control_t` | 104 x 30 | `Off / Auto / Lock` | 只读对照态 |
 
@@ -145,4 +142,4 @@
 - 直接复用核心层已有 segmented 控件，避免与 `src/widget` 同名实现冲突
 - 通过示例目录下的样式包装文件补齐 Reference Track 视觉约束
 - 焦点 ring 和键盘切换放回核心控件，使后续示例可复用
-- 页面保持 `240 x 320` 下的清爽布局，不引入额外卡片装饰
+- 页面保持 `480 x 480` 下的清爽布局，不引入额外卡片装饰

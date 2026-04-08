@@ -19,7 +19,7 @@
 
 ## 4. 视觉与布局规格
 
-- 目标屏幕：240 x 320。
+- 目标屏幕：480 x 480。
 - 根布局尺寸：230 x 310。
 - primary 主卡尺寸：190 x 142，包含阴影、内描边、顶部标题胶囊和底部 footer pill。
 - compact / locked 列尺寸：110 x 112，内部 meter 卡为 110 x 96。
@@ -33,7 +33,6 @@
 | `meter_primary` | `egui_view_level_meter_t` | 190 x 142 | `Bus A` | 主电平监看卡 |
 | `meter_compact` | `egui_view_level_meter_t` | 110 x 96 | `Compact A` | 紧凑预览卡 |
 | `meter_locked` | `egui_view_level_meter_t` | 110 x 96 | disabled | 只读预览卡 |
-| `status_label` | `egui_view_label_t` | 230 x 13 | `Bus A` | 外部状态反馈 |
 
 ## 6. 状态覆盖矩阵
 

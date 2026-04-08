@@ -2,6 +2,9 @@
 
 Standalone repository for `HelloCustomWidgets`.
 
+HelloCustomWidgets demos now use a default `480 x 480` showcase canvas.
+All widget demos follow one presentation rule: title only, standard at top, compact at left, read-only/locked at right.
+
 ## SDK dependency model
 
 This repository tracks the EmbeddedGUI SDK as a pinned submodule at `sdk/EmbeddedGUI`.
@@ -62,6 +65,8 @@ The default SDK resolution order is:
   `python scripts/setup_env.py --skip-emsdk`
 - Build one widget on PC:
   `make all APP=HelloCustomWidgets APP_SUB=input/xy_pad PORT=pc`
+- Default widget showcase canvas:
+  `480 x 480`
 - Run the local widget CI flow for one category:
   `make ci CATEGORY=input`
 - Run the local widget CI flow without Make:

@@ -7,7 +7,7 @@
 - 对应组件名：`TimePicker`
 - 保留状态：标准时间字段、展开 picker surface、`12h / 24h` 显示、`compact / read-only` 对照
 - 删除效果：Acrylic、系统级弹出层动画、阴影模糊、桌面级 flyout 定位逻辑
-- EGUI 适配说明：保留“时间字段 + 内联选择面板”的核心语义，压缩到 `240 x 320` 页面；不实现真实弹出层，而是使用页内 picker surface 表达 hour / minute / period 调整
+- EGUI 适配说明：保留“时间字段 + 内联选择面板”的核心语义，压缩到 `480 x 480` 页面；不实现真实弹出层，而是使用页内 picker surface 表达 hour / minute / period 调整
 
 ## 1. 为什么需要这个控件
 `time_picker` 用来表达“先查看当前时间值，再按需展开选择小时 / 分钟 / 上午下午”的标准时间输入语义，适合会议时间、同步窗口、静默时段、提醒时间等页内设置场景。
@@ -29,7 +29,7 @@
 - `example/HelloCustomWidgets/input/time_picker/`
 
 ## 4. 视觉与布局规格
-- 页面尺寸：`240 x 320`
+- 页面尺寸：`480 x 480`
 - 根布局：`224 x 296`
 - 页面结构：标题 -> guide -> `Standard` -> 主卡 -> 状态文案 -> 分隔线 -> `Compact / Read Only`
 - 主卡尺寸：`194 x 126`
@@ -48,9 +48,7 @@
 | --- | --- | ---: | --- | --- |
 | `root_layout` | `egui_view_linearlayout_t` | 224 x 296 | enabled | 页面根容器 |
 | `title_label` | `egui_view_label_t` | 224 x 18 | `Time Picker` | 页面标题 |
-| `guide_label` | `egui_view_label_t` | 224 x 12 | 可点击 | 切换主卡示例状态 |
 | `picker_primary` | `egui_view_time_picker_t` | 194 x 126 | `08:30 AM` 展开 | 标准时间选择器主卡 |
-| `status_label` | `egui_view_label_t` | 224 x 12 | `Standup 08:30 AM / Open` | 当前状态反馈 |
 | `picker_compact` | `egui_view_time_picker_t` | 106 x 58 | `13:30` 紧凑 | `24h` 紧凑预览 |
 | `picker_read_only` | `egui_view_time_picker_t` | 106 x 58 | `07:15 AM` 只读 | 只读预览 |
 
@@ -124,7 +122,7 @@
 - 不做复杂 locale 文案与系统日期联动
 
 ## 14. EGUI 适配时的简化点与约束
-- 固定在 `240 x 320` 下优化，优先保证字段与 picker surface 可读性
+- 固定在 `480 x 480` 下优化，优先保证字段与 picker surface 可读性
 - `compact` 版本只保留字段，不展开 surface
 - picker surface 固定三行可见值，通过 top / middle / bottom 三段点击完成调整
 - `24h` 模式下自动隐藏 period 分段，避免小卡片过挤

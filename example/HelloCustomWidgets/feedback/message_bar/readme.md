@@ -25,7 +25,7 @@
 
 ## 4. 视觉与布局规格
 
-- 画布：`240 x 320`
+- 画布：`480 x 480`
 - 根布局：`224 x 284`
 - 页面结构：标题 -> 引导文案 -> 主消息条 -> 状态文案 -> 分隔线 -> compact / persistent 双预览
 - 主卡：`196 x 96`
@@ -44,12 +44,8 @@
 | --- | --- | ---: | --- | --- |
 | `root_layout` | `egui_view_linearlayout_t` | 224 x 284 | enabled | 页面根布局 |
 | `title_label` | `egui_view_label_t` | 224 x 18 | `Message Bar` | 页面标题 |
-| `guide_label` | `egui_view_label_t` | 224 x 12 | `Tap bars to rotate severity` | 引导文案 |
 | `bar_primary` | `egui_view_message_bar_t` | 196 x 96 | `Info` | 主消息条 |
-| `status_label` | `egui_view_label_t` | 224 x 12 | `Info state active` | 当前状态文案 |
-| `section_divider` | `egui_view_line_t` | 152 x 2 | visible | 分隔上下区域 |
 | `bottom_row` | `egui_view_linearlayout_t` | 212 x 96 | enabled | 底部双列容器 |
-| `compact_label` | `egui_view_label_t` | 108 x 12 | `Compact` | 紧凑版标题 |
 | `bar_compact` | `egui_view_message_bar_t` | 104 x 82 | `Warning` | 紧凑预览 |
 | `persistent_label` | `egui_view_label_t` | 108 x 12 | `Persistent` | 持久版标题 |
 | `bar_persistent` | `egui_view_message_bar_t` | 104 x 82 | pinned | 持久只读预览 |
@@ -131,7 +127,7 @@ python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub feedback
 
 ## 14. EGUI 适配时的简化点与约束
 
-- 用固定尺寸和固定排版保证 `240 x 320` 下可读
+- 用固定尺寸和固定排版保证 `480 x 480` 下可读
 - 使用 Montserrat 内置字体，不引入额外字体资源
 - 颜色和线条表达尽量克制，避免回到 showcase 风格的重装饰路线
 - 先完成最小可运行版本，再继续做留白与状态收敛

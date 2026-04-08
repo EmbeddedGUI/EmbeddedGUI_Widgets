@@ -2,6 +2,7 @@
 
 #include "egui.h"
 #include "uicode.h"
+#include "demo_scaffold.h"
 #include "egui_view_radar_chart.h"
 
 #if EGUI_CONFIG_RECORDING_TEST
@@ -253,6 +254,26 @@ void test_init_ui(void)
     egui_view_set_on_click_listener(EGUI_VIEW_OF(&radar_mini), on_mini_click);
     egui_view_group_add_child(EGUI_VIEW_OF(&mini_column), EGUI_VIEW_OF(&radar_mini));
     apply_mini_state(0, 0);
+
+    {
+
+        egui_view_t *chrome_views[] = {
+
+                EGUI_VIEW_OF(&guide_label),
+
+                EGUI_VIEW_OF(&status_label),
+
+                EGUI_VIEW_OF(&compare_label),
+
+                EGUI_VIEW_OF(&mini_label),
+
+                EGUI_VIEW_OF(&section_divider),
+
+        };
+
+        hello_custom_widgets_demo_apply_title_only_scaffold(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label), chrome_views,
+                                                            EGUI_ARRAY_SIZE(chrome_views));
+    }
 
     egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&compare_column));
     egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&mini_column));

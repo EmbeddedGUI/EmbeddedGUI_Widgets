@@ -29,7 +29,7 @@
 - `example/HelloCustomWidgets/navigation/annotated_scroll_bar/`
 
 ## 4. 视觉与布局规格
-- 画布：`240 x 320`
+- 画布：`480 x 480`
 - 根布局：`224 x 308`
 - 主控件：`196 x 156`
 - 底部双预览：`216 x 86`
@@ -45,9 +45,7 @@
 | --- | --- | ---: | --- | --- |
 | `root_layout` | `egui_view_linearlayout_t` | `224 x 304` | enabled | 页面根布局 |
 | `title_label` | `egui_view_label_t` | `224 x 18` | `Annotated Scroll Bar` | 页面标题 |
-| `guide_label` | `egui_view_label_t` | `224 x 12` | clickable | 切换主 snapshot |
 | `annotated_scroll_bar_primary` | `egui_view_annotated_scroll_bar_t` | `196 x 152` | `Gallery rail` | 主控件 |
-| `status_label` | `egui_view_label_t` | `224 x 12` | 当前 section 状态 | 底部状态文案 |
 | `annotated_scroll_bar_compact` | `egui_view_annotated_scroll_bar_t` | `104 x 64` | compact | 紧凑预览 |
 | `annotated_scroll_bar_locked` | `egui_view_annotated_scroll_bar_t` | `104 x 64` | read only | 只读预览 |
 

@@ -8,7 +8,7 @@
 
 - 工业控制台里的链路健康监控。
 - 机房、安防、边缘网关的信号中继状态。
-- 需要在 240x320 小屏里快速看懂“正常 / 观察 / 告警”层级的反馈面板。
+- 需要在 480x480 小屏里快速看懂“正常 / 观察 / 告警”层级的反馈面板。
 
 ## 2. 为什么现有控件不够用
 
@@ -36,7 +36,7 @@
 
 ## 4. 视觉与布局规格
 
-- 屏幕基准：240 x 320。
+- 屏幕基准：480 x 480。
 - 顶部标题区：220 x 18。
 - 主信标面板：192 x 116。
 - 底部双卡区：210 x 86。
@@ -49,10 +49,7 @@
 | --- | --- | --- | --- | --- |
 | root_layout | egui_view_linearlayout_t | 220 x 306 | enabled | 页面总容器 |
 | title_label | egui_view_label_t | 220 x 18 | 可见 | 页面标题 |
-| guide_label | egui_view_label_t | 220 x 11 | 可见 | 交互说明 |
 | beacon_primary | egui_view_signal_beacon_t | 192 x 116 | snapshot 0 | 主信标面板 |
-| status_label | egui_view_label_t | 220 x 12 | 可见 | 当前交互反馈 |
-| section_divider | egui_view_line_t | 148 x 2 | 可见 | 分隔线 |
 | bottom_row | egui_view_linearlayout_t | 210 x 86 | enabled | 底部容器 |
 | beacon_field | egui_view_signal_beacon_t | 108 x 80 | snapshot 0 | 现场中继卡 |
 | beacon_lock | egui_view_signal_beacon_t | 100 x 80 | snapshot 0 | 锁定中继卡 |

@@ -26,7 +26,7 @@
 
 ## 4. 视觉与布局规格
 
-- 画布为 `240 x 320`。
+- 画布为 `480 x 480`。
 - 根布局 `root_layout` 为 `220 x 304`，整体垂直居中摆放。
 - 主卡 `cluster_primary` 为 `176 x 132`，包含区域标题、聚合点位、焦点 pin 与计数 badge。
 - compact / locked 卡为 `106 x 92`，标题行 12px，高度与左右边距保持平衡。
@@ -38,14 +38,9 @@
 | --- | --- | ---: | --- | --- |
 | `root_layout` | `egui_view_linearlayout_t` | 220 x 304 | enabled | 页面根布局 |
 | `title_label` | `egui_view_label_t` | 220 x 18 | `Pin Cluster` | 页面标题 |
-| `guide_label` | `egui_view_label_t` | 220 x 12 | `Tap pins to rotate zone` | 引导说明 |
 | `cluster_primary` | `egui_view_pin_cluster_t` | 176 x 132 | `Zone A` | 主点位聚合卡 |
-| `status_label` | `egui_view_label_t` | 220 x 14 | `Zone A pin` | 当前状态摘要 |
-| `section_divider` | `egui_view_line_t` | 148 x 2 | visible | 主卡与底部区域分隔 |
 | `bottom_row` | `egui_view_linearlayout_t` | 220 x 104 | enabled | 底部双列容器 |
-| `compact_label` | `egui_view_label_t` | 106 x 12 | `Compact A` | compact 标题 |
 | `cluster_compact` | `egui_view_pin_cluster_t` | 106 x 92 | `Compact A` | compact 点位预览 |
-| `locked_label` | `egui_view_label_t` | 106 x 12 | `Locked` | locked 标题 |
 | `cluster_locked` | `egui_view_pin_cluster_t` | 106 x 92 | disabled | 只读点位预览 |
 
 ## 6. 状态覆盖矩阵

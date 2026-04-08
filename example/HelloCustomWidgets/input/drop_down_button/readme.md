@@ -7,7 +7,7 @@
 - 对应组件名：`DropDownButton`
 - 本次保留状态：`default`、`accent`、`warning`、`compact`、`read-only`
 - 删除效果：Acrylic、真实图标资源、桌面级 hover/pressed 动画、多级真实 flyout 弹出定位、复杂阴影扩散
-- EGUI 适配说明：保留“整按钮触发下拉命令”的核心语义，重点验证标题、辅助文案、展开入口提示、紧凑态与只读态对照；在 `240 x 320` 下优先保证按钮轮廓、文案节奏和弹出内容摘要清晰可辨
+- EGUI 适配说明：保留“整按钮触发下拉命令”的核心语义，重点验证标题、辅助文案、展开入口提示、紧凑态与只读态对照；在 `480 x 480` 下优先保证按钮轮廓、文案节奏和弹出内容摘要清晰可辨
 
 ## 1. 为什么需要这个控件？
 
@@ -34,7 +34,7 @@
 
 ## 4. 视觉与布局规格
 
-- 画布：`240 x 320`
+- 画布：`480 x 480`
 - 根布局：`224 x 292`
 - 页面结构：标题 -> guide -> `Standard` 标签 -> 主卡按钮 -> 状态文案 -> 分隔线 -> `Compact / Read-only` 双预览
 - 主卡区域：`194 x 74`
@@ -54,9 +54,7 @@
 | --- | --- | ---: | --- | --- |
 | `root_layout` | `egui_view_linearlayout_t` | 224 x 292 | enabled | 页面根布局 |
 | `title_label` | `egui_view_label_t` | 224 x 18 | `Drop Down Button` | 页面标题 |
-| `guide_label` | `egui_view_label_t` | 224 x 12 | 可点击 | 轮换主卡 snapshot |
 | `primary_button` | `egui_view_drop_down_button_t` | 194 x 74 | `sort` | 标准主卡 |
-| `status_label` | `egui_view_label_t` | 224 x 12 | `Sort menu ready` | 状态回显 |
 | `compact_button` | `egui_view_drop_down_button_t` | 106 x 66 | `compact` | 紧凑预览 |
 | `readonly_button` | `egui_view_drop_down_button_t` | 106 x 66 | `read-only` | 只读预览 |
 
@@ -136,7 +134,7 @@ python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/dr
 
 ## 14. EGUI 适配时的简化点与约束
 
-- 先用固定 snapshot 驱动，优先保证 `240 x 320` 下的 reference 可审阅性
+- 先用固定 snapshot 驱动，优先保证 `480 x 480` 下的 reference 可审阅性
 - 主卡保留 `title + trigger hint + helper` 三段结构
 - compact 版只保留最必要的标题和提示层
 - read-only 版通过统一 palette 降噪，而不是新增装饰层

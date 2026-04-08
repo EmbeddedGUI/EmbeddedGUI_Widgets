@@ -28,7 +28,7 @@
 - `example/HelloCustomWidgets/layout/parallax_view/`
 
 ## 4. 视觉与布局规格
-- 画布：`240 x 320`
+- 画布：`480 x 480`
 - 根布局：`224 x 304`
 - 页面结构：标题 -> guide -> `Standard view` -> 主卡 -> 状态文案 -> 分隔线 -> `Compact view / Read-only`
 - 主卡尺寸：`194 x 136`
@@ -45,9 +45,7 @@
 | --- | --- | ---: | --- | --- |
 | `root_layout` | `egui_view_linearlayout_t` | 224 x 304 | enabled | 页面根容器 |
 | `title_label` | `egui_view_label_t` | 224 x 18 | `Parallax View` | 页面标题 |
-| `guide_label` | `egui_view_label_t` | 224 x 12 | 可点击 | 触发主卡状态轮换 |
 | `parallax_primary` | `egui_view_parallax_view_t` | 194 x 136 | `offset=0` | 标准 parallax 主卡 |
-| `status_label` | `egui_view_label_t` | 224 x 12 | `Active Hero Banner` | 当前焦点状态回显 |
 | `parallax_compact` | `egui_view_parallax_view_t` | 106 x 82 | compact | 紧凑预览 |
 | `parallax_locked` | `egui_view_parallax_view_t` | 106 x 82 | compact + locked | 只读对照 |
 
@@ -119,5 +117,5 @@
 ## 14. EGUI 适配时的简化点与约束
 - 以固定 `row + anchor_offset` 数组驱动，保证示例可重复验证
 - 通过背景条带位移模拟 depth，不引入额外资源依赖
-- 在 `240 x 320` 页面内优先保证三态对照和文本可读性
+- 在 `480 x 480` 页面内优先保证三态对照和文本可读性
 - 当前先沉淀为 `HelloCustomWidgets` custom widget，不下沉到框架核心层

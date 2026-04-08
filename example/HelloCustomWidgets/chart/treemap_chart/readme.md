@@ -2,7 +2,7 @@
 
 ## 1. 为什么需要这个控件
 
-`treemap_chart` 用矩形面积直接表达总量固定场景下的资源分配关系，适合在 240x320 这种小屏里快速看出谁占比更大、谁被压缩得更明显。
+`treemap_chart` 用矩形面积直接表达总量固定场景下的资源分配关系，适合在 480x480 这种小屏里快速看出谁占比更大、谁被压缩得更明显。
 
 ## 2. 为什么现有控件不够用
 
@@ -22,7 +22,7 @@
 
 ## 4. 视觉与布局规格
 
-- 目标屏幕：240 x 320。
+- 目标屏幕：480 x 480。
 - 根布局：`230 x 300`，整体垂直居中。
 - 主卡：`188 x 138`，包含阴影、外描边、内描边、居中 header pill 和居中 footer pill。
 - 状态栏：`230 x 13`，使用 `Core A / Core B / Compact A / Compact B` 这类短词，避免贴边。
@@ -41,8 +41,6 @@
 | `treemap_primary` | `egui_view_treemap_chart_t` | 188 x 138 | `Profile A` | 主 treemap 卡片 |
 | `treemap_compact` | `egui_view_treemap_chart_t` | 108 x 90 | `A` | 紧凑预览卡 |
 | `treemap_disabled` | `egui_view_treemap_chart_t` | 108 x 90 | `LK` / disabled | 只读预览卡 |
-| `status_label` | `egui_view_label_t` | 230 x 13 | `Core A` | 外部状态反馈 |
-| `compact_label` | `egui_view_label_t` | 108 x 13 | `Compact` | 紧凑卡标题 |
 | `disabled_label` | `egui_view_label_t` | 108 x 13 | `Locked` | 只读卡标题 |
 
 ## 6. 状态覆盖矩阵

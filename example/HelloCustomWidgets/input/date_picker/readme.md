@@ -8,7 +8,7 @@
 - 对应组件名：`DatePicker`
 - 保留状态：标准日期字段、内联 calendar surface、month navigation、compact / read-only 对照
 - 删除效果：系统级 flyout 定位、Acrylic、复杂阴影、桌面级弹出层动画
-- EGUI 适配说明：保留“日期字段 + 月历面板”的核心语义，压缩到 `240 x 320` 页面；不实现真实浮层，改成卡片内展开的 inline calendar surface
+- EGUI 适配说明：保留“日期字段 + 月历面板”的核心语义，压缩到 `480 x 480` 页面；不实现真实浮层，改成卡片内展开的 inline calendar surface
 
 ## 1. 为什么需要这个控件
 
@@ -38,7 +38,7 @@
 
 ## 4. 视觉与布局规格
 
-- 页面尺寸：`240 x 320`
+- 页面尺寸：`480 x 480`
 - 根布局：`224 x 308`
 - 页面结构：标题 -> guide -> `Standard` -> 主卡 -> 状态文本 -> 分隔线 -> `Compact / Read Only`
 - 主卡尺寸：展开态 `194 x 180`，收起态自动压缩到 `194 x 82`
@@ -58,9 +58,7 @@
 | --- | --- | ---: | --- | --- |
 | `root_layout` | `egui_view_linearlayout_t` | 224 x 308 | enabled | 页面根容器 |
 | `title_label` | `egui_view_label_t` | 224 x 18 | `Date Picker` | 页面标题 |
-| `guide_label` | `egui_view_label_t` | 224 x 12 | 可点击 | 切换主卡示例状态 |
 | `picker_primary` | `egui_view_date_picker_t` | 194 x 180（展开） / 194 x 82（收起） | `2026-03-18` 展开 | 标准日期选择器主卡 |
-| `status_label` | `egui_view_label_t` | 224 x 12 | `Launch 2026-03-18 / Open` | 当前状态反馈 |
 | `picker_compact` | `egui_view_date_picker_t` | 106 x 48 | `Mar 18` 紧凑 | 紧凑态预览 |
 | `picker_read_only` | `egui_view_date_picker_t` | 106 x 48 | `Apr 05` 只读 | 只读态预览 |
 
@@ -155,7 +153,7 @@
 
 ## 14. EGUI 适配时的简化点与约束
 
-- 固定在 `240 x 320` 下优化，优先保证字段和 calendar surface 可读性
+- 固定在 `480 x 480` 下优化，优先保证字段和 calendar surface 可读性
 - compact 版本只保留字段，不展开 surface
 - calendar surface 固定为 month title + weekday header + 6x7 day grid
 - 以 touch 点击字段 / 月切换按钮 / 日期格，以及键盘日期移动作为最小可运行版本

@@ -27,7 +27,7 @@
 - `example/HelloCustomWidgets/navigation/menu_bar/`
 
 ## 4. 视觉与布局规格
-- 画布：`240 x 320`
+- 画布：`480 x 480`
 - 根布局：`224 x 292`
 - 主卡尺寸：`196 x 112`
 - 底部预览区：`214 x 88`
@@ -61,9 +61,7 @@
 | --- | --- | ---: | --- | --- |
 | `root_layout` | `egui_view_linearlayout_t` | 224 x 292 | enabled | 页面根布局 |
 | `title_label` | `egui_view_label_t` | 224 x 18 | `Menu Bar` | 页面标题 |
-| `guide_label` | `egui_view_label_t` | 224 x 12 | 点击/键盘提示 | 指示交互方式 |
 | `menu_bar_primary` | `egui_view_menu_bar_t` | 196 x 112 | `File` 菜单展开 | 主菜单栏控件 |
-| `status_label` | `egui_view_label_t` | 224 x 12 | 状态文案 | 当前 snapshot 说明 |
 | `menu_bar_compact` | `egui_view_menu_bar_t` | 104 x 74 | compact | 底部紧凑对照 |
 | `menu_bar_locked` | `egui_view_menu_bar_t` | 104 x 74 | read only | 底部只读对照 |
 

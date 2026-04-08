@@ -7,6 +7,8 @@ extern "C" {
 #endif
 
 #define EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS 1
+#define EGUI_CONFIG_SCEEN_WIDTH            480
+#define EGUI_CONFIG_SCEEN_HEIGHT           480
 
 /* Ends C function definitions when using C++ */
 #ifdef __cplusplus

@@ -8,7 +8,7 @@
 - 对应组件名：`SplitButton`
 - 本次保留状态：`save / share / export / archive`、`compact`、`disabled`
 - 删除效果：Acrylic、真实图标资源、复杂下拉菜单弹层、桌面级 hover / pressed 动画、完整命令栏整合
-- EGUI 适配说明：保留“主动作 + 菜单入口”的复合按钮语义、主段 / 菜单段双焦点、compact / disabled 对照；在 `240 x 320` 下优先保证段落边界清楚、短文案稳定和键盘切焦点可辨
+- EGUI 适配说明：保留“主动作 + 菜单入口”的复合按钮语义、主段 / 菜单段双焦点、compact / disabled 对照；在 `480 x 480` 下优先保证段落边界清楚、短文案稳定和键盘切焦点可辨
 
 ## 1. 为什么需要这个控件？
 
@@ -36,7 +36,7 @@
 
 ## 4. 视觉与布局规格
 
-- 画布：`240 x 320`
+- 画布：`480 x 480`
 - 根布局：`224 x 292`
 - 页面结构：标题 -> guide -> `Standard` -> 主卡 -> 状态文案 -> 分隔线 -> `Compact / Disabled` 双预览
 - 主卡区域：`194 x 74`
@@ -55,9 +55,7 @@
 | --- | --- | ---: | --- | --- |
 | `root_layout` | `egui_view_linearlayout_t` | 224 x 292 | enabled | 页面根布局 |
 | `title_label` | `egui_view_label_t` | 224 x 18 | `Split Button` | 页面标题 |
-| `guide_label` | `egui_view_label_t` | 224 x 12 | 可点击 | 轮换主卡 snapshot |
 | `button_primary` | `egui_view_split_button_t` | 194 x 74 | `save` | 标准 split button |
-| `status_label` | `egui_view_label_t` | 224 x 12 | `Save draft: Save` | 当前焦点状态 |
 | `button_compact` | `egui_view_split_button_t` | 106 x 66 | `compact save` | 紧凑预览 |
 | `button_disabled` | `egui_view_split_button_t` | 106 x 66 | `disabled` | 禁用预览 |
 
@@ -140,7 +138,7 @@ python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/sp
 
 ## 14. EGUI 适配时的简化点与约束
 
-- 用固定 snapshot 驱动，优先保证 `240 x 320` 下的稳定 reference
+- 用固定 snapshot 驱动，优先保证 `480 x 480` 下的稳定 reference
 - 主卡保留 `title + split row + helper` 三段结构
 - compact 版只保留最必要的 label 与双段结构
 - disabled 版通过统一 palette 降噪，而不是新增额外装饰层

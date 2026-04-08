@@ -8,7 +8,7 @@
 - 对应组件名：`NavigationView / NavView`
 - 本次保留状态：`standard`、`compact`、`read only`
 - 删除效果：pane 展开/收起动画、分层树形导航、Acrylic、图标资源、系统级焦点与键盘快捷操作
-- EGUI 适配说明：以轻量常驻导航面板为核心，保留 header、selection indicator、底部 settings 语义，在 `240 x 320` 下优先保证页内侧栏的可读性与点击区域
+- EGUI 适配说明：以轻量常驻导航面板为核心，保留 header、selection indicator、底部 settings 语义，在 `480 x 480` 下优先保证页内侧栏的可读性与点击区域
 
 ## 1. 为什么需要这个控件
 
@@ -36,7 +36,7 @@
 
 ## 4. 视觉与布局规格
 
-- 画布：`240 x 320`
+- 画布：`480 x 480`
 - 根布局：`224 x 284`
 - 页面结构：标题 -> 引导文案 -> `Standard` 标签 -> 主导航面板 -> 当前状态文案 -> 分隔线 -> `Compact / Read only` 双预览
 - 主导航面板：`196 x 110`
@@ -55,14 +55,8 @@
 | --- | --- | ---: | --- | --- |
 | `root_layout` | `egui_view_linearlayout_t` | 224 x 284 | enabled | 页面根布局 |
 | `title_label` | `egui_view_label_t` | 224 x 18 | `Nav Panel` | 页面标题 |
-| `guide_label` | `egui_view_label_t` | 224 x 12 | `Tap items to move focus` | 引导文案 |
-| `primary_label` | `egui_view_label_t` | 224 x 11 | `Standard` | 主导航标签 |
 | `panel_primary` | `egui_view_nav_panel_t` | 196 x 110 | `Overview` 选中 | 标准导航面板 |
-| `status_label` | `egui_view_label_t` | 224 x 12 | `Overview pane ready` | 当前选中状态文案 |
-| `section_divider` | `egui_view_line_t` | 144 x 2 | visible | 分隔主区域与预览区 |
-| `compact_label` | `egui_view_label_t` | 106 x 11 | `Compact` | 紧凑预览标签 |
 | `panel_compact` | `egui_view_nav_panel_t` | 56 x 72 | `Home` 选中 | compact rail 预览 |
-| `locked_label` | `egui_view_label_t` | 106 x 11 | `Read only` | 只读预览标签 |
 | `panel_locked` | `egui_view_nav_panel_t` | 56 x 72 | `Teams` 选中 | 只读弱化 rail |
 
 ## 6. 状态覆盖矩阵
@@ -136,7 +130,7 @@ python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub navigati
 
 ## 14. EGUI 适配时的简化点与约束
 
-- 使用固定项数与固定 badge 文本，优先保证 `240 x 320` 下的可审阅性
+- 使用固定项数与固定 badge 文本，优先保证 `480 x 480` 下的可审阅性
 - 通过 selection indicator + 轻量填充表达选中态，不引入复杂 hover 动画
 - compact 与 read only 统一用窄 rail 表达，降低小尺寸布局压力
 - 先完成示例级导航面板，再决定是否抽象成通用框架控件

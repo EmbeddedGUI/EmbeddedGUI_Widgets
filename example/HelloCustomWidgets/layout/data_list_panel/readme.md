@@ -8,7 +8,7 @@
 - 对应组件名：`ListView` / `ItemsView` / `Details row`
 - 本次保留状态：标准态、`compact`、`read-only`
 - 删除效果：Acrylic、阴影、复杂 hover、虚拟滚动、桌面级列头拖拽
-- EGUI 适配说明：保留标准数据列表行、焦点行、头部摘要和 footer 状态胶囊的核心语义，在 `240 x 320` 页面对信息密度做收紧处理
+- EGUI 适配说明：保留标准数据列表行、焦点行、头部摘要和 footer 状态胶囊的核心语义，在 `480 x 480` 页面对信息密度做收紧处理
 
 ## 1. 为什么需要这个控件
 
@@ -37,7 +37,7 @@
 
 ## 4. 视觉与布局规格
 
-- 页面尺寸：`240 x 320`
+- 页面尺寸：`480 x 480`
 - 根布局：`224 x 292`
 - 页面结构：标题 -> guide -> `Standard` -> 主卡 -> 状态文案 -> 分隔线 -> `Compact / Read Only`
 - 主卡尺寸：`194 x 116`
@@ -57,9 +57,7 @@
 | --- | --- | ---: | --- | --- |
 | `root_layout` | `egui_view_linearlayout_t` | 224 x 292 | enabled | 页面根容器 |
 | `title_label` | `egui_view_label_t` | 224 x 18 | `Data List` | 页面标题 |
-| `guide_label` | `egui_view_label_t` | 224 x 12 | 可点击 | 推动主 snapshot 切换 |
 | `panel_primary` | `egui_view_data_list_panel_t` | 194 x 116 | `Sync queue` | 标准数据列表主卡 |
-| `status_label` | `egui_view_label_t` | 224 x 12 | `Sync queue: Nightly sync Blocked` | 当前焦点状态回显 |
 | `panel_compact` | `egui_view_data_list_panel_t` | 108 x 80 | `Recent` | 紧凑预览 |
 | `panel_readonly` | `egui_view_data_list_panel_t` | 108 x 80 | `Locked` | 只读静态对照 |
 
@@ -138,7 +136,7 @@
 
 ## 14. EGUI 适配时的简化点与约束
 
-- 使用 `snapshot + item` 固定数据结构，保证 `240 x 320` 页面内稳定呈现
+- 使用 `snapshot + item` 固定数据结构，保证 `480 x 480` 页面内稳定呈现
 - 数据行数量限制为 `4`
 - compact 模式下隐藏顶部 summary，并去掉双行 meta 表达，保留更轻量的标题 + value 行
 - 当前先完成示例级 `data_list_panel`，后续再评估是否沉入框架层

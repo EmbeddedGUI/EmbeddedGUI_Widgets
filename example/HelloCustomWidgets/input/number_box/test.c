@@ -3,6 +3,7 @@
 #include "egui.h"
 #include "egui_view_number_box.h"
 #include "uicode.h"
+#include "demo_scaffold.h"
 #include "utils/egui_sprintf.h"
 
 #if EGUI_CONFIG_RECORDING_TEST
@@ -213,6 +214,28 @@ void test_init_ui(void)
     egui_view_number_box_set_palette(EGUI_VIEW_OF(&box_locked), EGUI_COLOR_HEX(0xFBFCFD), EGUI_COLOR_HEX(NUMBER_BOX_LOCKED_BORDER_COLOR),
                                      EGUI_COLOR_HEX(0x566473), EGUI_COLOR_HEX(0x8C98A6), EGUI_COLOR_HEX(NUMBER_BOX_LOCKED_ACCENT_COLOR));
     egui_view_group_add_child(EGUI_VIEW_OF(&locked_column), EGUI_VIEW_OF(&box_locked));
+
+    {
+
+        egui_view_t *chrome_views[] = {
+
+                EGUI_VIEW_OF(&guide_label),
+
+                EGUI_VIEW_OF(&primary_label),
+
+                EGUI_VIEW_OF(&status_label),
+
+                EGUI_VIEW_OF(&compact_label),
+
+                EGUI_VIEW_OF(&locked_label),
+
+                EGUI_VIEW_OF(&section_divider),
+
+        };
+
+        hello_custom_widgets_demo_apply_title_only_scaffold(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label), chrome_views,
+                                                            EGUI_ARRAY_SIZE(chrome_views));
+    }
 
     egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&compact_column));
     egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&locked_column));

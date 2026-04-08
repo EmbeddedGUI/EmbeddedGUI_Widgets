@@ -8,7 +8,7 @@
 - 对应组件名：`RatingControl`
 - 本次保留状态：`standard`、`compact`、`read only`、`clear action`、`keyboard rating`
 - 删减效果：Acrylic、hover 动画、半星评分、真实 glyph 资源、桌面级 tooltip 与复杂 pointer over 状态
-- EGUI 适配说明：保留标准星级评分、页内 `Clear` 入口和键盘步进语义；在 `240 x 320` 下优先保证星形排布、标题留白和 compact / read-only 对照清晰可审阅
+- EGUI 适配说明：保留标准星级评分、页内 `Clear` 入口和键盘步进语义；在 `480 x 480` 下优先保证星形排布、标题留白和 compact / read-only 对照清晰可审阅
 
 ## 1. 为什么需要这个控件
 
@@ -37,7 +37,7 @@
 
 ## 4. 视觉与布局规格
 
-- 画布：`240 x 320`
+- 画布：`480 x 480`
 - 根布局：`224 x 288`
 - 页面结构：标题 -> guide -> `Standard` -> 主评分卡 -> 状态文案 -> 分隔线 -> `Compact / Read only`
 - 主评分卡：`196 x 92`
@@ -56,9 +56,7 @@
 | --- | --- | ---: | --- | --- |
 | `root_layout` | `egui_view_linearlayout_t` | 224 x 288 | enabled | 页面根布局 |
 | `title_label` | `egui_view_label_t` | 224 x 18 | `Rating Control` | 页面标题 |
-| `guide_label` | `egui_view_label_t` | 224 x 12 | 可点击 | 切换标准 snapshot |
 | `control_primary` | `egui_view_rating_control_t` | 196 x 92 | `Service quality` | 标准评分卡 |
-| `status_label` | `egui_view_label_t` | 224 x 12 | `Service 4/5 Great` | 当前已提交评分状态 |
 | `control_compact` | `egui_view_rating_control_t` | 106 x 42 | `3 / 5` | 紧凑评分预览 |
 | `control_locked` | `egui_view_rating_control_t` | 106 x 42 | `4 / 5` | 只读评分预览 |
 
@@ -167,7 +165,7 @@ output\main.exe
 
 ## 14. EGUI 适配时的简化点与约束
 
-- 用固定 `1..5` 星级 reference 作为主演示，优先保证 `240 x 320` 下排布稳定
+- 用固定 `1..5` 星级 reference 作为主演示，优先保证 `480 x 480` 下排布稳定
 - 标准态保留 `title + stars + caption + low/high + clear` 五段结构
 - caption 跟随预览值绘制，确保 `Clear` 聚焦和星级按压时语义一致
 - compact 只保留核心评分排布，压缩非必要文案

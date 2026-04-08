@@ -8,7 +8,7 @@
 - 对应组件名：`CalendarView`
 - 保留状态：常驻月历面板、month navigation、range anchor、compact / read-only 对照
 - 删除效果：系统级阴影、浮层动画、多视图切换、桌面级多选快捷手势
-- EGUI 适配说明：保留“常驻月历 + 区间选择 + 浏览月份”的核心语义，压缩到 `240 x 320` 页面；不做年份层级切换，只保留单月浏览与区间闭环
+- EGUI 适配说明：保留“常驻月历 + 区间选择 + 浏览月份”的核心语义，压缩到 `480 x 480` 页面；不做年份层级切换，只保留单月浏览与区间闭环
 
 ## 1. 为什么需要这个控件
 
@@ -35,7 +35,7 @@
 
 ## 4. 视觉与布局规格
 
-- 页面尺寸：`240 x 320`
+- 页面尺寸：`480 x 480`
 - 根布局：`224 x 292`
 - 页面结构：标题 -> guide -> `Standard` -> 主卡 -> 状态文本 -> 分隔线 -> `Compact / Read Only`
 - 主卡尺寸：`196 x 144`
@@ -54,9 +54,7 @@
 | --- | --- | ---: | --- | --- |
 | `root_layout` | `egui_view_linearlayout_t` | 224 x 292 | enabled | 页面根容器 |
 | `title_label` | `egui_view_label_t` | 224 x 18 | `Calendar View` | 页面标题 |
-| `guide_label` | `egui_view_label_t` | 224 x 12 | 可点击 | 切换主卡示例预设 |
 | `calendar_primary` | `egui_view_calendar_view_t` | 196 x 144 | `Mar 2026 / 09-13` | 标准常驻月历主卡 |
-| `status_label` | `egui_view_label_t` | 224 x 12 | `Sprint Mar 09-13` | 当前状态反馈 |
 | `calendar_compact` | `egui_view_calendar_view_t` | 104 x 50 | `May 05-08` 紧凑 | 紧凑态预览 |
 | `calendar_locked` | `egui_view_calendar_view_t` | 104 x 50 | `Jul 18-22` 只读 | 只读态预览 |
 
@@ -146,7 +144,7 @@
 
 ## 14. EGUI 适配时的简化点与约束
 
-- 固定在 `240 x 320` 下优化，优先保证月历网格可读性
+- 固定在 `480 x 480` 下优化，优先保证月历网格可读性
 - compact 版本退化为标题 + 范围摘要
 - 区间选择通过 anchor + 第二次确认闭环实现
 - 只暴露 `grid / prev / next` 三个键盘交互部件

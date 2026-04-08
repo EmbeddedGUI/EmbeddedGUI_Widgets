@@ -7,7 +7,7 @@
 - 对应组件名：`ScrollBar`
 - 保留状态：`decrease button + track + thumb + increase button`、`content / viewport / offset`、`line/page step`、`compact / read-only` 对照
 - 删除效果：系统级阴影、悬浮提示、自动隐藏滚动条、跨轴联动与容器级惯性滚动
-- EGUI 适配说明：保留“独立滚动条 + viewport 预览 + 标准按钮/轨道/滑块语义”，压缩到 `240 x 320` 页面；不直接滚动容器内容，只表达 viewport 位置与尺寸
+- EGUI 适配说明：保留“独立滚动条 + viewport 预览 + 标准按钮/轨道/滑块语义”，压缩到 `480 x 480` 页面；不直接滚动容器内容，只表达 viewport 位置与尺寸
 
 ## 1. 为什么需要这个控件
 `scroll_bar` 用来表达“在一个独立、可复用的标准滚动条里，用 thumb 的位置和尺寸表示 viewport 在长内容中的位置与可视比例”的语义，适合文档浏览、日志查看、时间线、属性面板与列表侧边轨道等场景。
@@ -27,7 +27,7 @@
 - 目录：`example/HelloCustomWidgets/input/scroll_bar/`
 
 ## 4. 视觉与布局规格
-- 页面尺寸：`240 x 320`
+- 页面尺寸：`480 x 480`
 - 根布局：`224 x 288`
 - 页面结构：标题 -> guide -> `Standard` -> 主卡 -> 状态文本 -> 分隔线 -> `Compact / Read only`
 - 主卡尺寸：`196 x 146`
@@ -46,7 +46,6 @@
 | --- | --- | ---: | --- | --- |
 | `root_layout` | `egui_view_linearlayout_t` | 224 x 288 | enabled | 页面根容器 |
 | `scroll_bar_primary` | `egui_view_scroll_bar_t` | 196 x 146 | `840 / 220 / 168` | 标准独立滚动条主卡 |
-| `status_label` | `egui_view_label_t` | 224 x 12 | `Docs 168 / 620` | 当前 offset / max offset 状态反馈 |
 | `scroll_bar_compact` | `egui_view_scroll_bar_t` | 104 x 52 | compact | 紧凑态比例预览 |
 | `scroll_bar_locked` | `egui_view_scroll_bar_t` | 104 x 52 | compact + read-only | 只读态预览 |
 
@@ -126,7 +125,7 @@
 - 不做多轴滚动或 overlay 浮动样式。
 
 ## 14. EGUI 适配时的简化点与约束
-- 固定在 `240 x 320` 页面内优化，优先保证 preview + rail 可读。
+- 固定在 `480 x 480` 页面内优化，优先保证 preview + rail 可读。
 - compact 态收缩为比例摘要与精简轨道，不继续显示完整 preview。
 - 通过 `get_part_region()` 暴露按钮 / track / thumb 命中区域，便于单测与录制。
 - 通过 `handle_navigation_key()` 收口标准键盘语义，避免把滚动条退化成普通 value slider。

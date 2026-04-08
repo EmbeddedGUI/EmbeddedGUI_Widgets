@@ -24,7 +24,7 @@
 
 ## 4. 视觉与布局规格
 
-- 屏幕基准：240 x 320。
+- 屏幕基准：480 x 480。
 - 根布局：`230 x 306`，垂直居中摆放。
 - 主卡：`188 x 138`，带 panel shadow、outer border、inner border、顶部 header pill、底部 footer pill。
 - 中部状态文案：`230 x 13`，用于反馈当前 primary/compact 状态。
@@ -44,12 +44,8 @@
 | --- | --- | ---: | --- | --- |
 | `root_layout` | `egui_view_linearlayout_t` | 230 x 306 | enabled | 页面根容器 |
 | `title_label` | `egui_view_label_t` | 230 x 18 | `Status Timeline` | 标题 |
-| `guide_label` | `egui_view_label_t` | 230 x 12 | `Tap cards to cycle` | 交互提示 |
 | `timeline_primary` | `egui_view_status_timeline_t` | 188 x 138 | `Flow A` | 主时间线 |
-| `status_label` | `egui_view_label_t` | 230 x 13 | `Core A` | 中部状态反馈 |
-| `compact_label` | `egui_view_label_t` | 108 x 13 | `Compact` | 左下预览标题 |
 | `timeline_compact` | `egui_view_status_timeline_t` | 108 x 92 | `Compact A` | 紧凑预览 |
-| `locked_label` | `egui_view_label_t` | 108 x 13 | `Locked` | 右下预览标题 |
 | `timeline_locked` | `egui_view_status_timeline_t` | 108 x 92 | `LK` / disabled | 只读预览 |
 
 ## 6. 状态覆盖矩阵

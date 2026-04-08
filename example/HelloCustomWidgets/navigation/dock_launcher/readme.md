@@ -40,10 +40,7 @@
 | --- | --- | --- | --- | --- |
 | `root_layout` | `egui_view_linearlayout_t` | `220 x 306` | 垂直布局 | 页面骨架 |
 | `title_label` | `egui_view_label_t` | `220 x 18` | `Dock Launcher` | 页面标题 |
-| `guide_label` | `egui_view_label_t` | `220 x 11` | `Tap cards to rotate launcher states` | 页面说明 |
 | `dock_primary` | `egui_view_dock_launcher_t` | `192 x 118` | snapshot 0 | 主停靠栏 |
-| `status_label` | `egui_view_label_t` | `220 x 12` | `Primary dock focus` | 主卡说明 |
-| `section_divider` | `egui_view_line_t` | `142 x 2` | 静态 | 分隔上下区域 |
 | `bottom_row` | `egui_view_linearlayout_t` | `212 x 86` | 横向布局 | 承载两个 compact 卡 |
 | `dock_favorites` | `egui_view_dock_launcher_t` | `108 x 80` | compact snapshot 0 | 收藏预览 |
 | `dock_recent` | `egui_view_dock_launcher_t` | `100 x 80` | locked snapshot 0 | 最近任务预览 |

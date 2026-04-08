@@ -2,7 +2,7 @@
 
 ## 1. 为什么需要这个控件？
 
-`kanban_board` 用多列泳道展示任务在不同阶段的堆叠状态，适合在 240x320 小屏上快速查看工作流负载、焦点列和收敛状态。它强调“列结构 + 卡片堆叠 + 焦点列”的组合信息，而不是单值、趋势线或表格明细。
+`kanban_board` 用多列泳道展示任务在不同阶段的堆叠状态，适合在 480x480 小屏上快速查看工作流负载、焦点列和收敛状态。它强调“列结构 + 卡片堆叠 + 焦点列”的组合信息，而不是单值、趋势线或表格明细。
 
 ## 2. 为什么现有控件不够用？
 
@@ -24,7 +24,7 @@
 
 ## 4. 视觉与布局规格
 
-- 屏幕基准：240 x 320。
+- 屏幕基准：480 x 480。
 - 根布局：`220 x 304`，垂直居中摆放。
 - 主看板：`176 x 132`，重点展示完整三列泳道结构。
 - 中部状态文案：`220 x 14`，用于反馈当前焦点来源。
@@ -43,12 +43,8 @@
 | --- | --- | ---: | --- | --- |
 | `root_layout` | `egui_view_linearlayout_t` | 220 x 304 | enabled | 页面根容器 |
 | `title_label` | `egui_view_label_t` | 220 x 18 | `Kanban Board` | 标题 |
-| `guide_label` | `egui_view_label_t` | 220 x 12 | `Tap boards to rotate focus` | 交互提示 |
 | `board_primary` | `egui_view_kanban_board_t` | 176 x 132 | `Sprint A` | 主看板 |
-| `status_label` | `egui_view_label_t` | 220 x 14 | `Sprint A focus` | 中部状态反馈 |
-| `compact_label` | `egui_view_label_t` | 106 x 12 | `Compact A` | 左下预览标题 |
 | `board_compact` | `egui_view_kanban_board_t` | 106 x 92 | `Preview A` | 紧凑预览 |
-| `locked_label` | `egui_view_label_t` | 106 x 12 | `Locked` | 右下预览标题 |
 | `board_locked` | `egui_view_kanban_board_t` | 106 x 92 | disabled | 只读预览 |
 
 ## 6. 状态覆盖矩阵

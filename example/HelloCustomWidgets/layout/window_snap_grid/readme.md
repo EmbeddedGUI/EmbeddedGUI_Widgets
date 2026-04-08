@@ -36,10 +36,7 @@
 | --- | --- | --- | --- | --- |
 | `root_layout` | `egui_view_linearlayout_t` | `220 x 306` | 垂直布局 | 页面骨架 |
 | `title_label` | `egui_view_label_t` | `220 x 18` | `Window Snap Grid` | 页面标题 |
-| `guide_label` | `egui_view_label_t` | `220 x 11` | `Tap cards to rotate snap layouts` | 页面说明 |
 | `snap_primary` | `egui_view_window_snap_grid_t` | `192 x 118` | snapshot 0 | 主布局预览 |
-| `status_label` | `egui_view_label_t` | `220 x 12` | `Primary tile focus` | 状态说明 |
-| `section_divider` | `egui_view_line_t` | `142 x 2` | 静态 | 分隔上下区域 |
 | `bottom_row` | `egui_view_linearlayout_t` | `216 x 86` | 横向布局 | 承载两个 compact 卡 |
 | `snap_saved` | `egui_view_window_snap_grid_t` | `108 x 80` | compact snapshot 0 | 保存布局预览 |
 | `snap_recent` | `egui_view_window_snap_grid_t` | `104 x 80` | locked snapshot 0 | 最近布局预览 |

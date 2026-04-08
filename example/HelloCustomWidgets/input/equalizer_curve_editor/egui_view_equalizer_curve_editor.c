@@ -2,6 +2,7 @@
 #include <string.h>
 
 #include "egui_view_equalizer_curve_editor.h"
+#include "demo_scaffold.h"
 
 typedef struct eq_palette eq_palette_t;
 struct eq_palette
@@ -111,44 +112,18 @@ static void get_zone_rects_local(egui_view_t *self, egui_region_t *main_rect, eg
     egui_region_t region;
 
     egui_view_get_work_region(self, &region);
-    main_rect->location.x = region.location.x + 26;
-    main_rect->location.y = region.location.y + 60;
-    main_rect->size.width = 188;
-    main_rect->size.height = 156;
-
-    left_rect->location.x = region.location.x + 4;
-    left_rect->location.y = region.location.y + 84;
-    left_rect->size.width = 44;
-    left_rect->size.height = 112;
-
-    right_rect->location.x = region.location.x + 192;
-    right_rect->location.y = region.location.y + 84;
-    right_rect->size.width = 44;
-    right_rect->size.height = 112;
+    hello_custom_widgets_demo_get_triptych_rects(&region, HELLO_CUSTOM_WIDGETS_TITLE_TOP_INSET, main_rect, left_rect, right_rect);
 }
 
 static void get_zone_rects_screen(egui_view_t *self, egui_region_t *main_rect, egui_region_t *left_rect, egui_region_t *right_rect)
 {
-    egui_dim_t ox;
-    egui_dim_t oy;
+    egui_region_t region;
 
-    ox = self->region_screen.location.x + self->padding.left;
-    oy = self->region_screen.location.y + self->padding.top;
-
-    main_rect->location.x = ox + 26;
-    main_rect->location.y = oy + 60;
-    main_rect->size.width = 188;
-    main_rect->size.height = 156;
-
-    left_rect->location.x = ox + 4;
-    left_rect->location.y = oy + 84;
-    left_rect->size.width = 44;
-    left_rect->size.height = 112;
-
-    right_rect->location.x = ox + 192;
-    right_rect->location.y = oy + 84;
-    right_rect->size.width = 44;
-    right_rect->size.height = 112;
+    region.location.x = self->region_screen.location.x + self->padding.left;
+    region.location.y = self->region_screen.location.y + self->padding.top;
+    region.size.width = self->region.size.width - self->padding.left - self->padding.right;
+    region.size.height = self->region.size.height - self->padding.top - self->padding.bottom;
+    hello_custom_widgets_demo_get_triptych_rects(&region, HELLO_CUSTOM_WIDGETS_TITLE_TOP_INSET, main_rect, left_rect, right_rect);
 }
 
 static int egui_view_equalizer_curve_editor_on_touch_event(egui_view_t *self, egui_motion_event_t *event)
@@ -297,12 +272,14 @@ static void egui_view_equalizer_curve_editor_on_draw(egui_view_t *self)
     text_region.size.height = 20;
     draw_round_fill_safe(region.location.x + 66, region.location.y + 19, 108, 2, 1, accent_color, egui_color_alpha_mix(self->alpha, 18));
     egui_canvas_draw_text_in_rect(title_font, "EQ Curve Editor", &text_region, EGUI_ALIGN_CENTER, accent_color, self->alpha);
+    goto draw_cards;
 
     text_region.location.y = region.location.y + 27;
     text_region.size.height = 11;
     egui_canvas_draw_text_in_rect(body_font, "Tap sides or center to step bands", &text_region, EGUI_ALIGN_CENTER,
                                   egui_rgb_mix(eq_palette.text, eq_palette.muted, 28), self->alpha);
 
+draw_cards:
     get_zone_rects_local(self, &main_rect, &left_rect, &right_rect);
     draw_preview_card(self, left_band, left_rect.location.x, left_rect.location.y, left_rect.size.width, left_rect.size.height, 0);
     draw_preview_card(self, right_band, right_rect.location.x, right_rect.location.y, right_rect.size.width, right_rect.size.height, 1);
@@ -367,6 +344,8 @@ static void egui_view_equalizer_curve_editor_on_draw(egui_view_t *self)
     text_region.size.width = main_rect.size.width - 64;
     text_region.size.height = 14;
     egui_canvas_draw_text_in_rect(body_font, current->footer, &text_region, EGUI_ALIGN_CENTER, egui_rgb_mix(eq_palette.text, accent_color, 18), self->alpha);
+
+    return;
 
     if (local->last_zone == 0)
     {

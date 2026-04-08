@@ -7,7 +7,7 @@
 - 对应组件名：`MenuFlyout / ContextMenu`
 - 本次保留状态：`standard`、`submenu`、`shortcut`、`danger`、`compact`、`disabled`
 - 删减效果：Acrylic、桌面级阴影扩散、真实图标资源、级联弹出动画、完整键盘导航
-- EGUI 适配说明：保留轻量弹出菜单卡、submenu 箭头、shortcut 右对齐、danger/disabled 语义和 compact 对照，在 `240 x 320` 中优先保证弹出菜单节奏、层级和留白稳定
+- EGUI 适配说明：保留轻量弹出菜单卡、submenu 箭头、shortcut 右对齐、danger/disabled 语义和 compact 对照，在 `480 x 480` 中优先保证弹出菜单节奏、层级和留白稳定
 
 ## 1. 为什么需要这个控件？
 `menu_flyout` 用来表达轻量弹出菜单，而不是全屏菜单页。它适合右键菜单、工具栏溢出菜单、卡片局部操作菜单等场景，强调短命令、级联入口、快捷键提示以及 danger / disabled 状态。
@@ -30,7 +30,7 @@
 - `example/HelloCustomWidgets/navigation/menu_flyout/`
 
 ## 4. 视觉与布局规格
-- 画布：`240 x 320`
+- 画布：`480 x 480`
 - 根布局：`224 x 292`
 - 页面结构：标题 -> 引导文案 -> `Standard` 标签 -> 主 `menu_flyout` -> 状态文案 -> 分隔线 -> `Compact / Disabled` 双预览
 - 主卡区域：`188 x 118`
@@ -49,12 +49,7 @@
 | --- | --- | ---: | --- | --- |
 | `root_layout` | `egui_view_linearlayout_t` | 224 x 292 | enabled | 页面根布局 |
 | `title_label` | `egui_view_label_t` | 224 x 18 | `Menu Flyout` | 页面标题 |
-| `guide_label` | `egui_view_label_t` | 224 x 12 | `Tap flyouts to review commands` | 引导文案 |
-| `primary_label` | `egui_view_label_t` | 224 x 11 | `Standard` | 主菜单标签 |
 | `flyout_primary` | `egui_view_menu_flyout_t` | 188 x 118 | `submenu focus` | 标准 flyout |
-| `status_label` | `egui_view_label_t` | 224 x 12 | `Submenu command focused` | 当前 focus 语义说明 |
-| `section_divider` | `egui_view_line_t` | 148 x 2 | visible | 分隔主区域与底部预览 |
-| `compact_label` | `egui_view_label_t` | 105 x 11 | `Compact` | compact 标签 |
 | `flyout_compact` | `egui_view_menu_flyout_t` | 104 x 78 | `compact action` | 紧凑预览 |
 | `disabled_label` | `egui_view_label_t` | 105 x 11 | `Disabled` | disabled 标签 |
 | `flyout_disabled` | `egui_view_menu_flyout_t` | 104 x 78 | `disabled preview` | 禁用态预览 |
@@ -128,6 +123,6 @@ python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub navigati
 
 ## 14. EGUI 适配时的简化点与约束
 - 用固定 snapshot + item 数组驱动，先保证示例稳定
-- 用统一的行高、separator 和右对齐 meta 文本，确保 `240 x 320` 下可审阅
+- 用统一的行高、separator 和右对齐 meta 文本，确保 `480 x 480` 下可审阅
 - compact 与 disabled 固定放在底部双列，便于与主卡直接对照
 - 先完成示例级 `menu_flyout`，后续再决定是否需要和框架层 `menu` 做抽象收敛

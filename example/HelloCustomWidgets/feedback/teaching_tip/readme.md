@@ -8,7 +8,7 @@
 - 对应组件名：`TeachingTip`
 - 保留状态：anchored target、callout surface、top / bottom placement、compact / read-only 对照
 - 删除效果：系统级 popup 定位、复杂阴影、Acrylic、真实图标资源、入场动画
-- EGUI 适配说明：保留“目标锚点 + 提示气泡 + 轻量动作行”的核心语义，压缩到 `240 x 320` 页面，改成页内稳定锚定的 reference 版本
+- EGUI 适配说明：保留“目标锚点 + 提示气泡 + 轻量动作行”的核心语义，压缩到 `480 x 480` 页面，改成页内稳定锚定的 reference 版本
 
 ## 1. 为什么需要这个控件
 
@@ -39,7 +39,7 @@
 
 ## 4. 视觉与布局规格
 
-- 页面尺寸：`240 x 320`
+- 页面尺寸：`480 x 480`
 - 根布局：`224 x 300`
 - 页面结构：标题 -> guide -> `Anchored coachmark` -> 主卡 -> 状态文本 -> 分隔线 -> `Compact / Read Only`
 - 主卡尺寸：`196 x 132`
@@ -72,9 +72,7 @@
 | --- | --- | ---: | --- | --- |
 | `root_layout` | `egui_view_linearlayout_t` | 224 x 300 | enabled | 页面根容器 |
 | `title_label` | `egui_view_label_t` | 224 x 18 | `Teaching Tip` | 页面标题 |
-| `guide_label` | `egui_view_label_t` | 224 x 12 | 可点击 | 切换主卡 snapshot |
 | `tip_primary` | `egui_view_teaching_tip_t` | 196 x 132 | accent / bottom / open | 标准 teaching tip |
-| `status_label` | `egui_view_label_t` | 224 x 12 | `Focus Pin tip` | 当前焦点状态 |
 | `tip_compact` | `egui_view_teaching_tip_t` | 106 x 84 | compact | 紧凑预览 |
 | `tip_locked` | `egui_view_teaching_tip_t` | 106 x 84 | read only | 只读预览 |
 
@@ -162,7 +160,7 @@
 
 ## 14. EGUI 适配时的简化点与约束
 
-- 固定在 `240 x 320` 下优化，优先保证锚定关系和文本可读性
+- 固定在 `480 x 480` 下优化，优先保证锚定关系和文本可读性
 - 用固定 target / bubble 组合表达 reference 语义
 - compact 与 read-only 固定放在底部双列预览
 - 先完成 `HelloCustomWidgets` 版本，后续再决定是否沉淀到框架层

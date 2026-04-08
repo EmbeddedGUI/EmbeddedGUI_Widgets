@@ -2,6 +2,7 @@
 #include <string.h>
 
 #include "egui_view_jog_shuttle_wheel.h"
+#include "demo_scaffold.h"
 
 typedef struct shuttle_palette shuttle_palette_t;
 struct shuttle_palette
@@ -121,44 +122,18 @@ static void get_zone_rects_local(egui_view_t *self, egui_region_t *wheel_rect, e
     egui_region_t region;
 
     egui_view_get_work_region(self, &region);
-    wheel_rect->location.x = region.location.x + 42;
-    wheel_rect->location.y = region.location.y + 56;
-    wheel_rect->size.width = 156;
-    wheel_rect->size.height = 156;
-
-    left_rect->location.x = region.location.x + 8;
-    left_rect->location.y = region.location.y + 102;
-    left_rect->size.width = 34;
-    left_rect->size.height = 90;
-
-    right_rect->location.x = region.location.x + 198;
-    right_rect->location.y = region.location.y + 102;
-    right_rect->size.width = 34;
-    right_rect->size.height = 90;
+    hello_custom_widgets_demo_get_triptych_rects(&region, HELLO_CUSTOM_WIDGETS_TITLE_TOP_INSET, wheel_rect, left_rect, right_rect);
 }
 
 static void get_zone_rects_screen(egui_view_t *self, egui_region_t *wheel_rect, egui_region_t *left_rect, egui_region_t *right_rect)
 {
-    egui_dim_t ox;
-    egui_dim_t oy;
+    egui_region_t region;
 
-    ox = self->region_screen.location.x + self->padding.left;
-    oy = self->region_screen.location.y + self->padding.top;
-
-    wheel_rect->location.x = ox + 42;
-    wheel_rect->location.y = oy + 56;
-    wheel_rect->size.width = 156;
-    wheel_rect->size.height = 156;
-
-    left_rect->location.x = ox + 8;
-    left_rect->location.y = oy + 102;
-    left_rect->size.width = 34;
-    left_rect->size.height = 90;
-
-    right_rect->location.x = ox + 198;
-    right_rect->location.y = oy + 102;
-    right_rect->size.width = 34;
-    right_rect->size.height = 90;
+    region.location.x = self->region_screen.location.x + self->padding.left;
+    region.location.y = self->region_screen.location.y + self->padding.top;
+    region.size.width = self->region.size.width - self->padding.left - self->padding.right;
+    region.size.height = self->region.size.height - self->padding.top - self->padding.bottom;
+    hello_custom_widgets_demo_get_triptych_rects(&region, HELLO_CUSTOM_WIDGETS_TITLE_TOP_INSET, wheel_rect, left_rect, right_rect);
 }
 
 static int egui_view_jog_shuttle_wheel_on_touch_event(egui_view_t *self, egui_motion_event_t *event)
@@ -297,12 +272,14 @@ static void egui_view_jog_shuttle_wheel_on_draw(egui_view_t *self)
     text_region.size.height = 20;
     draw_round_fill_safe(region.location.x + 60, region.location.y + 19, 120, 2, 1, accent_color, egui_color_alpha_mix(self->alpha, 16));
     egui_canvas_draw_text_in_rect(title_font, "Jog Shuttle Wheel", &text_region, EGUI_ALIGN_CENTER, accent_color, self->alpha);
+    goto draw_cards;
 
     text_region.location.y = region.location.y + 28;
     text_region.size.height = 12;
     egui_canvas_draw_text_in_rect(body_font, "Tap edges or wheel to step modes", &text_region, EGUI_ALIGN_CENTER,
                                   egui_rgb_mix(shuttle_palette.text, shuttle_palette.muted, 28), self->alpha);
 
+draw_cards:
     get_zone_rects_local(self, &wheel_rect, &left_rect, &right_rect);
     draw_side_preview(self, left_mode, left_rect.location.x, left_rect.location.y, left_rect.size.width, left_rect.size.height, 0);
     draw_side_preview(self, right_mode, right_rect.location.x, right_rect.location.y, right_rect.size.width, right_rect.size.height, 1);
@@ -335,6 +312,8 @@ static void egui_view_jog_shuttle_wheel_on_draw(egui_view_t *self)
     text_region.size.height = 14;
     egui_canvas_draw_text_in_rect(body_font, current->footer, &text_region, EGUI_ALIGN_CENTER, egui_rgb_mix(shuttle_palette.text, accent_color, 18),
                                   self->alpha);
+
+    return;
 
     if (local->last_zone == 0)
     {

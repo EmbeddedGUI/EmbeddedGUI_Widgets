@@ -4,6 +4,7 @@
 #include "egui.h"
 #include "egui_view_toggle_button.h"
 #include "uicode.h"
+#include "demo_scaffold.h"
 
 #if EGUI_CONFIG_RECORDING_TEST
 #include "core/egui_input_simulator.h"
@@ -318,6 +319,28 @@ void test_init_ui(void)
     egui_view_set_focusable(EGUI_VIEW_OF(&button_readonly), 0);
 #endif
     egui_view_group_add_child(EGUI_VIEW_OF(&readonly_column), EGUI_VIEW_OF(&button_readonly));
+
+    {
+
+        egui_view_t *chrome_views[] = {
+
+                EGUI_VIEW_OF(&primary_label),
+
+                EGUI_VIEW_OF(&status_label),
+
+                EGUI_VIEW_OF(&readonly_label),
+
+                EGUI_VIEW_OF(&section_divider),
+
+        };
+
+        hello_custom_widgets_demo_apply_title_only_scaffold(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label), chrome_views,
+                                                            EGUI_ARRAY_SIZE(chrome_views));
+
+        egui_view_label_set_text(EGUI_VIEW_OF(&guide_label), "");
+
+        egui_view_label_set_text(EGUI_VIEW_OF(&compact_label), "");
+    }
 
     egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&compact_column));
     egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&readonly_column));

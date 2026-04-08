@@ -2,6 +2,7 @@
 #include <string.h>
 
 #include "egui_view_frame_scrubber.h"
+#include "demo_scaffold.h"
 
 typedef struct scrubber_palette scrubber_palette_t;
 struct scrubber_palette
@@ -150,45 +151,20 @@ static void draw_preview_card(egui_view_t *self, const egui_view_frame_scrubber_
 static void get_zone_rects_local(egui_view_t *self, egui_region_t *main_rect, egui_region_t *left_rect, egui_region_t *right_rect)
 {
     egui_region_t region;
+
     egui_view_get_work_region(self, &region);
-
-    main_rect->location.x = region.location.x + 28;
-    main_rect->location.y = region.location.y + 61;
-    main_rect->size.width = 184;
-    main_rect->size.height = 154;
-
-    left_rect->location.x = region.location.x + 10;
-    left_rect->location.y = region.location.y + 86;
-    left_rect->size.width = 48;
-    left_rect->size.height = 112;
-
-    right_rect->location.x = region.location.x + 182;
-    right_rect->location.y = region.location.y + 86;
-    right_rect->size.width = 48;
-    right_rect->size.height = 112;
+    hello_custom_widgets_demo_get_triptych_rects(&region, HELLO_CUSTOM_WIDGETS_TITLE_TOP_INSET, main_rect, left_rect, right_rect);
 }
 
 static void get_zone_rects_screen(egui_view_t *self, egui_region_t *main_rect, egui_region_t *left_rect, egui_region_t *right_rect)
 {
-    egui_dim_t ox;
-    egui_dim_t oy;
-    ox = self->region_screen.location.x + self->padding.left;
-    oy = self->region_screen.location.y + self->padding.top;
+    egui_region_t region;
 
-    main_rect->location.x = ox + 28;
-    main_rect->location.y = oy + 61;
-    main_rect->size.width = 184;
-    main_rect->size.height = 154;
-
-    left_rect->location.x = ox + 10;
-    left_rect->location.y = oy + 86;
-    left_rect->size.width = 48;
-    left_rect->size.height = 112;
-
-    right_rect->location.x = ox + 182;
-    right_rect->location.y = oy + 86;
-    right_rect->size.width = 48;
-    right_rect->size.height = 112;
+    region.location.x = self->region_screen.location.x + self->padding.left;
+    region.location.y = self->region_screen.location.y + self->padding.top;
+    region.size.width = self->region.size.width - self->padding.left - self->padding.right;
+    region.size.height = self->region.size.height - self->padding.top - self->padding.bottom;
+    hello_custom_widgets_demo_get_triptych_rects(&region, HELLO_CUSTOM_WIDGETS_TITLE_TOP_INSET, main_rect, left_rect, right_rect);
 }
 
 static int egui_view_frame_scrubber_on_touch_event(egui_view_t *self, egui_motion_event_t *event)
@@ -265,12 +241,14 @@ static void egui_view_frame_scrubber_on_draw(egui_view_t *self)
     text_region.size.height = 20;
     draw_round_fill_safe(region.location.x + 80, region.location.y + 18, 80, 2, 1, accent_color, egui_color_alpha_mix(self->alpha, 24));
     egui_canvas_draw_text_in_rect(title_font, "Frame Scrubber", &text_region, EGUI_ALIGN_CENTER, accent_color, self->alpha);
+    goto draw_cards;
 
     text_region.location.y = region.location.y + 25;
     text_region.size.height = 11;
     egui_canvas_draw_text_in_rect(body_font, "Tap sides or center to scrub frames", &text_region, EGUI_ALIGN_CENTER,
                                   egui_rgb_mix(scrubber_palette.text, scrubber_palette.muted, 24), self->alpha);
 
+draw_cards:
     get_zone_rects_local(self, &main_rect, &left_rect, &right_rect);
     draw_preview_card(self, left_snapshot, left_rect.location.x, left_rect.location.y, left_rect.size.width, left_rect.size.height, 0);
     draw_preview_card(self, right_snapshot, right_rect.location.x, right_rect.location.y, right_rect.size.width, right_rect.size.height, 1);
@@ -323,6 +301,8 @@ static void egui_view_frame_scrubber_on_draw(egui_view_t *self)
     text_region.size.height = 12;
     egui_canvas_draw_text_in_rect(body_font, current->footer, &text_region, EGUI_ALIGN_CENTER, egui_rgb_mix(scrubber_palette.text, accent_color, 20),
                                   self->alpha);
+
+    return;
 
     if (local->last_zone == 0)
     {

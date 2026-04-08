@@ -2,6 +2,7 @@
 #include <string.h>
 
 #include "egui_view_piano_roll_editor.h"
+#include "demo_scaffold.h"
 
 typedef struct piano_roll_palette piano_roll_palette_t;
 struct piano_roll_palette
@@ -102,43 +103,20 @@ static void draw_round_stroke_safe(egui_dim_t x, egui_dim_t y, egui_dim_t w, egu
 static void get_zone_rects_local(egui_view_t *self, egui_region_t *main_rect, egui_region_t *left_rect, egui_region_t *right_rect)
 {
     egui_region_t region;
+
     egui_view_get_work_region(self, &region);
-
-    main_rect->location.x = region.location.x + 26;
-    main_rect->location.y = region.location.y + 52;
-    main_rect->size.width = 188;
-    main_rect->size.height = 178;
-
-    left_rect->location.x = region.location.x + 1;
-    left_rect->location.y = region.location.y + 90;
-    left_rect->size.width = 36;
-    left_rect->size.height = 102;
-
-    right_rect->location.x = region.location.x + 203;
-    right_rect->location.y = region.location.y + 90;
-    right_rect->size.width = 36;
-    right_rect->size.height = 102;
+    hello_custom_widgets_demo_get_triptych_rects(&region, HELLO_CUSTOM_WIDGETS_TITLE_TOP_INSET, main_rect, left_rect, right_rect);
 }
 
 static void get_zone_rects_screen(egui_view_t *self, egui_region_t *main_rect, egui_region_t *left_rect, egui_region_t *right_rect)
 {
-    egui_dim_t ox = self->region_screen.location.x + self->padding.left;
-    egui_dim_t oy = self->region_screen.location.y + self->padding.top;
+    egui_region_t region;
 
-    main_rect->location.x = ox + 26;
-    main_rect->location.y = oy + 52;
-    main_rect->size.width = 188;
-    main_rect->size.height = 178;
-
-    left_rect->location.x = ox + 1;
-    left_rect->location.y = oy + 90;
-    left_rect->size.width = 36;
-    left_rect->size.height = 102;
-
-    right_rect->location.x = ox + 203;
-    right_rect->location.y = oy + 90;
-    right_rect->size.width = 36;
-    right_rect->size.height = 102;
+    region.location.x = self->region_screen.location.x + self->padding.left;
+    region.location.y = self->region_screen.location.y + self->padding.top;
+    region.size.width = self->region.size.width - self->padding.left - self->padding.right;
+    region.size.height = self->region.size.height - self->padding.top - self->padding.bottom;
+    hello_custom_widgets_demo_get_triptych_rects(&region, HELLO_CUSTOM_WIDGETS_TITLE_TOP_INSET, main_rect, left_rect, right_rect);
 }
 
 void egui_view_piano_roll_editor_set_states(egui_view_t *self, const egui_view_piano_roll_editor_state_t *states, uint8_t state_count)
@@ -270,12 +248,14 @@ static void egui_view_piano_roll_editor_on_draw(egui_view_t *self)
     text_region.size.height = 20;
     draw_round_fill_safe(region.location.x + 66, region.location.y + 19, 108, 2, 1, accent, egui_color_alpha_mix(self->alpha, 12));
     egui_canvas_draw_text_in_rect(title_font, "Piano Roll Editor", &text_region, EGUI_ALIGN_CENTER, accent, self->alpha);
+    goto draw_cards;
 
     text_region.location.y = region.location.y + 27;
     text_region.size.height = 12;
     egui_canvas_draw_text_in_rect(body_font, "Tap lanes or cards to cycle", &text_region, EGUI_ALIGN_CENTER,
                                   egui_rgb_mix(piano_roll_palette.text, piano_roll_palette.muted, 30), self->alpha);
 
+draw_cards:
     get_zone_rects_local(self, &main_rect, &left_rect, &right_rect);
     draw_preview(self, left_state, left_rect.location.x, left_rect.location.y, left_rect.size.width, left_rect.size.height,
                  (uint8_t)((local->current_index + local->state_count - 1) % 4));
@@ -397,6 +377,8 @@ static void egui_view_piano_roll_editor_on_draw(egui_view_t *self)
     text_region.size.width = main_rect.size.width - 60;
     text_region.size.height = 14;
     egui_canvas_draw_text_in_rect(body_font, current->footer, &text_region, EGUI_ALIGN_CENTER, egui_rgb_mix(piano_roll_palette.text, accent, 16), self->alpha);
+
+    return;
 
     if (local->last_zone == 0)
     {

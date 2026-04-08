@@ -8,7 +8,7 @@ split_flap_board 用于在小屏里表达“站牌 / 班次 / 柜台 / 队列”
 
 - 机场、车站、码头的小型出发牌。
 - 工业产线工位号、队列号、班次号。
-- 需要在 240x320 里用强视觉模块快速确认编号的状态看板。
+- 需要在 480x480 里用强视觉模块快速确认编号的状态看板。
 
 ## 2. 为什么现有控件还不够
 
@@ -34,7 +34,7 @@ split_flap_board 用于在小屏里表达“站牌 / 班次 / 柜台 / 队列”
 
 ## 4. 视觉与布局规格
 
-- 屏幕基准：240 x 320。
+- 屏幕基准：480 x 480。
 - 顶部标题区：220 x 18。
 - 主牌区：192 x 116。
 - 底部双牌区：211 x 86。
@@ -47,10 +47,7 @@ split_flap_board 用于在小屏里表达“站牌 / 班次 / 柜台 / 队列”
 |---|---|---|---|---|
 | root_layout | egui_view_linearlayout_t | 220 x 308 | enabled | 页面总容器 |
 | title_label | egui_view_label_t | 220 x 18 | 可见 | 页面标题 |
-| guide_label | egui_view_label_t | 220 x 11 | 可见 | 交互说明 |
 | board_primary | egui_view_split_flap_board_t | 192 x 116 | snapshot 0 | 主出发牌 |
-| status_label | egui_view_label_t | 220 x 12 | 可见 | 当前交互反馈 |
-| section_divider | egui_view_line_t | 150 x 2 | 可见 | 分隔线 |
 | bottom_row | egui_view_linearlayout_t | 211 x 86 | enabled | 底部容器 |
 | board_compact | egui_view_split_flap_board_t | 122 x 80 | snapshot 0 | 紧凑队列牌 |
 | board_standby | egui_view_split_flap_board_t | 86 x 80 | snapshot 0 | 待机牌 |

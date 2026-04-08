@@ -8,7 +8,7 @@
 - 对应组件名：`NumberBox`
 - 本次保留状态：`standard`、`compact`、`read only`
 - 删减效果：键盘输入校验、鼠标滚轮、错误提示气泡、图标前后缀、Acrylic 与复杂焦点动画
-- EGUI 适配说明：使用固定范围、轻量步进按钮和静态单位后缀，在 `240 x 320` 下优先保证数字输入框的可读性与可点击性
+- EGUI 适配说明：使用固定范围、轻量步进按钮和静态单位后缀，在 `480 x 480` 下优先保证数字输入框的可读性与可点击性
 
 ## 1. 为什么需要这个控件
 
@@ -36,7 +36,7 @@
 
 ## 4. 视觉与布局规格
 
-- 画布：`240 x 320`
+- 画布：`480 x 480`
 - 根布局：`224 x 284`
 - 页面结构：标题 -> 引导文案 -> `Standard` 标签 -> 主数字框 -> 当前值文案 -> 分隔线 -> `Compact / Read only` 双预览
 - 主数字框：`196 x 68`
@@ -56,14 +56,8 @@
 | --- | --- | ---: | --- | --- |
 | `root_layout` | `egui_view_linearlayout_t` | 224 x 284 | enabled | 页面根布局 |
 | `title_label` | `egui_view_label_t` | 224 x 18 | `Number Box` | 页面标题 |
-| `guide_label` | `egui_view_label_t` | 224 x 12 | `Tap minus or plus to step` | 引导文案 |
-| `primary_label` | `egui_view_label_t` | 224 x 11 | `Standard` | 主数字框标签 |
 | `box_primary` | `egui_view_number_box_t` | 196 x 68 | `Spacing = 24 px` | 标准数字框 |
-| `status_label` | `egui_view_label_t` | 224 x 12 | `Spacing 24 px` | 当前值状态文案 |
-| `section_divider` | `egui_view_line_t` | 144 x 2 | visible | 分隔主区与预览区 |
-| `compact_label` | `egui_view_label_t` | 106 x 11 | `Compact` | 紧凑预览标签 |
 | `box_compact` | `egui_view_number_box_t` | 106 x 42 | `12 ms` | 紧凑数字框 |
-| `locked_label` | `egui_view_label_t` | 106 x 11 | `Read only` | 只读预览标签 |
 | `box_locked` | `egui_view_number_box_t` | 106 x 42 | `16 px` | 只读弱化数字框 |
 
 ## 6. 状态覆盖矩阵
@@ -137,7 +131,7 @@ python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/nu
 
 ## 14. EGUI 适配时的简化点与约束
 
-- 使用固定整数范围和步进，优先保证 `240 x 320` 下的可审阅性
+- 使用固定整数范围和步进，优先保证 `480 x 480` 下的可审阅性
 - 通过轻量 `- / +` 按钮承载交互，不引入复杂文本输入状态机
 - 保持浅色低噪音 reference 风格，避免回到 showcase 语法
 - 先完成示例级数字框，再决定是否上升到框架公共控件

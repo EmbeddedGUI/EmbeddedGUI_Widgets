@@ -7,7 +7,7 @@
 - 对应组件名：`CommandBar / Toolbar`
 - 本次保留状态：`standard`、`edit / review / layout / publish`、`compact`、`disabled`
 - 删除效果：Acrylic、真实图标资源、复杂溢出菜单动画、完整 hover / pressed / focus ring 体系、响应式隐藏算法
-- EGUI 适配说明：保留常驻命令栏的主命令、scope pill、overflow 入口和 compact / disabled 对照；在 `240 x 320` 中优先保证低噪音、稳定留白和命令层级可读
+- EGUI 适配说明：保留常驻命令栏的主命令、scope pill、overflow 入口和 compact / disabled 对照；在 `480 x 480` 中优先保证低噪音、稳定留白和命令层级可读
 
 ## 1. 为什么需要这个控件？
 `command_bar` 用来表达页内常驻工具栏，而不是弹出菜单或整页导航。它适合编辑、审核、布局、发布等需要“一组高频命令长期停留在页面顶部”的场景，强调主命令、当前 scope 和 overflow 入口的分层。
@@ -32,7 +32,7 @@
 - `example/HelloCustomWidgets/input/command_bar/`
 
 ## 4. 视觉与布局规格
-- 画布：`240 x 320`
+- 画布：`480 x 480`
 - 根布局：`224 x 296`
 - 页面结构：标题 -> guide -> `Standard bar` -> 主 `command_bar` -> 状态文案 -> 分隔线 -> `Compact / Disabled` 双预览
 - 主卡区域：`196 x 88`
@@ -51,10 +51,7 @@
 | --- | --- | ---: | --- | --- |
 | `root_layout` | `egui_view_linearlayout_t` | 224 x 296 | enabled | 页面根布局 |
 | `title_label` | `egui_view_label_t` | 224 x 18 | `Command Bar` | 页面标题 |
-| `guide_label` | `egui_view_label_t` | 224 x 12 | 可点击 | 轮换主卡 snapshot 的 guide |
 | `bar_primary` | `egui_view_command_bar_t` | 196 x 88 | `edit` | 标准命令栏 |
-| `status_label` | `egui_view_label_t` | 224 x 12 | `Edit: Save / Canvas` | 当前 focus 状态文案 |
-| `section_divider` | `egui_view_line_t` | 136 x 2 | visible | 分隔主卡与底部预览 |
 | `bar_compact` | `egui_view_command_bar_t` | 106 x 80 | `compact edit` | 紧凑预览 |
 | `bar_disabled` | `egui_view_command_bar_t` | 106 x 80 | `disabled` | 禁用预览 |
 
@@ -127,7 +124,7 @@ python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/co
 - 不做 hover、keyboard focus ring、checked / toggle 的完整桌面端细节
 
 ## 14. EGUI 适配时的简化点与约束
-- 使用固定 snapshot 驱动，先保证 `240 x 320` 下的稳定 reference
+- 使用固定 snapshot 驱动，先保证 `480 x 480` 下的稳定 reference
 - 主卡保留 `eyebrow + title + scope + command rail + footer` 五段结构
 - compact 版本只保留 icon-first 语义，不再追求完整文字信息密度
 - disabled 版本通过统一 palette 弱化，而不是引入额外状态层

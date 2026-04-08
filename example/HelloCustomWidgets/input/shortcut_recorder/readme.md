@@ -7,7 +7,7 @@
 - 对应组件名称：`Keyboard shortcut field / accelerator editor`
 - 本次保留状态：`standard`、`listening`、`preset apply`、`compact`、`read only`
 - 删除效果：系统级快捷键冲突检测、全局注册、Alt/Win 修饰键、长列表搜索建议、真实桌面焦点环动画
-- EGUI 适配说明：保留快捷键录入字段、监听态、预设列表与只读摘要；在 `240 x 320` 画布下优先保证 token 可读性、状态对比和底部双预览完整呈现
+- EGUI 适配说明：保留快捷键录入字段、监听态、预设列表与只读摘要；在 `480 x 480` 画布下优先保证 token 可读性、状态对比和底部双预览完整呈现
 
 ## 1. 为什么需要这个控件？
 
@@ -29,7 +29,7 @@
 
 ## 4. 视觉与布局规格
 
-- 画布：`240 x 320`
+- 画布：`480 x 480`
 - 根布局：`224 x 304`
 - 页面结构：标题 -> 引导文案 -> `Standard` 标签 -> 主卡 -> 状态文案 -> 分隔线 -> `Compact / Read only` 双预览
 - 主卡尺寸：`194 x 138`
@@ -43,9 +43,7 @@
 | --- | --- | ---: | --- | --- |
 | `root_layout` | `egui_view_linearlayout_t` | 224 x 304 | enabled | 页面根布局 |
 | `title_label` | `egui_view_label_t` | 224 x 18 | `Shortcut Recorder` | 页面标题 |
-| `guide_label` | `egui_view_label_t` | 224 x 12 | `Tap rows or press Enter` | 引导文案 |
 | `recorder_primary` | `egui_view_shortcut_recorder_t` | 194 x 138 | `Ctrl + K` | 标准快捷键录入控件 |
-| `status_label` | `egui_view_label_t` | 224 x 12 | `Ready: Ctrl + K` | 状态摘要 |
 | `recorder_compact` | `egui_view_shortcut_recorder_t` | 106 x 82 | `Ctrl + Shift + P` | 紧凑预览 |
 | `recorder_locked` | `egui_view_shortcut_recorder_t` | 106 x 82 | `Ctrl + S` | 只读预览 |
 

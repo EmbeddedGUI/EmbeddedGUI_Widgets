@@ -7,7 +7,7 @@
 - 对应组件名：`SettingCard` / `SettingsGroup`
 - 本次保留状态：`standard`、`compact`、`read only`、`accent`、`success`、`warning`、`neutral`
 - 删除效果：真实图标、Acrylic、长列表滚动、复杂 hover/focus ring、桌面级展开动效
-- EGUI 适配说明：保留设置卡分组、focus row、value pill / switch / chevron 尾部语义，在 `240 x 320` 页面里优先保证卡片节奏和信息密度稳定
+- EGUI 适配说明：保留设置卡分组、focus row、value pill / switch / chevron 尾部语义，在 `480 x 480` 页面里优先保证卡片节奏和信息密度稳定
 
 ## 1. 为什么需要这个控件？
 `settings_panel` 用来表达一组统一风格的设置卡行，适合出现在设置页、偏好面板和系统页中。它强调分组卡片、row focus、尾部值/开关语义，以及 compact/read only 对照，而不是通用列表或普通卡片容器。
@@ -30,7 +30,7 @@
 - `D:\workspace\gitee\EmbeddedGUI\example\HelloCustomWidgets\layout\settings_panel\`
 
 ## 4. 视觉与布局规格
-- 画布：`240 x 320`
+- 画布：`480 x 480`
 - 根布局：`224 x 300`
 - 页面结构：标题 -> 引导文案 -> 主 `settings_panel` -> 状态文案 -> 分隔线 -> `Compact / Read only` 双预览
 - 主卡区域：`196 x 132`
@@ -49,13 +49,8 @@
 | --- | --- | ---: | --- | --- |
 | `root_layout` | `egui_view_linearlayout_t` | 224 x 300 | enabled | 页面根布局 |
 | `title_label` | `egui_view_label_t` | 224 x 18 | `Settings Panel` | 页面标题 |
-| `guide_label` | `egui_view_label_t` | 224 x 12 | `Tap panels to review states` | 引导文案 |
 | `panel_primary` | `egui_view_settings_panel_t` | 196 x 132 | `accent` | 标准设置卡分组 |
-| `status_label` | `egui_view_label_t` | 224 x 12 | `Accent settings row active` | 当前 focus tone 说明 |
-| `section_divider` | `egui_view_line_t` | 148 x 2 | visible | 分隔主区和底部预览 |
-| `compact_label` | `egui_view_label_t` | 104 x 11 | `Compact` | compact 标题 |
 | `panel_compact` | `egui_view_settings_panel_t` | 104 x 84 | `accent compact` | 紧凑预览 |
-| `locked_label` | `egui_view_label_t` | 104 x 11 | `Read only` | 只读标题 |
 | `panel_locked` | `egui_view_settings_panel_t` | 104 x 84 | `neutral locked` | 只读静态预览 |
 
 ## 6. 状态覆盖矩阵

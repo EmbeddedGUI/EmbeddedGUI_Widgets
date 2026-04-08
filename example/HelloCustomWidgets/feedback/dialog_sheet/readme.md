@@ -7,7 +7,7 @@
 - 对应组件名：`ContentDialog / Dialog Sheet`
 - 本次保留状态：`accent`、`success`、`warning`、`error`、`compact`、`read only`
 - 删除效果：系统级模糊、真实图标资源、复杂阴影、动画进出场、拖拽手势关闭
-- EGUI 适配说明：保留低噪音遮罩、sheet 化卡片、hero area、tag、footer summary、primary / secondary action row，在 `240 x 320` 下优先保证主卡与底部对照预览的可读性
+- EGUI 适配说明：保留低噪音遮罩、sheet 化卡片、hero area、tag、footer summary、primary / secondary action row，在 `480 x 480` 下优先保证主卡与底部对照预览的可读性
 
 ## 1. 为什么需要这个控件？
 `dialog_sheet` 用来表达轻量弹层确认语义，适合设置页、发布页、同步页里的二次确认场景。它不是全屏对话框，也不是页内横幅，而是更接近 Fluent 2 `ContentDialog` 的低噪音 sheet 收口。
@@ -30,7 +30,7 @@
 - `example/HelloCustomWidgets/feedback/dialog_sheet/`
 
 ## 4. 视觉与布局规格
-- 画布：`240 x 320`
+- 画布：`480 x 480`
 - 根布局：`224 x 300`
 - 页面结构：标题 -> 引导文案 -> 主 `dialog_sheet` -> 状态文案 -> 分隔线 -> `Compact / Read-only` 双预览
 - 主卡区域：`196 x 132`
@@ -49,10 +49,7 @@
 | --- | --- | ---: | --- | --- |
 | `root_layout` | `egui_view_linearlayout_t` | 224 x 300 | enabled | 页面根布局 |
 | `title_label` | `egui_view_label_t` | 224 x 18 | `Dialog Sheet` | 页面标题 |
-| `guide_label` | `egui_view_label_t` | 224 x 12 | `Tap actions to shift focus` | 引导文案 |
 | `sheet_primary` | `egui_view_dialog_sheet_t` | 196 x 132 | `warning` | 标准 dialog sheet |
-| `status_label` | `egui_view_label_t` | 224 x 12 | `Focus Reconnect` | 当前动作状态说明 |
-| `section_divider` | `egui_view_line_t` | 141 x 2 | visible | 分隔主区和底部预览 |
 | `sheet_compact` | `egui_view_dialog_sheet_t` | 106 x 86 | `warning compact` | 紧凑预览 |
 | `sheet_locked` | `egui_view_dialog_sheet_t` | 106 x 86 | `neutral locked` | 只读静态预览 |
 
@@ -124,7 +121,7 @@ python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub feedback
 - 不做图标资源、复选框、辅助链接等扩展内容
 
 ## 14. EGUI 适配时的简化点与约束
-- 用固定尺寸 sheet 和低对比 backdrop 表达对话层，优先保证 `240 x 320` 下可审阅
+- 用固定尺寸 sheet 和低对比 backdrop 表达对话层，优先保证 `480 x 480` 下可审阅
 - 以 `hero + title + body + footer + actions` 五段式结构表达语义，不引入额外装饰
 - `Compact` 和 `Read-only` 固定放到底部双列，方便与主卡直接对照
 - 先完成示例级 `dialog_sheet`，后续再决定是否沉入通用框架控件

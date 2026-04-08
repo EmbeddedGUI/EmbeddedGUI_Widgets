@@ -8,7 +8,7 @@
 - 对应组件名称：`TreeView`
 - 本次保留状态：`standard`、`branch expanded`、`selection`、`compact`、`read only`
 - 删除效果：系统级图标资源、完整键盘焦点环、拖拽排序、虚拟滚动、复杂展开动画
-- EGUI 适配说明：保留层级缩进、展开箭头、轻量引导线与选中反馈；在 `240 x 320` 画布下优先保证层级可读性、留白稳定性与底部双预览的完整呈现
+- EGUI 适配说明：保留层级缩进、展开箭头、轻量引导线与选中反馈；在 `480 x 480` 画布下优先保证层级可读性、留白稳定性与底部双预览的完整呈现
 
 ## 1. 为什么需要这个控件？
 
@@ -32,7 +32,7 @@
 
 ## 4. 视觉与布局规格
 
-- 画布：`240 x 320`
+- 画布：`480 x 480`
 - 根布局：`224 x 300`
 - 页面结构：标题 -> 引导文案 -> `Standard` 标签 -> 主树视图 -> 状态文案 -> 分隔线 -> `Compact / Read only` 双预览
 - 主卡片：`196 x 122`
@@ -46,9 +46,7 @@
 | --- | --- | ---: | --- | --- |
 | `root_layout` | `egui_view_linearlayout_t` | 224 x 300 | enabled | 页面根布局 |
 | `title_label` | `egui_view_label_t` | 224 x 18 | `Tree View` | 页面标题 |
-| `guide_label` | `egui_view_label_t` | 224 x 12 | `Tap rows to change focus` | 引导文案 |
 | `tree_primary` | `egui_view_tree_view_t` | 196 x 122 | `Controls open` | 标准树视图 |
-| `status_label` | `egui_view_label_t` | 224 x 12 | `Focus Branches` | 焦点状态说明 |
 | `tree_compact` | `egui_view_tree_view_t` | 106 x 88 | `Library branch` | 紧凑预览 |
 | `tree_locked` | `egui_view_tree_view_t` | 106 x 88 | `Selection fixed` | 只读预览 |
 

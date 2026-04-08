@@ -1,6 +1,7 @@
 #include "egui.h"
 #include "egui_view_rating_control.h"
 #include "uicode.h"
+#include "demo_scaffold.h"
 #include "utils/egui_sprintf.h"
 
 #if EGUI_CONFIG_RECORDING_TEST
@@ -328,6 +329,28 @@ void test_init_ui(void)
 
     apply_primary_snapshot(0, 1);
     apply_compact_snapshot(0, 0);
+
+    {
+
+        egui_view_t *chrome_views[] = {
+
+                EGUI_VIEW_OF(&primary_label),
+
+                EGUI_VIEW_OF(&status_label),
+
+                EGUI_VIEW_OF(&locked_label),
+
+                EGUI_VIEW_OF(&section_divider),
+
+        };
+
+        hello_custom_widgets_demo_apply_title_only_scaffold(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label), chrome_views,
+                                                            EGUI_ARRAY_SIZE(chrome_views));
+
+        egui_view_label_set_text(EGUI_VIEW_OF(&guide_label), "");
+
+        egui_view_label_set_text(EGUI_VIEW_OF(&compact_label), "");
+    }
 
     egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&compact_column));
     egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&locked_column));
