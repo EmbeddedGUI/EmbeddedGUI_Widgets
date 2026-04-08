@@ -1,113 +1,125 @@
-﻿# toast_stack 自定义控件设计说明
+# toast_stack 自定义控件设计说明
 
 ## 参考来源
+
 - 参考设计系统：`Fluent 2`
 - 参考开源库：`WPF UI`
 - 次级补充参考：`ModernWpf`
-- 对应组件名：`Toast / Snackbar`
+- 对应组件名称：`Toast / Snackbar`
 - 本次保留状态：`info`、`success`、`warning`、`error`、`compact`、`read only`
-- 删除效果：系统级阴影、Acrylic、自动入场/退场动画、真实图标资源、复杂手势关闭
-- EGUI 适配说明：保留轻量叠卡、左侧 severity accent、标题/正文/动作/时间层级，在 `480 x 480` 下优先保证页内预览和双列对照的可读性
+- 删除效果：页面级 guide / 状态栏 / section label / 预览标签、系统级阴影、Acrylic、自动入场退场动画、场景化页面壳层
+- EGUI 适配说明：保留轻量叠卡、左侧 severity accent、标题 / 正文 / 动作 / meta 层级；录制态通过程序化 snapshot 切换覆盖主要状态
 
 ## 1. 为什么需要这个控件？
-`toast_stack` 用来表达页内临时通知的叠卡语义，适合设置页、同步页、桌面入口页里展示最近 2 到 3 条轻量反馈。它不是全屏弹窗，也不是单条横幅，而是更接近 Fluent 的轻量 toast / snackbar 组合。
 
-## 2. 为什么现有控件不够用
-- `message_bar` 偏页内单条反馈，不强调连续 toast 的前后层级
-- `notification_stack` 更接近旧版 showcase 风格，视觉语言偏重，不适合作为新的 reference 主线
-- `alert_banner` 偏横向告警条，不适合做卡片堆叠式的临时消息
-- `notification_badge`、`chips` 一类控件缺少标题、正文、动作和时间信息
+`toast_stack` 用来表达页内临时通知的叠卡语义，适合设置页、同步页和工作台首页展示最近 2 到 3 条轻量反馈。它不是全屏弹窗，也不是单条横幅，而是更贴近 Fluent 的轻量 toast / snackbar 组合。
 
-因此这里单独实现 `toast_stack`，作为 `feedback` 目录下更贴近 Fluent 2 的轻量叠卡参考控件。
+## 2. 为什么现有控件不够用？
+
+- `message_bar` 更偏单条页内反馈，不强调连续 toast 的前后层级
+- `dialog_sheet` 是阻塞式弹层，不适合轻量临时消息
+- `badge_group` 只能表达汇总提醒，不承载正文、动作和时间信息
+- 当前主线仍需要一版贴近 Fluent / WPF UI 的叠卡式 `Toast` reference custom widget
 
 ## 3. 目标场景与示例概览
-- 主区域展示标准 `toast_stack`，覆盖 `info / success / warning / error`
-- 左下 `Compact` 预览展示窄尺寸下的双态 toast stack
-- 右下 `Read only` 预览展示弱化颜色、无动作按钮、无关闭位的静态预览
-- 页面通过点击主卡和 compact 卡轮换 snapshot，验证标题、正文、动作按钮、meta pill、close glyph 与后两层卡片摘要
 
-目录：
-- `example/HelloCustomWidgets/feedback/toast_stack/`
+- 主卡展示标准 `toast_stack`，覆盖 `info / success / warning / error` 四态
+- 左下预览展示 `Compact` 紧凑态，保留前卡与两层摘要
+- 右下预览展示 `Read only` 弱化态，隐藏动作能力并冻结展示
+- 示例页结构收敛为标题、主 `toast_stack` 和 compact / read-only 双预览，不再保留外部 guide、状态栏和 section label
+
+目标目录：`example/HelloCustomWidgets/feedback/toast_stack/`
 
 ## 4. 视觉与布局规格
+
 - 画布：`480 x 480`
-- 根布局：`224 x 284`
-- 页面结构：标题 -> 引导文案 -> 主 `toast_stack` -> 状态文案 -> 分隔线 -> `Compact / Read only` 双预览
-- 主卡区域：`196 x 106`
-- 底部双预览容器：`212 x 96`
-- `Compact` 预览：`104 x 82`
-- `Read only` 预览：`104 x 82`
+- 根布局：`224 x 232`
+- 主卡片：`196 x 108`
+- 底部双预览容器：`216 x 83`
+- `Compact` / `Read only` 预览：`104 x 83`
 - 视觉规则：
   - 使用浅灰 page panel + 白底低噪音 toast card
-  - 前卡保留左侧 severity accent strip、状态圆点、标题、正文、动作 pill、meta pill
-  - 后两层卡只保留摘要标题与轻量占位线，避免过度装饰
-  - `Read only` 仅弱化 accent 和边框，不做额外交互动效
+  - 前卡保留 severity strip、标题、正文、动作 pill 和 meta pill
+  - 后两层卡只保留摘要标题与层级偏移，不叠加页面外说明
+  - palette 统一回中性浅色 Fluent / WPF UI 语法，不保留额外彩色标签壳层
 
 ## 5. 控件清单
 
 | 变量名 | 类型 | 尺寸 (W x H) | 初始状态 | 用途 |
 | --- | --- | ---: | --- | --- |
-| `root_layout` | `egui_view_linearlayout_t` | 224 x 284 | enabled | 页面根布局 |
-| `title_label` | `egui_view_label_t` | 224 x 18 | `Toast Stack` | 页面标题 |
-| `stack_primary` | `egui_view_toast_stack_t` | 196 x 106 | `info` | 标准 toast stack |
-| `stack_compact` | `egui_view_toast_stack_t` | 104 x 82 | `warning` | 紧凑预览 |
-| `stack_locked` | `egui_view_toast_stack_t` | 104 x 82 | `locked` | 只读静态预览 |
+| `root_layout` | `egui_view_linearlayout_t` | `224 x 232` | enabled | 页面根布局 |
+| `title_label` | `egui_view_label_t` | `224 x 18` | `Toast Stack` | 页面标题 |
+| `stack_primary` | `egui_view_toast_stack_t` | `196 x 108` | `Backup ready` | 标准主卡 |
+| `stack_compact` | `egui_view_toast_stack_t` | `104 x 83` | `Quota alert` | 紧凑预览 |
+| `stack_locked` | `egui_view_toast_stack_t` | `104 x 83` | `Review ready` | 只读预览 |
 
 ## 6. 状态覆盖矩阵
 
 | 状态 / 区域 | 主卡 | Compact | Read only |
 | --- | --- | --- | --- |
-| 默认态 | `info` | `warning` | `success locked` |
-| 轮换 1 | `success` | 保持 | 保持 |
-| 轮换 2 | `warning` | 保持 | 保持 |
-| 轮换 3 | `error` | 保持 | 保持 |
-| 紧凑轮换 | 保持 | `warning <-> error` | 保持 |
+| 默认 | `info` | `warning` | `success locked` |
+| 切换 1 | `success` | 保持 | 保持 |
+| 切换 2 | `warning` | 保持 | 保持 |
+| 切换 3 | `error` | 保持 | 保持 |
+| 紧凑切换 | 保持 | `warning -> error` | 保持 |
 | 只读弱化 | 不适用 | 不适用 | 弱化 accent、隐藏 action / close |
 
 ## 7. `egui_port_get_recording_action()` 录制动作设计
-1. 首帧等待并抓取默认 `info` 状态
-2. 切到 `success`
-3. 切到 `warning`
-4. 切到 `error`
-5. 切到底部 `Compact` 的另一组 snapshot
-6. 末尾等待一帧，供 runtime 抓最终截图
 
-录制采用 setter + `recording_request_snapshot()`，避免依赖点击命中造成状态不稳定。
+1. 应用默认主快照与紧凑快照
+2. 稳定后请求默认截图
+3. 程序化切到 `success`
+4. 请求第二张截图
+5. 程序化切到 `warning`
+6. 请求第三张截图
+7. 程序化切到 `error`
+8. 请求第四张截图
+9. 程序化切到 `Compact` 第二组快照
+10. 请求最终截图并保留收尾等待
 
 ## 8. 编译、runtime、截图验收标准
+
 ```bash
 make all APP=HelloCustomWidgets APP_SUB=feedback/toast_stack PORT=pc
-python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub feedback/toast_stack --timeout 10 --keep-screenshots
+python scripts/checks/check_touch_release_semantics.py --scope custom --category feedback
+python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub feedback/toast_stack --track reference --timeout 10 --keep-screenshots
+make all APP=HelloUnitTest PORT=pc_test
+output\main.exe
+python scripts/checks/check_docs_encoding.py
 ```
 
 验收重点：
-- 主卡、后两层卡、底部双预览都必须完整可见
-- `info / success / warning / error` 四态颜色差异要一眼可辨
-- 标题、正文、action pill、meta pill 之间要保留稳定留白
-- close glyph 不能贴边，也不能挤压标题
-- `Compact` 在小尺寸下仍需保留前卡语义与后两层层级
-- `Read only` 需要与可交互态明显区分，但不能做成发灰脏污效果
+
+- 主卡、后两层卡和底部双预览都必须完整可见，不能裁切
+- `info / success / warning / error` 四态差异要清晰，但整体不能回到高饱和 showcase 风格
+- 标题、正文、action pill 和 meta pill 之间要保持稳定留白
+- `Compact` 与 `Read only` 需要在同一 palette 下维持清晰层级差异
+- 页面不再出现 guide、状态栏、section label、preview label 这类外部 chrome
 
 ## 9. 已知限制与下一轮迭代计划
-- 当前版本是固定尺寸 reference 实现，还未覆盖更长正文与更长动作文案
-- 当前不做真实弹入/弹出动画，也不做手势关闭
-- 当前不做真实图标资源，仅保留 severity glyph + accent strip
-- 若后续需要沉入框架层，再单独评估 `src/widget/` 抽象和 UI Designer 接入
+
+- 当前仍使用固定 snapshot 数据，不接真实通知队列
+- 当前不做自动弹入 / 弹出动画，也不做滑动关闭手势
+- 当前不引入真实图标资源，只保留 severity strip 与圆点
+- 当前示例优先验证 reference 语义与布局稳定性，不联动全局通知中心
 
 ## 10. 与现有控件的重叠分析与差异化边界
-- 相比 `message_bar`：这里强调多条 toast 的叠卡关系，而不是单条页内反馈条
-- 相比 `notification_stack`：这里改成轻量 Fluent 2 语言，去掉旧 showcase 风格的重装饰
-- 相比 `alert_banner`：这里是卡片堆叠预览，不是横向告警横幅
-- 相比 `card`：这里保留通知语义、severity、动作和 meta，而不是通用容器
+
+- 相比 `message_bar`：这里强调多条 toast 的叠卡关系，而不是单条页内反馈
+- 相比 `dialog_sheet`：这里是轻量反馈，不阻塞页面
+- 相比 `badge_group`：这里承载正文、动作和时间信息，不只是数量提示
+- 相比旧版 showcase 通知控件：这里回到标准 Fluent reference 结构，不保留额外叙事壳层
 
 ## 11. 参考设计系统与开源母本
+
 - 参考设计系统：`Fluent 2`
 - 开源母本：`WPF UI`
 - 次级补充参考：`ModernWpf`
 
-## 12. 对应组件名，以及本次保留的核心状态
-- 对应组件名：`Toast / Snackbar`
-- 本次保留状态：
+## 12. 对应组件名称，以及本次保留的核心状态
+
+- 对应组件名称：`Toast / Snackbar`
+- 本次保留：
   - `info`
   - `success`
   - `warning`
@@ -116,13 +128,15 @@ python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub feedback
   - `read only`
 
 ## 13. 相比参考原型删掉了哪些效果或装饰
-- 不做系统级弹入/弹出动画
-- 不做 Acrylic、模糊、阴影扩散等桌面特效
-- 不做真实图标资源和手势滑动关闭
-- 不做队列计数、堆叠折叠、复杂 hover 状态
+
+- 不做页面级 guide、状态栏、section label 与外部预览标签
+- 不做系统级阴影、Acrylic 和自动入场退场动画
+- 不做真实图标资源与复杂手势关闭
+- 不做通知队列计数、折叠、hover 和其它桌面端高装饰效果
 
 ## 14. EGUI 适配时的简化点与约束
-- 使用固定叠卡偏移量，优先保证 `480 x 480` 下的可审阅性
+
+- 使用固定叠卡偏移量与 snapshot 数据，优先保证 `480 x 480` 下可审阅性
 - 用低噪音边框和少量色彩混合表达层级，避免回到 HMI / showcase 风格
-- `Compact` 与 `Read only` 统一放在底部双列，方便和主卡直接对照
-- 先完成示例级 `toast_stack`，后续再决定是否沉入通用框架控件
+- compact 与 read-only 直接放在底部双列，对照主卡状态变化
+- 当前先作为 `HelloCustomWidgets` 的 reference widget 维护，后续是否下沉框架层再评估

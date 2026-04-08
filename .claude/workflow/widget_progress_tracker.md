@@ -98,6 +98,11 @@
 ## 最近完成的收口动作
 
 - `2026-04-09`
+  - 完成 `feedback/toast_stack` 实现级样式收口：删除 guide / 状态栏 / section label / 预览标签等页面级 chrome，示例页收敛为标题、主 `toast_stack` 和 compact / read-only 双预览。
+  - 收紧 `toast_stack` 根布局与底部双预览尺寸，统一主态、compact 和 read-only palette 到 Fluent / WPF UI 中性浅色 `Toast / Snackbar` 语法，录制动作改为程序化 snapshot 切换。
+  - README 重写为当前 reference 结构，移除外部状态回显和点击外部标签切换的旧说明。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=feedback/toast_stack PORT=pc`、`check_touch_release_semantics.py --scope custom --category feedback`、`code_runtime_check.py --app HelloCustomWidgets --app-sub feedback/toast_stack --track reference --timeout 10 --keep-screenshots`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`check_docs_encoding.py`。
+- `2026-04-09`
   - 完成 `navigation/annotated_scroll_bar` 实现级样式收口：删除 guide / 状态栏 / section label / 预览标签等页面级 chrome，示例页收敛为标题、主 `annotated_scroll_bar` 和 compact / read-only 双预览。
   - 收紧 `annotated_scroll_bar` 根布局与底部双预览尺寸，统一主态、compact 和 read-only palette 到 Fluent / WPF UI 中性浅色 `AnnotatedScrollBar` 语法，录制动作改为程序化 snapshot 切换。
   - README 重写为当前 reference 结构，移除外部状态回显和隐藏 label 驱动的旧说明。
