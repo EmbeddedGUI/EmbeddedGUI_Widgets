@@ -27,6 +27,7 @@ SKIP_ROOTS = {
     ROOT_DIR / "web" / "demos",
 }
 README_PATTERN = re.compile(r"\?{4,}")
+MOJIBAKE_TOKENS = ("锟斤拷",)
 
 
 def should_skip_dir(path: Path) -> bool:
@@ -65,15 +66,35 @@ def is_readme(path: Path) -> bool:
 
 def check_readme_quality(path: Path, content: str) -> str | None:
     suspicious_blocks = README_PATTERN.findall(content)
-    replacement_char_count = content.count("\ufffd")
     question_count = content.count("?")
 
-    if replacement_char_count >= 3:
-        return "contains replacement characters"
     if len(suspicious_blocks) >= 2:
         return "contains repeated '????' style corruption"
     if suspicious_blocks and question_count >= 20:
         return "contains too many '?' markers for a README"
+    return None
+
+
+def find_private_use_character(content: str) -> str | None:
+    for char in content:
+        codepoint = ord(char)
+        if 0xE000 <= codepoint <= 0xF8FF:
+            return "U+%04X" % codepoint
+    return None
+
+
+def check_general_quality(content: str) -> str | None:
+    if "\ufffd" in content:
+        return "contains replacement characters"
+
+    private_use = find_private_use_character(content)
+    if private_use:
+        return "contains private-use character %s" % private_use
+
+    for token in MOJIBAKE_TOKENS:
+        if token in content:
+            return "contains mojibake token %r" % token
+
     return None
 
 
@@ -98,6 +119,10 @@ def main() -> int:
         except UnicodeDecodeError as exc:
             decode_failures.append("%s: %s" % (relative, exc))
             continue
+
+        general_issue = check_general_quality(content)
+        if general_issue:
+            quality_failures.append("%s: %s" % (relative, general_issue))
 
         if is_readme(path):
             quality_issue = check_readme_quality(path, content)
