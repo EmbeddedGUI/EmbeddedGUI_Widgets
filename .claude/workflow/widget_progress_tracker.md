@@ -98,6 +98,11 @@
 ## 最近完成的收口动作
 
 - `2026-04-09`
+  - 完成 `navigation/tab_view` 实现级样式收口：删除 guide / 状态栏 / section label / 预览标签等页面级 chrome，示例页压缩为标题、主 `tab_view` 与 compact / read-only 双预览。
+  - 收紧 `tab_view` 控件语义：移除 tabs 上方额外的 workspace/helper 说明条，压缩根布局和主卡留白，统一 palette、tab shell、close/add 按钮与内容面板到 Fluent / WPF UI 低噪音工作区风格。
+  - README 同步到 `224 x 224` 根布局与 `198 x 112` 主控件尺寸，compact snapshot 切换改为录制态程序化触发。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=navigation/tab_view PORT=pc`、`check_touch_release_semantics.py --scope custom --category navigation`、`code_runtime_check.py --app HelloCustomWidgets --app-sub navigation/tab_view --track reference --timeout 10 --keep-screenshots`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`check_docs_encoding.py`。
+- `2026-04-09`
   - 完成 `navigation/menu_flyout` 实现级样式收口：删除 guide / 状态文案 / section label / 预览标签等页面级 chrome，示例页收敛为标题、主 flyout 与 compact / disabled 双预览。
   - 收紧 `menu_flyout` 视觉表达：压缩根布局与主卡留白，统一 palette、分隔线、边框与弱阴影语法到 Fluent / WPF UI 中性轻量弹出菜单风格。
   - 同步修正文档尺寸与结构说明，compact snapshot 文案缩短以避免标题挤压。

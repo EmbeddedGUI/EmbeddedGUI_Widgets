@@ -20,19 +20,20 @@
 
 ## 3. 目标场景与示例概览
 - 主区域展示标准 `tab_view`，覆盖 `Docs workspace` 与 `Ops workspace` 两套 snapshot
-- 主区域展示标准 `tab_view`，header 区保留 title/meta，body 区保留 badge/eyebrow/title/footer 的轻量信息层
+- 主区域展示标准 `tab_view`，只保留页签头、内容面板和关闭 / 恢复入口，body 区保留 badge/eyebrow/title/footer 的轻量信息层
 - 左下 `Compact` 预览展示缩窄尺寸下的低噪音版本
 - 右下 `Read only` 预览展示只读冻结态
 - 主区域需要能看出切页、关闭标签和恢复标签后的内容联动
+- 示例页结构收敛为标题、主 `tab_view` 和 compact / read-only 双预览，不再保留 guide、状态栏和 section label
 
 目录：
 - `example/HelloCustomWidgets/navigation/tab_view/`
 
 ## 4. 视觉与布局规格
 - 画布：`480 x 480`
-- 根布局：`224 x 300`
-- 主 `tab_view`：`198 x 128`
-- 底部双预览：`216 x 90`
+- 根布局：`224 x 224`
+- 主 `tab_view`：`198 x 112`
+- 底部双预览：`216 x 72`
 - `Compact` / `Read only` 预览：`104 x 72`
 - 视觉规则：
   - 使用浅灰 page panel + 白底轻边框卡片
@@ -40,13 +41,14 @@
   - `Tab` 切换时 `close / add` 要能从部件级描边看出 focus 位置
   - body panel 用低对比内容卡，不回退到 showcase 风格的大色块
   - `Compact` 保留语义，不保留冗长 body 文本
+  - 主控件不再保留 tabs 上方的 workspace/helper 说明条，整体回到 Fluent / WPF UI 标准工作区页签容器语义
 
 ## 5. 控件清单
 | 变量名 | 类型 | 尺寸 (W x H) | 初始状态 | 用途 |
 | --- | --- | ---: | --- | --- |
-| `root_layout` | `egui_view_linearlayout_t` | `224 x 300` | enabled | 页面根布局 |
+| `root_layout` | `egui_view_linearlayout_t` | `224 x 224` | enabled | 页面根布局 |
 | `title_label` | `egui_view_label_t` | `224 x 18` | `Tab View` | 页面标题 |
-| `tab_view_primary` | `egui_view_tab_view_t` | `196 x 126` | `Docs workspace` | 主控件 |
+| `tab_view_primary` | `egui_view_tab_view_t` | `198 x 112` | `Docs workspace` | 主控件 |
 | `tab_view_compact` | `egui_view_tab_view_t` | `104 x 72` | compact | 紧凑预览 |
 | `tab_view_locked` | `egui_view_tab_view_t` | `104 x 72` | read only | 只读预览 |
 
@@ -57,7 +59,7 @@
 | 切换标签 | body 面板和 footer 同步变化 | 保持当前 compact snapshot | 不响应 |
 | 关闭标签 | 可关闭标签从 header 消失，visible count 变化 | 不演示 | 不响应 |
 | 恢复标签 | `+` 恢复所有已关闭标签 | 不演示 | 不响应 |
-| 切换 snapshot | 主工作区整体切换 | 通过 label 单独切换 | 固定冻结 |
+| 切换 snapshot | 主工作区整体切换 | 录制态程序化切换 | 固定冻结 |
 
 ## 7. `egui_port_get_recording_action()` 录制动作设计
 1. 首帧固定 `Docs / Home`
@@ -77,8 +79,9 @@ python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub navigati
 - 主 header、body、footer 三层必须完整可见
 - active tab 与 close / add 入口的留白不能挤压正文
 - 关闭标签前后 body 文案不能错位
-- `eyebrow`、status text 与底部双预览要保持轻量，不得喧宾夺主
+- `eyebrow` 与底部双预览要保持轻量，不得喧宾夺主
 - `Compact` 和 `Read only` 要能明显区别于主态
+- 根容器不再出现大段空白页板，主控件与底部双预览比例需要稳定
 
 ## 9. 已知限制与下一轮计划
 - 当前版本不做拖拽重排与多行 header command 区
@@ -112,6 +115,7 @@ python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub navigati
 - 不做复杂 hover、焦点环和多级阴影
 - 不做系统菜单、图标页签、Acrylic 背景
 - 不做多段 header 命令工具条
+- 不做页面级 guide、状态栏、section label 与 tabs 上方额外 workspace/helper 说明条
 
 ## 14. EGUI 适配时的简化点与约束
 - 以轻量 `closed_mask` 完成关闭语义，避免复杂容器重排
