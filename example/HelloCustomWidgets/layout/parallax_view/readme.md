@@ -19,7 +19,7 @@
 
 ## 3. 目标场景与示例概览
 - 主卡展示标准 `parallax_view`：hero 区背景层随 offset 慢速上移，前景 row 列表保持可读
-- 左下 `Compact view` 预览展示更紧凑的 parallax 摘要态，只保留核心层次
+- 左下 `Compact` 预览展示更紧凑的 parallax 摘要态，只保留核心层次
 - 右下 `Read-only` 预览展示锁定态，对照不可交互时的低噪音视觉
 - 支持 touch 点击 row 跳转到该 row 的 `anchor_offset`
 - 支持 `Up / Down / Home / End / Plus / Minus`
@@ -30,15 +30,15 @@
 ## 4. 视觉与布局规格
 - 画布：`480 x 480`
 - 根布局：`224 x 304`
-- 页面结构：标题 -> guide -> `Standard view` -> 主卡 -> 状态文案 -> 分隔线 -> `Compact view / Read-only`
+- 页面结构：标题 -> 主卡 -> `Compact / Read-only`
 - 主卡尺寸：`194 x 136`
-- 底部双预览容器：`218 x 90`
+- 底部双预览容器：`218 x 82`
 - 单个预览尺寸：`106 x 82`
 - 视觉规则：
   - 使用浅色 Fluent 风格 card，不回退到重装饰 showcase 语法
-  - 顶部 hero 区保留三层背景条，随 offset 产生慢速位移
-  - 前景 rows 以卡片列表方式压在 hero 下方，当前 row 用 tone bar 强调
-  - footer pill 固定回显当前 active row
+  - 顶部 hero 区保留三层低对比度背景条，随 offset 产生慢速位移
+  - 前景 rows 以低装饰列表方式压在 hero 下方，当前 row 只保留轻量 tone bar 强调
+  - footer pill 固定回显当前 active row，不再额外叠加页面级状态文案
 
 ## 5. 控件清单
 | 变量名 | 类型 | 尺寸 (W x H) | 初始状态 | 用途 |
@@ -80,7 +80,7 @@
 - 验收重点：
   - hero 区与 rows 不可重叠到难以识别
   - 背景层位移必须能从录制截图中看出明显变化
-  - footer pill、progress pill、短标签需要人工复核居中与留白
+  - footer pill、progress pill 与右侧短标签需要人工复核居中与留白
   - compact/read-only 必须一眼可区分
 
 ## 9. 已知限制与下一轮迭代计划

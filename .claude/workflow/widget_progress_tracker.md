@@ -98,6 +98,10 @@
 ## 最近完成的收口动作
 
 - `2026-04-08`
+  - 完成 `layout/parallax_view` 实现级样式收口：移除示例页冗余 chrome / 状态文案，保留标题 + 主卡 + 双预览结构。
+  - 收紧 `parallax_view` 视觉层次：降低外层色偏与装饰噪音，保留 hero shift / active row / compact / read-only 核心语义。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=layout/parallax_view PORT=pc`、`check_touch_release_semantics.py --scope custom --category layout`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`code_runtime_check.py --app HelloCustomWidgets --app-sub layout/parallax_view --track reference --timeout 10 --keep-screenshots`。
+- `2026-04-08`
   - 完成全部 `deprecated` 目录清退。
   - 完成全部 `showcase` 目录清退。
   - `widget_catalog.json` 收口为 `reference=42 / showcase=0 / deprecated=0`。
