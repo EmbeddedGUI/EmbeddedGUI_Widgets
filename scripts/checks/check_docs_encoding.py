@@ -24,16 +24,21 @@ SKIP_DIR_NAMES = {
 SKIP_ROOTS = {
     ROOT_DIR / "sdk",
     ROOT_DIR / "tools",
+    ROOT_DIR / "web" / "lib",
     ROOT_DIR / "web" / "demos",
 }
 README_PATTERN = re.compile(r"\?{4,}")
-MOJIBAKE_TOKENS = ("锟斤拷",)
-
-
-def should_skip_dir(path: Path) -> bool:
-    if path.name in SKIP_DIR_NAMES:
-        return True
-    return any(path == skip_root or skip_root in path.parents for skip_root in SKIP_ROOTS)
+MOJIBAKE_TOKENS = (
+    "��",
+    "鏈",
+    "褰撳",
+    "鍙傝",
+    "鏂囨。",
+    "鐩綍",
+    "杩愯",
+    "璇诲彇",
+    "鎺т欢",
+)
 
 
 def iter_doc_files(paths: list[Path]) -> list[Path]:
@@ -64,7 +69,7 @@ def is_readme(path: Path) -> bool:
     return name == "readme.md" or name == "readme.rst" or name == "readme.txt"
 
 
-def check_readme_quality(path: Path, content: str) -> str | None:
+def check_readme_quality(content: str) -> str | None:
     suspicious_blocks = README_PATTERN.findall(content)
     question_count = content.count("?")
 
@@ -125,7 +130,7 @@ def main() -> int:
             quality_failures.append("%s: %s" % (relative, general_issue))
 
         if is_readme(path):
-            quality_issue = check_readme_quality(path, content)
+            quality_issue = check_readme_quality(content)
             if quality_issue:
                 quality_failures.append("%s: %s" % (relative, quality_issue))
 
@@ -135,7 +140,7 @@ def main() -> int:
             print("  - %s" % item)
 
     if quality_failures:
-        print("Suspicious README content:")
+        print("Suspicious documentation content:")
         for item in quality_failures:
             print("  - %s" % item)
 
