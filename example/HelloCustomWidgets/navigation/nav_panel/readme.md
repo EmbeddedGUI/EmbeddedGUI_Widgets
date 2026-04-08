@@ -21,14 +21,13 @@
 - `tab_strip` 更像页签条，通常横向承载少量页面
 - 当前仓库缺少一版贴近 `Fluent NavigationView` 语义的轻量侧边导航
 
-因此这里单独实现 `nav_panel`，而不是继续在现有控件上打补丁。
-
 ## 3. 目标场景与示例概览
 
 - 主区域展示标准 `nav_panel`，对应桌面或平板页面里的左侧常驻导航
 - 左下 `Compact` 预览展示窄宽度下的图标化 rail
 - 右下 `Read only` 预览展示只读弱化态，用于静态预览或受限场景
 - 页面通过点选导航项切换选中态，并观察 selection indicator、badge、settings footer 与弱化态层级
+- 示例页结构收敛为标题、标准态主面板和 compact / read-only 双预览，不再保留 guide、状态文案和 section label
 
 目录：
 
@@ -37,27 +36,27 @@
 ## 4. 视觉与布局规格
 
 - 画布：`480 x 480`
-- 根布局：`224 x 284`
-- 页面结构：标题 -> 引导文案 -> `Standard` 标签 -> 主导航面板 -> 当前状态文案 -> 分隔线 -> `Compact / Read only` 双预览
-- 主导航面板：`196 x 110`
-- 底部双预览容器：`216 x 88`
-- `Compact` 预览：`56 x 72`
-- `Read only` 预览：`56 x 72`
+- 根布局：`224 x 224`
+- 页面结构：标题 -> 主导航面板 -> `Compact / Read only` 双预览
+- 主导航面板：`198 x 108`
+- 底部双预览容器：`152 x 74`
+- `Compact` 预览：`58 x 74`
+- `Read only` 预览：`58 x 74`
 - 视觉规则：
   - 使用浅灰 page panel + 白底低噪音边框
   - 标准态保留 header、小 badge、选中背景与左侧 selection indicator
   - compact 态压缩成窄 rail，只保留 badge 与选中条
-  - 只读态弱化 accent 与文字，不做额外交互装饰
+  - 只读态通过统一弱化 palette 表达锁定，不做额外说明控件
 
 ## 5. 控件清单
 
 | 变量名 | 类型 | 尺寸 (W x H) | 初始状态 | 用途 |
 | --- | --- | ---: | --- | --- |
-| `root_layout` | `egui_view_linearlayout_t` | 224 x 284 | enabled | 页面根布局 |
-| `title_label` | `egui_view_label_t` | 224 x 18 | `Nav Panel` | 页面标题 |
-| `panel_primary` | `egui_view_nav_panel_t` | 196 x 110 | `Overview` 选中 | 标准导航面板 |
-| `panel_compact` | `egui_view_nav_panel_t` | 56 x 72 | `Home` 选中 | compact rail 预览 |
-| `panel_locked` | `egui_view_nav_panel_t` | 56 x 72 | `Teams` 选中 | 只读弱化 rail |
+| `root_layout` | `egui_view_linearlayout_t` | `224 x 224` | enabled | 页面根布局 |
+| `title_label` | `egui_view_label_t` | `224 x 18` | `Nav Panel` | 页面标题 |
+| `panel_primary` | `egui_view_nav_panel_t` | `198 x 108` | `Overview` 选中 | 标准导航面板 |
+| `panel_compact` | `egui_view_nav_panel_t` | `58 x 74` | `Home` 选中 | compact rail 预览 |
+| `panel_locked` | `egui_view_nav_panel_t` | `58 x 74` | `Teams` 选中 | 只读弱化 rail |
 
 ## 6. 状态覆盖矩阵
 
@@ -90,14 +89,13 @@ python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub navigati
 - header、选中背景、左侧 indicator、badge 与底部 settings 要同时可辨识
 - compact rail 需要在小尺寸下保持当前项可读
 - `Read only` 必须和可交互态拉开层级，但不能发灰发脏
-- 文字与 badge、边框、选中条之间要保留合理留白
+- 页面不再出现大段空白页板，主面板与底部双预览比例稳定
 
 ## 9. 已知限制与后续方向
 
 - 当前版本不做展开/收起 pane、树形层级与二级导航
 - 当前不做真实图标资源，使用 badge 字母替代
 - 当前不做键盘导航、搜索框和顶栏命令区
-- 本轮先完成 reference 版 30 次收敛，后续再看是否需要沉入框架层
 
 ## 10. 与现有控件的重叠分析与差异化边界
 
@@ -127,6 +125,7 @@ python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub navigati
 - 不做系统图标资源与复杂分组图标
 - 不做树形层级展开、二级导航和过渡动画
 - 不做 Acrylic、阴影与大面积桌面窗口装饰
+- 不做页面级 guide、状态栏、section label 与额外说明 chrome
 
 ## 14. EGUI 适配时的简化点与约束
 

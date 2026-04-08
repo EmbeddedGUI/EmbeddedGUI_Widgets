@@ -98,6 +98,11 @@
 ## 最近完成的收口动作
 
 - `2026-04-09`
+  - 完成 `navigation/nav_panel` 实现级样式收口：删除 guide / 状态文案 / section label / 预览标签等页面级 chrome，示例页收敛为标题、主导航面板与 compact / read-only 双预览。
+  - 压缩 `nav_panel` 根布局与底部双预览宽度，统一主态、compact 和 read-only palette 到 Fluent / WPF UI 中性 `NavigationView` 侧边导航语法。
+  - README 重写为当前 reference 结构，移除旧版示例页组织和冗长场景说明残留。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=navigation/nav_panel PORT=pc`、`check_touch_release_semantics.py --scope custom --category navigation`、`code_runtime_check.py --app HelloCustomWidgets --app-sub navigation/nav_panel --track reference --timeout 10 --keep-screenshots`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`check_docs_encoding.py`。
+- `2026-04-09`
   - 完成 `navigation/menu_bar` 实现级样式收口：删除 guide / 状态栏 / section label / 预览标签等页面级 chrome，主页面收敛为标题、主 `menu_bar` 与 compact / read-only 双预览。
   - 压缩 `menu_bar` 示例页根布局与底部留白，统一主态、compact 和 read-only palette 到 Fluent / WPF UI 中性浅色菜单栏语法。
   - README 重写为当前 reference 结构，删除历史迭代残留的冗长视觉规则堆积。
