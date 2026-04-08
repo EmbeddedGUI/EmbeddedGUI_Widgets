@@ -2,6 +2,8 @@
 
 Standalone repository for `HelloCustomWidgets`.
 
+Online preview: <https://embeddedgui.github.io/EmbeddedGUI_Widgets/>
+
 HelloCustomWidgets demos now use a default `480 x 480` showcase canvas.
 All widget demos follow one presentation rule: title only, standard at top, compact at left, read-only/locked at right.
 
