@@ -12,6 +12,33 @@ import webbrowser
 from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 
+UTF8_CONTENT_TYPES = {
+    ".html": "text/html; charset=utf-8",
+    ".css": "text/css; charset=utf-8",
+    ".js": "application/javascript; charset=utf-8",
+    ".json": "application/json; charset=utf-8",
+    ".md": "text/markdown; charset=utf-8",
+    ".rst": "text/x-rst; charset=utf-8",
+    ".txt": "text/plain; charset=utf-8",
+}
+
+
+class Utf8StaticHandler(SimpleHTTPRequestHandler):
+    extensions_map = SimpleHTTPRequestHandler.extensions_map.copy()
+    extensions_map.update(UTF8_CONTENT_TYPES)
+
+    def guess_type(self, path: str) -> str:
+        suffix = pathlib.Path(path).suffix.lower()
+        if suffix in UTF8_CONTENT_TYPES:
+            return UTF8_CONTENT_TYPES[suffix]
+
+        content_type = super().guess_type(path)
+        if content_type in ("text/javascript", "application/x-javascript"):
+            return "application/javascript; charset=utf-8"
+        if content_type.startswith("text/") and "charset=" not in content_type:
+            return content_type + "; charset=utf-8"
+        return content_type
+
 
 def parse_args() -> argparse.Namespace:
     script_dir = pathlib.Path(__file__).resolve().parent
@@ -52,7 +79,7 @@ def main() -> int:
         except Exception:
             pass
 
-    handler = partial(SimpleHTTPRequestHandler, directory=str(web_dir))
+    handler = partial(Utf8StaticHandler, directory=str(web_dir))
     try:
         with ThreadingHTTPServer(("0.0.0.0", port), handler) as server:
             server.serve_forever()

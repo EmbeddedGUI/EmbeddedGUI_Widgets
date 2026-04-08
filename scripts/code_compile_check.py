@@ -11,6 +11,8 @@ import shutil
 import subprocess
 from pathlib import Path
 
+from widget_catalog import filter_widget_ids
+
 make_jobs = None
 
 # Speed up compilation: disable debug symbols, use -O0 (same as ui_designer)
@@ -69,25 +71,13 @@ def get_example_virtual_list():
 def get_example_size_analysis_list():
     return get_example_sub_list("HelloSizeAnalysis")
 
-def get_custom_widgets_list(category=None):
-    """Discover HelloCustomWidgets sub-apps (category/widget_name pairs)."""
-    base = 'example/HelloCustomWidgets'
-    if not os.path.isdir(base):
-        return []
-
-    result = []
-    categories = os.listdir(base)
-    for cat in sorted(categories):
-        cat_path = os.path.join(base, cat)
-        if not os.path.isdir(cat_path):
-            continue
-        if category and cat != category:
-            continue
-        for widget in sorted(os.listdir(cat_path)):
-            widget_path = os.path.join(cat_path, widget)
-            if os.path.isdir(widget_path) and os.path.exists(os.path.join(widget_path, 'test.c')):
-                result.append(f"{cat}/{widget}")
-    return result
+def get_custom_widgets_list(category=None, track="all", include_deprecated=False):
+    """Discover HelloCustomWidgets sub-apps from widget_catalog.json."""
+    return filter_widget_ids(
+        category=category,
+        track=track,
+        include_deprecated=include_deprecated or track == "deprecated",
+    )
 
 
 def normalize_user_cflags(user_cflags):
@@ -480,6 +470,16 @@ def parse_args():
                         default=None,
                         help="Only check specific category (e.g. input, display).")
 
+    parser.add_argument("--track",
+                        choices=["all", "reference", "showcase", "deprecated"],
+                        default="all",
+                        help="Filter HelloCustomWidgets by catalog track. Default keeps reference + showcase and excludes deprecated.")
+
+    parser.add_argument("--include-deprecated",
+                        action="store_true",
+                        default=False,
+                        help="Include catalog entries marked deprecated when compiling HelloCustomWidgets.")
+
     parser.add_argument("--jobs",
                         type=int,
                         default=0,
@@ -737,6 +737,7 @@ if __name__ == '__main__':
             os.system('make clean')
 
     start_time = time.time()
+    include_deprecated = args.include_deprecated or args.track == "deprecated"
 
     # Custom widgets check mode
     if args.custom_widgets:
@@ -744,7 +745,11 @@ if __name__ == '__main__':
         if res != 0:
             sys.exit(res)
 
-        custom_list = get_custom_widgets_list(args.category)
+        custom_list = get_custom_widgets_list(
+            args.category,
+            track=args.track,
+            include_deprecated=include_deprecated,
+        )
         custom_cases = [("HelloCustomWidgets", "pc", widget_sub) for widget_sub in custom_list]
         run_compile_cases_parallel(custom_cases, params, bits64=args.bits64, case_jobs=args.case_jobs)
 
@@ -770,7 +775,11 @@ if __name__ == '__main__':
         if res != 0:
             sys.exit(res)
 
-        custom_list = get_custom_widgets_list(args.category)
+        custom_list = get_custom_widgets_list(
+            args.category,
+            track=args.track,
+            include_deprecated=include_deprecated,
+        )
         full_cases = [("HelloCustomWidgets", "pc", widget_sub) for widget_sub in custom_list]
         run_compile_cases_parallel(full_cases, params, bits64=args.bits64, case_jobs=args.case_jobs)
 

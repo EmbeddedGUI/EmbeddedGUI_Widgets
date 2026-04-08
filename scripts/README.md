@@ -18,9 +18,16 @@ This repository keeps only the scripts needed for standalone custom-widget work.
 ## Subdirectories
 
 - `checks/`
-  Focused validation helpers such as touch release semantics auditing.
+  Focused validation helpers such as touch release semantics auditing and documentation encoding checks.
 - `web/`
   WASM build and GitHub Pages packaging helpers for the widgets-only site.
+
+## Useful checks
+
+- `python scripts/checks/check_touch_release_semantics.py --scope custom`
+  Audit widget touch release behavior.
+- `python scripts/checks/check_docs_encoding.py`
+  Validate documentation files decode as UTF-8 and catch obvious README corruption such as repeated `????`.
 
 ## Principle
 

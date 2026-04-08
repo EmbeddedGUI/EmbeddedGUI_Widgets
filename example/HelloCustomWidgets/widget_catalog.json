@@ -1,0 +1,942 @@
+[
+  {
+    "id": "chart/boxplot_chart",
+    "track": "deprecated",
+    "visibility": "hidden",
+    "reference_system": "",
+    "reference_library": "",
+    "reference_component": "",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
+    "id": "chart/candlestick_chart",
+    "track": "deprecated",
+    "visibility": "hidden",
+    "reference_system": "",
+    "reference_library": "",
+    "reference_component": "",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
+    "id": "chart/conversion_funnel",
+    "track": "deprecated",
+    "visibility": "hidden",
+    "reference_system": "",
+    "reference_library": "",
+    "reference_component": "",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
+    "id": "chart/heatmap_chart",
+    "track": "deprecated",
+    "visibility": "hidden",
+    "reference_system": "",
+    "reference_library": "",
+    "reference_component": "",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
+    "id": "chart/radar_chart",
+    "track": "deprecated",
+    "visibility": "hidden",
+    "reference_system": "",
+    "reference_library": "",
+    "reference_component": "",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
+    "id": "chart/sankey_flow",
+    "track": "deprecated",
+    "visibility": "hidden",
+    "reference_system": "",
+    "reference_library": "",
+    "reference_component": "",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
+    "id": "chart/treemap_chart",
+    "track": "deprecated",
+    "visibility": "hidden",
+    "reference_system": "",
+    "reference_library": "",
+    "reference_component": "",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
+    "id": "decoration/avatar_stack",
+    "track": "showcase",
+    "visibility": "internal",
+    "reference_system": "",
+    "reference_library": "",
+    "reference_component": "",
+    "replacement": "display/persona_group",
+    "doc_state": "ok"
+  },
+  {
+    "id": "decoration/pin_cluster",
+    "track": "showcase",
+    "visibility": "internal",
+    "reference_system": "",
+    "reference_library": "",
+    "reference_component": "",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
+    "id": "display/badge_group",
+    "track": "reference",
+    "visibility": "public",
+    "reference_system": "Fluent 2",
+    "reference_library": "WPF UI",
+    "reference_component": "BadgeGroup",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
+    "id": "display/card_panel",
+    "track": "reference",
+    "visibility": "public",
+    "reference_system": "Fluent 2",
+    "reference_library": "WPF UI",
+    "reference_component": "Card",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
+    "id": "display/flipdot_matrix_panel",
+    "track": "showcase",
+    "visibility": "internal",
+    "reference_system": "",
+    "reference_library": "",
+    "reference_component": "",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
+    "id": "display/layer_stack",
+    "track": "showcase",
+    "visibility": "internal",
+    "reference_system": "",
+    "reference_library": "",
+    "reference_component": "",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
+    "id": "display/node_topology",
+    "track": "showcase",
+    "visibility": "internal",
+    "reference_system": "",
+    "reference_library": "",
+    "reference_component": "",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
+    "id": "display/persona_group",
+    "track": "reference",
+    "visibility": "public",
+    "reference_system": "Fluent 2",
+    "reference_library": "WPF UI",
+    "reference_component": "AvatarGroup",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
+    "id": "display/server_rack",
+    "track": "deprecated",
+    "visibility": "hidden",
+    "reference_system": "",
+    "reference_library": "",
+    "reference_component": "",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
+    "id": "display/signal_matrix",
+    "track": "deprecated",
+    "visibility": "hidden",
+    "reference_system": "",
+    "reference_library": "",
+    "reference_component": "",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
+    "id": "display/split_flap_board",
+    "track": "showcase",
+    "visibility": "internal",
+    "reference_system": "",
+    "reference_library": "",
+    "reference_component": "",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
+    "id": "display/status_timeline",
+    "track": "showcase",
+    "visibility": "internal",
+    "reference_system": "",
+    "reference_library": "",
+    "reference_component": "",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
+    "id": "display/tag_cloud",
+    "track": "showcase",
+    "visibility": "internal",
+    "reference_system": "",
+    "reference_library": "",
+    "reference_component": "",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
+    "id": "feedback/alert_banner",
+    "track": "showcase",
+    "visibility": "internal",
+    "reference_system": "",
+    "reference_library": "",
+    "reference_component": "",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
+    "id": "feedback/dialog_sheet",
+    "track": "reference",
+    "visibility": "public",
+    "reference_system": "Fluent 2",
+    "reference_library": "WPF UI",
+    "reference_component": "ContentDialog",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
+    "id": "feedback/message_bar",
+    "track": "reference",
+    "visibility": "public",
+    "reference_system": "Fluent 2",
+    "reference_library": "WPF UI",
+    "reference_component": "MessageBar",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
+    "id": "feedback/notification_stack",
+    "track": "showcase",
+    "visibility": "internal",
+    "reference_system": "",
+    "reference_library": "",
+    "reference_component": "",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
+    "id": "feedback/signal_beacon",
+    "track": "showcase",
+    "visibility": "internal",
+    "reference_system": "",
+    "reference_library": "",
+    "reference_component": "",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
+    "id": "feedback/skeleton",
+    "track": "reference",
+    "visibility": "public",
+    "reference_system": "Fluent 2",
+    "reference_library": "WPF UI",
+    "reference_component": "Skeleton",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
+    "id": "feedback/skeleton_loader",
+    "track": "showcase",
+    "visibility": "internal",
+    "reference_system": "",
+    "reference_library": "",
+    "reference_component": "",
+    "replacement": "feedback/skeleton",
+    "doc_state": "ok"
+  },
+  {
+    "id": "feedback/teaching_tip",
+    "track": "reference",
+    "visibility": "public",
+    "reference_system": "Fluent 2",
+    "reference_library": "WPF UI",
+    "reference_component": "TeachingTip",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
+    "id": "feedback/toast_stack",
+    "track": "reference",
+    "visibility": "public",
+    "reference_system": "Fluent 2",
+    "reference_library": "WPF UI",
+    "reference_component": "Toast",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
+    "id": "input/auto_suggest_box",
+    "track": "reference",
+    "visibility": "public",
+    "reference_system": "Fluent 2",
+    "reference_library": "WPF UI",
+    "reference_component": "AutoSuggestBox",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
+    "id": "input/calendar_view",
+    "track": "reference",
+    "visibility": "public",
+    "reference_system": "Fluent 2",
+    "reference_library": "WPF UI",
+    "reference_component": "CalendarView",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
+    "id": "input/clip_launcher_grid",
+    "track": "deprecated",
+    "visibility": "hidden",
+    "reference_system": "",
+    "reference_library": "",
+    "reference_component": "",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
+    "id": "input/color_picker",
+    "track": "reference",
+    "visibility": "public",
+    "reference_system": "Fluent 2",
+    "reference_library": "WPF UI",
+    "reference_component": "ColorPicker",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
+    "id": "input/command_bar",
+    "track": "reference",
+    "visibility": "public",
+    "reference_system": "Fluent 2",
+    "reference_library": "WPF UI",
+    "reference_component": "CommandBar",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
+    "id": "input/date_picker",
+    "track": "reference",
+    "visibility": "public",
+    "reference_system": "Fluent 2",
+    "reference_library": "WPF UI",
+    "reference_component": "DatePicker",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
+    "id": "input/drop_down_button",
+    "track": "reference",
+    "visibility": "public",
+    "reference_system": "Fluent 2",
+    "reference_library": "WPF UI",
+    "reference_component": "DropDownButton",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
+    "id": "input/envelope_stage_editor",
+    "track": "showcase",
+    "visibility": "internal",
+    "reference_system": "",
+    "reference_library": "",
+    "reference_component": "",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
+    "id": "input/equalizer_curve_editor",
+    "track": "showcase",
+    "visibility": "internal",
+    "reference_system": "",
+    "reference_library": "",
+    "reference_component": "",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
+    "id": "input/fader_bank",
+    "track": "showcase",
+    "visibility": "internal",
+    "reference_system": "",
+    "reference_library": "",
+    "reference_component": "",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
+    "id": "input/knob_cluster_panel",
+    "track": "showcase",
+    "visibility": "internal",
+    "reference_system": "",
+    "reference_library": "",
+    "reference_component": "",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
+    "id": "input/number_box",
+    "track": "reference",
+    "visibility": "public",
+    "reference_system": "Fluent 2",
+    "reference_library": "WPF UI",
+    "reference_component": "NumberBox",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
+    "id": "input/password_box",
+    "track": "reference",
+    "visibility": "public",
+    "reference_system": "Fluent 2",
+    "reference_library": "WPF UI",
+    "reference_component": "PasswordBox",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
+    "id": "input/patch_bay",
+    "track": "showcase",
+    "visibility": "internal",
+    "reference_system": "",
+    "reference_library": "",
+    "reference_component": "",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
+    "id": "input/piano_roll_editor",
+    "track": "deprecated",
+    "visibility": "hidden",
+    "reference_system": "",
+    "reference_library": "",
+    "reference_component": "",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
+    "id": "input/range_band_editor",
+    "track": "showcase",
+    "visibility": "internal",
+    "reference_system": "",
+    "reference_library": "",
+    "reference_component": "",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
+    "id": "input/rating_control",
+    "track": "reference",
+    "visibility": "public",
+    "reference_system": "Fluent 2",
+    "reference_library": "WPF UI",
+    "reference_component": "RatingControl",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
+    "id": "input/scene_crossfader",
+    "track": "deprecated",
+    "visibility": "hidden",
+    "reference_system": "",
+    "reference_library": "",
+    "reference_component": "",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
+    "id": "input/scroll_bar",
+    "track": "reference",
+    "visibility": "public",
+    "reference_system": "Fluent 2",
+    "reference_library": "WPF UI",
+    "reference_component": "ScrollBar",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
+    "id": "input/segmented_control",
+    "track": "reference",
+    "visibility": "public",
+    "reference_system": "Fluent 2",
+    "reference_library": "WPF UI",
+    "reference_component": "SegmentedControl",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
+    "id": "input/shortcut_recorder",
+    "track": "reference",
+    "visibility": "public",
+    "reference_system": "Fluent 2",
+    "reference_library": "WPF UI",
+    "reference_component": "KeyboardAcceleratorRecorder",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
+    "id": "input/split_button",
+    "track": "reference",
+    "visibility": "public",
+    "reference_system": "Fluent 2",
+    "reference_library": "WPF UI",
+    "reference_component": "SplitButton",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
+    "id": "input/step_sequencer",
+    "track": "deprecated",
+    "visibility": "hidden",
+    "reference_system": "",
+    "reference_library": "",
+    "reference_component": "",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
+    "id": "input/swatch_picker",
+    "track": "showcase",
+    "visibility": "internal",
+    "reference_system": "",
+    "reference_library": "",
+    "reference_component": "",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
+    "id": "input/swipe_control",
+    "track": "reference",
+    "visibility": "public",
+    "reference_system": "Fluent 2",
+    "reference_library": "WPF UI",
+    "reference_component": "SwipeControl",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
+    "id": "input/time_picker",
+    "track": "reference",
+    "visibility": "public",
+    "reference_system": "Fluent 2",
+    "reference_library": "WPF UI",
+    "reference_component": "TimePicker",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
+    "id": "input/toggle_button",
+    "track": "reference",
+    "visibility": "public",
+    "reference_system": "Fluent 2",
+    "reference_library": "WPF UI",
+    "reference_component": "ToggleButton",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
+    "id": "input/toggle_split_button",
+    "track": "reference",
+    "visibility": "public",
+    "reference_system": "Fluent 2",
+    "reference_library": "WPF UI",
+    "reference_component": "ToggleSplitButton",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
+    "id": "input/token_input",
+    "track": "reference",
+    "visibility": "public",
+    "reference_system": "Fluent 2",
+    "reference_library": "WPF UI",
+    "reference_component": "TokenInput",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
+    "id": "input/xy_pad",
+    "track": "showcase",
+    "visibility": "internal",
+    "reference_system": "",
+    "reference_library": "",
+    "reference_component": "",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
+    "id": "layout/data_list_panel",
+    "track": "reference",
+    "visibility": "public",
+    "reference_system": "Fluent 2",
+    "reference_library": "WPF UI",
+    "reference_component": "ListView",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
+    "id": "layout/expander",
+    "track": "reference",
+    "visibility": "public",
+    "reference_system": "Fluent 2",
+    "reference_library": "WPF UI",
+    "reference_component": "Expander",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
+    "id": "layout/kanban_board",
+    "track": "showcase",
+    "visibility": "internal",
+    "reference_system": "",
+    "reference_library": "",
+    "reference_component": "",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
+    "id": "layout/master_detail",
+    "track": "reference",
+    "visibility": "public",
+    "reference_system": "Fluent 2",
+    "reference_library": "WPF UI",
+    "reference_component": "MasterDetail",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
+    "id": "layout/parallax_view",
+    "track": "reference",
+    "visibility": "public",
+    "reference_system": "Fluent 2",
+    "reference_library": "WPF UI",
+    "reference_component": "ParallaxView",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
+    "id": "layout/priority_matrix",
+    "track": "showcase",
+    "visibility": "internal",
+    "reference_system": "",
+    "reference_library": "",
+    "reference_component": "",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
+    "id": "layout/seat_map",
+    "track": "showcase",
+    "visibility": "internal",
+    "reference_system": "",
+    "reference_library": "",
+    "reference_component": "",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
+    "id": "layout/settings_panel",
+    "track": "reference",
+    "visibility": "public",
+    "reference_system": "Fluent 2",
+    "reference_library": "WPF UI",
+    "reference_component": "SettingCardGroup",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
+    "id": "layout/split_resizer",
+    "track": "showcase",
+    "visibility": "internal",
+    "reference_system": "",
+    "reference_library": "",
+    "reference_component": "",
+    "replacement": "layout/split_view",
+    "doc_state": "ok"
+  },
+  {
+    "id": "layout/split_view",
+    "track": "reference",
+    "visibility": "public",
+    "reference_system": "Fluent 2",
+    "reference_library": "WPF UI",
+    "reference_component": "SplitView",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
+    "id": "layout/window_snap_grid",
+    "track": "showcase",
+    "visibility": "internal",
+    "reference_system": "",
+    "reference_library": "",
+    "reference_component": "",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
+    "id": "media/chapter_strip",
+    "track": "deprecated",
+    "visibility": "hidden",
+    "reference_system": "",
+    "reference_library": "",
+    "reference_component": "",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
+    "id": "media/frame_scrubber",
+    "track": "deprecated",
+    "visibility": "hidden",
+    "reference_system": "",
+    "reference_library": "",
+    "reference_component": "",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
+    "id": "media/jog_shuttle_wheel",
+    "track": "deprecated",
+    "visibility": "hidden",
+    "reference_system": "",
+    "reference_library": "",
+    "reference_component": "",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
+    "id": "media/level_meter",
+    "track": "deprecated",
+    "visibility": "hidden",
+    "reference_system": "",
+    "reference_library": "",
+    "reference_component": "",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
+    "id": "media/subtitle_timeline",
+    "track": "deprecated",
+    "visibility": "hidden",
+    "reference_system": "",
+    "reference_library": "",
+    "reference_component": "",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
+    "id": "media/tape_loop_editor",
+    "track": "deprecated",
+    "visibility": "hidden",
+    "reference_system": "",
+    "reference_library": "",
+    "reference_component": "",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
+    "id": "media/transport_bar",
+    "track": "deprecated",
+    "visibility": "hidden",
+    "reference_system": "",
+    "reference_library": "",
+    "reference_component": "",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
+    "id": "media/waveform_strip",
+    "track": "deprecated",
+    "visibility": "hidden",
+    "reference_system": "",
+    "reference_library": "",
+    "reference_component": "",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
+    "id": "navigation/annotated_scroll_bar",
+    "track": "reference",
+    "visibility": "public",
+    "reference_system": "Fluent 2",
+    "reference_library": "WPF UI",
+    "reference_component": "AnnotatedScrollBar",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
+    "id": "navigation/breadcrumb_bar",
+    "track": "reference",
+    "visibility": "public",
+    "reference_system": "Fluent 2",
+    "reference_library": "WPF UI",
+    "reference_component": "BreadcrumbBar",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
+    "id": "navigation/breadcrumb_trail",
+    "track": "showcase",
+    "visibility": "internal",
+    "reference_system": "",
+    "reference_library": "",
+    "reference_component": "",
+    "replacement": "navigation/breadcrumb_bar",
+    "doc_state": "ok"
+  },
+  {
+    "id": "navigation/command_palette",
+    "track": "showcase",
+    "visibility": "internal",
+    "reference_system": "",
+    "reference_library": "",
+    "reference_component": "",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
+    "id": "navigation/coverflow_strip",
+    "track": "deprecated",
+    "visibility": "hidden",
+    "reference_system": "",
+    "reference_library": "",
+    "reference_component": "",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
+    "id": "navigation/dock_launcher",
+    "track": "deprecated",
+    "visibility": "hidden",
+    "reference_system": "",
+    "reference_library": "",
+    "reference_component": "",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
+    "id": "navigation/flip_view",
+    "track": "reference",
+    "visibility": "public",
+    "reference_system": "Fluent 2",
+    "reference_library": "WPF UI",
+    "reference_component": "FlipView",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
+    "id": "navigation/menu_bar",
+    "track": "reference",
+    "visibility": "public",
+    "reference_system": "Fluent 2",
+    "reference_library": "WPF UI",
+    "reference_component": "MenuBar",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
+    "id": "navigation/menu_flyout",
+    "track": "reference",
+    "visibility": "public",
+    "reference_system": "Fluent 2",
+    "reference_library": "WPF UI",
+    "reference_component": "MenuFlyout",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
+    "id": "navigation/nav_panel",
+    "track": "reference",
+    "visibility": "public",
+    "reference_system": "Fluent 2",
+    "reference_library": "WPF UI",
+    "reference_component": "NavigationView",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
+    "id": "navigation/pips_pager",
+    "track": "reference",
+    "visibility": "public",
+    "reference_system": "Fluent 2",
+    "reference_library": "WPF UI",
+    "reference_component": "PipsPager",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
+    "id": "navigation/radial_menu",
+    "track": "deprecated",
+    "visibility": "hidden",
+    "reference_system": "",
+    "reference_library": "",
+    "reference_component": "",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
+    "id": "navigation/tab_expose",
+    "track": "showcase",
+    "visibility": "internal",
+    "reference_system": "",
+    "reference_library": "",
+    "reference_component": "",
+    "replacement": "navigation/tab_view",
+    "doc_state": "ok"
+  },
+  {
+    "id": "navigation/tab_strip",
+    "track": "reference",
+    "visibility": "public",
+    "reference_system": "Fluent 2",
+    "reference_library": "WPF UI",
+    "reference_component": "TabStrip",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
+    "id": "navigation/tab_view",
+    "track": "reference",
+    "visibility": "public",
+    "reference_system": "Fluent 2",
+    "reference_library": "WPF UI",
+    "reference_component": "TabView",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
+    "id": "navigation/tree_view",
+    "track": "reference",
+    "visibility": "public",
+    "reference_system": "Fluent 2",
+    "reference_library": "WPF UI",
+    "reference_component": "TreeView",
+    "replacement": null,
+    "doc_state": "ok"
+  }
+]

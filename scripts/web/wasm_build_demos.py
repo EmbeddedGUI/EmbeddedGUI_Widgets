@@ -28,6 +28,11 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 SCRIPTS_ROOT = SCRIPT_DIR.parent
 ROOT_DIR = SCRIPTS_ROOT.parent
 
+if str(SCRIPTS_ROOT) not in sys.path:
+    sys.path.insert(0, str(SCRIPTS_ROOT))
+
+from widget_catalog import build_widget_catalog_map, filter_widget_ids
+
 
 WASM_SKIP_APPS = {"HelloUnitTest"}
 WASM_PRUNE_APPS = {"HelloUnitTest"}
@@ -35,6 +40,7 @@ APP_SUB_ROOTS = {
     "HelloBasic": "example/HelloBasic",
     "HelloVirtual": "example/HelloVirtual",
 }
+WIDGET_CATALOG_MAP = build_widget_catalog_map()
 
 
 def get_example_list():
@@ -66,22 +72,14 @@ def get_example_virtual_list():
     return get_example_sub_list("HelloVirtual")
 
 
-def get_custom_widgets_list():
+def get_custom_widgets_list(track="all", include_deprecated=False, category=None):
     """Discover HelloCustomWidgets sub-apps."""
-    base = 'example/HelloCustomWidgets'
-    if not os.path.isdir(base):
-        return []
-
-    result = []
-    for cat in sorted(os.listdir(base)):
-        cat_path = os.path.join(base, cat)
-        if not os.path.isdir(cat_path):
-            continue
-        for widget in sorted(os.listdir(cat_path)):
-            widget_path = os.path.join(cat_path, widget)
-            if os.path.isdir(widget_path) and os.path.exists(os.path.join(widget_path, 'test.c')):
-                result.append((cat, widget))
-    return result
+    widget_ids = filter_widget_ids(
+        category=category,
+        track=track,
+        include_deprecated=include_deprecated or track == "deprecated",
+    )
+    return [tuple(widget_id.split("/", 1)) for widget_id in widget_ids]
 
 
 def format_demo_name(app, app_sub):
@@ -104,6 +102,23 @@ def prune_demo_dirs(output_dir, app_names):
             continue
         if child.name in exact_names or child.name.startswith(prefixes):
             shutil.rmtree(child, ignore_errors=True)
+
+
+def prune_custom_widget_demo_dirs(output_dir, keep_demo_names):
+    """Remove stale HelloCustomWidgets demo directories left by previous full builds."""
+    output_path = Path(output_dir)
+    if not output_path.exists():
+        return
+
+    keep_set = set(keep_demo_names)
+    for child in output_path.iterdir():
+        if not child.is_dir():
+            continue
+        if not child.name.startswith("HelloCustomWidgets_"):
+            continue
+        if child.name in keep_set:
+            continue
+        shutil.rmtree(child, ignore_errors=True)
 
 
 def run_cmd(cmd, cwd=None):
@@ -200,6 +215,17 @@ def make_demo_entry(root_dir, result, category):
         entry["doc"] = result["docPath"]
     elif result.get("has_doc"):
         entry["doc"] = "demos/" + result["name"] + "/README.md"
+    if result["app"] == "HelloCustomWidgets" and result.get("app_sub"):
+        widget_id = result["app_sub"]
+        metadata = WIDGET_CATALOG_MAP.get(widget_id)
+        if metadata:
+            entry["widgetId"] = widget_id
+            entry["track"] = metadata["track"]
+            entry["visibility"] = metadata["visibility"]
+            entry["referenceSystem"] = metadata["reference_system"]
+            entry["referenceLibrary"] = metadata["reference_library"]
+            entry["referenceComponent"] = metadata["reference_component"]
+            entry["replacement"] = metadata["replacement"]
     return entry
 
 
@@ -404,18 +430,21 @@ def build_group_sequential(group, root_dir, emsdk_path, output_dir):
     return results
 
 
-def get_group_build_list(app_name):
+def get_group_build_list(app_name, track="all", include_deprecated=False):
     """Expand grouped demos into build list entries."""
     if app_name == "HelloBasic":
         return [(app_name, sub, "HelloBasic") for sub in get_example_basic_list()]
     if app_name == "HelloCustomWidgets":
-        return [(app_name, f"{cat}/{widget}", "HelloCustomWidgets") for cat, widget in get_custom_widgets_list()]
+        return [
+            (app_name, f"{cat}/{widget}", "HelloCustomWidgets")
+            for cat, widget in get_custom_widgets_list(track=track, include_deprecated=include_deprecated)
+        ]
     if app_name == "HelloVirtual":
         return [(app_name, sub, "Standalone") for sub in get_example_virtual_list()]
     return None
 
 
-def resolve_requested_builds(app_name, app_sub):
+def resolve_requested_builds(app_name, app_sub, track="all", include_deprecated=False):
     """Resolve command-line selection into build list entries."""
     if app_sub:
         if app_name == "HelloCustomWidgets" or "/" in app_sub:
@@ -431,7 +460,7 @@ def resolve_requested_builds(app_name, app_sub):
     if not app_name:
         return None
 
-    group_builds = get_group_build_list(app_name)
+    group_builds = get_group_build_list(app_name, track=track, include_deprecated=include_deprecated)
     if group_builds is not None:
         return group_builds
 
@@ -477,6 +506,10 @@ def main():
                         help="Build selected app/group (for example HelloCustomWidgets or HelloCustomWidgets_chart_radar_chart)")
     parser.add_argument("--app-sub", default=None,
                         help="Build single sub-app (e.g. button, virtual_stage_showcase, or chart/radar_chart)")
+    parser.add_argument("--track", choices=["all", "reference", "showcase", "deprecated"], default="all",
+                        help="Filter HelloCustomWidgets by catalog track. Default keeps reference + showcase and excludes deprecated.")
+    parser.add_argument("--include-deprecated", action="store_true",
+                        help="Include catalog entries marked deprecated in HelloCustomWidgets group builds.")
     parser.add_argument("--clean", action="store_true",
                         help="Clean output directory before building")
     parser.add_argument("--jobs", "-j", type=int, default=0,
@@ -499,14 +532,14 @@ def main():
 
     os.makedirs(output_dir, exist_ok=True)
 
-    # Default full-site builds should also prune demo families excluded from demos.json,
-    # otherwise old directories remain in web/demos and get packaged accidentally.
-    if not args.app and not args.app_sub:
-        prune_demo_dirs(output_dir, WASM_PRUNE_APPS)
-
     # Build task list from directory scan
     build_list = []
-    requested_builds = resolve_requested_builds(args.app, args.app_sub)
+    requested_builds = resolve_requested_builds(
+        args.app,
+        args.app_sub,
+        track=args.track,
+        include_deprecated=args.include_deprecated or args.track == "deprecated",
+    )
     if requested_builds:
         build_list.extend(requested_builds)
     else:
@@ -514,11 +547,24 @@ def main():
         for app in app_sets:
             if app in WASM_SKIP_APPS:
                 continue
-            group_builds = get_group_build_list(app)
+            group_builds = get_group_build_list(
+                app,
+                track=args.track,
+                include_deprecated=args.include_deprecated or args.track == "deprecated",
+            )
             if group_builds is not None:
                 build_list.extend(group_builds)
                 continue
             build_list.append((app, None, "Standalone"))
+
+    # Default full-site builds should also prune demo families excluded from demos.json,
+    # otherwise old directories remain in web/demos and get packaged accidentally.
+    if not args.app and not args.app_sub:
+        prune_demo_dirs(output_dir, WASM_PRUNE_APPS)
+        prune_custom_widget_demo_dirs(
+            output_dir,
+            [format_demo_name(app, sub) for app, sub, _ in build_list if app == "HelloCustomWidgets"],
+        )
 
     total = len(build_list)
     start_time = time.time()
@@ -628,7 +674,11 @@ def main():
             existing = json.load(f)
         # Remove old entries for rebuilt demos, then append new
         built_names = {d["name"] for d in demos_built}
-        if args.app and not args.app_sub and get_group_build_list(args.app) is not None:
+        if args.app and not args.app_sub and get_group_build_list(
+            args.app,
+            track=args.track,
+            include_deprecated=args.include_deprecated or args.track == "deprecated",
+        ) is not None:
             merged = [d for d in existing if d.get("app") != args.app]
         else:
             merged = [d for d in existing if d["name"] not in built_names]
@@ -636,7 +686,7 @@ def main():
         demos_built = merged
 
     with open(json_path, "w", encoding="utf-8") as f:
-        json.dump(demos_built, f, indent=2)
+        json.dump(sorted(demos_built, key=lambda item: item["name"]), f, indent=2, ensure_ascii=False)
     print(f"\nGenerated {json_path} with {len(demos_built)} demos", flush=True)
 
     print(f"\n{'='*50}", flush=True)

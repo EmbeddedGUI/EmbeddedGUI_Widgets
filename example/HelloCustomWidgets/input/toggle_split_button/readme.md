@@ -1,101 +1,36 @@
-# toggle_split_button
+# Toggle Split Button
 
-## 1. Ϊʲô��Ҫ����ؼ�
+## 参考来源
 
-`toggle_split_button` ���������������������״̬��ͬʱ��Ҫ�ṩ���Ӳ˵����ı�׼�������塣���ʺ����Ѷ��ġ�ͬ�����ء�¼�ƿ��ء�����ģʽ������� on/off ״̬������Ҫ�л����Ի�Ŀ��ͨ���ĳ�����
+- 参考设计体系：`Fluent 2`
+- 参考开源库：`WPF UI`
+- 对应组件语义：`ToggleSplitButton`
 
-## 2. Ϊʲô���пؼ�������
+## 定位
 
-- `toggle_button` ֻ�е��β����л���ȱ�ٲ˵���ڡ�
-- `split_button` �����κͲ˵��Σ���������˲ʱ������������ checked ״̬��
-- `menu_flyout` ֻ��������չ�������е���פ���ط�����
+`toggle_split_button` 是当前主线 reference 输入控件，用来表达“带保持状态的主动作”与“附加菜单动作”同时存在的场景。它比普通 `toggle_button` 多了分裂菜单入口，也比 `split_button` 多了稳定的 checked 语义。
 
-����������Ҫһ���� checked state �� split menu �ϲ������Ķ����ؼ���
+## 当前示例内容
 
-## 3. Ŀ�곡����ʾ������
+- 主卡展示标准态，包含标题、辅助说明、主按钮区和菜单区。
+- `Compact` 预览压缩了布局高度，只保留核心结构与选中状态。
+- `Read only` 预览验证只读态下的边框、`ON/OFF` 文案和 chevron 是否仍然清楚。
+- 录制动作会切换 checked 状态、左右焦点部分以及多个快照。
 
-ʾ��ҳչʾ������̬��
+## 现状判断
 
-- Standard���������⡢helper��״̬���ҡ����κͲ˵��Ρ�
-- Compact��ѹ�����֣������ֶνṹ�� checked ���ҡ�
-- Read only�������ɼ�״̬��������Ӧ�����ͼ������롣
+- 轨道：`reference`
+- 该控件是带二段式操作的主线基线，后续凡是同时需要开关状态和附加菜单的输入场景，都应优先向它靠齐。
+- 设计上应继续保持 Fluent 2 / WPF UI 的浅色、克制和语义清晰，不回退到重装饰风格。
 
-## 4. �Ӿ��벼�ֹ��
+## 使用建议
 
-- ��㿨Ƭ����ǳɫ panel��Բ�� 8~10px��
-- ����ռ��Ҫ���ȣ������ `ON/OFF` ���ң��м�������ǩ���Ҳ��ѡ glyph��
-- �˵��α���խ�У�ֻ���� chevron ��ڡ�
-- Standard ģʽ������ʾ title���ײ���ʾ helper��
-- Compact ģʽȥ�� helper�����̸߶ȡ�
+- 适合模式切换、发布开关、工具启停这类需要“主动作 + 更多选项”的页面。
+- 不适合拿来替代完整 `menu_flyout` 或复杂多级命令面板。
 
-## 5. �ؼ��嵥
+## 构建与验证
 
-| ������ | ���� | �ߴ� | ��ʼ״̬ | ��; |
-| --- | --- | --- | --- | --- |
-| `button_primary` | `egui_view_toggle_split_button_t` | 196x76 | checked + primary focus | ���ؼ� |
-| `button_compact` | `egui_view_toggle_split_button_t` | 106x68 | compact | ����Ԥ�� |
-| `button_locked` | `egui_view_toggle_split_button_t` | 106x68 | compact + read only | ֻ��Ԥ�� |
-
-## 6. ״̬���Ǿ���
-
-| ״̬ | Standard | Compact | Read only |
-| --- | --- | --- | --- |
-| checked / unchecked | �� | �� | �� |
-| primary focus | �� | Ԥ���̶� | �� |
-| menu focus | �� | Ԥ���̶� | �� |
-| primary activate | �� | ��ֹ | �� |
-| menu activate | �� | ��ֹ | �� |
-
-## 7. `egui_port_get_recording_action()` ¼�ƶ������
-
-¼��˳�����£�
-
-1. ��ʼ�ȴ�����ȡ��׼̬��
-2. `Space` �л����� checked ״̬����ͼ��
-3. `Right + Enter` �е��˵��β��л���һ��ģʽ���ͼ��
-4. `Left + Space` �ص��������л�һ�κ��ͼ��
-5. ��� guide �л�����һ���׼ snapshot ���ͼ��
-6. ��� compact ��ǩ�л����� preview ��ģʽ���ͼ��
-
-## 8. ���롢runtime����ͼ���ձ�׼
-
-- `make all APP=HelloCustomWidgets APP_SUB=input/toggle_split_button PORT=pc` ����ͨ����
-- `python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/toggle_split_button --timeout 10 --keep-screenshots` ����ͨ����
-- `HelloUnitTest` �����ִ�б���ͨ����
-- ��ͼ��Ҫȷ������ `ON/OFF` ���ҡ�����ǩ��chevron ��ڵ���������ƽ�⣬���ֲ����ߡ�
-
-## 9. ��֪��������һ�ֵ����ƻ�
-
-- ��ǰ�˵����� snapshot �л���ģ��˵������û��չ����ʵ flyout ��塣
-- Ŀǰû����̬�� indeterminate ״̬��
-- �������Ҫ��������ܺ��ģ��ɼ����������Ĳ˵���塢ͼ����Դ�� hover/pressed ϸ�ַ�����
-
-## 10. �����пؼ����ص���������컯�߽�
-
-- ��� `split_button`�����β���˲ʱ������Ǳ��� checked ״̬��
-- ��� `toggle_button`�����ﱣ���˵��Σ����ڲ��뿪�ؼ���ǰ�����л�ģʽ��
-- ��� `menu_flyout`�����ؼ�ǿ����פ���غ͵�����ҳ�ڿ��ƣ�������һ���������б���
-
-## 11. �ο����ϵͳ�뿪Դĸ��
-
-- Fluent 2 `ToggleSplitButton`
-- WPF UI `ToggleSplitButton`
-
-���α������ǹ��еġ����� checked + �Ҷ� menu entry���������壬����������˸�����Ӱ�� hover ��Ч��
-
-## 12. ��Ӧ��������Լ����α����ĺ���״̬
-
-- ���������`toggle_split_button`
-- ����״̬��`snapshot_index`��`checked`��`current_part`��`compact_mode`��`read_only_mode`
-
-## 13. ��Ȳο�ԭ��ɾ������ЩЧ����װ��
-
-- ɾ�� hover ��Ӱ������߿���ʵ�����˵���塣
-- ɾ������˸��ܶ�ͼ��͸��ӷָ��ߡ�
-- ɾ���༶ flyout ������ֻ���� snapshot �л������
-
-## 14. EGUI ����ʱ�ļ򻯵���Լ��
-
-- �� `snapshot` ���б���˵��л����������������ⵯ��ϵͳ��
-- �� `ON/OFF` �ı������������ͼ�꣬��֤С��Ļ�ɶ��ԡ�
-- ���������ͳһ�� `current_part + checked_states` ״̬�������ڵ�Ԫ���Ժͺ�����չ��
+```bash
+make all APP=HelloCustomWidgets APP_SUB=input/toggle_split_button PORT=pc
+python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/toggle_split_button --timeout 10 --keep-screenshots
+```

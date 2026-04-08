@@ -17,6 +17,8 @@ import re
 import time
 from pathlib import Path
 
+from widget_catalog import filter_widget_ids
+
 SCRIPT_DIR = Path(__file__).resolve().parent
 ROOT_DIR = SCRIPT_DIR.parent
 SCREENSHOT_DIR = "runtime_check_output"
@@ -314,7 +316,7 @@ def get_example_list():
     return sorted(app_list)
 
 
-def get_example_sub_list(app):
+def get_example_sub_list(app, category=None, track="all", include_deprecated=False):
     """Get list of sub-applications for apps that use APP_SUB."""
     root = SUB_APP_ROOTS.get(app)
     app_list = []
@@ -325,17 +327,11 @@ def get_example_sub_list(app):
         return app_list
 
     if app == "HelloCustomWidgets":
-        for root, dirs, files in os.walk(path):
-            dirs[:] = [name for name in dirs if not name.startswith('.') and not name.startswith('__')]
-            if 'test.c' not in files:
-                continue
-
-            rel_path = os.path.relpath(root, str(path)).replace('\\', '/')
-            if rel_path == '.':
-                continue
-            app_list.append(rel_path)
-
-        return sorted(app_list)
+        return filter_widget_ids(
+            category=category,
+            track=track,
+            include_deprecated=include_deprecated or track == "deprecated",
+        )
 
     for file in os.listdir(path):
         file_path = path / file
@@ -380,8 +376,11 @@ def filter_sub_apps(app, app_subs, category=None):
     return sorted([app_sub for app_sub in app_subs if app_sub.startswith(prefix + '/')])
 
 
-def build_sub_app_sets():
-    return {app: get_example_sub_list(app) for app in SUB_APP_ROOTS}
+def build_sub_app_sets(track="all", include_deprecated=False):
+    return {
+        app: get_example_sub_list(app, track=track, include_deprecated=include_deprecated)
+        for app in SUB_APP_ROOTS
+    }
 
 
 def build_standard_app_list(app_sets, skipped_apps=None):
@@ -1012,12 +1011,12 @@ def run_full_check(bits64, speed=RECORDING_SPEED, snapshot_settle_ms=RECORDING_S
                    clock_scale=RECORDING_CLOCK_SCALE,
                    snapshot_stable_cycles=RECORDING_SNAPSHOT_STABLE_CYCLES,
                    snapshot_max_wait_ms=RECORDING_SNAPSHOT_MAX_WAIT_MS,
-                   skip_custom_widgets=False, jobs=0):
+                   skip_custom_widgets=False, jobs=0, track="all", include_deprecated=False):
     """Run runtime check on all examples.
     Returns list of (app_name, success, message) tuples.
     """
     app_sets = get_example_list()
-    sub_app_sets = build_sub_app_sets()
+    sub_app_sets = build_sub_app_sets(track=track, include_deprecated=include_deprecated or track == "deprecated")
     skipped_apps = set()
 
     if skip_custom_widgets:
@@ -1049,9 +1048,10 @@ def run_scope_check(scope, bits64, explicit_timeout=None,
                     clock_scale=RECORDING_CLOCK_SCALE,
                     snapshot_stable_cycles=RECORDING_SNAPSHOT_STABLE_CYCLES,
                     snapshot_max_wait_ms=RECORDING_SNAPSHOT_MAX_WAIT_MS,
-                    skip_custom_widgets=False, jobs=0, shard_count=1, shard_index=1):
+                    skip_custom_widgets=False, jobs=0, shard_count=1, shard_index=1,
+                    track="all", include_deprecated=False):
     app_sets = get_example_list()
-    sub_app_sets = build_sub_app_sets()
+    sub_app_sets = build_sub_app_sets(track=track, include_deprecated=include_deprecated or track == "deprecated")
     skipped_apps = set()
     if skip_custom_widgets:
         skipped_apps.add("HelloCustomWidgets")
@@ -1142,6 +1142,10 @@ Examples:
     parser.add_argument('--app-sub', type=str,
                         help='Single HelloCustomWidgets sub-app (for example input/xy_pad).')
     parser.add_argument('--category', type=str, help='HelloCustomWidgets category filter (e.g. input)')
+    parser.add_argument('--track', choices=['all', 'reference', 'showcase', 'deprecated'], default='all',
+                        help='Filter HelloCustomWidgets by catalog track. Default keeps reference + showcase and excludes deprecated.')
+    parser.add_argument('--include-deprecated', action='store_true',
+                        help='Include catalog entries marked deprecated in HelloCustomWidgets batch selection.')
     parser.add_argument('--bits64', action='store_true', help='Build for 64-bit')
     parser.add_argument('--timeout', type=int, default=DEFAULT_TIMEOUT,
                         help='Run timeout in seconds (default: %d)' % DEFAULT_TIMEOUT)
@@ -1213,6 +1217,8 @@ Examples:
             snapshot_max_wait_ms=snapshot_max_wait_ms,
             skip_custom_widgets=args.skip_custom_widgets,
             jobs=args.jobs,
+            track=args.track,
+            include_deprecated=args.include_deprecated,
         )
         all_passed = print_summary(results)
 
@@ -1231,6 +1237,8 @@ Examples:
                 jobs=args.jobs,
                 shard_count=args.shard_count,
                 shard_index=args.shard_index,
+                track=args.track,
+                include_deprecated=args.include_deprecated,
             )
         except ValueError as exc:
             print("Error: %s" % exc)
@@ -1245,7 +1253,15 @@ Examples:
         results = []
         run_all_sub_apps = args.app in SUB_APP_ROOTS and not args.app_sub
         if run_all_sub_apps:
-            sub_apps = filter_sub_apps(args.app, get_example_sub_list(args.app), args.category)
+            if args.app == "HelloCustomWidgets":
+                sub_apps = get_example_sub_list(
+                    args.app,
+                    category=args.category,
+                    track=args.track,
+                    include_deprecated=args.include_deprecated or args.track == "deprecated",
+                )
+            else:
+                sub_apps = filter_sub_apps(args.app, get_example_sub_list(args.app), args.category)
             if not sub_apps:
                 category_suffix = " (category=%s)" % args.category if args.category else ""
                 print("Error: no %s sub-apps found%s" % (args.app, category_suffix))
