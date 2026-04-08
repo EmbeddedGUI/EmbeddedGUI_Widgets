@@ -20,17 +20,65 @@ on:
   workflow_dispatch:
     inputs:
       category:
-        description: 'Widget category to check (empty for all)'
-        required: false
-        type: string
+        description: 'Widget category to check'
+        required: true
+        default: all
+        type: choice
+        options:
+          - all
+          - input
+          - display
+          - layout
+          - chart
+          - navigation
+          - feedback
+          - media
+          - decoration
 
 jobs:
+  resolve-categories:
+    runs-on: ubuntu-latest
+    outputs:
+      categories: ${{ steps.resolve.outputs.categories }}
+    steps:
+      - id: resolve
+        shell: bash
+        env:
+          DISPATCH_CATEGORY: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.category || 'all' }}
+        run: |
+          if [ "$DISPATCH_CATEGORY" = "all" ]; then
+            echo 'categories=["input","display","layout","chart","navigation","feedback","media","decoration"]' >> "$GITHUB_OUTPUT"
+          else
+            echo "categories=[\"$DISPATCH_CATEGORY\"]" >> "$GITHUB_OUTPUT"
+          fi
+
+  unit-test:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: recursive
+
+      - uses: rlalik/setup-cpp-compiler@v1.2
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: Install Python dependencies
+        run: python -m pip install -r requirements.txt
+
+      - name: Run HelloUnitTest
+        run: python scripts/code_compile_check.py --unit-tests-only --bits64
+
   check:
+    needs: resolve-categories
     runs-on: windows-latest
     strategy:
       fail-fast: false
       matrix:
-        category: [input, display, layout, chart, navigation, feedback, media, decoration]
+        category: ${{ fromJson(needs.resolve-categories.outputs.categories) }}
     steps:
       - uses: actions/checkout@v6
         with:
