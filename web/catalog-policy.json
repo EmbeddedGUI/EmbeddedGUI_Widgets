@@ -1,0 +1,95 @@
+{
+  "generatedFrom": "example/HelloCustomWidgets/widget_catalog.json",
+  "total": 94,
+  "defaultWebTotal": 70,
+  "tracks": {
+    "reference": 42,
+    "showcase": 28,
+    "deprecated": 24
+  },
+  "visibility": {
+    "public": 42,
+    "internal": 28,
+    "hidden": 24
+  },
+  "categories": [
+    {
+      "id": "input",
+      "total": 30,
+      "reference": 18,
+      "showcase": 8,
+      "deprecated": 4
+    },
+    {
+      "id": "layout",
+      "total": 11,
+      "reference": 6,
+      "showcase": 5,
+      "deprecated": 0
+    },
+    {
+      "id": "navigation",
+      "total": 16,
+      "reference": 10,
+      "showcase": 3,
+      "deprecated": 3
+    },
+    {
+      "id": "display",
+      "total": 11,
+      "reference": 3,
+      "showcase": 6,
+      "deprecated": 2
+    },
+    {
+      "id": "feedback",
+      "total": 9,
+      "reference": 5,
+      "showcase": 4,
+      "deprecated": 0
+    },
+    {
+      "id": "decoration",
+      "total": 2,
+      "reference": 0,
+      "showcase": 2,
+      "deprecated": 0
+    },
+    {
+      "id": "chart",
+      "total": 7,
+      "reference": 0,
+      "showcase": 0,
+      "deprecated": 7
+    },
+    {
+      "id": "media",
+      "total": 8,
+      "reference": 0,
+      "showcase": 0,
+      "deprecated": 8
+    }
+  ],
+  "replacements": [
+    {
+      "source": "decoration/avatar_stack",
+      "target": "display/persona_group"
+    },
+    {
+      "source": "feedback/skeleton_loader",
+      "target": "feedback/skeleton"
+    },
+    {
+      "source": "layout/split_resizer",
+      "target": "layout/split_view"
+    },
+    {
+      "source": "navigation/breadcrumb_trail",
+      "target": "navigation/breadcrumb_bar"
+    },
+    {
+      "source": "navigation/tab_expose",
+      "target": "navigation/tab_view"
+    }
+  ]
+}

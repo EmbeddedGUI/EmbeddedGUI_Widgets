@@ -16,8 +16,11 @@ if str(SCRIPTS_ROOT) not in sys.path:
 
 from widget_catalog import (
     EXPECTED_VISIBILITY_BY_TRACK,
+    WEB_CATALOG_POLICY_PATH,
+    build_catalog_policy_summary,
     build_widget_catalog_map,
     format_catalog_entries,
+    format_catalog_policy_summary,
     get_catalog_track_counts,
     scan_custom_widgets,
 )
@@ -95,6 +98,13 @@ def main() -> int:
     if current_text != canonical_text:
         errors.append(
             "widget_catalog.json is not in canonical synchronized form; run python scripts/sync_widget_catalog.py"
+        )
+
+    canonical_policy_text = format_catalog_policy_summary(build_catalog_policy_summary(entries=list(catalog_map.values())))
+    current_policy_text = WEB_CATALOG_POLICY_PATH.read_text(encoding="utf-8") if WEB_CATALOG_POLICY_PATH.exists() else ""
+    if current_policy_text != canonical_policy_text:
+        errors.append(
+            "web/catalog-policy.json is not synchronized; run python scripts/sync_widget_catalog.py"
         )
 
     if errors:
