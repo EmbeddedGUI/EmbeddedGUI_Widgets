@@ -28,6 +28,8 @@ This repository keeps only the scripts needed for standalone custom-widget work.
   Audit widget touch release behavior.
 - `python scripts/checks/check_docs_encoding.py`
   Validate documentation files decode as UTF-8 and catch obvious README corruption such as repeated `????`.
+- `python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --refresh-existing`
+  Refresh `web/demos/demos.json` and bundled README files from existing web demo artifacts without rebuilding WASM.
 
 ## Principle
 

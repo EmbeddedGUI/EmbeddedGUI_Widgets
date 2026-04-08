@@ -3,6 +3,7 @@
 
 Usage:
     python scripts/web/wasm_build_demos.py [--emsdk-path PATH] [--output-dir DIR] [--app APP] [--app-sub SUB]
+    python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --refresh-existing
 
 Optimization: HelloCustomWidgets demos share OBJDIR by config hash,
 so common framework objects are compiled once and reused across compatible demos.
@@ -227,6 +228,54 @@ def make_demo_entry(root_dir, result, category):
             entry["referenceComponent"] = metadata["reference_component"]
             entry["replacement"] = metadata["replacement"]
     return entry
+
+
+def get_readme_source_path(root_dir, app, app_sub=None):
+    if app_sub:
+        return Path(root_dir) / "example" / app / app_sub / "readme.md"
+    return Path(root_dir) / "example" / app / "readme.md"
+
+
+def sync_demo_readme(root_dir, output_dir, app, app_sub=None):
+    demo_name = format_demo_name(app, app_sub)
+    demo_dir = Path(output_dir) / demo_name
+    readme_src = get_readme_source_path(root_dir, app, app_sub)
+    readme_dst = demo_dir / "README.md"
+    if readme_src.exists():
+        shutil.copy2(readme_src, readme_dst)
+        return True, f"demos/{demo_name}/README.md"
+
+    if readme_dst.exists():
+        readme_dst.unlink()
+    return False, None
+
+
+def refresh_existing_demo(root_dir, app, app_sub, output_dir):
+    """Refresh one demos.json entry from an existing web/demos artifact set."""
+    demo_name = format_demo_name(app, app_sub)
+    demo_dir = Path(output_dir) / demo_name
+    required_files = [
+        demo_dir / f"{app}.html",
+        demo_dir / f"{app}.js",
+        demo_dir / f"{app}.wasm",
+    ]
+    missing = [path.name for path in required_files if not path.exists()]
+    if missing:
+        return {
+            "name": demo_name,
+            "error": "missing existing demo artifacts: %s" % ", ".join(missing),
+        }
+
+    has_doc, doc_path = sync_demo_readme(root_dir, output_dir, app, app_sub)
+    result = {
+        "name": demo_name,
+        "has_doc": has_doc,
+        "app": app,
+        "app_sub": app_sub,
+    }
+    if doc_path:
+        result["docPath"] = doc_path
+    return result
 
 
 def get_auto_make_jobs(concurrent_builds=1):
@@ -510,6 +559,8 @@ def main():
                         help="Filter HelloCustomWidgets by catalog track. Default keeps reference + showcase and excludes deprecated.")
     parser.add_argument("--include-deprecated", action="store_true",
                         help="Include catalog entries marked deprecated in HelloCustomWidgets group builds.")
+    parser.add_argument("--refresh-existing", action="store_true",
+                        help="Refresh demos.json and bundled README files from existing web/demos artifacts without rebuilding WASM.")
     parser.add_argument("--clean", action="store_true",
                         help="Clean output directory before building")
     parser.add_argument("--jobs", "-j", type=int, default=0,
@@ -517,6 +568,8 @@ def main():
     parser.add_argument("--make-jobs", type=int, default=0,
                         help="Per-build make parallelism. 0 means auto-detect.")
     args = parser.parse_args()
+    if args.clean and args.refresh_existing:
+        parser.error("--clean cannot be combined with --refresh-existing")
 
     root_dir = str(ROOT_DIR)
     os.chdir(root_dir)
@@ -568,6 +621,51 @@ def main():
 
     total = len(build_list)
     start_time = time.time()
+
+    if args.refresh_existing:
+        demos_built = []
+        failed = []
+        count = 0
+        print(f"\n--- Refresh existing demo artifacts ({total} demos) ---", flush=True)
+        for app, sub, category in build_list:
+            count += 1
+            name = format_demo_name(app, sub)
+            print(f"\n[{count}/{total}] {name}", flush=True)
+            result = refresh_existing_demo(root_dir, app, sub, output_dir)
+            result["category"] = category
+            if "error" in result:
+                print(f"  FAILED: {result['error']}", flush=True)
+                failed.append(result["name"])
+            else:
+                print(f"  REFRESHED -> {os.path.join(output_dir, result['name'])}", flush=True)
+                demos_built.append(make_demo_entry(root_dir, result, category))
+
+        elapsed = time.time() - start_time
+        json_path = os.path.join(output_dir, "demos.json")
+        if (args.app or args.app_sub) and os.path.exists(json_path):
+            with open(json_path, "r", encoding="utf-8") as f:
+                existing = json.load(f)
+            refreshed_names = {d["name"] for d in demos_built}
+            if args.app and not args.app_sub and get_group_build_list(
+                args.app,
+                track=args.track,
+                include_deprecated=args.include_deprecated or args.track == "deprecated",
+            ) is not None:
+                merged = [d for d in existing if d.get("app") != args.app]
+            else:
+                merged = [d for d in existing if d["name"] not in refreshed_names]
+            merged.extend(demos_built)
+            demos_built = merged
+
+        with open(json_path, "w", encoding="utf-8") as f:
+            json.dump(sorted(demos_built, key=lambda item: item["name"]), f, indent=2, ensure_ascii=False)
+        print(f"\nGenerated {json_path} with {len(demos_built)} demos", flush=True)
+
+        print(f"\n{'='*50}", flush=True)
+        print(f"Refreshed: {len(demos_built)}/{total}  Time: {elapsed:.1f}s", flush=True)
+        if failed:
+            print(f"Failed: {', '.join(failed)}", flush=True)
+        return 0 if not failed else 1
 
     # Split into groups: multi-sub-app families stay sequential, standalone apps may go parallel
     basic_group = [(a, s, c) for a, s, c in build_list if a == "HelloBasic"]
