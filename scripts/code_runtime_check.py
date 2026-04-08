@@ -1133,17 +1133,17 @@ def main():
 Examples:
   %(prog)s --app HelloUnitTest                       Test the custom-widget unit-test harness
   %(prog)s --app HelloCustomWidgets --category input Test HelloCustomWidgets category
-  %(prog)s --app HelloCustomWidgets --app-sub input/xy_pad --timeout 10 --keep-screenshots
+  %(prog)s --app HelloCustomWidgets --app-sub input/auto_suggest_box --timeout 10 --keep-screenshots
   %(prog)s --full-check                              Test all HelloCustomWidgets demos
         """
     )
     parser.add_argument('--app', type=str,
                         help='Specific app to test. For HelloCustomWidgets without --app-sub, tests all widget demos.')
     parser.add_argument('--app-sub', type=str,
-                        help='Single HelloCustomWidgets sub-app (for example input/xy_pad).')
+                        help='Single HelloCustomWidgets sub-app (for example input/auto_suggest_box).')
     parser.add_argument('--category', type=str, help='HelloCustomWidgets category filter (e.g. input)')
-    parser.add_argument('--track', choices=['all', 'reference', 'showcase', 'deprecated'], default='all',
-                        help='Filter HelloCustomWidgets by catalog track. Default keeps reference + showcase and excludes deprecated.')
+    parser.add_argument('--track', choices=['all', 'reference', 'showcase', 'deprecated'], default='reference',
+                        help='Filter HelloCustomWidgets by catalog track. Default follows the current repository policy and selects reference widgets.')
     parser.add_argument('--include-deprecated', action='store_true',
                         help='Include catalog entries marked deprecated in HelloCustomWidgets batch selection.')
     parser.add_argument('--bits64', action='store_true', help='Build for 64-bit')

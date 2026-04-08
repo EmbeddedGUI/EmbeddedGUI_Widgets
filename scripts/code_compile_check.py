@@ -472,8 +472,8 @@ def parse_args():
 
     parser.add_argument("--track",
                         choices=["all", "reference", "showcase", "deprecated"],
-                        default="all",
-                        help="Filter HelloCustomWidgets by catalog track. Default keeps reference + showcase and excludes deprecated.")
+                        default="reference",
+                        help="Filter HelloCustomWidgets by catalog track. Default follows the current repository policy and selects reference widgets.")
 
     parser.add_argument("--include-deprecated",
                         action="store_true",

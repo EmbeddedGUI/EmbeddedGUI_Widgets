@@ -473,7 +473,7 @@ def ensure_emsdk(root_dir: Path, env: dict[str, str], auto_install: bool, versio
 def run_build_verification(root_dir: Path, env: dict[str, str]) -> bool:
     log_header("Build Verification")
     make_cmd = find_command("make.exe", env) or find_command("make", env) or "make"
-    command = [make_cmd, "all", "APP=HelloCustomWidgets", "APP_SUB=input/xy_pad", "PORT=pc"]
+    command = [make_cmd, "all", "APP=HelloCustomWidgets", "APP_SUB=input/auto_suggest_box", "PORT=pc"]
     print("Running: " + " ".join(command))
     result = run(command, cwd=root_dir, env=env)
     if result.returncode == 0:
@@ -542,7 +542,7 @@ def print_summary(
     status_line("Build check", build_status)
     print()
     print("Common commands:")
-    print("  make all APP=HelloCustomWidgets APP_SUB=input/xy_pad PORT=pc")
+    print("  make all APP=HelloCustomWidgets APP_SUB=input/auto_suggest_box PORT=pc")
     print("  make ci CATEGORY=input")
     print("  python scripts/release_check.py")
     if emcc_ready:

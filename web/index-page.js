@@ -9,6 +9,7 @@
         },
         policy: {
             total: null,
+            reference: null,
             defaultWebTotal: null,
             showcase: null,
             deprecated: null,
@@ -37,68 +38,73 @@
         landingEyebrow: { "zh-CN": "Fluent 2 / WPF UI", "en": "Fluent 2 / WPF UI" },
         landingTitle: { "zh-CN": "HelloCustomWidgets 统一入口", "en": "HelloCustomWidgets Main Entry" },
         landingDescription: {
-            "zh-CN": "整个站点已经收口到 Fluent 2 / WPF UI 参考体系。Reference 作为主线保留，showcase 仅作为过渡与历史样例，不再继续扩散成新的默认风格。",
-            "en": "The site now converges on Fluent 2 / WPF UI. Reference widgets remain on the mainline, while showcase entries are kept only as transitional and historical samples."
+            "zh-CN": "站点默认围绕 Fluent 2 / WPF UI 的 reference 基线组织。若本地构建仍包含历史轨道，可通过显式参数回看，但不会作为默认风格继续扩散。",
+            "en": "The site defaults to the Fluent 2 / WPF UI reference baseline. Historical tracks can still be revisited explicitly in local builds, but they are no longer treated as the default style."
         },
         landingDescriptionReferenceOnly: {
-            "zh-CN": "整个站点已经完全收口到 Fluent 2 / WPF UI 参考体系。当前仓库仅保留 Reference 主线控件，不再保留 showcase 历史轨道。",
-            "en": "The site now fully converges on Fluent 2 / WPF UI. Only reference widgets remain in the repository, and the showcase track has been removed."
+            "zh-CN": "整个站点已经完全收口到 Fluent 2 / WPF UI 参考体系。当前仓库和默认网页目录都只保留 Reference 主线控件。",
+            "en": "The site now fully converges on Fluent 2 / WPF UI. Both the repository and the default web catalog keep only the Reference mainline."
         },
         actionReference: { "zh-CN": "打开 Reference 目录", "en": "Open Reference Catalog" },
-        actionShowcase: { "zh-CN": "查看 Showcase 轨道", "en": "Open Showcase Track" },
+        actionShowcase: { "zh-CN": "查看历史轨道", "en": "Open Historical Track" },
         actionManifest: { "zh-CN": "查看 demos.json", "en": "Open demos.json" },
         actionPolicy: { "zh-CN": "查看 catalog-policy.json", "en": "Open catalog-policy.json" },
-        statTotalLabel: { "zh-CN": "站点目录", "en": "Web Catalog" },
+        statTotalLabel: { "zh-CN": "网页目录", "en": "Web Catalog" },
         statTotalDescription: { "zh-CN": "当前网页包内可直接打开的 HelloCustomWidgets 条目。", "en": "HelloCustomWidgets entries currently available in the web bundle." },
         statReferenceLabel: { "zh-CN": "Reference 主线", "en": "Reference Mainline" },
-        statReferenceDescription: { "zh-CN": "后续视觉和交互统一默认以这一轨道为基准。", "en": "Future visual and interaction work should default to this track." },
-        statShowcaseLabel: { "zh-CN": "Showcase 保留", "en": "Showcase Archive" },
-        statShowcaseDescription: { "zh-CN": "只保留展示价值，不再作为主线控件继续扩张。", "en": "Kept for demonstration value, not for further mainline expansion." },
+        statReferenceDescription: { "zh-CN": "后续视觉和交互统一默认以这条主线为准。", "en": "Future visual and interaction work should default to this track." },
+        statShowcaseLabel: { "zh-CN": "历史轨道", "en": "Historical Track" },
+        statShowcaseDescription: { "zh-CN": "只在本地显式回看时保留，不再作为默认入口。", "en": "Kept only for explicit local review and no longer exposed as a default entry point." },
         principlesKicker: { "zh-CN": "Mainline Rules", "en": "Mainline Rules" },
-        principlesTitle: { "zh-CN": "统一风格的三个约束", "en": "Three Rules for a Unified Style" },
+        principlesTitle: { "zh-CN": "统一风格的三条约束", "en": "Three Rules for a Unified Style" },
         workflowKicker: { "zh-CN": "Workflow", "en": "Workflow" },
         workflowTitle: { "zh-CN": "日常维护入口", "en": "Daily Maintenance Entry Points" },
         tracksKicker: { "zh-CN": "Track Policy", "en": "Track Policy" },
-        tracksTitle: { "zh-CN": "Catalog 轨道说明", "en": "Catalog Track Policy" },
+        tracksTitle: { "zh-CN": "目录轨道说明", "en": "Catalog Track Policy" },
         tracksNote: {
-            "zh-CN": "默认网页 manifest 不再暴露 deprecated 条目；如需回看旧控件，请显式使用构建脚本切换到对应轨道。",
-            "en": "The default web manifest no longer exposes deprecated entries. Use the build scripts explicitly if you need to revisit old widgets."
+            "zh-CN": "如需回看历史轨道，请显式使用构建脚本切换到 `--track showcase` 或 `--track deprecated`。",
+            "en": "Use the build scripts with `--track showcase` or `--track deprecated` if you need to revisit historical tracks."
         },
         tracksNotePruned: {
-            "zh-CN": "当前仓库已完成 deprecated 目录清退，默认保留的只有 Reference 与 Showcase 两条轨道。",
-            "en": "Deprecated directories have been pruned from the repository. Only Reference and Showcase remain in the retained set."
+            "zh-CN": "当前仓库已清退 `deprecated` 目录，若本地仍保留历史包，可显式切换到 `showcase` 回看。",
+            "en": "Deprecated directories have been pruned. If your local bundle still includes historical entries, switch to `showcase` explicitly."
         },
         tracksNoteReferenceOnly: {
-            "zh-CN": "当前仓库已完成全部非主线控件清退，现在只保留 Reference 主线目录。",
+            "zh-CN": "当前仓库已完成全部非主线控件清退，默认目录只保留 Reference 主线。",
             "en": "All non-mainline widgets have been pruned. Only the Reference mainline remains."
         },
         manifestMissing: {
-            "zh-CN": "未找到 demos.json，首页中的 web 统计暂不可用。先运行 `python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --refresh-existing` 或完整构建命令。",
-            "en": "demos.json is missing, so web bundle stats are unavailable. Run `python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --refresh-existing` or a full build first."
+            "zh-CN": "未找到 demos.json，首页中的 web 统计暂不可用。先运行 `python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --track reference --refresh-existing` 或完整构建命令。",
+            "en": "demos.json is missing, so web bundle stats are unavailable. Run `python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --track reference --refresh-existing` or a full build first."
         },
         policyMissing: {
             "zh-CN": "未找到 catalog-policy.json，catalog 规则摘要暂不可用。先运行 `python scripts/sync_widget_catalog.py`。",
-            "en": "catalog-policy.json is missing, so policy summary is unavailable. Run `python scripts/sync_widget_catalog.py` first."
+            "en": "catalog-policy.json is missing, so the policy summary is unavailable. Run `python scripts/sync_widget_catalog.py` first."
         },
         catalogNoteSummary: {
-            "zh-CN": "完整 catalog 共 {total} 个控件，其中 {defaultWebTotal} 个仍进入默认网页目录，{deprecated} 个保持 deprecated，不再默认发布。",
-            "en": "The full catalog contains {total} widgets. {defaultWebTotal} still ship in the default web catalog, while {deprecated} stay deprecated and unpublished by default."
+            "zh-CN": "完整 catalog 共 {total} 个控件，其中 {reference} 个属于 Reference 主线，默认网页目录当前发布 {defaultWebTotal} 个。",
+            "en": "The full catalog contains {total} widgets. {reference} belong to the Reference mainline, and {defaultWebTotal} are currently published in the default web catalog."
         },
         placeholderValue: { "zh-CN": "--", "en": "--" },
         principlesReferenceTitle: { "zh-CN": "Reference 优先", "en": "Reference First" },
         principlesReferenceBody: {
-            "zh-CN": "新控件、重构和视觉收口都应优先贴齐 Fluent 2 / WPF UI，可替代的旧控件不再继续并行演化。",
+            "zh-CN": "新控件、重构和视觉收口都要先对齐 Fluent 2 / WPF UI，能被标准语义覆盖的旧控件不再保留平行实现。",
             "en": "New widgets, refactors, and visual consolidation should align with Fluent 2 / WPF UI before anything else."
         },
-        principlesShowcaseTitle: { "zh-CN": "Showcase 限定", "en": "Showcase Is Limited" },
+        principlesShowcaseTitle: { "zh-CN": "历史轨道只做回看", "en": "Historical Track Is Review Only" },
         principlesShowcaseBody: {
-            "zh-CN": "showcase 只用于保留历史探索、行业样例或过渡方案，不再承担主线设计语言的扩张职责。",
-            "en": "Showcase is reserved for historical explorations, domain samples, or transitional patterns instead of mainline design growth."
+            "zh-CN": "showcase 只用于保留历史探索、行业样例或迁移参考，不再承担主线设计语言扩张职责。",
+            "en": "Showcase is reserved for historical exploration, domain samples, or migration reference instead of mainline design growth."
+        },
+        principlesPrunedTitle: { "zh-CN": "非主线已清退", "en": "Non-mainline Pruned" },
+        principlesPrunedBody: {
+            "zh-CN": "仓库已经删掉所有不符合主线方向的 `showcase` / `deprecated` 控件，后续维护不再保留双轨入口。",
+            "en": "All `showcase` and `deprecated` widgets outside the mainline have been removed, so maintenance no longer keeps dual-track entry points."
         },
         principlesDocsTitle: { "zh-CN": "文档必须 UTF-8", "en": "Docs Must Stay UTF-8" },
         principlesDocsBody: {
-            "zh-CN": "文档和站点源码统一保持 UTF-8；新增 README、脚本和页面都需要通过编码检查，避免再次出现串码或问号占位。",
-            "en": "Documentation and site sources must stay in UTF-8. New README files, scripts, and pages should pass encoding checks to avoid mojibake regressions."
+            "zh-CN": "文档和站点源码统一保持 UTF-8；README、脚本和页面都要通过编码检查，避免再次出现乱码或历史残留文本。",
+            "en": "Documentation and site sources must stay in UTF-8. README files, scripts, and pages should pass encoding checks to avoid mojibake regressions."
         },
         workflowCompileTitle: { "zh-CN": "Reference 编译检查", "en": "Reference Compile Sweep" },
         workflowRuntimeTitle: { "zh-CN": "Reference 运行检查", "en": "Reference Runtime Sweep" },
@@ -109,21 +115,23 @@
             "en": "Mainline widgets. Kept in the default web catalog as the Fluent 2 / WPF UI baseline."
         },
         trackShowcaseBody: {
-            "zh-CN": "历史样例与过渡轨道。仍可浏览，但不再作为默认设计语言继续外扩。",
-            "en": "Historical samples and transitional entries. Still browseable, but no longer used as the default design language."
+            "zh-CN": "历史样例与过渡轨道。只建议在本地显式回看，不再作为默认设计语言继续扩展。",
+            "en": "Historical samples and transitional entries. Review them explicitly, but do not expand them as the default design language."
         },
         trackDeprecatedBody: {
-            "zh-CN": "默认不进入网页 manifest；仅在显式构建或回溯审查时保留。",
-            "en": "Excluded from the default web manifest and kept only for explicit rebuilds or historical review."
+            "zh-CN": "已退出主线。默认不进入网页 manifest，仅在显式构建或历史核对时保留。",
+            "en": "No longer on the mainline. Excluded from the default web manifest and kept only for explicit rebuilds or historical review."
         },
         catalogKicker: { "zh-CN": "Catalog Policy", "en": "Catalog Policy" },
         catalogTitle: { "zh-CN": "完整 catalog 摘要", "en": "Full Catalog Summary" },
         policyTotalLabel: { "zh-CN": "完整总量", "en": "Full Catalog" },
-        policyTotalDescription: { "zh-CN": "HelloCustomWidgets 源目录中的全部控件，不受默认网页 manifest 过滤。", "en": "All widgets in the HelloCustomWidgets source tree, before default web manifest filtering." },
-        policyDeprecatedLabel: { "zh-CN": "Deprecated", "en": "Deprecated" },
-        policyDeprecatedDescription: { "zh-CN": "已退出主线，只在显式回溯或兼容核对时保留。", "en": "No longer on the mainline and kept only for explicit review or compatibility checks." },
+        policyTotalDescription: { "zh-CN": "HelloCustomWidgets 源目录中的全部控件，不受默认网页目录过滤。", "en": "All widgets in the HelloCustomWidgets source tree before default web filtering." },
+        policyReferenceLabel: { "zh-CN": "Reference 数量", "en": "Reference Count" },
+        policyReferenceDescription: { "zh-CN": "当前仍在主线内保留并继续维护的控件数量。", "en": "Widgets that remain on the mainline and continue to be maintained." },
+        policyPublishedLabel: { "zh-CN": "网页发布量", "en": "Published on Web" },
+        policyPublishedDescription: { "zh-CN": "默认网页目录当前发布的控件数量。", "en": "Widgets currently published in the default web catalog." },
         policyReplacementLabel: { "zh-CN": "Replacement 路径", "en": "Replacement Paths" },
-        policyReplacementDescription: { "zh-CN": "已经明确指定迁移目标的过渡控件数量。", "en": "Transitional widgets that already have explicit migration targets." },
+        policyReplacementDescription: { "zh-CN": "已经明确指定迁移目标的历史控件数量。", "en": "Historical widgets that already have explicit migration targets." },
         policyCategoryLabel: { "zh-CN": "分类数", "en": "Categories" },
         policyCategoryDescription: { "zh-CN": "当前 catalog 覆盖的控件分类维度。", "en": "Widget categories currently covered by the catalog." },
         categorySummaryLabel: { "zh-CN": "分类覆盖", "en": "Category Coverage" },
@@ -133,6 +141,10 @@
         categoryBreakdown: {
             "zh-CN": "共 {total} 个 · R {reference} / S {showcase} / D {deprecated}",
             "en": "{total} total · R {reference} / S {showcase} / D {deprecated}"
+        },
+        categoryBreakdownReferenceOnly: {
+            "zh-CN": "共 {total} 个，全部为 Reference",
+            "en": "{total} total, all Reference"
         }
     };
 
@@ -174,6 +186,7 @@
         document.getElementById("action-manifest").textContent = t("actionManifest");
         document.getElementById("action-policy").textContent = t("actionPolicy");
         document.getElementById("action-showcase").classList.toggle("hidden", state.policy.showcase === 0);
+        document.getElementById("stat-showcase-card").classList.toggle("hidden", state.policy.showcase === 0);
         document.getElementById("stat-total-label").textContent = t("statTotalLabel");
         document.getElementById("stat-total-description").textContent = t("statTotalDescription");
         document.getElementById("stat-reference-label").textContent = t("statReferenceLabel");
@@ -197,8 +210,8 @@
             ? t("policyMissing")
             : t("catalogNoteSummary", {
                 total: fmtNumber(state.policy.total),
-                defaultWebTotal: fmtNumber(state.policy.defaultWebTotal),
-                deprecated: fmtNumber(state.policy.deprecated)
+                reference: fmtNumber(state.policy.reference),
+                defaultWebTotal: fmtNumber(state.policy.defaultWebTotal)
             });
     }
 
@@ -211,15 +224,18 @@
     function renderPrinciples() {
         var cards = [
             { title: t("principlesReferenceTitle"), body: t("principlesReferenceBody") },
-            { title: t("principlesShowcaseTitle"), body: t("principlesShowcaseBody") },
+            state.policy.showcase === 0
+                ? { title: t("principlesPrunedTitle"), body: t("principlesPrunedBody") }
+                : { title: t("principlesShowcaseTitle"), body: t("principlesShowcaseBody") },
             { title: t("principlesDocsTitle"), body: t("principlesDocsBody") }
         ];
+
         document.getElementById("principles-grid").innerHTML = cards.map(function(card) {
             return [
                 '<article class="landing-card">',
                 '<h3>' + esc(card.title) + '</h3>',
-                '<p>' + esc(card.body) + '</p>',
-                '</article>'
+                '<p>' + esc(card.body) + "</p>",
+                "</article>"
             ].join("");
         }).join("");
     }
@@ -228,15 +244,16 @@
         var items = [
             { title: t("workflowCompileTitle"), command: "python scripts/code_compile_check.py --custom-widgets --track reference" },
             { title: t("workflowRuntimeTitle"), command: "python scripts/code_runtime_check.py --app HelloCustomWidgets --track reference" },
-            { title: t("workflowManifestTitle"), command: "python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --refresh-existing" },
+            { title: t("workflowManifestTitle"), command: "python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --track reference --refresh-existing" },
             { title: t("workflowPolicyTitle"), command: "python scripts/sync_widget_catalog.py" }
         ];
+
         document.getElementById("workflow-list").innerHTML = items.map(function(item) {
             return [
                 '<article class="command-item">',
                 '<h3>' + esc(item.title) + '</h3>',
-                '<code>' + esc(item.command) + '</code>',
-                '</article>'
+                '<code>' + esc(item.command) + "</code>",
+                "</article>"
             ].join("");
         }).join("");
     }
@@ -251,12 +268,13 @@
         if (state.policy.deprecated !== 0) {
             cards.push({ tone: "deprecated", title: "Deprecated", body: t("trackDeprecatedBody") });
         }
+
         document.getElementById("tracks-grid").innerHTML = cards.map(function(card) {
             return [
                 '<article class="landing-card tone-' + esc(card.tone) + '">',
                 '<h3>' + esc(card.title) + '</h3>',
-                '<p>' + esc(card.body) + '</p>',
-                '</article>'
+                '<p>' + esc(card.body) + "</p>",
+                "</article>"
             ].join("");
         }).join("");
     }
@@ -269,56 +287,65 @@
                 description: t("policyTotalDescription")
             },
             {
-                label: t("policyDeprecatedLabel"),
-                value: fmtNumber(state.policy.deprecated),
-                description: t("policyDeprecatedDescription")
+                label: t("policyReferenceLabel"),
+                value: fmtNumber(state.policy.reference),
+                description: t("policyReferenceDescription")
             },
             {
-                label: t("policyReplacementLabel"),
-                value: fmtNumber(state.policy.replacementCount),
-                description: t("policyReplacementDescription")
+                label: t("policyPublishedLabel"),
+                value: fmtNumber(state.policy.defaultWebTotal),
+                description: t("policyPublishedDescription")
             },
             {
                 label: t("policyCategoryLabel"),
                 value: fmtNumber(state.policy.categoryCount),
                 description: t("policyCategoryDescription")
+            },
+            {
+                label: t("policyReplacementLabel"),
+                value: fmtNumber(state.policy.replacementCount),
+                description: t("policyReplacementDescription")
             }
         ];
+
         document.getElementById("catalog-stats-grid").innerHTML = stats.map(function(item) {
             return [
                 '<article class="landing-stat-card compact">',
                 '<div class="meta-label">' + esc(item.label) + '</div>',
                 '<div class="landing-stat-value">' + esc(item.value) + '</div>',
-                '<p>' + esc(item.description) + '</p>',
-                '</article>'
+                '<p>' + esc(item.description) + "</p>",
+                "</article>"
             ].join("");
         }).join("");
 
         if (!state.policy.categories.length) {
-            document.getElementById("category-summary-list").innerHTML = '<p class="landing-note replacement-empty">' + esc(t("categoryEmpty")) + '</p>';
+            document.getElementById("category-summary-list").innerHTML = '<p class="landing-note replacement-empty">' + esc(t("categoryEmpty")) + "</p>";
         } else {
             document.getElementById("category-summary-list").innerHTML = state.policy.categories.map(function(category) {
+                var breakdown = (category.showcase === 0 && category.deprecated === 0)
+                    ? t("categoryBreakdownReferenceOnly", category)
+                    : t("categoryBreakdown", category);
                 return [
                     '<div class="category-pill">',
-                    '<strong>' + esc(fmtCategory(category.id)) + '</strong>',
-                    '<span>' + esc(t("categoryBreakdown", category)) + '</span>',
-                    '</div>'
+                    '<strong>' + esc(fmtCategory(category.id)) + "</strong>",
+                    '<span>' + esc(breakdown) + "</span>",
+                    "</div>"
                 ].join("");
             }).join("");
         }
 
         if (!state.policy.replacements.length) {
-            document.getElementById("replacement-summary-list").innerHTML = '<p class="landing-note replacement-empty">' + esc(t("replacementEmpty")) + '</p>';
+            document.getElementById("replacement-summary-list").innerHTML = '<p class="landing-note replacement-empty">' + esc(t("replacementEmpty")) + "</p>";
             return;
         }
 
         document.getElementById("replacement-summary-list").innerHTML = state.policy.replacements.map(function(item) {
             return [
                 '<a class="replacement-item" href="' + esc(demoQuery(item.target)) + '">',
-                '<span class="replacement-source">' + esc(item.source) + '</span>',
-                '<span class="replacement-arrow">→</span>',
-                '<span class="replacement-target">' + esc(item.target) + '</span>',
-                '</a>'
+                '<span class="replacement-source">' + esc(item.source) + "</span>",
+                '<span class="replacement-arrow">&rarr;</span>',
+                '<span class="replacement-target">' + esc(item.target) + "</span>",
+                "</a>"
             ].join("");
         }).join("");
     }
@@ -362,6 +389,7 @@
             return response.json();
         }).then(function(summary) {
             state.policy.total = summary.total;
+            state.policy.reference = summary.tracks ? summary.tracks.reference : null;
             state.policy.defaultWebTotal = summary.defaultWebTotal;
             state.policy.showcase = summary.tracks ? summary.tracks.showcase : null;
             state.policy.deprecated = summary.tracks ? summary.tracks.deprecated : null;
@@ -372,6 +400,7 @@
             state.policy.missing = false;
         }).catch(function() {
             state.policy.total = null;
+            state.policy.reference = null;
             state.policy.defaultWebTotal = null;
             state.policy.showcase = null;
             state.policy.deprecated = null;

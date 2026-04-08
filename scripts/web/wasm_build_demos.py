@@ -554,9 +554,9 @@ def main():
     parser.add_argument("--app", default=None,
                         help="Build selected app/group (for example HelloCustomWidgets or HelloCustomWidgets_chart_radar_chart)")
     parser.add_argument("--app-sub", default=None,
-                        help="Build single sub-app (e.g. button, virtual_stage_showcase, or chart/radar_chart)")
-    parser.add_argument("--track", choices=["all", "reference", "showcase", "deprecated"], default="all",
-                        help="Filter HelloCustomWidgets by catalog track. Default keeps reference + showcase and excludes deprecated.")
+                        help="Build single sub-app (e.g. button, input/auto_suggest_box, or navigation/tree_view)")
+    parser.add_argument("--track", choices=["all", "reference", "showcase", "deprecated"], default="reference",
+                        help="Filter HelloCustomWidgets by catalog track. Default follows the current repository policy and selects reference widgets.")
     parser.add_argument("--include-deprecated", action="store_true",
                         help="Include catalog entries marked deprecated in HelloCustomWidgets group builds.")
     parser.add_argument("--refresh-existing", action="store_true",

@@ -43,8 +43,9 @@ def scan_custom_widgets() -> list[str]:
 
 def _normalize_entry(entry: dict) -> dict:
     widget_id = str(entry.get("id", "")).strip().replace("\\", "/")
-    track = str(entry.get("track", "showcase")).strip() or "showcase"
-    visibility = str(entry.get("visibility", "internal")).strip() or "internal"
+    track = str(entry.get("track", "reference")).strip() or "reference"
+    default_visibility = EXPECTED_VISIBILITY_BY_TRACK.get(track, "public")
+    visibility = str(entry.get("visibility", default_visibility)).strip() or default_visibility
     replacement = entry.get("replacement")
 
     if track not in VALID_TRACKS:
@@ -69,8 +70,8 @@ def _normalize_entry(entry: dict) -> dict:
 def make_default_entry(widget_id: str) -> dict:
     return {
         "id": widget_id,
-        "track": "showcase",
-        "visibility": EXPECTED_VISIBILITY_BY_TRACK["showcase"],
+        "track": "reference",
+        "visibility": EXPECTED_VISIBILITY_BY_TRACK["reference"],
         "reference_system": "",
         "reference_library": "",
         "reference_component": "",
