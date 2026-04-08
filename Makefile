@@ -69,7 +69,7 @@ CI_ARGS += $(if $(strip $(CI_COMPILE_CASE_JOBS)),--compile-case-jobs $(CI_COMPIL
 CI_ARGS += $(if $(strip $(CI_RUNTIME_JOBS)),--runtime-jobs $(CI_RUNTIME_JOBS),)
 CI_ARGS += $(if $(filter 1 true TRUE yes YES,$(strip $(SKIP_UNIT_TESTS))),--skip-unit-tests,)
 
-.PHONY: all clean run resource resource_refresh ci setup release-check
+.PHONY: all clean run resource resource_refresh ci setup release-check sync-catalog
 
 all clean resource resource_refresh:
 	$(MAKE) -C $(SDK_ROOT) $@ $(FORWARD_ARGS)
@@ -86,6 +86,9 @@ setup:
 
 release-check:
 	$(PYTHON) scripts/release_check.py $(RELEASE_ARGS)
+
+sync-catalog:
+	$(PYTHON) scripts/sync_widget_catalog.py
 
 %:
 	$(MAKE) -C $(SDK_ROOT) $@ $(FORWARD_ARGS)

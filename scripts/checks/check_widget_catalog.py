@@ -17,6 +17,7 @@ if str(SCRIPTS_ROOT) not in sys.path:
 from widget_catalog import (
     EXPECTED_VISIBILITY_BY_TRACK,
     build_widget_catalog_map,
+    format_catalog_entries,
     get_catalog_track_counts,
     scan_custom_widgets,
 )
@@ -87,6 +88,14 @@ def main() -> int:
                 "%s: replacement target must be terminal and cannot point again (got %s -> %s)"
                 % (widget_id, replacement, replacement_entry["replacement"])
             )
+
+    catalog_path = ROOT_DIR / "example" / "HelloCustomWidgets" / "widget_catalog.json"
+    canonical_text = format_catalog_entries(list(catalog_map.values()))
+    current_text = catalog_path.read_text(encoding="utf-8") if catalog_path.exists() else ""
+    if current_text != canonical_text:
+        errors.append(
+            "widget_catalog.json is not in canonical synchronized form; run python scripts/sync_widget_catalog.py"
+        )
 
     if errors:
         print("Widget catalog check FAILED (%d issues)" % len(errors))

@@ -88,6 +88,8 @@ The default SDK resolution order is:
   `python scripts/checks/check_touch_release_semantics.py --scope custom --category input`
 - Widget catalog policy audit:
   `python scripts/checks/check_widget_catalog.py`
+- Sync widget catalog:
+  `python scripts/sync_widget_catalog.py`
 - Build the widgets web bundle:
   `python scripts/web/wasm_build_demos.py`
 - Preview the local site:
@@ -111,4 +113,4 @@ The default SDK resolution order is:
 - `iteration_log/` is local-only review evidence and stays ignored.
 - The repo root `Makefile` forwards build requests into `sdk/EmbeddedGUI` while keeping outputs in this repository.
 - Root convenience entrypoints:
-  `setup.bat` / `setup.sh`, `make setup`, `make release-check`
+  `setup.bat` / `setup.sh`, `make setup`, `make release-check`, `make sync-catalog`

@@ -15,6 +15,16 @@ EXPECTED_VISIBILITY_BY_TRACK = {
     "showcase": "internal",
     "deprecated": "hidden",
 }
+CATALOG_FIELD_ORDER = [
+    "id",
+    "track",
+    "visibility",
+    "reference_system",
+    "reference_library",
+    "reference_component",
+    "replacement",
+    "doc_state",
+]
 
 
 def scan_custom_widgets() -> list[str]:
@@ -53,10 +63,22 @@ def _normalize_entry(entry: dict) -> dict:
     }
 
 
+def make_default_entry(widget_id: str) -> dict:
+    return {
+        "id": widget_id,
+        "track": "showcase",
+        "visibility": EXPECTED_VISIBILITY_BY_TRACK["showcase"],
+        "reference_system": "",
+        "reference_library": "",
+        "reference_component": "",
+        "replacement": None,
+        "doc_state": "ok",
+    }
+
+
 def load_widget_catalog() -> list[dict]:
     if not CATALOG_PATH.exists():
-        return [{"id": widget_id, "track": "showcase", "visibility": "internal", "reference_system": "", "reference_library": "",
-                 "reference_component": "", "replacement": None, "doc_state": "ok"} for widget_id in scan_custom_widgets()]
+        return [make_default_entry(widget_id) for widget_id in scan_custom_widgets()]
 
     entries = json.loads(CATALOG_PATH.read_text(encoding="utf-8"))
     if not isinstance(entries, list):
@@ -80,6 +102,32 @@ def load_widget_catalog() -> list[dict]:
 
 def build_widget_catalog_map() -> dict[str, dict]:
     return {entry["id"]: entry for entry in load_widget_catalog()}
+
+
+def sort_catalog_entries(entries: list[dict]) -> list[dict]:
+    return sorted(entries, key=lambda entry: entry["id"])
+
+
+def format_catalog_entries(entries: list[dict]) -> str:
+    normalized_entries = []
+    for entry in sort_catalog_entries(entries):
+        normalized_entries.append({field: entry[field] for field in CATALOG_FIELD_ORDER})
+    return json.dumps(normalized_entries, indent=2, ensure_ascii=False) + "\n"
+
+
+def build_synchronized_catalog_entries() -> list[dict]:
+    existing = build_widget_catalog_map()
+    synchronized = []
+    for widget_id in scan_custom_widgets():
+        synchronized.append(existing.get(widget_id, make_default_entry(widget_id)))
+    return sort_catalog_entries(synchronized)
+
+
+def write_widget_catalog(path: Path | None = None) -> list[dict]:
+    target_path = path or CATALOG_PATH
+    entries = build_synchronized_catalog_entries()
+    target_path.write_text(format_catalog_entries(entries), encoding="utf-8")
+    return entries
 
 
 def get_catalog_track_counts() -> dict[str, int]:
