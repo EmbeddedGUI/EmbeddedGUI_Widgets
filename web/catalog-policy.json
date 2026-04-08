@@ -1,15 +1,15 @@
 {
   "generatedFrom": "example/HelloCustomWidgets/widget_catalog.json",
-  "total": 70,
-  "defaultWebTotal": 70,
+  "total": 65,
+  "defaultWebTotal": 65,
   "tracks": {
     "reference": 42,
-    "showcase": 28,
+    "showcase": 23,
     "deprecated": 0
   },
   "visibility": {
     "public": 42,
-    "internal": 28,
+    "internal": 23,
     "hidden": 0
   },
   "categories": [
@@ -22,16 +22,16 @@
     },
     {
       "id": "layout",
-      "total": 11,
+      "total": 10,
       "reference": 6,
-      "showcase": 5,
+      "showcase": 4,
       "deprecated": 0
     },
     {
       "id": "navigation",
-      "total": 13,
+      "total": 11,
       "reference": 10,
-      "showcase": 3,
+      "showcase": 1,
       "deprecated": 0
     },
     {
@@ -43,39 +43,18 @@
     },
     {
       "id": "feedback",
-      "total": 9,
+      "total": 8,
       "reference": 5,
-      "showcase": 4,
+      "showcase": 3,
       "deprecated": 0
     },
     {
       "id": "decoration",
-      "total": 2,
+      "total": 1,
       "reference": 0,
-      "showcase": 2,
+      "showcase": 1,
       "deprecated": 0
     }
   ],
-  "replacements": [
-    {
-      "source": "decoration/avatar_stack",
-      "target": "display/persona_group"
-    },
-    {
-      "source": "feedback/skeleton_loader",
-      "target": "feedback/skeleton"
-    },
-    {
-      "source": "layout/split_resizer",
-      "target": "layout/split_view"
-    },
-    {
-      "source": "navigation/breadcrumb_trail",
-      "target": "navigation/breadcrumb_bar"
-    },
-    {
-      "source": "navigation/tab_expose",
-      "target": "navigation/tab_view"
-    }
-  ]
+  "replacements": []
 }

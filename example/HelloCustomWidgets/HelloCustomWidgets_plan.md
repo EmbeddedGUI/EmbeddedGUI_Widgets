@@ -5,8 +5,8 @@
 ## 当前状态
 
 - `HelloCustomWidgets` 继续使用 `category/widget_name` 的两级 `APP_SUB` 结构
-- 截至 `2026-04-08`，仓库中保留 `70` 个控件目录，覆盖 `decoration`、`display`、`feedback`、`input`、`layout`、`navigation` 六个分类
-- 当前保留集按 `Reference / Showcase` 两条线收口：`reference=42`、`showcase=28`；后续默认只围绕这两条线维护
+- 截至 `2026-04-08`，仓库中保留 `65` 个控件目录，覆盖 `decoration`、`display`、`feedback`、`input`、`layout`、`navigation` 六个分类
+- 当前保留集按 `Reference / Showcase` 两条线收口：`reference=42`、`showcase=23`；后续默认只围绕这两条线维护
 - `2026-04-08` 已清退 `24` 个明显偏离 `Fluent 2 / WPF UI` 主线的 `deprecated` 控件目录，不再保留 `chart/*`、`media/*` 以及一批强行业/强实验语义控件
 
 ## 当前基线
@@ -82,8 +82,13 @@ example/HelloCustomWidgets/<category>/<widget>/
 - `navigation/dock_launcher`
 - `navigation/coverflow_strip`
 - `navigation/radial_menu`
+- `decoration/avatar_stack`
 - `display/server_rack`
 - `display/signal_matrix`
+- `feedback/skeleton_loader`
+- `layout/split_resizer`
+- `navigation/breadcrumb_trail`
+- `navigation/tab_expose`
 
 ## 构建入口
 

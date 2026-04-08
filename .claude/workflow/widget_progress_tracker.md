@@ -9,8 +9,8 @@
 
 ## 当前快照
 
-- 截至 `2026-04-08`，`example/HelloCustomWidgets/` 下当前保留 `70` 个带 `test.c` 的控件目录（`reference=42`、`showcase=28`）。
-- `2026-04-08` 已批量删除 `24` 个 `deprecated` 控件目录，用于继续把项目收口到 `Fluent 2 / WPF UI` 主线。
+- 截至 `2026-04-08`，`example/HelloCustomWidgets/` 下当前保留 `65` 个带 `test.c` 的控件目录（`reference=42`、`showcase=23`）。
+- `2026-04-08` 已先后删除 `24` 个 `deprecated` 控件目录，以及 `5` 个已有主线替代项的 `showcase` 控件，用于继续把项目收口到 `Fluent 2 / WPF UI` 主线。
 - 下方“已完成控件”表保留了历史开发记录和后续 acceptance refresh 记录，因此表格行数不等于唯一控件数。
 - 即使某些历史控件目录已被清退，下方时间线记录仍保留，用于追踪既有 acceptance 结论与演进边界。
 - 已出现历史重复登记的控件包括 `tree_view`、`menu_flyout`、`number_box`；这里保留原记录，仅将本文件视为时间线索引，不把序号当作唯一控件计数。

@@ -33,7 +33,6 @@
 #include "test/test_settings_panel.h"
 #include "test/test_shortcut_recorder.h"
 #include "test/test_skeleton.h"
-#include "test/test_skeleton_loader.h"
 #include "test/test_split_button.h"
 #include "test/test_split_view.h"
 #include "test/test_swipe_control.h"
@@ -87,7 +86,6 @@ void uicode_create_ui(void)
     test_settings_panel_run();
     test_shortcut_recorder_run();
     test_skeleton_run();
-    test_skeleton_loader_run();
     test_split_button_run();
     test_split_view_run();
     test_swipe_control_run();

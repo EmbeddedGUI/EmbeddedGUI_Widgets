@@ -1,15 +1,5 @@
 [
   {
-    "id": "decoration/avatar_stack",
-    "track": "showcase",
-    "visibility": "internal",
-    "reference_system": "",
-    "reference_library": "",
-    "reference_component": "",
-    "replacement": "display/persona_group",
-    "doc_state": "ok"
-  },
-  {
     "id": "decoration/pin_cluster",
     "track": "showcase",
     "visibility": "internal",
@@ -167,16 +157,6 @@
     "reference_library": "WPF UI",
     "reference_component": "Skeleton",
     "replacement": null,
-    "doc_state": "ok"
-  },
-  {
-    "id": "feedback/skeleton_loader",
-    "track": "showcase",
-    "visibility": "internal",
-    "reference_system": "",
-    "reference_library": "",
-    "reference_component": "",
-    "replacement": "feedback/skeleton",
     "doc_state": "ok"
   },
   {
@@ -540,16 +520,6 @@
     "doc_state": "ok"
   },
   {
-    "id": "layout/split_resizer",
-    "track": "showcase",
-    "visibility": "internal",
-    "reference_system": "",
-    "reference_library": "",
-    "reference_component": "",
-    "replacement": "layout/split_view",
-    "doc_state": "ok"
-  },
-  {
     "id": "layout/split_view",
     "track": "reference",
     "visibility": "public",
@@ -587,16 +557,6 @@
     "reference_library": "WPF UI",
     "reference_component": "BreadcrumbBar",
     "replacement": null,
-    "doc_state": "ok"
-  },
-  {
-    "id": "navigation/breadcrumb_trail",
-    "track": "showcase",
-    "visibility": "internal",
-    "reference_system": "",
-    "reference_library": "",
-    "reference_component": "",
-    "replacement": "navigation/breadcrumb_bar",
     "doc_state": "ok"
   },
   {
@@ -657,16 +617,6 @@
     "reference_library": "WPF UI",
     "reference_component": "PipsPager",
     "replacement": null,
-    "doc_state": "ok"
-  },
-  {
-    "id": "navigation/tab_expose",
-    "track": "showcase",
-    "visibility": "internal",
-    "reference_system": "",
-    "reference_library": "",
-    "reference_component": "",
-    "replacement": "navigation/tab_view",
     "doc_state": "ok"
   },
   {
