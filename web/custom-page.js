@@ -4,6 +4,7 @@
         allDemos: [],
         demoMap: {},
         activeTrack: "reference",
+        requestedTrack: "",
         query: "",
         selectedName: "",
         initialTarget: ""
@@ -18,6 +19,7 @@
         linkJson: { "zh-CN": "demos.json", "en": "demos.json" },
         trackLabel: { "zh-CN": "展示轨道", "en": "Display track" },
         searchPlaceholder: { "zh-CN": "搜索控件、分类、参考组件", "en": "Search widgets, categories, or reference components" },
+        defaultEyebrow: { "zh-CN": "Reference 优先目录", "en": "Reference-first catalog" },
         defaultTitle: { "zh-CN": "选择一个控件", "en": "Select a widget" },
         defaultDescription: { "zh-CN": "左侧列表只保留当前网页包内可用的 HelloCustomWidgets，并按 reference / showcase 轨道统一整理。", "en": "The sidebar only lists HelloCustomWidgets demos available in the current web bundle, grouped by reference and showcase tracks." },
         emptyTitle: { "zh-CN": "当前筛选下没有控件", "en": "No widgets match the current filters" },
@@ -84,6 +86,10 @@
     function demoPath(d) { return "demos/" + d.name + "/" + d.app + ".html"; }
     function frameHeight(d) { var n = Number(d && d.height); return !Number.isFinite(n) || n <= 0 ? 460 : Math.max(420, n + 48); }
     function compareCategory(a, b) { var ia = categoryOrder.indexOf(a), ib = categoryOrder.indexOf(b); if (ia === -1 && ib === -1) return a.localeCompare(b); if (ia === -1) return 1; if (ib === -1) return -1; return ia - ib; }
+    function normalizeTrack(value) {
+        var track = String(value || "").toLowerCase();
+        return ["reference", "showcase", "deprecated", "all"].indexOf(track) !== -1 ? track : "reference";
+    }
 
     function parseMeta(demo) {
         var widgetId = demo.widgetId || demo.appSub || "";
@@ -175,7 +181,7 @@
             docShell.classList.add("hidden");
             title.textContent = missingCatalog ? t("missingCatalogTitle") : t("emptyTitle");
             desc.textContent = missingCatalog ? t("missingCatalogDescription") : t("emptyDescription");
-            eyebrow.textContent = "Reference-first catalog";
+            eyebrow.textContent = t("defaultEyebrow");
             metaGrid.innerHTML = "";
             notices.innerHTML = "";
             actionRow.innerHTML = "";
@@ -247,7 +253,7 @@
         state.allDemos.forEach(function(d) { state.demoMap[d.name] = d; });
         if (state.initialTarget && state.demoMap[state.initialTarget]) {
             state.selectedName = state.initialTarget;
-            state.activeTrack = state.demoMap[state.initialTarget].track === "deprecated" ? "all" : state.demoMap[state.initialTarget].track;
+            state.activeTrack = state.requestedTrack || (state.demoMap[state.initialTarget].track === "deprecated" ? "all" : state.demoMap[state.initialTarget].track);
         } else if (state.allDemos.length) {
             var firstReference = state.allDemos.find(function(d) { return d.track === "reference"; });
             state.selectedName = (firstReference || state.allDemos[0]).name;
@@ -284,7 +290,12 @@
     try {
         var params = new URLSearchParams(window.location.search);
         var requested = params.get("demo") || params.get("app");
+        var requestedTrack = params.get("track");
         state.initialTarget = requested ? (requested.indexOf("HelloCustomWidgets_") === 0 ? requested : demoName(requested)) : (window.location.hash ? window.location.hash.slice(1) : "");
+        if (requestedTrack) {
+            state.requestedTrack = normalizeTrack(requestedTrack);
+            state.activeTrack = state.requestedTrack;
+        }
     } catch (error) {
         state.initialTarget = window.location.hash ? window.location.hash.slice(1) : "";
     }

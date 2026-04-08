@@ -1,12 +1,73 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
     <meta charset="utf-8">
-    <meta http-equiv="refresh" content="0; url=custom.html">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>EmbeddedGUI Widgets</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <p>Redirecting to <a href="custom.html">custom.html</a>...</p>
+    <div class="lang-toggle" role="group" aria-label="Language switch">
+        <button type="button" class="lang-toggle-button" data-lang-switch="zh-CN">中文</button>
+        <button type="button" class="lang-toggle-button" data-lang-switch="en">EN</button>
+    </div>
+
+    <main class="landing-shell">
+        <section class="surface landing-hero">
+            <div class="landing-copy">
+                <div class="eyebrow" id="landing-eyebrow"></div>
+                <h1 id="landing-title"></h1>
+                <p id="landing-description"></p>
+                <div class="hero-links">
+                    <a id="action-reference" class="button-link" href="custom.html?track=reference"></a>
+                    <a id="action-showcase" class="button-link secondary" href="custom.html?track=showcase"></a>
+                    <a id="action-manifest" class="button-link ghost" href="demos/demos.json" target="_blank" rel="noreferrer"></a>
+                </div>
+            </div>
+
+            <div class="landing-stats" id="landing-stats">
+                <article class="landing-stat-card">
+                    <div class="meta-label" id="stat-total-label"></div>
+                    <div class="landing-stat-value" id="stat-total-value">--</div>
+                    <p id="stat-total-description"></p>
+                </article>
+                <article class="landing-stat-card">
+                    <div class="meta-label" id="stat-reference-label"></div>
+                    <div class="landing-stat-value" id="stat-reference-value">--</div>
+                    <p id="stat-reference-description"></p>
+                </article>
+                <article class="landing-stat-card">
+                    <div class="meta-label" id="stat-showcase-label"></div>
+                    <div class="landing-stat-value" id="stat-showcase-value">--</div>
+                    <p id="stat-showcase-description"></p>
+                </article>
+            </div>
+        </section>
+
+        <section class="landing-grid">
+            <section class="surface landing-panel">
+                <div class="panel-kicker" id="principles-kicker"></div>
+                <h2 id="principles-title"></h2>
+                <div class="landing-card-grid" id="principles-grid"></div>
+            </section>
+
+            <section class="surface landing-panel">
+                <div class="panel-kicker" id="workflow-kicker"></div>
+                <h2 id="workflow-title"></h2>
+                <div class="command-list" id="workflow-list"></div>
+            </section>
+        </section>
+
+        <section class="surface landing-panel">
+            <div class="panel-kicker" id="tracks-kicker"></div>
+            <h2 id="tracks-title"></h2>
+            <div class="landing-card-grid" id="tracks-grid"></div>
+            <div class="landing-note" id="tracks-note"></div>
+        </section>
+    </main>
+
+    <script src="i18n.js"></script>
+    <script src="index-page.js"></script>
 </body>
 </html>
