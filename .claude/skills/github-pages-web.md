@@ -75,8 +75,8 @@ python scripts/web/wasm_build_demos.py --app MyNewApp
 - 把 `readme.md` 复制为 `web/demos/MyNewApp/README.md`
 - 在 `web/demos/demos.json` 追加条目
 
-### 步骤 3：提交 PR / 推送 main
-GitHub Actions (`wasm-deploy.yml`) 在 push 到 main 时自动全量构建并部署到 GitHub Pages。
+### 步骤 3：提交 PR / 需要发布时手动触发
+GitHub Actions (`wasm-deploy.yml`) 改为只在手动 `workflow_dispatch` 时执行，由用户主动发起全量构建和 GitHub Pages 部署。
 
 ---
 
@@ -219,7 +219,7 @@ Canvas 会自动按比例缩放，不需要额外处理。
 ## CI/CD 流程
 
 ```
-push → main
+workflow_dispatch
   └─ wasm-deploy.yml
        ├─ python scripts/web/wasm_build_demos.py  （全量构建）
        └─ actions/deploy-pages → GitHub Pages  （部署 web/ 目录）

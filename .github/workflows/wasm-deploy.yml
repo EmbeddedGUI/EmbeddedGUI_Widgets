@@ -1,17 +1,6 @@
 name: Build WASM & Deploy to GitHub Pages
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - '.github/workflows/wasm-deploy.yml'
-      - '.gitmodules'
-      - 'Makefile'
-      - 'example/HelloCustomWidgets/**'
-      - 'scripts/web/wasm_build_demos.py'
-      - 'web/**'
-      - 'requirements.txt'
   workflow_dispatch:
 
 permissions:
