@@ -71,8 +71,12 @@ CI_ARGS += $(if $(filter 1 true TRUE yes YES,$(strip $(SKIP_UNIT_TESTS))),--skip
 
 .PHONY: all clean run resource resource_refresh ci setup release-check
 
-all clean run resource resource_refresh:
+all clean resource resource_refresh:
 	$(MAKE) -C $(SDK_ROOT) $@ $(FORWARD_ARGS)
+
+run:
+	$(MAKE) -C $(SDK_ROOT) all $(FORWARD_ARGS)
+	$(PYTHON) scripts/run_app.py --output-dir "$(abspath $(OUTPUT_PATH))"
 
 ci:
 	$(PYTHON) scripts/ci_local_check.py $(CI_ARGS)
