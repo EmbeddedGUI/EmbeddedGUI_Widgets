@@ -98,6 +98,11 @@
 ## 最近完成的收口动作
 
 - `2026-04-09`
+  - 完成 `navigation/menu_flyout` 实现级样式收口：删除 guide / 状态文案 / section label / 预览标签等页面级 chrome，示例页收敛为标题、主 flyout 与 compact / disabled 双预览。
+  - 收紧 `menu_flyout` 视觉表达：压缩根布局与主卡留白，统一 palette、分隔线、边框与弱阴影语法到 Fluent / WPF UI 中性轻量弹出菜单风格。
+  - 同步修正文档尺寸与结构说明，compact snapshot 文案缩短以避免标题挤压。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=navigation/menu_flyout PORT=pc`、`check_touch_release_semantics.py --scope custom --category navigation`、`code_runtime_check.py --app HelloCustomWidgets --app-sub navigation/menu_flyout --track reference --timeout 10 --keep-screenshots`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`check_docs_encoding.py`。
+- `2026-04-09`
   - 完成 `navigation/flip_view` 实现级样式收口：示例页删除 guide / 状态栏 / section label 等页面级 chrome，只保留标题、标准主卡和 compact / read-only 双预览。
   - 收紧 `flip_view` 视觉表达：改回浅底、轻边框、弱阴影、低饱和 accent 的 Fluent / WPF UI 单卡轮播语义，overlay 按钮回归中性 shell。
   - 录制动作切换为程序化切轨，不再依赖点击隐藏标签；README 与尺寸说明同步到 `224 x 228` / `196 x 122` / `216 x 64`。

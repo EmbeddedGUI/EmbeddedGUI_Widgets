@@ -101,12 +101,12 @@ static void egui_view_menu_flyout_draw_row(egui_view_t *self, egui_view_menu_fly
 {
     egui_region_t text_region;
     egui_color_t tone_color = egui_view_menu_flyout_tone_color(local, item->tone);
-    egui_color_t icon_fill = egui_rgb_mix(local->surface_color, tone_color, focused ? 16 : 10);
-    egui_color_t icon_text = focused ? tone_color : egui_rgb_mix(local->text_color, tone_color, 12);
-    egui_color_t title_color = item->tone == 3 ? tone_color : local->text_color;
-    egui_color_t meta_color = egui_rgb_mix(local->muted_text_color, tone_color, focused ? 20 : 10);
-    egui_color_t row_fill = egui_rgb_mix(local->surface_color, tone_color, focused ? 11 : (item->emphasized ? 5 : 3));
-    egui_color_t separator_color = egui_rgb_mix(local->border_color, local->surface_color, 38);
+    egui_color_t icon_fill = egui_rgb_mix(local->surface_color, tone_color, focused ? 12 : 8);
+    egui_color_t icon_text = focused ? tone_color : egui_rgb_mix(local->text_color, tone_color, 10);
+    egui_color_t title_color = item->tone == 3 ? egui_rgb_mix(local->text_color, tone_color, 52) : local->text_color;
+    egui_color_t meta_color = egui_rgb_mix(local->muted_text_color, tone_color, focused ? 14 : 8);
+    egui_color_t row_fill = egui_rgb_mix(local->surface_color, tone_color, focused ? 8 : 4);
+    egui_color_t separator_color = egui_rgb_mix(local->border_color, local->surface_color, 24);
     egui_dim_t icon_size = local->compact_mode ? 10 : 12;
     egui_dim_t icon_x = x + (local->compact_mode ? 6 : 7);
     egui_dim_t icon_y = y + (height - icon_size) / 2;
@@ -116,6 +116,7 @@ static void egui_view_menu_flyout_draw_row(egui_view_t *self, egui_view_menu_fly
     egui_dim_t meta_w = egui_view_menu_flyout_meta_width(item->meta, local->compact_mode, meta_max_w);
     egui_dim_t meta_x = trailing_x - meta_w - (meta_w > 0 && trailing_w > 0 ? 3 : 0);
     egui_dim_t title_x = icon_x + icon_size + (local->compact_mode ? 6 : 8);
+    uint8_t show_row_fill = focused || item->emphasized;
 
     if (item->separator_before)
     {
@@ -124,11 +125,11 @@ static void egui_view_menu_flyout_draw_row(egui_view_t *self, egui_view_menu_fly
 
     if (item->enabled == 0 || local->disabled_mode)
     {
-        icon_fill = egui_rgb_mix(icon_fill, local->surface_color, 26);
-        icon_text = egui_rgb_mix(icon_text, local->muted_text_color, 30);
-        title_color = egui_rgb_mix(title_color, local->muted_text_color, 28);
-        meta_color = egui_rgb_mix(meta_color, local->muted_text_color, 36);
-        row_fill = egui_rgb_mix(row_fill, local->surface_color, 26);
+        icon_fill = egui_rgb_mix(icon_fill, local->surface_color, 38);
+        icon_text = egui_rgb_mix(icon_text, local->muted_text_color, 34);
+        title_color = egui_rgb_mix(title_color, local->muted_text_color, 30);
+        meta_color = egui_rgb_mix(meta_color, local->muted_text_color, 40);
+        row_fill = egui_rgb_mix(row_fill, local->surface_color, 52);
     }
 
     if (!egui_view_get_enable(self))
@@ -140,7 +141,11 @@ static void egui_view_menu_flyout_draw_row(egui_view_t *self, egui_view_menu_fly
         row_fill = egui_view_menu_flyout_mix_disabled(row_fill);
     }
 
-    egui_canvas_draw_round_rectangle_fill(x, y, width, height, local->compact_mode ? 6 : 7, row_fill, egui_color_alpha_mix(self->alpha, focused ? 94 : 64));
+    if (show_row_fill)
+    {
+        egui_canvas_draw_round_rectangle_fill(x, y, width, height, local->compact_mode ? 6 : 7, row_fill,
+                                              egui_color_alpha_mix(self->alpha, focused ? 100 : 72));
+    }
     egui_canvas_draw_round_rectangle_fill(icon_x, icon_y, icon_size, icon_size, local->compact_mode ? 3 : 4, icon_fill, egui_color_alpha_mix(self->alpha, 96));
 
     text_region.location.x = icon_x;
@@ -299,9 +304,9 @@ static void egui_view_menu_flyout_on_draw(egui_view_t *self)
     focus_index = egui_view_menu_flyout_focus_index(snapshot, item_count);
     if (local->disabled_mode)
     {
-        surface_color = egui_rgb_mix(surface_color, EGUI_COLOR_HEX(0xF3F5F8), 32);
-        border_color = egui_rgb_mix(border_color, EGUI_COLOR_HEX(0xC8D1DA), 24);
-        shadow_color = egui_rgb_mix(shadow_color, surface_color, 36);
+        surface_color = egui_rgb_mix(surface_color, EGUI_COLOR_HEX(0xF3F5F8), 42);
+        border_color = egui_rgb_mix(border_color, EGUI_COLOR_HEX(0xA7B1BC), 20);
+        shadow_color = egui_rgb_mix(shadow_color, surface_color, 48);
     }
 
     if (!egui_view_get_enable(self))
@@ -321,9 +326,10 @@ static void egui_view_menu_flyout_on_draw(egui_view_t *self)
     max_y = y + h - padding;
     radius = local->compact_mode ? 8 : 10;
 
-    egui_canvas_draw_round_rectangle_fill(x + 2, y + 3, w - 2, h - 2, radius, shadow_color, egui_color_alpha_mix(self->alpha, local->compact_mode ? 16 : 22));
+    egui_canvas_draw_round_rectangle_fill(x + 2, y + 3, w - 2, h - 2, radius, egui_rgb_mix(shadow_color, EGUI_COLOR_HEX(0x0F172A), 16),
+                                          egui_color_alpha_mix(self->alpha, local->compact_mode ? 10 : 14));
     egui_canvas_draw_round_rectangle_fill(x, y, w, h, radius, surface_color, egui_color_alpha_mix(self->alpha, 100));
-    egui_canvas_draw_round_rectangle(x, y, w, h, radius, 1, border_color, egui_color_alpha_mix(self->alpha, 62));
+    egui_canvas_draw_round_rectangle(x, y, w, h, radius, 1, border_color, egui_color_alpha_mix(self->alpha, 46));
 
     for (i = 0; i < item_count; i++)
     {
@@ -373,14 +379,14 @@ void egui_view_menu_flyout_init(egui_view_t *self)
     local->font = (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT;
     local->meta_font = (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT;
     local->surface_color = EGUI_COLOR_HEX(0xFFFFFF);
-    local->border_color = EGUI_COLOR_HEX(0xD6DDE5);
-    local->text_color = EGUI_COLOR_HEX(0x1A2430);
-    local->muted_text_color = EGUI_COLOR_HEX(0x6B7887);
-    local->accent_color = EGUI_COLOR_HEX(0x2563EB);
-    local->success_color = EGUI_COLOR_HEX(0x178454);
-    local->warning_color = EGUI_COLOR_HEX(0xB87A16);
-    local->danger_color = EGUI_COLOR_HEX(0xB33A33);
-    local->shadow_color = EGUI_COLOR_HEX(0xC8D2DC);
+    local->border_color = EGUI_COLOR_HEX(0xD5DCE4);
+    local->text_color = EGUI_COLOR_HEX(0x1A2734);
+    local->muted_text_color = EGUI_COLOR_HEX(0x6B7A89);
+    local->accent_color = EGUI_COLOR_HEX(0x0F6CBD);
+    local->success_color = EGUI_COLOR_HEX(0x0F7B45);
+    local->warning_color = EGUI_COLOR_HEX(0x9D5D00);
+    local->danger_color = EGUI_COLOR_HEX(0xC42B1C);
+    local->shadow_color = EGUI_COLOR_HEX(0xD0D7DE);
     local->snapshot_count = 0;
     local->current_snapshot = 0;
     local->compact_mode = 0;

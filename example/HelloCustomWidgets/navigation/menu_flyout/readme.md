@@ -25,16 +25,17 @@
 - 左下 `Compact` 预览展示窄尺寸轻量弹出菜单
 - 右下 `Disabled` 预览展示不可用命令的弱化语义
 - 点击主卡轮换 4 组 snapshot，点击 compact 卡轮换 2 组 snapshot，验证 submenu 箭头、shortcut 右对齐、danger 和 disabled 的视觉边界
+- 示例页结构收敛为标题、标准 flyout 和 compact / disabled 双预览，不再保留 guide、状态文案和 section label
 
 目录：
 - `example/HelloCustomWidgets/navigation/menu_flyout/`
 
 ## 4. 视觉与布局规格
 - 画布：`480 x 480`
-- 根布局：`224 x 292`
-- 页面结构：标题 -> 引导文案 -> `Standard` 标签 -> 主 `menu_flyout` -> 状态文案 -> 分隔线 -> `Compact / Disabled` 双预览
-- 主卡区域：`188 x 118`
-- 底部双预览容器：`214 x 92`
+- 根布局：`224 x 224`
+- 页面结构：标题 -> 主 `menu_flyout` -> `Compact / Disabled` 双预览
+- 主卡区域：`188 x 104`
+- 底部双预览容器：`214 x 78`
 - `Compact` 预览：`104 x 78`
 - `Disabled` 预览：`104 x 78`
 - 视觉规则：
@@ -42,16 +43,16 @@
   - 保留轻量圆角、细边框和弱阴影，不做重 showcase 装饰
   - 命令行对齐统一：左侧 glyph、标题、右侧 shortcut / state、最右 submenu 箭头
   - 通过 group separator 区分命令分组，不添加额外头部 chrome
+  - 调色统一为浅底、轻边框、低饱和 accent 的 Fluent / WPF UI 中性语法
 
 ## 5. 控件清单
 
 | 变量名 | 类型 | 尺寸 (W x H) | 初始状态 | 用途 |
 | --- | --- | ---: | --- | --- |
-| `root_layout` | `egui_view_linearlayout_t` | 224 x 292 | enabled | 页面根布局 |
+| `root_layout` | `egui_view_linearlayout_t` | 224 x 224 | enabled | 页面根布局 |
 | `title_label` | `egui_view_label_t` | 224 x 18 | `Menu Flyout` | 页面标题 |
-| `flyout_primary` | `egui_view_menu_flyout_t` | 188 x 118 | `submenu focus` | 标准 flyout |
+| `flyout_primary` | `egui_view_menu_flyout_t` | `188 x 104` | `submenu focus` | 标准 flyout |
 | `flyout_compact` | `egui_view_menu_flyout_t` | 104 x 78 | `compact action` | 紧凑预览 |
-| `disabled_label` | `egui_view_label_t` | 105 x 11 | `Disabled` | disabled 标签 |
 | `flyout_disabled` | `egui_view_menu_flyout_t` | 104 x 78 | `disabled preview` | 禁用态预览 |
 
 ## 6. 状态覆盖矩阵
@@ -87,6 +88,7 @@ python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub navigati
 - danger 项要明显区别于普通命令，但不能过度装饰
 - disabled 预览要一眼可辨，同时仍保留弹出菜单结构
 - compact 预览不能退化成纯文本列表
+- 根容器不再出现大段空白页板，主卡与双预览比例需要稳定
 
 ## 9. 已知限制与下一轮迭代计划
 - 当前是固定尺寸 reference 实现，未覆盖超长 shortcut 或超多菜单项
@@ -120,6 +122,7 @@ python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub navigati
 - 不做完整图标资源、checkbox / radio glyph 体系
 - 不做 hover、pressed、focus ring 等完整桌面交互细节
 - 不做真实级联子菜单展开，仅保留 submenu 入口语义
+- 不做页面级 guide、状态栏和 section divider 这类非控件本体说明 chrome
 
 ## 14. EGUI 适配时的简化点与约束
 - 用固定 snapshot + item 数组驱动，先保证示例稳定
