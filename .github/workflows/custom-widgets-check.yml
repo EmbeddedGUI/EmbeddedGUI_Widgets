@@ -9,9 +9,11 @@ on:
       - 'CLAUDE.md'
       - 'example/HelloCustomWidgets/**'
       - 'example/HelloUnitTest/**'
+      - 'scripts/checks/check_widget_catalog.py'
       - 'scripts/checks/check_touch_release_semantics.py'
       - 'scripts/code_compile_check.py'
       - 'scripts/code_runtime_check.py'
+      - 'scripts/widget_catalog.py'
       - 'requirements.txt'
 
   schedule:
@@ -53,6 +55,7 @@ jobs:
           fi
 
   unit-test:
+    needs: catalog
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v6
@@ -73,7 +76,7 @@ jobs:
         run: python scripts/code_compile_check.py --unit-tests-only --bits64
 
   check:
-    needs: resolve-categories
+    needs: [resolve-categories, catalog]
     runs-on: windows-latest
     strategy:
       fail-fast: false
@@ -102,3 +105,16 @@ jobs:
 
       - name: Runtime check custom widgets (${{ matrix.category }})
         run: python scripts/code_runtime_check.py --app HelloCustomWidgets --category ${{ matrix.category }} --bits64
+
+  catalog:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: Check widget catalog consistency
+        run: python scripts/checks/check_widget_catalog.py

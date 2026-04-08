@@ -40,6 +40,7 @@ The default SDK resolution order is:
    `make ci CATEGORY=input`
 4. If you prefer a direct Python entrypoint:
    `python scripts/ci_local_check.py --category input`
+   This now includes the widget catalog policy check automatically.
 5. Run one release-style manual sweep:
    `python scripts/release_check.py`
 6. Build the web demos when you need the local site:
@@ -85,6 +86,8 @@ The default SDK resolution order is:
   `python scripts/code_runtime_check.py --app HelloCustomWidgets --category input --bits64`
 - Touch semantics audit:
   `python scripts/checks/check_touch_release_semantics.py --scope custom --category input`
+- Widget catalog policy audit:
+  `python scripts/checks/check_widget_catalog.py`
 - Build the widgets web bundle:
   `python scripts/web/wasm_build_demos.py`
 - Preview the local site:

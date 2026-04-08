@@ -14,8 +14,9 @@ import time
 SCRIPT_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = SCRIPT_DIR.parent
 
-ALL_STEP_NAMES = ["touch", "compile", "unit_test", "runtime", "wasm"]
+ALL_STEP_NAMES = ["catalog", "touch", "compile", "unit_test", "runtime", "wasm"]
 STEP_DESCRIPTIONS = {
+    "catalog": "Widget catalog consistency check",
     "touch": "Custom widget touch release semantics check",
     "compile": "HelloCustomWidgets compile sweep",
     "unit_test": "HelloUnitTest build and run",
@@ -92,6 +93,7 @@ def build_steps(args: argparse.Namespace) -> list[tuple[str, str, list[list[str]
     compile_case_args = ["--case-jobs", str(args.compile_case_jobs)] if args.compile_case_jobs > 0 else []
     runtime_job_args = ["--jobs", str(args.runtime_jobs)] if args.runtime_jobs > 0 else []
 
+    catalog_cmd = [py, str(SCRIPT_DIR / "checks" / "check_widget_catalog.py")]
     touch_cmd = [py, str(SCRIPT_DIR / "checks" / "check_touch_release_semantics.py"), "--scope", "custom"] + category_args
     compile_cmd = [py, str(SCRIPT_DIR / "code_compile_check.py"), "--custom-widgets"] + category_args + bits64_args + compile_case_args
     unit_test_cmd = [py, str(SCRIPT_DIR / "code_compile_check.py"), "--unit-tests-only"] + bits64_args
@@ -121,6 +123,7 @@ def build_steps(args: argparse.Namespace) -> list[tuple[str, str, list[list[str]
         wasm_commands = [wasm_common_args + ["--clean"]]
 
     return [
+        ("catalog", STEP_DESCRIPTIONS["catalog"], [catalog_cmd]),
         ("touch", STEP_DESCRIPTIONS["touch"], [touch_cmd]),
         ("compile", STEP_DESCRIPTIONS["compile"], [compile_cmd]),
         ("unit_test", STEP_DESCRIPTIONS["unit_test"], [unit_test_cmd]),

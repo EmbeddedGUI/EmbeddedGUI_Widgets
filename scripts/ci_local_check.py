@@ -31,7 +31,7 @@ def add_category_arg(cmd, category):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Run the local widget CI flow: touch audit, compile, runtime, and HelloUnitTest.",
+        description="Run the local widget CI flow: catalog audit, touch audit, compile, runtime, and HelloUnitTest.",
     )
     parser.add_argument(
         "--category",
@@ -72,6 +72,9 @@ def main():
     args = parser.parse_args()
 
     python = sys.executable
+
+    catalog_cmd = [python, "scripts/checks/check_widget_catalog.py"]
+    run_step("Widget Catalog Policy", catalog_cmd)
 
     touch_cmd = [python, "scripts/checks/check_touch_release_semantics.py", "--scope", "custom"]
     add_category_arg(touch_cmd, args.category)
