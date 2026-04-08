@@ -9,7 +9,7 @@
 
 ## 当前快照
 
-- 截至 `2026-04-08`，`example/HelloCustomWidgets/` 当前保留 `42` 个控件目录。
+- 截至 `2026-04-09`，`example/HelloCustomWidgets/` 当前保留 `42` 个控件目录。
 - 所有保留控件均来自 `reference` 主线：
   - `input = 18`
   - `layout = 6`
@@ -97,6 +97,11 @@
 
 ## 最近完成的收口动作
 
+- `2026-04-09`
+  - 完成 `navigation/flip_view` 实现级样式收口：示例页删除 guide / 状态栏 / section label 等页面级 chrome，只保留标题、标准主卡和 compact / read-only 双预览。
+  - 收紧 `flip_view` 视觉表达：改回浅底、轻边框、弱阴影、低饱和 accent 的 Fluent / WPF UI 单卡轮播语义，overlay 按钮回归中性 shell。
+  - 录制动作切换为程序化切轨，不再依赖点击隐藏标签；README 与尺寸说明同步到 `224 x 228` / `196 x 122` / `216 x 64`。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=navigation/flip_view PORT=pc`、`check_touch_release_semantics.py --scope custom --category navigation`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`code_runtime_check.py --app HelloCustomWidgets --app-sub navigation/flip_view --track reference --timeout 10 --keep-screenshots`、`check_docs_encoding.py`。
 - `2026-04-08`
   - 完成 `layout/parallax_view` 实现级样式收口：移除示例页冗余 chrome / 状态文案，保留标题 + 主卡 + 双预览结构。
   - 收紧 `parallax_view` 视觉层次：降低外层色偏与装饰噪音，保留 hero shift / active row / compact / read-only 核心语义。

@@ -546,7 +546,7 @@ static void flip_view_draw_text(const egui_font_t *font, egui_view_t *self, cons
 static void flip_view_draw_focus(egui_view_t *self, const egui_region_t *region, egui_dim_t radius, egui_color_t color)
 {
     flip_view_draw_round_stroke_safe(region->location.x - 1, region->location.y - 1, region->size.width + 2, region->size.height + 2, radius, 1, color,
-                                     egui_color_alpha_mix(self->alpha, 74));
+                                     egui_color_alpha_mix(self->alpha, 60));
 }
 
 static void flip_view_draw_counter(egui_view_t *self, const egui_view_flip_view_t *local, const egui_view_flip_view_item_t *item,
@@ -555,6 +555,7 @@ static void flip_view_draw_counter(egui_view_t *self, const egui_view_flip_view_
     egui_region_t region;
     char counter_text[16];
     egui_dim_t pill_w;
+    egui_color_t counter_color = local->read_only_mode ? egui_rgb_mix(item->accent_color, local->inactive_color, 54) : item->accent_color;
 
     flip_view_format_counter(counter_text, sizeof(counter_text), local->current_index, local->item_count);
     pill_w = (egui_dim_t)(34 + strlen(counter_text) * 4);
@@ -573,10 +574,10 @@ static void flip_view_draw_counter(egui_view_t *self, const egui_view_flip_view_
     region.size.height = local->compact_mode ? 11 : 12;
 
     flip_view_draw_round_fill_safe(region.location.x, region.location.y, region.size.width, region.size.height, region.size.height / 2,
-                                   egui_rgb_mix(item->accent_color, local->surface_color, 44), egui_color_alpha_mix(self->alpha, 84));
+                                   egui_rgb_mix(local->surface_color, counter_color, 10), egui_color_alpha_mix(self->alpha, 94));
     flip_view_draw_round_stroke_safe(region.location.x, region.location.y, region.size.width, region.size.height, region.size.height / 2, 1,
-                                     egui_rgb_mix(item->accent_color, local->border_color, 18), egui_color_alpha_mix(self->alpha, 58));
-    flip_view_draw_text(meta_font, self, counter_text, &region, EGUI_ALIGN_CENTER, local->text_color);
+                                     egui_rgb_mix(local->border_color, counter_color, 10), egui_color_alpha_mix(self->alpha, 42));
+    flip_view_draw_text(meta_font, self, counter_text, &region, EGUI_ALIGN_CENTER, counter_color);
 }
 
 static void flip_view_draw_surface(egui_view_t *self, egui_view_flip_view_t *local, const egui_view_flip_view_item_t *item,
@@ -595,23 +596,26 @@ static void flip_view_draw_surface(egui_view_t *self, egui_view_flip_view_t *loc
     const egui_font_t *title_font = local->font;
     const egui_font_t *meta_font = local->meta_font;
 
-    shell_color = egui_rgb_mix(item->surface_color, local->surface_color, local->read_only_mode ? 42 : 18);
+    shell_color = egui_rgb_mix(item->surface_color, local->surface_color, local->read_only_mode ? 58 : 8);
 
     if (local->read_only_mode)
     {
-        accent_color = egui_rgb_mix(item->accent_color, local->inactive_color, 46);
-        title_color = egui_rgb_mix(local->text_color, local->inactive_color, 28);
-        body_color = egui_rgb_mix(local->muted_text_color, local->inactive_color, 20);
+        accent_color = egui_rgb_mix(item->accent_color, local->inactive_color, 54);
+        title_color = egui_rgb_mix(local->text_color, local->inactive_color, 32);
+        body_color = egui_rgb_mix(local->muted_text_color, local->inactive_color, 24);
     }
 
-    flip_view_draw_round_fill_safe(metrics->surface_region.location.x + FV_STD_CARD_SHADOW_X, metrics->surface_region.location.y + FV_STD_CARD_SHADOW_Y,
-                                   metrics->surface_region.size.width, metrics->surface_region.size.height, card_radius,
-                                   egui_rgb_mix(local->border_color, EGUI_COLOR_HEX(0x081018), 58), egui_color_alpha_mix(self->alpha, 28));
+    if (!local->compact_mode)
+    {
+        flip_view_draw_round_fill_safe(metrics->surface_region.location.x + FV_STD_CARD_SHADOW_X, metrics->surface_region.location.y + FV_STD_CARD_SHADOW_Y,
+                                       metrics->surface_region.size.width, metrics->surface_region.size.height, card_radius,
+                                       egui_rgb_mix(local->border_color, EGUI_COLOR_HEX(0x0F172A), 28), egui_color_alpha_mix(self->alpha, 12));
+    }
     flip_view_draw_round_fill_safe(metrics->surface_region.location.x, metrics->surface_region.location.y, metrics->surface_region.size.width,
                                    metrics->surface_region.size.height, card_radius, shell_color, egui_color_alpha_mix(self->alpha, 100));
     flip_view_draw_round_stroke_safe(metrics->surface_region.location.x, metrics->surface_region.location.y, metrics->surface_region.size.width,
-                                     metrics->surface_region.size.height, card_radius, 1, egui_rgb_mix(accent_color, local->border_color, 28),
-                                     egui_color_alpha_mix(self->alpha, 66));
+                                     metrics->surface_region.size.height, card_radius, 1, egui_rgb_mix(local->border_color, accent_color, local->compact_mode ? 6 : 8),
+                                     egui_color_alpha_mix(self->alpha, 52));
 
     eyebrow_w = (egui_dim_t)(24 + strlen(item->eyebrow ? item->eyebrow : "") * 4);
     if (eyebrow_w < 42)
@@ -628,8 +632,11 @@ static void flip_view_draw_surface(egui_view_t *self, egui_view_flip_view_t *loc
     text_region.size.width = eyebrow_w;
     text_region.size.height = local->compact_mode ? 11 : 12;
     flip_view_draw_round_fill_safe(text_region.location.x, text_region.location.y, text_region.size.width, text_region.size.height, text_region.size.height / 2,
-                                   accent_color, egui_color_alpha_mix(self->alpha, local->read_only_mode ? 56 : 82));
-    flip_view_draw_text(meta_font, self, item->eyebrow, &text_region, EGUI_ALIGN_CENTER, EGUI_COLOR_HEX(0xFFFFFF));
+                                   egui_rgb_mix(local->surface_color, accent_color, local->read_only_mode ? 8 : 12),
+                                   egui_color_alpha_mix(self->alpha, 96));
+    flip_view_draw_round_stroke_safe(text_region.location.x, text_region.location.y, text_region.size.width, text_region.size.height, text_region.size.height / 2, 1,
+                                     egui_rgb_mix(local->border_color, accent_color, 10), egui_color_alpha_mix(self->alpha, 38));
+    flip_view_draw_text(meta_font, self, item->eyebrow, &text_region, EGUI_ALIGN_CENTER, accent_color);
 
     flip_view_draw_counter(self, local, item, &metrics->surface_region, meta_font);
 
@@ -658,12 +665,12 @@ static void flip_view_draw_surface(egui_view_t *self, egui_view_flip_view_t *loc
         text_region.location.y = metrics->surface_region.location.y + metrics->surface_region.size.height - 22;
         text_region.size.width = content_w;
         text_region.size.height = 12;
-        flip_view_draw_text(meta_font, self, item->footer, &text_region, EGUI_ALIGN_LEFT, egui_rgb_mix(body_color, accent_color, 18));
+        flip_view_draw_text(meta_font, self, item->footer, &text_region, EGUI_ALIGN_LEFT, egui_rgb_mix(body_color, accent_color, 10));
 
         egui_canvas_draw_line(metrics->surface_region.location.x + 12, metrics->surface_region.location.y + metrics->surface_region.size.height - 30,
                               metrics->surface_region.location.x + metrics->surface_region.size.width - 12,
                               metrics->surface_region.location.y + metrics->surface_region.size.height - 30, 1,
-                              egui_rgb_mix(accent_color, local->surface_color, 36), egui_color_alpha_mix(self->alpha, 64));
+                              egui_rgb_mix(local->border_color, accent_color, 8), egui_color_alpha_mix(self->alpha, 50));
     }
     else
     {
@@ -671,7 +678,7 @@ static void flip_view_draw_surface(egui_view_t *self, egui_view_flip_view_t *loc
         text_region.location.y = metrics->surface_region.location.y + metrics->surface_region.size.height - 18;
         text_region.size.width = content_w;
         text_region.size.height = 10;
-        flip_view_draw_text(meta_font, self, item->footer, &text_region, EGUI_ALIGN_LEFT, egui_rgb_mix(body_color, accent_color, 18));
+        flip_view_draw_text(meta_font, self, item->footer, &text_region, EGUI_ALIGN_LEFT, egui_rgb_mix(body_color, accent_color, 10));
     }
 }
 static void flip_view_draw_button(egui_view_t *self, egui_view_flip_view_t *local, const egui_region_t *region, const egui_view_flip_view_item_t *item,
@@ -681,24 +688,25 @@ static void flip_view_draw_button(egui_view_t *self, egui_view_flip_view_t *loca
     egui_color_t border_color;
     egui_color_t icon_color;
     uint8_t enabled = flip_view_part_enabled(local, self, part);
+    uint8_t focused = local->current_part == part;
 
     if (enabled)
     {
-        fill_color = egui_rgb_mix(item->accent_color, local->surface_color, local->pressed_part == part ? 34 : 18);
-        border_color = egui_rgb_mix(item->accent_color, local->border_color, 20);
-        icon_color = local->text_color;
+        fill_color = egui_rgb_mix(local->surface_color, item->accent_color, local->pressed_part == part ? 14 : 8);
+        border_color = egui_rgb_mix(local->border_color, item->accent_color, focused ? 16 : 10);
+        icon_color = focused ? item->accent_color : egui_rgb_mix(local->text_color, item->accent_color, 14);
     }
     else
     {
-        fill_color = egui_rgb_mix(local->inactive_color, local->surface_color, 28);
-        border_color = egui_rgb_mix(local->inactive_color, local->border_color, 16);
-        icon_color = egui_rgb_mix(local->inactive_color, local->muted_text_color, 30);
+        fill_color = egui_rgb_mix(local->surface_color, local->inactive_color, 8);
+        border_color = egui_rgb_mix(local->border_color, local->inactive_color, 10);
+        icon_color = egui_rgb_mix(local->inactive_color, local->muted_text_color, 18);
     }
 
     flip_view_draw_round_fill_safe(region->location.x, region->location.y, region->size.width, region->size.height, region->size.width / 2, fill_color,
-                                   egui_color_alpha_mix(self->alpha, 92));
+                                   egui_color_alpha_mix(self->alpha, 96));
     flip_view_draw_round_stroke_safe(region->location.x, region->location.y, region->size.width, region->size.height, region->size.width / 2, 1, border_color,
-                                     egui_color_alpha_mix(self->alpha, 58));
+                                     egui_color_alpha_mix(self->alpha, 42));
     flip_view_draw_chevron(self, region, icon_color, is_next);
 }
 
@@ -718,16 +726,16 @@ static void egui_view_flip_view_on_draw(egui_view_t *self)
 
     if (local->read_only_mode)
     {
-        surface_color = egui_rgb_mix(surface_color, EGUI_COLOR_HEX(0xF0F3F7), 52);
-        border_color = egui_rgb_mix(border_color, EGUI_COLOR_HEX(0xA7B1BD), 42);
-        text_color = egui_rgb_mix(text_color, EGUI_COLOR_HEX(0x8892A0), 34);
-        muted_text_color = egui_rgb_mix(muted_text_color, EGUI_COLOR_HEX(0x93A0AE), 30);
+        surface_color = egui_rgb_mix(surface_color, EGUI_COLOR_HEX(0xF2F5F8), 58);
+        border_color = egui_rgb_mix(border_color, EGUI_COLOR_HEX(0xA7B1BD), 32);
+        text_color = egui_rgb_mix(text_color, EGUI_COLOR_HEX(0x8892A0), 28);
+        muted_text_color = egui_rgb_mix(muted_text_color, EGUI_COLOR_HEX(0x93A0AE), 24);
     }
 
     flip_view_draw_round_fill_safe(self->region_screen.location.x, self->region_screen.location.y, self->region_screen.size.width,
                                    self->region_screen.size.height, outer_radius, surface_color, egui_color_alpha_mix(self->alpha, 100));
     flip_view_draw_round_stroke_safe(self->region_screen.location.x, self->region_screen.location.y, self->region_screen.size.width,
-                                     self->region_screen.size.height, outer_radius, 1, border_color, egui_color_alpha_mix(self->alpha, 58));
+                                     self->region_screen.size.height, outer_radius, 1, border_color, egui_color_alpha_mix(self->alpha, 46));
 
     if (item == NULL)
     {
@@ -889,10 +897,10 @@ void egui_view_flip_view_init(egui_view_t *self)
     local->title = NULL;
     local->helper = NULL;
     local->surface_color = EGUI_COLOR_HEX(0xFFFFFF);
-    local->border_color = EGUI_COLOR_HEX(0xD6DEE7);
-    local->text_color = EGUI_COLOR_HEX(0x172331);
-    local->muted_text_color = EGUI_COLOR_HEX(0x6E7C8B);
-    local->inactive_color = EGUI_COLOR_HEX(0xA6B0BD);
+    local->border_color = EGUI_COLOR_HEX(0xD5DCE4);
+    local->text_color = EGUI_COLOR_HEX(0x1A2734);
+    local->muted_text_color = EGUI_COLOR_HEX(0x6B7A89);
+    local->inactive_color = EGUI_COLOR_HEX(0xA7B1BC);
     local->item_count = 0;
     local->current_index = 0;
     local->current_part = EGUI_VIEW_FLIP_VIEW_PART_SURFACE;
