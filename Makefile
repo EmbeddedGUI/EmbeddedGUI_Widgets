@@ -6,20 +6,32 @@ CI_TIMEOUT ?=
 CI_COMPILE_CASE_JOBS ?=
 CI_RUNTIME_JOBS ?=
 SKIP_UNIT_TESTS ?=
+SETUP_ARGS ?=
+RELEASE_ARGS ?=
 
 SDK_ROOT ?= sdk/EmbeddedGUI
 OUTPUT_PATH ?= $(CURDIR)/output
 OBJROOT_PATH ?= $(OUTPUT_PATH)
 EGUI_APP_ROOT_PATH ?= ../../example
+LOCAL_EMSDK := $(CURDIR)/tools/emsdk
+SUBMODULE_EMSDK := $(CURDIR)/sdk/EmbeddedGUI/tools/emsdk
 SIBLING_EMSDK := $(CURDIR)/../EmbeddedGUI/tools/emsdk
 
 ifeq ($(strip $(EMSDK_PATH)),)
-ifneq ($(wildcard $(SIBLING_EMSDK)),)
+ifneq ($(wildcard $(LOCAL_EMSDK)),)
+EMSDK_PATH := $(LOCAL_EMSDK)
+else ifneq ($(wildcard $(SUBMODULE_EMSDK)),)
+EMSDK_PATH := $(SUBMODULE_EMSDK)
+else ifneq ($(wildcard $(SIBLING_EMSDK)),)
 EMSDK_PATH := $(SIBLING_EMSDK)
 endif
 else
 ifeq ($(wildcard $(EMSDK_PATH)),)
-ifneq ($(wildcard $(SIBLING_EMSDK)),)
+ifneq ($(wildcard $(LOCAL_EMSDK)),)
+EMSDK_PATH := $(LOCAL_EMSDK)
+else ifneq ($(wildcard $(SUBMODULE_EMSDK)),)
+EMSDK_PATH := $(SUBMODULE_EMSDK)
+else ifneq ($(wildcard $(SIBLING_EMSDK)),)
 EMSDK_PATH := $(SIBLING_EMSDK)
 endif
 endif
@@ -57,13 +69,19 @@ CI_ARGS += $(if $(strip $(CI_COMPILE_CASE_JOBS)),--compile-case-jobs $(CI_COMPIL
 CI_ARGS += $(if $(strip $(CI_RUNTIME_JOBS)),--runtime-jobs $(CI_RUNTIME_JOBS),)
 CI_ARGS += $(if $(filter 1 true TRUE yes YES,$(strip $(SKIP_UNIT_TESTS))),--skip-unit-tests,)
 
-.PHONY: all clean run resource resource_refresh ci
+.PHONY: all clean run resource resource_refresh ci setup release-check
 
 all clean run resource resource_refresh:
 	$(MAKE) -C $(SDK_ROOT) $@ $(FORWARD_ARGS)
 
 ci:
 	$(PYTHON) scripts/ci_local_check.py $(CI_ARGS)
+
+setup:
+	$(PYTHON) scripts/setup_env.py $(SETUP_ARGS)
+
+release-check:
+	$(PYTHON) scripts/release_check.py $(RELEASE_ARGS)
 
 %:
 	$(MAKE) -C $(SDK_ROOT) $@ $(FORWARD_ARGS)

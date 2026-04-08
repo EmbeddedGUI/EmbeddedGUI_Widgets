@@ -15,6 +15,7 @@
 /.coverage
 /.venv/
 /venv/
+/tools/
 *.py[cod]
 *.o
 *.d

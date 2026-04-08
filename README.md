@@ -16,24 +16,30 @@ The default SDK resolution order is:
 
 1. Initialize the SDK submodule:
    `git submodule update --init --recursive`
-2. Install Python dependencies:
+2. Use the setup entrypoint that matches your platform:
+   Windows: `setup.bat`
+   Linux / macOS: `./setup.sh`
+3. If you only need the native PC flow, you can skip Emscripten:
+   `python scripts/setup_env.py --skip-emsdk`
+4. Manual fallback:
    `python -m pip install -r requirements.txt`
-3. Make sure the local toolchain is available:
-   `make` + GCC for `PORT=pc` builds. On Windows, use an environment that provides GNU Make and GCC.
-4. Optional for web builds:
-   Install Emscripten and make it available via `EMSDK_PATH`/`EMSDK`.
 
 ## Quick Start
 
-1. Verify the SDK submodule and the PC toolchain:
+1. Bootstrap the environment:
+   Windows: `setup.bat`
+   Linux / macOS: `./setup.sh`
+2. Verify the SDK submodule and the PC toolchain:
    `make all APP=HelloCustomWidgets APP_SUB=input/xy_pad PORT=pc`
-2. Run one local CI sweep for a category:
+3. Run one local CI sweep for a category:
    `make ci CATEGORY=input`
-3. If you prefer a direct Python entrypoint:
+4. If you prefer a direct Python entrypoint:
    `python scripts/ci_local_check.py --category input`
-4. Build the web demos when you need the local site:
+5. Run one release-style manual sweep:
+   `python scripts/release_check.py`
+6. Build the web demos when you need the local site:
    `python scripts/web/wasm_build_demos.py`
-5. To match the full widget CI locally, omit `CATEGORY`:
+7. To match the full widget CI locally, omit `CATEGORY`:
    `make ci`
 
 ## CI mapping
@@ -42,17 +48,28 @@ The default SDK resolution order is:
   `make ci CATEGORY=input`
 - Unit-test only:
   `python scripts/code_compile_check.py --unit-tests-only --bits64`
+- Release-style manual full check:
+  `python scripts/release_check.py`
 - GitHub Pages build equivalent:
   `python scripts/web/wasm_build_demos.py`
 
 ## Common commands
 
+- Bootstrap the local environment:
+  Windows: `setup.bat`
+  Linux / macOS: `./setup.sh`
+- Bootstrap from Python directly:
+  `python scripts/setup_env.py --skip-emsdk`
 - Build one widget on PC:
   `make all APP=HelloCustomWidgets APP_SUB=input/xy_pad PORT=pc`
 - Run the local widget CI flow for one category:
   `make ci CATEGORY=input`
 - Run the local widget CI flow without Make:
   `python scripts/ci_local_check.py --category input`
+- Run the release-style manual check:
+  `python scripts/release_check.py`
+- Run the release-style manual check for one category:
+  `python scripts/release_check.py --category input --skip wasm`
 - Compile-check one category:
   `python scripts/code_compile_check.py --custom-widgets --category input --bits64`
 - Runtime-check one widget:
@@ -83,3 +100,5 @@ The default SDK resolution order is:
 
 - `iteration_log/` is local-only review evidence and stays ignored.
 - The repo root `Makefile` forwards build requests into `sdk/EmbeddedGUI` while keeping outputs in this repository.
+- Root convenience entrypoints:
+  `setup.bat` / `setup.sh`, `make setup`, `make release-check`

@@ -454,10 +454,13 @@ def resolve_requested_builds(app_name, app_sub):
 
 def main():
     local_emsdk = ROOT_DIR / "tools" / "emsdk"
+    submodule_emsdk = ROOT_DIR / "sdk" / "EmbeddedGUI" / "tools" / "emsdk"
     sibling_emsdk = ROOT_DIR.parent / "EmbeddedGUI" / "tools" / "emsdk"
     default_emsdk_path = ""
     if local_emsdk.exists():
         default_emsdk_path = str(local_emsdk)
+    elif submodule_emsdk.exists():
+        default_emsdk_path = str(submodule_emsdk)
     elif sibling_emsdk.exists():
         default_emsdk_path = str(sibling_emsdk)
     else:
