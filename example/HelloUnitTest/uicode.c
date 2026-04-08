@@ -8,7 +8,6 @@
 #include "test/test_breadcrumb_bar.h"
 #include "test/test_calendar_view.h"
 #include "test/test_card_panel.h"
-#include "test/test_chapter_strip.h"
 #include "test/test_color_picker.h"
 #include "test/test_command_bar.h"
 #include "test/test_data_list_panel.h"
@@ -46,7 +45,6 @@
 #include "test/test_toggle_button.h"
 #include "test/test_toggle_split_button.h"
 #include "test/test_token_input.h"
-#include "test/test_transport_bar.h"
 #include "test/test_tree_view.h"
 
 void uicode_init_ui(void)
@@ -64,7 +62,6 @@ void uicode_create_ui(void)
     test_breadcrumb_bar_run();
     test_calendar_view_run();
     test_card_panel_run();
-    test_chapter_strip_run();
     test_color_picker_run();
     test_command_bar_run();
     test_data_list_panel_run();
@@ -102,6 +99,5 @@ void uicode_create_ui(void)
     test_toggle_button_run();
     test_toggle_split_button_run();
     test_token_input_run();
-    test_transport_bar_run();
     test_tree_view_run();
 }

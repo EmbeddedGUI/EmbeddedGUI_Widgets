@@ -5,9 +5,9 @@
 ## 当前状态
 
 - `HelloCustomWidgets` 继续使用 `category/widget_name` 的两级 `APP_SUB` 结构
-- 截至 `2026-04-07`，仓库中已落地 `94` 个控件目录，覆盖 `chart`、`decoration`、`display`、`feedback`、`input`、`layout`、`media`、`navigation` 八个分类
-- 其中前期已完成的 `50` 个控件继续视为 **Showcase Track** 历史基线，保留用于 demo、实验和展示，不再默认作为后续标准控件模板
-- 从 `2026-03-14` 起，后续新增控件切换到 **Reference Track**，统一基于 `Fluent 2 + WPF UI`；当前目录总数 `94` 已包含这部分后续落地项
+- 截至 `2026-04-08`，仓库中保留 `70` 个控件目录，覆盖 `decoration`、`display`、`feedback`、`input`、`layout`、`navigation` 六个分类
+- 当前保留集按 `Reference / Showcase` 两条线收口：`reference=42`、`showcase=28`；后续默认只围绕这两条线维护
+- `2026-04-08` 已清退 `24` 个明显偏离 `Fluent 2 / WPF UI` 主线的 `deprecated` 控件目录，不再保留 `chart/*`、`media/*` 以及一批强行业/强实验语义控件
 
 ## 当前基线
 
@@ -69,9 +69,9 @@ example/HelloCustomWidgets/<category>/<widget>/
 - `feedback/toast_stack`
 - `display/card_panel`
 
-### 3. 存量控件不再当作主线模板
+### 3. 已清退的非主线控件
 
-像下面这类控件继续保留，但不再作为后续风格母本：
+下面这批控件已从仓库中删除，不再作为后续风格母本，也不再参与默认构建与维护：
 
 - `chart/*`
 - `media/*`
@@ -126,5 +126,5 @@ python scripts/web/wasm_build_demos.py
 ## 维护说明
 
 - `HelloCustomWidgets` 继续承担“样例池 + 探索池”职责
-- 但后续要区分 **Showcase** 与 **Reference** 两条线，不再混用
+- 当前仓库只保留 **Showcase** 与 **Reference** 两条线，不再混入额外清退轨道目录
 - 如果某个新控件未来要沉入框架层，必须优先来自 `Reference Track`

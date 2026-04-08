@@ -1,75 +1,5 @@
 [
   {
-    "id": "chart/boxplot_chart",
-    "track": "deprecated",
-    "visibility": "hidden",
-    "reference_system": "",
-    "reference_library": "",
-    "reference_component": "",
-    "replacement": null,
-    "doc_state": "ok"
-  },
-  {
-    "id": "chart/candlestick_chart",
-    "track": "deprecated",
-    "visibility": "hidden",
-    "reference_system": "",
-    "reference_library": "",
-    "reference_component": "",
-    "replacement": null,
-    "doc_state": "ok"
-  },
-  {
-    "id": "chart/conversion_funnel",
-    "track": "deprecated",
-    "visibility": "hidden",
-    "reference_system": "",
-    "reference_library": "",
-    "reference_component": "",
-    "replacement": null,
-    "doc_state": "ok"
-  },
-  {
-    "id": "chart/heatmap_chart",
-    "track": "deprecated",
-    "visibility": "hidden",
-    "reference_system": "",
-    "reference_library": "",
-    "reference_component": "",
-    "replacement": null,
-    "doc_state": "ok"
-  },
-  {
-    "id": "chart/radar_chart",
-    "track": "deprecated",
-    "visibility": "hidden",
-    "reference_system": "",
-    "reference_library": "",
-    "reference_component": "",
-    "replacement": null,
-    "doc_state": "ok"
-  },
-  {
-    "id": "chart/sankey_flow",
-    "track": "deprecated",
-    "visibility": "hidden",
-    "reference_system": "",
-    "reference_library": "",
-    "reference_component": "",
-    "replacement": null,
-    "doc_state": "ok"
-  },
-  {
-    "id": "chart/treemap_chart",
-    "track": "deprecated",
-    "visibility": "hidden",
-    "reference_system": "",
-    "reference_library": "",
-    "reference_component": "",
-    "replacement": null,
-    "doc_state": "ok"
-  },
-  {
     "id": "decoration/avatar_stack",
     "track": "showcase",
     "visibility": "internal",
@@ -146,26 +76,6 @@
     "reference_system": "Fluent 2",
     "reference_library": "WPF UI",
     "reference_component": "AvatarGroup",
-    "replacement": null,
-    "doc_state": "ok"
-  },
-  {
-    "id": "display/server_rack",
-    "track": "deprecated",
-    "visibility": "hidden",
-    "reference_system": "",
-    "reference_library": "",
-    "reference_component": "",
-    "replacement": null,
-    "doc_state": "ok"
-  },
-  {
-    "id": "display/signal_matrix",
-    "track": "deprecated",
-    "visibility": "hidden",
-    "reference_system": "",
-    "reference_library": "",
-    "reference_component": "",
     "replacement": null,
     "doc_state": "ok"
   },
@@ -310,16 +220,6 @@
     "doc_state": "ok"
   },
   {
-    "id": "input/clip_launcher_grid",
-    "track": "deprecated",
-    "visibility": "hidden",
-    "reference_system": "",
-    "reference_library": "",
-    "reference_component": "",
-    "replacement": null,
-    "doc_state": "ok"
-  },
-  {
     "id": "input/color_picker",
     "track": "reference",
     "visibility": "public",
@@ -430,16 +330,6 @@
     "doc_state": "ok"
   },
   {
-    "id": "input/piano_roll_editor",
-    "track": "deprecated",
-    "visibility": "hidden",
-    "reference_system": "",
-    "reference_library": "",
-    "reference_component": "",
-    "replacement": null,
-    "doc_state": "ok"
-  },
-  {
     "id": "input/range_band_editor",
     "track": "showcase",
     "visibility": "internal",
@@ -456,16 +346,6 @@
     "reference_system": "Fluent 2",
     "reference_library": "WPF UI",
     "reference_component": "RatingControl",
-    "replacement": null,
-    "doc_state": "ok"
-  },
-  {
-    "id": "input/scene_crossfader",
-    "track": "deprecated",
-    "visibility": "hidden",
-    "reference_system": "",
-    "reference_library": "",
-    "reference_component": "",
     "replacement": null,
     "doc_state": "ok"
   },
@@ -506,16 +386,6 @@
     "reference_system": "Fluent 2",
     "reference_library": "WPF UI",
     "reference_component": "SplitButton",
-    "replacement": null,
-    "doc_state": "ok"
-  },
-  {
-    "id": "input/step_sequencer",
-    "track": "deprecated",
-    "visibility": "hidden",
-    "reference_system": "",
-    "reference_library": "",
-    "reference_component": "",
     "replacement": null,
     "doc_state": "ok"
   },
@@ -700,86 +570,6 @@
     "doc_state": "ok"
   },
   {
-    "id": "media/chapter_strip",
-    "track": "deprecated",
-    "visibility": "hidden",
-    "reference_system": "",
-    "reference_library": "",
-    "reference_component": "",
-    "replacement": null,
-    "doc_state": "ok"
-  },
-  {
-    "id": "media/frame_scrubber",
-    "track": "deprecated",
-    "visibility": "hidden",
-    "reference_system": "",
-    "reference_library": "",
-    "reference_component": "",
-    "replacement": null,
-    "doc_state": "ok"
-  },
-  {
-    "id": "media/jog_shuttle_wheel",
-    "track": "deprecated",
-    "visibility": "hidden",
-    "reference_system": "",
-    "reference_library": "",
-    "reference_component": "",
-    "replacement": null,
-    "doc_state": "ok"
-  },
-  {
-    "id": "media/level_meter",
-    "track": "deprecated",
-    "visibility": "hidden",
-    "reference_system": "",
-    "reference_library": "",
-    "reference_component": "",
-    "replacement": null,
-    "doc_state": "ok"
-  },
-  {
-    "id": "media/subtitle_timeline",
-    "track": "deprecated",
-    "visibility": "hidden",
-    "reference_system": "",
-    "reference_library": "",
-    "reference_component": "",
-    "replacement": null,
-    "doc_state": "ok"
-  },
-  {
-    "id": "media/tape_loop_editor",
-    "track": "deprecated",
-    "visibility": "hidden",
-    "reference_system": "",
-    "reference_library": "",
-    "reference_component": "",
-    "replacement": null,
-    "doc_state": "ok"
-  },
-  {
-    "id": "media/transport_bar",
-    "track": "deprecated",
-    "visibility": "hidden",
-    "reference_system": "",
-    "reference_library": "",
-    "reference_component": "",
-    "replacement": null,
-    "doc_state": "ok"
-  },
-  {
-    "id": "media/waveform_strip",
-    "track": "deprecated",
-    "visibility": "hidden",
-    "reference_system": "",
-    "reference_library": "",
-    "reference_component": "",
-    "replacement": null,
-    "doc_state": "ok"
-  },
-  {
     "id": "navigation/annotated_scroll_bar",
     "track": "reference",
     "visibility": "public",
@@ -813,26 +603,6 @@
     "id": "navigation/command_palette",
     "track": "showcase",
     "visibility": "internal",
-    "reference_system": "",
-    "reference_library": "",
-    "reference_component": "",
-    "replacement": null,
-    "doc_state": "ok"
-  },
-  {
-    "id": "navigation/coverflow_strip",
-    "track": "deprecated",
-    "visibility": "hidden",
-    "reference_system": "",
-    "reference_library": "",
-    "reference_component": "",
-    "replacement": null,
-    "doc_state": "ok"
-  },
-  {
-    "id": "navigation/dock_launcher",
-    "track": "deprecated",
-    "visibility": "hidden",
     "reference_system": "",
     "reference_library": "",
     "reference_component": "",
@@ -886,16 +656,6 @@
     "reference_system": "Fluent 2",
     "reference_library": "WPF UI",
     "reference_component": "PipsPager",
-    "replacement": null,
-    "doc_state": "ok"
-  },
-  {
-    "id": "navigation/radial_menu",
-    "track": "deprecated",
-    "visibility": "hidden",
-    "reference_system": "",
-    "reference_library": "",
-    "reference_component": "",
     "replacement": null,
     "doc_state": "ok"
   },

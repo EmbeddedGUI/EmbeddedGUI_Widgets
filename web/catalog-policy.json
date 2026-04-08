@@ -1,24 +1,24 @@
 {
   "generatedFrom": "example/HelloCustomWidgets/widget_catalog.json",
-  "total": 94,
+  "total": 70,
   "defaultWebTotal": 70,
   "tracks": {
     "reference": 42,
     "showcase": 28,
-    "deprecated": 24
+    "deprecated": 0
   },
   "visibility": {
     "public": 42,
     "internal": 28,
-    "hidden": 24
+    "hidden": 0
   },
   "categories": [
     {
       "id": "input",
-      "total": 30,
+      "total": 26,
       "reference": 18,
       "showcase": 8,
-      "deprecated": 4
+      "deprecated": 0
     },
     {
       "id": "layout",
@@ -29,17 +29,17 @@
     },
     {
       "id": "navigation",
-      "total": 16,
+      "total": 13,
       "reference": 10,
       "showcase": 3,
-      "deprecated": 3
+      "deprecated": 0
     },
     {
       "id": "display",
-      "total": 11,
+      "total": 9,
       "reference": 3,
       "showcase": 6,
-      "deprecated": 2
+      "deprecated": 0
     },
     {
       "id": "feedback",
@@ -54,20 +54,6 @@
       "reference": 0,
       "showcase": 2,
       "deprecated": 0
-    },
-    {
-      "id": "chart",
-      "total": 7,
-      "reference": 0,
-      "showcase": 0,
-      "deprecated": 7
-    },
-    {
-      "id": "media",
-      "total": 8,
-      "reference": 0,
-      "showcase": 0,
-      "deprecated": 8
     }
   ],
   "replacements": [

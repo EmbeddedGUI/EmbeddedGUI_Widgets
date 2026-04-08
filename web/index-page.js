@@ -59,6 +59,10 @@
             "zh-CN": "默认网页 manifest 不再暴露 deprecated 条目；如需回看旧控件，请显式使用构建脚本切换到对应轨道。",
             "en": "The default web manifest no longer exposes deprecated entries. Use the build scripts explicitly if you need to revisit old widgets."
         },
+        tracksNotePruned: {
+            "zh-CN": "当前仓库已完成 deprecated 目录清退，默认保留的只有 Reference 与 Showcase 两条轨道。",
+            "en": "Deprecated directories have been pruned from the repository. Only Reference and Showcase remain in the retained set."
+        },
         manifestMissing: {
             "zh-CN": "未找到 demos.json，首页中的 web 统计暂不可用。先运行 `python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --refresh-existing` 或完整构建命令。",
             "en": "demos.json is missing, so web bundle stats are unavailable. Run `python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --refresh-existing` or a full build first."
@@ -172,7 +176,9 @@
         document.getElementById("workflow-title").textContent = t("workflowTitle");
         document.getElementById("tracks-kicker").textContent = t("tracksKicker");
         document.getElementById("tracks-title").textContent = t("tracksTitle");
-        document.getElementById("tracks-note").textContent = state.manifest.missing ? t("manifestMissing") : t("tracksNote");
+        document.getElementById("tracks-note").textContent = state.manifest.missing
+            ? t("manifestMissing")
+            : (state.policy.deprecated === 0 ? t("tracksNotePruned") : t("tracksNote"));
         document.getElementById("catalog-kicker").textContent = t("catalogKicker");
         document.getElementById("catalog-title").textContent = t("catalogTitle");
         document.getElementById("category-summary-label").textContent = t("categorySummaryLabel");
@@ -228,9 +234,11 @@
     function renderTracks() {
         var cards = [
             { tone: "reference", title: "Reference", body: t("trackReferenceBody") },
-            { tone: "showcase", title: "Showcase", body: t("trackShowcaseBody") },
-            { tone: "deprecated", title: "Deprecated", body: t("trackDeprecatedBody") }
+            { tone: "showcase", title: "Showcase", body: t("trackShowcaseBody") }
         ];
+        if (state.policy.deprecated !== 0) {
+            cards.push({ tone: "deprecated", title: "Deprecated", body: t("trackDeprecatedBody") });
+        }
         document.getElementById("tracks-grid").innerHTML = cards.map(function(card) {
             return [
                 '<article class="landing-card tone-' + esc(card.tone) + '">',
