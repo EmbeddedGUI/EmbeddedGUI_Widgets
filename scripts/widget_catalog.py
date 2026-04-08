@@ -9,6 +9,12 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 ROOT_DIR = SCRIPT_DIR.parent
 CATALOG_PATH = ROOT_DIR / "example" / "HelloCustomWidgets" / "widget_catalog.json"
 VALID_TRACKS = {"reference", "showcase", "deprecated"}
+VALID_VISIBILITIES = {"public", "internal", "hidden"}
+EXPECTED_VISIBILITY_BY_TRACK = {
+    "reference": "public",
+    "showcase": "internal",
+    "deprecated": "hidden",
+}
 
 
 def scan_custom_widgets() -> list[str]:
@@ -26,9 +32,14 @@ def _normalize_entry(entry: dict) -> dict:
     widget_id = str(entry.get("id", "")).strip().replace("\\", "/")
     track = str(entry.get("track", "showcase")).strip() or "showcase"
     visibility = str(entry.get("visibility", "internal")).strip() or "internal"
+    replacement = entry.get("replacement")
 
     if track not in VALID_TRACKS:
         raise ValueError("invalid track for %s: %s" % (widget_id or "<missing>", track))
+    if visibility not in VALID_VISIBILITIES:
+        raise ValueError("invalid visibility for %s: %s" % (widget_id or "<missing>", visibility))
+    if replacement is not None:
+        replacement = str(replacement).strip().replace("\\", "/") or None
 
     return {
         "id": widget_id,
@@ -37,7 +48,7 @@ def _normalize_entry(entry: dict) -> dict:
         "reference_system": str(entry.get("reference_system", "") or ""),
         "reference_library": str(entry.get("reference_library", "") or ""),
         "reference_component": str(entry.get("reference_component", "") or ""),
-        "replacement": entry.get("replacement"),
+        "replacement": replacement,
         "doc_state": str(entry.get("doc_state", "ok") or "ok"),
     }
 
@@ -69,6 +80,13 @@ def load_widget_catalog() -> list[dict]:
 
 def build_widget_catalog_map() -> dict[str, dict]:
     return {entry["id"]: entry for entry in load_widget_catalog()}
+
+
+def get_catalog_track_counts() -> dict[str, int]:
+    counts = {track: 0 for track in sorted(VALID_TRACKS)}
+    for entry in load_widget_catalog():
+        counts[entry["track"]] += 1
+    return counts
 
 
 def filter_widget_ids(category: str | None = None, track: str = "all", include_deprecated: bool = False) -> list[str]:
