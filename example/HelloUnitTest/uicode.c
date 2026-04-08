@@ -1,7 +1,6 @@
 #include "egui.h"
 #include "uicode.h"
 
-#include "test/test_alert_banner.h"
 #include "test/test_annotated_scroll_bar.h"
 #include "test/test_auto_suggest_box.h"
 #include "test/test_badge_group.h"
@@ -21,7 +20,6 @@
 #include "test/test_menu_flyout.h"
 #include "test/test_message_bar.h"
 #include "test/test_nav_panel.h"
-#include "test/test_node_topology.h"
 #include "test/test_number_box.h"
 #include "test/test_parallax_view.h"
 #include "test/test_password_box.h"
@@ -54,7 +52,6 @@ void uicode_create_ui(void)
 {
     uicode_init_ui();
 
-    test_alert_banner_run();
     test_annotated_scroll_bar_run();
     test_auto_suggest_box_run();
     test_badge_group_run();
@@ -74,7 +71,6 @@ void uicode_create_ui(void)
     test_menu_flyout_run();
     test_message_bar_run();
     test_nav_panel_run();
-    test_node_topology_run();
     test_number_box_run();
     test_parallax_view_run();
     test_password_box_run();

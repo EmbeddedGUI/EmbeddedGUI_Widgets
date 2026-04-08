@@ -5,9 +5,9 @@
 ## 当前状态
 
 - `HelloCustomWidgets` 继续使用 `category/widget_name` 的两级 `APP_SUB` 结构
-- 截至 `2026-04-08`，仓库中保留 `65` 个控件目录，覆盖 `decoration`、`display`、`feedback`、`input`、`layout`、`navigation` 六个分类
-- 当前保留集按 `Reference / Showcase` 两条线收口：`reference=42`、`showcase=23`；后续默认只围绕这两条线维护
-- `2026-04-08` 已清退 `24` 个明显偏离 `Fluent 2 / WPF UI` 主线的 `deprecated` 控件目录，不再保留 `chart/*`、`media/*` 以及一批强行业/强实验语义控件
+- 截至 `2026-04-08`，仓库中保留 `42` 个控件目录，覆盖 `display`、`feedback`、`input`、`layout`、`navigation` 五个分类
+- 当前保留集只剩 `reference=42` 一条主线，后续默认围绕 `Fluent 2 / WPF UI` 标准控件继续维护
+- `2026-04-08` 已清退全部 `deprecated` 与 `showcase` 控件目录，不再保留历史演示轨道
 
 ## 当前基线
 
@@ -75,36 +75,23 @@ example/HelloCustomWidgets/<category>/<widget>/
 
 - `chart/*`
 - `media/*`
-- `input/clip_launcher_grid`
-- `input/scene_crossfader`
-- `input/step_sequencer`
-- `input/piano_roll_editor`
-- `navigation/dock_launcher`
-- `navigation/coverflow_strip`
-- `navigation/radial_menu`
-- `decoration/avatar_stack`
-- `display/server_rack`
-- `display/signal_matrix`
-- `feedback/skeleton_loader`
-- `layout/split_resizer`
-- `navigation/breadcrumb_trail`
-- `navigation/tab_expose`
+- 全部 `showcase` 轨道控件，例如 `pin_cluster`、`status_timeline`、`xy_pad`、`window_snap_grid`、`command_palette`
 
 ## 构建入口
 
-- Make 默认入口仍可使用真实控件，例如：`input/xy_pad`
+- Make 默认入口切换为标准 `reference` 控件，例如：`input/auto_suggest_box`
 - CMake 仍支持两级 `APP_SUB`
-- 示例：`input/xy_pad`、`feedback/alert_banner`、`navigation/breadcrumb_trail`
+- 示例：`input/auto_suggest_box`、`feedback/message_bar`、`navigation/tree_view`
 
 ## 推荐验证命令
 
 ### 构建 / 运行
 
 ```bash
-make all APP=HelloCustomWidgets APP_SUB=input/xy_pad PORT=pc
-cmake -B build_cmake/HelloCustomWidgets_input_xy_pad -DAPP=HelloCustomWidgets -DAPP_SUB=input/xy_pad -DPORT=pc -G "MinGW Makefiles"
-cmake --build build_cmake/HelloCustomWidgets_input_xy_pad -j
-python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/xy_pad --timeout 10 --keep-screenshots
+make all APP=HelloCustomWidgets APP_SUB=input/auto_suggest_box PORT=pc
+cmake -B build_cmake/HelloCustomWidgets_input_auto_suggest_box -DAPP=HelloCustomWidgets -DAPP_SUB=input/auto_suggest_box -DPORT=pc -G "MinGW Makefiles"
+cmake --build build_cmake/HelloCustomWidgets_input_auto_suggest_box -j
+python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/auto_suggest_box --timeout 10 --keep-screenshots
 ```
 
 ### 编译检查

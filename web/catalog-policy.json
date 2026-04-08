@@ -1,58 +1,51 @@
 {
   "generatedFrom": "example/HelloCustomWidgets/widget_catalog.json",
-  "total": 65,
-  "defaultWebTotal": 65,
+  "total": 42,
+  "defaultWebTotal": 42,
   "tracks": {
     "reference": 42,
-    "showcase": 23,
+    "showcase": 0,
     "deprecated": 0
   },
   "visibility": {
     "public": 42,
-    "internal": 23,
+    "internal": 0,
     "hidden": 0
   },
   "categories": [
     {
       "id": "input",
-      "total": 26,
+      "total": 18,
       "reference": 18,
-      "showcase": 8,
+      "showcase": 0,
       "deprecated": 0
     },
     {
       "id": "layout",
-      "total": 10,
+      "total": 6,
       "reference": 6,
-      "showcase": 4,
+      "showcase": 0,
       "deprecated": 0
     },
     {
       "id": "navigation",
-      "total": 11,
+      "total": 10,
       "reference": 10,
-      "showcase": 1,
+      "showcase": 0,
       "deprecated": 0
     },
     {
       "id": "display",
-      "total": 9,
+      "total": 3,
       "reference": 3,
-      "showcase": 6,
+      "showcase": 0,
       "deprecated": 0
     },
     {
       "id": "feedback",
-      "total": 8,
+      "total": 5,
       "reference": 5,
-      "showcase": 3,
-      "deprecated": 0
-    },
-    {
-      "id": "decoration",
-      "total": 1,
-      "reference": 0,
-      "showcase": 1,
+      "showcase": 0,
       "deprecated": 0
     }
   ],

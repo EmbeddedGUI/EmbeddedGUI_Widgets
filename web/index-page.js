@@ -10,6 +10,7 @@
         policy: {
             total: null,
             defaultWebTotal: null,
+            showcase: null,
             deprecated: null,
             replacementCount: null,
             categoryCount: null,
@@ -39,6 +40,10 @@
             "zh-CN": "整个站点已经收口到 Fluent 2 / WPF UI 参考体系。Reference 作为主线保留，showcase 仅作为过渡与历史样例，不再继续扩散成新的默认风格。",
             "en": "The site now converges on Fluent 2 / WPF UI. Reference widgets remain on the mainline, while showcase entries are kept only as transitional and historical samples."
         },
+        landingDescriptionReferenceOnly: {
+            "zh-CN": "整个站点已经完全收口到 Fluent 2 / WPF UI 参考体系。当前仓库仅保留 Reference 主线控件，不再保留 showcase 历史轨道。",
+            "en": "The site now fully converges on Fluent 2 / WPF UI. Only reference widgets remain in the repository, and the showcase track has been removed."
+        },
         actionReference: { "zh-CN": "打开 Reference 目录", "en": "Open Reference Catalog" },
         actionShowcase: { "zh-CN": "查看 Showcase 轨道", "en": "Open Showcase Track" },
         actionManifest: { "zh-CN": "查看 demos.json", "en": "Open demos.json" },
@@ -62,6 +67,10 @@
         tracksNotePruned: {
             "zh-CN": "当前仓库已完成 deprecated 目录清退，默认保留的只有 Reference 与 Showcase 两条轨道。",
             "en": "Deprecated directories have been pruned from the repository. Only Reference and Showcase remain in the retained set."
+        },
+        tracksNoteReferenceOnly: {
+            "zh-CN": "当前仓库已完成全部非主线控件清退，现在只保留 Reference 主线目录。",
+            "en": "All non-mainline widgets have been pruned. Only the Reference mainline remains."
         },
         manifestMissing: {
             "zh-CN": "未找到 demos.json，首页中的 web 统计暂不可用。先运行 `python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --refresh-existing` 或完整构建命令。",
@@ -159,11 +168,12 @@
         document.title = t("pageTitle");
         document.getElementById("landing-eyebrow").textContent = t("landingEyebrow");
         document.getElementById("landing-title").textContent = t("landingTitle");
-        document.getElementById("landing-description").textContent = t("landingDescription");
+        document.getElementById("landing-description").textContent = state.policy.showcase === 0 ? t("landingDescriptionReferenceOnly") : t("landingDescription");
         document.getElementById("action-reference").textContent = t("actionReference");
         document.getElementById("action-showcase").textContent = t("actionShowcase");
         document.getElementById("action-manifest").textContent = t("actionManifest");
         document.getElementById("action-policy").textContent = t("actionPolicy");
+        document.getElementById("action-showcase").classList.toggle("hidden", state.policy.showcase === 0);
         document.getElementById("stat-total-label").textContent = t("statTotalLabel");
         document.getElementById("stat-total-description").textContent = t("statTotalDescription");
         document.getElementById("stat-reference-label").textContent = t("statReferenceLabel");
@@ -178,7 +188,7 @@
         document.getElementById("tracks-title").textContent = t("tracksTitle");
         document.getElementById("tracks-note").textContent = state.manifest.missing
             ? t("manifestMissing")
-            : (state.policy.deprecated === 0 ? t("tracksNotePruned") : t("tracksNote"));
+            : (state.policy.showcase === 0 ? t("tracksNoteReferenceOnly") : (state.policy.deprecated === 0 ? t("tracksNotePruned") : t("tracksNote")));
         document.getElementById("catalog-kicker").textContent = t("catalogKicker");
         document.getElementById("catalog-title").textContent = t("catalogTitle");
         document.getElementById("category-summary-label").textContent = t("categorySummaryLabel");
@@ -233,9 +243,11 @@
 
     function renderTracks() {
         var cards = [
-            { tone: "reference", title: "Reference", body: t("trackReferenceBody") },
-            { tone: "showcase", title: "Showcase", body: t("trackShowcaseBody") }
+            { tone: "reference", title: "Reference", body: t("trackReferenceBody") }
         ];
+        if (state.policy.showcase !== 0) {
+            cards.push({ tone: "showcase", title: "Showcase", body: t("trackShowcaseBody") });
+        }
         if (state.policy.deprecated !== 0) {
             cards.push({ tone: "deprecated", title: "Deprecated", body: t("trackDeprecatedBody") });
         }
@@ -351,6 +363,7 @@
         }).then(function(summary) {
             state.policy.total = summary.total;
             state.policy.defaultWebTotal = summary.defaultWebTotal;
+            state.policy.showcase = summary.tracks ? summary.tracks.showcase : null;
             state.policy.deprecated = summary.tracks ? summary.tracks.deprecated : null;
             state.policy.replacementCount = summary.replacements ? summary.replacements.length : 0;
             state.policy.categoryCount = summary.categories ? summary.categories.length : 0;
@@ -360,6 +373,7 @@
         }).catch(function() {
             state.policy.total = null;
             state.policy.defaultWebTotal = null;
+            state.policy.showcase = null;
             state.policy.deprecated = null;
             state.policy.replacementCount = null;
             state.policy.categoryCount = null;

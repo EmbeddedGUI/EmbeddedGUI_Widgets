@@ -15,6 +15,7 @@
         pageTitle: { "zh-CN": "EmbeddedGUI HelloCustomWidgets", "en": "EmbeddedGUI HelloCustomWidgets" },
         sidebarTitle: { "zh-CN": "HelloCustomWidgets 控件目录", "en": "HelloCustomWidgets Catalog" },
         sidebarDescription: { "zh-CN": "项目主线统一收口到 Fluent 2 / WPF UI。默认只展示 reference 控件，showcase 仅保留历史示例与过渡参考。", "en": "The project now converges on Fluent 2 / WPF UI. Reference widgets are shown by default; showcase entries remain only as historical and transitional samples." },
+        sidebarDescriptionReferenceOnly: { "zh-CN": "项目主线统一收口到 Fluent 2 / WPF UI。当前仓库只保留 reference 控件，showcase 轨道已整体清退。", "en": "The project now converges on Fluent 2 / WPF UI. Only reference widgets remain and the showcase track has been pruned." },
         linkHome: { "zh-CN": "站点入口", "en": "Site entry" },
         linkJson: { "zh-CN": "demos.json", "en": "demos.json" },
         trackLabel: { "zh-CN": "展示轨道", "en": "Display track" },
@@ -22,6 +23,7 @@
         defaultEyebrow: { "zh-CN": "Reference 优先目录", "en": "Reference-first catalog" },
         defaultTitle: { "zh-CN": "选择一个控件", "en": "Select a widget" },
         defaultDescription: { "zh-CN": "左侧列表只保留当前网页包内可用的 HelloCustomWidgets，并按 reference / showcase 轨道统一整理。", "en": "The sidebar only lists HelloCustomWidgets demos available in the current web bundle, grouped by reference and showcase tracks." },
+        defaultDescriptionReferenceOnly: { "zh-CN": "左侧列表只保留当前网页包内可用的 HelloCustomWidgets reference 控件，作为唯一主线目录。", "en": "The sidebar only lists HelloCustomWidgets reference widgets available in the current web bundle as the single mainline catalog." },
         emptyTitle: { "zh-CN": "当前筛选下没有控件", "en": "No widgets match the current filters" },
         emptyDescription: { "zh-CN": "可以切换轨道、清空搜索，或重新执行 `python scripts/web/wasm_build_demos.py`。", "en": "Switch track, clear the search, or rerun `python scripts/web/wasm_build_demos.py`." },
         missingCatalogTitle: { "zh-CN": "缺少 demos.json", "en": "Missing demos.json" },
@@ -110,32 +112,39 @@
     }
 
     function setStaticText() {
+        var showcaseCount = state.allDemos.filter(function(d) { return d.track === "showcase"; }).length;
         document.title = t("pageTitle");
         document.getElementById("sidebar-title").textContent = t("sidebarTitle");
-        document.getElementById("sidebar-description").textContent = t("sidebarDescription");
+        document.getElementById("sidebar-description").textContent = showcaseCount === 0 ? t("sidebarDescriptionReferenceOnly") : t("sidebarDescription");
         document.getElementById("link-home").textContent = t("linkHome");
         document.getElementById("link-json").textContent = t("linkJson");
         document.getElementById("track-label").textContent = t("trackLabel");
         document.getElementById("search-input").placeholder = t("searchPlaceholder");
         document.getElementById("content-title").textContent = t("defaultTitle");
-        document.getElementById("content-description").textContent = t("defaultDescription");
+        document.getElementById("content-description").textContent = showcaseCount === 0 ? t("defaultDescriptionReferenceOnly") : t("defaultDescription");
         document.getElementById("empty-title").textContent = t("emptyTitle");
         document.getElementById("empty-description").textContent = t("emptyDescription");
         document.getElementById("preview-label").textContent = t("previewLabel");
         document.getElementById("doc-label").textContent = t("docLabel");
         document.querySelectorAll("[data-track]").forEach(function(button) {
+            var track = button.getAttribute("data-track");
             button.textContent = fmtTrack(button.getAttribute("data-track"));
-            button.classList.toggle("active", button.getAttribute("data-track") === state.activeTrack);
+            button.classList.toggle("hidden", track === "showcase" && showcaseCount === 0);
+            button.classList.toggle("active", track === state.activeTrack);
         });
     }
 
     function renderSidebar(visible) {
         var sidebar = document.getElementById("sidebar-list");
-        document.getElementById("sidebar-stats").innerHTML = [
-            '<span class="stat-badge">' + esc(t("countReference", { count: state.allDemos.filter(function(d) { return d.track === "reference"; }).length })) + "</span>",
-            '<span class="stat-badge">' + esc(t("countShowcase", { count: state.allDemos.filter(function(d) { return d.track === "showcase"; }).length })) + "</span>",
-            '<span class="stat-badge accent">' + esc(t("countVisible", { count: visible.length })) + "</span>"
-        ].join("");
+        var showcaseCount = state.allDemos.filter(function(d) { return d.track === "showcase"; }).length;
+        var stats = [
+            '<span class="stat-badge">' + esc(t("countReference", { count: state.allDemos.filter(function(d) { return d.track === "reference"; }).length })) + "</span>"
+        ];
+        if (showcaseCount !== 0) {
+            stats.push('<span class="stat-badge">' + esc(t("countShowcase", { count: showcaseCount })) + "</span>");
+        }
+        stats.push('<span class="stat-badge accent">' + esc(t("countVisible", { count: visible.length })) + "</span>");
+        document.getElementById("sidebar-stats").innerHTML = stats.join("");
         if (!visible.length) {
             sidebar.innerHTML = '<div class="sidebar-empty">' + esc(t("sidebarEmpty")) + "</div>";
             return;
@@ -251,9 +260,17 @@
         }).sort(function(a, b) { return a.name.localeCompare(b.name); });
         state.demoMap = {};
         state.allDemos.forEach(function(d) { state.demoMap[d.name] = d; });
+        var hasShowcase = state.allDemos.some(function(d) { return d.track === "showcase"; });
+        var resolvedRequestedTrack = state.requestedTrack;
+        if (!hasShowcase && resolvedRequestedTrack === "showcase") {
+            resolvedRequestedTrack = "reference";
+        }
+        if (!hasShowcase && state.activeTrack === "showcase") {
+            state.activeTrack = "reference";
+        }
         if (state.initialTarget && state.demoMap[state.initialTarget]) {
             state.selectedName = state.initialTarget;
-            state.activeTrack = state.requestedTrack || (state.demoMap[state.initialTarget].track === "deprecated" ? "all" : state.demoMap[state.initialTarget].track);
+            state.activeTrack = resolvedRequestedTrack || (state.demoMap[state.initialTarget].track === "deprecated" ? "all" : state.demoMap[state.initialTarget].track);
         } else if (state.allDemos.length) {
             var firstReference = state.allDemos.find(function(d) { return d.track === "reference"; });
             state.selectedName = (firstReference || state.allDemos[0]).name;

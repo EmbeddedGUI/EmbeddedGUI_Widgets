@@ -1,15 +1,5 @@
 [
   {
-    "id": "decoration/pin_cluster",
-    "track": "showcase",
-    "visibility": "internal",
-    "reference_system": "",
-    "reference_library": "",
-    "reference_component": "",
-    "replacement": null,
-    "doc_state": "ok"
-  },
-  {
     "id": "display/badge_group",
     "track": "reference",
     "visibility": "public",
@@ -30,82 +20,12 @@
     "doc_state": "ok"
   },
   {
-    "id": "display/flipdot_matrix_panel",
-    "track": "showcase",
-    "visibility": "internal",
-    "reference_system": "",
-    "reference_library": "",
-    "reference_component": "",
-    "replacement": null,
-    "doc_state": "ok"
-  },
-  {
-    "id": "display/layer_stack",
-    "track": "showcase",
-    "visibility": "internal",
-    "reference_system": "",
-    "reference_library": "",
-    "reference_component": "",
-    "replacement": null,
-    "doc_state": "ok"
-  },
-  {
-    "id": "display/node_topology",
-    "track": "showcase",
-    "visibility": "internal",
-    "reference_system": "",
-    "reference_library": "",
-    "reference_component": "",
-    "replacement": null,
-    "doc_state": "ok"
-  },
-  {
     "id": "display/persona_group",
     "track": "reference",
     "visibility": "public",
     "reference_system": "Fluent 2",
     "reference_library": "WPF UI",
     "reference_component": "AvatarGroup",
-    "replacement": null,
-    "doc_state": "ok"
-  },
-  {
-    "id": "display/split_flap_board",
-    "track": "showcase",
-    "visibility": "internal",
-    "reference_system": "",
-    "reference_library": "",
-    "reference_component": "",
-    "replacement": null,
-    "doc_state": "ok"
-  },
-  {
-    "id": "display/status_timeline",
-    "track": "showcase",
-    "visibility": "internal",
-    "reference_system": "",
-    "reference_library": "",
-    "reference_component": "",
-    "replacement": null,
-    "doc_state": "ok"
-  },
-  {
-    "id": "display/tag_cloud",
-    "track": "showcase",
-    "visibility": "internal",
-    "reference_system": "",
-    "reference_library": "",
-    "reference_component": "",
-    "replacement": null,
-    "doc_state": "ok"
-  },
-  {
-    "id": "feedback/alert_banner",
-    "track": "showcase",
-    "visibility": "internal",
-    "reference_system": "",
-    "reference_library": "",
-    "reference_component": "",
     "replacement": null,
     "doc_state": "ok"
   },
@@ -126,26 +46,6 @@
     "reference_system": "Fluent 2",
     "reference_library": "WPF UI",
     "reference_component": "MessageBar",
-    "replacement": null,
-    "doc_state": "ok"
-  },
-  {
-    "id": "feedback/notification_stack",
-    "track": "showcase",
-    "visibility": "internal",
-    "reference_system": "",
-    "reference_library": "",
-    "reference_component": "",
-    "replacement": null,
-    "doc_state": "ok"
-  },
-  {
-    "id": "feedback/signal_beacon",
-    "track": "showcase",
-    "visibility": "internal",
-    "reference_system": "",
-    "reference_library": "",
-    "reference_component": "",
     "replacement": null,
     "doc_state": "ok"
   },
@@ -240,46 +140,6 @@
     "doc_state": "ok"
   },
   {
-    "id": "input/envelope_stage_editor",
-    "track": "showcase",
-    "visibility": "internal",
-    "reference_system": "",
-    "reference_library": "",
-    "reference_component": "",
-    "replacement": null,
-    "doc_state": "ok"
-  },
-  {
-    "id": "input/equalizer_curve_editor",
-    "track": "showcase",
-    "visibility": "internal",
-    "reference_system": "",
-    "reference_library": "",
-    "reference_component": "",
-    "replacement": null,
-    "doc_state": "ok"
-  },
-  {
-    "id": "input/fader_bank",
-    "track": "showcase",
-    "visibility": "internal",
-    "reference_system": "",
-    "reference_library": "",
-    "reference_component": "",
-    "replacement": null,
-    "doc_state": "ok"
-  },
-  {
-    "id": "input/knob_cluster_panel",
-    "track": "showcase",
-    "visibility": "internal",
-    "reference_system": "",
-    "reference_library": "",
-    "reference_component": "",
-    "replacement": null,
-    "doc_state": "ok"
-  },
-  {
     "id": "input/number_box",
     "track": "reference",
     "visibility": "public",
@@ -296,26 +156,6 @@
     "reference_system": "Fluent 2",
     "reference_library": "WPF UI",
     "reference_component": "PasswordBox",
-    "replacement": null,
-    "doc_state": "ok"
-  },
-  {
-    "id": "input/patch_bay",
-    "track": "showcase",
-    "visibility": "internal",
-    "reference_system": "",
-    "reference_library": "",
-    "reference_component": "",
-    "replacement": null,
-    "doc_state": "ok"
-  },
-  {
-    "id": "input/range_band_editor",
-    "track": "showcase",
-    "visibility": "internal",
-    "reference_system": "",
-    "reference_library": "",
-    "reference_component": "",
     "replacement": null,
     "doc_state": "ok"
   },
@@ -370,16 +210,6 @@
     "doc_state": "ok"
   },
   {
-    "id": "input/swatch_picker",
-    "track": "showcase",
-    "visibility": "internal",
-    "reference_system": "",
-    "reference_library": "",
-    "reference_component": "",
-    "replacement": null,
-    "doc_state": "ok"
-  },
-  {
     "id": "input/swipe_control",
     "track": "reference",
     "visibility": "public",
@@ -430,16 +260,6 @@
     "doc_state": "ok"
   },
   {
-    "id": "input/xy_pad",
-    "track": "showcase",
-    "visibility": "internal",
-    "reference_system": "",
-    "reference_library": "",
-    "reference_component": "",
-    "replacement": null,
-    "doc_state": "ok"
-  },
-  {
     "id": "layout/data_list_panel",
     "track": "reference",
     "visibility": "public",
@@ -456,16 +276,6 @@
     "reference_system": "Fluent 2",
     "reference_library": "WPF UI",
     "reference_component": "Expander",
-    "replacement": null,
-    "doc_state": "ok"
-  },
-  {
-    "id": "layout/kanban_board",
-    "track": "showcase",
-    "visibility": "internal",
-    "reference_system": "",
-    "reference_library": "",
-    "reference_component": "",
     "replacement": null,
     "doc_state": "ok"
   },
@@ -490,26 +300,6 @@
     "doc_state": "ok"
   },
   {
-    "id": "layout/priority_matrix",
-    "track": "showcase",
-    "visibility": "internal",
-    "reference_system": "",
-    "reference_library": "",
-    "reference_component": "",
-    "replacement": null,
-    "doc_state": "ok"
-  },
-  {
-    "id": "layout/seat_map",
-    "track": "showcase",
-    "visibility": "internal",
-    "reference_system": "",
-    "reference_library": "",
-    "reference_component": "",
-    "replacement": null,
-    "doc_state": "ok"
-  },
-  {
     "id": "layout/settings_panel",
     "track": "reference",
     "visibility": "public",
@@ -530,16 +320,6 @@
     "doc_state": "ok"
   },
   {
-    "id": "layout/window_snap_grid",
-    "track": "showcase",
-    "visibility": "internal",
-    "reference_system": "",
-    "reference_library": "",
-    "reference_component": "",
-    "replacement": null,
-    "doc_state": "ok"
-  },
-  {
     "id": "navigation/annotated_scroll_bar",
     "track": "reference",
     "visibility": "public",
@@ -556,16 +336,6 @@
     "reference_system": "Fluent 2",
     "reference_library": "WPF UI",
     "reference_component": "BreadcrumbBar",
-    "replacement": null,
-    "doc_state": "ok"
-  },
-  {
-    "id": "navigation/command_palette",
-    "track": "showcase",
-    "visibility": "internal",
-    "reference_system": "",
-    "reference_library": "",
-    "reference_component": "",
     "replacement": null,
     "doc_state": "ok"
   },

@@ -5,7 +5,7 @@ EGUI_CODE_INCLUDE	+= $(EGUI_PATH)/widget
 
 
 # select the sub app
-APP_SUB ?= input/xy_pad
+APP_SUB ?= input/auto_suggest_box
 
 EGUI_APP_SUB_PATH := $(EGUI_APP_PATH)/$(APP_SUB)
 
