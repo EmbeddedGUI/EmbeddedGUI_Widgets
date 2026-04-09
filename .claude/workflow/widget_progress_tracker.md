@@ -98,6 +98,10 @@
 ## 最近完成的收口动作
 
 - `2026-04-09`
+  - 完成 `navigation/pips_pager` 实现级样式收口：移除底部 preview 的旧双列容器壳，页面统一为标题、主 `pips_pager` 与 `compact / read only` 静态对照，继续保留 `PipsPager` 的 previous / next、当前页和离散 pips 语义。
+  - `test.c` 将 `pager_locked` 收口为 `pager_read_only`，底部两个 preview 统一禁用 touch / focus，并为 read-only 预览补上更弱的灰蓝 palette；`egui_view_pips_pager.c` 进一步压轻 previous/next 按钮、inactive dots、current pill、focus ring 和 read-only chrome；README 重写为当前 `reference` 模板。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=navigation/pips_pager PORT=pc`、`check_touch_release_semantics.py --scope custom --category navigation`、`code_runtime_check.py --app HelloCustomWidgets --app-sub navigation/pips_pager --track reference --timeout 10 --keep-screenshots`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`check_docs_encoding.py`。
+- `2026-04-09`
   - 完成 `navigation/annotated_scroll_bar` 实现级样式收口：移除底部 preview 的旧双列容器壳，页面统一为标题、主 `annotated_scroll_bar` 与 `compact / read only` 静态对照，继续保留 `AnnotatedScrollBar` 的键盘步进、marker jump、rail drag 和只读对照语义。
   - `test.c` 将 `annotated_scroll_bar_locked` 收口为 `annotated_scroll_bar_read_only`，底部两个 preview 统一禁用 touch / focus，并为 read-only 预览补上更弱的灰蓝 palette；`egui_view_annotated_scroll_bar.c` 进一步压轻 summary、count pill、bubble、connector、rail、indicator、button、focus ring 和 read-only chrome；README 重写为当前 `reference` 模板。
   - 已通过 `make all APP=HelloCustomWidgets APP_SUB=navigation/annotated_scroll_bar PORT=pc`、`check_touch_release_semantics.py --scope custom --category navigation`、`code_runtime_check.py --app HelloCustomWidgets --app-sub navigation/annotated_scroll_bar --track reference --timeout 10 --keep-screenshots`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`check_docs_encoding.py`。
@@ -221,7 +225,6 @@
   - 完成 `feedback/toast_stack` 实现级样式收口。
 - `2026-04-09`
 - `2026-04-09`
-  - 完成 `navigation/pips_pager` 实现级样式收口。
 - `2026-04-09`
   - 完成 `navigation/breadcrumb_bar` 实现级样式收口。
 - `2026-04-09`

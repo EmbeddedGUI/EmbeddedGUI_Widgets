@@ -579,7 +579,7 @@ static void pips_pager_draw_chevron(egui_view_t *self, const egui_region_t *regi
 {
     egui_dim_t cx = region->location.x + region->size.width / 2;
     egui_dim_t cy = region->location.y + region->size.height / 2;
-    egui_alpha_t alpha = egui_color_alpha_mix(self->alpha, 92);
+    egui_alpha_t alpha = egui_color_alpha_mix(self->alpha, 84);
 
     if (is_next)
     {
@@ -608,7 +608,7 @@ static void pips_pager_draw_text(const egui_font_t *font, egui_view_t *self, con
 static void pips_pager_draw_focus(egui_view_t *self, const egui_region_t *region, egui_dim_t radius, egui_color_t color)
 {
     egui_canvas_draw_round_rectangle(region->location.x - 1, region->location.y - 1, region->size.width + 2, region->size.height + 2, radius, 1, color,
-                                     egui_color_alpha_mix(self->alpha, 68));
+                                     egui_color_alpha_mix(self->alpha, 54));
 }
 
 static void egui_view_pips_pager_on_draw(egui_view_t *self)
@@ -630,39 +630,39 @@ static void egui_view_pips_pager_on_draw(egui_view_t *self)
     pips_pager_normalize_state(local);
     if (local->read_only_mode)
     {
-        surface_color = egui_rgb_mix(surface_color, EGUI_COLOR_HEX(0xEEF2F6), 50);
-        border_color = egui_rgb_mix(border_color, EGUI_COLOR_HEX(0x9AA7B4), 44);
-        text_color = egui_rgb_mix(text_color, EGUI_COLOR_HEX(0x7A8794), 38);
-        muted_text_color = egui_rgb_mix(muted_text_color, EGUI_COLOR_HEX(0x8B98A5), 38);
-        accent_color = egui_rgb_mix(accent_color, EGUI_COLOR_HEX(0x9FB1C5), 36);
+        surface_color = egui_rgb_mix(surface_color, EGUI_COLOR_HEX(0xEEF2F6), 30);
+        border_color = egui_rgb_mix(border_color, EGUI_COLOR_HEX(0x9AA7B4), 26);
+        text_color = egui_rgb_mix(text_color, EGUI_COLOR_HEX(0x7A8794), 22);
+        muted_text_color = egui_rgb_mix(muted_text_color, EGUI_COLOR_HEX(0x8B98A5), 22);
+        accent_color = egui_rgb_mix(accent_color, EGUI_COLOR_HEX(0x9FB1C5), 26);
     }
 
     pips_pager_get_metrics(local, self, &metrics);
 
     egui_canvas_draw_round_rectangle_fill(self->region_screen.location.x, self->region_screen.location.y, self->region_screen.size.width,
-                                          self->region_screen.size.height, outer_radius, surface_color, egui_color_alpha_mix(self->alpha, 96));
+                                          self->region_screen.size.height, outer_radius, surface_color, egui_color_alpha_mix(self->alpha, 94));
     egui_canvas_draw_round_rectangle(self->region_screen.location.x, self->region_screen.location.y, self->region_screen.size.width,
-                                     self->region_screen.size.height, outer_radius, 1, border_color, egui_color_alpha_mix(self->alpha, 58));
+                                     self->region_screen.size.height, outer_radius, 1, border_color, egui_color_alpha_mix(self->alpha, 44));
 
     pips_pager_draw_text(local->meta_font, self, local->title, &metrics.title_region, muted_text_color);
     pips_pager_draw_text(local->meta_font, self, local->helper, &metrics.helper_region, muted_text_color);
 
     egui_canvas_draw_round_rectangle_fill(metrics.previous_region.location.x, metrics.previous_region.location.y, metrics.previous_region.size.width,
                                           metrics.previous_region.size.height, button_radius,
-                                          egui_rgb_mix(surface_color, accent_color, local->pressed_part == EGUI_VIEW_PIPS_PAGER_PART_PREVIOUS ? 28 : 10),
-                                          egui_color_alpha_mix(self->alpha, 94));
+                                          egui_rgb_mix(surface_color, accent_color, local->pressed_part == EGUI_VIEW_PIPS_PAGER_PART_PREVIOUS ? 14 : 4),
+                                          egui_color_alpha_mix(self->alpha, 92));
     egui_canvas_draw_round_rectangle(metrics.previous_region.location.x, metrics.previous_region.location.y, metrics.previous_region.size.width,
-                                     metrics.previous_region.size.height, button_radius, 1, egui_rgb_mix(border_color, accent_color, 20),
-                                     egui_color_alpha_mix(self->alpha, 44));
+                                     metrics.previous_region.size.height, button_radius, 1, egui_rgb_mix(border_color, accent_color, 10),
+                                     egui_color_alpha_mix(self->alpha, 36));
     pips_pager_draw_chevron(self, &metrics.previous_region,
                             pips_pager_part_enabled(local, self, EGUI_VIEW_PIPS_PAGER_PART_PREVIOUS) ? text_color : muted_text_color, 0);
 
     egui_canvas_draw_round_rectangle_fill(
             metrics.next_region.location.x, metrics.next_region.location.y, metrics.next_region.size.width, metrics.next_region.size.height, button_radius,
-            egui_rgb_mix(surface_color, accent_color, local->pressed_part == EGUI_VIEW_PIPS_PAGER_PART_NEXT ? 28 : 10), egui_color_alpha_mix(self->alpha, 94));
+            egui_rgb_mix(surface_color, accent_color, local->pressed_part == EGUI_VIEW_PIPS_PAGER_PART_NEXT ? 14 : 4), egui_color_alpha_mix(self->alpha, 92));
     egui_canvas_draw_round_rectangle(metrics.next_region.location.x, metrics.next_region.location.y, metrics.next_region.size.width,
-                                     metrics.next_region.size.height, button_radius, 1, egui_rgb_mix(border_color, accent_color, 20),
-                                     egui_color_alpha_mix(self->alpha, 44));
+                                     metrics.next_region.size.height, button_radius, 1, egui_rgb_mix(border_color, accent_color, 10),
+                                     egui_color_alpha_mix(self->alpha, 36));
     pips_pager_draw_chevron(self, &metrics.next_region, pips_pager_part_enabled(local, self, EGUI_VIEW_PIPS_PAGER_PART_NEXT) ? text_color : muted_text_color,
                             1);
 
@@ -678,14 +678,14 @@ static void egui_view_pips_pager_on_draw(egui_view_t *self)
         {
             egui_dim_t pill_x = pip_region.location.x + (pip_region.size.width - active_w) / 2;
             egui_dim_t pill_y = pip_region.location.y + (pip_region.size.height - dot_d) / 2;
-            egui_canvas_draw_round_rectangle_fill(pill_x, pill_y, active_w, dot_d, dot_d / 2, accent_color, egui_color_alpha_mix(self->alpha, 100));
+            egui_canvas_draw_round_rectangle_fill(pill_x, pill_y, active_w, dot_d, dot_d / 2, accent_color, egui_color_alpha_mix(self->alpha, 92));
         }
         else
         {
             dot_x = pip_region.location.x + pip_region.size.width / 2;
             dot_y = pip_region.location.y + pip_region.size.height / 2;
             egui_canvas_draw_circle_fill(dot_x, dot_y, dot_d / 2, local->compact_mode ? local->preview_color : local->inactive_color,
-                                         egui_color_alpha_mix(self->alpha, 96));
+                                         egui_color_alpha_mix(self->alpha, local->compact_mode ? 72 : 64));
         }
         if (local->current_part == EGUI_VIEW_PIPS_PAGER_PART_PIP && i == local->current_index && !local->read_only_mode)
         {
@@ -819,12 +819,12 @@ void egui_view_pips_pager_init(egui_view_t *self)
     local->title = NULL;
     local->helper = NULL;
     local->surface_color = EGUI_COLOR_HEX(0xFFFFFF);
-    local->border_color = EGUI_COLOR_HEX(0xD6DEE7);
+    local->border_color = EGUI_COLOR_HEX(0xD2DBE3);
     local->text_color = EGUI_COLOR_HEX(0x1D2630);
     local->muted_text_color = EGUI_COLOR_HEX(0x6F7B89);
-    local->accent_color = EGUI_COLOR_HEX(0x2563EB);
-    local->inactive_color = EGUI_COLOR_HEX(0xAAB6C3);
-    local->preview_color = EGUI_COLOR_HEX(0x6DD3C4);
+    local->accent_color = EGUI_COLOR_HEX(0x0F6CBD);
+    local->inactive_color = EGUI_COLOR_HEX(0xAEB9C4);
+    local->preview_color = EGUI_COLOR_HEX(0xB9CCE0);
     local->total_count = 5;
     local->current_index = 0;
     local->visible_count = 5;
