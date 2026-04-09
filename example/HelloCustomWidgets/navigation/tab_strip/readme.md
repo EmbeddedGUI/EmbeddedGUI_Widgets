@@ -95,13 +95,14 @@ python scripts/checks/check_docs_encoding.py
 - variable-width tab 必须保持自然留白，不能退化成均分按钮。
 - 当前项 fill、divider 和 underline 需要可辨识，但整体不能回到高噪音 showcase 风格。
 - `compact` 在窄宽度下仍要保持标签可读。
-- `read only` 只能做静态展示，不能响应 touch、focus 或键盘。
+- `read only` 只能做静态展示，不能响应 touch、focus 或键盘；切换到 `read only` 时还要清空 pressed 状态。
 
 ## 9. 已知限制与后续方向
 
 - 当前版本只覆盖纯文本页签，不做图标、关闭按钮和拖拽重排。
 - 文本宽度仍采用轻量估算，没有接入真实字体测量。
 - 当前主页面只验证页签条本体，不联动内容面板。
+- 当前键盘交互只覆盖 `Left / Right / Home / End` 的主线导航。
 
 ## 10. 与现有控件的边界
 
@@ -136,5 +137,6 @@ python scripts/checks/check_docs_encoding.py
 
 - 使用固定 tab 数据保证录制稳定。
 - `compact / read only` 直接复用同一控件模式，减少额外页面壳层。
+- `read only` 直接使用 `read_only_mode`，避免页面语义和控件实现脱节。
 - 通过程序化切换 current index 保证 runtime 能稳定抓到页签变化。
 - 当前先作为 `HelloCustomWidgets` 的 reference widget 维护，后续是否下沉框架层再单独评估。

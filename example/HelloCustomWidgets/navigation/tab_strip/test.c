@@ -49,6 +49,12 @@ static void apply_read_only_index(void)
     egui_view_tab_strip_set_current_index(EGUI_VIEW_OF(&bar_read_only), 1);
 }
 
+static void apply_read_only_state(void)
+{
+    apply_read_only_index();
+    egui_view_tab_strip_set_read_only_mode(EGUI_VIEW_OF(&bar_read_only), 1);
+}
+
 static int consume_preview_touch(egui_view_t *self, egui_motion_event_t *event)
 {
     EGUI_UNUSED(self);
@@ -70,15 +76,15 @@ void test_init_ui(void)
     egui_view_label_set_align_type(EGUI_VIEW_OF(&title_label), EGUI_ALIGN_CENTER);
     egui_view_label_set_font(EGUI_VIEW_OF(&title_label), (const egui_font_t *)&egui_res_font_montserrat_12_4);
     egui_view_label_set_font_color(EGUI_VIEW_OF(&title_label), EGUI_COLOR_HEX(0x21303F), EGUI_ALPHA_100);
-    egui_view_set_margin(EGUI_VIEW_OF(&title_label), 0, 8, 0, 4);
+    egui_view_set_margin(EGUI_VIEW_OF(&title_label), 0, 6, 0, 4);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label));
 
     egui_view_tab_strip_init(EGUI_VIEW_OF(&bar_primary));
     egui_view_set_size(EGUI_VIEW_OF(&bar_primary), TAB_STRIP_PRIMARY_WIDTH, TAB_STRIP_PRIMARY_HEIGHT);
     egui_view_tab_strip_set_tabs(EGUI_VIEW_OF(&bar_primary), primary_tabs, 3);
     egui_view_tab_strip_set_font(EGUI_VIEW_OF(&bar_primary), (const egui_font_t *)&egui_res_font_montserrat_10_4);
-    egui_view_tab_strip_set_palette(EGUI_VIEW_OF(&bar_primary), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD2DBE3), EGUI_COLOR_HEX(0x1A2734),
-                                    EGUI_COLOR_HEX(0x6B7A89), EGUI_COLOR_HEX(0x0F6CBD));
+    egui_view_tab_strip_set_palette(EGUI_VIEW_OF(&bar_primary), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD2DBE3), EGUI_COLOR_HEX(0x18222D),
+                                    EGUI_COLOR_HEX(0x6E7C8B), EGUI_COLOR_HEX(0x0F6CBD));
     egui_view_set_margin(EGUI_VIEW_OF(&bar_primary), 0, 0, 0, 8);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&bar_primary));
 
@@ -93,8 +99,8 @@ void test_init_ui(void)
     egui_view_tab_strip_set_tabs(EGUI_VIEW_OF(&bar_compact), compact_tabs, 2);
     egui_view_tab_strip_set_font(EGUI_VIEW_OF(&bar_compact), (const egui_font_t *)&egui_res_font_montserrat_10_4);
     egui_view_tab_strip_set_compact_mode(EGUI_VIEW_OF(&bar_compact), 1);
-    egui_view_tab_strip_set_palette(EGUI_VIEW_OF(&bar_compact), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD2DBE3), EGUI_COLOR_HEX(0x1A2734),
-                                    EGUI_COLOR_HEX(0x6B7A89), EGUI_COLOR_HEX(0x0F6CBD));
+    egui_view_tab_strip_set_palette(EGUI_VIEW_OF(&bar_compact), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD2DBE3), EGUI_COLOR_HEX(0x18222D),
+                                    EGUI_COLOR_HEX(0x6E7C8B), EGUI_COLOR_HEX(0x0F6CBD));
     static egui_view_api_t bar_compact_touch_api;
     egui_view_override_api_on_touch(EGUI_VIEW_OF(&bar_compact), &bar_compact_touch_api, consume_preview_touch);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
@@ -108,9 +114,9 @@ void test_init_ui(void)
     egui_view_tab_strip_set_tabs(EGUI_VIEW_OF(&bar_read_only), read_only_tabs, 2);
     egui_view_tab_strip_set_font(EGUI_VIEW_OF(&bar_read_only), (const egui_font_t *)&egui_res_font_montserrat_10_4);
     egui_view_tab_strip_set_compact_mode(EGUI_VIEW_OF(&bar_read_only), 1);
-    egui_view_tab_strip_set_locked_mode(EGUI_VIEW_OF(&bar_read_only), 1);
-    egui_view_tab_strip_set_palette(EGUI_VIEW_OF(&bar_read_only), EGUI_COLOR_HEX(0xFBFCFD), EGUI_COLOR_HEX(0xD8DFE6), EGUI_COLOR_HEX(0x536474),
-                                    EGUI_COLOR_HEX(0x8896A4), EGUI_COLOR_HEX(0xA7B4C1));
+    egui_view_tab_strip_set_read_only_mode(EGUI_VIEW_OF(&bar_read_only), 1);
+    egui_view_tab_strip_set_palette(EGUI_VIEW_OF(&bar_read_only), EGUI_COLOR_HEX(0xFBFCFD), EGUI_COLOR_HEX(0xD9E1E8), EGUI_COLOR_HEX(0x566675),
+                                    EGUI_COLOR_HEX(0x8A97A3), EGUI_COLOR_HEX(0xB8C4CF));
     static egui_view_api_t bar_read_only_touch_api;
     egui_view_override_api_on_touch(EGUI_VIEW_OF(&bar_read_only), &bar_read_only_touch_api, consume_preview_touch);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
@@ -120,7 +126,7 @@ void test_init_ui(void)
 
     apply_primary_index(0);
     apply_compact_index(0);
-    apply_read_only_index();
+    apply_read_only_state();
 
     {
         hello_custom_widgets_demo_apply_title_only_scaffold(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label), NULL, 0);
@@ -148,7 +154,7 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
         {
             apply_primary_index(0);
             apply_compact_index(0);
-            apply_read_only_index();
+            apply_read_only_state();
         }
         EGUI_SIM_SET_WAIT(p_action, TAB_STRIP_RECORD_WAIT);
         return true;

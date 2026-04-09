@@ -34,7 +34,7 @@
 
 | 状态 | 控件名 | 分类 | 开始日期 | 当前阶段 | 目标 |
 | --- | --- | --- | --- | --- | --- |
-| 进行中 | `tab_strip` | `navigation` | `2026-04-10` | `reference 细化` | 把旧 `locked_mode` 语义统一为 `read_only_mode`，补齐只读态 pressed 清理、touch / key 输入抑制、交互单测和关键帧渲染验收 |
+| 进行中 | `breadcrumb_bar` | `navigation` | `2026-04-10` | `reference 细化` | 把旧 `locked_mode` 语义统一为 `read_only_mode`，补齐只读态 pressed 清理、touch / key 输入抑制、交互单测和关键帧渲染验收 |
 
 ## 当前保留的 Reference 主线控件
 
@@ -97,6 +97,12 @@
 
 ## 最近完成的收口动作
 
+- `2026-04-10`
+  - 完成 `navigation/tab_strip` 二次收口：在原有 `reference` 页面结构基础上，把控件内部的旧 `locked_mode` 语义统一为 `read_only_mode`，并继续压轻容器边框、active fill、divider、underline 和只读态 chrome 的对比度。
+  - `test.c` 新增 `apply_read_only_state()`，让 `read only` 预览在初始化和录制 case `0` 重置时都显式回到只读态；同步微调标题间距和 `read only` palette，继续保持底部两个 preview 只承担 reference 对照职责。
+  - `egui_view_tab_strip.h/.c` 把 `locked_mode` API 收口为 `read_only_mode`，新增 `INDEX_NONE` 常量，并在 `set_tabs()`、`set_current_index()`、`set_compact_mode()` 和 `set_read_only_mode()` 中统一清理 pressed 状态；同时补上 `Left / Right / Home / End` 键盘导航，以及只读态对 touch / key 的输入抑制。
+  - `example/HelloUnitTest/test/test_tab_strip.c` 把旧 `locked_mode` 单测改成 `read_only_mode`，新增键盘导航测试和“切到只读时清空 pressed 并忽略后续 touch / key 输入”的交互回归；README 同步明确 `read only` 需要同时满足视觉弱化和输入抑制。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=navigation/tab_strip PORT=pc`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category navigation`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub navigation/tab_strip --track reference --timeout 10 --keep-screenshots`、`python scripts/checks/check_docs_encoding.py`，并人工核对关键帧确认交互切换后的渲染稳定。
 - `2026-04-10`
   - 完成 `navigation/tree_view` 二次收口：在原有 `reference` 页面结构基础上，把控件内部的旧 `locked_mode` 语义统一为 `read_only_mode`，并继续压轻 tree card、list border、selected row、indicator、guide、glyph、caption、footer 和 meta pill 的对比度。
   - `test.c` 新增 `apply_read_only_state()`，让 `read only` 预览在初始化和录制 case `0` 重置时都显式回到只读态；同步微调标题间距和 `read only` palette，继续保持底部两个 preview 只承担 reference 对照职责。

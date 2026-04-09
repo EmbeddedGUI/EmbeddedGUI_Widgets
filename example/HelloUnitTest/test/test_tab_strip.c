@@ -44,6 +44,20 @@ static void layout_tab_strip(egui_dim_t width)
     egui_region_copy(&EGUI_VIEW_OF(&test_tab_strip)->region_screen, &region);
 }
 
+static int send_key(uint8_t key_code)
+{
+    egui_key_event_t event;
+    int handled = 0;
+
+    memset(&event, 0, sizeof(event));
+    event.type = EGUI_KEY_EVENT_ACTION_DOWN;
+    event.key_code = key_code;
+    handled |= EGUI_VIEW_OF(&test_tab_strip)->api->on_key_event(EGUI_VIEW_OF(&test_tab_strip), &event);
+    event.type = EGUI_KEY_EVENT_ACTION_UP;
+    handled |= EGUI_VIEW_OF(&test_tab_strip)->api->on_key_event(EGUI_VIEW_OF(&test_tab_strip), &event);
+    return handled;
+}
+
 static int send_touch(uint8_t type, egui_dim_t x, egui_dim_t y)
 {
     egui_motion_event_t event;
@@ -110,9 +124,9 @@ static void test_tab_strip_font_modes_palette_and_helpers(void)
     EGUI_TEST_ASSERT_TRUE(test_tab_strip.font == (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT);
 
     egui_view_tab_strip_set_compact_mode(EGUI_VIEW_OF(&test_tab_strip), 2);
-    egui_view_tab_strip_set_locked_mode(EGUI_VIEW_OF(&test_tab_strip), 3);
+    egui_view_tab_strip_set_read_only_mode(EGUI_VIEW_OF(&test_tab_strip), 3);
     EGUI_TEST_ASSERT_EQUAL_INT(1, test_tab_strip.compact_mode);
-    EGUI_TEST_ASSERT_EQUAL_INT(1, test_tab_strip.locked_mode);
+    EGUI_TEST_ASSERT_EQUAL_INT(1, test_tab_strip.read_only_mode);
 
     egui_view_tab_strip_set_palette(EGUI_VIEW_OF(&test_tab_strip), EGUI_COLOR_HEX(0x101112), EGUI_COLOR_HEX(0x202122), EGUI_COLOR_HEX(0x303132),
                                     EGUI_COLOR_HEX(0x404142), EGUI_COLOR_HEX(0x505152));
@@ -141,7 +155,7 @@ static void test_tab_strip_font_modes_palette_and_helpers(void)
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_TAB_STRIP_COMPACT_GAP, egui_view_tab_strip_item_gap(1));
 
     egui_view_tab_strip_set_compact_mode(EGUI_VIEW_OF(&test_tab_strip), 0);
-    egui_view_tab_strip_set_locked_mode(EGUI_VIEW_OF(&test_tab_strip), 0);
+    egui_view_tab_strip_set_read_only_mode(EGUI_VIEW_OF(&test_tab_strip), 0);
     egui_view_tab_strip_set_tabs(EGUI_VIEW_OF(&test_tab_strip), g_tabs_long, 3);
     count = egui_view_tab_strip_prepare_layout(&test_tab_strip, 0, 72, items);
     EGUI_TEST_ASSERT_EQUAL_INT(3, count);
@@ -149,7 +163,7 @@ static void test_tab_strip_font_modes_palette_and_helpers(void)
     EGUI_TEST_ASSERT_TRUE(strcmp(items[0].label, g_tabs_long[0]) != 0);
     EGUI_TEST_ASSERT_TRUE(strcmp(items[1].label, g_tabs_long[1]) != 0);
     EGUI_TEST_ASSERT_TRUE(items[1].x > items[0].x);
-    EGUI_TEST_ASSERT_EQUAL_INT(0xFF, egui_view_tab_strip_resolve_hit(&test_tab_strip, EGUI_VIEW_OF(&test_tab_strip), 4));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_TAB_STRIP_INDEX_NONE, egui_view_tab_strip_resolve_hit(&test_tab_strip, EGUI_VIEW_OF(&test_tab_strip), 4));
 }
 
 static void test_tab_strip_touch_selects_and_cancel_resets_pressed_state(void)
@@ -169,7 +183,7 @@ static void test_tab_strip_touch_selects_and_cancel_resets_pressed_state(void)
     EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_tab_strip_get_current_index(EGUI_VIEW_OF(&test_tab_strip)));
     EGUI_TEST_ASSERT_EQUAL_INT(1, g_listener_count);
     EGUI_TEST_ASSERT_EQUAL_INT(1, g_listener_index);
-    EGUI_TEST_ASSERT_EQUAL_INT(0xFF, test_tab_strip.pressed_index);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_TAB_STRIP_INDEX_NONE, test_tab_strip.pressed_index);
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_tab_strip)->is_pressed);
 
     get_item_center(2, &x, &y);
@@ -177,11 +191,25 @@ static void test_tab_strip_touch_selects_and_cancel_resets_pressed_state(void)
     EGUI_TEST_ASSERT_EQUAL_INT(2, test_tab_strip.pressed_index);
     EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_CANCEL, x, y));
     EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_tab_strip_get_current_index(EGUI_VIEW_OF(&test_tab_strip)));
-    EGUI_TEST_ASSERT_EQUAL_INT(0xFF, test_tab_strip.pressed_index);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_TAB_STRIP_INDEX_NONE, test_tab_strip.pressed_index);
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_tab_strip)->is_pressed);
 }
 
-static void test_tab_strip_locked_or_disabled_ignores_touch(void)
+static void test_tab_strip_keyboard_navigation(void)
+{
+    setup_tab_strip();
+    EGUI_TEST_ASSERT_TRUE(send_key(EGUI_KEY_CODE_RIGHT));
+    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_tab_strip_get_current_index(EGUI_VIEW_OF(&test_tab_strip)));
+    EGUI_TEST_ASSERT_TRUE(send_key(EGUI_KEY_CODE_END));
+    EGUI_TEST_ASSERT_EQUAL_INT(2, egui_view_tab_strip_get_current_index(EGUI_VIEW_OF(&test_tab_strip)));
+    EGUI_TEST_ASSERT_TRUE(send_key(EGUI_KEY_CODE_LEFT));
+    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_tab_strip_get_current_index(EGUI_VIEW_OF(&test_tab_strip)));
+    EGUI_TEST_ASSERT_TRUE(send_key(EGUI_KEY_CODE_HOME));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_tab_strip_get_current_index(EGUI_VIEW_OF(&test_tab_strip)));
+    EGUI_TEST_ASSERT_EQUAL_INT(4, g_listener_count);
+}
+
+static void test_tab_strip_read_only_mode_clears_pressed_and_ignores_input(void)
 {
     egui_dim_t x;
     egui_dim_t y;
@@ -190,13 +218,37 @@ static void test_tab_strip_locked_or_disabled_ignores_touch(void)
     layout_tab_strip(196);
     get_item_center(2, &x, &y);
 
-    egui_view_tab_strip_set_locked_mode(EGUI_VIEW_OF(&test_tab_strip), 1);
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
+    EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&test_tab_strip)->is_pressed);
+    EGUI_TEST_ASSERT_EQUAL_INT(2, test_tab_strip.pressed_index);
+
+    egui_view_tab_strip_set_read_only_mode(EGUI_VIEW_OF(&test_tab_strip), 1);
+    EGUI_TEST_ASSERT_EQUAL_INT(1, test_tab_strip.read_only_mode);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_tab_strip)->is_pressed);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_TAB_STRIP_INDEX_NONE, test_tab_strip.pressed_index);
     EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
+    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, x, y));
+    EGUI_TEST_ASSERT_FALSE(send_key(EGUI_KEY_CODE_END));
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_tab_strip_get_current_index(EGUI_VIEW_OF(&test_tab_strip)));
 
-    egui_view_tab_strip_set_locked_mode(EGUI_VIEW_OF(&test_tab_strip), 0);
+    egui_view_tab_strip_set_read_only_mode(EGUI_VIEW_OF(&test_tab_strip), 0);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, test_tab_strip.read_only_mode);
+    EGUI_TEST_ASSERT_TRUE(send_key(EGUI_KEY_CODE_END));
+    EGUI_TEST_ASSERT_EQUAL_INT(2, egui_view_tab_strip_get_current_index(EGUI_VIEW_OF(&test_tab_strip)));
+}
+
+static void test_tab_strip_disabled_ignores_touch(void)
+{
+    egui_dim_t x;
+    egui_dim_t y;
+
+    setup_tab_strip();
+    layout_tab_strip(196);
+    get_item_center(2, &x, &y);
+
     egui_view_set_enable(EGUI_VIEW_OF(&test_tab_strip), 0);
     EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
+    EGUI_TEST_ASSERT_FALSE(send_key(EGUI_KEY_CODE_END));
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_tab_strip_get_current_index(EGUI_VIEW_OF(&test_tab_strip)));
 }
 
@@ -206,6 +258,8 @@ void test_tab_strip_run(void)
     EGUI_TEST_RUN(test_tab_strip_set_tabs_and_current_index);
     EGUI_TEST_RUN(test_tab_strip_font_modes_palette_and_helpers);
     EGUI_TEST_RUN(test_tab_strip_touch_selects_and_cancel_resets_pressed_state);
-    EGUI_TEST_RUN(test_tab_strip_locked_or_disabled_ignores_touch);
+    EGUI_TEST_RUN(test_tab_strip_keyboard_navigation);
+    EGUI_TEST_RUN(test_tab_strip_read_only_mode_clears_pressed_and_ignores_input);
+    EGUI_TEST_RUN(test_tab_strip_disabled_ignores_touch);
     EGUI_TEST_SUITE_END();
 }
