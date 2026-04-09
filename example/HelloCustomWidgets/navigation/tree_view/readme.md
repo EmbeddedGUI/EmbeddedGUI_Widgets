@@ -23,7 +23,7 @@
 ## 3. 目标场景与示例概览
 - 主控件：展示标准 `TreeView`，保留分支展开、层级缩进、选中项和 meta 摘要。
 - `compact` 预览：保留相同树语义，但压缩为更小尺寸，用于验证小尺寸 reference 收口。
-- `read only` 预览：保留冻结态和固定选择，只作为静态对照，不再承担点击或焦点职责。
+- `read only` 预览：保留冻结态和固定选择，只作为静态对照，不再承担点击或焦点职责，并显式抑制 touch / key 输入。
 - 页面只保留标题、主 `tree_view` 和底部 `compact / read only` 双预览，不再保留旧的预览列容器和说明性页面 chrome。
 
 ## 4. 视觉与布局规格
@@ -87,7 +87,7 @@ python scripts/checks/check_docs_encoding.py
 - 主控件和底部 `compact / read only` 预览都必须完整可见，不能裁切。
 - 层级缩进、展开箭头、引导线和右侧 meta pill 需要稳定对齐，但不能回到旧版重描边风格。
 - 选中行必须清晰，但不能压过树本身的层级信息。
-- `compact / read only` 不再响应触摸，也不参与焦点循环。
+- `compact / read only` 不再响应触摸，也不参与焦点循环；其中 `read only` 还需要清空 pressed 状态并忽略键盘输入。
 - 触摸释放语义必须继续满足“按下与抬起命中同一目标才提交”。
 
 ## 9. 已知限制与后续方向
@@ -123,5 +123,5 @@ python scripts/checks/check_docs_encoding.py
 ## 14. EGUI 适配时的简化点与约束
 - 使用固定 `snapshot + item` 数组驱动层级状态，优先保证 reference 稳定。
 - 底部 `compact / read only` 固定放在同一行，只承担静态对照职责。
-- `read only` 继续复用 `locked_mode`，但页面语义统一表述为 `read only`。
+- `read only` 直接使用 `read_only_mode`，避免页面语义与控件实现脱节。
 - 当前先作为 `HelloCustomWidgets` reference 示例维护，后续是否下沉框架层再单独评估。

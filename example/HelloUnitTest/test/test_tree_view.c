@@ -150,13 +150,13 @@ static void test_tree_view_touch_selects_item(void)
     EGUI_TEST_ASSERT_EQUAL_INT(2, last_selection_index);
 }
 
-static void test_tree_view_locked_mode_ignores_input(void)
+static void test_tree_view_read_only_mode_ignores_input(void)
 {
     egui_dim_t x;
     egui_dim_t y;
 
     setup_tree_view();
-    egui_view_tree_view_set_locked_mode(EGUI_VIEW_OF(&test_tree_view), 1);
+    egui_view_tree_view_set_read_only_mode(EGUI_VIEW_OF(&test_tree_view), 1);
     layout_tree_view(10, 20, 144, 120);
     EGUI_TEST_ASSERT_TRUE(get_item_center(3, &x, &y));
 
@@ -165,6 +165,36 @@ static void test_tree_view_locked_mode_ignores_input(void)
     EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, x, y));
     EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_tree_view_get_current_index(EGUI_VIEW_OF(&test_tree_view)));
     EGUI_TEST_ASSERT_EQUAL_INT(0, selection_change_count);
+}
+
+static void test_tree_view_read_only_mode_clears_pressed_state(void)
+{
+    egui_dim_t x;
+    egui_dim_t y;
+
+    setup_tree_view();
+    layout_tree_view(10, 20, 144, 120);
+    EGUI_TEST_ASSERT_TRUE(get_item_center(2, &x, &y));
+
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
+    EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&test_tree_view)->is_pressed);
+    EGUI_TEST_ASSERT_EQUAL_INT(2, test_tree_view.pressed_index);
+
+    egui_view_tree_view_set_read_only_mode(EGUI_VIEW_OF(&test_tree_view), 1);
+    EGUI_TEST_ASSERT_EQUAL_INT(1, test_tree_view.read_only_mode);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_tree_view)->is_pressed);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_TREE_VIEW_INDEX_NONE, test_tree_view.pressed_index);
+
+    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
+    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, x, y));
+    EGUI_TEST_ASSERT_FALSE(send_key(EGUI_KEY_CODE_END));
+    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_tree_view_get_current_index(EGUI_VIEW_OF(&test_tree_view)));
+
+    egui_view_tree_view_set_read_only_mode(EGUI_VIEW_OF(&test_tree_view), 0);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, test_tree_view.read_only_mode);
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, x, y));
+    EGUI_TEST_ASSERT_EQUAL_INT(2, egui_view_tree_view_get_current_index(EGUI_VIEW_OF(&test_tree_view)));
 }
 
 static void test_tree_view_compact_mode_keeps_selection_and_allows_input(void)
@@ -210,7 +240,8 @@ void test_tree_view_run(void)
     EGUI_TEST_RUN(test_tree_view_snapshot_switch_resets_focus_index);
     EGUI_TEST_RUN(test_tree_view_set_current_index_clamps_to_last_item);
     EGUI_TEST_RUN(test_tree_view_touch_selects_item);
-    EGUI_TEST_RUN(test_tree_view_locked_mode_ignores_input);
+    EGUI_TEST_RUN(test_tree_view_read_only_mode_ignores_input);
+    EGUI_TEST_RUN(test_tree_view_read_only_mode_clears_pressed_state);
     EGUI_TEST_RUN(test_tree_view_compact_mode_keeps_selection_and_allows_input);
     EGUI_TEST_RUN(test_tree_view_keyboard_navigation);
     EGUI_TEST_SUITE_END();
