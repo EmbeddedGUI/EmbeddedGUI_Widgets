@@ -154,14 +154,14 @@ static void test_badge_group_font_modes_and_palette_update(void)
     EGUI_TEST_ASSERT_TRUE(test_group.meta_font == (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT);
 
     egui_view_badge_group_set_compact_mode(EGUI_VIEW_OF(&test_group), 2);
-    egui_view_badge_group_set_locked_mode(EGUI_VIEW_OF(&test_group), 3);
+    egui_view_badge_group_set_read_only_mode(EGUI_VIEW_OF(&test_group), 3);
     EGUI_TEST_ASSERT_EQUAL_INT(1, test_group.compact_mode);
-    EGUI_TEST_ASSERT_EQUAL_INT(1, test_group.locked_mode);
+    EGUI_TEST_ASSERT_EQUAL_INT(1, test_group.read_only_mode);
 
     egui_view_badge_group_set_compact_mode(EGUI_VIEW_OF(&test_group), 0);
-    egui_view_badge_group_set_locked_mode(EGUI_VIEW_OF(&test_group), 0);
+    egui_view_badge_group_set_read_only_mode(EGUI_VIEW_OF(&test_group), 0);
     EGUI_TEST_ASSERT_EQUAL_INT(0, test_group.compact_mode);
-    EGUI_TEST_ASSERT_EQUAL_INT(0, test_group.locked_mode);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, test_group.read_only_mode);
 
     egui_view_badge_group_set_palette(EGUI_VIEW_OF(&test_group), EGUI_COLOR_HEX(0x101112), EGUI_COLOR_HEX(0x202122), EGUI_COLOR_HEX(0x303132),
                                       EGUI_COLOR_HEX(0x404142), EGUI_COLOR_HEX(0x505152), EGUI_COLOR_HEX(0x606162), EGUI_COLOR_HEX(0x707172),
@@ -196,6 +196,30 @@ static void test_badge_group_touch_and_key_click_listener(void)
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_group)->is_pressed);
     EGUI_TEST_ASSERT_EQUAL_INT(2, click_count);
     EGUI_TEST_ASSERT_FALSE(send_key(EGUI_KEY_CODE_ENTER));
+}
+
+static void test_badge_group_read_only_mode_clears_pressed_and_ignores_input(void)
+{
+    setup_group();
+    layout_group();
+
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN));
+    EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&test_group)->is_pressed);
+
+    egui_view_badge_group_set_read_only_mode(EGUI_VIEW_OF(&test_group), 1);
+    EGUI_TEST_ASSERT_EQUAL_INT(1, test_group.read_only_mode);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_group)->is_pressed);
+
+    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN));
+    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_UP));
+    EGUI_TEST_ASSERT_FALSE(send_key(EGUI_KEY_CODE_ENTER));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, click_count);
+
+    egui_view_badge_group_set_read_only_mode(EGUI_VIEW_OF(&test_group), 0);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, test_group.read_only_mode);
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN));
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_UP));
+    EGUI_TEST_ASSERT_EQUAL_INT(1, click_count);
 }
 
 static void test_badge_group_internal_helpers_cover_focus_tone_text_and_width(void)
@@ -233,6 +257,7 @@ void test_badge_group_run(void)
     EGUI_TEST_RUN(test_badge_group_set_current_snapshot_ignores_out_of_range);
     EGUI_TEST_RUN(test_badge_group_font_modes_and_palette_update);
     EGUI_TEST_RUN(test_badge_group_touch_and_key_click_listener);
+    EGUI_TEST_RUN(test_badge_group_read_only_mode_clears_pressed_and_ignores_input);
     EGUI_TEST_RUN(test_badge_group_internal_helpers_cover_focus_tone_text_and_width);
     EGUI_TEST_SUITE_END();
 }

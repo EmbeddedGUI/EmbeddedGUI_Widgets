@@ -104,21 +104,21 @@ static void egui_view_badge_group_draw_badge(egui_view_t *self, egui_view_badge_
     uint8_t is_enabled;
 
     tone_color = egui_view_badge_group_tone_color(local, item->tone);
-    fill_color = item->outlined ? local->surface_color : egui_rgb_mix(local->surface_color, tone_color, item->emphasized ? 18 : 10);
-    border_color = egui_rgb_mix(local->border_color, tone_color, focused ? 28 : (item->outlined ? 20 : 16));
-    text_color = focused ? tone_color : egui_rgb_mix(local->text_color, tone_color, item->emphasized ? 10 : 4);
-    meta_fill = egui_rgb_mix(local->surface_color, tone_color, item->emphasized ? 26 : 16);
-    meta_text = tone_color;
+    fill_color = item->outlined ? local->surface_color : egui_rgb_mix(local->surface_color, tone_color, item->emphasized ? 10 : 6);
+    border_color = egui_rgb_mix(local->border_color, tone_color, focused ? 18 : (item->outlined ? 12 : 10));
+    text_color = focused ? egui_rgb_mix(local->text_color, tone_color, 20) : egui_rgb_mix(local->text_color, tone_color, item->emphasized ? 8 : 3);
+    meta_fill = egui_rgb_mix(local->surface_color, tone_color, item->emphasized ? 16 : 10);
+    meta_text = egui_rgb_mix(local->text_color, tone_color, 18);
     radius = height / 2;
     is_enabled = egui_view_get_enable(self) ? 1 : 0;
 
-    if (local->locked_mode)
+    if (local->read_only_mode)
     {
-        fill_color = egui_rgb_mix(fill_color, local->surface_color, 34);
-        border_color = egui_rgb_mix(border_color, local->muted_text_color, 20);
-        text_color = egui_rgb_mix(text_color, local->muted_text_color, 30);
-        meta_fill = egui_rgb_mix(meta_fill, local->surface_color, 38);
-        meta_text = egui_rgb_mix(meta_text, local->muted_text_color, 34);
+        fill_color = egui_rgb_mix(fill_color, local->surface_color, 42);
+        border_color = egui_rgb_mix(border_color, local->muted_text_color, 16);
+        text_color = egui_rgb_mix(text_color, local->muted_text_color, 36);
+        meta_fill = egui_rgb_mix(meta_fill, local->surface_color, 44);
+        meta_text = egui_rgb_mix(meta_text, local->muted_text_color, 40);
     }
 
     if (!is_enabled)
@@ -131,8 +131,8 @@ static void egui_view_badge_group_draw_badge(egui_view_t *self, egui_view_badge_
     }
 
     egui_canvas_draw_round_rectangle_fill(x, y, width, height, radius, fill_color,
-                                          egui_color_alpha_mix(self->alpha, item->outlined ? 80 : (focused ? 100 : 94)));
-    egui_canvas_draw_round_rectangle(x, y, width, height, radius, 1, border_color, egui_color_alpha_mix(self->alpha, focused ? 68 : 54));
+                                          egui_color_alpha_mix(self->alpha, item->outlined ? 74 : (focused ? 96 : 90)));
+    egui_canvas_draw_round_rectangle(x, y, width, height, radius, 1, border_color, egui_color_alpha_mix(self->alpha, focused ? 54 : 42));
 
     meta_w = 0;
     if (item->meta != NULL && item->meta[0] != '\0')
@@ -148,7 +148,7 @@ static void egui_view_badge_group_draw_badge(egui_view_t *self, egui_view_badge_
         }
 
         egui_canvas_draw_round_rectangle_fill(x + width - meta_w - 3, y + 2, meta_w, height - 4, (height - 4) / 2, meta_fill,
-                                              egui_color_alpha_mix(self->alpha, focused ? 92 : 86));
+                                              egui_color_alpha_mix(self->alpha, focused ? 80 : 74));
 
         text_region.location.x = x + width - meta_w - 3;
         text_region.location.y = y;
@@ -218,10 +218,11 @@ void egui_view_badge_group_set_compact_mode(egui_view_t *self, uint8_t compact_m
     egui_view_invalidate(self);
 }
 
-void egui_view_badge_group_set_locked_mode(egui_view_t *self, uint8_t locked_mode)
+void egui_view_badge_group_set_read_only_mode(egui_view_t *self, uint8_t read_only_mode)
 {
     EGUI_LOCAL_INIT(egui_view_badge_group_t);
-    local->locked_mode = locked_mode ? 1 : 0;
+    local->read_only_mode = read_only_mode ? 1 : 0;
+    egui_view_set_pressed(self, false);
     egui_view_invalidate(self);
 }
 
@@ -302,32 +303,32 @@ static void egui_view_badge_group_on_draw(egui_view_t *self)
     focus_index = egui_view_badge_group_focus_index(snapshot, item_count);
     focus_item = &snapshot->items[focus_index];
     focus_color = egui_view_badge_group_tone_color(local, focus_item->tone);
-    card_fill = egui_rgb_mix(local->surface_color, focus_color, local->compact_mode ? 4 : 6);
-    card_border = egui_rgb_mix(local->border_color, focus_color, local->compact_mode ? 10 : 14);
+    card_fill = egui_rgb_mix(local->surface_color, focus_color, local->compact_mode ? 3 : 4);
+    card_border = egui_rgb_mix(local->border_color, focus_color, local->compact_mode ? 7 : 10);
     title_color = local->text_color;
-    body_color = egui_rgb_mix(local->muted_text_color, local->text_color, local->compact_mode ? 15 : 20);
-    footer_color = egui_rgb_mix(local->muted_text_color, focus_color, local->compact_mode ? 16 : 22);
-    footer_fill = egui_rgb_mix(local->surface_color, focus_color, local->compact_mode ? 7 : 10);
-    footer_border = egui_rgb_mix(local->border_color, focus_color, local->compact_mode ? 16 : 20);
-    eyebrow_fill = egui_rgb_mix(local->surface_color, focus_color, local->compact_mode ? 12 : 16);
-    eyebrow_border = egui_rgb_mix(local->border_color, focus_color, local->compact_mode ? 16 : 22);
-    focus_fill = egui_rgb_mix(local->surface_color, focus_color, local->compact_mode ? 14 : 18);
-    focus_border = egui_rgb_mix(local->border_color, focus_color, local->compact_mode ? 20 : 26);
+    body_color = egui_rgb_mix(local->muted_text_color, local->text_color, local->compact_mode ? 10 : 16);
+    footer_color = egui_rgb_mix(local->muted_text_color, focus_color, local->compact_mode ? 8 : 12);
+    footer_fill = egui_rgb_mix(local->surface_color, focus_color, local->compact_mode ? 4 : 6);
+    footer_border = egui_rgb_mix(local->border_color, focus_color, local->compact_mode ? 8 : 10);
+    eyebrow_fill = egui_rgb_mix(local->surface_color, focus_color, local->compact_mode ? 7 : 10);
+    eyebrow_border = egui_rgb_mix(local->border_color, focus_color, local->compact_mode ? 10 : 14);
+    focus_fill = egui_rgb_mix(local->surface_color, focus_color, local->compact_mode ? 8 : 10);
+    focus_border = egui_rgb_mix(local->border_color, focus_color, local->compact_mode ? 10 : 14);
 
-    if (local->locked_mode)
+    if (local->read_only_mode)
     {
-        focus_color = egui_rgb_mix(focus_color, local->muted_text_color, 74);
-        card_fill = egui_rgb_mix(card_fill, local->surface_color, 18);
-        card_border = egui_rgb_mix(card_border, local->muted_text_color, 20);
-        title_color = egui_rgb_mix(title_color, local->muted_text_color, 16);
-        body_color = egui_rgb_mix(body_color, local->muted_text_color, 20);
-        footer_color = egui_rgb_mix(footer_color, local->muted_text_color, 26);
-        footer_fill = egui_rgb_mix(footer_fill, local->surface_color, 26);
-        footer_border = egui_rgb_mix(footer_border, local->muted_text_color, 20);
-        eyebrow_fill = egui_rgb_mix(eyebrow_fill, local->surface_color, 20);
-        eyebrow_border = egui_rgb_mix(eyebrow_border, local->muted_text_color, 18);
-        focus_fill = egui_rgb_mix(focus_fill, local->surface_color, 24);
-        focus_border = egui_rgb_mix(focus_border, local->muted_text_color, 18);
+        focus_color = egui_rgb_mix(focus_color, local->muted_text_color, 82);
+        card_fill = egui_rgb_mix(card_fill, local->surface_color, 24);
+        card_border = egui_rgb_mix(card_border, local->muted_text_color, 16);
+        title_color = egui_rgb_mix(title_color, local->muted_text_color, 24);
+        body_color = egui_rgb_mix(body_color, local->muted_text_color, 28);
+        footer_color = egui_rgb_mix(footer_color, local->muted_text_color, 36);
+        footer_fill = egui_rgb_mix(footer_fill, local->surface_color, 32);
+        footer_border = egui_rgb_mix(footer_border, local->muted_text_color, 18);
+        eyebrow_fill = egui_rgb_mix(eyebrow_fill, local->surface_color, 28);
+        eyebrow_border = egui_rgb_mix(eyebrow_border, local->muted_text_color, 16);
+        focus_fill = egui_rgb_mix(focus_fill, local->surface_color, 32);
+        focus_border = egui_rgb_mix(focus_border, local->muted_text_color, 16);
     }
 
     if (!egui_view_get_enable(self))
@@ -367,12 +368,12 @@ static void egui_view_badge_group_on_draw(egui_view_t *self)
     focus_pill_y = footer_y + (footer_h - focus_pill_h) / 2;
 
     egui_canvas_draw_round_rectangle_fill(x, y, w, h, local->compact_mode ? 8 : 10, card_fill, egui_color_alpha_mix(self->alpha, 100));
-    egui_canvas_draw_round_rectangle(x, y, w, h, local->compact_mode ? 8 : 10, 1, card_border, egui_color_alpha_mix(self->alpha, 68));
+    egui_canvas_draw_round_rectangle(x, y, w, h, local->compact_mode ? 8 : 10, 1, card_border, egui_color_alpha_mix(self->alpha, 58));
     egui_canvas_draw_round_rectangle_fill(x + 2, y + 2, w - 4, local->compact_mode ? 3 : 4, local->compact_mode ? 6 : 8, focus_color,
-                                          egui_color_alpha_mix(self->alpha, local->locked_mode ? 14 : 24));
+                                          egui_color_alpha_mix(self->alpha, local->read_only_mode ? 8 : 14));
 
-    egui_canvas_draw_round_rectangle_fill(x + padding, y + padding, eyebrow_w, badge_h, badge_h / 2, eyebrow_fill, egui_color_alpha_mix(self->alpha, 92));
-    egui_canvas_draw_round_rectangle(x + padding, y + padding, eyebrow_w, badge_h, badge_h / 2, 1, eyebrow_border, egui_color_alpha_mix(self->alpha, 56));
+    egui_canvas_draw_round_rectangle_fill(x + padding, y + padding, eyebrow_w, badge_h, badge_h / 2, eyebrow_fill, egui_color_alpha_mix(self->alpha, 82));
+    egui_canvas_draw_round_rectangle(x + padding, y + padding, eyebrow_w, badge_h, badge_h / 2, 1, eyebrow_border, egui_color_alpha_mix(self->alpha, 40));
 
     text_region.location.x = x + padding;
     text_region.location.y = y + padding;
@@ -429,16 +430,16 @@ static void egui_view_badge_group_on_draw(egui_view_t *self)
     }
 
     egui_canvas_draw_round_rectangle_fill(x + padding, footer_y, w - padding * 2, footer_h, local->compact_mode ? 6 : 8, footer_fill,
-                                          egui_color_alpha_mix(self->alpha, local->compact_mode ? 22 : 28));
+                                          egui_color_alpha_mix(self->alpha, local->compact_mode ? 16 : 20));
     egui_canvas_draw_round_rectangle(x + padding, footer_y, w - padding * 2, footer_h, local->compact_mode ? 6 : 8, 1, footer_border,
-                                     egui_color_alpha_mix(self->alpha, local->compact_mode ? 32 : 38));
+                                     egui_color_alpha_mix(self->alpha, local->compact_mode ? 22 : 26));
 
     if (!local->compact_mode)
     {
         egui_canvas_draw_round_rectangle_fill(focus_pill_x, focus_pill_y, focus_pill_w, focus_pill_h, focus_pill_h / 2, focus_fill,
-                                              egui_color_alpha_mix(self->alpha, 94));
+                                              egui_color_alpha_mix(self->alpha, 78));
         egui_canvas_draw_round_rectangle(focus_pill_x, focus_pill_y, focus_pill_w, focus_pill_h, focus_pill_h / 2, 1, focus_border,
-                                         egui_color_alpha_mix(self->alpha, 56));
+                                         egui_color_alpha_mix(self->alpha, 38));
 
         text_region.location.x = focus_pill_x;
         text_region.location.y = focus_pill_y;
@@ -462,9 +463,41 @@ static void egui_view_badge_group_on_draw(egui_view_t *self)
     }
 }
 
+#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
+static int egui_view_badge_group_on_touch_event(egui_view_t *self, egui_motion_event_t *event)
+{
+    EGUI_LOCAL_INIT(egui_view_badge_group_t);
+
+    if (local->read_only_mode)
+    {
+        if (event->type == EGUI_MOTION_EVENT_ACTION_UP || event->type == EGUI_MOTION_EVENT_ACTION_CANCEL)
+        {
+            egui_view_set_pressed(self, false);
+        }
+        return 0;
+    }
+
+    return egui_view_on_touch_event(self, event);
+}
+#endif
+
+#if EGUI_CONFIG_FUNCTION_SUPPORT_KEY
+static int egui_view_badge_group_on_key_event(egui_view_t *self, egui_key_event_t *event)
+{
+    EGUI_LOCAL_INIT(egui_view_badge_group_t);
+
+    if (local->read_only_mode)
+    {
+        return 0;
+    }
+
+    return egui_view_on_key_event(self, event);
+}
+#endif
+
 const egui_view_api_t EGUI_VIEW_API_TABLE_NAME(egui_view_badge_group_t) = {
         .dispatch_touch_event = egui_view_dispatch_touch_event,
-        .on_touch_event = egui_view_on_touch_event,
+        .on_touch_event = egui_view_badge_group_on_touch_event,
         .on_intercept_touch_event = egui_view_on_intercept_touch_event,
         .compute_scroll = egui_view_compute_scroll,
         .calculate_layout = egui_view_calculate_layout,
@@ -475,7 +508,7 @@ const egui_view_api_t EGUI_VIEW_API_TABLE_NAME(egui_view_badge_group_t) = {
         .on_detach_from_window = egui_view_on_detach_from_window,
 #if EGUI_CONFIG_FUNCTION_SUPPORT_KEY
         .dispatch_key_event = egui_view_dispatch_key_event,
-        .on_key_event = egui_view_on_key_event,
+        .on_key_event = egui_view_badge_group_on_key_event,
 #endif
 };
 
@@ -491,15 +524,15 @@ void egui_view_badge_group_init(egui_view_t *self)
     local->font = (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT;
     local->meta_font = (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT;
     local->surface_color = EGUI_COLOR_HEX(0xFFFFFF);
-    local->border_color = EGUI_COLOR_HEX(0xD7DFE7);
-    local->text_color = EGUI_COLOR_HEX(0x17212B);
-    local->muted_text_color = EGUI_COLOR_HEX(0x617080);
-    local->accent_color = EGUI_COLOR_HEX(0x2563EB);
-    local->success_color = EGUI_COLOR_HEX(0x0F9D58);
-    local->warning_color = EGUI_COLOR_HEX(0xC77C11);
-    local->neutral_color = EGUI_COLOR_HEX(0x6A7480);
+    local->border_color = EGUI_COLOR_HEX(0xD2DBE3);
+    local->text_color = EGUI_COLOR_HEX(0x1A2734);
+    local->muted_text_color = EGUI_COLOR_HEX(0x6B7A89);
+    local->accent_color = EGUI_COLOR_HEX(0x0F6CBD);
+    local->success_color = EGUI_COLOR_HEX(0x0F7B45);
+    local->warning_color = EGUI_COLOR_HEX(0x9D5D00);
+    local->neutral_color = EGUI_COLOR_HEX(0x7A8796);
     local->snapshot_count = 0;
     local->current_snapshot = 0;
     local->compact_mode = 0;
-    local->locked_mode = 0;
+    local->read_only_mode = 0;
 }
