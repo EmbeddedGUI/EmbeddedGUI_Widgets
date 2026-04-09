@@ -99,6 +99,14 @@ static egui_color_t parallax_view_mix_disabled(egui_color_t color)
     return egui_rgb_mix(color, EGUI_COLOR_HEX(0xA8B4BF), 54);
 }
 
+static void parallax_view_clear_pressed_state(egui_view_t *self)
+{
+    EGUI_LOCAL_INIT(egui_view_parallax_view_t);
+
+    local->pressed_row = EGUI_VIEW_PARALLAX_VIEW_INDEX_NONE;
+    egui_view_set_pressed(self, false);
+}
+
 static egui_color_t parallax_view_tone_color(egui_view_parallax_view_t *local, uint8_t tone)
 {
     switch (tone)
@@ -480,8 +488,10 @@ void egui_view_parallax_view_set_rows(egui_view_t *self, const egui_view_paralla
 
     local->rows = rows;
     local->row_count = parallax_view_clamp_row_count(row_count);
-    local->pressed_row = EGUI_VIEW_PARALLAX_VIEW_INDEX_NONE;
-    parallax_view_set_offset_inner(self, local->offset, 1);
+    parallax_view_clear_pressed_state(self);
+    local->offset = parallax_view_clamp_offset_value(local, local->offset);
+    parallax_view_notify_changed(self);
+    egui_view_invalidate(self);
 }
 
 void egui_view_parallax_view_set_header(egui_view_t *self, const char *title, const char *subtitle, const char *footer_prefix)
@@ -578,7 +588,7 @@ void egui_view_parallax_view_set_compact_mode(egui_view_t *self, uint8_t compact
     EGUI_LOCAL_INIT(egui_view_parallax_view_t);
 
     local->compact_mode = compact_mode ? 1 : 0;
-    local->pressed_row = EGUI_VIEW_PARALLAX_VIEW_INDEX_NONE;
+    parallax_view_clear_pressed_state(self);
     egui_view_invalidate(self);
 }
 
@@ -587,8 +597,7 @@ void egui_view_parallax_view_set_read_only_mode(egui_view_t *self, uint8_t read_
     EGUI_LOCAL_INIT(egui_view_parallax_view_t);
 
     local->read_only_mode = read_only_mode ? 1 : 0;
-    local->pressed_row = EGUI_VIEW_PARALLAX_VIEW_INDEX_NONE;
-    egui_view_set_pressed(self, false);
+    parallax_view_clear_pressed_state(self);
     egui_view_invalidate(self);
 }
 
@@ -760,17 +769,14 @@ static int egui_view_parallax_view_on_touch_event(egui_view_t *self, egui_motion
     EGUI_LOCAL_INIT(egui_view_parallax_view_t);
     uint8_t hit_row;
 
-    if (!egui_view_get_enable(self) || local->compact_mode)
+    if (!egui_view_get_enable(self) || local->compact_mode || local->read_only_mode)
     {
-        return 0;
-    }
-    if (local->read_only_mode)
-    {
-        if (event->type == EGUI_MOTION_EVENT_ACTION_UP || event->type == EGUI_MOTION_EVENT_ACTION_CANCEL)
+        if (self->is_pressed || local->pressed_row != EGUI_VIEW_PARALLAX_VIEW_INDEX_NONE)
         {
-            local->pressed_row = EGUI_VIEW_PARALLAX_VIEW_INDEX_NONE;
-            egui_view_set_pressed(self, false);
+            parallax_view_clear_pressed_state(self);
+            egui_view_invalidate(self);
         }
+        EGUI_UNUSED(event);
         return 0;
     }
 
@@ -792,13 +798,11 @@ static int egui_view_parallax_view_on_touch_event(egui_view_t *self, egui_motion
         {
             parallax_view_set_offset_inner(self, local->rows[hit_row].anchor_offset, 1);
         }
-        local->pressed_row = EGUI_VIEW_PARALLAX_VIEW_INDEX_NONE;
-        egui_view_set_pressed(self, false);
+        parallax_view_clear_pressed_state(self);
         egui_view_invalidate(self);
         return hit_row != EGUI_VIEW_PARALLAX_VIEW_INDEX_NONE;
     case EGUI_MOTION_EVENT_ACTION_CANCEL:
-        local->pressed_row = EGUI_VIEW_PARALLAX_VIEW_INDEX_NONE;
-        egui_view_set_pressed(self, false);
+        parallax_view_clear_pressed_state(self);
         egui_view_invalidate(self);
         return 1;
     default:
@@ -905,574 +909,3 @@ void egui_view_parallax_view_init(egui_view_t *self)
 
     egui_view_set_view_name(self, "egui_view_parallax_view");
 }
-
-#if 0
-static uint8_t parallax_view_hit_row(egui_view_parallax_view_t *local, egui_view_t *self, egui_dim_t x, egui_dim_t y)
-{
-    egui_view_parallax_view_metrics_t metrics;
-    egui_dim_t local_x = x - self->region_screen.location.x;
-    egui_dim_t local_y = y - self->region_screen.location.y;
-    uint8_t i;
-
-    parallax_view_get_metrics(local, self, &metrics);
-    for (i = 0; i < local->row_count; i++)
-    {
-        if (egui_region_pt_in_rect(&metrics.row_regions[i], x, y) || egui_region_pt_in_rect(&metrics.row_regions[i], local_x, local_y))
-        {
-            return i;
-        }
-    }
-
-    return EGUI_VIEW_PARALLAX_VIEW_INDEX_NONE;
-}
-
-static void parallax_view_set_offset_inner(egui_view_t *self, egui_dim_t offset, uint8_t notify)
-{
-    EGUI_LOCAL_INIT(egui_view_parallax_view_t);
-    egui_dim_t clamped_offset = parallax_view_clamp_offset_value(local, offset);
-
-    if (local->offset == clamped_offset)
-    {
-        return;
-    }
-
-    local->offset = clamped_offset;
-    local->pressed_row = EGUI_VIEW_PARALLAX_VIEW_INDEX_NONE;
-    egui_view_invalidate(self);
-    if (notify)
-    {
-        parallax_view_notify_changed(self);
-    }
-}
-
-void egui_view_parallax_view_set_rows(egui_view_t *self, const egui_view_parallax_view_row_t *rows, uint8_t row_count)
-{
-    EGUI_LOCAL_INIT(egui_view_parallax_view_t);
-
-    local->rows = rows;
-    local->row_count = parallax_view_clamp_row_count(row_count);
-    local->pressed_row = EGUI_VIEW_PARALLAX_VIEW_INDEX_NONE;
-    local->offset = parallax_view_clamp_offset_value(local, local->offset);
-    egui_view_invalidate(self);
-}
-
-void egui_view_parallax_view_set_header(egui_view_t *self, const char *title, const char *subtitle, const char *footer_prefix)
-{
-    EGUI_LOCAL_INIT(egui_view_parallax_view_t);
-
-    local->title = title;
-    local->subtitle = subtitle;
-    local->footer_prefix = footer_prefix;
-    egui_view_invalidate(self);
-}
-
-void egui_view_parallax_view_set_font(egui_view_t *self, const egui_font_t *font)
-{
-    EGUI_LOCAL_INIT(egui_view_parallax_view_t);
-    local->font = font ? font : (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT;
-    egui_view_invalidate(self);
-}
-
-void egui_view_parallax_view_set_meta_font(egui_view_t *self, const egui_font_t *font)
-{
-    EGUI_LOCAL_INIT(egui_view_parallax_view_t);
-    local->meta_font = font ? font : (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT;
-    egui_view_invalidate(self);
-}
-
-void egui_view_parallax_view_set_on_changed_listener(egui_view_t *self, egui_view_on_parallax_view_changed_listener_t listener)
-{
-    EGUI_LOCAL_INIT(egui_view_parallax_view_t);
-    local->on_changed = listener;
-}
-
-void egui_view_parallax_view_set_content_metrics(egui_view_t *self, egui_dim_t content_length, egui_dim_t viewport_length)
-{
-    EGUI_LOCAL_INIT(egui_view_parallax_view_t);
-    egui_dim_t clamped_offset;
-    uint8_t changed = 0;
-
-    if (content_length < 0)
-    {
-        content_length = 0;
-    }
-    if (viewport_length < 0)
-    {
-        viewport_length = 0;
-    }
-
-    if (local->content_length != content_length)
-    {
-        local->content_length = content_length;
-        changed = 1;
-    }
-    if (local->viewport_length != viewport_length)
-    {
-        local->viewport_length = viewport_length;
-        changed = 1;
-    }
-
-    clamped_offset = parallax_view_clamp_offset_value(local, local->offset);
-    if (clamped_offset != local->offset)
-    {
-        local->offset = clamped_offset;
-        changed = 1;
-        parallax_view_notify_changed(self);
-    }
-
-    if (changed)
-    {
-        egui_view_invalidate(self);
-    }
-}
-
-egui_dim_t egui_view_parallax_view_get_content_length(egui_view_t *self)
-{
-    EGUI_LOCAL_INIT(egui_view_parallax_view_t);
-    return local->content_length;
-}
-
-egui_dim_t egui_view_parallax_view_get_viewport_length(egui_view_t *self)
-{
-    EGUI_LOCAL_INIT(egui_view_parallax_view_t);
-    return local->viewport_length;
-}
-
-void egui_view_parallax_view_set_offset(egui_view_t *self, egui_dim_t offset)
-{
-    parallax_view_set_offset_inner(self, offset, 1);
-}
-
-egui_dim_t egui_view_parallax_view_get_offset(egui_view_t *self)
-{
-    EGUI_LOCAL_INIT(egui_view_parallax_view_t);
-    return local->offset;
-}
-
-egui_dim_t egui_view_parallax_view_get_max_offset(egui_view_t *self)
-{
-    EGUI_LOCAL_INIT(egui_view_parallax_view_t);
-    return parallax_view_get_max_offset_inner(local);
-}
-
-void egui_view_parallax_view_set_vertical_shift(egui_view_t *self, egui_dim_t vertical_shift)
-{
-    EGUI_LOCAL_INIT(egui_view_parallax_view_t);
-    if (vertical_shift < 0)
-    {
-        vertical_shift = 0;
-    }
-    local->vertical_shift = vertical_shift;
-    egui_view_invalidate(self);
-}
-
-egui_dim_t egui_view_parallax_view_get_vertical_shift(egui_view_t *self)
-{
-    EGUI_LOCAL_INIT(egui_view_parallax_view_t);
-    return local->vertical_shift;
-}
-
-void egui_view_parallax_view_set_step_size(egui_view_t *self, egui_dim_t line_step, egui_dim_t page_step)
-{
-    EGUI_LOCAL_INIT(egui_view_parallax_view_t);
-    local->line_step = line_step > 0 ? line_step : 1;
-    local->page_step = page_step > 0 ? page_step : 1;
-}
-
-void egui_view_parallax_view_set_compact_mode(egui_view_t *self, uint8_t compact_mode)
-{
-    EGUI_LOCAL_INIT(egui_view_parallax_view_t);
-    local->compact_mode = compact_mode ? 1 : 0;
-    local->pressed_row = EGUI_VIEW_PARALLAX_VIEW_INDEX_NONE;
-    egui_view_set_pressed(self, false);
-    egui_view_invalidate(self);
-}
-
-void egui_view_parallax_view_set_locked_mode(egui_view_t *self, uint8_t locked_mode)
-{
-    EGUI_LOCAL_INIT(egui_view_parallax_view_t);
-    local->locked_mode = locked_mode ? 1 : 0;
-    local->pressed_row = EGUI_VIEW_PARALLAX_VIEW_INDEX_NONE;
-    egui_view_set_pressed(self, false);
-    egui_view_invalidate(self);
-}
-
-uint8_t egui_view_parallax_view_get_active_row(egui_view_t *self)
-{
-    EGUI_LOCAL_INIT(egui_view_parallax_view_t);
-    return parallax_view_get_active_row_inner(local);
-}
-
-uint8_t egui_view_parallax_view_get_row_region(egui_view_t *self, uint8_t row_index, egui_region_t *region)
-{
-    EGUI_LOCAL_INIT(egui_view_parallax_view_t);
-    egui_view_parallax_view_metrics_t metrics;
-
-    if (region == NULL || row_index >= local->row_count)
-    {
-        return 0;
-    }
-
-    parallax_view_get_metrics(local, self, &metrics);
-    if (metrics.row_regions[row_index].size.width <= 0 || metrics.row_regions[row_index].size.height <= 0)
-    {
-        return 0;
-    }
-
-    *region = metrics.row_regions[row_index];
-    return 1;
-}
-
-static void parallax_view_draw_hero(egui_view_t *self, egui_view_parallax_view_t *local, const egui_view_parallax_view_metrics_t *metrics, uint8_t active_row)
-{
-    egui_region_t hero_region;
-    egui_region_t title_region;
-    egui_region_t subtitle_region;
-    egui_region_t progress_region;
-    egui_color_t tone_color = active_row < local->row_count ? parallax_view_tone_color(local, local->rows[active_row].tone) : local->accent_color;
-    egui_color_t hero_fill = egui_rgb_mix(local->panel_color, tone_color, 10);
-    egui_color_t hero_border = egui_rgb_mix(local->border_color, tone_color, 22);
-    egui_color_t title_color = egui_rgb_mix(local->text_color, tone_color, 6);
-    egui_color_t subtitle_color = egui_rgb_mix(local->muted_text_color, tone_color, 12);
-    egui_dim_t max_offset = parallax_view_get_max_offset_inner(local);
-    egui_dim_t shift = max_offset > 0 ? (egui_dim_t)((int32_t)local->offset * local->vertical_shift / max_offset) : 0;
-    egui_dim_t pill_w;
-    char progress_text[24];
-
-    parallax_view_region_to_screen(self, &metrics->hero_region, &hero_region);
-    parallax_view_region_to_screen(self, &metrics->title_region, &title_region);
-    parallax_view_region_to_screen(self, &metrics->subtitle_region, &subtitle_region);
-    parallax_view_region_to_screen(self, &metrics->progress_region, &progress_region);
-
-    if (local->locked_mode)
-    {
-        hero_fill = egui_rgb_mix(hero_fill, local->surface_color, 30);
-        hero_border = egui_rgb_mix(hero_border, local->muted_text_color, 18);
-        title_color = egui_rgb_mix(title_color, local->muted_text_color, 18);
-        subtitle_color = egui_rgb_mix(subtitle_color, local->muted_text_color, 18);
-        tone_color = egui_rgb_mix(tone_color, local->muted_text_color, 32);
-    }
-    if (!egui_view_get_enable(self))
-    {
-        hero_fill = parallax_view_mix_disabled(hero_fill);
-        hero_border = parallax_view_mix_disabled(hero_border);
-        title_color = parallax_view_mix_disabled(title_color);
-        subtitle_color = parallax_view_mix_disabled(subtitle_color);
-        tone_color = parallax_view_mix_disabled(tone_color);
-    }
-
-    parallax_view_draw_round_fill_safe(hero_region.location.x, hero_region.location.y, hero_region.size.width, hero_region.size.height,
-                                       local->compact_mode ? 8 : 10, hero_fill, egui_color_alpha_mix(self->alpha, 98));
-    parallax_view_draw_round_stroke_safe(hero_region.location.x, hero_region.location.y, hero_region.size.width, hero_region.size.height,
-                                         local->compact_mode ? 8 : 10, 1, hero_border, egui_color_alpha_mix(self->alpha, 44));
-
-    parallax_view_draw_round_fill_safe(hero_region.location.x + 10, hero_region.location.y + 8 - shift / 3, hero_region.size.width - 20,
-                                       local->compact_mode ? 6 : 8, 4, egui_rgb_mix(local->surface_color, tone_color, 22),
-                                       egui_color_alpha_mix(self->alpha, 58));
-    parallax_view_draw_round_fill_safe(hero_region.location.x + 18, hero_region.location.y + hero_region.size.height / 2 - shift / 2,
-                                       hero_region.size.width - 54, local->compact_mode ? 14 : 18, local->compact_mode ? 7 : 9,
-                                       egui_rgb_mix(local->surface_color, tone_color, 12), egui_color_alpha_mix(self->alpha, 36));
-    parallax_view_draw_round_fill_safe(hero_region.location.x + hero_region.size.width / 2, hero_region.location.y + hero_region.size.height - 16 - shift,
-                                       hero_region.size.width / 3, local->compact_mode ? 12 : 16, local->compact_mode ? 6 : 8,
-                                       egui_rgb_mix(local->surface_color, tone_color, 16), egui_color_alpha_mix(self->alpha, 34));
-
-    title_region.size.width = progress_region.location.x - title_region.location.x - (local->compact_mode ? 6 : 8);
-    parallax_view_draw_text(local->font, self, local->title, &title_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, title_color);
-    if (!local->compact_mode)
-    {
-        parallax_view_draw_text(local->meta_font, self, local->subtitle, &subtitle_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, subtitle_color);
-    }
-
-    parallax_view_format_progress(progress_text, sizeof(progress_text), local->offset, max_offset);
-    pill_w = (egui_dim_t)(18 + parallax_view_text_len(progress_text) * 5);
-    if (pill_w > progress_region.size.width)
-    {
-        pill_w = progress_region.size.width;
-    }
-    progress_region.location.x = progress_region.location.x + progress_region.size.width - pill_w;
-    progress_region.size.width = pill_w;
-    parallax_view_draw_round_fill_safe(progress_region.location.x, progress_region.location.y, progress_region.size.width, progress_region.size.height,
-                                       progress_region.size.height / 2, egui_rgb_mix(local->surface_color, tone_color, 22),
-                                       egui_color_alpha_mix(self->alpha, 92));
-    parallax_view_draw_round_stroke_safe(progress_region.location.x, progress_region.location.y, progress_region.size.width, progress_region.size.height,
-                                         progress_region.size.height / 2, 1, egui_rgb_mix(local->border_color, tone_color, 24),
-                                         egui_color_alpha_mix(self->alpha, 42));
-    parallax_view_draw_text(local->meta_font, self, progress_text, &progress_region, EGUI_ALIGN_CENTER, tone_color);
-}
-
-static void parallax_view_draw_rows(egui_view_t *self, egui_view_parallax_view_t *local, const egui_view_parallax_view_metrics_t *metrics, uint8_t active_row)
-{
-    uint8_t i;
-
-    for (i = 0; i < local->row_count; i++)
-    {
-        egui_region_t row_region;
-        egui_region_t title_region;
-        egui_region_t meta_region;
-        egui_color_t tone_color = parallax_view_tone_color(local, local->rows[i].tone);
-        egui_color_t row_fill = egui_rgb_mix(local->surface_color, tone_color, i == active_row ? 12 : 5);
-        egui_color_t row_border = egui_rgb_mix(local->border_color, tone_color, i == active_row ? 28 : 14);
-        egui_color_t title_color = i == active_row ? egui_rgb_mix(local->text_color, tone_color, 10) : local->text_color;
-        egui_color_t meta_color = egui_rgb_mix(local->muted_text_color, tone_color, i == active_row ? 18 : 10);
-        egui_color_t accent_fill = i == active_row ? tone_color : egui_rgb_mix(local->surface_color, tone_color, 26);
-
-        parallax_view_region_to_screen(self, &metrics->row_regions[i], &row_region);
-
-        if (i == local->pressed_row)
-        {
-            row_fill = egui_rgb_mix(row_fill, tone_color, 12);
-        }
-        if (local->locked_mode)
-        {
-            row_fill = egui_rgb_mix(row_fill, local->surface_color, 24);
-            row_border = egui_rgb_mix(row_border, local->muted_text_color, 18);
-            title_color = egui_rgb_mix(title_color, local->muted_text_color, 16);
-            meta_color = egui_rgb_mix(meta_color, local->muted_text_color, 18);
-            accent_fill = egui_rgb_mix(accent_fill, local->muted_text_color, 26);
-        }
-        if (!egui_view_get_enable(self))
-        {
-            row_fill = parallax_view_mix_disabled(row_fill);
-            row_border = parallax_view_mix_disabled(row_border);
-            title_color = parallax_view_mix_disabled(title_color);
-            meta_color = parallax_view_mix_disabled(meta_color);
-            accent_fill = parallax_view_mix_disabled(accent_fill);
-        }
-
-        parallax_view_draw_round_fill_safe(row_region.location.x + 1, row_region.location.y + 2, row_region.size.width, row_region.size.height,
-                                           local->compact_mode ? 6 : 8, EGUI_COLOR_HEX(0x182433), egui_color_alpha_mix(self->alpha, 10));
-        parallax_view_draw_round_fill_safe(row_region.location.x, row_region.location.y, row_region.size.width, row_region.size.height,
-                                           local->compact_mode ? 6 : 8, row_fill, egui_color_alpha_mix(self->alpha, 96));
-        parallax_view_draw_round_stroke_safe(row_region.location.x, row_region.location.y, row_region.size.width, row_region.size.height,
-                                             local->compact_mode ? 6 : 8, 1, row_border, egui_color_alpha_mix(self->alpha, i == active_row ? 50 : 30));
-
-        parallax_view_draw_round_fill_safe(row_region.location.x + 6, row_region.location.y + 4, local->compact_mode ? 4 : 5, row_region.size.height - 8,
-                                           2, accent_fill, egui_color_alpha_mix(self->alpha, i == active_row ? 100 : 72));
-
-        title_region.location.x = row_region.location.x + (local->compact_mode ? 15 : 19);
-        title_region.location.y = row_region.location.y;
-        title_region.size.width = row_region.size.width - (local->compact_mode ? 58 : 74);
-        title_region.size.height = row_region.size.height;
-        parallax_view_draw_text(local->font, self, local->rows[i].title, &title_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, title_color);
-
-        meta_region.size.width = local->compact_mode ? 34 : 44;
-        meta_region.size.height = local->compact_mode ? 10 : 11;
-        meta_region.location.x = row_region.location.x + row_region.size.width - meta_region.size.width - (local->compact_mode ? 6 : 8);
-        meta_region.location.y = row_region.location.y + (row_region.size.height - meta_region.size.height) / 2;
-        parallax_view_draw_round_fill_safe(meta_region.location.x, meta_region.location.y, meta_region.size.width, meta_region.size.height,
-                                           meta_region.size.height / 2, egui_rgb_mix(local->panel_color, tone_color, i == active_row ? 18 : 10),
-                                           egui_color_alpha_mix(self->alpha, 88));
-        parallax_view_draw_text(local->meta_font, self, local->rows[i].meta, &meta_region, EGUI_ALIGN_CENTER, meta_color);
-    }
-}
-
-static void parallax_view_draw_footer(egui_view_t *self, egui_view_parallax_view_t *local, const egui_view_parallax_view_metrics_t *metrics, uint8_t active_row)
-{
-    egui_region_t footer_region;
-    egui_color_t tone_color = active_row < local->row_count ? parallax_view_tone_color(local, local->rows[active_row].tone) : local->accent_color;
-    egui_color_t footer_fill = egui_rgb_mix(local->surface_color, tone_color, 16);
-    egui_color_t footer_border = egui_rgb_mix(local->border_color, tone_color, 24);
-    egui_color_t footer_text = tone_color;
-    char footer_text_buffer[72];
-
-    parallax_view_region_to_screen(self, &metrics->footer_region, &footer_region);
-
-    if (local->locked_mode)
-    {
-        footer_fill = egui_rgb_mix(footer_fill, local->surface_color, 20);
-        footer_border = egui_rgb_mix(footer_border, local->muted_text_color, 22);
-        footer_text = egui_rgb_mix(footer_text, local->muted_text_color, 26);
-    }
-    if (!egui_view_get_enable(self))
-    {
-        footer_fill = parallax_view_mix_disabled(footer_fill);
-        footer_border = parallax_view_mix_disabled(footer_border);
-        footer_text = parallax_view_mix_disabled(footer_text);
-    }
-
-    parallax_view_format_footer(local, footer_text_buffer, sizeof(footer_text_buffer), active_row);
-    parallax_view_draw_round_fill_safe(footer_region.location.x, footer_region.location.y, footer_region.size.width, footer_region.size.height,
-                                       footer_region.size.height / 2, footer_fill, egui_color_alpha_mix(self->alpha, 96));
-    parallax_view_draw_round_stroke_safe(footer_region.location.x, footer_region.location.y, footer_region.size.width, footer_region.size.height,
-                                         footer_region.size.height / 2, 1, footer_border, egui_color_alpha_mix(self->alpha, 36));
-    parallax_view_draw_text(local->meta_font, self, footer_text_buffer, &footer_region, EGUI_ALIGN_CENTER, footer_text);
-}
-
-static void egui_view_parallax_view_on_draw(egui_view_t *self)
-{
-    EGUI_LOCAL_INIT(egui_view_parallax_view_t);
-    egui_view_parallax_view_metrics_t metrics;
-    egui_color_t surface_color = local->surface_color;
-    egui_color_t border_color = local->border_color;
-    uint8_t active_row = parallax_view_get_active_row_inner(local);
-
-    parallax_view_get_metrics(local, self, &metrics);
-
-    if (local->locked_mode)
-    {
-        surface_color = egui_rgb_mix(surface_color, EGUI_COLOR_HEX(0xF4F6F8), 24);
-        border_color = egui_rgb_mix(border_color, EGUI_COLOR_HEX(0xA7B3BF), 18);
-    }
-    if (!egui_view_get_enable(self))
-    {
-        surface_color = parallax_view_mix_disabled(surface_color);
-        border_color = parallax_view_mix_disabled(border_color);
-    }
-
-    parallax_view_draw_round_fill_safe(self->region_screen.location.x, self->region_screen.location.y, self->region_screen.size.width,
-                                       self->region_screen.size.height, local->compact_mode ? PV_COMPACT_RADIUS : PV_STD_RADIUS, surface_color,
-                                       egui_color_alpha_mix(self->alpha, 100));
-    parallax_view_draw_round_stroke_safe(self->region_screen.location.x, self->region_screen.location.y, self->region_screen.size.width,
-                                         self->region_screen.size.height, local->compact_mode ? PV_COMPACT_RADIUS : PV_STD_RADIUS, 1, border_color,
-                                         egui_color_alpha_mix(self->alpha, 54));
-
-    parallax_view_draw_hero(self, local, &metrics, active_row);
-    parallax_view_draw_rows(self, local, &metrics, active_row);
-    parallax_view_draw_footer(self, local, &metrics, active_row);
-}
-
-#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
-static int egui_view_parallax_view_on_touch_event(egui_view_t *self, egui_motion_event_t *event)
-{
-    EGUI_LOCAL_INIT(egui_view_parallax_view_t);
-    uint8_t hit_row;
-
-    if (local->row_count == 0 || local->rows == NULL || local->compact_mode || local->locked_mode || !egui_view_get_enable(self))
-    {
-        return 0;
-    }
-
-    switch (event->type)
-    {
-    case EGUI_MOTION_EVENT_ACTION_DOWN:
-        hit_row = parallax_view_hit_row(local, self, event->location.x, event->location.y);
-        if (hit_row == EGUI_VIEW_PARALLAX_VIEW_INDEX_NONE)
-        {
-            return 0;
-        }
-        local->pressed_row = hit_row;
-        egui_view_set_pressed(self, true);
-        egui_view_invalidate(self);
-        return 1;
-    case EGUI_MOTION_EVENT_ACTION_UP:
-        hit_row = parallax_view_hit_row(local, self, event->location.x, event->location.y);
-        if (hit_row == local->pressed_row && hit_row < local->row_count)
-        {
-            parallax_view_set_offset_inner(self, local->rows[hit_row].anchor_offset, 1);
-        }
-        local->pressed_row = EGUI_VIEW_PARALLAX_VIEW_INDEX_NONE;
-        egui_view_set_pressed(self, false);
-        egui_view_invalidate(self);
-        return hit_row != EGUI_VIEW_PARALLAX_VIEW_INDEX_NONE;
-    case EGUI_MOTION_EVENT_ACTION_CANCEL:
-        local->pressed_row = EGUI_VIEW_PARALLAX_VIEW_INDEX_NONE;
-        egui_view_set_pressed(self, false);
-        egui_view_invalidate(self);
-        return 1;
-    default:
-        return 0;
-    }
-}
-#endif
-
-#if EGUI_CONFIG_FUNCTION_SUPPORT_KEY
-static int egui_view_parallax_view_on_key_event(egui_view_t *self, egui_key_event_t *event)
-{
-    EGUI_LOCAL_INIT(egui_view_parallax_view_t);
-
-    if (event->type != EGUI_KEY_EVENT_ACTION_UP)
-    {
-        return 0;
-    }
-    if (local->row_count == 0 || local->rows == NULL || local->compact_mode || local->locked_mode || !egui_view_get_enable(self))
-    {
-        return 0;
-    }
-
-    switch (event->key_code)
-    {
-    case EGUI_KEY_CODE_UP:
-    case EGUI_KEY_CODE_LEFT:
-        parallax_view_set_offset_inner(self, (egui_dim_t)(local->offset - local->line_step), 1);
-        return 1;
-    case EGUI_KEY_CODE_DOWN:
-    case EGUI_KEY_CODE_RIGHT:
-        parallax_view_set_offset_inner(self, (egui_dim_t)(local->offset + local->line_step), 1);
-        return 1;
-    case EGUI_KEY_CODE_HOME:
-        parallax_view_set_offset_inner(self, 0, 1);
-        return 1;
-    case EGUI_KEY_CODE_END:
-        parallax_view_set_offset_inner(self, parallax_view_get_max_offset_inner(local), 1);
-        return 1;
-    case EGUI_KEY_CODE_PLUS:
-        parallax_view_set_offset_inner(self, (egui_dim_t)(local->offset + local->page_step), 1);
-        return 1;
-    case EGUI_KEY_CODE_MINUS:
-        parallax_view_set_offset_inner(self, (egui_dim_t)(local->offset - local->page_step), 1);
-        return 1;
-    default:
-        return egui_view_on_key_event(self, event);
-    }
-}
-#endif
-
-const egui_view_api_t EGUI_VIEW_API_TABLE_NAME(egui_view_parallax_view_t) = {
-        .dispatch_touch_event = egui_view_dispatch_touch_event,
-#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
-        .on_touch_event = egui_view_parallax_view_on_touch_event,
-#else
-        .on_touch_event = egui_view_on_touch_event,
-#endif
-        .on_intercept_touch_event = egui_view_on_intercept_touch_event,
-        .compute_scroll = egui_view_compute_scroll,
-        .calculate_layout = egui_view_calculate_layout,
-        .request_layout = egui_view_request_layout,
-        .draw = egui_view_draw,
-        .on_attach_to_window = egui_view_on_attach_to_window,
-        .on_draw = egui_view_parallax_view_on_draw,
-        .on_detach_from_window = egui_view_on_detach_from_window,
-#if EGUI_CONFIG_FUNCTION_SUPPORT_KEY
-        .dispatch_key_event = egui_view_dispatch_key_event,
-        .on_key_event = egui_view_parallax_view_on_key_event,
-#endif
-};
-
-void egui_view_parallax_view_init(egui_view_t *self)
-{
-    EGUI_INIT_LOCAL(egui_view_parallax_view_t);
-
-    egui_view_init(self);
-    self->api = &EGUI_VIEW_API_TABLE_NAME(egui_view_parallax_view_t);
-    egui_view_set_padding_all(self, 2);
-
-    local->rows = NULL;
-    local->font = (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT;
-    local->meta_font = (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT;
-    local->on_changed = NULL;
-    local->title = NULL;
-    local->subtitle = NULL;
-    local->footer_prefix = NULL;
-    local->surface_color = EGUI_COLOR_HEX(0xFFFFFF);
-    local->panel_color = EGUI_COLOR_HEX(0xF4F8FC);
-    local->border_color = EGUI_COLOR_HEX(0xD7E0E8);
-    local->text_color = EGUI_COLOR_HEX(0x1A2734);
-    local->muted_text_color = EGUI_COLOR_HEX(0x6E7D8D);
-    local->accent_color = EGUI_COLOR_HEX(0x2563EB);
-    local->success_color = EGUI_COLOR_HEX(0x178454);
-    local->warning_color = EGUI_COLOR_HEX(0xB87A16);
-    local->neutral_color = EGUI_COLOR_HEX(0x718090);
-    local->content_length = 640;
-    local->viewport_length = 80;
-    local->offset = 0;
-    local->vertical_shift = 18;
-    local->line_step = 40;
-    local->page_step = 180;
-    local->row_count = 0;
-    local->compact_mode = 0;
-    local->locked_mode = 0;
-    local->pressed_row = EGUI_VIEW_PARALLAX_VIEW_INDEX_NONE;
-
-    egui_view_set_view_name(self, "egui_view_parallax_view");
-}
-#endif

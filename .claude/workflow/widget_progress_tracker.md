@@ -98,6 +98,11 @@
 ## 最近完成的收口动作
 
 - `2026-04-10`
+  - 完成 `layout/parallax_view` 二次收口：在已落到 `reference` 结构的基础上，清理 `egui_view_parallax_view.c` 文件尾部残留的旧 `locked_mode` 死代码，并继续把 pressed 清理语义统一到 `compact / read only / disabled` 交互链路里。
+  - `egui_view_parallax_view.c` 新增统一的 `parallax_view_clear_pressed_state()`，让 `set_rows()`、`set_compact_mode()`、`set_read_only_mode()` 与 touch 入口都通过同一 helper 清空 `pressed_row / is_pressed`；`set_rows()` 同步重算 offset、触发 `on_changed` 并刷新渲染，避免交互切换后残留旧高亮。
+  - `example/HelloUnitTest/test/test_parallax_view.c` 新增“异目标 release 不提交”“`ACTION_CANCEL` 清理 pressed”“切入 `compact` 清 pressed 并忽略输入”“disabled 新输入清理残留 pressed”与独立的 `read only` 输入抑制回归，确保交互后的渲染状态稳定。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=layout/parallax_view PORT=pc`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category layout`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub layout/parallax_view --track reference --timeout 10 --keep-screenshots`、`python scripts/checks/check_docs_encoding.py`，并把关键帧归档到本地 `iteration_log/` 供验收复核。
+- `2026-04-10`
   - 完成 `input/number_box` 二次收口：在原有 `reference` 页面结构基础上，把控件内部的旧 `locked_mode` 语义统一为 `read_only_mode`，并继续压轻只读态 field、border、文字和 accent 的对比度。
   - `test.c` 新增 `apply_read_only_state()`，让 `read only` 预览在初始化和录制 case `0` 重置时都显式回到只读态；同步微调标题间距和主态 / `compact` / `read only` palette，继续保持底部两个 preview 只承担 reference 对照职责。
   - `egui_view_number_box.h/.c` 把 `locked_mode` API 收口为 `read_only_mode`，新增统一的 pressed 清理辅助函数，并在 `set_compact_mode()` 和 `set_read_only_mode()` 中同步清理 `pressed_part / is_pressed`；同时补上只读态和 disabled 态对 touch / key 的输入抑制。
