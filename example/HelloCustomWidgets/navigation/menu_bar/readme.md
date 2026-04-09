@@ -84,6 +84,7 @@ python scripts/checks/check_docs_encoding.py
 - 主控件和底部 `compact / read only` 预览都必须完整可见。
 - 顶层菜单 underline、面板锚点、separator、当前行和危险项都必须可辨识，但不能变成高噪音装饰。
 - `compact / read only` 不再响应触摸，也不参与焦点循环。
+- 切换到 `read only` 时要立即清空 pressed 状态，避免保留错误按下渲染。
 - 触摸释放语义必须继续满足“按下与抬起命中同一目标才提交”。
 
 ## 9. 已知限制与后续方向
@@ -120,5 +121,5 @@ python scripts/checks/check_docs_encoding.py
 ## 14. EGUI 适配时的简化点与约束
 - 用 `snapshot` 数组驱动顶层菜单和下拉内容，优先保证 reference 稳定。
 - 底部 `compact / read only` 固定放在同一行，只承担静态对照职责。
-- `read only` 继续复用 `locked_mode` 实现，但页面语义统一表述为 `read only`。
+- `read only` 直接使用 `read_only_mode`，避免页面语义和控件实现脱节。
 - 当前先作为 `HelloCustomWidgets` reference 示例维护，后续是否下沉框架层再单独评估。

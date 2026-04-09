@@ -359,6 +359,13 @@ static void egui_view_menu_bar_notify_item_activated(egui_view_t *self, egui_vie
     local->on_item_activated(self, local->current_snapshot, local->current_item);
 }
 
+static void egui_view_menu_bar_clear_pressed_state(egui_view_t *self, egui_view_menu_bar_t *local)
+{
+    local->pressed_item = EGUI_VIEW_MENU_BAR_ITEM_NONE;
+    local->pressed_menu = EGUI_VIEW_MENU_BAR_HIT_NONE;
+    egui_view_set_pressed(self, false);
+}
+
 static void egui_view_menu_bar_apply_snapshot(egui_view_t *self, uint8_t snapshot_index, uint8_t notify)
 {
     EGUI_LOCAL_INIT(egui_view_menu_bar_t);
@@ -387,9 +394,7 @@ static void egui_view_menu_bar_apply_snapshot(egui_view_t *self, uint8_t snapsho
 
     local->current_snapshot = snapshot_index;
     local->current_item = next_item;
-    local->pressed_item = EGUI_VIEW_MENU_BAR_ITEM_NONE;
-    local->pressed_menu = EGUI_VIEW_MENU_BAR_HIT_NONE;
-    egui_view_set_pressed(self, false);
+    egui_view_menu_bar_clear_pressed_state(self, local);
     egui_view_invalidate(self);
 
     if (notify && changed)
@@ -414,7 +419,7 @@ static void egui_view_menu_bar_set_current_item_inner(egui_view_t *self, uint8_t
     if (item_count == 0)
     {
         local->current_item = EGUI_VIEW_MENU_BAR_ITEM_NONE;
-        local->pressed_item = EGUI_VIEW_MENU_BAR_ITEM_NONE;
+        egui_view_menu_bar_clear_pressed_state(self, local);
         egui_view_invalidate(self);
         return;
     }
@@ -551,7 +556,7 @@ static uint8_t egui_view_menu_bar_build_layout(egui_view_menu_bar_t *local, egui
         cursor_x += item_w + (local->compact_mode ? 3 : 4);
     }
 
-    layout->panel_visible = (snapshot->show_panel && layout->panel_item_count > 0 && !local->locked_mode) ? 1 : 0;
+    layout->panel_visible = (snapshot->show_panel && layout->panel_item_count > 0 && !local->read_only_mode) ? 1 : 0;
     if (!layout->panel_visible)
     {
         layout->panel_region.location.x = 0;
@@ -626,9 +631,7 @@ void egui_view_menu_bar_set_snapshots(egui_view_t *self, const egui_view_menu_ba
     snapshot = egui_view_menu_bar_get_snapshot(local);
     item_count = snapshot == NULL ? 0 : egui_view_menu_bar_clamp_panel_item_count(snapshot->panel_item_count);
     local->current_item = egui_view_menu_bar_resolve_focus_item(snapshot, item_count);
-    local->pressed_item = EGUI_VIEW_MENU_BAR_ITEM_NONE;
-    local->pressed_menu = EGUI_VIEW_MENU_BAR_HIT_NONE;
-    egui_view_set_pressed(self, false);
+    egui_view_menu_bar_clear_pressed_state(self, local);
     egui_view_invalidate(self);
 }
 
@@ -646,6 +649,9 @@ uint8_t egui_view_menu_bar_get_current_snapshot(egui_view_t *self)
 
 void egui_view_menu_bar_set_current_item(egui_view_t *self, uint8_t item_index)
 {
+    EGUI_LOCAL_INIT(egui_view_menu_bar_t);
+
+    egui_view_menu_bar_clear_pressed_state(self, local);
     egui_view_menu_bar_set_current_item_inner(self, item_index, 1);
 }
 
@@ -725,18 +731,16 @@ void egui_view_menu_bar_set_compact_mode(egui_view_t *self, uint8_t compact_mode
     EGUI_LOCAL_INIT(egui_view_menu_bar_t);
 
     local->compact_mode = compact_mode ? 1 : 0;
-    local->pressed_item = EGUI_VIEW_MENU_BAR_ITEM_NONE;
-    local->pressed_menu = EGUI_VIEW_MENU_BAR_HIT_NONE;
+    egui_view_menu_bar_clear_pressed_state(self, local);
     egui_view_invalidate(self);
 }
 
-void egui_view_menu_bar_set_locked_mode(egui_view_t *self, uint8_t locked_mode)
+void egui_view_menu_bar_set_read_only_mode(egui_view_t *self, uint8_t read_only_mode)
 {
     EGUI_LOCAL_INIT(egui_view_menu_bar_t);
 
-    local->locked_mode = locked_mode ? 1 : 0;
-    local->pressed_item = EGUI_VIEW_MENU_BAR_ITEM_NONE;
-    local->pressed_menu = EGUI_VIEW_MENU_BAR_HIT_NONE;
+    local->read_only_mode = read_only_mode ? 1 : 0;
+    egui_view_menu_bar_clear_pressed_state(self, local);
     egui_view_invalidate(self);
 }
 
@@ -813,10 +817,12 @@ static void egui_view_menu_bar_draw_summary_anchor(egui_view_t *self, egui_view_
         return;
     }
 
-    cap_fill = egui_rgb_mix(fill_color, local->accent_color, local->locked_mode ? 10 : 18);
-    cap_border = egui_rgb_mix(border_color, local->accent_color, local->locked_mode ? 8 : 12);
-    egui_canvas_draw_round_rectangle_fill(cap_x, cap_y, cap_w, cap_h, 1, cap_fill, egui_color_alpha_mix(self->alpha, local->locked_mode ? 68 : 82));
-    egui_canvas_draw_round_rectangle(cap_x, cap_y, cap_w, cap_h, 1, 1, cap_border, egui_color_alpha_mix(self->alpha, local->locked_mode ? 46 : 60));
+    cap_fill = egui_rgb_mix(fill_color, local->accent_color, local->read_only_mode ? 8 : 18);
+    cap_border = egui_rgb_mix(border_color, local->accent_color, local->read_only_mode ? 6 : 12);
+    egui_canvas_draw_round_rectangle_fill(cap_x, cap_y, cap_w, cap_h, 1, cap_fill,
+                                          egui_color_alpha_mix(self->alpha, local->read_only_mode ? 60 : 82));
+    egui_canvas_draw_round_rectangle(cap_x, cap_y, cap_w, cap_h, 1, 1, cap_border,
+                                     egui_color_alpha_mix(self->alpha, local->read_only_mode ? 38 : 60));
 }
 
 static void egui_view_menu_bar_draw_summary_strip(egui_view_t *self, egui_view_menu_bar_t *local, const egui_view_menu_bar_snapshot_t *snapshot,
@@ -876,12 +882,12 @@ static void egui_view_menu_bar_draw_summary_strip(egui_view_t *self, egui_view_m
     {
         cue_color = egui_view_menu_bar_mix_disabled(cue_color);
     }
-    if (local->locked_mode)
+    if (local->read_only_mode)
     {
         cue_color = egui_rgb_mix(cue_color, muted_text_color, 18);
     }
 
-    if (local->locked_mode)
+    if (local->read_only_mode)
     {
         lock_region.location.x = strip_region.location.x + 2;
         lock_region.location.y = strip_region.location.y + 2;
@@ -902,7 +908,8 @@ static void egui_view_menu_bar_draw_summary_strip(egui_view_t *self, egui_view_m
     if (cue_region.size.width > 0 && cue_region.size.height > 0)
     {
         egui_canvas_draw_round_rectangle_fill(cue_region.location.x, cue_region.location.y, cue_region.size.width, cue_region.size.height,
-                                              cue_region.size.width > 2 ? 1 : 0, cue_color, egui_color_alpha_mix(self->alpha, local->locked_mode ? 58 : 72));
+                                              cue_region.size.width > 2 ? 1 : 0, cue_color,
+                                              egui_color_alpha_mix(self->alpha, local->read_only_mode ? 52 : 72));
         text_region.location.x += local->compact_mode ? 6 : 7;
         text_region.size.width -= local->compact_mode ? 6 : 7;
     }
@@ -932,31 +939,31 @@ static void egui_view_menu_bar_draw_summary_strip(egui_view_t *self, egui_view_m
     meta_chip_region.location.y = strip_region.location.y + 2;
     meta_chip_region.size.width = meta_chip_w;
     meta_chip_region.size.height = strip_region.size.height - 4;
-    meta_text_color = egui_rgb_mix(muted_text_color, local->accent_color, local->locked_mode ? 6 : 8);
+    meta_text_color = egui_rgb_mix(muted_text_color, local->accent_color, local->read_only_mode ? 4 : 8);
     title_text_color = text_color;
     if (snapshot->panel_items[0].tone != 0)
     {
-        title_text_color = egui_rgb_mix(title_text_color, cue_color, local->locked_mode ? 4 : 6);
+        title_text_color = egui_rgb_mix(title_text_color, cue_color, local->read_only_mode ? 3 : 6);
     }
     else if (snapshot->panel_items[0].enabled)
     {
-        title_text_color = egui_rgb_mix(title_text_color, local->accent_color, local->locked_mode ? 2 : 4);
+        title_text_color = egui_rgb_mix(title_text_color, local->accent_color, local->read_only_mode ? 1 : 4);
     }
     if (!snapshot->panel_items[0].enabled)
     {
         title_text_color = egui_rgb_mix(title_text_color, muted_text_color, 34);
     }
-    meta_chip_fill_color = egui_rgb_mix(fill_color, local->accent_color, local->locked_mode ? 6 : 8);
-    meta_chip_border_color = egui_rgb_mix(border_color, local->accent_color, local->locked_mode ? 6 : 10);
+    meta_chip_fill_color = egui_rgb_mix(fill_color, local->accent_color, local->read_only_mode ? 4 : 8);
+    meta_chip_border_color = egui_rgb_mix(border_color, local->accent_color, local->read_only_mode ? 4 : 10);
 
     if (meta_chip_region.size.width > (local->compact_mode ? 14 : 18) && meta_chip_region.size.height > 8)
     {
         egui_canvas_draw_round_rectangle_fill(meta_chip_region.location.x, meta_chip_region.location.y, meta_chip_region.size.width,
                                               meta_chip_region.size.height, local->compact_mode ? 3 : 4, meta_chip_fill_color,
-                                              egui_color_alpha_mix(self->alpha, local->locked_mode ? 46 : 56));
+                                              egui_color_alpha_mix(self->alpha, local->read_only_mode ? 38 : 56));
         egui_canvas_draw_round_rectangle(meta_chip_region.location.x, meta_chip_region.location.y, meta_chip_region.size.width, meta_chip_region.size.height,
                                          local->compact_mode ? 3 : 4, 1, meta_chip_border_color,
-                                         egui_color_alpha_mix(self->alpha, local->locked_mode ? 34 : 44));
+                                         egui_color_alpha_mix(self->alpha, local->read_only_mode ? 28 : 44));
     }
 
     egui_view_menu_bar_draw_text(local->font, self, snapshot->panel_items[0].title, &text_region, EGUI_ALIGN_LEFT, title_text_color, EGUI_ALPHA_100);
@@ -1208,8 +1215,8 @@ static void egui_view_menu_bar_draw_panel_anchor(egui_view_t *self, egui_view_me
     }
 
     anchor_fill = egui_rgb_mix(panel_fill_color, local->accent_color, local->compact_mode ? 5 : 8);
-    anchor_fill = egui_rgb_mix(anchor_fill, top_fill_color, local->locked_mode ? 10 : 4);
-    anchor_border = egui_rgb_mix(border_color, local->accent_color, local->locked_mode ? 6 : 10);
+    anchor_fill = egui_rgb_mix(anchor_fill, top_fill_color, local->read_only_mode ? 8 : 4);
+    anchor_border = egui_rgb_mix(border_color, local->accent_color, local->read_only_mode ? 4 : 10);
     cap_color = egui_rgb_mix(local->accent_color, border_color, local->compact_mode ? 16 : 12);
     stem_color = egui_rgb_mix(anchor_border, panel_fill_color, local->compact_mode ? 12 : 16);
 
@@ -1292,7 +1299,7 @@ static void egui_view_menu_bar_on_draw(egui_view_t *self)
     muted_text_color = local->muted_text_color;
     shadow_color = local->shadow_color;
 
-    if (local->locked_mode)
+    if (local->read_only_mode)
     {
         top_fill_color = egui_rgb_mix(top_fill_color, local->surface_color, 14);
         panel_fill_color = egui_rgb_mix(panel_fill_color, top_fill_color, 16);
@@ -1316,7 +1323,7 @@ static void egui_view_menu_bar_on_draw(egui_view_t *self)
                                           layout.top_region.size.height, local->compact_mode ? 6 : 8, top_fill_color, egui_color_alpha_mix(self->alpha, 94));
     egui_canvas_draw_round_rectangle(layout.top_region.location.x, layout.top_region.location.y, layout.top_region.size.width, layout.top_region.size.height,
                                      local->compact_mode ? 6 : 8, 1, border_color, egui_color_alpha_mix(self->alpha, 90));
-    if (local->locked_mode)
+    if (local->read_only_mode)
     {
         egui_region_t lock_region;
 
@@ -1347,7 +1354,7 @@ static void egui_view_menu_bar_on_draw(egui_view_t *self)
 
         if (index == layout.current_menu)
         {
-            current_fill = egui_rgb_mix(top_fill_color, local->accent_color, local->locked_mode ? 6 : (is_pressed_menu ? 20 : 14));
+            current_fill = egui_rgb_mix(top_fill_color, local->accent_color, local->read_only_mode ? 5 : (is_pressed_menu ? 20 : 14));
             egui_canvas_draw_round_rectangle_fill(layout.top_item_regions[index].location.x, layout.top_item_regions[index].location.y,
                                                   layout.top_item_regions[index].size.width, layout.top_item_regions[index].size.height,
                                                   local->compact_mode ? 4 : 5, current_fill, egui_color_alpha_mix(self->alpha, 90));
@@ -1355,20 +1362,20 @@ static void egui_view_menu_bar_on_draw(egui_view_t *self)
                                              layout.top_item_regions[index].size.width, layout.top_item_regions[index].size.height, local->compact_mode ? 4 : 5,
                                              1, egui_rgb_mix(border_color, local->accent_color, is_pressed_menu ? 20 : 12),
                                              egui_color_alpha_mix(self->alpha, is_pressed_menu ? 70 : 62));
-            if (is_pressed_menu && menu_enabled && is_enabled && !local->locked_mode)
+            if (is_pressed_menu && menu_enabled && is_enabled && !local->read_only_mode)
             {
                 egui_canvas_draw_round_rectangle_fill(layout.top_item_regions[index].location.x + 3, layout.top_item_regions[index].location.y + 2,
                                                       layout.top_item_regions[index].size.width - 6, 2, 1, local->accent_color,
                                                       egui_color_alpha_mix(self->alpha, 62));
             }
-            if (local->locked_mode && menu_enabled && is_enabled)
+            if (local->read_only_mode && menu_enabled && is_enabled)
             {
                 current_pip_w = local->compact_mode ? 1 : 2;
                 current_pip_h = local->compact_mode ? 4 : 5;
                 current_pip_x = layout.top_item_regions[index].location.x + 3;
                 current_pip_y = layout.top_item_regions[index].location.y + (layout.top_item_regions[index].size.height - current_pip_h) / 2;
                 egui_canvas_draw_round_rectangle_fill(current_pip_x, current_pip_y, current_pip_w, current_pip_h, 1, local->accent_color,
-                                                      egui_color_alpha_mix(self->alpha, local->compact_mode ? 40 : 44));
+                                                      egui_color_alpha_mix(self->alpha, local->compact_mode ? 34 : 40));
             }
         }
         else if (!local->compact_mode && snapshot->menus[index].emphasized)
@@ -1379,11 +1386,11 @@ static void egui_view_menu_bar_on_draw(egui_view_t *self)
         {
             item_text_color = egui_rgb_mix(item_text_color, muted_text_color, local->compact_mode ? 18 : 12);
         }
-        if (!menu_enabled || local->locked_mode || !is_enabled)
+        if (!menu_enabled || local->read_only_mode || !is_enabled)
         {
             item_text_color = egui_rgb_mix(item_text_color, muted_text_color, 44);
         }
-        if (index == layout.current_menu && local->locked_mode && menu_enabled && is_enabled)
+        if (index == layout.current_menu && local->read_only_mode && menu_enabled && is_enabled)
         {
             item_text_color = egui_rgb_mix(text_color, local->accent_color, 2);
         }
@@ -1401,10 +1408,10 @@ static void egui_view_menu_bar_on_draw(egui_view_t *self)
                 layout.top_item_regions[layout.current_menu].location.x + underline_padding_x, layout.top_region.location.y + layout.top_region.size.height - 4,
                 layout.top_item_regions[layout.current_menu].location.x + layout.top_item_regions[layout.current_menu].size.width - underline_padding_x,
                 layout.top_region.location.y + layout.top_region.size.height - 4, 1, local->accent_color,
-                egui_color_alpha_mix(self->alpha, local->locked_mode ? 30 : 56));
+                egui_color_alpha_mix(self->alpha, local->read_only_mode ? 24 : 56));
     }
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
-    if (is_focused && is_enabled && !local->locked_mode && layout.top_item_regions[layout.current_menu].size.width > 6)
+    if (is_focused && is_enabled && !local->read_only_mode && layout.top_item_regions[layout.current_menu].size.width > 6)
     {
         egui_dim_t focus_x = layout.top_item_regions[layout.current_menu].location.x - 1;
         egui_dim_t focus_y = layout.top_item_regions[layout.current_menu].location.y - 1;
@@ -1553,7 +1560,17 @@ static int egui_view_menu_bar_on_touch_event(egui_view_t *self, egui_motion_even
     uint8_t item_count;
     uint8_t menu_count;
 
-    if (snapshot == NULL || !egui_view_get_enable(self) || local->locked_mode)
+    if (local->read_only_mode)
+    {
+        if (self->is_pressed || local->pressed_item != EGUI_VIEW_MENU_BAR_ITEM_NONE || local->pressed_menu != EGUI_VIEW_MENU_BAR_HIT_NONE)
+        {
+            egui_view_menu_bar_clear_pressed_state(self, local);
+            egui_view_invalidate(self);
+        }
+        return 0;
+    }
+
+    if (snapshot == NULL || !egui_view_get_enable(self))
     {
         return 0;
     }
@@ -1633,9 +1650,7 @@ static int egui_view_menu_bar_on_touch_event(egui_view_t *self, egui_motion_even
             {
                 egui_view_menu_bar_apply_snapshot(self, hit_menu, 1);
             }
-            local->pressed_menu = EGUI_VIEW_MENU_BAR_HIT_NONE;
-            local->pressed_item = EGUI_VIEW_MENU_BAR_ITEM_NONE;
-            egui_view_set_pressed(self, false);
+            egui_view_menu_bar_clear_pressed_state(self, local);
             egui_view_invalidate(self);
             return hit_menu != EGUI_VIEW_MENU_BAR_HIT_NONE;
         }
@@ -1650,17 +1665,13 @@ static int egui_view_menu_bar_on_touch_event(egui_view_t *self, egui_motion_even
                 egui_view_menu_bar_set_current_item_inner(self, hit_item, 1);
                 egui_view_menu_bar_notify_item_activated(self, local);
             }
-            local->pressed_item = EGUI_VIEW_MENU_BAR_ITEM_NONE;
-            local->pressed_menu = EGUI_VIEW_MENU_BAR_HIT_NONE;
-            egui_view_set_pressed(self, false);
+            egui_view_menu_bar_clear_pressed_state(self, local);
             egui_view_invalidate(self);
             return hit_item != EGUI_VIEW_MENU_BAR_ITEM_NONE;
         }
         return 0;
     case EGUI_MOTION_EVENT_ACTION_CANCEL:
-        local->pressed_item = EGUI_VIEW_MENU_BAR_ITEM_NONE;
-        local->pressed_menu = EGUI_VIEW_MENU_BAR_HIT_NONE;
-        egui_view_set_pressed(self, false);
+        egui_view_menu_bar_clear_pressed_state(self, local);
         egui_view_invalidate(self);
         return 1;
     default:
@@ -1695,7 +1706,17 @@ static int egui_view_menu_bar_on_key_event(egui_view_t *self, egui_key_event_t *
     uint8_t target_snapshot;
     uint8_t snapshot_index;
 
-    if (snapshot == NULL || !egui_view_get_enable(self) || local->locked_mode)
+    if (local->read_only_mode)
+    {
+        if (local->pressed_item != EGUI_VIEW_MENU_BAR_ITEM_NONE)
+        {
+            local->pressed_item = EGUI_VIEW_MENU_BAR_ITEM_NONE;
+            egui_view_invalidate(self);
+        }
+        return 0;
+    }
+
+    if (snapshot == NULL || !egui_view_get_enable(self))
     {
         return 0;
     }
@@ -1821,7 +1842,7 @@ void egui_view_menu_bar_init(egui_view_t *self)
     local->current_snapshot = 0;
     local->current_item = EGUI_VIEW_MENU_BAR_ITEM_NONE;
     local->compact_mode = 0;
-    local->locked_mode = 0;
+    local->read_only_mode = 0;
     local->pressed_item = EGUI_VIEW_MENU_BAR_ITEM_NONE;
     local->pressed_menu = EGUI_VIEW_MENU_BAR_HIT_NONE;
 

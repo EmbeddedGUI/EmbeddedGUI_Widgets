@@ -126,6 +126,12 @@ static void apply_read_only_snapshot(uint8_t index)
     egui_view_menu_bar_set_current_snapshot(EGUI_VIEW_OF(&menu_bar_read_only), index);
 }
 
+static void apply_read_only_state(uint8_t index)
+{
+    apply_read_only_snapshot(index);
+    egui_view_menu_bar_set_read_only_mode(EGUI_VIEW_OF(&menu_bar_read_only), 1);
+}
+
 static int consume_preview_touch(egui_view_t *self, egui_motion_event_t *event)
 {
     EGUI_UNUSED(self);
@@ -145,6 +151,11 @@ static void clear_recording_pressed_state(void)
     menu_bar_compact.pressed_menu = EGUI_VIEW_MENU_BAR_HIT_NONE;
     egui_view_set_pressed(EGUI_VIEW_OF(&menu_bar_compact), false);
     egui_view_invalidate(EGUI_VIEW_OF(&menu_bar_compact));
+
+    menu_bar_read_only.pressed_item = EGUI_VIEW_MENU_BAR_ITEM_NONE;
+    menu_bar_read_only.pressed_menu = EGUI_VIEW_MENU_BAR_HIT_NONE;
+    egui_view_set_pressed(EGUI_VIEW_OF(&menu_bar_read_only), false);
+    egui_view_invalidate(EGUI_VIEW_OF(&menu_bar_read_only));
 }
 
 static void preview_primary_pressed_menu(uint8_t snapshot_index)
@@ -181,7 +192,7 @@ void test_init_ui(void)
     egui_view_label_set_align_type(EGUI_VIEW_OF(&title_label), EGUI_ALIGN_CENTER);
     egui_view_label_set_font(EGUI_VIEW_OF(&title_label), (const egui_font_t *)&egui_res_font_montserrat_12_4);
     egui_view_label_set_font_color(EGUI_VIEW_OF(&title_label), EGUI_COLOR_HEX(0x21303F), EGUI_ALPHA_100);
-    egui_view_set_margin(EGUI_VIEW_OF(&title_label), 0, 8, 0, 4);
+    egui_view_set_margin(EGUI_VIEW_OF(&title_label), 0, 6, 0, 4);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label));
 
     egui_view_menu_bar_init(EGUI_VIEW_OF(&menu_bar_primary));
@@ -189,8 +200,8 @@ void test_init_ui(void)
     egui_view_menu_bar_set_snapshots(EGUI_VIEW_OF(&menu_bar_primary), primary_snapshots, 4);
     egui_view_menu_bar_set_font(EGUI_VIEW_OF(&menu_bar_primary), (const egui_font_t *)&egui_res_font_montserrat_10_4);
     egui_view_menu_bar_set_meta_font(EGUI_VIEW_OF(&menu_bar_primary), (const egui_font_t *)&egui_res_font_montserrat_8_4);
-    egui_view_menu_bar_set_palette(EGUI_VIEW_OF(&menu_bar_primary), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD5DCE4), EGUI_COLOR_HEX(0x1A2734),
-                                   EGUI_COLOR_HEX(0x6B7A89), EGUI_COLOR_HEX(0x0F6CBD), EGUI_COLOR_HEX(0x0F7B45), EGUI_COLOR_HEX(0x9D5D00),
+    egui_view_menu_bar_set_palette(EGUI_VIEW_OF(&menu_bar_primary), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD5DCE4), EGUI_COLOR_HEX(0x18222D),
+                                   EGUI_COLOR_HEX(0x6E7C8B), EGUI_COLOR_HEX(0x0F6CBD), EGUI_COLOR_HEX(0x0F7B45), EGUI_COLOR_HEX(0x9D5D00),
                                    EGUI_COLOR_HEX(0xC42B1C), EGUI_COLOR_HEX(0xD0D7DE));
     egui_view_set_margin(EGUI_VIEW_OF(&menu_bar_primary), 0, 0, 0, 8);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&menu_bar_primary));
@@ -207,8 +218,8 @@ void test_init_ui(void)
     egui_view_menu_bar_set_font(EGUI_VIEW_OF(&menu_bar_compact), (const egui_font_t *)&egui_res_font_montserrat_8_4);
     egui_view_menu_bar_set_meta_font(EGUI_VIEW_OF(&menu_bar_compact), (const egui_font_t *)&egui_res_font_montserrat_8_4);
     egui_view_menu_bar_set_compact_mode(EGUI_VIEW_OF(&menu_bar_compact), 1);
-    egui_view_menu_bar_set_palette(EGUI_VIEW_OF(&menu_bar_compact), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD5DCE4), EGUI_COLOR_HEX(0x1A2734),
-                                   EGUI_COLOR_HEX(0x6B7A89), EGUI_COLOR_HEX(0x0F6CBD), EGUI_COLOR_HEX(0x0F7B45), EGUI_COLOR_HEX(0x9D5D00),
+    egui_view_menu_bar_set_palette(EGUI_VIEW_OF(&menu_bar_compact), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD5DCE4), EGUI_COLOR_HEX(0x18222D),
+                                   EGUI_COLOR_HEX(0x6E7C8B), EGUI_COLOR_HEX(0x0F6CBD), EGUI_COLOR_HEX(0x0F7B45), EGUI_COLOR_HEX(0x9D5D00),
                                    EGUI_COLOR_HEX(0xC42B1C), EGUI_COLOR_HEX(0xD0D7DE));
     static egui_view_api_t menu_bar_compact_touch_api;
     egui_view_override_api_on_touch(EGUI_VIEW_OF(&menu_bar_compact), &menu_bar_compact_touch_api, consume_preview_touch);
@@ -224,10 +235,10 @@ void test_init_ui(void)
     egui_view_menu_bar_set_font(EGUI_VIEW_OF(&menu_bar_read_only), (const egui_font_t *)&egui_res_font_montserrat_8_4);
     egui_view_menu_bar_set_meta_font(EGUI_VIEW_OF(&menu_bar_read_only), (const egui_font_t *)&egui_res_font_montserrat_8_4);
     egui_view_menu_bar_set_compact_mode(EGUI_VIEW_OF(&menu_bar_read_only), 1);
-    egui_view_menu_bar_set_locked_mode(EGUI_VIEW_OF(&menu_bar_read_only), 1);
-    egui_view_menu_bar_set_palette(EGUI_VIEW_OF(&menu_bar_read_only), EGUI_COLOR_HEX(0xFBFCFD), EGUI_COLOR_HEX(0xDBE2E8), EGUI_COLOR_HEX(0x536474),
-                                   EGUI_COLOR_HEX(0x8896A4), EGUI_COLOR_HEX(0xB3BFCA), EGUI_COLOR_HEX(0xA7BDB6), EGUI_COLOR_HEX(0xC3AE88),
-                                   EGUI_COLOR_HEX(0xC7A3A3), EGUI_COLOR_HEX(0xD8DFE6));
+    egui_view_menu_bar_set_read_only_mode(EGUI_VIEW_OF(&menu_bar_read_only), 1);
+    egui_view_menu_bar_set_palette(EGUI_VIEW_OF(&menu_bar_read_only), EGUI_COLOR_HEX(0xFBFCFD), EGUI_COLOR_HEX(0xDBE2E8), EGUI_COLOR_HEX(0x566675),
+                                   EGUI_COLOR_HEX(0x8A97A3), EGUI_COLOR_HEX(0xB8C4CF), EGUI_COLOR_HEX(0xAEBFB8), EGUI_COLOR_HEX(0xC7B592),
+                                   EGUI_COLOR_HEX(0xCBA9A9), EGUI_COLOR_HEX(0xD8DFE6));
     static egui_view_api_t menu_bar_read_only_touch_api;
     egui_view_override_api_on_touch(EGUI_VIEW_OF(&menu_bar_read_only), &menu_bar_read_only_touch_api, consume_preview_touch);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
@@ -237,7 +248,7 @@ void test_init_ui(void)
 
     apply_primary_snapshot(0);
     apply_compact_snapshot(0);
-    apply_read_only_snapshot(0);
+    apply_read_only_state(0);
 
     {
         hello_custom_widgets_demo_apply_title_only_scaffold(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label), NULL, 0);
@@ -266,7 +277,7 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
             clear_recording_pressed_state();
             apply_primary_snapshot(0);
             apply_compact_snapshot(0);
-            apply_read_only_snapshot(0);
+            apply_read_only_state(0);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
             egui_view_request_focus(EGUI_VIEW_OF(&menu_bar_primary));
 #endif
