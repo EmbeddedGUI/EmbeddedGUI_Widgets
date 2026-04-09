@@ -7,7 +7,7 @@
 - 对应组件名：`MenuFlyout / ContextMenu`
 - 本次保留状态：`standard`、`submenu`、`shortcut`、`danger`、`compact`、`disabled`
 - 删除效果：页面级 `guide`、状态文案、section label、可点击预览卡、Acrylic、桌面级大阴影、复杂级联子菜单动画
-- EGUI 适配说明：继续复用仓库内 `menu_flyout` 基础实现，本轮只收口 `reference` 页结构、示例命令内容和绘制强度，不改 `sdk/EmbeddedGUI`
+- EGUI 适配说明：继续复用仓库内 `menu_flyout` 基础实现，本轮只收口 `reference` 页结构、示例命令内容和绘制强度，不改 `sdk/EmbeddedGUI`；`snapshot / compact / disabled / view disabled` 切换共享同一套 `pressed` 清理语义
 
 ## 1. 为什么需要这个控件
 `menu_flyout` 用来表达“在局部区域弹出一组短命令”的标准菜单语义。它适合卡片操作、列表项上下文菜单、工具栏溢出菜单这类需要短路径操作的场景。
@@ -81,6 +81,8 @@ python scripts/checks/check_docs_encoding.py
 - 主面板和底部 `compact / disabled` 预览都必须完整可见
 - 行内图标占位、标题、右侧快捷键和 submenu 箭头需要稳定对齐
 - `danger` 项和 `disabled` 预览必须可辨识，但不能变成高噪音装饰
+- `snapshot / compact / disabled / view disabled` 切换后不能残留 `pressed` 高亮或下压位移渲染
+- `disabled_mode / !enable` 不仅要忽略后续 touch / key 输入，还要在收到新输入时清理残留 `pressed` 渲染
 - 底部预览不再响应点击，只保留静态 reference 对照
 
 ## 9. 已知限制与后续方向

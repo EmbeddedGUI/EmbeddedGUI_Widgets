@@ -50,6 +50,11 @@ static egui_color_t egui_view_menu_flyout_mix_disabled(egui_color_t color)
     return egui_rgb_mix(color, EGUI_COLOR_DARK_GREY, 68);
 }
 
+static void egui_view_menu_flyout_clear_pressed_state(egui_view_t *self)
+{
+    egui_view_set_pressed(self, false);
+}
+
 static egui_color_t egui_view_menu_flyout_tone_color(egui_view_menu_flyout_t *local, uint8_t tone)
 {
     switch (tone)
@@ -190,6 +195,7 @@ void egui_view_menu_flyout_set_snapshots(egui_view_t *self, const egui_view_menu
         local->current_snapshot = 0;
     }
 
+    egui_view_menu_flyout_clear_pressed_state(self);
     egui_view_invalidate(self);
 }
 
@@ -204,10 +210,16 @@ void egui_view_menu_flyout_set_current_snapshot(egui_view_t *self, uint8_t snaps
 
     if (local->current_snapshot == snapshot_index)
     {
+        if (self->is_pressed)
+        {
+            egui_view_menu_flyout_clear_pressed_state(self);
+            egui_view_invalidate(self);
+        }
         return;
     }
 
     local->current_snapshot = snapshot_index;
+    egui_view_menu_flyout_clear_pressed_state(self);
     egui_view_invalidate(self);
 }
 
@@ -238,6 +250,7 @@ void egui_view_menu_flyout_set_compact_mode(egui_view_t *self, uint8_t compact_m
     EGUI_LOCAL_INIT(egui_view_menu_flyout_t);
 
     local->compact_mode = compact_mode ? 1 : 0;
+    egui_view_menu_flyout_clear_pressed_state(self);
     egui_view_invalidate(self);
 }
 
@@ -246,6 +259,7 @@ void egui_view_menu_flyout_set_disabled_mode(egui_view_t *self, uint8_t disabled
     EGUI_LOCAL_INIT(egui_view_menu_flyout_t);
 
     local->disabled_mode = disabled_mode ? 1 : 0;
+    egui_view_menu_flyout_clear_pressed_state(self);
     egui_view_invalidate(self);
 }
 
@@ -350,9 +364,53 @@ static void egui_view_menu_flyout_on_draw(egui_view_t *self)
     }
 }
 
+#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
+static int egui_view_menu_flyout_on_touch_event(egui_view_t *self, egui_motion_event_t *event)
+{
+    EGUI_LOCAL_INIT(egui_view_menu_flyout_t);
+
+    if (local->disabled_mode || !egui_view_get_enable(self))
+    {
+        if (self->is_pressed)
+        {
+            egui_view_menu_flyout_clear_pressed_state(self);
+            egui_view_invalidate(self);
+        }
+        EGUI_UNUSED(event);
+        return 0;
+    }
+
+    return egui_view_on_touch_event(self, event);
+}
+#endif
+
+#if EGUI_CONFIG_FUNCTION_SUPPORT_KEY
+static int egui_view_menu_flyout_on_key_event(egui_view_t *self, egui_key_event_t *event)
+{
+    EGUI_LOCAL_INIT(egui_view_menu_flyout_t);
+
+    if (local->disabled_mode || !egui_view_get_enable(self))
+    {
+        if (self->is_pressed)
+        {
+            egui_view_menu_flyout_clear_pressed_state(self);
+            egui_view_invalidate(self);
+        }
+        EGUI_UNUSED(event);
+        return 0;
+    }
+
+    return egui_view_on_key_event(self, event);
+}
+#endif
+
 const egui_view_api_t EGUI_VIEW_API_TABLE_NAME(egui_view_menu_flyout_t) = {
         .dispatch_touch_event = egui_view_dispatch_touch_event,
+#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
+        .on_touch_event = egui_view_menu_flyout_on_touch_event,
+#else
         .on_touch_event = egui_view_on_touch_event,
+#endif
         .on_intercept_touch_event = egui_view_on_intercept_touch_event,
         .compute_scroll = egui_view_compute_scroll,
         .calculate_layout = egui_view_calculate_layout,
@@ -363,7 +421,7 @@ const egui_view_api_t EGUI_VIEW_API_TABLE_NAME(egui_view_menu_flyout_t) = {
         .on_detach_from_window = egui_view_on_detach_from_window,
 #if EGUI_CONFIG_FUNCTION_SUPPORT_KEY
         .dispatch_key_event = egui_view_dispatch_key_event,
-        .on_key_event = egui_view_on_key_event,
+        .on_key_event = egui_view_menu_flyout_on_key_event,
 #endif
 };
 

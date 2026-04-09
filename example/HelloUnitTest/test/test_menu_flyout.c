@@ -93,9 +93,11 @@ static void test_menu_flyout_set_snapshots_clamps_count_and_resets_current_snaps
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_MENU_FLYOUT_MAX_SNAPSHOTS, test_flyout.snapshot_count);
 
     test_flyout.current_snapshot = 5;
+    EGUI_VIEW_OF(&test_flyout)->is_pressed = true;
     egui_view_menu_flyout_set_snapshots(EGUI_VIEW_OF(&test_flyout), g_snapshots, 1);
     EGUI_TEST_ASSERT_EQUAL_INT(1, test_flyout.snapshot_count);
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_menu_flyout_get_current_snapshot(EGUI_VIEW_OF(&test_flyout)));
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_flyout)->is_pressed);
 }
 
 static void test_menu_flyout_set_current_snapshot_ignores_out_of_range(void)
@@ -105,6 +107,10 @@ static void test_menu_flyout_set_current_snapshot_ignores_out_of_range(void)
 
     egui_view_menu_flyout_set_current_snapshot(EGUI_VIEW_OF(&test_flyout), 2);
     EGUI_TEST_ASSERT_EQUAL_INT(2, egui_view_menu_flyout_get_current_snapshot(EGUI_VIEW_OF(&test_flyout)));
+
+    EGUI_VIEW_OF(&test_flyout)->is_pressed = true;
+    egui_view_menu_flyout_set_current_snapshot(EGUI_VIEW_OF(&test_flyout), 2);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_flyout)->is_pressed);
 
     egui_view_menu_flyout_set_current_snapshot(EGUI_VIEW_OF(&test_flyout), 9);
     EGUI_TEST_ASSERT_EQUAL_INT(2, egui_view_menu_flyout_get_current_snapshot(EGUI_VIEW_OF(&test_flyout)));
@@ -119,10 +125,12 @@ static void test_menu_flyout_font_modes_and_palette_update(void)
     EGUI_TEST_ASSERT_TRUE(test_flyout.font == (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT);
     EGUI_TEST_ASSERT_TRUE(test_flyout.meta_font == (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT);
 
+    EGUI_VIEW_OF(&test_flyout)->is_pressed = true;
     egui_view_menu_flyout_set_compact_mode(EGUI_VIEW_OF(&test_flyout), 1);
     egui_view_menu_flyout_set_disabled_mode(EGUI_VIEW_OF(&test_flyout), 1);
     EGUI_TEST_ASSERT_TRUE(test_flyout.compact_mode);
     EGUI_TEST_ASSERT_TRUE(test_flyout.disabled_mode);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_flyout)->is_pressed);
 
     egui_view_menu_flyout_set_palette(EGUI_VIEW_OF(&test_flyout), EGUI_COLOR_HEX(0x101112), EGUI_COLOR_HEX(0x202122), EGUI_COLOR_HEX(0x303132),
                                       EGUI_COLOR_HEX(0x404142), EGUI_COLOR_HEX(0x505152), EGUI_COLOR_HEX(0x606162), EGUI_COLOR_HEX(0x707172),
@@ -148,6 +156,72 @@ static void test_menu_flyout_touch_and_enter_trigger_click_listener(void)
     EGUI_TEST_ASSERT_EQUAL_INT(2, click_count);
 }
 
+static void test_menu_flyout_compact_mode_clears_pressed_and_keeps_click_behavior(void)
+{
+    setup_flyout();
+    egui_view_set_on_click_listener(EGUI_VIEW_OF(&test_flyout), on_flyout_click);
+    layout_flyout();
+    egui_view_menu_flyout_set_current_snapshot(EGUI_VIEW_OF(&test_flyout), 2);
+
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, 48, 46));
+    EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&test_flyout)->is_pressed);
+
+    egui_view_menu_flyout_set_compact_mode(EGUI_VIEW_OF(&test_flyout), 1);
+    EGUI_TEST_ASSERT_TRUE(test_flyout.compact_mode);
+    EGUI_TEST_ASSERT_EQUAL_INT(2, egui_view_menu_flyout_get_current_snapshot(EGUI_VIEW_OF(&test_flyout)));
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_flyout)->is_pressed);
+
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, 48, 46));
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, 48, 46));
+    EGUI_TEST_ASSERT_EQUAL_INT(1, click_count);
+}
+
+static void test_menu_flyout_disabled_mode_ignores_input_and_clears_pressed_state(void)
+{
+    setup_flyout();
+    egui_view_set_on_click_listener(EGUI_VIEW_OF(&test_flyout), on_flyout_click);
+    layout_flyout();
+
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, 48, 46));
+    EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&test_flyout)->is_pressed);
+
+    egui_view_menu_flyout_set_disabled_mode(EGUI_VIEW_OF(&test_flyout), 1);
+    EGUI_TEST_ASSERT_TRUE(test_flyout.disabled_mode);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_flyout)->is_pressed);
+    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, 48, 46));
+    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, 48, 46));
+    EGUI_TEST_ASSERT_FALSE(send_key(EGUI_KEY_CODE_ENTER));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, click_count);
+
+    egui_view_menu_flyout_set_disabled_mode(EGUI_VIEW_OF(&test_flyout), 0);
+    EGUI_TEST_ASSERT_FALSE(test_flyout.disabled_mode);
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, 48, 46));
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, 48, 46));
+    EGUI_TEST_ASSERT_EQUAL_INT(1, click_count);
+}
+
+static void test_menu_flyout_view_disabled_ignores_input_and_clears_pressed_state(void)
+{
+    setup_flyout();
+    egui_view_set_on_click_listener(EGUI_VIEW_OF(&test_flyout), on_flyout_click);
+    layout_flyout();
+
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, 48, 46));
+    EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&test_flyout)->is_pressed);
+
+    egui_view_set_enable(EGUI_VIEW_OF(&test_flyout), 0);
+    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, 48, 46));
+    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, 48, 46));
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_flyout)->is_pressed);
+    EGUI_TEST_ASSERT_FALSE(send_key(EGUI_KEY_CODE_ENTER));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, click_count);
+
+    egui_view_set_enable(EGUI_VIEW_OF(&test_flyout), 1);
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, 48, 46));
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, 48, 46));
+    EGUI_TEST_ASSERT_EQUAL_INT(1, click_count);
+}
+
 static void test_menu_flyout_internal_helpers_clamp_focus_and_meta(void)
 {
     egui_view_menu_flyout_snapshot_t snapshot = {g_items_a, 3, 9};
@@ -168,6 +242,9 @@ void test_menu_flyout_run(void)
     EGUI_TEST_RUN(test_menu_flyout_set_current_snapshot_ignores_out_of_range);
     EGUI_TEST_RUN(test_menu_flyout_font_modes_and_palette_update);
     EGUI_TEST_RUN(test_menu_flyout_touch_and_enter_trigger_click_listener);
+    EGUI_TEST_RUN(test_menu_flyout_compact_mode_clears_pressed_and_keeps_click_behavior);
+    EGUI_TEST_RUN(test_menu_flyout_disabled_mode_ignores_input_and_clears_pressed_state);
+    EGUI_TEST_RUN(test_menu_flyout_view_disabled_ignores_input_and_clears_pressed_state);
     EGUI_TEST_RUN(test_menu_flyout_internal_helpers_clamp_focus_and_meta);
     EGUI_TEST_SUITE_END();
 }
