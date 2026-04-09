@@ -107,6 +107,14 @@ static egui_color_t egui_view_teaching_tip_mix_disabled(egui_color_t color)
     return egui_rgb_mix(color, EGUI_COLOR_DARK_GREY, 68);
 }
 
+static void egui_view_teaching_tip_clear_pressed_state(egui_view_t *self)
+{
+    EGUI_LOCAL_INIT(egui_view_teaching_tip_t);
+
+    local->pressed_part = EGUI_VIEW_TEACHING_TIP_PART_NONE;
+    egui_view_set_pressed(self, false);
+}
+
 static egui_color_t egui_view_teaching_tip_tone_color(egui_view_teaching_tip_t *local, uint8_t tone)
 {
     switch (tone)
@@ -201,6 +209,10 @@ static void egui_view_teaching_tip_set_current_part_inner(egui_view_t *self, uin
 
     if (local->current_part == part)
     {
+        if (local->pressed_part != EGUI_VIEW_TEACHING_TIP_PART_NONE || self->is_pressed)
+        {
+            egui_view_teaching_tip_clear_pressed_state(self);
+        }
         if (notify && local->on_part_changed)
         {
             local->on_part_changed(self, part);
@@ -210,6 +222,7 @@ static void egui_view_teaching_tip_set_current_part_inner(egui_view_t *self, uin
     }
 
     local->current_part = part;
+    egui_view_teaching_tip_clear_pressed_state(self);
     if (notify && local->on_part_changed)
     {
         local->on_part_changed(self, part);
@@ -282,7 +295,7 @@ void egui_view_teaching_tip_set_snapshots(egui_view_t *self, const egui_view_tea
 
     snapshot = egui_view_teaching_tip_get_snapshot(local);
     local->current_part = egui_view_teaching_tip_resolve_default_part(local, self, snapshot);
-    local->pressed_part = EGUI_VIEW_TEACHING_TIP_PART_NONE;
+    egui_view_teaching_tip_clear_pressed_state(self);
     egui_view_invalidate(self);
 }
 
@@ -297,13 +310,18 @@ void egui_view_teaching_tip_set_current_snapshot(egui_view_t *self, uint8_t snap
     }
     if (local->current_snapshot == snapshot_index)
     {
+        if (local->pressed_part != EGUI_VIEW_TEACHING_TIP_PART_NONE || self->is_pressed)
+        {
+            egui_view_teaching_tip_clear_pressed_state(self);
+            egui_view_invalidate(self);
+        }
         return;
     }
 
     local->current_snapshot = snapshot_index;
     snapshot = egui_view_teaching_tip_get_snapshot(local);
     local->current_part = egui_view_teaching_tip_resolve_default_part(local, self, snapshot);
-    local->pressed_part = EGUI_VIEW_TEACHING_TIP_PART_NONE;
+    egui_view_teaching_tip_clear_pressed_state(self);
     egui_view_invalidate(self);
 }
 uint8_t egui_view_teaching_tip_get_current_snapshot(egui_view_t *self)
@@ -350,6 +368,7 @@ void egui_view_teaching_tip_set_compact_mode(egui_view_t *self, uint8_t compact_
     EGUI_LOCAL_INIT(egui_view_teaching_tip_t);
 
     local->compact_mode = compact_mode ? 1 : 0;
+    egui_view_teaching_tip_clear_pressed_state(self);
     egui_view_invalidate(self);
 }
 
@@ -358,6 +377,7 @@ void egui_view_teaching_tip_set_read_only_mode(egui_view_t *self, uint8_t read_o
     EGUI_LOCAL_INIT(egui_view_teaching_tip_t);
 
     local->read_only_mode = read_only_mode ? 1 : 0;
+    egui_view_teaching_tip_clear_pressed_state(self);
     egui_view_invalidate(self);
 }
 
@@ -1138,6 +1158,11 @@ static int egui_view_teaching_tip_on_touch_event(egui_view_t *self, egui_motion_
 
     if (!egui_view_get_enable(self) || local->read_only_mode)
     {
+        if (local->pressed_part != EGUI_VIEW_TEACHING_TIP_PART_NONE || self->is_pressed)
+        {
+            egui_view_teaching_tip_clear_pressed_state(self);
+            egui_view_invalidate(self);
+        }
         return 0;
     }
 
@@ -1147,6 +1172,11 @@ static int egui_view_teaching_tip_on_touch_event(egui_view_t *self, egui_motion_
         hit_part = egui_view_teaching_tip_hit_part(local, self, event->location.x, event->location.y);
         if (!egui_view_teaching_tip_part_is_enabled(local, self, egui_view_teaching_tip_get_snapshot(local), hit_part))
         {
+            if (local->pressed_part != EGUI_VIEW_TEACHING_TIP_PART_NONE || self->is_pressed)
+            {
+                egui_view_teaching_tip_clear_pressed_state(self);
+                egui_view_invalidate(self);
+            }
             return 0;
         }
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
@@ -1166,13 +1196,11 @@ static int egui_view_teaching_tip_on_touch_event(egui_view_t *self, egui_motion_
         {
             egui_view_teaching_tip_set_current_part_inner(self, hit_part, 1);
         }
-        local->pressed_part = EGUI_VIEW_TEACHING_TIP_PART_NONE;
-        egui_view_set_pressed(self, false);
+        egui_view_teaching_tip_clear_pressed_state(self);
         egui_view_invalidate(self);
         return hit_part != EGUI_VIEW_TEACHING_TIP_PART_NONE ? 1 : 0;
     case EGUI_MOTION_EVENT_ACTION_CANCEL:
-        local->pressed_part = EGUI_VIEW_TEACHING_TIP_PART_NONE;
-        egui_view_set_pressed(self, false);
+        egui_view_teaching_tip_clear_pressed_state(self);
         egui_view_invalidate(self);
         return 1;
     default:
@@ -1190,7 +1218,17 @@ static uint8_t egui_view_teaching_tip_handle_navigation_key_inner(egui_view_t *s
     uint8_t count;
     uint8_t index;
 
-    if (snapshot == NULL || !egui_view_get_enable(self) || local->read_only_mode)
+    if (!egui_view_get_enable(self) || local->read_only_mode)
+    {
+        if (local->pressed_part != EGUI_VIEW_TEACHING_TIP_PART_NONE || self->is_pressed)
+        {
+            egui_view_teaching_tip_clear_pressed_state(self);
+            egui_view_invalidate(self);
+        }
+        return 0;
+    }
+
+    if (snapshot == NULL)
     {
         return 0;
     }

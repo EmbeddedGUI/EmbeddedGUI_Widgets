@@ -174,11 +174,13 @@ static void test_teaching_tip_set_snapshots_clamp_and_default_part(void)
     test_tip.current_snapshot = 5;
     test_tip.current_part = EGUI_VIEW_TEACHING_TIP_PART_CLOSE;
     test_tip.pressed_part = EGUI_VIEW_TEACHING_TIP_PART_PRIMARY;
+    egui_view_set_pressed(EGUI_VIEW_OF(&test_tip), true);
     egui_view_teaching_tip_set_snapshots(EGUI_VIEW_OF(&test_tip), g_snapshots, 1);
     EGUI_TEST_ASSERT_EQUAL_INT(1, test_tip.snapshot_count);
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_teaching_tip_get_current_snapshot(EGUI_VIEW_OF(&test_tip)));
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_TEACHING_TIP_PART_PRIMARY, egui_view_teaching_tip_get_current_part(EGUI_VIEW_OF(&test_tip)));
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_TEACHING_TIP_PART_NONE, test_tip.pressed_part);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_tip)->is_pressed);
 
     egui_view_teaching_tip_set_snapshots(EGUI_VIEW_OF(&test_tip), &g_secondary_only_snapshot, 1);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_TEACHING_TIP_PART_SECONDARY, egui_view_teaching_tip_get_current_part(EGUI_VIEW_OF(&test_tip)));
@@ -202,6 +204,13 @@ static void test_teaching_tip_snapshot_and_part_guards(void)
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_teaching_tip_get_current_snapshot(EGUI_VIEW_OF(&test_tip)));
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_TEACHING_TIP_PART_PRIMARY, egui_view_teaching_tip_get_current_part(EGUI_VIEW_OF(&test_tip)));
 
+    test_tip.pressed_part = EGUI_VIEW_TEACHING_TIP_PART_CLOSE;
+    egui_view_set_pressed(EGUI_VIEW_OF(&test_tip), true);
+    egui_view_teaching_tip_set_current_part(EGUI_VIEW_OF(&test_tip), EGUI_VIEW_TEACHING_TIP_PART_PRIMARY);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_TEACHING_TIP_PART_PRIMARY, egui_view_teaching_tip_get_current_part(EGUI_VIEW_OF(&test_tip)));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_TEACHING_TIP_PART_NONE, test_tip.pressed_part);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_tip)->is_pressed);
+
     egui_view_teaching_tip_set_current_part(EGUI_VIEW_OF(&test_tip), EGUI_VIEW_TEACHING_TIP_PART_SECONDARY);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_TEACHING_TIP_PART_SECONDARY, egui_view_teaching_tip_get_current_part(EGUI_VIEW_OF(&test_tip)));
     EGUI_TEST_ASSERT_EQUAL_INT(0, changed_count);
@@ -210,10 +219,19 @@ static void test_teaching_tip_snapshot_and_part_guards(void)
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_TEACHING_TIP_PART_SECONDARY, egui_view_teaching_tip_get_current_part(EGUI_VIEW_OF(&test_tip)));
 
     test_tip.pressed_part = EGUI_VIEW_TEACHING_TIP_PART_CLOSE;
+    egui_view_set_pressed(EGUI_VIEW_OF(&test_tip), true);
+    egui_view_teaching_tip_set_current_snapshot(EGUI_VIEW_OF(&test_tip), 0);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_teaching_tip_get_current_snapshot(EGUI_VIEW_OF(&test_tip)));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_TEACHING_TIP_PART_NONE, test_tip.pressed_part);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_tip)->is_pressed);
+
+    test_tip.pressed_part = EGUI_VIEW_TEACHING_TIP_PART_CLOSE;
+    egui_view_set_pressed(EGUI_VIEW_OF(&test_tip), true);
     egui_view_teaching_tip_set_current_snapshot(EGUI_VIEW_OF(&test_tip), 1);
     EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_teaching_tip_get_current_snapshot(EGUI_VIEW_OF(&test_tip)));
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_TEACHING_TIP_PART_SECONDARY, egui_view_teaching_tip_get_current_part(EGUI_VIEW_OF(&test_tip)));
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_TEACHING_TIP_PART_NONE, test_tip.pressed_part);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_tip)->is_pressed);
 
     egui_view_teaching_tip_set_current_snapshot(EGUI_VIEW_OF(&test_tip), 9);
     EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_teaching_tip_get_current_snapshot(EGUI_VIEW_OF(&test_tip)));
@@ -242,13 +260,21 @@ static void test_teaching_tip_font_palette_and_internal_helpers(void)
     EGUI_TEST_ASSERT_TRUE(test_tip.font == (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT);
     EGUI_TEST_ASSERT_TRUE(test_tip.meta_font == (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT);
 
+    test_tip.pressed_part = EGUI_VIEW_TEACHING_TIP_PART_PRIMARY;
+    egui_view_set_pressed(EGUI_VIEW_OF(&test_tip), true);
     egui_view_teaching_tip_set_compact_mode(EGUI_VIEW_OF(&test_tip), 2);
     EGUI_TEST_ASSERT_EQUAL_INT(1, test_tip.compact_mode);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_TEACHING_TIP_PART_NONE, test_tip.pressed_part);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_tip)->is_pressed);
     egui_view_teaching_tip_set_compact_mode(EGUI_VIEW_OF(&test_tip), 0);
     EGUI_TEST_ASSERT_EQUAL_INT(0, test_tip.compact_mode);
 
+    test_tip.pressed_part = EGUI_VIEW_TEACHING_TIP_PART_SECONDARY;
+    egui_view_set_pressed(EGUI_VIEW_OF(&test_tip), true);
     egui_view_teaching_tip_set_read_only_mode(EGUI_VIEW_OF(&test_tip), 3);
     EGUI_TEST_ASSERT_EQUAL_INT(1, test_tip.read_only_mode);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_TEACHING_TIP_PART_NONE, test_tip.pressed_part);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_tip)->is_pressed);
     egui_view_teaching_tip_set_read_only_mode(EGUI_VIEW_OF(&test_tip), 0);
     EGUI_TEST_ASSERT_EQUAL_INT(0, test_tip.read_only_mode);
 
@@ -443,12 +469,6 @@ static void test_teaching_tip_touch_interaction_and_cancel(void)
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_TEACHING_TIP_PART_TARGET, egui_view_teaching_tip_get_current_part(EGUI_VIEW_OF(&test_tip)));
     EGUI_TEST_ASSERT_EQUAL_INT(3, changed_count);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_TEACHING_TIP_PART_TARGET, last_part);
-
-    egui_view_teaching_tip_set_read_only_mode(EGUI_VIEW_OF(&test_tip), 1);
-    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, target_x, target_y));
-    egui_view_teaching_tip_set_read_only_mode(EGUI_VIEW_OF(&test_tip), 0);
-    egui_view_set_enable(EGUI_VIEW_OF(&test_tip), 0);
-    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, target_x, target_y));
 }
 
 static void test_teaching_tip_keyboard_navigation_and_guards(void)
@@ -500,6 +520,110 @@ static void test_teaching_tip_keyboard_navigation_and_guards(void)
     EGUI_TEST_ASSERT_FALSE(send_key(EGUI_KEY_CODE_LEFT));
 }
 
+static void test_teaching_tip_compact_mode_clears_pressed_and_keeps_input_behavior(void)
+{
+    egui_region_t target_region;
+    egui_region_t secondary_region;
+    egui_dim_t target_x;
+    egui_dim_t target_y;
+    egui_dim_t secondary_x;
+    egui_dim_t secondary_y;
+
+    setup_tip();
+    layout_tip();
+
+    EGUI_TEST_ASSERT_TRUE(egui_view_teaching_tip_get_part_region(EGUI_VIEW_OF(&test_tip), EGUI_VIEW_TEACHING_TIP_PART_SECONDARY, &secondary_region));
+    get_region_center(&secondary_region, &secondary_x, &secondary_y);
+
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, secondary_x, secondary_y));
+    EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&test_tip)->is_pressed);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_TEACHING_TIP_PART_SECONDARY, test_tip.pressed_part);
+
+    egui_view_teaching_tip_set_compact_mode(EGUI_VIEW_OF(&test_tip), 1);
+    EGUI_TEST_ASSERT_EQUAL_INT(1, test_tip.compact_mode);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_TEACHING_TIP_PART_NONE, test_tip.pressed_part);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_tip)->is_pressed);
+
+    EGUI_TEST_ASSERT_TRUE(egui_view_teaching_tip_get_part_region(EGUI_VIEW_OF(&test_tip), EGUI_VIEW_TEACHING_TIP_PART_TARGET, &target_region));
+    get_region_center(&target_region, &target_x, &target_y);
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, target_x, target_y));
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, target_x, target_y));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_TEACHING_TIP_PART_TARGET, egui_view_teaching_tip_get_current_part(EGUI_VIEW_OF(&test_tip)));
+    EGUI_TEST_ASSERT_EQUAL_INT(1, changed_count);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_TEACHING_TIP_PART_TARGET, last_part);
+}
+
+static void test_teaching_tip_read_only_mode_clears_pressed_and_ignores_input(void)
+{
+    egui_region_t primary_region;
+    egui_dim_t primary_x;
+    egui_dim_t primary_y;
+
+    setup_tip();
+    layout_tip();
+
+    EGUI_TEST_ASSERT_TRUE(egui_view_teaching_tip_get_part_region(EGUI_VIEW_OF(&test_tip), EGUI_VIEW_TEACHING_TIP_PART_PRIMARY, &primary_region));
+    get_region_center(&primary_region, &primary_x, &primary_y);
+
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, primary_x, primary_y));
+    EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&test_tip)->is_pressed);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_TEACHING_TIP_PART_PRIMARY, test_tip.pressed_part);
+
+    egui_view_teaching_tip_set_read_only_mode(EGUI_VIEW_OF(&test_tip), 1);
+    EGUI_TEST_ASSERT_EQUAL_INT(1, test_tip.read_only_mode);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_TEACHING_TIP_PART_NONE, test_tip.pressed_part);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_tip)->is_pressed);
+    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, primary_x, primary_y));
+    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, primary_x, primary_y));
+    EGUI_TEST_ASSERT_FALSE(send_key(EGUI_KEY_CODE_LEFT));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_TEACHING_TIP_PART_PRIMARY, egui_view_teaching_tip_get_current_part(EGUI_VIEW_OF(&test_tip)));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, changed_count);
+
+    egui_view_teaching_tip_set_read_only_mode(EGUI_VIEW_OF(&test_tip), 0);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, test_tip.read_only_mode);
+    EGUI_TEST_ASSERT_TRUE(send_key(EGUI_KEY_CODE_LEFT));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_TEACHING_TIP_PART_SECONDARY, egui_view_teaching_tip_get_current_part(EGUI_VIEW_OF(&test_tip)));
+    EGUI_TEST_ASSERT_EQUAL_INT(1, changed_count);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_TEACHING_TIP_PART_SECONDARY, last_part);
+}
+
+static void test_teaching_tip_disabled_ignores_input_and_clears_pressed_state(void)
+{
+    egui_region_t primary_region;
+    egui_region_t target_region;
+    egui_dim_t primary_x;
+    egui_dim_t primary_y;
+    egui_dim_t target_x;
+    egui_dim_t target_y;
+
+    setup_tip();
+    layout_tip();
+
+    EGUI_TEST_ASSERT_TRUE(egui_view_teaching_tip_get_part_region(EGUI_VIEW_OF(&test_tip), EGUI_VIEW_TEACHING_TIP_PART_PRIMARY, &primary_region));
+    get_region_center(&primary_region, &primary_x, &primary_y);
+
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, primary_x, primary_y));
+    EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&test_tip)->is_pressed);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_TEACHING_TIP_PART_PRIMARY, test_tip.pressed_part);
+
+    egui_view_set_enable(EGUI_VIEW_OF(&test_tip), 0);
+    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, primary_x, primary_y));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_TEACHING_TIP_PART_NONE, test_tip.pressed_part);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_tip)->is_pressed);
+    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, primary_x, primary_y));
+    EGUI_TEST_ASSERT_FALSE(send_key(EGUI_KEY_CODE_LEFT));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, changed_count);
+
+    egui_view_set_enable(EGUI_VIEW_OF(&test_tip), 1);
+    EGUI_TEST_ASSERT_TRUE(egui_view_teaching_tip_get_part_region(EGUI_VIEW_OF(&test_tip), EGUI_VIEW_TEACHING_TIP_PART_TARGET, &target_region));
+    get_region_center(&target_region, &target_x, &target_y);
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, target_x, target_y));
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, target_x, target_y));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_TEACHING_TIP_PART_TARGET, egui_view_teaching_tip_get_current_part(EGUI_VIEW_OF(&test_tip)));
+    EGUI_TEST_ASSERT_EQUAL_INT(1, changed_count);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_TEACHING_TIP_PART_TARGET, last_part);
+}
+
 void test_teaching_tip_run(void)
 {
     EGUI_TEST_SUITE_BEGIN(teaching_tip);
@@ -508,6 +632,9 @@ void test_teaching_tip_run(void)
     EGUI_TEST_RUN(test_teaching_tip_font_palette_and_internal_helpers);
     EGUI_TEST_RUN(test_teaching_tip_metrics_and_hit_testing);
     EGUI_TEST_RUN(test_teaching_tip_touch_interaction_and_cancel);
+    EGUI_TEST_RUN(test_teaching_tip_compact_mode_clears_pressed_and_keeps_input_behavior);
+    EGUI_TEST_RUN(test_teaching_tip_read_only_mode_clears_pressed_and_ignores_input);
+    EGUI_TEST_RUN(test_teaching_tip_disabled_ignores_input_and_clears_pressed_state);
     EGUI_TEST_RUN(test_teaching_tip_keyboard_navigation_and_guards);
     EGUI_TEST_SUITE_END();
 }

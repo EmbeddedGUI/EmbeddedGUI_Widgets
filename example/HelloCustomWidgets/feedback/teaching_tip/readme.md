@@ -41,6 +41,7 @@
   - target 与 bubble 的锚定关系必须清楚，但整体不能回到旧 showcase 风格。
   - `primary / secondary / close` 仍保留清晰的动作层级，但 chrome 必须更轻。
   - 底部两个 preview 都禁用 touch 和 focus，只做静态 reference 对照。
+  - `snapshot / compact / read only` 切换后不能残留 target 或 action 的 `pressed` 高亮，避免 callout 在交互收尾后停留在旧态。
 
 ## 5. 控件清单
 
@@ -105,6 +106,7 @@ python scripts/checks/check_docs_encoding.py
 - target 与 bubble 的锚定关系必须清楚。
 - `top / bottom placement` 必须能从截图中直接辨认。
 - 关闭态与重开态必须稳定，不依赖外部状态桥接。
+- `read only / disabled` 不仅要忽略后续 `touch / key` 输入，还要在新输入或模式切换时清掉残留 `pressed` 渲染。
 - 页面中不再出现 `guide`、状态桥接、外部 preview 标签和旧双列包裹壳层。
 - `compact` 与 `read only` 只作静态对照展示，不承担切换职责。
 
@@ -146,4 +148,5 @@ python scripts/checks/check_docs_encoding.py
 - 使用固定 `snapshot` 数据保证录制稳定。
 - `compact / read only` 直接复用同一控件模式，减少额外页面壳层。
 - 通过程序化切换 snapshot 与控件内导航 helper 保证 runtime 稳定抓取状态变化。
+- `snapshot / compact / read only / disabled` 共用同一套 `pressed` 清理语义，确保 target、action pill 和 close affordance 在交互收尾后不残留旧高亮。
 - 当前先作为 `HelloCustomWidgets` 的 `reference widget` 维护，后续是否下沉框架层再单独评估。
