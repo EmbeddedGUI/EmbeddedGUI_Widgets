@@ -153,6 +153,18 @@ static egui_color_t egui_view_tab_view_mix_disabled(egui_color_t color)
     return egui_rgb_mix(color, EGUI_COLOR_DARK_GREY, 64);
 }
 
+static uint8_t egui_view_tab_view_clear_pressed_state(egui_view_t *self)
+{
+    EGUI_LOCAL_INIT(egui_view_tab_view_t);
+    uint8_t had_pressed =
+            self->is_pressed || local->pressed_tab != EGUI_VIEW_TAB_VIEW_TAB_NONE || local->pressed_part != EGUI_VIEW_TAB_VIEW_PART_TAB;
+
+    local->pressed_tab = EGUI_VIEW_TAB_VIEW_TAB_NONE;
+    local->pressed_part = EGUI_VIEW_TAB_VIEW_PART_TAB;
+    egui_view_set_pressed(self, 0);
+    return had_pressed;
+}
+
 static egui_color_t egui_view_tab_view_tone_color(egui_view_tab_view_t *local, uint8_t tone)
 {
     switch (tone)
@@ -370,7 +382,12 @@ static void egui_view_tab_view_normalize_part(egui_view_t *self)
 {
     EGUI_LOCAL_INIT(egui_view_tab_view_t);
 
-    if (local->current_part == EGUI_VIEW_TAB_VIEW_PART_CLOSE && !egui_view_tab_view_has_close_part(local))
+    if (local->current_part != EGUI_VIEW_TAB_VIEW_PART_TAB && local->current_part != EGUI_VIEW_TAB_VIEW_PART_CLOSE &&
+        local->current_part != EGUI_VIEW_TAB_VIEW_PART_ADD)
+    {
+        local->current_part = EGUI_VIEW_TAB_VIEW_PART_TAB;
+    }
+    else if (local->current_part == EGUI_VIEW_TAB_VIEW_PART_CLOSE && !egui_view_tab_view_has_close_part(local))
     {
         local->current_part = EGUI_VIEW_TAB_VIEW_PART_TAB;
     }
@@ -389,6 +406,14 @@ static void egui_view_tab_view_set_current_snapshot_inner(egui_view_t *self, uin
     {
         return;
     }
+    if (local->current_snapshot == snapshot_index)
+    {
+        if (egui_view_tab_view_clear_pressed_state(self))
+        {
+            egui_view_invalidate(self);
+        }
+        return;
+    }
 
     local->current_snapshot = snapshot_index;
     local->closed_mask = 0;
@@ -402,9 +427,7 @@ static void egui_view_tab_view_set_current_snapshot_inner(egui_view_t *self, uin
         }
     }
     local->current_part = EGUI_VIEW_TAB_VIEW_PART_TAB;
-    local->pressed_tab = EGUI_VIEW_TAB_VIEW_TAB_NONE;
-    local->pressed_part = EGUI_VIEW_TAB_VIEW_PART_TAB;
-    egui_view_set_pressed(self, 0);
+    egui_view_tab_view_clear_pressed_state(self);
     egui_view_tab_view_resolve_current_tab(local);
     egui_view_tab_view_normalize_part(self);
     if (notify)
@@ -425,10 +448,15 @@ static void egui_view_tab_view_set_current_tab_inner(egui_view_t *self, uint8_t 
     }
     if (local->current_tab == tab_index)
     {
+        if (egui_view_tab_view_clear_pressed_state(self))
+        {
+            egui_view_invalidate(self);
+        }
         return;
     }
 
     local->current_tab = tab_index;
+    egui_view_tab_view_clear_pressed_state(self);
     if (local->current_part == EGUI_VIEW_TAB_VIEW_PART_CLOSE && !egui_view_tab_view_has_close_part(local))
     {
         local->current_part = EGUI_VIEW_TAB_VIEW_PART_TAB;
@@ -693,10 +721,18 @@ void egui_view_tab_view_set_snapshots(egui_view_t *self, const egui_view_tab_vie
     EGUI_LOCAL_INIT(egui_view_tab_view_t);
 
     local->snapshots = snapshots;
-    local->snapshot_count = egui_view_tab_view_clamp_snapshot_count(snapshot_count);
+    local->snapshot_count = snapshots ? egui_view_tab_view_clamp_snapshot_count(snapshot_count) : 0;
     local->current_snapshot = 0;
     local->closed_mask = 0;
-    local->current_tab = 0;
+    local->current_tab = EGUI_VIEW_TAB_VIEW_TAB_NONE;
+    local->current_part = EGUI_VIEW_TAB_VIEW_PART_TAB;
+    egui_view_tab_view_clear_pressed_state(self);
+    if (local->snapshot_count == 0)
+    {
+        egui_view_invalidate(self);
+        return;
+    }
+    local->current_snapshot = EGUI_VIEW_TAB_VIEW_MAX_SNAPSHOTS;
     egui_view_tab_view_set_current_snapshot_inner(self, 0, 1);
 }
 
@@ -725,9 +761,19 @@ uint8_t egui_view_tab_view_get_current_tab(egui_view_t *self)
 void egui_view_tab_view_set_current_part(egui_view_t *self, uint8_t part)
 {
     EGUI_LOCAL_INIT(egui_view_tab_view_t);
+    uint8_t previous_part = local->current_part;
 
     local->current_part = part;
     egui_view_tab_view_normalize_part(self);
+    if (local->current_part == previous_part)
+    {
+        if (egui_view_tab_view_clear_pressed_state(self))
+        {
+            egui_view_invalidate(self);
+        }
+        return;
+    }
+    egui_view_tab_view_clear_pressed_state(self);
     egui_view_tab_view_notify_changed(self);
     egui_view_invalidate(self);
 }
@@ -758,6 +804,7 @@ uint8_t egui_view_tab_view_close_current_tab(egui_view_t *self)
         local->current_tab = egui_view_tab_view_find_first_visible(local);
     }
     local->current_part = EGUI_VIEW_TAB_VIEW_PART_TAB;
+    egui_view_tab_view_clear_pressed_state(self);
     egui_view_tab_view_notify_action(self, EGUI_VIEW_TAB_VIEW_ACTION_CLOSE, closed_tab);
     egui_view_tab_view_notify_changed(self);
     egui_view_invalidate(self);
@@ -781,6 +828,7 @@ uint8_t egui_view_tab_view_restore_tabs(egui_view_t *self)
     local->closed_mask = 0;
     local->current_tab = snapshot->current_index < snapshot->tab_count ? snapshot->current_index : 0;
     local->current_part = EGUI_VIEW_TAB_VIEW_PART_TAB;
+    egui_view_tab_view_clear_pressed_state(self);
     egui_view_tab_view_notify_action(self, EGUI_VIEW_TAB_VIEW_ACTION_ADD, local->current_tab);
     egui_view_tab_view_notify_changed(self);
     egui_view_invalidate(self);
@@ -884,6 +932,7 @@ void egui_view_tab_view_set_compact_mode(egui_view_t *self, uint8_t compact_mode
     {
         local->current_part = EGUI_VIEW_TAB_VIEW_PART_TAB;
     }
+    egui_view_tab_view_clear_pressed_state(self);
     egui_view_invalidate(self);
 }
 
@@ -891,9 +940,7 @@ void egui_view_tab_view_set_read_only_mode(egui_view_t *self, uint8_t read_only_
 {
     EGUI_LOCAL_INIT(egui_view_tab_view_t);
     local->read_only_mode = read_only_mode ? 1 : 0;
-    local->pressed_tab = EGUI_VIEW_TAB_VIEW_TAB_NONE;
-    local->pressed_part = EGUI_VIEW_TAB_VIEW_PART_TAB;
-    egui_view_set_pressed(self, 0);
+    egui_view_tab_view_clear_pressed_state(self);
     egui_view_invalidate(self);
 }
 
@@ -1278,10 +1325,15 @@ static void egui_view_tab_view_on_draw(egui_view_t *self)
 static int egui_view_tab_view_on_touch_event(egui_view_t *self, egui_motion_event_t *event)
 {
     EGUI_LOCAL_INIT(egui_view_tab_view_t);
+    const egui_view_tab_view_snapshot_t *snapshot = egui_view_tab_view_get_snapshot(local);
     egui_view_tab_view_hit_t hit;
 
-    if (!egui_view_get_enable(self) || local->read_only_mode)
+    if (snapshot == NULL || !egui_view_get_enable(self) || local->read_only_mode)
     {
+        if (egui_view_tab_view_clear_pressed_state(self))
+        {
+            egui_view_invalidate(self);
+        }
         return 0;
     }
 
@@ -1296,6 +1348,7 @@ static int egui_view_tab_view_on_touch_event(egui_view_t *self, egui_motion_even
         local->pressed_tab = hit.tab_index;
         local->pressed_part = hit.part;
         egui_view_set_pressed(self, 1);
+        egui_view_invalidate(self);
         return 1;
     case EGUI_MOTION_EVENT_ACTION_UP:
         egui_view_tab_view_resolve_hit(self, event->location.x, event->location.y, &hit);
@@ -1314,14 +1367,14 @@ static int egui_view_tab_view_on_touch_event(egui_view_t *self, egui_motion_even
                 egui_view_tab_view_restore_tabs(self);
             }
         }
-        local->pressed_tab = EGUI_VIEW_TAB_VIEW_TAB_NONE;
-        local->pressed_part = EGUI_VIEW_TAB_VIEW_PART_TAB;
-        egui_view_set_pressed(self, 0);
+        egui_view_tab_view_clear_pressed_state(self);
+        egui_view_invalidate(self);
         return 1;
     case EGUI_MOTION_EVENT_ACTION_CANCEL:
-        local->pressed_tab = EGUI_VIEW_TAB_VIEW_TAB_NONE;
-        local->pressed_part = EGUI_VIEW_TAB_VIEW_PART_TAB;
-        egui_view_set_pressed(self, 0);
+        if (egui_view_tab_view_clear_pressed_state(self))
+        {
+            egui_view_invalidate(self);
+        }
         return 1;
     default:
         return 0;
@@ -1333,10 +1386,19 @@ static int egui_view_tab_view_on_touch_event(egui_view_t *self, egui_motion_even
 static int egui_view_tab_view_on_key_event(egui_view_t *self, egui_key_event_t *event)
 {
     EGUI_LOCAL_INIT(egui_view_tab_view_t);
+    const egui_view_tab_view_snapshot_t *snapshot = egui_view_tab_view_get_snapshot(local);
     uint8_t next_part[3];
     uint8_t part_count = 0;
 
-    if (!egui_view_get_enable(self) || local->read_only_mode || event->type != EGUI_KEY_EVENT_ACTION_UP)
+    if (snapshot == NULL || !egui_view_get_enable(self) || local->read_only_mode)
+    {
+        if (egui_view_tab_view_clear_pressed_state(self))
+        {
+            egui_view_invalidate(self);
+        }
+        return 0;
+    }
+    if (event->type != EGUI_KEY_EVENT_ACTION_UP)
     {
         return 0;
     }

@@ -7,7 +7,7 @@
 - 对应组件名：`TabView`
 - 本次保留状态：`standard`、`close current tab`、`restore closed tabs`、`compact`、`read only`
 - 删除效果：页面级 `guide`、状态栏、section label、额外 workspace/helper 说明条、可点击 preview 卡、重阴影、强按钮化 tab shell
-- EGUI 适配说明：继续复用仓库内 `tab_view` 基础实现，本轮只收口 `reference` 页面结构、示例文案和绘制强度，不修改 `sdk/EmbeddedGUI`
+- EGUI 适配说明：继续复用仓库内 `tab_view` 基础实现，本轮只收口 `reference` 页面结构、示例文案和绘制强度，不修改 `sdk/EmbeddedGUI`；`snapshot / current tab / current part / compact / read only / view disabled` 切换共享同一套 `pressed` 清理语义
 
 ## 1. 为什么需要这个控件
 `tab_view` 用来表达“页签头和内容面板是一体的工作区容器”，适合文档页、后台工作区、设置页中的多面板切换场景。
@@ -84,6 +84,8 @@ python scripts/checks/check_docs_encoding.py
 - header、body、footer 和底部 `compact / read only` 预览都必须完整可见。
 - active tab、close、add、body card 和 footer pill 必须可辨识，但不能回到旧的重按钮化风格。
 - `compact / read only` 不再响应触摸，也不承担页面状态切换职责。
+- `snapshot / current tab / current part / compact / read only / view disabled` 切换后不能残留 tab、close 或 add 的 `pressed` 高亮与下压渲染。
+- `read_only_mode / !enable` 不仅要忽略后续 touch / key 输入，还要在收到新输入时先清理残留 `pressed` 状态。
 - `close current tab` 与 `restore closed tabs` 的行为不能回归。
 
 ## 9. 已知限制与后续方向
