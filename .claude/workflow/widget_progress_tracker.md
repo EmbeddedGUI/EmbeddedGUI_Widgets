@@ -98,6 +98,10 @@
 ## 最近完成的收口动作
 
 - `2026-04-09`
+  - 完成 `navigation/menu_flyout` 实现级样式收口：继续保留 `MenuFlyout / ContextMenu` 主线语义，删掉底部可点击预览卡职责，把页面统一收口为标题、主控件和 `compact / disabled` 双预览。
+  - 主面板命令内容统一改成更中性的业务摘要命令，`egui_view_menu_flyout.c` 进一步压轻圆角、阴影、边框、separator 和行内高亮强度，README 重写为当前 `reference` 模板。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=navigation/menu_flyout PORT=pc`、`check_touch_release_semantics.py --scope custom --category navigation`、`code_runtime_check.py --app HelloCustomWidgets --app-sub navigation/menu_flyout --track reference --timeout 10 --keep-screenshots`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`check_docs_encoding.py`。
+- `2026-04-09`
   - 完成 `navigation/flip_view` 实现级样式收口：继续保留 `FlipView` 主线语义，删掉旧示例里的故事化文案和 read-only 锁定叙事，把页面统一收口为标题、主控件和 `compact / read only` 双预览。
   - 主控件与预览轨道统一改成低噪音业务摘要内容，`egui_view_flip_view.c` 进一步压轻圆角、阴影、边框和按钮强调度，README 重写为当前 `reference` 模板。
   - 已通过 `make all APP=HelloCustomWidgets APP_SUB=navigation/flip_view PORT=pc`、`check_touch_release_semantics.py --scope custom --category navigation`、`code_runtime_check.py --app HelloCustomWidgets --app-sub navigation/flip_view --track reference --timeout 10 --keep-screenshots`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`check_docs_encoding.py`。

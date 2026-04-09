@@ -13,7 +13,6 @@
 #define MENU_FLYOUT_PRIMARY_HEIGHT 104
 #define MENU_FLYOUT_BOTTOM_WIDTH   214
 #define MENU_FLYOUT_BOTTOM_HEIGHT  78
-#define MENU_FLYOUT_COLUMN_WIDTH   104
 #define MENU_FLYOUT_CARD_WIDTH     104
 #define MENU_FLYOUT_CARD_HEIGHT    78
 
@@ -21,9 +20,7 @@ static egui_view_linearlayout_t root_layout;
 static egui_view_label_t title_label;
 static egui_view_menu_flyout_t flyout_primary;
 static egui_view_linearlayout_t bottom_row;
-static egui_view_linearlayout_t compact_column;
 static egui_view_menu_flyout_t flyout_compact;
-static egui_view_linearlayout_t disabled_column;
 static egui_view_menu_flyout_t flyout_disabled;
 
 EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
@@ -33,24 +30,24 @@ EGUI_BACKGROUND_COLOR_STATIC_CONST_INIT(bg_page_panel, &bg_page_panel_params);
 static const char *title_text = "Menu Flyout";
 
 static const egui_view_menu_flyout_item_t primary_items_0[] = {
-        {"NW", "New tab", "Ctrl+N", 0, 0, 1, 0, EGUI_VIEW_MENU_FLYOUT_TRAILING_NONE},
-        {"OP", "Open recent", "", 0, 1, 1, 0, EGUI_VIEW_MENU_FLYOUT_TRAILING_SUBMENU},
-        {"SH", "Share link", "Ctrl+L", 0, 0, 1, 1, EGUI_VIEW_MENU_FLYOUT_TRAILING_NONE},
+        {"OP", "Open panel", "Ctrl+O", 0, 0, 1, 0, EGUI_VIEW_MENU_FLYOUT_TRAILING_NONE},
+        {"RV", "Review history", "", 0, 1, 1, 0, EGUI_VIEW_MENU_FLYOUT_TRAILING_SUBMENU},
+        {"CP", "Copy link", "Ctrl+L", 0, 0, 1, 1, EGUI_VIEW_MENU_FLYOUT_TRAILING_NONE},
         {"RN", "Rename", "F2", 0, 0, 1, 0, EGUI_VIEW_MENU_FLYOUT_TRAILING_NONE},
 };
 
 static const egui_view_menu_flyout_item_t primary_items_1[] = {
-        {"SO", "Sort by name", "", 0, 0, 1, 0, EGUI_VIEW_MENU_FLYOUT_TRAILING_NONE},
-        {"DT", "Sort by date", "", 0, 0, 1, 0, EGUI_VIEW_MENU_FLYOUT_TRAILING_NONE},
-        {"PN", "Pin to top", "On", 1, 1, 1, 1, EGUI_VIEW_MENU_FLYOUT_TRAILING_NONE},
+        {"NM", "Name ascending", "", 0, 0, 1, 0, EGUI_VIEW_MENU_FLYOUT_TRAILING_NONE},
+        {"DT", "Date modified", "", 0, 0, 1, 0, EGUI_VIEW_MENU_FLYOUT_TRAILING_NONE},
+        {"PN", "Pin summary", "On", 1, 1, 1, 1, EGUI_VIEW_MENU_FLYOUT_TRAILING_NONE},
         {"PR", "Preferences", "", 0, 0, 1, 0, EGUI_VIEW_MENU_FLYOUT_TRAILING_SUBMENU},
 };
 
 static const egui_view_menu_flyout_item_t primary_items_2[] = {
-        {"EX", "Export PNG", "Ctrl+E", 0, 0, 1, 0, EGUI_VIEW_MENU_FLYOUT_TRAILING_NONE},
+        {"EX", "Export report", "Ctrl+E", 0, 0, 1, 0, EGUI_VIEW_MENU_FLYOUT_TRAILING_NONE},
         {"CP", "Copy path", "Ctrl+Shift+C", 0, 0, 1, 0, EGUI_VIEW_MENU_FLYOUT_TRAILING_NONE},
         {"DP", "Duplicate", "Ctrl+D", 0, 0, 1, 1, EGUI_VIEW_MENU_FLYOUT_TRAILING_NONE},
-        {"DL", "Delete item", "Shift+Del", 3, 1, 1, 0, EGUI_VIEW_MENU_FLYOUT_TRAILING_NONE},
+        {"DL", "Delete record", "Shift+Del", 3, 1, 1, 0, EGUI_VIEW_MENU_FLYOUT_TRAILING_NONE},
 };
 
 static const egui_view_menu_flyout_item_t primary_items_3[] = {
@@ -62,13 +59,13 @@ static const egui_view_menu_flyout_item_t primary_items_3[] = {
 
 static const egui_view_menu_flyout_item_t compact_items_0[] = {
         {"OP", "Open", "", 0, 1, 1, 0, EGUI_VIEW_MENU_FLYOUT_TRAILING_NONE},
-        {"CL", "Clone", "", 0, 0, 1, 0, EGUI_VIEW_MENU_FLYOUT_TRAILING_NONE},
+        {"CP", "Copy", "", 0, 0, 1, 0, EGUI_VIEW_MENU_FLYOUT_TRAILING_NONE},
         {"MO", "More", "", 0, 0, 1, 1, EGUI_VIEW_MENU_FLYOUT_TRAILING_SUBMENU},
 };
 
 static const egui_view_menu_flyout_item_t compact_items_1[] = {
         {"PI", "Pin", "On", 1, 1, 1, 0, EGUI_VIEW_MENU_FLYOUT_TRAILING_NONE},
-        {"DN", "Dense", "On", 2, 0, 1, 0, EGUI_VIEW_MENU_FLYOUT_TRAILING_NONE},
+        {"DN", "Density", "On", 2, 0, 1, 0, EGUI_VIEW_MENU_FLYOUT_TRAILING_NONE},
         {"DL", "Delete", "", 3, 0, 1, 1, EGUI_VIEW_MENU_FLYOUT_TRAILING_NONE},
 };
 
@@ -104,19 +101,18 @@ static void apply_compact_snapshot(uint8_t index)
     egui_view_menu_flyout_set_current_snapshot(EGUI_VIEW_OF(&flyout_compact), index);
 }
 
+static int consume_preview_touch(egui_view_t *self, egui_motion_event_t *event)
+{
+    EGUI_UNUSED(self);
+    EGUI_UNUSED(event);
+    return 1;
+}
+
 static void on_primary_click(egui_view_t *self)
 {
     uint8_t next = (egui_view_menu_flyout_get_current_snapshot(self) + 1) % 4;
 
     apply_primary_snapshot(next);
-}
-
-static void on_compact_click(egui_view_t *self)
-{
-    uint8_t next = (egui_view_menu_flyout_get_current_snapshot(self) + 1) % 2;
-
-    EGUI_UNUSED(self);
-    apply_compact_snapshot(next);
 }
 
 void test_init_ui(void)
@@ -133,7 +129,7 @@ void test_init_ui(void)
     egui_view_label_set_align_type(EGUI_VIEW_OF(&title_label), EGUI_ALIGN_CENTER);
     egui_view_label_set_font(EGUI_VIEW_OF(&title_label), (const egui_font_t *)&egui_res_font_montserrat_12_4);
     egui_view_label_set_font_color(EGUI_VIEW_OF(&title_label), EGUI_COLOR_HEX(0x21303F), EGUI_ALPHA_100);
-    egui_view_set_margin(EGUI_VIEW_OF(&title_label), 0, 8, 0, 6);
+    egui_view_set_margin(EGUI_VIEW_OF(&title_label), 0, 8, 0, 4);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label));
 
     egui_view_menu_flyout_init(EGUI_VIEW_OF(&flyout_primary));
@@ -154,12 +150,6 @@ void test_init_ui(void)
     egui_view_linearlayout_set_align_type(EGUI_VIEW_OF(&bottom_row), EGUI_ALIGN_VCENTER);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&bottom_row));
 
-    egui_view_linearlayout_init(EGUI_VIEW_OF(&compact_column));
-    egui_view_set_size(EGUI_VIEW_OF(&compact_column), MENU_FLYOUT_COLUMN_WIDTH, MENU_FLYOUT_BOTTOM_HEIGHT);
-    egui_view_linearlayout_set_orientation(EGUI_VIEW_OF(&compact_column), 0);
-    egui_view_linearlayout_set_align_type(EGUI_VIEW_OF(&compact_column), EGUI_ALIGN_HCENTER);
-    egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&compact_column));
-
     egui_view_menu_flyout_init(EGUI_VIEW_OF(&flyout_compact));
     egui_view_set_size(EGUI_VIEW_OF(&flyout_compact), MENU_FLYOUT_CARD_WIDTH, MENU_FLYOUT_CARD_HEIGHT);
     egui_view_menu_flyout_set_snapshots(EGUI_VIEW_OF(&flyout_compact), compact_snapshots, 2);
@@ -169,18 +159,16 @@ void test_init_ui(void)
     egui_view_menu_flyout_set_palette(EGUI_VIEW_OF(&flyout_compact), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD5DCE4), EGUI_COLOR_HEX(0x1A2734),
                                       EGUI_COLOR_HEX(0x6B7A89), EGUI_COLOR_HEX(0x0F6CBD), EGUI_COLOR_HEX(0x0F7B45), EGUI_COLOR_HEX(0x9D5D00),
                                       EGUI_COLOR_HEX(0xC42B1C), EGUI_COLOR_HEX(0xD0D7DE));
-    egui_view_set_on_click_listener(EGUI_VIEW_OF(&flyout_compact), on_compact_click);
-    egui_view_group_add_child(EGUI_VIEW_OF(&compact_column), EGUI_VIEW_OF(&flyout_compact));
-
-    egui_view_linearlayout_init(EGUI_VIEW_OF(&disabled_column));
-    egui_view_set_size(EGUI_VIEW_OF(&disabled_column), MENU_FLYOUT_COLUMN_WIDTH, MENU_FLYOUT_BOTTOM_HEIGHT);
-    egui_view_set_margin(EGUI_VIEW_OF(&disabled_column), 6, 0, 0, 0);
-    egui_view_linearlayout_set_orientation(EGUI_VIEW_OF(&disabled_column), 0);
-    egui_view_linearlayout_set_align_type(EGUI_VIEW_OF(&disabled_column), EGUI_ALIGN_HCENTER);
-    egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&disabled_column));
+    static egui_view_api_t flyout_compact_touch_api;
+    egui_view_override_api_on_touch(EGUI_VIEW_OF(&flyout_compact), &flyout_compact_touch_api, consume_preview_touch);
+#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
+    egui_view_set_focusable(EGUI_VIEW_OF(&flyout_compact), false);
+#endif
+    egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&flyout_compact));
 
     egui_view_menu_flyout_init(EGUI_VIEW_OF(&flyout_disabled));
     egui_view_set_size(EGUI_VIEW_OF(&flyout_disabled), MENU_FLYOUT_CARD_WIDTH, MENU_FLYOUT_CARD_HEIGHT);
+    egui_view_set_margin(EGUI_VIEW_OF(&flyout_disabled), 6, 0, 0, 0);
     egui_view_menu_flyout_set_snapshots(EGUI_VIEW_OF(&flyout_disabled), disabled_snapshots, 1);
     egui_view_menu_flyout_set_font(EGUI_VIEW_OF(&flyout_disabled), (const egui_font_t *)&egui_res_font_montserrat_8_4);
     egui_view_menu_flyout_set_meta_font(EGUI_VIEW_OF(&flyout_disabled), (const egui_font_t *)&egui_res_font_montserrat_8_4);
@@ -189,7 +177,12 @@ void test_init_ui(void)
     egui_view_menu_flyout_set_palette(EGUI_VIEW_OF(&flyout_disabled), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD5DCE4), EGUI_COLOR_HEX(0x1A2734),
                                       EGUI_COLOR_HEX(0x6B7A89), EGUI_COLOR_HEX(0x0F6CBD), EGUI_COLOR_HEX(0x0F7B45), EGUI_COLOR_HEX(0x9D5D00),
                                       EGUI_COLOR_HEX(0xC42B1C), EGUI_COLOR_HEX(0xD0D7DE));
-    egui_view_group_add_child(EGUI_VIEW_OF(&disabled_column), EGUI_VIEW_OF(&flyout_disabled));
+    static egui_view_api_t flyout_disabled_touch_api;
+    egui_view_override_api_on_touch(EGUI_VIEW_OF(&flyout_disabled), &flyout_disabled_touch_api, consume_preview_touch);
+#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
+    egui_view_set_focusable(EGUI_VIEW_OF(&flyout_disabled), false);
+#endif
+    egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&flyout_disabled));
 
     apply_primary_snapshot(0);
     apply_compact_snapshot(0);
@@ -198,8 +191,6 @@ void test_init_ui(void)
         hello_custom_widgets_demo_apply_title_only_scaffold(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label), NULL, 0);
     }
 
-    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&compact_column));
-    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&disabled_column));
     egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&bottom_row));
     egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&root_layout));
 
