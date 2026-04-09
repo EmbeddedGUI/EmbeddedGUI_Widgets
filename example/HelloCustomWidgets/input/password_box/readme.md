@@ -1,4 +1,4 @@
-﻿# password_box 自定义控件设计说明
+# password_box 自定义控件设计说明
 
 ## 参考来源
 
@@ -6,28 +6,30 @@
 - 参考开源库：`WPF UI`
 - 次级补充参考：`ModernWpf`
 - 对应组件名：`PasswordBox`
-- 本次保留状态：`standard`、`compact`、`read only`、`reveal toggle`、`keyboard cursor`
-- 删减效果：Acrylic、系统级 reveal 动画、caps lock 提示、复杂校验态、桌面 hover 细节
-- EGUI 适配说明：保留标准密码遮罩字段、右侧 reveal 按钮和 compact / read-only 对照；在 `480 x 480` 下优先保证字段留白、图标居中、光标与遮罩文本可读
+- 本次保留状态：`masked`、`revealed`、`compact`、`read only`、`focused`
+- 删除效果：页面级 guide / 状态文案 / standard label / section divider / preview label、标签点击切换、复杂校验提示、Acrylic 与桌面 hover 细节
+- EGUI 适配说明：保留标准密码字段、右侧 reveal 切换和 `compact / read only` 对照，在 `480 x 480` 里优先保证遮罩文本、光标和图标都清晰可辨
 
 ## 1. 为什么需要这个控件
 
-`password_box` 用于表达标准密码输入语义，比如 Wi-Fi 密码、部署密钥、设备管理员口令等。它比普通 `textinput` 更接近用户熟悉的安全输入模式，也能作为后续通用表单控件沉入框架层。
+`password_box` 用于表达标准密码输入语义，比如 Wi-Fi 密码、部署密钥、设备管理员口令等。它比普通 `textinput` 更接近用户熟悉的安全输入模式，也是当前 input 主线里必须保留的一类标准表单控件。
 
 ## 2. 为什么现有控件不够用
 
-- `textinput` 只有通用文本输入，没有密码遮罩和 reveal 入口
+- `textinput` 只有通用文本编辑，没有密码遮罩和 reveal 入口
 - `token_input` 面向多值编辑，不适合单条秘密字段
 - `auto_suggest_box` 偏建议输入，不适合安全信息录入
-- 当前主线里缺少一版接近 `Fluent 2 / WPF UI PasswordBox` 的标准密码框
+- 当前主线需要一版接近 `Fluent 2 / WPF UI PasswordBox` 的标准 password field reference
+
+因此这里继续保留 `password_box`，但示例页必须收敛到统一的 reference 结构。
 
 ## 3. 目标场景与示例概览
 
 - 主区域展示标准 `password_box`，包含 label、helper、遮罩文本和 reveal 按钮
-- 左下 `Compact` 预览展示紧凑密码字段
-- 右下 `Read only` 预览展示只读遮罩字段
-- 主卡支持触摸聚焦、键盘编辑、Tab 切换到 reveal 按钮、Space / Enter 切换明文显示
-- guide 标签切换标准 snapshot；compact 标签切换紧凑 snapshot
+- 左下 `compact` 预览展示紧凑密码字段
+- 右下 `read only` 预览展示只读遮罩字段
+- 示例页只保留标题、主 `password_box` 和底部 `compact / read only` 双预览，不再保留 guide、外部状态回显和标签点击
+- 录制动作改为程序化切换主 snapshot、键盘编辑和 reveal 切换，不再点击页面 chrome
 
 目录：
 
@@ -36,98 +38,114 @@
 ## 4. 视觉与布局规格
 
 - 画布：`480 x 480`
-- 根布局：`224 x 278`
-- 页面结构：标题 -> guide -> `Standard` -> 主密码框 -> 状态文案 -> 分隔线 -> `Compact / Read only`
+- 根布局：`224 x 154`
+- 页面结构：标题 -> 主 `password_box` -> `compact / read only` 双预览
 - 主密码框：`196 x 70`
-- 底部双预览：`216 x 64`
-- `Compact`：`106 x 44`
-- `Read only`：`106 x 44`
+- 底部双预览容器：`216 x 44`
+- `compact` 预览：`106 x 44`
+- `read only` 预览：`106 x 44`
 - 视觉规则：
-  - 采用浅灰 page panel + 白色表单卡，不回到 showcase / HMI 风格
-  - reveal 图标保持低噪音，不使用夸张 hover
-  - read-only 通过统一降噪 palette 弱化，而不是额外堆叠装饰件
+  - 使用浅灰白 page panel + 白底轻边框 palette
+  - 主密码框保留标准表单卡语义，不再叠页面级说明和状态桥接
+  - `compact` 与 `read only` 作为静态对照，不承担交互职责
+  - accent、边框和文本色统一向 Fluent / WPF UI 低噪音浅色体系收口
 
 ## 5. 控件清单
 
 | 变量名 | 类型 | 尺寸 (W x H) | 初始状态 | 用途 |
 | --- | --- | ---: | --- | --- |
-| `root_layout` | `egui_view_linearlayout_t` | 224 x 278 | enabled | 页面根布局 |
-| `title_label` | `egui_view_label_t` | 224 x 18 | `Password Box` | 页面标题 |
-| `box_primary` | `egui_view_password_box_t` | 196 x 70 | `studio-24` | 标准密码框 |
-| `box_compact` | `egui_view_password_box_t` | 106 x 44 | `7429` | 紧凑密码框 |
-| `box_locked` | `egui_view_password_box_t` | 106 x 44 | `fleet-admin` | 只读遮罩预览 |
+| `root_layout` | `egui_view_linearlayout_t` | `224 x 154` | enabled | 页面根布局 |
+| `title_label` | `egui_view_label_t` | `224 x 18` | `Password Box` | 页面标题 |
+| `box_primary` | `egui_view_password_box_t` | `196 x 70` | `studio-24` | 标准密码框 |
+| `box_compact` | `egui_view_password_box_t` | `106 x 44` | `7429` | 紧凑静态预览 |
+| `box_read_only` | `egui_view_password_box_t` | `106 x 44` | `fleet-admin` | 只读静态预览 |
 
 ## 6. 状态覆盖矩阵
 
 | 状态 / 区域 | 主密码框 | Compact | Read only |
 | --- | --- | --- | --- |
-| 默认态 | 遮罩显示 | 遮罩显示 | 遮罩显示 |
-| 触摸聚焦 | 光标显示 | 可切换 | 不响应 |
-| reveal 点击 | 明文 / 遮罩切换 | 明文 / 遮罩切换 | 不显示 reveal |
-| `Backspace / Delete` | 编辑内容 | 可编辑 | 不适用 |
-| `Tab` | field / reveal 切换 | 可切换 | 不适用 |
-| `Left / Right / Home / End` | 光标移动 | 可移动 | 不适用 |
-| guide / compact 切换 | 切换 snapshot | 切换 snapshot | 固定 |
+| 默认态 | `studio-24` 遮罩显示 | `7429` 遮罩显示 | `fleet-admin` 遮罩显示 |
+| 键盘编辑 | `Backspace` + `2` | 不响应 | 不响应 |
+| reveal 切换 | 明文 / 遮罩切换 | 仅作静态对照 | 不适用 |
+| `Tab` / `Space` | field / reveal 闭环切换 | 不响应 | 不响应 |
+| snapshot 轮换 | `Wi-Fi` -> `Deploy secret` | `7429` -> `A-1709` | 固定 |
+| 只读弱化 | 不适用 | 不适用 | 仅保留只读遮罩预览 |
 
 ## 7. `egui_port_get_recording_action()` 录制动作设计
 
-1. 抓取默认遮罩态
-2. 点击主密码框聚焦
-3. 发送 `Backspace` 与 `2`，验证键盘编辑
-4. 抓取编辑后遮罩态
-5. 点击 reveal 按钮，抓取明文态
-6. `Tab` 到 reveal，按 `Space` 切回遮罩态
-7. 点击 guide，切换主 snapshot
-8. 点击 compact 标签，切换紧凑 snapshot
-9. 抓取最终对照态
+1. 应用默认主 snapshot、`compact` snapshot 和只读预览
+2. 请求第一页默认遮罩态截图
+3. 点击主密码框聚焦
+4. 发送 `Backspace` 与 `2`，验证字段编辑
+5. 请求第二页编辑后截图
+6. 程序化切换到 `revealed`
+7. 请求第三页明文截图
+8. 发送 `Tab` 与 `Space`，回到遮罩态
+9. 请求第四页截图
+10. 程序化切换主 snapshot 到 `Deploy secret`
+11. 请求第五页截图
+12. 程序化切换 `compact` 预览到第二个静态值
+13. 请求最终对照截图
 
 ## 8. 编译、runtime、截图验收标准
 
 ```bash
 make all APP=HelloCustomWidgets APP_SUB=input/password_box PORT=pc
-python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/password_box --timeout 10 --keep-screenshots
+python scripts/checks/check_touch_release_semantics.py --scope custom --category input
+python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/password_box --track reference --timeout 10 --keep-screenshots
 make all APP=HelloUnitTest PORT=pc_test
 output\main.exe
+python scripts/checks/check_docs_encoding.py
 ```
 
 验收重点：
 
-- label、helper、字段文本、reveal 图标都必须完整可见
-- 主卡 reveal 按钮与右侧留白必须平衡，不能出现图标偏心
-- 遮罩文本与光标不能贴边
-- compact 和 read-only 必须保持标准输入控件语义，而不是新造卡片装饰
+- 主密码框和底部双预览必须完整可见，不能被裁切
+- 主卡必须看起来像标准密码输入，而不是自造状态卡片
+- 遮罩文本、光标和 reveal 图标要可辨识，不能贴边
+- `compact` 和 `read only` 必须是静态对照，不再承担标签切换职责
+- 页面中不再出现 guide、状态文案、standard label、section divider 和外部 preview label
 
-## 9. 已知限制与下一轮迭代计划
+## 9. 已知限制与后续方向
 
-- 当前用 `*` 作为遮罩字符，没有做真实 bullet glyph
-- 没有实现 caps lock / strength / validation 提示
-- 后续如果沉入框架层，可补 submit / error / disabled 态
+- 当前只覆盖简化键盘闭环，不做完整桌面输入法行为
+- 当前不做 caps lock、strength、validation 和错误提示
+- 当前 `compact` 与 `read only` 仅作为静态对照，不承载真实交互
+- 若后续要沉入框架层，再单独评估与表单校验、凭据管理和 submit 流程的联动
 
 ## 10. 与现有控件的重叠分析与差异化边界
 
-- 与 `textinput` 的差异：核心在密码遮罩与 reveal 按钮，而不是通用文本编辑
-- 与 `token_input` 的差异：核心在单值秘密字段，而不是多 token 管理
-- 与 `auto_suggest_box` 的差异：核心在安全输入，不涉及建议列表或下拉面板
+- 相比 `textinput`：核心差异是密码遮罩与 reveal 按钮，而不是通用文本编辑
+- 相比 `token_input`：核心差异是单值秘密字段，而不是多 token 管理
+- 相比 `auto_suggest_box`：核心差异是安全输入，不涉及建议列表或下拉面板
+- 相比 `number_box`：本控件表达秘密文本输入，不承担数值范围和步进语义
 
 ## 11. 参考设计系统与开源母本
 
-- 设计系统：`Fluent 2`
+- 参考设计系统：`Fluent 2`
 - 开源母本：`WPF UI`
-- 次级参考：`ModernWpf`
+- 次级补充参考：`ModernWpf`
 
 ## 12. 对应组件名，以及本次保留的核心状态
 
 - 对应组件名：`PasswordBox`
-- 保留状态：`masked`、`revealed`、`compact`、`read only`、`focused`
+- 本次保留状态：
+  - `masked`
+  - `revealed`
+  - `compact`
+  - `read only`
+  - `focused`
 
 ## 13. 相比参考原型删掉了哪些效果或装饰
 
-- 去掉 Acrylic、阴影动画和桌面 hover
-- 去掉系统密码管理入口
-- 去掉复杂焦点过渡与 validation adorners
+- 不做页面级 guide、状态回显、standard label、section divider 和 preview label
+- 不做标签点击轮换和外部状态桥接
+- 不做复杂 validation、caps lock、密码强度和系统凭据入口
+- 不做 Acrylic、hover 光效和复杂焦点动画
 
 ## 14. EGUI 适配时的简化点与约束
 
-- 优先保证 `480 x 480` 下的视觉居中与留白
-- reveal 只保留单个右侧图标入口
-- 用简化键盘事件闭环代替桌面完整输入法行为
+- 使用固定 snapshot 与轻量键盘事件，优先保证 `480 x 480` 页面里的可审阅性
+- 只保留单个 reveal 入口，不引入浮层或额外辅助提示
+- `compact` 与 `read only` 固定放底部双列，便于和主卡直接对照
+- 先完成示例级 password field，再决定是否上升到框架公共控件
