@@ -98,6 +98,9 @@
 ## 最近完成的收口动作
 
 - `2026-04-09`
+  - 完成 `input/calendar_view` 实现级样式收口：删除页面级 guide、状态文案、`Standard` 标签、分隔线、预览标签与 label-click 场景切换逻辑，把页面结构统一为标题、主 `calendar_view` 与 `compact / read only` 双预览。
+  - 主控件保留真实 `CalendarView` 区间选择、月份浏览与焦点闭环，页面空白区和底部预览统一改为清焦收口；`compact` 与 `read only` 预览收敛为静态 reference 对照，README 已重写为当前 `reference` 结构。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=input/calendar_view PORT=pc`、`check_touch_release_semantics.py --scope custom --category input`、`code_runtime_check.py --app HelloCustomWidgets --app-sub input/calendar_view --track reference --timeout 10 --keep-screenshots`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`check_docs_encoding.py`。
   - 完成 `input/rating_control` 实现级样式收口：删除 guide、状态回显、section divider、外部 preview 标签和 label-click 场景切换逻辑，把页面结构统一为标题、主 `rating_control` 与 `compact / read only` 双预览。
   - 主控件保留真实触摸评分、`Clear` 和键盘闭环，底部两个预览收敛为静态 reference 对照；README 已重写为当前 `reference` 结构。
   - 已通过 `make all APP=HelloCustomWidgets APP_SUB=input/rating_control PORT=pc`、`check_touch_release_semantics.py --scope custom --category input`、`code_runtime_check.py --app HelloCustomWidgets --app-sub input/rating_control --track reference --timeout 10 --keep-screenshots`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`check_docs_encoding.py`。
