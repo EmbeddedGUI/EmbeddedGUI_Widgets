@@ -1,124 +1,124 @@
-# tab_view 自定义控件设计说明
+# tab_view 设计说明
 
 ## 参考来源
 - 参考设计系统：`Fluent 2`
 - 参考开源库：`WPF UI`
-- 次级补充参考：`ModernWpf`
+- 补充参考：`ModernWpf`
 - 对应组件名：`TabView`
-- 本次保留状态：`standard`、`compact`、`read only`
-- 删除效果：拖拽重排、窗口级系统菜单、Acrylic、复杂 hover 动画、多行 header 命令区
-- EGUI 适配说明：保留标准页签头、内容面板、关闭入口和恢复入口，用轻量边框与 pill 取代桌面级大面积视觉层
+- 本次保留状态：`standard`、`close current tab`、`restore closed tabs`、`compact`、`read only`
+- 删除效果：页面级 `guide`、状态栏、section label、额外 workspace/helper 说明条、可点击 preview 卡、重阴影、强按钮化 tab shell
+- EGUI 适配说明：继续复用仓库内 `tab_view` 基础实现，本轮只收口 `reference` 页面结构、示例文案和绘制强度，不修改 `sdk/EmbeddedGUI`
 
 ## 1. 为什么需要这个控件
-`tab_view` 用来表达页签头和内容面板是一体的浏览容器，适合文档页、后台工作区、设置页中的多面板切换场景。
+`tab_view` 用来表达“页签头和内容面板是一体的工作区容器”，适合文档页、后台工作区、设置页中的多面板切换场景。
 
 ## 2. 为什么现有控件不够用
-- `tab_strip` 只解决页签头，不承载内容面板
-- `tab_expose` 偏多页总览，不是页签内联阅读容器
-- `flip_view` 是单页轮播，不是多页签工作区
-- `viewpage` / `tab_bar` 更偏基础切页，不具备标准 `TabView` 的 header + content shell 语义
+- `tab_strip` 只表达页签头，不承载内容面板。
+- `flip_view` 是顺序浏览，不是并列工作区页签。
+- `nav_panel` 负责导航，不表达标签式工作区。
+- `menu_bar` 和 `command_bar` 负责命令组织，不负责页签内容容器。
+
+因此这里继续保留 `tab_view`，但示例页需要回到统一的 `Fluent / WPF UI` reference 结构。
 
 ## 3. 目标场景与示例概览
-- 主区域展示标准 `tab_view`，覆盖 `Docs workspace` 与 `Ops workspace` 两套 snapshot
-- 主区域展示标准 `tab_view`，只保留页签头、内容面板和关闭 / 恢复入口，body 区保留 badge/eyebrow/title/footer 的轻量信息层
-- 左下 `Compact` 预览展示缩窄尺寸下的低噪音版本
-- 右下 `Read only` 预览展示只读冻结态
-- 主区域需要能看出切页、关闭标签和恢复标签后的内容联动
-- 示例页结构收敛为标题、主 `tab_view` 和 compact / read-only 双预览，不再保留 guide、状态栏和 section label
-
-目录：
-- `example/HelloCustomWidgets/navigation/tab_view/`
+- 主控件：展示标准 `TabView`，保留 tab header、content body、关闭当前页签和恢复隐藏页签入口。
+- `compact` 预览：保留相同语义，但压缩 body chrome 和文本密度，用于验证小尺寸 reference 收口。
+- `read only` 预览：保留冻结态和内容摘要，只作为静态对照，不再承担点击职责。
+- 页面只保留标题、主 `tab_view` 和底部 `compact / read only` 双预览，不再保留 guide、状态栏和额外说明条。
 
 ## 4. 视觉与布局规格
-- 画布：`480 x 480`
-- 根布局：`224 x 224`
-- 主 `tab_view`：`198 x 112`
-- 底部双预览：`216 x 72`
-- `Compact` / `Read only` 预览：`104 x 72`
-- 视觉规则：
-  - 使用浅灰 page panel + 白底轻边框卡片
-  - active tab 只保留轻量 fill、underline 和可见的关闭入口
-  - `Tab` 切换时 `close / add` 要能从部件级描边看出 focus 位置
-  - body panel 用低对比内容卡，不回退到 showcase 风格的大色块
-  - `Compact` 保留语义，不保留冗长 body 文本
-  - 主控件不再保留 tabs 上方的 workspace/helper 说明条，整体回到 Fluent / WPF UI 标准工作区页签容器语义
+- 根容器尺寸：`224 x 224`
+- 主控件尺寸：`198 x 112`
+- 底部对照行尺寸：`216 x 72`
+- `compact` 预览：`104 x 72`
+- `read only` 预览：`104 x 72`
+- 页面结构：标题 -> 主 `tab_view` -> `compact / read only`
+- 样式约束：
+  - 维持浅底、轻边框、低噪音 tab shell 与 body card。
+  - active tab 只保留轻量 fill、细 underline 和 close 入口，不做厚重按钮化。
+  - body 面板保留 badge / title / footer 的层级，但需要压轻描边和胶囊强调。
+  - 底部两个 preview 固定为静态 reference 对照，不再参与交互闭环。
 
 ## 5. 控件清单
+
 | 变量名 | 类型 | 尺寸 (W x H) | 初始状态 | 用途 |
 | --- | --- | ---: | --- | --- |
-| `root_layout` | `egui_view_linearlayout_t` | `224 x 224` | enabled | 页面根布局 |
-| `title_label` | `egui_view_label_t` | `224 x 18` | `Tab View` | 页面标题 |
-| `tab_view_primary` | `egui_view_tab_view_t` | `198 x 112` | `Docs workspace` | 主控件 |
-| `tab_view_compact` | `egui_view_tab_view_t` | `104 x 72` | compact | 紧凑预览 |
-| `tab_view_locked` | `egui_view_tab_view_t` | `104 x 72` | read only | 只读预览 |
+| `tab_view_primary` | `egui_view_tab_view_t` | `198 x 112` | `Docs workspace / Home` | 主 `TabView` |
+| `tab_view_compact` | `egui_view_tab_view_t` | `104 x 72` | compact | 底部紧凑静态对照 |
+| `tab_view_read_only` | `egui_view_tab_view_t` | `104 x 72` | read only | 底部只读静态对照 |
+| `primary_snapshots` | `egui_view_tab_view_snapshot_t[2]` | - | `Docs / Ops` | 主控件录制轨道 |
+| `compact_snapshots` | `egui_view_tab_view_snapshot_t[2]` | - | `Compact docs / Compact ops` | 紧凑预览程序化切换轨道 |
+| `read_only_snapshots` | `egui_view_tab_view_snapshot_t[1]` | - | `Read only` | 只读预览固定数据 |
 
 ## 6. 状态覆盖矩阵
-| 状态 / 区域 | 主 `tab_view` | Compact | Read only |
+| 区域 / 轨道 | Snapshot | 关键状态 | 说明 |
 | --- | --- | --- | --- |
-| 默认态 | `Docs / Home` | `Compact docs` | `Read only / Read` |
-| 切换标签 | body 面板和 footer 同步变化 | 保持当前 compact snapshot | 不响应 |
-| 关闭标签 | 可关闭标签从 header 消失，visible count 变化 | 不演示 | 不响应 |
-| 恢复标签 | `+` 恢复所有已关闭标签 | 不演示 | 不响应 |
-| 切换 snapshot | 主工作区整体切换 | 录制态程序化切换 | 固定冻结 |
+| 主控件 | `Docs workspace` | 默认工作区 | 保留 active tab、body、footer |
+| 主控件 | `Docs / Publish` | 切换当前页签 | 验证 body 和 footer 同步变化 |
+| 主控件 | `Docs / close current` | 关闭页签 | 验证 header 可见数量收缩 |
+| 主控件 | `Docs / restore` | 恢复页签 | 验证 `+` 恢复已隐藏页签 |
+| 主控件 | `Ops workspace` | 第二条工作区轨道 | 验证 snapshot 切换后内容壳仍稳定 |
+| `compact` | `Compact docs` | 紧凑对照 | 验证小尺寸 shell 与 body 收口 |
+| `compact` | `Compact ops` | 第二条预览轨道 | 只做程序化切换，不参与交互 |
+| `read only` | `Read only` | 冻结态摘要 | 固定只读，对外禁用触摸和焦点 |
 
 ## 7. `egui_port_get_recording_action()` 录制动作设计
-1. 首帧固定 `Docs / Home`
-2. 切到 `Publish`
-3. 关闭当前标签，展示 visible count 收缩
-4. 用 `+` 恢复标签
-5. 切换到 `Ops workspace`
-6. 切换 `Compact` 预览 snapshot
+1. 重置主控件、`compact` 和 `read only` 到默认 snapshot，并输出首帧。
+2. 切到主控件 `Publish` 页签。
+3. 关闭当前页签，记录可见 tab 数量变化。
+4. 通过 `+` 恢复已关闭页签。
+5. 切到 `Ops workspace` snapshot。
+6. 程序化切换 `compact` 到第二条预览轨道。
 
-## 8. 编译、runtime、截图验收标准
+## 8. 编译、touch、runtime、单测与文档检查
 ```bash
 make all APP=HelloCustomWidgets APP_SUB=navigation/tab_view PORT=pc
-python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub navigation/tab_view --timeout 10 --keep-screenshots
+python scripts/checks/check_touch_release_semantics.py --scope custom --category navigation
+python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub navigation/tab_view --track reference --timeout 10 --keep-screenshots
+make all APP=HelloUnitTest PORT=pc_test
+output\main.exe
+python scripts/checks/check_docs_encoding.py
 ```
 
 验收重点：
-- 主 header、body、footer 三层必须完整可见
-- active tab 与 close / add 入口的留白不能挤压正文
-- 关闭标签前后 body 文案不能错位
-- `eyebrow` 与底部双预览要保持轻量，不得喧宾夺主
-- `Compact` 和 `Read only` 要能明显区别于主态
-- 根容器不再出现大段空白页板，主控件与底部双预览比例需要稳定
+- header、body、footer 和底部 `compact / read only` 预览都必须完整可见。
+- active tab、close、add、body card 和 footer pill 必须可辨识，但不能回到旧的重按钮化风格。
+- `compact / read only` 不再响应触摸，也不承担页面状态切换职责。
+- `close current tab` 与 `restore closed tabs` 的行为不能回归。
 
-## 9. 已知限制与下一轮计划
-- 当前版本不做拖拽重排与多行 header command 区
-- 关闭标签采用本地 `closed_mask`，只在当前 snapshot 内生效
-- 文本宽度仍是轻量估算，不做真实字体测量
-- 已补齐 `eyebrow`、footer 文案退化、部件级 focus 可视化与录制态 status 同步
-- 后续若升级到框架公共控件，再单独规划拖拽重排和更复杂的 header command 区
+## 9. 已知限制与后续方向
+- 当前不做拖拽重排、tear-out、多行 header command 区和窗口级集成。
+- 关闭页签继续使用本地 `closed_mask`，只在当前 snapshot 内生效。
+- 文本宽度仍使用轻量估算，不引入复杂字体测量和弹性布局。
 
-## 10. 与现有控件的重叠分析与差异化边界
-- 相比 `tab_strip`：这里把 content body 作为控件内部语义的一部分
-- 相比 `tab_expose`：这里不是多页总览，而是单工作区内联切换
-- 相比 `flip_view`：这里是多标签并列语义，不是前后翻页浏览
-- 相比 `viewpage`：这里强调标准桌面式 `TabView` 外观与关闭/恢复入口
+## 10. 与现有控件的边界
+- 相比 `tab_strip`：这里把 content body 视为控件语义的一部分。
+- 相比 `flip_view`：这里是并列页签，不是前后翻页。
+- 相比 `nav_panel`：这里表达工作区页签，不是导航结构。
+- 相比 `menu_bar`：这里是内容容器，不是命令入口。
 
 ## 11. 参考设计系统与开源母本
-- 设计系统：`Fluent 2`
-- 开源母本：`WPF UI`
-- 次级补充：`ModernWpf`
+- 参考设计系统：`Fluent 2`
+- 参考开源库：`WPF UI`
+- 补充参考：`ModernWpf`
 
-## 12. 对应组件名，以及本次保留的核心状态
+## 12. 对应组件名与本次保留的核心状态
 - 对应组件名：`TabView`
-- 本次保留：
+- 本次保留核心状态：
   - `standard`
-  - `compact`
-  - `read only`
   - `close current tab`
   - `restore closed tabs`
+  - `compact`
+  - `read only`
 
-## 13. 相比参考原型删掉了哪些效果或装饰
-- 不做拖拽重排、tear-out、窗口级集成
-- 不做复杂 hover、焦点环和多级阴影
-- 不做系统菜单、图标页签、Acrylic 背景
-- 不做多段 header 命令工具条
-- 不做页面级 guide、状态栏、section label 与 tabs 上方额外 workspace/helper 说明条
+## 13. 相比参考原型删掉的效果或装饰
+- 删掉页面级 guide、状态栏、section label 与额外 workspace/helper 说明条。
+- 删掉可点击 preview 卡与 preview 轨道的外部交互职责。
+- 删掉拖拽重排、tear-out、窗口级集成和复杂 hover 动画。
+- 删掉重阴影、厚描边和高噪音 tab shell/body 装饰。
 
 ## 14. EGUI 适配时的简化点与约束
-- 以轻量 `closed_mask` 完成关闭语义，避免复杂容器重排
-- 所有状态在 `480 x 480` 中优先保证可审阅性
-- 维持浅色低噪音方向，避免退回 showcase 风格
-- 当前先作为 `HelloCustomWidgets` 示例控件推进，不下沉到 `src/widget/`
+- 使用 `snapshot + closed_mask` 驱动工作区状态，优先保证 reference 稳定。
+- 底部 `compact / read only` 固定放在同一行，只承担静态对照职责。
+- `read only` 继续复用 `read_only_mode`，但页面语义统一表述为 `read only`。
+- 当前先作为 `HelloCustomWidgets` reference 示例维护，后续是否下沉框架层再单独评估。

@@ -983,16 +983,16 @@ static void egui_view_tab_view_on_draw(egui_view_t *self)
     egui_view_tab_view_copy_elided(footer_buf, sizeof(footer_buf), tab ? tab->footer : NULL, local->compact_mode ? 10 : 14);
 
     tone_color = tab ? egui_view_tab_view_tone_color(local, tab->tone) : local->accent_color;
-    card_fill = egui_rgb_mix(local->surface_color, tone_color, local->compact_mode ? 4 : 5);
-    card_border = egui_rgb_mix(local->border_color, tone_color, local->compact_mode ? 10 : 12);
-    body_fill = egui_rgb_mix(local->section_color, tone_color, local->compact_mode ? 8 : 10);
-    body_border = egui_rgb_mix(local->border_color, tone_color, local->compact_mode ? 10 : 12);
+    card_fill = egui_rgb_mix(local->surface_color, tone_color, local->compact_mode ? 3 : 4);
+    card_border = egui_rgb_mix(local->border_color, tone_color, local->compact_mode ? 8 : 10);
+    body_fill = egui_rgb_mix(local->section_color, tone_color, local->compact_mode ? 6 : 8);
+    body_border = egui_rgb_mix(local->border_color, tone_color, local->compact_mode ? 8 : 10);
     title_color = local->text_color;
-    meta_color = egui_rgb_mix(local->muted_text_color, tone_color, 10);
-    badge_fill = egui_rgb_mix(local->surface_color, tone_color, 12);
+    meta_color = egui_rgb_mix(local->muted_text_color, tone_color, 8);
+    badge_fill = egui_rgb_mix(local->surface_color, tone_color, 10);
     badge_text = tone_color;
-    footer_fill = egui_rgb_mix(local->surface_color, tone_color, 10);
-    footer_border = egui_rgb_mix(local->border_color, tone_color, 12);
+    footer_fill = egui_rgb_mix(local->surface_color, tone_color, 8);
+    footer_border = egui_rgb_mix(local->border_color, tone_color, 10);
     footer_text = tone_color;
 
     if (local->read_only_mode)
@@ -1025,17 +1025,17 @@ static void egui_view_tab_view_on_draw(egui_view_t *self)
     }
 
     egui_canvas_draw_round_rectangle_fill(metrics.content_region.location.x - 2, metrics.content_region.location.y - 2, metrics.content_region.size.width + 4,
-                                          metrics.content_region.size.height + 4, radius, card_fill, egui_color_alpha_mix(self->alpha, 98));
+                                          metrics.content_region.size.height + 4, radius, card_fill, egui_color_alpha_mix(self->alpha, 94));
     egui_canvas_draw_round_rectangle(metrics.content_region.location.x - 2, metrics.content_region.location.y - 2, metrics.content_region.size.width + 4,
-                                     metrics.content_region.size.height + 4, radius, 1, card_border, egui_color_alpha_mix(self->alpha, 46));
+                                     metrics.content_region.size.height + 4, radius, 1, card_border, egui_color_alpha_mix(self->alpha, 30));
 
     for (i = 0; i < metrics.visible_count; i++)
     {
         const egui_view_tab_view_tab_t *item = egui_view_tab_view_get_tab(local, metrics.items[i].tab_index);
         uint8_t active = metrics.items[i].tab_index == local->current_tab;
-        egui_color_t tab_fill = egui_rgb_mix(local->surface_color, tone_color, active ? 8 : 2);
-        egui_color_t tab_border = egui_rgb_mix(local->border_color, tone_color, active ? 14 : 8);
-        egui_color_t tab_text = active ? title_color : egui_rgb_mix(local->muted_text_color, title_color, 8);
+        egui_color_t tab_fill = egui_rgb_mix(local->surface_color, tone_color, active ? 6 : 1);
+        egui_color_t tab_border = egui_rgb_mix(local->border_color, tone_color, active ? 10 : 6);
+        egui_color_t tab_text = active ? title_color : egui_rgb_mix(local->muted_text_color, title_color, 6);
         egui_region_t label_region = metrics.items[i].tab_region;
 
         if (local->read_only_mode && active)
@@ -1051,9 +1051,9 @@ static void egui_view_tab_view_on_draw(egui_view_t *self)
         }
 
         egui_canvas_draw_round_rectangle_fill(label_region.location.x, label_region.location.y, label_region.size.width, label_region.size.height,
-                                              local->compact_mode ? 5 : 6, tab_fill, egui_color_alpha_mix(self->alpha, active ? 100 : 72));
+                                              local->compact_mode ? 5 : 6, tab_fill, egui_color_alpha_mix(self->alpha, active ? 92 : 60));
         egui_canvas_draw_round_rectangle(label_region.location.x, label_region.location.y, label_region.size.width, label_region.size.height,
-                                         local->compact_mode ? 5 : 6, 1, tab_border, egui_color_alpha_mix(self->alpha, active ? 42 : 24));
+                                         local->compact_mode ? 5 : 6, 1, tab_border, egui_color_alpha_mix(self->alpha, active ? 34 : 18));
 
         if (active)
         {
@@ -1069,28 +1069,28 @@ static void egui_view_tab_view_on_draw(egui_view_t *self)
             }
             egui_canvas_draw_line(label_region.location.x + underline_inset, label_region.location.y + label_region.size.height - 1,
                                   label_region.location.x + label_region.size.width - underline_inset, label_region.location.y + label_region.size.height - 1,
-                                  1, tone_color, egui_color_alpha_mix(self->alpha, local->current_part == EGUI_VIEW_TAB_VIEW_PART_TAB ? 100 : 78));
+                                  1, tone_color, egui_color_alpha_mix(self->alpha, local->current_part == EGUI_VIEW_TAB_VIEW_PART_TAB ? 82 : 60));
         }
         if (item != NULL && item->dirty && !local->compact_mode)
         {
             egui_canvas_draw_round_rectangle_fill(label_region.location.x + 5, label_region.location.y + 5, 4, 4, 2, tone_color,
-                                                  egui_color_alpha_mix(self->alpha, 100));
+                                                  egui_color_alpha_mix(self->alpha, 88));
             label_region.location.x += 6;
             label_region.size.width -= 6;
         }
 
         if (metrics.items[i].close_region.size.width > 0)
         {
-            egui_color_t close_fill = egui_rgb_mix(local->surface_color, tone_color, local->current_part == EGUI_VIEW_TAB_VIEW_PART_CLOSE ? 14 : 8);
-            egui_color_t close_text = egui_rgb_mix(title_color, tone_color, 14);
-            egui_color_t close_border = egui_rgb_mix(local->border_color, tone_color, local->current_part == EGUI_VIEW_TAB_VIEW_PART_CLOSE ? 20 : 10);
+            egui_color_t close_fill = egui_rgb_mix(local->surface_color, tone_color, local->current_part == EGUI_VIEW_TAB_VIEW_PART_CLOSE ? 10 : 6);
+            egui_color_t close_text = egui_rgb_mix(title_color, tone_color, 10);
+            egui_color_t close_border = egui_rgb_mix(local->border_color, tone_color, local->current_part == EGUI_VIEW_TAB_VIEW_PART_CLOSE ? 14 : 8);
 
             egui_canvas_draw_round_rectangle_fill(metrics.items[i].close_region.location.x, metrics.items[i].close_region.location.y,
                                                   metrics.items[i].close_region.size.width, metrics.items[i].close_region.size.height, 4, close_fill,
-                                                  egui_color_alpha_mix(self->alpha, 96));
+                                                  egui_color_alpha_mix(self->alpha, 88));
             egui_canvas_draw_round_rectangle(metrics.items[i].close_region.location.x, metrics.items[i].close_region.location.y,
                                              metrics.items[i].close_region.size.width, metrics.items[i].close_region.size.height, 4, 1, close_border,
-                                             egui_color_alpha_mix(self->alpha, local->current_part == EGUI_VIEW_TAB_VIEW_PART_CLOSE ? 48 : 24));
+                                             egui_color_alpha_mix(self->alpha, local->current_part == EGUI_VIEW_TAB_VIEW_PART_CLOSE ? 34 : 18));
             text_region = metrics.items[i].close_region;
             egui_view_tab_view_draw_text(local->meta_font, self, "x", &text_region, EGUI_ALIGN_CENTER, close_text);
             label_region.size.width -= metrics.items[i].close_region.size.width + 4;
@@ -1102,8 +1102,8 @@ static void egui_view_tab_view_on_draw(egui_view_t *self)
 
     if (metrics.has_add)
     {
-        egui_color_t add_fill = egui_rgb_mix(local->surface_color, local->accent_color, local->current_part == EGUI_VIEW_TAB_VIEW_PART_ADD ? 12 : 8);
-        egui_color_t add_border = egui_rgb_mix(local->border_color, local->accent_color, local->current_part == EGUI_VIEW_TAB_VIEW_PART_ADD ? 18 : 10);
+        egui_color_t add_fill = egui_rgb_mix(local->surface_color, local->accent_color, local->current_part == EGUI_VIEW_TAB_VIEW_PART_ADD ? 8 : 5);
+        egui_color_t add_border = egui_rgb_mix(local->border_color, local->accent_color, local->current_part == EGUI_VIEW_TAB_VIEW_PART_ADD ? 12 : 8);
         egui_color_t add_text = local->accent_color;
 
         if (local->read_only_mode)
@@ -1121,17 +1121,17 @@ static void egui_view_tab_view_on_draw(egui_view_t *self)
 
         egui_canvas_draw_round_rectangle_fill(metrics.add_region.location.x, metrics.add_region.location.y, metrics.add_region.size.width,
                                               metrics.add_region.size.height, metrics.add_region.size.height / 2, add_fill,
-                                              egui_color_alpha_mix(self->alpha, 96));
+                                              egui_color_alpha_mix(self->alpha, 88));
         egui_canvas_draw_round_rectangle(metrics.add_region.location.x, metrics.add_region.location.y, metrics.add_region.size.width,
                                          metrics.add_region.size.height, metrics.add_region.size.height / 2, 1, add_border,
-                                         egui_color_alpha_mix(self->alpha, local->current_part == EGUI_VIEW_TAB_VIEW_PART_ADD ? 46 : 34));
+                                         egui_color_alpha_mix(self->alpha, local->current_part == EGUI_VIEW_TAB_VIEW_PART_ADD ? 34 : 24));
         egui_view_tab_view_draw_text(local->font, self, "+", &metrics.add_region, EGUI_ALIGN_CENTER, add_text);
     }
 
     egui_canvas_draw_round_rectangle_fill(metrics.body_region.location.x, metrics.body_region.location.y, metrics.body_region.size.width,
-                                          metrics.body_region.size.height, body_radius, body_fill, egui_color_alpha_mix(self->alpha, 98));
+                                          metrics.body_region.size.height, body_radius, body_fill, egui_color_alpha_mix(self->alpha, 96));
     egui_canvas_draw_round_rectangle(metrics.body_region.location.x, metrics.body_region.location.y, metrics.body_region.size.width,
-                                     metrics.body_region.size.height, body_radius, 1, body_border, egui_color_alpha_mix(self->alpha, 38));
+                                     metrics.body_region.size.height, body_radius, 1, body_border, egui_color_alpha_mix(self->alpha, 28));
 
     if (tab == NULL)
     {
@@ -1217,7 +1217,7 @@ static void egui_view_tab_view_on_draw(egui_view_t *self)
             badge_w = text_region.size.width;
         }
         egui_canvas_draw_round_rectangle_fill(text_region.location.x, text_region.location.y, badge_w, badge_h, badge_h / 2, badge_fill,
-                                              egui_color_alpha_mix(self->alpha, 98));
+                                              egui_color_alpha_mix(self->alpha, 88));
         badge_region.location.x = text_region.location.x;
         badge_region.location.y = text_region.location.y;
         badge_region.size.width = badge_w;
@@ -1268,8 +1268,8 @@ static void egui_view_tab_view_on_draw(egui_view_t *self)
     {
         footer_w = metrics.body_region.size.width - body_pad_x * 2;
     }
-    egui_canvas_draw_round_rectangle_fill(footer_x, footer_y, footer_w, footer_h, footer_h / 2, footer_fill, egui_color_alpha_mix(self->alpha, 98));
-    egui_canvas_draw_round_rectangle(footer_x, footer_y, footer_w, footer_h, footer_h / 2, 1, footer_border, egui_color_alpha_mix(self->alpha, 34));
+    egui_canvas_draw_round_rectangle_fill(footer_x, footer_y, footer_w, footer_h, footer_h / 2, footer_fill, egui_color_alpha_mix(self->alpha, 88));
+    egui_canvas_draw_round_rectangle(footer_x, footer_y, footer_w, footer_h, footer_h / 2, 1, footer_border, egui_color_alpha_mix(self->alpha, 28));
     egui_view_tab_view_draw_text(local->meta_font, self, footer_buf, &((egui_region_t){{footer_x, footer_y}, {footer_w, footer_h}}), EGUI_ALIGN_CENTER,
                                  footer_text);
 }
@@ -1449,14 +1449,14 @@ void egui_view_tab_view_init(egui_view_t *self)
     local->on_changed = NULL;
     local->on_action = NULL;
     local->surface_color = EGUI_COLOR_HEX(0xFFFFFF);
-    local->border_color = EGUI_COLOR_HEX(0xD5DCE4);
-    local->section_color = EGUI_COLOR_HEX(0xF4F7F9);
+    local->border_color = EGUI_COLOR_HEX(0xD9E0E6);
+    local->section_color = EGUI_COLOR_HEX(0xF6F8FA);
     local->text_color = EGUI_COLOR_HEX(0x1A2734);
     local->muted_text_color = EGUI_COLOR_HEX(0x6B7A89);
     local->accent_color = EGUI_COLOR_HEX(0x0F6CBD);
     local->success_color = EGUI_COLOR_HEX(0x0F7B45);
     local->warning_color = EGUI_COLOR_HEX(0x9D5D00);
-    local->neutral_color = EGUI_COLOR_HEX(0x6B7A89);
+    local->neutral_color = EGUI_COLOR_HEX(0x73808D);
     local->snapshot_count = 0;
     local->current_snapshot = 0;
     local->current_tab = EGUI_VIEW_TAB_VIEW_TAB_NONE;

@@ -227,7 +227,8 @@
   - 完成 `navigation/menu_bar` 实现级样式收口：移除底部 preview 的点击与焦点循环职责，把页面统一为标题、主控件与 `compact / read only` 静态对照，继续压轻 `egui_view_menu_bar.c` 的顶栏当前态、focus ring、panel shadow、separator、row highlight 与 summary strip。
   - 已通过 `make all APP=HelloCustomWidgets APP_SUB=navigation/menu_bar PORT=pc`、`check_touch_release_semantics.py --scope custom --category navigation`、`code_runtime_check.py --app HelloCustomWidgets --app-sub navigation/menu_bar --track reference --timeout 10 --keep-screenshots`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`check_docs_encoding.py`。
 - `2026-04-09`
-  - 完成 `navigation/tab_view` 实现级样式收口。
+  - 完成 `navigation/tab_view` 实现级样式收口：移除底部 preview 的双列包裹结构，把页面统一为标题、主控件与 `compact / read only` 静态对照，继续压轻 `egui_view_tab_view.c` 的 tab shell、active tab、close/add、body panel、badge 与 footer pill。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=navigation/tab_view PORT=pc`、`check_touch_release_semantics.py --scope custom --category navigation`、`code_runtime_check.py --app HelloCustomWidgets --app-sub navigation/tab_view --track reference --timeout 10 --keep-screenshots`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`check_docs_encoding.py`。
 - `2026-04-09`
   - 完成 `navigation/menu_flyout` 实现级样式收口。
 - `2026-04-09`
