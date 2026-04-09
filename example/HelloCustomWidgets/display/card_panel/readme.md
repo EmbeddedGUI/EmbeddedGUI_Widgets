@@ -91,7 +91,7 @@ python scripts/checks/check_docs_encoding.py
 验收重点：
 - 主控件和底部 `compact / read only` 预览必须完整可见。
 - header strap、metric chip、detail strip 和 footer 之间需要保留清晰层级，但不能回到高对比 showcase 风格。
-- `read only` 预览必须明显弱化 tone，并隐藏 action pill。
+- `read only` 预览必须明显弱化 tone、隐藏 action pill，并真实忽略后续 `touch / key` 输入；模式切换后也不能残留 pressed 渲染。
 - 页面中不再出现旧的列容器壳、guide、状态回显和外部 preview 标签。
 - 底部两个 preview 只作静态 reference 对照，不承接交互职责。
 

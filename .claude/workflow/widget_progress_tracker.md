@@ -98,6 +98,11 @@
 ## 最近完成的收口动作
 
 - `2026-04-10`
+  - 完成 `display/card_panel` 二次收口：在已落到 `reference` 结构的基础上，补齐卡片在快照切换、`read only`、disabled 和 compact 模式切换下的 pressed 清理语义，并把 `read only / disabled` 的输入抑制真正收口到控件实现里。
+  - `egui_view_card_panel.c` 新增统一的 `egui_view_card_panel_clear_pressed_state()`，让 `set_snapshots()`、`set_current_snapshot()`、`set_compact_mode()` 和 `set_read_only_mode()` 都能清掉残留 pressed；同时补上自定义 touch / key guard，让 `read only` 与 disabled 状态在新输入到来时清理渲染并拒绝提交，compact 态则保留卡片 click 语义。
+  - `example/HelloUnitTest/test/test_card_panel.c` 新增“切快照清 pressed”“compact 切换后恢复点击”“`read only` 清 pressed 并忽略 `touch / key`”“disabled 清理残留 pressed 并在恢复后再次点击”的交互回归；README 同步明确 `read only` 需要同时满足弱化 tone、隐藏 action pill、输入抑制和 pressed 清理。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=display/card_panel PORT=pc`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category display`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub display/card_panel --track reference --timeout 10 --keep-screenshots`、`python scripts/checks/check_docs_encoding.py`，并把关键帧归档到本地 `iteration_log/` 供验收复核。
+- `2026-04-10`
   - 完成 `layout/parallax_view` 二次收口：在已落到 `reference` 结构的基础上，清理 `egui_view_parallax_view.c` 文件尾部残留的旧 `locked_mode` 死代码，并继续把 pressed 清理语义统一到 `compact / read only / disabled` 交互链路里。
   - `egui_view_parallax_view.c` 新增统一的 `parallax_view_clear_pressed_state()`，让 `set_rows()`、`set_compact_mode()`、`set_read_only_mode()` 与 touch 入口都通过同一 helper 清空 `pressed_row / is_pressed`；`set_rows()` 同步重算 offset、触发 `on_changed` 并刷新渲染，避免交互切换后残留旧高亮。
   - `example/HelloUnitTest/test/test_parallax_view.c` 新增“异目标 release 不提交”“`ACTION_CANCEL` 清理 pressed”“切入 `compact` 清 pressed 并忽略输入”“disabled 新输入清理残留 pressed”与独立的 `read only` 输入抑制回归，确保交互后的渲染状态稳定。
