@@ -99,6 +99,16 @@ static egui_color_t egui_view_master_detail_mix_disabled(egui_color_t color)
     return egui_rgb_mix(color, EGUI_COLOR_DARK_GREY, 68);
 }
 
+static uint8_t egui_view_master_detail_clear_pressed_state(egui_view_t *self)
+{
+    EGUI_LOCAL_INIT(egui_view_master_detail_t);
+    uint8_t had_pressed = self->is_pressed || local->pressed_index != EGUI_VIEW_MASTER_DETAIL_MAX_ITEMS;
+
+    local->pressed_index = EGUI_VIEW_MASTER_DETAIL_MAX_ITEMS;
+    egui_view_set_pressed(self, false);
+    return had_pressed;
+}
+
 static void egui_view_master_detail_draw_text(const egui_font_t *font, egui_view_t *self, const char *text, const egui_region_t *region, uint8_t align,
                                               egui_color_t color)
 {
@@ -209,10 +219,15 @@ static void egui_view_master_detail_set_current_index_inner(egui_view_t *self, u
     }
     if (local->current_index == item_index)
     {
+        if (egui_view_master_detail_clear_pressed_state(self))
+        {
+            egui_view_invalidate(self);
+        }
         return;
     }
 
     local->current_index = item_index;
+    egui_view_master_detail_clear_pressed_state(self);
     if (notify && local->on_selection_changed)
     {
         local->on_selection_changed(self, item_index);
@@ -230,7 +245,7 @@ void egui_view_master_detail_set_items(egui_view_t *self, const egui_view_master
     {
         local->current_index = 0;
     }
-    local->pressed_index = EGUI_VIEW_MASTER_DETAIL_MAX_ITEMS;
+    egui_view_master_detail_clear_pressed_state(self);
     egui_view_invalidate(self);
 }
 
@@ -275,6 +290,7 @@ void egui_view_master_detail_set_compact_mode(egui_view_t *self, uint8_t compact
 {
     EGUI_LOCAL_INIT(egui_view_master_detail_t);
     local->compact_mode = compact_mode ? 1 : 0;
+    egui_view_master_detail_clear_pressed_state(self);
     egui_view_invalidate(self);
 }
 
@@ -282,8 +298,7 @@ void egui_view_master_detail_set_read_only_mode(egui_view_t *self, uint8_t read_
 {
     EGUI_LOCAL_INIT(egui_view_master_detail_t);
     local->read_only_mode = read_only_mode ? 1 : 0;
-    local->pressed_index = EGUI_VIEW_MASTER_DETAIL_MAX_ITEMS;
-    egui_view_set_pressed(self, false);
+    egui_view_master_detail_clear_pressed_state(self);
     egui_view_invalidate(self);
 }
 
@@ -560,6 +575,10 @@ static int egui_view_master_detail_on_touch_event(egui_view_t *self, egui_motion
 
     if (local->items == NULL || local->item_count == 0 || !egui_view_get_enable(self) || local->read_only_mode)
     {
+        if (egui_view_master_detail_clear_pressed_state(self))
+        {
+            egui_view_invalidate(self);
+        }
         return 0;
     }
 
@@ -581,14 +600,14 @@ static int egui_view_master_detail_on_touch_event(egui_view_t *self, egui_motion
         {
             egui_view_master_detail_set_current_index_inner(self, hit_index, 1);
         }
-        local->pressed_index = EGUI_VIEW_MASTER_DETAIL_MAX_ITEMS;
-        egui_view_set_pressed(self, false);
+        egui_view_master_detail_clear_pressed_state(self);
         egui_view_invalidate(self);
         return hit_index < local->item_count;
     case EGUI_MOTION_EVENT_ACTION_CANCEL:
-        local->pressed_index = EGUI_VIEW_MASTER_DETAIL_MAX_ITEMS;
-        egui_view_set_pressed(self, false);
-        egui_view_invalidate(self);
+        if (egui_view_master_detail_clear_pressed_state(self))
+        {
+            egui_view_invalidate(self);
+        }
         return 1;
     default:
         return 0;
@@ -602,7 +621,15 @@ static int egui_view_master_detail_on_key_event(egui_view_t *self, egui_key_even
     EGUI_LOCAL_INIT(egui_view_master_detail_t);
     uint8_t next_index;
 
-    if (local->items == NULL || local->item_count == 0 || !egui_view_get_enable(self) || local->read_only_mode || event->type != EGUI_KEY_EVENT_ACTION_UP)
+    if (local->items == NULL || local->item_count == 0 || !egui_view_get_enable(self) || local->read_only_mode)
+    {
+        if (egui_view_master_detail_clear_pressed_state(self))
+        {
+            egui_view_invalidate(self);
+        }
+        return 0;
+    }
+    if (event->type != EGUI_KEY_EVENT_ACTION_UP)
     {
         return 0;
     }
