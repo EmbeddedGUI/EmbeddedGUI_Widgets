@@ -43,7 +43,7 @@
   - 使用浅灰 page panel、白色面板容器和低噪音浅边框。
   - 标准态保留 header、selection indicator、badge 与 footer，但降低 selected row 和 badge 的强调强度。
   - `compact` 保留 rail 语义，不再依赖外部标签解释。
-  - `read only` 使用更弱的灰蓝 palette，只做静态 reference 对照。
+  - `read only` 使用更弱的灰蓝 palette，只做静态 reference 对照，并要求切换时清空 pressed 状态。
 
 ## 5. 控件清单
 
@@ -97,8 +97,8 @@ python scripts/checks/check_docs_encoding.py
 - 主控件和底部 `compact / read only` 预览都必须完整可见，不能重新长出旧 preview 壳层。
 - header、selected row、indicator、badge 和 footer 需要可辨识，但整体不能回到高噪音 showcase 风格。
 - `compact` 在窄宽度下仍要保持 rail 语义清晰。
-- `read only` 只能做静态展示，不能响应 touch、focus 或键盘。
-- `HelloUnitTest` 里已有的 selection clamp、metrics/hit testing、touch 选择和 locked/disabled 语义不能回归。
+- `read only` 只能做静态展示，不能响应 touch、focus 或键盘；切换到 `read_only_mode` 时还要清空 pressed 状态。
+- `HelloUnitTest` 里已有的 selection clamp、metrics/hit testing、touch 选择、键盘导航和 `read only` / disabled 语义不能回归。
 
 ## 9. 已知限制与后续方向
 
@@ -139,5 +139,6 @@ python scripts/checks/check_docs_encoding.py
 
 - 使用固定导航项数据保证录制稳定。
 - `compact / read only` 直接复用同一控件模式，减少额外页面壳层。
+- `read only` 直接使用 `read_only_mode`，避免页面语义和控件实现脱节。
 - 通过程序化切换 current index 保证 runtime 能稳定抓到导航状态。
 - 当前先作为 `HelloCustomWidgets` 的 reference widget 维护，后续是否下沉框架层再单独评估。
