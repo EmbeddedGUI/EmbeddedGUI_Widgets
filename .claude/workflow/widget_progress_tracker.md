@@ -34,7 +34,7 @@
 
 | 状态 | 控件名 | 分类 | 开始日期 | 当前阶段 | 目标 |
 | --- | --- | --- | --- | --- | --- |
-| 进行中 | `teaching_tip` | `feedback` | `2026-04-09` | `reference 细化` | 收口为标题 + 主控件 + `compact / read only` 静态对照，并继续压轻 callout surface、pointer tail、hero / close / action chrome |
+| 进行中 | `dialog_sheet` | `feedback` | `2026-04-09` | `reference 细化` | 收口为标题 + 主控件 + `compact / read only` 静态对照，并继续压轻 overlay、sheet surface、hero / tag / action chrome |
 
 ## 当前保留的 Reference 主线控件
 
@@ -96,6 +96,11 @@
 - `toast_stack` -> `Toast`
 
 ## 最近完成的收口动作
+
+- `2026-04-09`
+  - 完成 `feedback/teaching_tip` 实现级样式收口：移除底部 preview 的旧列容器壳与页面桥接逻辑，页面统一为标题、主 `teaching_tip` 与 `compact / read only` 静态对照，继续保留 `TeachingTip` 的 target 锚点、`top / bottom placement`、close / action 和 closed / reopen 语义。
+  - `test.c` 将 `tip_locked` 收口为 `tip_read_only`，底部两个 preview 统一禁用 touch / focus，并在录制起点显式重置主轨道和 `read only` 对照；`egui_view_teaching_tip.c` 进一步压轻 callout surface、pointer tail、target halo、action button、close pill 和 closed hint；README 重写为当前 `reference` 模板。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=feedback/teaching_tip PORT=pc`、`check_touch_release_semantics.py --scope custom --category feedback`、`code_runtime_check.py --app HelloCustomWidgets --app-sub feedback/teaching_tip --track reference --timeout 10 --keep-screenshots`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`check_docs_encoding.py`。
 
 - `2026-04-09`
   - 完成 `feedback/skeleton` 实现级样式收口：移除底部 preview 的旧列容器壳与页面桥接逻辑，页面统一为标题、主 `skeleton` 与 `compact / read only` 静态对照，继续保留 `Skeleton` 的 `wave` 主态、`compact` 脉冲占位和 `read only` 静态占位语义。
@@ -240,8 +245,6 @@
   - 完成 `display/card_panel` 实现级样式收口，移除旧版状态桥接和页面壳。
 - `2026-04-09`
   - 完成 `display/badge_group` 实现级样式收口，统一到 Fluent / WPF UI 低噪音浅色 reference。
-- `2026-04-09`
-  - 完成 `feedback/teaching_tip` 实现级样式收口。
 - `2026-04-09`
   - 完成 `feedback/dialog_sheet` 实现级样式收口。
 - `2026-04-09`

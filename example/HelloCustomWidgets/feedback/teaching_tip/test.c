@@ -25,10 +25,8 @@ static egui_view_linearlayout_t root_layout;
 static egui_view_label_t title_label;
 static egui_view_teaching_tip_t tip_primary;
 static egui_view_linearlayout_t bottom_row;
-static egui_view_linearlayout_t compact_column;
 static egui_view_teaching_tip_t tip_compact;
-static egui_view_linearlayout_t locked_column;
-static egui_view_teaching_tip_t tip_locked;
+static egui_view_teaching_tip_t tip_read_only;
 
 EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
 EGUI_BACKGROUND_PARAM_INIT(bg_page_panel_params, &bg_page_panel_param, NULL, NULL);
@@ -54,7 +52,7 @@ static const egui_view_teaching_tip_snapshot_t compact_snapshots[] = {
          EGUI_VIEW_TEACHING_TIP_PART_PRIMARY, 8},
 };
 
-static const egui_view_teaching_tip_snapshot_t locked_snapshots[] = {
+static const egui_view_teaching_tip_snapshot_t read_only_snapshots[] = {
         {"Preview", "Read only", "Review", "Preview only.", "Read", "", "Preview", EGUI_VIEW_TEACHING_TIP_TONE_NEUTRAL, EGUI_VIEW_TEACHING_TIP_PLACEMENT_BOTTOM,
          1, 1, 0, 0, EGUI_VIEW_TEACHING_TIP_PART_TARGET, 6},
 };
@@ -92,10 +90,22 @@ static void apply_primary_snapshot(uint8_t index)
     egui_view_teaching_tip_set_current_snapshot(EGUI_VIEW_OF(&tip_primary), primary_snapshot_index);
 }
 
+static void reset_primary_state(uint8_t index)
+{
+    reset_primary_snapshots();
+    egui_view_teaching_tip_set_snapshots(EGUI_VIEW_OF(&tip_primary), primary_snapshots, PRIMARY_SNAPSHOT_COUNT);
+    apply_primary_snapshot(index);
+}
+
 static void apply_compact_snapshot(uint8_t index)
 {
     compact_snapshot_index = (uint8_t)(index % COMPACT_SNAPSHOT_COUNT);
     egui_view_teaching_tip_set_current_snapshot(EGUI_VIEW_OF(&tip_compact), compact_snapshot_index);
+}
+
+static void apply_read_only_snapshot(void)
+{
+    egui_view_teaching_tip_set_current_snapshot(EGUI_VIEW_OF(&tip_read_only), 0);
 }
 
 static void on_primary_part_changed(egui_view_t *self, uint8_t part)
@@ -140,7 +150,7 @@ void test_init_ui(void)
     egui_view_label_set_align_type(EGUI_VIEW_OF(&title_label), EGUI_ALIGN_CENTER);
     egui_view_label_set_font(EGUI_VIEW_OF(&title_label), (const egui_font_t *)&egui_res_font_montserrat_12_4);
     egui_view_label_set_font_color(EGUI_VIEW_OF(&title_label), EGUI_COLOR_HEX(0x21303F), EGUI_ALPHA_100);
-    egui_view_set_margin(EGUI_VIEW_OF(&title_label), 0, 8, 0, 6);
+    egui_view_set_margin(EGUI_VIEW_OF(&title_label), 0, 8, 0, 4);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label));
 
     egui_view_teaching_tip_init(EGUI_VIEW_OF(&tip_primary));
@@ -149,7 +159,7 @@ void test_init_ui(void)
     egui_view_teaching_tip_set_meta_font(EGUI_VIEW_OF(&tip_primary), (const egui_font_t *)&egui_res_font_montserrat_8_4);
     egui_view_teaching_tip_set_snapshots(EGUI_VIEW_OF(&tip_primary), primary_snapshots, PRIMARY_SNAPSHOT_COUNT);
     egui_view_teaching_tip_set_on_part_changed_listener(EGUI_VIEW_OF(&tip_primary), on_primary_part_changed);
-    egui_view_teaching_tip_set_palette(EGUI_VIEW_OF(&tip_primary), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD5DCE4), EGUI_COLOR_HEX(0x1A2734),
+    egui_view_teaching_tip_set_palette(EGUI_VIEW_OF(&tip_primary), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD2DBE3), EGUI_COLOR_HEX(0x1A2734),
                                        EGUI_COLOR_HEX(0x6B7A89), EGUI_COLOR_HEX(0x0F6CBD), EGUI_COLOR_HEX(0x0F7B45), EGUI_COLOR_HEX(0x9D5D00),
                                        EGUI_COLOR_HEX(0x7A8796), EGUI_COLOR_HEX(0xDDE5EB));
     egui_view_set_margin(EGUI_VIEW_OF(&tip_primary), 0, 0, 0, 8);
@@ -161,19 +171,13 @@ void test_init_ui(void)
     egui_view_linearlayout_set_align_type(EGUI_VIEW_OF(&bottom_row), EGUI_ALIGN_VCENTER);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&bottom_row));
 
-    egui_view_linearlayout_init(EGUI_VIEW_OF(&compact_column));
-    egui_view_set_size(EGUI_VIEW_OF(&compact_column), TEACHING_TIP_PREVIEW_WIDTH, TEACHING_TIP_BOTTOM_ROW_HEIGHT);
-    egui_view_linearlayout_set_orientation(EGUI_VIEW_OF(&compact_column), 0);
-    egui_view_linearlayout_set_align_type(EGUI_VIEW_OF(&compact_column), EGUI_ALIGN_HCENTER);
-    egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&compact_column));
-
     egui_view_teaching_tip_init(EGUI_VIEW_OF(&tip_compact));
     egui_view_set_size(EGUI_VIEW_OF(&tip_compact), TEACHING_TIP_PREVIEW_WIDTH, TEACHING_TIP_PREVIEW_HEIGHT);
     egui_view_teaching_tip_set_font(EGUI_VIEW_OF(&tip_compact), (const egui_font_t *)&egui_res_font_montserrat_8_4);
     egui_view_teaching_tip_set_meta_font(EGUI_VIEW_OF(&tip_compact), (const egui_font_t *)&egui_res_font_montserrat_8_4);
     egui_view_teaching_tip_set_snapshots(EGUI_VIEW_OF(&tip_compact), compact_snapshots, COMPACT_SNAPSHOT_COUNT);
     egui_view_teaching_tip_set_compact_mode(EGUI_VIEW_OF(&tip_compact), 1);
-    egui_view_teaching_tip_set_palette(EGUI_VIEW_OF(&tip_compact), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD5DCE4), EGUI_COLOR_HEX(0x1A2734),
+    egui_view_teaching_tip_set_palette(EGUI_VIEW_OF(&tip_compact), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD2DBE3), EGUI_COLOR_HEX(0x1A2734),
                                        EGUI_COLOR_HEX(0x6B7A89), EGUI_COLOR_HEX(0x0F6CBD), EGUI_COLOR_HEX(0x0F7B45), EGUI_COLOR_HEX(0x9D5D00),
                                        EGUI_COLOR_HEX(0x7A8796), EGUI_COLOR_HEX(0xDDE5EB));
     static egui_view_api_t tip_compact_touch_api;
@@ -181,42 +185,34 @@ void test_init_ui(void)
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&tip_compact), false);
 #endif
-    egui_view_group_add_child(EGUI_VIEW_OF(&compact_column), EGUI_VIEW_OF(&tip_compact));
+    egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&tip_compact));
 
-    egui_view_linearlayout_init(EGUI_VIEW_OF(&locked_column));
-    egui_view_set_size(EGUI_VIEW_OF(&locked_column), TEACHING_TIP_PREVIEW_WIDTH, TEACHING_TIP_BOTTOM_ROW_HEIGHT);
-    egui_view_set_margin(EGUI_VIEW_OF(&locked_column), 8, 0, 0, 0);
-    egui_view_linearlayout_set_orientation(EGUI_VIEW_OF(&locked_column), 0);
-    egui_view_linearlayout_set_align_type(EGUI_VIEW_OF(&locked_column), EGUI_ALIGN_HCENTER);
-    egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&locked_column));
-
-    egui_view_teaching_tip_init(EGUI_VIEW_OF(&tip_locked));
-    egui_view_set_size(EGUI_VIEW_OF(&tip_locked), TEACHING_TIP_PREVIEW_WIDTH, TEACHING_TIP_PREVIEW_HEIGHT);
-    egui_view_teaching_tip_set_font(EGUI_VIEW_OF(&tip_locked), (const egui_font_t *)&egui_res_font_montserrat_8_4);
-    egui_view_teaching_tip_set_meta_font(EGUI_VIEW_OF(&tip_locked), (const egui_font_t *)&egui_res_font_montserrat_8_4);
-    egui_view_teaching_tip_set_snapshots(EGUI_VIEW_OF(&tip_locked), locked_snapshots, 1);
-    egui_view_teaching_tip_set_compact_mode(EGUI_VIEW_OF(&tip_locked), 1);
-    egui_view_teaching_tip_set_read_only_mode(EGUI_VIEW_OF(&tip_locked), 1);
-    egui_view_teaching_tip_set_palette(EGUI_VIEW_OF(&tip_locked), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD5DCE4), EGUI_COLOR_HEX(0x1A2734),
-                                       EGUI_COLOR_HEX(0x6B7A89), EGUI_COLOR_HEX(0x0F6CBD), EGUI_COLOR_HEX(0x0F7B45), EGUI_COLOR_HEX(0x9D5D00),
-                                       EGUI_COLOR_HEX(0x7A8796), EGUI_COLOR_HEX(0xDDE5EB));
-    static egui_view_api_t tip_locked_touch_api;
-    egui_view_override_api_on_touch(EGUI_VIEW_OF(&tip_locked), &tip_locked_touch_api, consume_preview_touch);
+    egui_view_teaching_tip_init(EGUI_VIEW_OF(&tip_read_only));
+    egui_view_set_size(EGUI_VIEW_OF(&tip_read_only), TEACHING_TIP_PREVIEW_WIDTH, TEACHING_TIP_PREVIEW_HEIGHT);
+    egui_view_set_margin(EGUI_VIEW_OF(&tip_read_only), 8, 0, 0, 0);
+    egui_view_teaching_tip_set_font(EGUI_VIEW_OF(&tip_read_only), (const egui_font_t *)&egui_res_font_montserrat_8_4);
+    egui_view_teaching_tip_set_meta_font(EGUI_VIEW_OF(&tip_read_only), (const egui_font_t *)&egui_res_font_montserrat_8_4);
+    egui_view_teaching_tip_set_snapshots(EGUI_VIEW_OF(&tip_read_only), read_only_snapshots, 1);
+    egui_view_teaching_tip_set_compact_mode(EGUI_VIEW_OF(&tip_read_only), 1);
+    egui_view_teaching_tip_set_read_only_mode(EGUI_VIEW_OF(&tip_read_only), 1);
+    egui_view_teaching_tip_set_palette(EGUI_VIEW_OF(&tip_read_only), EGUI_COLOR_HEX(0xFBFCFD), EGUI_COLOR_HEX(0xD8DFE6), EGUI_COLOR_HEX(0x536474),
+                                       EGUI_COLOR_HEX(0x8896A4), EGUI_COLOR_HEX(0xA7B4C1), EGUI_COLOR_HEX(0xB2C4BA), EGUI_COLOR_HEX(0xC4B8A4),
+                                       EGUI_COLOR_HEX(0xB4BDC8), EGUI_COLOR_HEX(0xE8EDF2));
+    static egui_view_api_t tip_read_only_touch_api;
+    egui_view_override_api_on_touch(EGUI_VIEW_OF(&tip_read_only), &tip_read_only_touch_api, consume_preview_touch);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
-    egui_view_set_focusable(EGUI_VIEW_OF(&tip_locked), false);
+    egui_view_set_focusable(EGUI_VIEW_OF(&tip_read_only), false);
 #endif
-    egui_view_group_add_child(EGUI_VIEW_OF(&locked_column), EGUI_VIEW_OF(&tip_locked));
+    egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&tip_read_only));
 
-    apply_primary_snapshot(0);
+    reset_primary_state(0);
     apply_compact_snapshot(0);
-    egui_view_teaching_tip_set_current_snapshot(EGUI_VIEW_OF(&tip_locked), 0);
+    apply_read_only_snapshot();
 
     {
         hello_custom_widgets_demo_apply_title_only_scaffold(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label), NULL, 0);
     }
 
-    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&compact_column));
-    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&locked_column));
     egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&bottom_row));
     egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&root_layout));
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
@@ -273,8 +269,9 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     case 0:
         if (first_call)
         {
-            apply_primary_snapshot(0);
+            reset_primary_state(0);
             apply_compact_snapshot(0);
+            apply_read_only_snapshot();
         }
         EGUI_SIM_SET_WAIT(p_action, TEACHING_TIP_RECORD_WAIT);
         return true;
