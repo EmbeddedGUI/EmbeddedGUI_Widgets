@@ -82,9 +82,11 @@ static void test_toast_stack_set_snapshots_clamp_and_reset_current(void)
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_TOAST_STACK_MAX_SNAPSHOTS, test_stack.snapshot_count);
 
     test_stack.current_snapshot = 3;
+    EGUI_VIEW_OF(&test_stack)->is_pressed = true;
     egui_view_toast_stack_set_snapshots(EGUI_VIEW_OF(&test_stack), g_snapshots, 1);
     EGUI_TEST_ASSERT_EQUAL_INT(1, test_stack.snapshot_count);
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_toast_stack_get_current_snapshot(EGUI_VIEW_OF(&test_stack)));
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_stack)->is_pressed);
 
     egui_view_toast_stack_set_snapshots(EGUI_VIEW_OF(&test_stack), NULL, 0);
     EGUI_TEST_ASSERT_EQUAL_INT(0, test_stack.snapshot_count);
@@ -98,6 +100,10 @@ static void test_toast_stack_set_current_snapshot_ignores_out_of_range(void)
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_toast_stack_get_current_snapshot(EGUI_VIEW_OF(&test_stack)));
     egui_view_toast_stack_set_current_snapshot(EGUI_VIEW_OF(&test_stack), 2);
     EGUI_TEST_ASSERT_EQUAL_INT(2, egui_view_toast_stack_get_current_snapshot(EGUI_VIEW_OF(&test_stack)));
+
+    EGUI_VIEW_OF(&test_stack)->is_pressed = true;
+    egui_view_toast_stack_set_current_snapshot(EGUI_VIEW_OF(&test_stack), 2);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_stack)->is_pressed);
 
     egui_view_toast_stack_set_current_snapshot(EGUI_VIEW_OF(&test_stack), 7);
     EGUI_TEST_ASSERT_EQUAL_INT(2, egui_view_toast_stack_get_current_snapshot(EGUI_VIEW_OF(&test_stack)));
@@ -116,15 +122,20 @@ static void test_toast_stack_font_modes_and_palette_update(void)
     EGUI_TEST_ASSERT_TRUE(test_stack.font == (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT);
     EGUI_TEST_ASSERT_TRUE(test_stack.meta_font == (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT);
 
+    EGUI_VIEW_OF(&test_stack)->is_pressed = true;
     egui_view_toast_stack_set_compact_mode(EGUI_VIEW_OF(&test_stack), 2);
-    egui_view_toast_stack_set_locked_mode(EGUI_VIEW_OF(&test_stack), 3);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_stack)->is_pressed);
+
+    EGUI_VIEW_OF(&test_stack)->is_pressed = true;
+    egui_view_toast_stack_set_read_only_mode(EGUI_VIEW_OF(&test_stack), 3);
     EGUI_TEST_ASSERT_EQUAL_INT(1, test_stack.compact_mode);
-    EGUI_TEST_ASSERT_EQUAL_INT(1, test_stack.locked_mode);
+    EGUI_TEST_ASSERT_EQUAL_INT(1, test_stack.read_only_mode);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_stack)->is_pressed);
 
     egui_view_toast_stack_set_compact_mode(EGUI_VIEW_OF(&test_stack), 0);
-    egui_view_toast_stack_set_locked_mode(EGUI_VIEW_OF(&test_stack), 0);
+    egui_view_toast_stack_set_read_only_mode(EGUI_VIEW_OF(&test_stack), 0);
     EGUI_TEST_ASSERT_EQUAL_INT(0, test_stack.compact_mode);
-    EGUI_TEST_ASSERT_EQUAL_INT(0, test_stack.locked_mode);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, test_stack.read_only_mode);
 
     egui_view_toast_stack_set_palette(EGUI_VIEW_OF(&test_stack), EGUI_COLOR_HEX(0x101112), EGUI_COLOR_HEX(0x202122), EGUI_COLOR_HEX(0x303132),
                                       EGUI_COLOR_HEX(0x404142), EGUI_COLOR_HEX(0x505152), EGUI_COLOR_HEX(0x606162), EGUI_COLOR_HEX(0x707172),
@@ -153,13 +164,41 @@ static void test_toast_stack_touch_and_key_click_listener(void)
 
     EGUI_TEST_ASSERT_TRUE(send_key(EGUI_KEY_CODE_ENTER));
     EGUI_TEST_ASSERT_EQUAL_INT(2, click_count);
+}
+
+static void test_toast_stack_read_only_mode_clears_pressed_and_ignores_input(void)
+{
+    setup_stack();
+    layout_stack();
+
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN));
+    EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&test_stack)->is_pressed);
+
+    egui_view_toast_stack_set_read_only_mode(EGUI_VIEW_OF(&test_stack), 1);
+    EGUI_TEST_ASSERT_EQUAL_INT(1, test_stack.read_only_mode);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_stack)->is_pressed);
+    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN));
+    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_UP));
+    EGUI_TEST_ASSERT_FALSE(send_key(EGUI_KEY_CODE_ENTER));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, click_count);
+
+    egui_view_toast_stack_set_read_only_mode(EGUI_VIEW_OF(&test_stack), 0);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, test_stack.read_only_mode);
+    EGUI_TEST_ASSERT_TRUE(send_key(EGUI_KEY_CODE_ENTER));
+    EGUI_TEST_ASSERT_EQUAL_INT(1, click_count);
+}
+
+static void test_toast_stack_disabled_ignores_input(void)
+{
+    setup_stack();
+    layout_stack();
 
     egui_view_set_enable(EGUI_VIEW_OF(&test_stack), 0);
-    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN));
-    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_UP));
+    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN));
+    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_UP));
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_stack)->is_pressed);
-    EGUI_TEST_ASSERT_EQUAL_INT(2, click_count);
     EGUI_TEST_ASSERT_FALSE(send_key(EGUI_KEY_CODE_ENTER));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, click_count);
 }
 
 static void test_toast_stack_internal_helpers_cover_severity_and_text(void)
@@ -193,6 +232,8 @@ void test_toast_stack_run(void)
     EGUI_TEST_RUN(test_toast_stack_set_current_snapshot_ignores_out_of_range);
     EGUI_TEST_RUN(test_toast_stack_font_modes_and_palette_update);
     EGUI_TEST_RUN(test_toast_stack_touch_and_key_click_listener);
+    EGUI_TEST_RUN(test_toast_stack_read_only_mode_clears_pressed_and_ignores_input);
+    EGUI_TEST_RUN(test_toast_stack_disabled_ignores_input);
     EGUI_TEST_RUN(test_toast_stack_internal_helpers_cover_severity_and_text);
     EGUI_TEST_SUITE_END();
 }

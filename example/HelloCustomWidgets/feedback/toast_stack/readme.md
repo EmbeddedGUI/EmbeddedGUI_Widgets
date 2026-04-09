@@ -92,13 +92,14 @@ python scripts/checks/check_docs_encoding.py
 - 主控件和底部 `compact / read only` 预览都必须完整可见。
 - `Info / Success / Warning / Error` 四态需要一眼可辨，但不能回到高饱和 showcase 风格。
 - 前卡、后两层叠卡、action pill 和 meta pill 仍要保持清晰层级。
-- `read only` 只做静态展示，不能响应 touch、focus 或页面桥接。
+- `read only` 只做静态展示，不能响应 touch、key、focus 或页面桥接。
+- `read only` 从交互态切入时也必须清空 pressed，避免残留按下渲染。
 - 单测已有的 snapshot、palette、touch 和 key click 语义不能回归。
 
 ## 9. 已知限制与后续方向
 - 当前版本仍使用固定 snapshot 数据，不接真实通知队列。
 - 当前不做自动弹入 / 弹出动画，也不做滑动关闭。
-- 当前优先验证 `reference` 语义、布局稳定性和视觉收口，不联动全局通知中心。
+- 当前优先验证 `reference` 语义、布局稳定性、交互切换后的渲染稳定性，不联动全局通知中心。
 
 ## 10. 与现有控件的边界
 - 相比 `message_bar`：这里强调多条 toast 的叠卡关系，而不是单条页内反馈。

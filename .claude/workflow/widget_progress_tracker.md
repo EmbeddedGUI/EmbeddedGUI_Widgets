@@ -34,7 +34,7 @@
 
 | 状态 | 控件名 | 分类 | 开始日期 | 当前阶段 | 目标 |
 | --- | --- | --- | --- | --- | --- |
-| 进行中 | `toast_stack` | `feedback` | `2026-04-10` | `reference 细化` | 把旧 `locked_mode` 语义统一为 `read_only_mode`，补齐只读态交互抑制、pressed 清理、交互回归单测和关键帧渲染验收 |
+| 进行中 | `skeleton` | `feedback` | `2026-04-10` | `reference 细化` | 把旧 `locked_mode` 语义统一为 `read_only_mode`，补齐只读态动画 / 交互语义、回归单测和关键帧渲染验收 |
 
 ## 当前保留的 Reference 主线控件
 
@@ -97,6 +97,12 @@
 
 ## 最近完成的收口动作
 
+- `2026-04-10`
+  - 完成 `feedback/toast_stack` 二次收口：在原有 `reference` 页面结构基础上，把控件内部的旧 `locked_mode` 语义统一为 `read_only_mode`，并继续压轻只读态 severity strip、glyph、后卡、action pill、meta pill 和底部分隔线的对比度。
+  - `test.c` 新增 `apply_read_only_state()`，让 `read only` 预览在初始化和录制 case `0` 重置时都显式回到只读态；同步微调标题间距、只读预览文案和主态 / `compact` / `read only` palette，继续保持底部两个 preview 只承担 reference 对照职责。
+  - `egui_view_toast_stack.h/.c` 把 `locked_mode` API 收口为 `read_only_mode`，新增统一的 pressed 清理辅助函数，并在 `set_snapshots()`、`set_current_snapshot()`、`set_compact_mode()` 和 `set_read_only_mode()` 中同步清理 `is_pressed`；同时补上只读态和 disabled 态对默认 touch / key click 链路的输入抑制。
+  - `example/HelloUnitTest/test/test_toast_stack.c` 把旧 `locked_mode` 单测改成 `read_only_mode`，新增“切到只读时清空 pressed 并忽略后续 touch / key 输入”的交互回归，拆出 disabled 抑制测试，并补充 `is_pressed` 清理断言；README 同步明确 `read only` 需要同时满足 pressed 清理、输入抑制和渲染稳定。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=feedback/toast_stack PORT=pc`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category feedback`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub feedback/toast_stack --track reference --timeout 10 --keep-screenshots`、`python scripts/checks/check_docs_encoding.py`，并把关键帧补档到本地 `iteration_log/` 供验收复核。
 - `2026-04-10`
   - 完成 `feedback/message_bar` 二次收口：在原有 `reference` 页面结构基础上，把控件内部的旧 `locked_mode` 语义统一为 `read_only_mode`，并继续压轻只读态 severity strip、glyph circle、pin chip 和底部分隔线的对比度。
   - `test.c` 新增 `apply_read_only_state()`，让 `read only` 预览在初始化和录制 case `0` 重置时都显式回到只读态；同步微调标题间距、只读预览文案和主态 / `compact` / `read only` palette，继续保持底部两个 preview 只承担 reference 对照职责。

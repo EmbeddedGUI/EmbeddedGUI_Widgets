@@ -66,6 +66,11 @@ static uint8_t egui_view_toast_stack_text_len(const char *text)
     return length;
 }
 
+static void egui_view_toast_stack_clear_pressed_state(egui_view_t *self)
+{
+    egui_view_set_pressed(self, false);
+}
+
 void egui_view_toast_stack_set_snapshots(egui_view_t *self, const egui_view_toast_stack_snapshot_t *snapshots, uint8_t snapshot_count)
 {
     EGUI_LOCAL_INIT(egui_view_toast_stack_t);
@@ -75,6 +80,7 @@ void egui_view_toast_stack_set_snapshots(egui_view_t *self, const egui_view_toas
     {
         local->current_snapshot = 0;
     }
+    egui_view_toast_stack_clear_pressed_state(self);
     egui_view_invalidate(self);
 }
 
@@ -87,9 +93,15 @@ void egui_view_toast_stack_set_current_snapshot(egui_view_t *self, uint8_t snaps
     }
     if (local->current_snapshot == snapshot_index)
     {
+        if (self->is_pressed)
+        {
+            egui_view_toast_stack_clear_pressed_state(self);
+            egui_view_invalidate(self);
+        }
         return;
     }
     local->current_snapshot = snapshot_index;
+    egui_view_toast_stack_clear_pressed_state(self);
     egui_view_invalidate(self);
 }
 
@@ -117,13 +129,15 @@ void egui_view_toast_stack_set_compact_mode(egui_view_t *self, uint8_t compact_m
 {
     EGUI_LOCAL_INIT(egui_view_toast_stack_t);
     local->compact_mode = compact_mode ? 1 : 0;
+    egui_view_toast_stack_clear_pressed_state(self);
     egui_view_invalidate(self);
 }
 
-void egui_view_toast_stack_set_locked_mode(egui_view_t *self, uint8_t locked_mode)
+void egui_view_toast_stack_set_read_only_mode(egui_view_t *self, uint8_t read_only_mode)
 {
     EGUI_LOCAL_INIT(egui_view_toast_stack_t);
-    local->locked_mode = locked_mode ? 1 : 0;
+    local->read_only_mode = read_only_mode ? 1 : 0;
+    egui_view_toast_stack_clear_pressed_state(self);
     egui_view_invalidate(self);
 }
 
@@ -231,6 +245,7 @@ static void egui_view_toast_stack_on_draw(egui_view_t *self)
     egui_color_t title_color;
     egui_color_t body_color;
     egui_color_t meta_color;
+    egui_color_t glyph_color;
     egui_color_t shadow_color;
     egui_color_t action_fill;
     egui_color_t action_border;
@@ -299,24 +314,27 @@ static void egui_view_toast_stack_on_draw(egui_view_t *self)
     title_color = local->text_color;
     body_color = local->muted_text_color;
     meta_color = egui_rgb_mix(local->muted_text_color, local->text_color, local->compact_mode ? 24 : 20);
+    glyph_color = local->surface_color;
     shadow_color = egui_rgb_mix(EGUI_COLOR_BLACK, local->border_color, 6);
     action_fill = egui_rgb_mix(local->surface_color, local->accent_color, 5);
     action_border = egui_rgb_mix(local->border_color, local->accent_color, 9);
     action_text = egui_rgb_mix(local->accent_color, local->text_color, 20);
 
-    if (local->locked_mode)
+    if (local->read_only_mode)
     {
-        severity_color = egui_rgb_mix(severity_color, local->muted_text_color, 78);
-        front_fill = egui_rgb_mix(front_fill, EGUI_COLOR_HEX(0xFBFCFD), 22);
-        front_border = egui_rgb_mix(front_border, local->muted_text_color, 20);
-        back_fill = egui_rgb_mix(back_fill, EGUI_COLOR_HEX(0xFBFCFD), 18);
-        back_border = egui_rgb_mix(back_border, local->muted_text_color, 16);
-        title_color = egui_rgb_mix(title_color, local->muted_text_color, 22);
-        body_color = egui_rgb_mix(body_color, local->text_color, 16);
-        meta_color = egui_rgb_mix(meta_color, local->muted_text_color, 18);
-        action_fill = egui_rgb_mix(action_fill, local->surface_color, 32);
-        action_border = egui_rgb_mix(action_border, local->muted_text_color, 26);
-        action_text = egui_rgb_mix(action_text, local->muted_text_color, 78);
+        severity_color = egui_rgb_mix(severity_color, local->muted_text_color, 98);
+        front_fill = egui_rgb_mix(front_fill, EGUI_COLOR_HEX(0xFBFCFD), 30);
+        front_border = egui_rgb_mix(front_border, local->muted_text_color, 30);
+        back_fill = egui_rgb_mix(back_fill, EGUI_COLOR_HEX(0xFBFCFD), 26);
+        back_border = egui_rgb_mix(back_border, local->muted_text_color, 24);
+        title_color = egui_rgb_mix(title_color, local->muted_text_color, 34);
+        body_color = egui_rgb_mix(body_color, local->text_color, 10);
+        meta_color = egui_rgb_mix(meta_color, local->muted_text_color, 28);
+        glyph_color = egui_rgb_mix(glyph_color, local->muted_text_color, 34);
+        shadow_color = egui_rgb_mix(shadow_color, local->surface_color, 22);
+        action_fill = egui_rgb_mix(action_fill, local->surface_color, 40);
+        action_border = egui_rgb_mix(action_border, local->muted_text_color, 34);
+        action_text = egui_rgb_mix(action_text, local->muted_text_color, 92);
     }
 
     if (!is_enabled)
@@ -329,6 +347,7 @@ static void egui_view_toast_stack_on_draw(egui_view_t *self)
         title_color = egui_view_toast_stack_mix_disabled(title_color);
         body_color = egui_view_toast_stack_mix_disabled(body_color);
         meta_color = egui_view_toast_stack_mix_disabled(meta_color);
+        glyph_color = egui_view_toast_stack_mix_disabled(glyph_color);
         shadow_color = egui_view_toast_stack_mix_disabled(shadow_color);
         action_fill = egui_view_toast_stack_mix_disabled(action_fill);
         action_border = egui_view_toast_stack_mix_disabled(action_border);
@@ -348,27 +367,27 @@ static void egui_view_toast_stack_on_draw(egui_view_t *self)
     egui_canvas_draw_round_rectangle(front_region.location.x, front_region.location.y, front_region.size.width, front_region.size.height, radius, 1,
                                      front_border, egui_color_alpha_mix(self->alpha, local->compact_mode ? 48 : 56));
     egui_canvas_draw_round_rectangle_fill(front_region.location.x + 1, front_region.location.y + 1, strip_w, front_region.size.height - 2, radius - 2,
-                                          severity_color, egui_color_alpha_mix(self->alpha, local->locked_mode ? 32 : 70));
+                                          severity_color, egui_color_alpha_mix(self->alpha, local->read_only_mode ? 24 : 70));
 
     content_x = front_region.location.x + (local->compact_mode ? 8 : 10);
     content_y = front_region.location.y + (local->compact_mode ? 6 : 8);
     content_w = front_region.size.width - (local->compact_mode ? 14 : 18);
     content_h = front_region.size.height - (local->compact_mode ? 12 : 16);
     icon_size = local->compact_mode ? 10 : 12;
-    close_w = (!local->compact_mode && snapshot->closable && !local->locked_mode && is_enabled) ? 10 : 0;
+    close_w = (!local->compact_mode && snapshot->closable && !local->read_only_mode && is_enabled) ? 10 : 0;
     show_close = close_w > 0 ? 1 : 0;
     title_x = content_x + icon_size + 6;
     title_w = content_w - icon_size - 6 - (show_close ? 12 : 0);
     title_h = local->compact_mode ? 11 : 12;
 
     egui_canvas_draw_circle_fill(content_x + icon_size / 2, content_y + icon_size / 2, icon_size / 2, severity_color,
-                                 egui_color_alpha_mix(self->alpha, local->locked_mode ? 28 : 74));
+                                 egui_color_alpha_mix(self->alpha, local->read_only_mode ? 22 : 74));
     text_region.location.x = content_x;
     text_region.location.y = content_y - 1;
     text_region.size.width = icon_size;
     text_region.size.height = icon_size + 2;
     egui_view_toast_stack_draw_text(local->meta_font, self, egui_view_toast_stack_severity_glyph(snapshot->severity), &text_region, EGUI_ALIGN_CENTER,
-                                    local->surface_color);
+                                    glyph_color);
 
     text_region.location.x = title_x;
     text_region.location.y = content_y - 1;
@@ -405,7 +424,7 @@ static void egui_view_toast_stack_on_draw(egui_view_t *self)
     action_h = local->compact_mode ? 11 : 13;
     meta_h = local->compact_mode ? 10 : 12;
     footer_y = content_y + content_h - action_h;
-    show_action = (snapshot->action != NULL && snapshot->action[0] != '\0' && !local->locked_mode) ? 1 : 0;
+    show_action = (snapshot->action != NULL && snapshot->action[0] != '\0' && !local->read_only_mode) ? 1 : 0;
     action_w = 18 + egui_view_toast_stack_text_len(snapshot->action) * (local->compact_mode ? 4 : 5);
     meta_w = 12 + egui_view_toast_stack_text_len(snapshot->meta) * (local->compact_mode ? 4 : 5);
 
@@ -420,7 +439,8 @@ static void egui_view_toast_stack_on_draw(egui_view_t *self)
             action_w = content_w / 2;
         }
         egui_view_toast_stack_draw_pill(local->meta_font, self, snapshot->action, title_x, footer_y, action_w, action_h, 5, action_fill,
-                                        local->compact_mode ? 24 : 30, action_border, local->compact_mode ? 32 : 38, action_text);
+                                        local->read_only_mode ? (local->compact_mode ? 16 : 20) : (local->compact_mode ? 24 : 30), action_border,
+                                        local->read_only_mode ? (local->compact_mode ? 20 : 24) : (local->compact_mode ? 32 : 38), action_text);
     }
 
     if (snapshot->meta != NULL && snapshot->meta[0] != '\0')
@@ -444,20 +464,60 @@ static void egui_view_toast_stack_on_draw(egui_view_t *self)
         }
 
         egui_view_toast_stack_draw_pill(local->meta_font, self, snapshot->meta, meta_x, content_y + content_h - meta_h, meta_w, meta_h, 5,
-                                        egui_rgb_mix(local->surface_color, local->border_color, 4), local->compact_mode ? 20 : 24,
-                                        egui_rgb_mix(local->border_color, severity_color, 5), local->compact_mode ? 26 : 30, meta_color);
+                                        egui_rgb_mix(local->surface_color, local->border_color, 4),
+                                        local->read_only_mode ? (local->compact_mode ? 14 : 18) : (local->compact_mode ? 20 : 24),
+                                        egui_rgb_mix(local->border_color, severity_color, 5),
+                                        local->read_only_mode ? (local->compact_mode ? 18 : 22) : (local->compact_mode ? 26 : 30), meta_color);
     }
 
-    if (local->locked_mode || !is_enabled)
+    if (local->read_only_mode || !is_enabled)
     {
         egui_canvas_draw_line(content_x + 1, content_y + content_h, content_x + content_w - 2, content_y + content_h, 1, front_border,
                               egui_color_alpha_mix(self->alpha, 24));
     }
 }
 
+#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
+static int egui_view_toast_stack_on_touch_event(egui_view_t *self, egui_motion_event_t *event)
+{
+    EGUI_LOCAL_INIT(egui_view_toast_stack_t);
+
+    if (local->read_only_mode || !egui_view_get_enable(self))
+    {
+        if (self->is_pressed)
+        {
+            egui_view_toast_stack_clear_pressed_state(self);
+            egui_view_invalidate(self);
+        }
+        EGUI_UNUSED(event);
+        return 0;
+    }
+
+    return egui_view_on_touch_event(self, event);
+}
+#endif
+
+#if EGUI_CONFIG_FUNCTION_SUPPORT_KEY
+static int egui_view_toast_stack_on_key_event(egui_view_t *self, egui_key_event_t *event)
+{
+    EGUI_LOCAL_INIT(egui_view_toast_stack_t);
+
+    if (local->read_only_mode || !egui_view_get_enable(self))
+    {
+        return 0;
+    }
+
+    return egui_view_on_key_event(self, event);
+}
+#endif
+
 const egui_view_api_t EGUI_VIEW_API_TABLE_NAME(egui_view_toast_stack_t) = {
         .dispatch_touch_event = egui_view_dispatch_touch_event,
+#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
+        .on_touch_event = egui_view_toast_stack_on_touch_event,
+#else
         .on_touch_event = egui_view_on_touch_event,
+#endif
         .on_intercept_touch_event = egui_view_on_intercept_touch_event,
         .compute_scroll = egui_view_compute_scroll,
         .calculate_layout = egui_view_calculate_layout,
@@ -468,7 +528,7 @@ const egui_view_api_t EGUI_VIEW_API_TABLE_NAME(egui_view_toast_stack_t) = {
         .on_detach_from_window = egui_view_on_detach_from_window,
 #if EGUI_CONFIG_FUNCTION_SUPPORT_KEY
         .dispatch_key_event = egui_view_dispatch_key_event,
-        .on_key_event = egui_view_on_key_event,
+        .on_key_event = egui_view_toast_stack_on_key_event,
 #endif
 };
 
@@ -495,5 +555,5 @@ void egui_view_toast_stack_init(egui_view_t *self)
     local->snapshot_count = 0;
     local->current_snapshot = 0;
     local->compact_mode = 0;
-    local->locked_mode = 0;
+    local->read_only_mode = 0;
 }
