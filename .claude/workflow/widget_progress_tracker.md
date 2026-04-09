@@ -98,6 +98,10 @@
 ## 最近完成的收口动作
 
 - `2026-04-09`
+  - 完成 `input/split_button` 实现级样式收口：删除 guide、状态回显、section divider 和外部 preview 标签，把页面结构统一为标题、主 `split_button` 与 `compact / disabled` 双预览。
+  - 主控件保留主段 / 菜单段键盘切换与 reference snapshot，底部两个预览收敛为静态对照，不再承担场景切换或标签点击职责。
+  - README 重写为当前 `reference` 结构；已通过 `make all APP=HelloCustomWidgets APP_SUB=input/split_button PORT=pc`、`check_touch_release_semantics.py --scope custom --category input`、`code_runtime_check.py --app HelloCustomWidgets --app-sub input/split_button --track reference --timeout 10 --keep-screenshots`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`check_docs_encoding.py`。
+- `2026-04-09`
   - 完成 `input/toggle_button` 实现级样式收口：删除 guide、状态回显、section divider 和外部 preview 标签，把页面结构统一为标题、主 `toggle_button` 与 `compact / read only` 双预览。
   - 主按钮保留 `Enter / Space` 键盘闭环与 on/off reference snapshot，底部两个预览收敛为静态对照，不再承担场景切换或标签点击职责。
   - README 重写为当前 `reference` 结构；已通过 `make all APP=HelloCustomWidgets APP_SUB=input/toggle_button PORT=pc`、`check_touch_release_semantics.py --scope custom --category input`、`code_runtime_check.py --app HelloCustomWidgets --app-sub input/toggle_button --track reference --timeout 10 --keep-screenshots`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`check_docs_encoding.py`。

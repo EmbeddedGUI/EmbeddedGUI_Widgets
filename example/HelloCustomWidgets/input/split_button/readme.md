@@ -6,29 +6,30 @@
 - 参考开源库：`WPF UI`
 - 次级补充参考：`ModernWpf`
 - 对应组件名：`SplitButton`
-- 本次保留状态：`save / share / export / archive`、`compact`、`disabled`
-- 删除效果：Acrylic、真实图标资源、复杂下拉菜单弹层、桌面级 hover / pressed 动画、完整命令栏整合
-- EGUI 适配说明：保留“主动作 + 菜单入口”的复合按钮语义、主段 / 菜单段双焦点、compact / disabled 对照；在 `480 x 480` 下优先保证段落边界清楚、短文案稳定和键盘切焦点可辨
+- 本次保留状态：`standard`、`compact`、`disabled`、`primary part`、`menu part`
+- 删除效果：页面级 guide、状态回显、外部 preview 标签、section divider、真实下拉菜单弹层、桌面级 hover / pressed 动画、Acrylic 与复杂命令栏包装
+- EGUI 适配说明：保留“主动作 + 菜单入口”的复合按钮语义与主段 / 菜单段键盘切换，在 `480 x 480` 页面里优先保证双段边界、标题层级和底部双预览对照稳定
 
-## 1. 为什么需要这个控件？
+## 1. 为什么需要这个控件
 
-`split_button` 用来表达“有一个默认主动作，同时还有一组次级动作藏在菜单里”的标准页内复合按钮。它适合保存、分享、导出、归档这类高频操作：默认点击直接执行主动作，而右侧菜单段保留更多选择。
+`split_button` 用来表达“存在一个默认主动作，同时还有更多动作挂在菜单入口”的标准复合按钮。它适合保存、分享、导出、归档这类高频命令：默认点击直接执行主动作，右侧菜单段保留更多选择。
 
 ## 2. 为什么现有控件不够用
 
 - 普通 `button` 只有单一动作，不表达“默认动作 + 更多动作”的双入口
-- `menu_flyout` 是单独的弹出命令面板，不是页内复合按钮
-- `command_bar` 承担的是常驻工具栏语义，不是单个复合按钮语义
-- `number_box`、`segmented_control` 等输入控件也不覆盖 SplitButton 的主段 / 菜单段交互
+- `menu_flyout` 是独立弹出面板，不是页内复合按钮
+- `command_bar` 承担的是工具栏语义，不是单个复合按钮语义
+- `drop_down_button` 只有菜单入口，没有主段 / 菜单段并存的 split 结构
+
+因此这里继续保留 `split_button`，但示例页必须回到统一的 reference 结构。
 
 ## 3. 目标场景与示例概览
 
-- 主区域展示标准 `split_button`，覆盖 `save / share / export / archive` 四组 snapshot
-- 左下 `Compact` 预览展示紧凑版 split button
-- 右下 `Disabled` 预览展示禁用态 split button
-- 主卡支持触摸切换 `primary / menu` 焦点
-- 主卡支持 `Left / Right / Tab / Home / End` 键盘切换焦点
-- 点击 guide 文案轮换主卡 snapshot；点击 `Compact` 标题轮换 compact snapshot
+- 主区域展示标准 `split_button`，保留 `save / share / export / archive` 一组主线 snapshot
+- 左下 `compact` 预览展示紧凑尺寸下的轻量 split button
+- 右下 `disabled` 预览展示禁用态 split button
+- 主控件保留 `Left / Right / Tab / Home / End` 键盘切换主段 / 菜单段
+- 示例页只保留标题、主 `split_button` 和底部 `compact / disabled` 双预览，不再保留 guide、状态回显和外部标签
 
 目录：
 
@@ -37,80 +38,84 @@
 ## 4. 视觉与布局规格
 
 - 画布：`480 x 480`
-- 根布局：`224 x 292`
-- 页面结构：标题 -> guide -> `Standard` -> 主卡 -> 状态文案 -> 分隔线 -> `Compact / Disabled` 双预览
-- 主卡区域：`194 x 74`
-- 底部双预览容器：`218 x 82`
-- `Compact` 预览：`106 x 66`
-- `Disabled` 预览：`106 x 66`
+- 根布局：`224 x 154`
+- 页面结构：标题 -> 主 `split_button` -> `compact / disabled` 双预览
+- 主控件：`196 x 74`
+- 底部双预览容器：`216 x 44`
+- `compact` 预览：`104 x 44`
+- `disabled` 预览：`104 x 44`
 - 视觉规则：
-  - 使用浅灰 page panel + 白色复合按钮卡，避免回到 HMI / 工业面板风格
-  - 保留 SplitButton 的左右双段结构、垂直分隔和右侧下拉入口
-  - 强调主动作段，但不做桌面级强 hover、阴影扩散和动画
-  - compact 版本继续保留双段结构，只缩短文案并压缩辅助文案
+  - 使用浅灰白 page panel + 白底低噪音表面
+  - 主控件保留 SplitButton 的左右双段结构、分隔线和独立菜单入口
+  - `compact` 预览保留相同双段语义，但减少信息密度
+  - `disabled` 预览弱化对比度，但仍保留完整 split 结构
 
 ## 5. 控件清单
 
 | 变量名 | 类型 | 尺寸 (W x H) | 初始状态 | 用途 |
 | --- | --- | ---: | --- | --- |
-| `root_layout` | `egui_view_linearlayout_t` | 224 x 292 | enabled | 页面根布局 |
-| `title_label` | `egui_view_label_t` | 224 x 18 | `Split Button` | 页面标题 |
-| `button_primary` | `egui_view_split_button_t` | 194 x 74 | `save` | 标准 split button |
-| `button_compact` | `egui_view_split_button_t` | 106 x 66 | `compact save` | 紧凑预览 |
-| `button_disabled` | `egui_view_split_button_t` | 106 x 66 | `disabled` | 禁用预览 |
+| `root_layout` | `egui_view_linearlayout_t` | `224 x 154` | enabled | 页面根布局 |
+| `title_label` | `egui_view_label_t` | `224 x 18` | `Split Button` | 页面标题 |
+| `button_primary` | `egui_view_split_button_t` | `196 x 74` | `Save draft` | 标准主控件 |
+| `button_compact` | `egui_view_split_button_t` | `104 x 44` | `Quick / Save` | 紧凑静态预览 |
+| `button_disabled` | `egui_view_split_button_t` | `104 x 44` | `Locked / Publish` | 禁用静态预览 |
 
 ## 6. 状态覆盖矩阵
 
-| 状态 / 区域 | 主卡 | Compact | Disabled |
+| 状态 / 区域 | 主控件 | Compact | Disabled |
 | --- | --- | --- | --- |
-| 默认态 | `save` | `compact save` | `disabled` |
-| 切换 1 | `share` | 保持 | 保持 |
-| 切换 2 | `export` | 保持 | 保持 |
-| 切换 3 | `archive` | 保持 | 保持 |
-| 紧凑切换 | 保持 | `compact review` | 保持 |
-| 点击主段 | 更新 focus | 更新 focus | 不可交互 |
-| 点击菜单段 | 更新 focus | 更新 focus | 不可交互 |
-| 键盘焦点 | `Left / Right / Tab / Home / End` | 同步支持 | 禁用 |
+| `primary part` | 是 | 是 | 是 |
+| `menu part` | 是 | 是 | 是 |
+| 主线 snapshot 轮换 | 是 | 否 | 否 |
+| 触摸切换分段 | 是 | 否 | 否 |
+| 键盘 `Left / Right / Tab / Home / End` | 是 | 否 | 否 |
+| 静态对照 | 否 | 是 | 是 |
 
 ## 7. `egui_port_get_recording_action()` 录制动作设计
 
-1. 首帧等待并抓取 `save` snapshot
-2. 切到 `share`
-3. 切到 `export`
-4. 切到底部 `Compact` 第二组 snapshot
-5. 回到主卡 `archive`
-6. 尾帧等待，供 runtime 抓最终截图
-
-录制采用 setter + `recording_request_snapshot()`，不依赖真实触摸命中，保证回放稳定。
+1. 应用默认主控件与 `compact` 预览状态
+2. 请求第一页截图
+3. 通过 `Right` 把主控件焦点切到菜单段
+4. 请求第二页截图
+5. 程序化切换主控件到 `Share handoff`
+6. 请求第三页截图
+7. 通过 `Left` 把主控件焦点切回主段
+8. 请求第四页截图
+9. 程序化切换主控件到 `Archive page`，并把 `compact` 预览切换到第二组静态对照
+10. 请求最终截图并保留收尾等待
 
 ## 8. 编译、runtime、截图验收标准
 
 ```bash
 make all APP=HelloCustomWidgets APP_SUB=input/split_button PORT=pc
-python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/split_button --timeout 10 --keep-screenshots
+python scripts/checks/check_touch_release_semantics.py --scope custom --category input
+python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/split_button --track reference --timeout 10 --keep-screenshots
+make all APP=HelloUnitTest PORT=pc_test
+output\main.exe
+python scripts/checks/check_docs_encoding.py
 ```
 
 验收重点：
 
-- 主卡、compact、disabled 三个 split button 都必须完整可见
-- 主段与菜单段边界清楚，不能糊成单按钮
-- 短文案 `Save / Share / Export / Archive` 需要逐项检查居中与左右留白
-- 右侧下拉入口必须看得出独立焦点，不可变成装饰性小图标
-- disabled 预览必须一眼可辨，但仍保留 SplitButton 结构
+- 主控件、`compact` 和 `disabled` 三个 split button 都必须完整可见，不能被裁切
+- 主段与菜单段边界必须清晰，不能糊成单按钮
+- 标题、标签和辅助文案要保持 Fluent / WPF UI 的低噪音层级
+- 页面中不再出现 guide、状态回显、section divider 和外部 preview 标签
+- `disabled` 预览必须一眼可辨，但仍保留 split button 结构
 
-## 9. 已知限制与下一轮迭代计划
+## 9. 已知限制与后续方向
 
 - 当前只保留菜单入口语义，不弹出真实 flyout
 - 当前 glyph 使用双字母占位，不接真实图标资源
-- 当前是固定尺寸 reference，未覆盖真实响应式宽度策略
-- 若后续需要沉入框架层，再评估与 `button`、`menu_flyout` 的复用边界
+- 当前 `compact` 与 `disabled` 仅作为静态对照，不承担交互职责
+- 若后续要沉入框架层，再单独评估与 `button`、`menu_flyout` 的复用边界
 
 ## 10. 与现有控件的重叠分析与差异化边界
 
-- 相比 `button`：这里是复合双入口，不是单动作按钮
-- 相比 `menu_flyout`：这里是页内复合按钮，不是独立弹出命令面板
-- 相比 `command_bar`：这里是单个主动作控件，不承担整条工具栏语义
-- 相比 `segmented_control`：这里的右段是更多动作入口，不是并列选项切换
+- 相比 `button`：本控件是复合双入口，不是单动作按钮
+- 相比 `drop_down_button`：本控件同时保留主动作段和菜单入口
+- 相比 `menu_flyout`：本控件是页内复合按钮，不是独立弹出命令面板
+- 相比 `command_bar`：本控件是单个复合命令，不承担整条工具栏语义
 
 ## 11. 参考设计系统与开源母本
 
@@ -122,23 +127,22 @@ python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/sp
 
 - 对应组件名：`SplitButton`
 - 本次保留状态：
-  - `save`
-  - `share`
-  - `export`
-  - `archive`
+  - `standard`
   - `compact`
   - `disabled`
+  - `primary part`
+  - `menu part`
 
 ## 13. 相比参考原型删除了哪些效果或装饰
 
-- 不做桌面级悬停、按下、阴影过渡
+- 不做页面级 guide、状态回显、外部 preview 标签和 section divider
 - 不做真实菜单弹层和二级命令列表
-- 不做系统级图标资源与快捷键标签
-- 不做 Acrylic、半透明模糊和复杂主题联动
+- 不做桌面级 hover、pressed、阴影扩散和 Acrylic
+- 不做系统级图标资源、快捷键标签和复杂主题联动
 
 ## 14. EGUI 适配时的简化点与约束
 
-- 用固定 snapshot 驱动，优先保证 `480 x 480` 下的稳定 reference
-- 主卡保留 `title + split row + helper` 三段结构
-- compact 版只保留最必要的 label 与双段结构
-- disabled 版通过统一 palette 降噪，而不是新增额外装饰层
+- 用固定 snapshot 驱动，优先保证 `480 x 480` 页面里的稳定 reference
+- 主控件保留 `title + split row + helper` 三段结构
+- 底部 `compact` 与 `disabled` 固定为静态对照，不再承担额外交互
+- 先完成示例级审阅稳定性，再决定是否抽象到框架公共层
