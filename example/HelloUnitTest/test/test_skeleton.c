@@ -98,9 +98,11 @@ static void test_skeleton_set_snapshots_clamp_and_reset_current(void)
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_SKELETON_MAX_SNAPSHOTS, test_skeleton.snapshot_count);
 
     test_skeleton.current_snapshot = 3;
+    EGUI_VIEW_OF(&test_skeleton)->is_pressed = true;
     egui_view_skeleton_set_snapshots(EGUI_VIEW_OF(&test_skeleton), g_snapshots, 1);
     EGUI_TEST_ASSERT_EQUAL_INT(1, test_skeleton.snapshot_count);
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_skeleton_get_current_snapshot(EGUI_VIEW_OF(&test_skeleton)));
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_skeleton)->is_pressed);
 
     egui_view_skeleton_set_current_snapshot(EGUI_VIEW_OF(&test_skeleton), 9);
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_skeleton_get_current_snapshot(EGUI_VIEW_OF(&test_skeleton)));
@@ -118,11 +120,15 @@ static void test_skeleton_set_current_snapshot_and_emphasis(void)
     egui_view_skeleton_set_current_snapshot(EGUI_VIEW_OF(&test_skeleton), 1);
     EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_skeleton_get_current_snapshot(EGUI_VIEW_OF(&test_skeleton)));
 
+    EGUI_VIEW_OF(&test_skeleton)->is_pressed = true;
+    egui_view_skeleton_set_current_snapshot(EGUI_VIEW_OF(&test_skeleton), 1);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_skeleton)->is_pressed);
+
     egui_view_skeleton_set_emphasis_block(EGUI_VIEW_OF(&test_skeleton), 6);
     EGUI_TEST_ASSERT_EQUAL_INT(6, test_skeleton.emphasis_block);
 }
 
-static void test_skeleton_font_footer_modes_palette_and_animation(void)
+static void test_skeleton_font_footer_modes_palette_read_only_and_animation(void)
 {
     setup_skeleton();
 
@@ -130,14 +136,19 @@ static void test_skeleton_font_footer_modes_palette_and_animation(void)
     EGUI_TEST_ASSERT_TRUE(test_skeleton.font == (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT);
 
     egui_view_skeleton_set_show_footer(EGUI_VIEW_OF(&test_skeleton), 2);
+    EGUI_VIEW_OF(&test_skeleton)->is_pressed = true;
     egui_view_skeleton_set_compact_mode(EGUI_VIEW_OF(&test_skeleton), 3);
-    egui_view_skeleton_set_locked_mode(EGUI_VIEW_OF(&test_skeleton), 4);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_skeleton)->is_pressed);
+
+    EGUI_VIEW_OF(&test_skeleton)->is_pressed = true;
+    egui_view_skeleton_set_read_only_mode(EGUI_VIEW_OF(&test_skeleton), 4);
     egui_view_skeleton_set_animation_mode(EGUI_VIEW_OF(&test_skeleton), 9);
 
     EGUI_TEST_ASSERT_EQUAL_INT(1, test_skeleton.show_footer);
     EGUI_TEST_ASSERT_EQUAL_INT(1, test_skeleton.compact_mode);
-    EGUI_TEST_ASSERT_EQUAL_INT(1, test_skeleton.locked_mode);
+    EGUI_TEST_ASSERT_EQUAL_INT(1, test_skeleton.read_only_mode);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_SKELETON_ANIM_PULSE, test_skeleton.animation_mode);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_skeleton)->is_pressed);
     EGUI_TEST_ASSERT_EQUAL_INT(0, test_skeleton.timer_started);
 
     egui_view_skeleton_set_palette(EGUI_VIEW_OF(&test_skeleton), EGUI_COLOR_HEX(0x101112), EGUI_COLOR_HEX(0x202122), EGUI_COLOR_HEX(0x303132),
@@ -149,7 +160,7 @@ static void test_skeleton_font_footer_modes_palette_and_animation(void)
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x505152).full, test_skeleton.muted_text_color.full);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x606162).full, test_skeleton.accent_color.full);
 
-    egui_view_skeleton_set_locked_mode(EGUI_VIEW_OF(&test_skeleton), 0);
+    egui_view_skeleton_set_read_only_mode(EGUI_VIEW_OF(&test_skeleton), 0);
     EGUI_TEST_ASSERT_EQUAL_INT(1, test_skeleton.timer_started);
 
     egui_view_skeleton_set_animation_mode(EGUI_VIEW_OF(&test_skeleton), EGUI_VIEW_SKELETON_ANIM_NONE);
@@ -160,6 +171,8 @@ static void test_skeleton_font_footer_modes_palette_and_animation(void)
     egui_view_skeleton_set_compact_mode(EGUI_VIEW_OF(&test_skeleton), 0);
     EGUI_TEST_ASSERT_EQUAL_INT(0, test_skeleton.show_footer);
     EGUI_TEST_ASSERT_EQUAL_INT(0, test_skeleton.compact_mode);
+
+    stop_timer_if_started();
 }
 
 static void test_skeleton_attach_detach_and_helper_functions(void)
@@ -201,12 +214,46 @@ static void test_skeleton_touch_and_key_click_listener(void)
     EGUI_TEST_ASSERT_TRUE(send_key(EGUI_KEY_CODE_ENTER));
     EGUI_TEST_ASSERT_EQUAL_INT(2, click_count);
 
-    egui_view_set_enable(EGUI_VIEW_OF(&test_skeleton), 0);
+    stop_timer_if_started();
+}
+
+static void test_skeleton_read_only_mode_stops_timer_and_ignores_input(void)
+{
+    setup_skeleton();
+    layout_skeleton();
+
     EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN));
-    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_UP));
+    EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&test_skeleton)->is_pressed);
+
+    egui_view_skeleton_set_read_only_mode(EGUI_VIEW_OF(&test_skeleton), 1);
+    EGUI_TEST_ASSERT_EQUAL_INT(1, test_skeleton.read_only_mode);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, test_skeleton.timer_started);
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_skeleton)->is_pressed);
-    EGUI_TEST_ASSERT_EQUAL_INT(2, click_count);
+    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN));
+    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_UP));
     EGUI_TEST_ASSERT_FALSE(send_key(EGUI_KEY_CODE_ENTER));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, click_count);
+
+    egui_view_skeleton_set_read_only_mode(EGUI_VIEW_OF(&test_skeleton), 0);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, test_skeleton.read_only_mode);
+    EGUI_TEST_ASSERT_EQUAL_INT(1, test_skeleton.timer_started);
+    EGUI_TEST_ASSERT_TRUE(send_key(EGUI_KEY_CODE_ENTER));
+    EGUI_TEST_ASSERT_EQUAL_INT(1, click_count);
+
+    stop_timer_if_started();
+}
+
+static void test_skeleton_disabled_ignores_input(void)
+{
+    setup_skeleton();
+    layout_skeleton();
+
+    egui_view_set_enable(EGUI_VIEW_OF(&test_skeleton), 0);
+    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN));
+    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_UP));
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_skeleton)->is_pressed);
+    EGUI_TEST_ASSERT_FALSE(send_key(EGUI_KEY_CODE_ENTER));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, click_count);
 
     stop_timer_if_started();
 }
@@ -216,8 +263,10 @@ void test_skeleton_run(void)
     EGUI_TEST_SUITE_BEGIN(skeleton);
     EGUI_TEST_RUN(test_skeleton_set_snapshots_clamp_and_reset_current);
     EGUI_TEST_RUN(test_skeleton_set_current_snapshot_and_emphasis);
-    EGUI_TEST_RUN(test_skeleton_font_footer_modes_palette_and_animation);
+    EGUI_TEST_RUN(test_skeleton_font_footer_modes_palette_read_only_and_animation);
     EGUI_TEST_RUN(test_skeleton_attach_detach_and_helper_functions);
     EGUI_TEST_RUN(test_skeleton_touch_and_key_click_listener);
+    EGUI_TEST_RUN(test_skeleton_read_only_mode_stops_timer_and_ignores_input);
+    EGUI_TEST_RUN(test_skeleton_disabled_ignores_input);
     EGUI_TEST_SUITE_END();
 }

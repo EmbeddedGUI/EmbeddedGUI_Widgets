@@ -25,6 +25,11 @@ static egui_color_t egui_view_skeleton_mix_disabled(egui_color_t color)
     return egui_rgb_mix(color, EGUI_COLOR_DARK_GREY, 62);
 }
 
+static void egui_view_skeleton_clear_pressed_state(egui_view_t *self)
+{
+    egui_view_set_pressed(self, false);
+}
+
 static void egui_view_skeleton_tick(egui_timer_t *timer)
 {
     egui_view_t *self = (egui_view_t *)timer->user_data;
@@ -38,7 +43,7 @@ static void egui_view_skeleton_start_timer(egui_view_t *self)
 {
     EGUI_LOCAL_INIT(egui_view_skeleton_t);
 
-    if (local->timer_started || local->animation_mode == EGUI_VIEW_SKELETON_ANIM_NONE || local->locked_mode)
+    if (local->timer_started || local->animation_mode == EGUI_VIEW_SKELETON_ANIM_NONE || local->read_only_mode)
     {
         return;
     }
@@ -70,6 +75,7 @@ void egui_view_skeleton_set_snapshots(egui_view_t *self, const egui_view_skeleto
     {
         local->current_snapshot = 0;
     }
+    egui_view_skeleton_clear_pressed_state(self);
     egui_view_invalidate(self);
 }
 
@@ -83,10 +89,16 @@ void egui_view_skeleton_set_current_snapshot(egui_view_t *self, uint8_t snapshot
     }
     if (local->current_snapshot == snapshot_index)
     {
+        if (self->is_pressed)
+        {
+            egui_view_skeleton_clear_pressed_state(self);
+            egui_view_invalidate(self);
+        }
         return;
     }
 
     local->current_snapshot = snapshot_index;
+    egui_view_skeleton_clear_pressed_state(self);
     egui_view_invalidate(self);
 }
 
@@ -125,15 +137,17 @@ void egui_view_skeleton_set_compact_mode(egui_view_t *self, uint8_t compact_mode
     EGUI_LOCAL_INIT(egui_view_skeleton_t);
 
     local->compact_mode = compact_mode ? 1 : 0;
+    egui_view_skeleton_clear_pressed_state(self);
     egui_view_invalidate(self);
 }
 
-void egui_view_skeleton_set_locked_mode(egui_view_t *self, uint8_t locked_mode)
+void egui_view_skeleton_set_read_only_mode(egui_view_t *self, uint8_t read_only_mode)
 {
     EGUI_LOCAL_INIT(egui_view_skeleton_t);
 
-    local->locked_mode = locked_mode ? 1 : 0;
-    if (local->locked_mode)
+    local->read_only_mode = read_only_mode ? 1 : 0;
+    egui_view_skeleton_clear_pressed_state(self);
+    if (local->read_only_mode)
     {
         egui_view_skeleton_stop_timer(self);
     }
@@ -153,7 +167,7 @@ void egui_view_skeleton_set_animation_mode(egui_view_t *self, uint8_t animation_
         animation_mode = EGUI_VIEW_SKELETON_ANIM_PULSE;
     }
     local->animation_mode = animation_mode;
-    if (local->animation_mode == EGUI_VIEW_SKELETON_ANIM_NONE || local->locked_mode)
+    if (local->animation_mode == EGUI_VIEW_SKELETON_ANIM_NONE || local->read_only_mode)
     {
         egui_view_skeleton_stop_timer(self);
     }
@@ -250,13 +264,14 @@ static void egui_view_skeleton_on_draw(egui_view_t *self)
     accent_color = local->accent_color;
     radius = local->compact_mode ? 7 : 10;
 
-    if (local->locked_mode)
+    if (local->read_only_mode)
     {
-        surface_color = egui_rgb_mix(surface_color, EGUI_COLOR_HEX(0xFAFBFC), 12);
-        border_color = egui_rgb_mix(border_color, EGUI_COLOR_HEX(0xF7F9FB), 18);
-        block_color = egui_rgb_mix(block_color, EGUI_COLOR_HEX(0xF8FAFC), 14);
+        surface_color = egui_rgb_mix(surface_color, EGUI_COLOR_HEX(0xFCFDFE), 16);
+        border_color = egui_rgb_mix(border_color, EGUI_COLOR_HEX(0xF8FAFC), 24);
+        block_color = egui_rgb_mix(block_color, EGUI_COLOR_HEX(0xF9FBFD), 20);
         text_color = egui_rgb_mix(text_color, muted_text_color, 82);
-        accent_color = egui_rgb_mix(accent_color, muted_text_color, 28);
+        muted_text_color = egui_rgb_mix(muted_text_color, surface_color, 12);
+        accent_color = egui_rgb_mix(accent_color, muted_text_color, 36);
     }
     else if (!local->compact_mode)
     {
@@ -319,17 +334,22 @@ static void egui_view_skeleton_on_draw(egui_view_t *self)
         fill_color = egui_rgb_mix(block_color, accent_color, is_emphasis ? 7 : 1);
         line_color = egui_rgb_mix(border_color, accent_color, is_emphasis ? 14 : 3);
 
-        if (local->animation_mode == EGUI_VIEW_SKELETON_ANIM_PULSE && is_emphasis && !local->locked_mode)
+        if (local->animation_mode == EGUI_VIEW_SKELETON_ANIM_PULSE && is_emphasis && !local->read_only_mode)
         {
             fill_color = egui_rgb_mix(block_color, accent_color, 8 + pulse_mix / 2);
             line_color = egui_rgb_mix(border_color, accent_color, 12 + pulse_mix / 2);
         }
 
-        egui_canvas_draw_round_rectangle_fill(x, y, w, h, block->radius, fill_color, egui_color_alpha_mix(self->alpha, local->compact_mode ? 62 : 76));
+        egui_canvas_draw_round_rectangle_fill(x, y, w, h, block->radius, fill_color,
+                                              egui_color_alpha_mix(self->alpha, local->read_only_mode ? (local->compact_mode ? 54 : 64)
+                                                                                                       : (local->compact_mode ? 62 : 76)));
         egui_canvas_draw_round_rectangle(x, y, w, h, block->radius, 1, line_color,
-                                         egui_color_alpha_mix(self->alpha, local->compact_mode ? (is_emphasis ? 38 : 16) : (is_emphasis ? 48 : 22)));
+                                         egui_color_alpha_mix(self->alpha,
+                                                              local->read_only_mode ? (local->compact_mode ? (is_emphasis ? 24 : 12) : (is_emphasis ? 32 : 18))
+                                                                                    : (local->compact_mode ? (is_emphasis ? 38 : 16)
+                                                                                                           : (is_emphasis ? 48 : 22))));
 
-        if (local->animation_mode == EGUI_VIEW_SKELETON_ANIM_WAVE && !local->locked_mode)
+        if (local->animation_mode == EGUI_VIEW_SKELETON_ANIM_WAVE && !local->read_only_mode)
         {
             egui_dim_t overlap_x0;
             egui_dim_t overlap_x1;
@@ -352,7 +372,7 @@ static void egui_view_skeleton_on_draw(egui_view_t *self)
     {
         footer_y = content_y + content_height + 3;
         egui_view_skeleton_draw_footer(local, self, snapshot->footer ? snapshot->footer : "Loading content", content_x, footer_y, content_width,
-                                       local->locked_mode ? muted_text_color : text_color);
+                                       local->read_only_mode ? muted_text_color : text_color);
     }
 }
 
@@ -368,9 +388,48 @@ static void egui_view_skeleton_on_detach(egui_view_t *self)
     egui_view_on_detach_from_window(self);
 }
 
+#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
+static int egui_view_skeleton_on_touch_event(egui_view_t *self, egui_motion_event_t *event)
+{
+    EGUI_LOCAL_INIT(egui_view_skeleton_t);
+
+    if (local->read_only_mode || !egui_view_get_enable(self))
+    {
+        if (self->is_pressed)
+        {
+            egui_view_skeleton_clear_pressed_state(self);
+            egui_view_invalidate(self);
+        }
+        EGUI_UNUSED(event);
+        return 0;
+    }
+
+    return egui_view_on_touch_event(self, event);
+}
+#endif
+
+#if EGUI_CONFIG_FUNCTION_SUPPORT_KEY
+static int egui_view_skeleton_on_key_event(egui_view_t *self, egui_key_event_t *event)
+{
+    EGUI_LOCAL_INIT(egui_view_skeleton_t);
+
+    if (local->read_only_mode || !egui_view_get_enable(self))
+    {
+        EGUI_UNUSED(event);
+        return 0;
+    }
+
+    return egui_view_on_key_event(self, event);
+}
+#endif
+
 const egui_view_api_t EGUI_VIEW_API_TABLE_NAME(egui_view_skeleton_t) = {
         .dispatch_touch_event = egui_view_dispatch_touch_event,
+#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
+        .on_touch_event = egui_view_skeleton_on_touch_event,
+#else
         .on_touch_event = egui_view_on_touch_event,
+#endif
         .on_intercept_touch_event = egui_view_on_intercept_touch_event,
         .compute_scroll = egui_view_compute_scroll,
         .calculate_layout = egui_view_calculate_layout,
@@ -381,7 +440,7 @@ const egui_view_api_t EGUI_VIEW_API_TABLE_NAME(egui_view_skeleton_t) = {
         .on_detach_from_window = egui_view_skeleton_on_detach,
 #if EGUI_CONFIG_FUNCTION_SUPPORT_KEY
         .dispatch_key_event = egui_view_dispatch_key_event,
-        .on_key_event = egui_view_on_key_event,
+        .on_key_event = egui_view_skeleton_on_key_event,
 #endif
 };
 
@@ -406,7 +465,7 @@ void egui_view_skeleton_init(egui_view_t *self)
     local->emphasis_block = 0xFF;
     local->show_footer = 1;
     local->compact_mode = 0;
-    local->locked_mode = 0;
+    local->read_only_mode = 0;
     local->animation_mode = EGUI_VIEW_SKELETON_ANIM_WAVE;
     local->anim_phase = 0;
     local->timer_started = 0;

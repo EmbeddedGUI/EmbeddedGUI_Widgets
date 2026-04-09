@@ -86,8 +86,10 @@ static void apply_compact_snapshot(uint8_t index)
     egui_view_skeleton_set_emphasis_block(EGUI_VIEW_OF(&skeleton_compact), compact_snapshots[compact_snapshot_index].emphasis_block);
 }
 
-static void apply_read_only_snapshot(void)
+static void apply_read_only_state(uint8_t enabled)
 {
+    egui_view_skeleton_set_read_only_mode(EGUI_VIEW_OF(&skeleton_read_only), enabled);
+    egui_view_skeleton_set_animation_mode(EGUI_VIEW_OF(&skeleton_read_only), enabled ? EGUI_VIEW_SKELETON_ANIM_NONE : EGUI_VIEW_SKELETON_ANIM_PULSE);
     egui_view_skeleton_set_current_snapshot(EGUI_VIEW_OF(&skeleton_read_only), 0);
     egui_view_skeleton_set_emphasis_block(EGUI_VIEW_OF(&skeleton_read_only), read_only_snapshots[0].emphasis_block);
 }
@@ -113,15 +115,15 @@ void test_init_ui(void)
     egui_view_label_set_align_type(EGUI_VIEW_OF(&title_label), EGUI_ALIGN_CENTER);
     egui_view_label_set_font(EGUI_VIEW_OF(&title_label), (const egui_font_t *)&egui_res_font_montserrat_12_4);
     egui_view_label_set_font_color(EGUI_VIEW_OF(&title_label), EGUI_COLOR_HEX(0x21303F), EGUI_ALPHA_100);
-    egui_view_set_margin(EGUI_VIEW_OF(&title_label), 0, 8, 0, 4);
+    egui_view_set_margin(EGUI_VIEW_OF(&title_label), 0, 6, 0, 4);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label));
 
     egui_view_skeleton_init(EGUI_VIEW_OF(&skeleton_primary));
     egui_view_set_size(EGUI_VIEW_OF(&skeleton_primary), SKELETON_PRIMARY_WIDTH, SKELETON_PRIMARY_HEIGHT);
     egui_view_skeleton_set_snapshots(EGUI_VIEW_OF(&skeleton_primary), primary_snapshots, 3);
     egui_view_skeleton_set_font(EGUI_VIEW_OF(&skeleton_primary), (const egui_font_t *)&egui_res_font_montserrat_10_4);
-    egui_view_skeleton_set_palette(EGUI_VIEW_OF(&skeleton_primary), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD2DBE3), EGUI_COLOR_HEX(0xE7EDF3),
-                                   EGUI_COLOR_HEX(0x5F6E7D), EGUI_COLOR_HEX(0x8793A0), EGUI_COLOR_HEX(0x8AB7EA));
+    egui_view_skeleton_set_palette(EGUI_VIEW_OF(&skeleton_primary), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD5DDE5), EGUI_COLOR_HEX(0xE8EEF4),
+                                   EGUI_COLOR_HEX(0x5F6E7D), EGUI_COLOR_HEX(0x8793A0), EGUI_COLOR_HEX(0x8FB9E6));
     egui_view_set_margin(EGUI_VIEW_OF(&skeleton_primary), 0, 0, 0, 8);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&skeleton_primary));
 
@@ -138,8 +140,8 @@ void test_init_ui(void)
     egui_view_skeleton_set_show_footer(EGUI_VIEW_OF(&skeleton_compact), 0);
     egui_view_skeleton_set_compact_mode(EGUI_VIEW_OF(&skeleton_compact), 1);
     egui_view_skeleton_set_animation_mode(EGUI_VIEW_OF(&skeleton_compact), EGUI_VIEW_SKELETON_ANIM_PULSE);
-    egui_view_skeleton_set_palette(EGUI_VIEW_OF(&skeleton_compact), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD2DBE3), EGUI_COLOR_HEX(0xE7EDF3),
-                                   EGUI_COLOR_HEX(0x5F6E7D), EGUI_COLOR_HEX(0x8793A0), EGUI_COLOR_HEX(0x8AB7EA));
+    egui_view_skeleton_set_palette(EGUI_VIEW_OF(&skeleton_compact), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD7DFE6), EGUI_COLOR_HEX(0xEAF0F5),
+                                   EGUI_COLOR_HEX(0x5F6E7D), EGUI_COLOR_HEX(0x8793A0), EGUI_COLOR_HEX(0x93B9E0));
     static egui_view_api_t skeleton_compact_touch_api;
     egui_view_override_api_on_touch(EGUI_VIEW_OF(&skeleton_compact), &skeleton_compact_touch_api, consume_preview_touch);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
@@ -154,10 +156,10 @@ void test_init_ui(void)
     egui_view_skeleton_set_font(EGUI_VIEW_OF(&skeleton_read_only), (const egui_font_t *)&egui_res_font_montserrat_8_4);
     egui_view_skeleton_set_show_footer(EGUI_VIEW_OF(&skeleton_read_only), 0);
     egui_view_skeleton_set_compact_mode(EGUI_VIEW_OF(&skeleton_read_only), 1);
-    egui_view_skeleton_set_locked_mode(EGUI_VIEW_OF(&skeleton_read_only), 1);
+    egui_view_skeleton_set_read_only_mode(EGUI_VIEW_OF(&skeleton_read_only), 1);
     egui_view_skeleton_set_animation_mode(EGUI_VIEW_OF(&skeleton_read_only), EGUI_VIEW_SKELETON_ANIM_NONE);
-    egui_view_skeleton_set_palette(EGUI_VIEW_OF(&skeleton_read_only), EGUI_COLOR_HEX(0xFBFCFD), EGUI_COLOR_HEX(0xD8DFE6), EGUI_COLOR_HEX(0xEAF0F5),
-                                   EGUI_COLOR_HEX(0x8896A4), EGUI_COLOR_HEX(0xA5B1BD), EGUI_COLOR_HEX(0xB4C9DC));
+    egui_view_skeleton_set_palette(EGUI_VIEW_OF(&skeleton_read_only), EGUI_COLOR_HEX(0xFCFDFE), EGUI_COLOR_HEX(0xDEE4EA), EGUI_COLOR_HEX(0xEEF3F7),
+                                   EGUI_COLOR_HEX(0x8F9BA7), EGUI_COLOR_HEX(0xA8B2BC), EGUI_COLOR_HEX(0xB5C8D7));
     static egui_view_api_t skeleton_read_only_touch_api;
     egui_view_override_api_on_touch(EGUI_VIEW_OF(&skeleton_read_only), &skeleton_read_only_touch_api, consume_preview_touch);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
@@ -167,7 +169,7 @@ void test_init_ui(void)
 
     apply_primary_snapshot(0);
     apply_compact_snapshot(0);
-    apply_read_only_snapshot();
+    apply_read_only_state(1);
 
     {
         hello_custom_widgets_demo_apply_title_only_scaffold(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label), NULL, 0);
@@ -195,7 +197,7 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
         {
             apply_primary_snapshot(0);
             apply_compact_snapshot(0);
-            apply_read_only_snapshot();
+            apply_read_only_state(1);
         }
         EGUI_SIM_SET_WAIT(p_action, SKELETON_RECORD_WAIT);
         return true;

@@ -53,7 +53,7 @@ struct egui_view_skeleton
     uint8_t emphasis_block;
     uint8_t show_footer;
     uint8_t compact_mode;
-    uint8_t locked_mode;
+    uint8_t read_only_mode;
     uint8_t animation_mode;
     uint8_t anim_phase;
     uint8_t timer_started;
@@ -67,7 +67,7 @@ void egui_view_skeleton_set_emphasis_block(egui_view_t *self, uint8_t block_inde
 void egui_view_skeleton_set_font(egui_view_t *self, const egui_font_t *font);
 void egui_view_skeleton_set_show_footer(egui_view_t *self, uint8_t show_footer);
 void egui_view_skeleton_set_compact_mode(egui_view_t *self, uint8_t compact_mode);
-void egui_view_skeleton_set_locked_mode(egui_view_t *self, uint8_t locked_mode);
+void egui_view_skeleton_set_read_only_mode(egui_view_t *self, uint8_t read_only_mode);
 void egui_view_skeleton_set_animation_mode(egui_view_t *self, uint8_t animation_mode);
 void egui_view_skeleton_set_palette(egui_view_t *self, egui_color_t surface_color, egui_color_t border_color, egui_color_t block_color, egui_color_t text_color,
                                     egui_color_t muted_text_color, egui_color_t accent_color);

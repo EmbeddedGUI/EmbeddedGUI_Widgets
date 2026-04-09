@@ -36,7 +36,7 @@
 - 页面结构：标题 + 主控件 + 底部双预览
 - 样式约束：
   - 使用浅灰 page panel、白底 skeleton card 和低噪音浅边框。
-  - 主控件保留轻量 `wave shimmer`，`compact` 保留更柔和的 `pulse` 强调，`read only` 关闭动画。
+  - 主控件保留轻量 `wave shimmer`，`compact` 保留更柔和的 `pulse` 强调，`read only` 关闭动画并弱化 chrome。
   - emphasis block 只做轻量灰蓝提亮，不回到高饱和 showcase 风格。
   - 底部两个 preview 都禁用 touch 和 focus，只做静态 reference 对照。
 
@@ -62,7 +62,7 @@
 | 主控件 | `Settings` | 第三组主控件骨架 |
 | `compact` | `Compact row` | 默认紧凑对照 |
 | `compact` | `Compact tile` | 第二组紧凑对照 |
-| `read only` | `Read only` | 固定只读对照，禁用动画与外部交互 |
+| `read only` | `Read only` | 固定只读对照，禁用动画与外部交互，并在切入时清空 pressed |
 
 ## 7. `egui_port_get_recording_action()` 录制动作设计
 1. 重置主控件、`compact` 和 `read only` 到默认状态。
@@ -88,8 +88,9 @@ python scripts/checks/check_docs_encoding.py
 - 主控件和底部 `compact / read only` 预览都必须完整可见。
 - `wave`、`compact`、`read only` 三种语义要能从截图直接分辨。
 - 主控件的 shimmer 必须保持轻量，不能回到高噪音 showcase 风格。
-- `read only` 只做静态展示，不能响应 touch、focus 或页面桥接。
-- 单测已有的 snapshot、palette、timer、touch 和 key click 语义不能回归。
+- `read only` 只做静态展示，不能响应 touch、focus 或页面桥接，并且切入时要立即停掉 timer。
+- 退出 `read only` 后，只有在动画模式允许时才恢复 timer。
+- 单测已有的 snapshot、palette、timer、touch 和 key click 语义不能回归，并要覆盖 `read only / disabled` 的输入抑制。
 
 ## 9. 已知限制与后续方向
 - 当前版本仍使用固定 snapshot 数据，不接真实业务骨架配置。
