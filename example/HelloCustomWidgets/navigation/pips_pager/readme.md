@@ -8,7 +8,7 @@
 - 对应组件名：`PipsPager`
 - 本次保留状态：`standard`、`current page`、`previous / next`、`compact`、`read only`
 - 本次删除效果：页面级 `guide`、状态文案、外部 preview 标签、旧双列 preview 包裹壳、过亮按钮和过强当前页强调
-- EGUI 适配说明：继续复用仓库内 `pips_pager` 基础实现，本轮只收口 `reference` 页面结构、静态对照预览和绘制强度，不修改 `sdk/EmbeddedGUI`
+- EGUI 适配说明：继续复用仓库内 `pips_pager` 基础实现，本轮只收口 `reference` 页面结构、静态对照预览和绘制强度，不修改 `sdk/EmbeddedGUI`；`page metrics / current index / current part / compact / read only / view disabled` 切换共享同一套 `pressed` 清理语义
 
 ## 1. 为什么需要这个控件
 
@@ -98,7 +98,9 @@ python scripts/checks/check_docs_encoding.py
 - previous / next、当前页 pill 和 inactive dots 需要清晰可辨，但整体不能回到高噪音 showcase 风格。
 - `compact` 在小尺寸下仍要看得出当前页位置。
 - `read only` 只能做静态展示，不能响应 touch、focus 或键盘。
-- unit test 中已有的键盘导航、`+ / -`、visible pip 选择和只读/紧凑忽略输入语义不能回归。
+- `page metrics / current index / current part / compact / read only / view disabled` 切换后不能残留 previous / next / pip 的 `pressed` 高亮或下压位移渲染。
+- `compact / read_only_mode / !enable` 不仅要忽略后续 touch / key 输入，还要在收到新输入时先清理残留 `pressed` 状态。
+- unit test 中已有的键盘导航、`+ / -`、visible pip 选择、cancel 清理以及只读 / 紧凑 / disabled 输入抑制语义不能回归。
 
 ## 9. 已知限制与后续方向
 

@@ -46,6 +46,16 @@ static uint8_t pips_pager_has_text(const char *text)
     return (text != NULL && text[0] != '\0') ? 1 : 0;
 }
 
+static uint8_t pips_pager_clear_pressed_state(egui_view_t *self, egui_view_pips_pager_t *local)
+{
+    uint8_t had_pressed = self->is_pressed || local->pressed_part != EGUI_VIEW_PIPS_PAGER_PART_NONE;
+
+    local->pressed_part = EGUI_VIEW_PIPS_PAGER_PART_NONE;
+    local->pressed_index = 0;
+    egui_view_set_pressed(self, false);
+    return had_pressed;
+}
+
 static void pips_pager_normalize_state(egui_view_pips_pager_t *local)
 {
     if (local->total_count == 0)
@@ -146,7 +156,22 @@ static uint8_t pips_pager_part_enabled(egui_view_pips_pager_t *local, egui_view_
 static void pips_pager_set_current_part_inner(egui_view_t *self, uint8_t part, uint8_t notify)
 {
     EGUI_LOCAL_INIT(egui_view_pips_pager_t);
+    uint8_t had_pressed = pips_pager_clear_pressed_state(self, local);
+    uint8_t changed = 0;
 
+    if (local->total_count == 0)
+    {
+        if (local->current_part != EGUI_VIEW_PIPS_PAGER_PART_NONE)
+        {
+            local->current_part = EGUI_VIEW_PIPS_PAGER_PART_NONE;
+            changed = 1;
+        }
+        if (changed || had_pressed)
+        {
+            egui_view_invalidate(self);
+        }
+        return;
+    }
     pips_pager_normalize_state(local);
     if (!pips_pager_part_enabled(local, self, part) && part != EGUI_VIEW_PIPS_PAGER_PART_PIP)
     {
@@ -155,6 +180,10 @@ static void pips_pager_set_current_part_inner(egui_view_t *self, uint8_t part, u
     if (local->current_part != part)
     {
         local->current_part = part;
+        changed = 1;
+    }
+    if (changed || had_pressed)
+    {
         egui_view_invalidate(self);
     }
     if (notify)
@@ -166,11 +195,20 @@ static void pips_pager_set_current_part_inner(egui_view_t *self, uint8_t part, u
 static void pips_pager_set_current_index_inner(egui_view_t *self, uint8_t current_index, uint8_t notify)
 {
     EGUI_LOCAL_INIT(egui_view_pips_pager_t);
+    uint8_t had_pressed = pips_pager_clear_pressed_state(self, local);
+    uint8_t changed = 0;
 
     if (local->total_count == 0)
     {
+        local->current_index = 0;
+        local->current_part = EGUI_VIEW_PIPS_PAGER_PART_NONE;
+        if (had_pressed)
+        {
+            egui_view_invalidate(self);
+        }
         return;
     }
+    pips_pager_normalize_state(local);
     if (current_index >= local->total_count)
     {
         current_index = (uint8_t)(local->total_count - 1);
@@ -178,6 +216,10 @@ static void pips_pager_set_current_index_inner(egui_view_t *self, uint8_t curren
     if (local->current_index != current_index)
     {
         local->current_index = current_index;
+        changed = 1;
+    }
+    if (changed || had_pressed)
+    {
         egui_view_invalidate(self);
     }
     if (notify)
@@ -398,6 +440,7 @@ void egui_view_pips_pager_set_palette(egui_view_t *self, egui_color_t surface_co
 void egui_view_pips_pager_set_page_metrics(egui_view_t *self, uint8_t total_count, uint8_t current_index, uint8_t visible_count)
 {
     EGUI_LOCAL_INIT(egui_view_pips_pager_t);
+    pips_pager_clear_pressed_state(self, local);
     local->total_count = total_count;
     local->current_index = current_index;
     local->visible_count = visible_count;
@@ -442,6 +485,7 @@ uint8_t egui_view_pips_pager_get_current_part(egui_view_t *self)
 void egui_view_pips_pager_set_compact_mode(egui_view_t *self, uint8_t compact_mode)
 {
     EGUI_LOCAL_INIT(egui_view_pips_pager_t);
+    pips_pager_clear_pressed_state(self, local);
     local->compact_mode = compact_mode ? 1 : 0;
     pips_pager_normalize_state(local);
     egui_view_invalidate(self);
@@ -450,6 +494,7 @@ void egui_view_pips_pager_set_compact_mode(egui_view_t *self, uint8_t compact_mo
 void egui_view_pips_pager_set_read_only_mode(egui_view_t *self, uint8_t read_only_mode)
 {
     EGUI_LOCAL_INIT(egui_view_pips_pager_t);
+    pips_pager_clear_pressed_state(self, local);
     local->read_only_mode = read_only_mode ? 1 : 0;
     pips_pager_normalize_state(local);
     egui_view_invalidate(self);
@@ -710,11 +755,15 @@ static int egui_view_pips_pager_on_touch_event(egui_view_t *self, egui_motion_ev
     uint8_t hit_part;
     uint8_t hit_index = 0;
 
-    pips_pager_normalize_state(local);
     if (local->read_only_mode || local->compact_mode || local->total_count == 0 || !egui_view_get_enable(self))
     {
+        if (pips_pager_clear_pressed_state(self, local))
+        {
+            egui_view_invalidate(self);
+        }
         return 0;
     }
+    pips_pager_normalize_state(local);
 
     switch (event->type)
     {
@@ -722,6 +771,10 @@ static int egui_view_pips_pager_on_touch_event(egui_view_t *self, egui_motion_ev
         hit_part = pips_pager_hit_part(local, self, event->location.x, event->location.y, &hit_index);
         if (hit_part == EGUI_VIEW_PIPS_PAGER_PART_NONE)
         {
+            if (pips_pager_clear_pressed_state(self, local))
+            {
+                egui_view_invalidate(self);
+            }
             return 0;
         }
         local->pressed_part = hit_part;
@@ -731,7 +784,11 @@ static int egui_view_pips_pager_on_touch_event(egui_view_t *self, egui_motion_ev
         egui_view_invalidate(self);
         return 1;
     case EGUI_MOTION_EVENT_ACTION_UP:
+    {
+        uint8_t handled;
+
         hit_part = pips_pager_hit_part(local, self, event->location.x, event->location.y, &hit_index);
+        handled = (local->pressed_part != EGUI_VIEW_PIPS_PAGER_PART_NONE) || hit_part != EGUI_VIEW_PIPS_PAGER_PART_NONE;
         if (local->pressed_part == hit_part)
         {
             if (hit_part == EGUI_VIEW_PIPS_PAGER_PART_PREVIOUS)
@@ -750,17 +807,19 @@ static int egui_view_pips_pager_on_touch_event(egui_view_t *self, egui_motion_ev
                 pips_pager_notify(self);
             }
         }
-        local->pressed_part = EGUI_VIEW_PIPS_PAGER_PART_NONE;
-        local->pressed_index = 0;
-        egui_view_set_pressed(self, false);
-        egui_view_invalidate(self);
-        return hit_part != EGUI_VIEW_PIPS_PAGER_PART_NONE;
+        if (pips_pager_clear_pressed_state(self, local))
+        {
+            egui_view_invalidate(self);
+        }
+        return handled;
+    }
     case EGUI_MOTION_EVENT_ACTION_CANCEL:
-        local->pressed_part = EGUI_VIEW_PIPS_PAGER_PART_NONE;
-        local->pressed_index = 0;
-        egui_view_set_pressed(self, false);
-        egui_view_invalidate(self);
-        return 1;
+        if (pips_pager_clear_pressed_state(self, local))
+        {
+            egui_view_invalidate(self);
+            return 1;
+        }
+        return 0;
     default:
         return 0;
     }
@@ -770,6 +829,16 @@ static int egui_view_pips_pager_on_touch_event(egui_view_t *self, egui_motion_ev
 #if EGUI_CONFIG_FUNCTION_SUPPORT_KEY
 static int egui_view_pips_pager_on_key_event(egui_view_t *self, egui_key_event_t *event)
 {
+    EGUI_LOCAL_INIT(egui_view_pips_pager_t);
+
+    if (!egui_view_get_enable(self) || local->read_only_mode || local->compact_mode || local->total_count == 0)
+    {
+        if (pips_pager_clear_pressed_state(self, local))
+        {
+            egui_view_invalidate(self);
+        }
+        return 0;
+    }
     if (event->type != EGUI_KEY_EVENT_ACTION_UP)
     {
         return 0;
