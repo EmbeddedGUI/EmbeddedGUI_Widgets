@@ -97,6 +97,11 @@
 ## 最近完成的收口动作
 
 - `2026-04-09`
+  - 完成 `feedback/toast_stack` 实现级样式收口：移除底部 preview 的旧列容器壳与页面桥接逻辑，页面统一为标题、主 `toast_stack` 与 `compact / read only` 静态对照，继续保留 `Toast / Snackbar` 的前卡、后两层叠卡、正文、action 和 meta 层级语义。
+  - `test.c` 将 `stack_locked` 收口为 `stack_read_only`，底部两个 preview 统一禁用 touch / focus 并补上程序化 `read only` 重置；`egui_view_toast_stack.c` 进一步压轻 back card、front card、severity strip、action pill、meta pill 和 read-only chrome；README 重写为当前 `reference` 模板。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=feedback/toast_stack PORT=pc`、`check_touch_release_semantics.py --scope custom --category feedback`、`code_runtime_check.py --app HelloCustomWidgets --app-sub feedback/toast_stack --track reference --timeout 10 --keep-screenshots`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`check_docs_encoding.py`。
+
+- `2026-04-09`
   - 完成 `feedback/message_bar` 实现级样式收口：移除底部 preview 的旧列容器壳与页面桥接逻辑，页面统一为标题、主 `message_bar` 与 `compact / read only` 静态对照，继续保留 `MessageBar / InfoBar` 的四类 severity、正文与 action 层级语义。
   - `test.c` 将 `bar_locked` 收口为 `bar_read_only`，底部两个 preview 统一禁用 touch / focus 并补上程序化 `read only` 重置；`egui_view_message_bar.c` 进一步压轻容器 fill / border、severity strip、glyph circle、action button 和 pin chrome；README 重写为当前 `reference` 模板。
   - 已通过 `make all APP=HelloCustomWidgets APP_SUB=feedback/message_bar PORT=pc`、`check_touch_release_semantics.py --scope custom --category feedback`、`code_runtime_check.py --app HelloCustomWidgets --app-sub feedback/message_bar --track reference --timeout 10 --keep-screenshots`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`check_docs_encoding.py`。
@@ -237,7 +242,6 @@
   - 完成 `feedback/skeleton` 实现级样式收口。
 - `2026-04-09`
 - `2026-04-09`
-  - 完成 `feedback/toast_stack` 实现级样式收口。
 - `2026-04-09`
   - 完成 `navigation/menu_bar` 实现级样式收口：移除底部 preview 的点击与焦点循环职责，把页面统一为标题、主控件与 `compact / read only` 静态对照，继续压轻 `egui_view_menu_bar.c` 的顶栏当前态、focus ring、panel shadow、separator、row highlight 与 summary strip。
   - 已通过 `make all APP=HelloCustomWidgets APP_SUB=navigation/menu_bar PORT=pc`、`check_touch_release_semantics.py --scope custom --category navigation`、`code_runtime_check.py --app HelloCustomWidgets --app-sub navigation/menu_bar --track reference --timeout 10 --keep-screenshots`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`check_docs_encoding.py`。
