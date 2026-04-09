@@ -7,24 +7,23 @@
 #include "core/egui_input_simulator.h"
 #endif
 
-#define NAV_PANEL_ROOT_WIDTH       224
-#define NAV_PANEL_ROOT_HEIGHT      224
-#define NAV_PANEL_PRIMARY_WIDTH    198
-#define NAV_PANEL_PRIMARY_HEIGHT   108
-#define NAV_PANEL_COMPACT_WIDTH    58
-#define NAV_PANEL_COMPACT_HEIGHT   74
-#define NAV_PANEL_BOTTOM_ROW_WIDTH 152
-#define NAV_PANEL_BOTTOM_ROW_HEIGHT 74
-#define NAV_PANEL_COLUMN_WIDTH     72
+#define NAV_PANEL_ROOT_WIDTH         224
+#define NAV_PANEL_ROOT_HEIGHT        224
+#define NAV_PANEL_PRIMARY_WIDTH      198
+#define NAV_PANEL_PRIMARY_HEIGHT     108
+#define NAV_PANEL_COMPACT_WIDTH      58
+#define NAV_PANEL_COMPACT_HEIGHT     74
+#define NAV_PANEL_BOTTOM_ROW_WIDTH   152
+#define NAV_PANEL_BOTTOM_ROW_HEIGHT  74
+#define NAV_PANEL_RECORD_WAIT        90
+#define NAV_PANEL_RECORD_FRAME_WAIT  170
 
 static egui_view_linearlayout_t root_layout;
 static egui_view_label_t title_label;
 static egui_view_nav_panel_t panel_primary;
 static egui_view_linearlayout_t bottom_row;
-static egui_view_linearlayout_t compact_column;
 static egui_view_nav_panel_t panel_compact;
-static egui_view_linearlayout_t locked_column;
-static egui_view_nav_panel_t panel_locked;
+static egui_view_nav_panel_t panel_read_only;
 
 EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
 EGUI_BACKGROUND_PARAM_INIT(bg_page_panel_params, &bg_page_panel_param, NULL, NULL);
@@ -44,11 +43,33 @@ static const egui_view_nav_panel_item_t compact_items[] = {
         {"Rules", "R"},
 };
 
-static const egui_view_nav_panel_item_t locked_items[] = {
+static const egui_view_nav_panel_item_t read_only_items[] = {
         {"Feed", "F"},
         {"Teams", "T"},
         {"Audit", "A"},
 };
+
+static void apply_primary_index(uint8_t index)
+{
+    egui_view_nav_panel_set_current_index(EGUI_VIEW_OF(&panel_primary), index);
+}
+
+static void apply_compact_index(uint8_t index)
+{
+    egui_view_nav_panel_set_current_index(EGUI_VIEW_OF(&panel_compact), index);
+}
+
+static void apply_read_only_index(void)
+{
+    egui_view_nav_panel_set_current_index(EGUI_VIEW_OF(&panel_read_only), 1);
+}
+
+static int consume_preview_touch(egui_view_t *self, egui_motion_event_t *event)
+{
+    EGUI_UNUSED(self);
+    EGUI_UNUSED(event);
+    return 1;
+}
 
 void test_init_ui(void)
 {
@@ -64,7 +85,7 @@ void test_init_ui(void)
     egui_view_label_set_align_type(EGUI_VIEW_OF(&title_label), EGUI_ALIGN_CENTER);
     egui_view_label_set_font(EGUI_VIEW_OF(&title_label), (const egui_font_t *)&egui_res_font_montserrat_12_4);
     egui_view_label_set_font_color(EGUI_VIEW_OF(&title_label), EGUI_COLOR_HEX(0x21303F), EGUI_ALPHA_100);
-    egui_view_set_margin(EGUI_VIEW_OF(&title_label), 0, 8, 0, 6);
+    egui_view_set_margin(EGUI_VIEW_OF(&title_label), 0, 8, 0, 4);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label));
 
     egui_view_nav_panel_init(EGUI_VIEW_OF(&panel_primary));
@@ -72,11 +93,10 @@ void test_init_ui(void)
     egui_view_nav_panel_set_font(EGUI_VIEW_OF(&panel_primary), (const egui_font_t *)&egui_res_font_montserrat_10_4);
     egui_view_nav_panel_set_meta_font(EGUI_VIEW_OF(&panel_primary), (const egui_font_t *)&egui_res_font_montserrat_8_4);
     egui_view_nav_panel_set_items(EGUI_VIEW_OF(&panel_primary), primary_items, 3);
-    egui_view_nav_panel_set_current_index(EGUI_VIEW_OF(&panel_primary), 0);
     egui_view_nav_panel_set_header_text(EGUI_VIEW_OF(&panel_primary), "Workspace");
     egui_view_nav_panel_set_footer_text(EGUI_VIEW_OF(&panel_primary), "Settings");
     egui_view_nav_panel_set_footer_badge(EGUI_VIEW_OF(&panel_primary), "S");
-    egui_view_nav_panel_set_palette(EGUI_VIEW_OF(&panel_primary), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD5DCE4), EGUI_COLOR_HEX(0x1A2734),
+    egui_view_nav_panel_set_palette(EGUI_VIEW_OF(&panel_primary), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD2DBE3), EGUI_COLOR_HEX(0x1A2734),
                                     EGUI_COLOR_HEX(0x6B7A89), EGUI_COLOR_HEX(0x0F6CBD));
     egui_view_set_margin(EGUI_VIEW_OF(&panel_primary), 0, 0, 0, 8);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&panel_primary));
@@ -87,50 +107,48 @@ void test_init_ui(void)
     egui_view_linearlayout_set_align_type(EGUI_VIEW_OF(&bottom_row), EGUI_ALIGN_VCENTER);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&bottom_row));
 
-    egui_view_linearlayout_init(EGUI_VIEW_OF(&compact_column));
-    egui_view_set_size(EGUI_VIEW_OF(&compact_column), NAV_PANEL_COLUMN_WIDTH, NAV_PANEL_BOTTOM_ROW_HEIGHT);
-    egui_view_linearlayout_set_orientation(EGUI_VIEW_OF(&compact_column), 0);
-    egui_view_linearlayout_set_align_type(EGUI_VIEW_OF(&compact_column), EGUI_ALIGN_HCENTER);
-    egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&compact_column));
-
     egui_view_nav_panel_init(EGUI_VIEW_OF(&panel_compact));
     egui_view_set_size(EGUI_VIEW_OF(&panel_compact), NAV_PANEL_COMPACT_WIDTH, NAV_PANEL_COMPACT_HEIGHT);
     egui_view_nav_panel_set_font(EGUI_VIEW_OF(&panel_compact), (const egui_font_t *)&egui_res_font_montserrat_10_4);
     egui_view_nav_panel_set_meta_font(EGUI_VIEW_OF(&panel_compact), (const egui_font_t *)&egui_res_font_montserrat_8_4);
     egui_view_nav_panel_set_items(EGUI_VIEW_OF(&panel_compact), compact_items, 3);
-    egui_view_nav_panel_set_current_index(EGUI_VIEW_OF(&panel_compact), 0);
     egui_view_nav_panel_set_footer_badge(EGUI_VIEW_OF(&panel_compact), "S");
     egui_view_nav_panel_set_compact_mode(EGUI_VIEW_OF(&panel_compact), 1);
-    egui_view_nav_panel_set_palette(EGUI_VIEW_OF(&panel_compact), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD5DCE4), EGUI_COLOR_HEX(0x1A2734),
+    egui_view_nav_panel_set_palette(EGUI_VIEW_OF(&panel_compact), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD2DBE3), EGUI_COLOR_HEX(0x1A2734),
                                     EGUI_COLOR_HEX(0x6B7A89), EGUI_COLOR_HEX(0x0F6CBD));
-    egui_view_group_add_child(EGUI_VIEW_OF(&compact_column), EGUI_VIEW_OF(&panel_compact));
+    static egui_view_api_t panel_compact_touch_api;
+    egui_view_override_api_on_touch(EGUI_VIEW_OF(&panel_compact), &panel_compact_touch_api, consume_preview_touch);
+#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
+    egui_view_set_focusable(EGUI_VIEW_OF(&panel_compact), false);
+#endif
+    egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&panel_compact));
 
-    egui_view_linearlayout_init(EGUI_VIEW_OF(&locked_column));
-    egui_view_set_size(EGUI_VIEW_OF(&locked_column), NAV_PANEL_COLUMN_WIDTH, NAV_PANEL_BOTTOM_ROW_HEIGHT);
-    egui_view_set_margin(EGUI_VIEW_OF(&locked_column), 8, 0, 0, 0);
-    egui_view_linearlayout_set_orientation(EGUI_VIEW_OF(&locked_column), 0);
-    egui_view_linearlayout_set_align_type(EGUI_VIEW_OF(&locked_column), EGUI_ALIGN_HCENTER);
-    egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&locked_column));
+    egui_view_nav_panel_init(EGUI_VIEW_OF(&panel_read_only));
+    egui_view_set_size(EGUI_VIEW_OF(&panel_read_only), NAV_PANEL_COMPACT_WIDTH, NAV_PANEL_COMPACT_HEIGHT);
+    egui_view_set_margin(EGUI_VIEW_OF(&panel_read_only), 8, 0, 0, 0);
+    egui_view_nav_panel_set_font(EGUI_VIEW_OF(&panel_read_only), (const egui_font_t *)&egui_res_font_montserrat_10_4);
+    egui_view_nav_panel_set_meta_font(EGUI_VIEW_OF(&panel_read_only), (const egui_font_t *)&egui_res_font_montserrat_8_4);
+    egui_view_nav_panel_set_items(EGUI_VIEW_OF(&panel_read_only), read_only_items, 3);
+    egui_view_nav_panel_set_footer_badge(EGUI_VIEW_OF(&panel_read_only), "S");
+    egui_view_nav_panel_set_compact_mode(EGUI_VIEW_OF(&panel_read_only), 1);
+    egui_view_nav_panel_set_locked_mode(EGUI_VIEW_OF(&panel_read_only), 1);
+    egui_view_nav_panel_set_palette(EGUI_VIEW_OF(&panel_read_only), EGUI_COLOR_HEX(0xFBFCFD), EGUI_COLOR_HEX(0xD8DFE6), EGUI_COLOR_HEX(0x536474),
+                                    EGUI_COLOR_HEX(0x8896A4), EGUI_COLOR_HEX(0xA7B4C1));
+    static egui_view_api_t panel_read_only_touch_api;
+    egui_view_override_api_on_touch(EGUI_VIEW_OF(&panel_read_only), &panel_read_only_touch_api, consume_preview_touch);
+#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
+    egui_view_set_focusable(EGUI_VIEW_OF(&panel_read_only), false);
+#endif
+    egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&panel_read_only));
 
-    egui_view_nav_panel_init(EGUI_VIEW_OF(&panel_locked));
-    egui_view_set_size(EGUI_VIEW_OF(&panel_locked), NAV_PANEL_COMPACT_WIDTH, NAV_PANEL_COMPACT_HEIGHT);
-    egui_view_nav_panel_set_font(EGUI_VIEW_OF(&panel_locked), (const egui_font_t *)&egui_res_font_montserrat_10_4);
-    egui_view_nav_panel_set_meta_font(EGUI_VIEW_OF(&panel_locked), (const egui_font_t *)&egui_res_font_montserrat_8_4);
-    egui_view_nav_panel_set_items(EGUI_VIEW_OF(&panel_locked), locked_items, 3);
-    egui_view_nav_panel_set_current_index(EGUI_VIEW_OF(&panel_locked), 1);
-    egui_view_nav_panel_set_footer_badge(EGUI_VIEW_OF(&panel_locked), "S");
-    egui_view_nav_panel_set_compact_mode(EGUI_VIEW_OF(&panel_locked), 1);
-    egui_view_nav_panel_set_locked_mode(EGUI_VIEW_OF(&panel_locked), 1);
-    egui_view_nav_panel_set_palette(EGUI_VIEW_OF(&panel_locked), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD5DCE4), EGUI_COLOR_HEX(0x1A2734),
-                                    EGUI_COLOR_HEX(0x6B7A89), EGUI_COLOR_HEX(0x0F6CBD));
-    egui_view_group_add_child(EGUI_VIEW_OF(&locked_column), EGUI_VIEW_OF(&panel_locked));
+    apply_primary_index(0);
+    apply_compact_index(0);
+    apply_read_only_index();
 
     {
         hello_custom_widgets_demo_apply_title_only_scaffold(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label), NULL, 0);
     }
 
-    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&compact_column));
-    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&locked_column));
     egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&bottom_row));
     egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&root_layout));
 
@@ -151,43 +169,74 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     case 0:
         if (first_call)
         {
-            egui_view_nav_panel_set_current_index(EGUI_VIEW_OF(&panel_primary), 0);
-            egui_view_nav_panel_set_current_index(EGUI_VIEW_OF(&panel_compact), 0);
-            recording_request_snapshot();
+            apply_primary_index(0);
+            apply_compact_index(0);
+            apply_read_only_index();
         }
-        EGUI_SIM_SET_WAIT(p_action, 240);
+        EGUI_SIM_SET_WAIT(p_action, NAV_PANEL_RECORD_WAIT);
         return true;
     case 1:
         if (first_call)
         {
-            egui_view_nav_panel_set_current_index(EGUI_VIEW_OF(&panel_primary), 1);
             recording_request_snapshot();
         }
-        EGUI_SIM_SET_WAIT(p_action, 240);
+        EGUI_SIM_SET_WAIT(p_action, NAV_PANEL_RECORD_FRAME_WAIT);
         return true;
     case 2:
         if (first_call)
         {
-            egui_view_nav_panel_set_current_index(EGUI_VIEW_OF(&panel_primary), 2);
-            recording_request_snapshot();
+            apply_primary_index(1);
         }
-        EGUI_SIM_SET_WAIT(p_action, 240);
+        EGUI_SIM_SET_WAIT(p_action, NAV_PANEL_RECORD_WAIT);
         return true;
     case 3:
         if (first_call)
         {
-            egui_view_nav_panel_set_current_index(EGUI_VIEW_OF(&panel_primary), 1);
             recording_request_snapshot();
         }
-        EGUI_SIM_SET_WAIT(p_action, 240);
+        EGUI_SIM_SET_WAIT(p_action, NAV_PANEL_RECORD_FRAME_WAIT);
         return true;
     case 4:
         if (first_call)
         {
-            egui_view_nav_panel_set_current_index(EGUI_VIEW_OF(&panel_compact), 2);
+            apply_primary_index(2);
+        }
+        EGUI_SIM_SET_WAIT(p_action, NAV_PANEL_RECORD_WAIT);
+        return true;
+    case 5:
+        if (first_call)
+        {
             recording_request_snapshot();
         }
-        EGUI_SIM_SET_WAIT(p_action, 640);
+        EGUI_SIM_SET_WAIT(p_action, NAV_PANEL_RECORD_FRAME_WAIT);
+        return true;
+    case 6:
+        if (first_call)
+        {
+            apply_primary_index(1);
+        }
+        EGUI_SIM_SET_WAIT(p_action, NAV_PANEL_RECORD_WAIT);
+        return true;
+    case 7:
+        if (first_call)
+        {
+            recording_request_snapshot();
+        }
+        EGUI_SIM_SET_WAIT(p_action, NAV_PANEL_RECORD_FRAME_WAIT);
+        return true;
+    case 8:
+        if (first_call)
+        {
+            apply_compact_index(2);
+        }
+        EGUI_SIM_SET_WAIT(p_action, NAV_PANEL_RECORD_WAIT);
+        return true;
+    case 9:
+        if (first_call)
+        {
+            recording_request_snapshot();
+        }
+        EGUI_SIM_SET_WAIT(p_action, 520);
         return true;
     default:
         return false;

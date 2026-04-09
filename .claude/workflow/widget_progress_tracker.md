@@ -98,6 +98,10 @@
 ## 最近完成的收口动作
 
 - `2026-04-09`
+  - 完成 `navigation/nav_panel` 实现级样式收口：移除底部 preview 的旧列容器壳与 preview 交互桥接逻辑，页面统一为标题、主 `nav_panel` 与 `compact / read only` 静态对照，继续保留 `NavigationView` 的 selected row、compact rail 和 footer 语义。
+  - `test.c` 将 `panel_locked` 收口为 `panel_read_only`，底部两个 preview 统一禁用 touch / focus 并改为程序化切换；`egui_view_nav_panel.c` 进一步压轻 selected row、indicator、badge 和 footer chrome；README 重写为当前 `reference` 模板。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=navigation/nav_panel PORT=pc`、`check_touch_release_semantics.py --scope custom --category navigation`、`code_runtime_check.py --app HelloCustomWidgets --app-sub navigation/nav_panel --track reference --timeout 10 --keep-screenshots`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`check_docs_encoding.py`。
+- `2026-04-09`
   - 完成 `navigation/tab_strip` 实现级样式收口：移除底部 preview 的旧列容器壳与 preview 交互桥接逻辑，页面统一为标题、主 `tab_strip` 与 `compact / read only` 静态对照，继续保留 variable-width tab、current tab 和 compact 语义。
   - `test.c` 将 `bar_locked` 收口为 `bar_read_only`，底部两个 preview 统一禁用 touch / focus 并改为程序化切换；`egui_view_tab_strip.c` 进一步压轻容器边框、active fill、divider、underline 和 locked chrome；README 重写为当前 `reference` 模板。
   - 已通过 `make all APP=HelloCustomWidgets APP_SUB=navigation/tab_strip PORT=pc`、`check_touch_release_semantics.py --scope custom --category navigation`、`code_runtime_check.py --app HelloCustomWidgets --app-sub navigation/tab_strip --track reference --timeout 10 --keep-screenshots`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`check_docs_encoding.py`。
@@ -231,8 +235,6 @@
   - 完成 `feedback/message_bar` 实现级样式收口。
 - `2026-04-09`
   - 完成 `feedback/toast_stack` 实现级样式收口。
-- `2026-04-09`
-  - 完成 `navigation/nav_panel` 实现级样式收口。
 - `2026-04-09`
   - 完成 `navigation/menu_bar` 实现级样式收口：移除底部 preview 的点击与焦点循环职责，把页面统一为标题、主控件与 `compact / read only` 静态对照，继续压轻 `egui_view_menu_bar.c` 的顶栏当前态、focus ring、panel shadow、separator、row highlight 与 summary strip。
   - 已通过 `make all APP=HelloCustomWidgets APP_SUB=navigation/menu_bar PORT=pc`、`check_touch_release_semantics.py --scope custom --category navigation`、`code_runtime_check.py --app HelloCustomWidgets --app-sub navigation/menu_bar --track reference --timeout 10 --keep-screenshots`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`check_docs_encoding.py`。
