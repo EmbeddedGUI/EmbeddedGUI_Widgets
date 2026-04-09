@@ -3,168 +3,150 @@
 ## 参考来源
 
 - 参考设计系统：`Fluent 2`
-- 参考开源母本：web token/tag input 组件语义
+- 参考开源库：`WPF UI`
+- 次级补充参考：web token/tag input 常见表单语义
 - 对应组件名：`TokenInput`
-- 本次保留状态：`standard`、`compact`、`read only`、`token overflow summary`、`remove affordance`、`blank-area focus`
-- 删减效果：不做桌面级阴影弹层、不做复杂 IME 候选联动、不做拖拽重排、不做动画化 placeholder
-- EGUI 适配说明：优先保留多 token 内联编辑、回车/逗号提交、退格回删、remove 图标删除、compact / read-only 对照和 overflow 摘要，避免回到 showcase / HMI 风格
+- 本次保留状态：`standard`、`compact`、`read only`、`input focus`、`token add/remove`
+- 删除效果：页面级 guide / 状态文案 / standard label / section divider / preview label、标签点击切换、夸张阴影、拖拽重排、复杂 IME 联动
+- EGUI 适配说明：继续复用仓库里的 `token_input` 基础实现，本轮重点收口 reference 页面结构、统一浅色 palette，并保留最核心的 token 提交、删除和只读对照闭环
 
 ## 1. 为什么需要这个控件
 
-`token_input` 用来表达“一个字段里编辑多个离散值”的标准表单语义，比如收件人、标签、设备分组、筛选条件和关键字集合。它比单值 `textinput` 更接近真实业务里的多项录入场景，也比普通 `chips` 更强调“编辑器”而不是“结果展示”。
+`token_input` 用来表达“一个字段里编辑多个离散值”的标准表单语义，例如收件人、标签、设备分组和筛选条件。它比普通 `textinput` 更接近真实业务里的多值输入，也比纯展示型 `chips` 更强调可编辑表单控件。
 
 ## 2. 为什么现有控件不够用
 
-- `textinput` 只能编辑单段文本，不具备 token 提交、回退删除和多值排布语义
-- `chips` 更偏展示 / 点击，不承担输入焦点、占位和提交闭环
-- `auto_suggest_box` 强调建议选择，不覆盖“多个已提交值 + 当前输入”的混合状态
-- `combobox` / `radio_button` 是单选或受限选择，不适合自由追加多个 token
+- `textinput` 只覆盖单段文本，不负责多 token 提交、删除和焦点切换
+- `chips` 更偏展示或点击，不承担输入位和编辑语义
+- `auto_suggest_box` 更偏建议选择，不覆盖“已提交 token + 当前输入”的混合状态
+- 当前主线需要一版更接近 `Fluent 2 / WPF UI TokenInput` 的标准 reference 页面
 
-所以需要一个以标准表单风格呈现的 `token_input`，承载多值编辑、回退和紧凑态对照。
+因此这里继续保留 `token_input`，但示例页必须回到统一的 reference 结构。
 
 ## 3. 目标场景与示例概览
 
-- 主卡展示标准 `token_input`，包含标签标题、token 行、占位输入位和状态说明
-- 左下 `Compact` 预览展示压缩版 token editor，并在 token 过多时折叠为 `+N`
-- 右下 `Read only` 预览展示只读 token 集合，并保留同样的 overflow summary 语义
-- 主卡支持新增 token、聚焦尾部输入位、点击空白区聚焦输入位、删除最后一个 token
-- 主卡里的可编辑 token 支持 remove 图标删除
-- 主卡支持 `Left / Right / Home / End / Backspace / Enter / Space / Tab`
+- 主区域展示标准 `token_input`，覆盖 token 列表、输入位和删除 affordance
+- 左下 `compact` 预览展示紧凑对照态
+- 右下 `read only` 预览展示只读静态对照态
+- 示例页只保留标题、主 `token_input` 和底部 `compact / read only` 双预览
+- 录制动作只依赖真实 token 区域点击和键盘输入，不再依赖 guide、状态行或标签点击
 
-目标目录：
+组件目录：
 
 - `example/HelloCustomWidgets/input/token_input/`
 
 ## 4. 视觉与布局规格
 
-- 画布：`480 x 480`
-- 根布局：控制在 `224 x 292`
-- 页面结构：标题 -> guide -> `Standard` -> 主 token 卡 -> 状态行 -> 分隔线 -> `Compact / Read only`
-- 主卡建议尺寸：`196 x 92`
-- 底部双预览容器：`216 x 70`
-- `Compact` 预览：`106 x 48`
-- `Read only` 预览：`106 x 48`
-- 视觉规则：
-  - 采用浅灰 page panel + 白色输入卡，强调标准表单而不是展示型大卡片
-  - token 使用低饱和 accent 边框和轻胶囊背景，避免彩色 badge 堆叠
-  - 输入占位、remove affordance 与 overflow summary 只做轻量焦点强化，不做悬浮夸张动效
-  - read-only 通过统一降噪 palette 弱化，而不是增加额外装饰层
+- 页面尺寸：`480 x 480`
+- 根布局：`224 x 180`
+- 页面结构：标题 -> 主 `token_input` -> `compact / read only` 双预览
+- 主控件尺寸：`196 x 92`
+- 底部双预览行：`216 x 48`
+- `compact` 预览：`104 x 48`
+- `read only` 预览：`104 x 48`
+- 视觉约束：
+  - 保持浅色 page panel、白色输入面和轻边框
+  - token 胶囊维持低饱和浅色填充，不做 showcase 式多色 badge 堆叠
+  - 焦点和删除 affordance 保持轻量强调，不做悬浮夸张动效
+  - `compact` 只收紧密度与字体，不改变语义
+  - `read only` 保留结果呈现，但不承担交互职责
 
 ## 5. 控件清单
 
 | 变量名 | 类型 | 尺寸 (W x H) | 初始状态 | 用途 |
 | --- | --- | ---: | --- | --- |
-| `root_layout` | `egui_view_linearlayout_t` | 224 x 292 | enabled | 页面根布局 |
-| `title_label` | `egui_view_label_t` | 224 x 18 | `Token Input` | 页面标题 |
-| `editor_primary` | `egui_view_token_input_t` | 196 x 92 | `Recipients` | 标准 token 编辑器 |
-| `editor_compact` | `egui_view_token_input_t` | 106 x 48 | `Compact` | 紧凑态对照与 overflow summary 预览 |
-| `editor_locked` | `egui_view_token_input_t` | 106 x 48 | read only | 只读态对照与 overflow summary 预览 |
+| `root_layout` | `egui_view_linearlayout_t` | `224 x 180` | enabled | 页面根容器 |
+| `title_label` | `egui_view_label_t` | `224 x 18` | `Token Input` | 页面标题 |
+| `editor_primary` | `egui_view_token_input_t` | `196 x 92` | `Alice / Ops / QA` | 主 token 输入控件 |
+| `editor_compact` | `egui_view_token_input_t` | `104 x 48` | `AL / BO` | 紧凑静态预览 |
+| `editor_read_only` | `egui_view_token_input_t` | `104 x 48` | `Audit / Ops / QA / Net / Sys` | 只读静态预览 |
 
 ## 6. 状态覆盖矩阵
 
-| 状态 / 区域 | 主编辑器 | Compact | Read only |
+| 状态 / 区域 | 主控件 | Compact | Read only |
 | --- | --- | --- | --- |
-| 默认态 | 3 个 token + 尾部输入位 | 2 个 token | 固定 token 集合 |
-| `Enter` / `Comma` | 提交当前输入为新 token | 不录制 | 不适用 |
-| `Backspace` | 空输入位时回删最后一个 token | 不录制 | 不适用 |
-| 左右导航 | 在 token 与输入位之间移动焦点 | 不录制 | 不适用 |
-| 空白区点击 | 主卡空白区回落到输入位 | 不录制 | 不适用 |
-| remove 图标 | 可编辑 token 右侧显示 close 图标并支持删除 | 不录制 | 不显示 |
-| 溢出态 | 超过可视容量后把尾部 token 折叠成 `+N` 摘要 | 固定摘要 | 固定摘要 |
-| 只读态 | 不响应编辑，只展示结果 | - | 弱化并禁止编辑 |
+| 默认态 | `Alice / Ops / QA` | `AL / BO` | 固定 token 集 |
+| 输入焦点 | 点击输入位回到尾部输入区 | 不响应 | 不响应 |
+| 键盘提交 | `N / E / T / Enter` 追加新 token | 不响应 | 不响应 |
+| remove 删除 | 点击 token remove 图标删除最后一项 | 不响应 | 不响应 |
+| 主 snapshot 轮换 | 收件人 -> 标签 | 保持 | 保持 |
+| 紧凑 snapshot 轮换 | 保持 | `AL / BO` -> `UI / QA / OPS / SYS / NET` | 保持 |
+| 只读弱化 | 不适用 | 不适用 | 保留静态只读对照 |
 
 ## 7. `egui_port_get_recording_action()` 录制动作设计
 
-1. 等待首帧并抓取默认场景
-2. 点击主编辑器尾部输入位，验证焦点进入
-3. 通过模拟键盘输入 `N / E / T / Enter` 追加一个 token
-4. 抓取新增 token 后的主卡截图
-5. 点击最后一个 token 的 remove 图标，验证 touch 删除链路
-6. 抓取删除后的主卡截图
-7. 执行 `Home / End`，验证主卡焦点移动
-8. 点击 guide 切换主场景，展示第二组标准 token
-9. 点击 `Compact` 标签切换到底部 overflow 预览
-10. 抓取 compact / read-only 同时出现 `+N` 摘要的最终截图
-
-录制同时依赖：
-
-- 真实 token 区域命中，避免伪造状态
-- 控件内部键盘分发路径，而不是只改数据
-- 状态行同步反映 token 数量与当前焦点语义
+1. 应用默认主 snapshot、`compact` snapshot 和只读对照，并请求主控件焦点
+2. 请求第一页默认截图
+3. 点击主控件输入位，验证焦点进入
+4. 请求第二页输入焦点截图
+5. 发送 `N / E / T / Enter`，提交一个新 token
+6. 请求第三页新增 token 截图
+7. 点击新增 token 的 remove 图标
+8. 请求第四页删除结果截图
+9. 程序化切换主 snapshot 到标签场景
+10. 请求第五页 snapshot 切换截图
+11. 程序化切换 `compact` 预览到第二个静态快照
+12. 请求最终对照截图
 
 ## 8. 编译、runtime、截图验收标准
 
 ```bash
 make all APP=HelloCustomWidgets APP_SUB=input/token_input PORT=pc
-python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/token_input --timeout 10 --keep-screenshots
+python scripts/checks/check_touch_release_semantics.py --scope custom --category input
+python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/token_input --track reference --timeout 10 --keep-screenshots
 make all APP=HelloUnitTest PORT=pc_test
 output\main.exe
+python scripts/checks/check_docs_encoding.py
 ```
 
 验收重点：
 
-- 主卡、compact、read-only 三个编辑器都必须完整可见
-- token、占位输入位、状态行与标签文案之间留白平衡
-- token 胶囊的文字要真实居中，不能出现左右 padding 明显失衡
-- `+N` 摘要胶囊在 compact / read-only 下都要可见，且隐藏 token 不再暴露 part / remove region
-- remove 图标命中区要稳定，touch 删除后焦点不能丢失到隐藏 part
-- 新增 token、remove 删除、回删 token、焦点移动这几段链路都要能从截图或单测读出来
-- `HelloUnitTest` 需要覆盖 token 提交、回删、remove 图标、overflow summary、只读 / disabled guard 和焦点边界
+- 主控件和底部双预览必须完整可见
+- token 文本、输入位和 remove affordance 都要清晰可辨
+- 主控件必须像标准表单 `TokenInput`，而不是带外部状态桥接的展示卡片
+- `compact` 与 `read only` 必须是静态对照，不再承担标签切换职责
+- 页面中不再出现 guide、状态文案、standard label、section divider 和外部 preview label
 
-## 9. 已知限制与下一轮迭代计划
+## 9. 已知限制与后续方向
 
-- 当前优先做单行或单卡多行包裹，不做复杂虚拟化
-- 当前不做真实输入法候选联动，只保留基础 ASCII 输入路径
-- 当前不做拖拽重排 token，先把标准编辑器语义收口
-- 当前 overflow 仍采用“最后一个可见 token 替换成 `+N`”的轻量策略，不做多摘要层或展开面板
-- 如果后续沉入框架层，再评估与通用 `textinput` / `chips` / `autocomplete` 的复用边界
+- 当前版本不做拖拽重排
+- 当前不做 IME 候选联动或复杂粘贴策略
+- 当前仍以固定 snapshot 演示为主，不接动态建议源
+- 后续如果要继续下沉到框架层，再评估与 `textinput` / `chips` / `autocomplete` 的共用边界
 
 ## 10. 与现有控件的重叠分析与差异化边界
 
-- 相比 `textinput`：这里是多值 token 编辑器，不是单值文本框
-- 相比 `chips`：这里有输入位与编辑语义，不是纯展示 chip 列表
-- 相比 `auto_suggest_box`：这里强调“已提交 token + 当前输入”的双态共存
-- 相比 `number_box` / `segmented_control`：这里不表达数值步进或单选切换
+- 相比 `textinput`：这里是多 token 编辑器，而不是单值文本框
+- 相比 `chips`：这里保留输入位和编辑语义，不是纯展示 chip 列表
+- 相比 `auto_suggest_box`：这里强调“已提交 token + 当前输入”的混合状态
+- 相比 `segmented_control`：这里不是互斥切换，而是可累积的多值输入
 
 ## 11. 参考设计系统与开源母本
 
 - 参考设计系统：`Fluent 2`
-- 开源母本：web token/tag input 组件语义
+- 开源母本：`WPF UI`
+- 次级补充参考：web token/tag input 常见表单模式
 
-## 12. 对应组件名，以及本次保留的核心状态
+## 12. 对应组件名与保留核心状态
 
 - 对应组件名：`TokenInput`
-- 本次保留状态：
+- 本次保留核心状态：
   - `standard`
   - `compact`
   - `read only`
-  - `token overflow summary`
-  - `remove affordance`
-  - `blank-area focus`
-  - `keyboard backspace`
+  - `input focus`
+  - `token add/remove`
 
-## 13. 相比参考原型删掉了哪些效果或装饰
+## 13. 相比参考原型删除的效果或装饰
 
-- 不做复杂建议下拉层和搜索高亮
-- 不做拖拽排序、拖拽插入指示器和桌面级 hover 动效
-- 不做多层阴影、Acrylic 或高动态渐变
-- 不做复杂 IME/剪贴板系统交互
+- 不做页面级 guide、状态回显、standard label、section divider 和 preview label
+- 不做标签点击轮换和外部状态桥接
+- 不做拖拽重排、复杂 IME 联动和桌面端夸张阴影
+- 不做 showcase 式多色 token 和额外装饰层
 
 ## 14. EGUI 适配时的简化点与约束
 
-- 优先保留 token 提交、回删、左右导航和只读弱化这些核心表单语义
-- 首版聚焦 `480 x 480` 下稳定排版，不追求超长 token 的复杂折叠策略
-- 尽量复用现有 `chips` / `textinput` / `linearlayout` 的视觉和交互能力，而不是造一套完全孤立的新体系
-- 已布局后优先保证焦点、pressed 状态与可见 token 同步，不让隐藏 input / token 残留为当前 part
-- 主页示例保持干净、低噪音、标准表单风格
-
-
-## 15. 最近收口行为
-
-- token 文本会在 `set_tokens()` 与 `add_token()` 入口统一做首尾空白修剪，忽略 `NULL`、空字符串和全空白 token。
-- compact overflow 把 input 挤出可视区后，会保留已有 draft，但隐藏 input 不再接收 printable key / commit key，也不会暴露隐藏 part / remove region。
-- hidden draft 在布局放宽、input 重新可见后会恢复到 input 焦点；如果中途切到 `read only` 再切回 editable，也会继续回到 input，保证 `Backspace` 优先编辑 draft。
-- `compact -> standard` 往返切换遵循同样的 hidden draft 恢复语义；只要 draft 仍存在且用户没有显式改焦点，input 重新可见后会继续回到 input。
-- hidden draft 待恢复期间即使先调用 `add_token()` 追加 token，也会保留 draft 与待恢复意图；但如果随后用户显式切到某个 token，自动回到 input 的意图仍会被这次显式选择覆盖。
-- 如果 hidden draft 待恢复期间用户显式切到某个 token（键盘导航或 API 设焦点），这个显式选择会覆盖自动恢复 input 的意图；后续布局放宽时保持 token 焦点，不强制跳回 input。
-- draft 被提交或清空后，`current_part` 会重新归一化到当前可见的 input / token，避免隐藏 part 残留在 API 可观察状态里。
+- 直接复用 `token_input` 基础结构，避免新增重复基础控件
+- 通过示例页 palette 统一 Reference Track 颜色和尺寸
+- 用真实 token 区域点击和键盘输入完成录制，不再依赖页面 chrome
+- 先完成示例级 `TokenInput` reference，再决定是否继续扩展更复杂的输入策略

@@ -98,6 +98,10 @@
 ## 最近完成的收口动作
 
 - `2026-04-09`
+  - 完成 `input/token_input` 实现级样式收口：移除 guide / 状态文案 / standard label / section divider / preview label，页面结构统一为标题、主 `token_input` 与 `compact / read only` 双预览。
+  - 统一 `token_input` reference palette、主控件尺寸、底部双预览和录制动作；保留真实 token 输入、提交与 remove 交互，同时把底部预览改为静态对照，不再承担标签切换职责。
+  - README 重写为当前 `reference` 结构；已通过 `make all APP=HelloCustomWidgets APP_SUB=input/token_input PORT=pc`、`check_touch_release_semantics.py --scope custom --category input`、`code_runtime_check.py --app HelloCustomWidgets --app-sub input/token_input --track reference --timeout 10 --keep-screenshots`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`check_docs_encoding.py`。
+- `2026-04-09`
   - 完成 `input/auto_suggest_box` 实现级样式收口：移除 guide / 状态文案 / standard label / section divider / preview label，页面结构统一为标题、主 `auto_suggest_box` 与 `compact / read only` 双预览。
   - 统一 `auto_suggest_box` palette、主控件尺寸与底部双预览布局；录制动作改为程序化 `expand/collapse` 与键盘提交，并在展开帧中重排底部预览，避免与 suggestions 列表重叠。
   - README 重写为当前 `reference` 结构；已通过 `make all APP=HelloCustomWidgets APP_SUB=input/auto_suggest_box PORT=pc`、`check_touch_release_semantics.py --scope custom --category input`、`code_runtime_check.py --app HelloCustomWidgets --app-sub input/auto_suggest_box --track reference --timeout 10 --keep-screenshots`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`check_docs_encoding.py`。
