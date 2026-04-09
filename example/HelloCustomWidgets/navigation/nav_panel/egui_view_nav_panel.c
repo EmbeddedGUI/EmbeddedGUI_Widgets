@@ -150,10 +150,13 @@ static void egui_view_nav_panel_draw_text(const egui_font_t *font, egui_view_t *
     egui_canvas_draw_text_in_rect(font, text, &draw_region, align, color, self->alpha);
 }
 
-static void egui_view_nav_panel_clear_pressed_state(egui_view_t *self, egui_view_nav_panel_t *local)
+static uint8_t egui_view_nav_panel_clear_pressed_state(egui_view_t *self, egui_view_nav_panel_t *local)
 {
+    uint8_t had_pressed = self->is_pressed || local->pressed_index != EGUI_VIEW_NAV_PANEL_INDEX_NONE;
+
     local->pressed_index = EGUI_VIEW_NAV_PANEL_INDEX_NONE;
     egui_view_set_pressed(self, false);
+    return had_pressed;
 }
 
 static void egui_view_nav_panel_set_current_index_inner(egui_view_t *self, uint8_t index, uint8_t notify)
@@ -164,6 +167,10 @@ static void egui_view_nav_panel_set_current_index_inner(egui_view_t *self, uint8
     if (visible_item_count == 0)
     {
         local->current_index = 0;
+        if (egui_view_nav_panel_clear_pressed_state(self, local))
+        {
+            egui_view_invalidate(self);
+        }
         return;
     }
     if (index >= visible_item_count)
@@ -172,10 +179,15 @@ static void egui_view_nav_panel_set_current_index_inner(egui_view_t *self, uint8
     }
     if (local->current_index == index)
     {
+        if (egui_view_nav_panel_clear_pressed_state(self, local))
+        {
+            egui_view_invalidate(self);
+        }
         return;
     }
 
     local->current_index = index;
+    egui_view_nav_panel_clear_pressed_state(self, local);
     if (notify && local->on_selection_changed != NULL)
     {
         local->on_selection_changed(self, index);
@@ -198,8 +210,6 @@ void egui_view_nav_panel_set_items(egui_view_t *self, const egui_view_nav_panel_
 
 void egui_view_nav_panel_set_current_index(egui_view_t *self, uint8_t index)
 {
-    EGUI_LOCAL_INIT(egui_view_nav_panel_t);
-    egui_view_nav_panel_clear_pressed_state(self, local);
     egui_view_nav_panel_set_current_index_inner(self, index, 1);
 }
 
@@ -497,9 +507,8 @@ static int egui_view_nav_panel_on_touch_event(egui_view_t *self, egui_motion_eve
 
     if (local->read_only_mode)
     {
-        if (self->is_pressed || local->pressed_index != EGUI_VIEW_NAV_PANEL_INDEX_NONE)
+        if (egui_view_nav_panel_clear_pressed_state(self, local))
         {
-            egui_view_nav_panel_clear_pressed_state(self, local);
             egui_view_invalidate(self);
         }
         return 0;
@@ -507,6 +516,10 @@ static int egui_view_nav_panel_on_touch_event(egui_view_t *self, egui_motion_eve
 
     if (!egui_view_get_enable(self))
     {
+        if (egui_view_nav_panel_clear_pressed_state(self, local))
+        {
+            egui_view_invalidate(self);
+        }
         return 0;
     }
 
@@ -523,20 +536,28 @@ static int egui_view_nav_panel_on_touch_event(egui_view_t *self, egui_motion_eve
         egui_view_invalidate(self);
         return 1;
     case EGUI_MOTION_EVENT_ACTION_UP:
+    {
+        uint8_t handled;
+
         hit_index = egui_view_nav_panel_hit_item(local, self, event->location.x, event->location.y);
+        handled = (local->pressed_index != EGUI_VIEW_NAV_PANEL_INDEX_NONE) || hit_index != EGUI_VIEW_NAV_PANEL_INDEX_NONE;
         if (local->pressed_index != EGUI_VIEW_NAV_PANEL_INDEX_NONE && local->pressed_index == hit_index)
         {
             egui_view_nav_panel_set_current_index_inner(self, hit_index, 1);
         }
-        local->pressed_index = EGUI_VIEW_NAV_PANEL_INDEX_NONE;
-        egui_view_set_pressed(self, false);
-        egui_view_invalidate(self);
-        return hit_index != EGUI_VIEW_NAV_PANEL_INDEX_NONE;
+        if (egui_view_nav_panel_clear_pressed_state(self, local))
+        {
+            egui_view_invalidate(self);
+        }
+        return handled;
+    }
     case EGUI_MOTION_EVENT_ACTION_CANCEL:
-        local->pressed_index = EGUI_VIEW_NAV_PANEL_INDEX_NONE;
-        egui_view_set_pressed(self, false);
-        egui_view_invalidate(self);
-        return 1;
+        if (egui_view_nav_panel_clear_pressed_state(self, local))
+        {
+            egui_view_invalidate(self);
+            return 1;
+        }
+        return 0;
     default:
         return 0;
     }
@@ -552,6 +573,10 @@ static int egui_view_nav_panel_on_key_event(egui_view_t *self, egui_key_event_t 
 
     if (!egui_view_get_enable(self) || local->read_only_mode || visible_item_count == 0)
     {
+        if (egui_view_nav_panel_clear_pressed_state(self, local))
+        {
+            egui_view_invalidate(self);
+        }
         return 0;
     }
 
@@ -582,7 +607,6 @@ static int egui_view_nav_panel_on_key_event(egui_view_t *self, egui_key_event_t 
         return 0;
     }
 
-    egui_view_nav_panel_clear_pressed_state(self, local);
     egui_view_nav_panel_set_current_index_inner(self, target_index, 1);
     return 1;
 }
