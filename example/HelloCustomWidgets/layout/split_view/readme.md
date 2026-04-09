@@ -8,7 +8,7 @@
 - 对应组件名：`SplitView`
 - 本次保留状态：`standard`、`compact`、`read only`、`pane open`、`pane compact`、`accent`、`warning`、`neutral`
 - 删除效果：页面级 guide / 状态文案 / standard label / section label / preview label、复杂阴影、场景化说明文案、hover/focus ring
-- EGUI 适配说明：保留侧栏列表、pane 展开/收起、detail 面板和当前选择项，在 `480 x 480` 页面内优先保证结构稳定和主副卡对照阅读
+- EGUI 适配说明：保留侧栏列表、pane 展开/收起、detail 面板和当前选择项，在 `480 x 480` 页面内优先保证结构稳定和主副卡对照阅读；`item / pane / compact / read only / view disabled` 切换共享同一套 `pressed` 清理语义
 
 ## 1. 为什么需要这个控件
 
@@ -100,6 +100,8 @@ python scripts/checks/check_docs_encoding.py
 - rail、detail 区、正文和 footer 之间要保留稳定留白
 - 主卡与双预览都必须维持 `Fluent 2 / WPF UI` 低噪音浅色语义
 - 页面中不再出现 guide、状态回显、standard label、section divider、`Compact` / `Read only` 外部标签
+- `item / pane / compact / read only / view disabled` 切换后不能残留 rail row 或 toggle 的 `pressed` 高亮与下压位移渲染
+- `read_only_mode / !enable` 不仅要忽略后续 touch / key 输入，还要在收到新输入时清理残留 `pressed` 渲染
 - 底部预览不再承担交互职责，只作为对照展示
 
 ## 9. 已知限制与下一轮迭代计划

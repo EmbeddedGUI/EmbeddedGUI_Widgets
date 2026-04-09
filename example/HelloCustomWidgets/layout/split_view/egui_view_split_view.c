@@ -105,6 +105,17 @@ static egui_color_t sv_mix_disabled(egui_color_t color)
     return egui_rgb_mix(color, EGUI_COLOR_DARK_GREY, 68);
 }
 
+static uint8_t sv_clear_pressed_state(egui_view_t *self)
+{
+    EGUI_LOCAL_INIT(egui_view_split_view_t);
+    uint8_t had_pressed = self->is_pressed || local->pressed_toggle || local->pressed_index != EGUI_VIEW_SPLIT_VIEW_INDEX_NONE;
+
+    local->pressed_index = EGUI_VIEW_SPLIT_VIEW_INDEX_NONE;
+    local->pressed_toggle = 0;
+    egui_view_set_pressed(self, false);
+    return had_pressed;
+}
+
 static void sv_draw_text(const egui_font_t *font, egui_view_t *self, const char *text, const egui_region_t *region, uint8_t align, egui_color_t color)
 {
     egui_region_t draw_region = *region;
@@ -263,11 +274,20 @@ static void sv_set_current_index_inner(egui_view_t *self, uint8_t index, uint8_t
 {
     EGUI_LOCAL_INIT(egui_view_split_view_t);
 
-    if (local->items == NULL || local->item_count == 0 || index >= local->item_count || local->current_index == index)
+    if (local->items == NULL || local->item_count == 0 || index >= local->item_count)
     {
         return;
     }
+    if (local->current_index == index)
+    {
+        if (sv_clear_pressed_state(self))
+        {
+            egui_view_invalidate(self);
+        }
+        return;
+    }
     local->current_index = index;
+    sv_clear_pressed_state(self);
     if (notify && local->on_selection_changed)
     {
         local->on_selection_changed(self, index);
@@ -282,9 +302,14 @@ static void sv_set_pane_expanded_inner(egui_view_t *self, uint8_t expanded, uint
 
     if (local->pane_expanded == expanded)
     {
+        if (sv_clear_pressed_state(self))
+        {
+            egui_view_invalidate(self);
+        }
         return;
     }
     local->pane_expanded = expanded;
+    sv_clear_pressed_state(self);
     if (notify && local->on_pane_state_changed)
     {
         local->on_pane_state_changed(self, expanded);
@@ -301,8 +326,7 @@ void egui_view_split_view_set_items(egui_view_t *self, const egui_view_split_vie
     {
         local->current_index = 0;
     }
-    local->pressed_index = EGUI_VIEW_SPLIT_VIEW_INDEX_NONE;
-    local->pressed_toggle = 0;
+    sv_clear_pressed_state(self);
     egui_view_invalidate(self);
 }
 
@@ -353,6 +377,7 @@ void egui_view_split_view_set_compact_mode(egui_view_t *self, uint8_t compact_mo
 {
     EGUI_LOCAL_INIT(egui_view_split_view_t);
     local->compact_mode = compact_mode ? 1 : 0;
+    sv_clear_pressed_state(self);
     egui_view_invalidate(self);
 }
 
@@ -360,9 +385,7 @@ void egui_view_split_view_set_read_only_mode(egui_view_t *self, uint8_t read_onl
 {
     EGUI_LOCAL_INIT(egui_view_split_view_t);
     local->read_only_mode = read_only_mode ? 1 : 0;
-    local->pressed_index = EGUI_VIEW_SPLIT_VIEW_INDEX_NONE;
-    local->pressed_toggle = 0;
-    egui_view_set_pressed(self, false);
+    sv_clear_pressed_state(self);
     egui_view_invalidate(self);
 }
 
@@ -764,6 +787,10 @@ static int egui_view_split_view_on_touch_event(egui_view_t *self, egui_motion_ev
 
     if (local->items == NULL || local->item_count == 0 || !egui_view_get_enable(self) || local->read_only_mode)
     {
+        if (sv_clear_pressed_state(self))
+        {
+            egui_view_invalidate(self);
+        }
         return 0;
     }
 
@@ -798,16 +825,14 @@ static int egui_view_split_view_on_touch_event(egui_view_t *self, egui_motion_ev
         {
             sv_set_current_index_inner(self, hit_index, 1);
         }
-        local->pressed_toggle = 0;
-        local->pressed_index = EGUI_VIEW_SPLIT_VIEW_INDEX_NONE;
-        egui_view_set_pressed(self, false);
+        sv_clear_pressed_state(self);
         egui_view_invalidate(self);
         return (hit_toggle || hit_index != EGUI_VIEW_SPLIT_VIEW_INDEX_NONE) ? 1 : 0;
     case EGUI_MOTION_EVENT_ACTION_CANCEL:
-        local->pressed_toggle = 0;
-        local->pressed_index = EGUI_VIEW_SPLIT_VIEW_INDEX_NONE;
-        egui_view_set_pressed(self, false);
-        egui_view_invalidate(self);
+        if (sv_clear_pressed_state(self))
+        {
+            egui_view_invalidate(self);
+        }
         return 1;
     default:
         return 0;
@@ -823,6 +848,10 @@ static int egui_view_split_view_on_key_event(egui_view_t *self, egui_key_event_t
 
     if (local->items == NULL || local->item_count == 0 || !egui_view_get_enable(self) || local->read_only_mode)
     {
+        if (sv_clear_pressed_state(self))
+        {
+            egui_view_invalidate(self);
+        }
         return 0;
     }
 

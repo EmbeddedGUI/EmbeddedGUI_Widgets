@@ -98,6 +98,11 @@
 ## 最近完成的收口动作
 
 - `2026-04-10`
+  - 完成 `layout/split_view` 二次收口：在既有 `reference` 页面结构不再调整的前提下，把工作重点收回到交互行为，补齐 `item / pane / compact / read only / view disabled` 切换链路里的 pressed 清理与输入抑制，确保交互后的渲染稳定。
+  - `egui_view_split_view.c` 新增统一的 `sv_clear_pressed_state()`，让 `set_items()`、`set_current_index()`、`set_pane_expanded()`、`set_compact_mode()` 和 `set_read_only_mode()` 共用同一套 `pressed_index / pressed_toggle / is_pressed` 清理逻辑；同时把 `read_only / !enable / empty items` 的 touch 与 key guard 收口到事件入口，收到新输入时会先清理残留 pressed 再拒绝提交。
+  - `example/HelloUnitTest/test/test_split_view.c` 补齐“same current index 清 pressed”“same pane / pane 切换清 pressed”“compact 切换后清理 pressed 且保留 selection”“read_only / !enable 清理残留 pressed 并忽略后续 touch / key 输入”的交互回归；README 同步明确模式切换后不能残留 rail row 或 toggle 的 `pressed` 高亮与下压位移渲染。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=layout/split_view PORT=pc`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category layout`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub layout/split_view --track reference --timeout 10 --keep-screenshots`、`python scripts/checks/check_docs_encoding.py`，并人工核对 `runtime_check_output/HelloCustomWidgets_layout_split_view/default/frame_0000.png`、`frame_0004.png`、`frame_0008.png`，确认主卡切换与底部预览都没有残留 pressed 污染。
+- `2026-04-10`
   - 完成 `navigation/menu_flyout` 二次收口：在既有 `reference` 页面结构不再调整的前提下，把工作重点收回到交互行为，补齐 `snapshot / compact / disabled / view disabled` 切换链路里的 pressed 清理与输入抑制，确保交互后的渲染稳定。
   - `egui_view_menu_flyout.c` 新增统一的 `egui_view_menu_flyout_clear_pressed_state()`，让 `set_snapshots()`、`set_current_snapshot()`、`set_compact_mode()` 和 `set_disabled_mode()` 共用同一套 pressed 清理逻辑；同时新增自定义 touch / key guard，把 `disabled_mode / !enable` 收口到事件入口，收到新输入时会先清理残留 pressed 再拒绝提交。
   - `example/HelloUnitTest/test/test_menu_flyout.c` 补齐“same snapshot 清 pressed”“compact 切换后清理 pressed 且保留 click”“disabled_mode / !enable 清理残留 pressed 并忽略后续 touch / key 输入”的交互回归；README 同步明确模式切换后不能残留 `pressed` 高亮或下压位移渲染。
