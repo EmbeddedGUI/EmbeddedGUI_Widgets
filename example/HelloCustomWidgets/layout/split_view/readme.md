@@ -1,126 +1,151 @@
-﻿# split_view 设计说明
+# split_view 自定义控件设计说明
 
 ## 参考来源
+
 - 参考设计系统：`Fluent 2`
 - 参考开源库：`WPF UI`
-- 补充参考：`ModernWpf`
+- 次级补充参考：`ModernWpf`
 - 对应组件名：`SplitView`
-- 保留状态：标准态、compact pane、read-only 对照
-- 删除效果：Acrylic、阴影扩散、Reveal/Hover 光效、系统级转场动画、真实图标资源
-- EGUI 适配说明：保留“左侧 pane + 右侧 content + 可折叠 pane”语义，压缩到 `480 x 480` 页面内；compact 版本改为更轻的窄侧栏，read-only 版本仅保留结构和静态视觉反馈
+- 本次保留状态：`standard`、`compact`、`read only`、`pane open`、`pane compact`、`accent`、`warning`、`neutral`
+- 删除效果：页面级 guide / 状态文案 / standard label / section label / preview label、复杂阴影、场景化说明文案、hover/focus ring
+- EGUI 适配说明：保留侧栏列表、pane 展开/收起、detail 面板和当前选择项，在 `480 x 480` 页面内优先保证结构稳定和主副卡对照阅读
 
 ## 1. 为什么需要这个控件
-`split_view` 用来表达“左侧可折叠导航/列表面板，右侧显示当前内容”的标准双栏结构。它适合文件浏览、设置分类、内容导航、工作区面板等场景，重点不是复杂拖拽，而是稳定的 pane 展开/收起语义。
+
+`split_view` 用来承载“侧栏导航 + 内容面板”的双栏布局，并让 pane 的展开/收起和当前选择项成为同一个控件语义。它适合出现在设置中心、资料库、审阅页和分栏工作区里。
 
 ## 2. 为什么现有控件不够用
-- `master_detail` 强调 master 列表驱动 detail 阅读，但没有独立的 pane toggle 语义
-- `nav_panel` 更偏导航容器，不强调同屏 content 区域的阅读结构
-- 旧 `split_resizer` 偏 showcase / dashboard 风格，不是 Fluent 风格的标准 pane 控件
-- `list`、`table` 只能列出项目，缺少“可折叠侧栏 + 内容区”的组合表达
+
+- `nav_panel` 负责导航语义，但不承担 detail 面板
+- `data_list_panel` 更偏列表选择，不等同于 `SplitView` 的双栏 pane 结构
+- `master_detail` 偏主从内容阅读，不等同于可收起侧栏
+- 旧 showcase 页面大量依赖外部状态说明和标签驱动，不适合继续作为 Fluent 主线
+
+因此这里继续保留 `split_view`，但示例页必须回到统一的 reference 结构。
 
 ## 3. 目标场景与示例概览
-- 主区域展示标准 `split_view`：左侧 pane 默认展开，右侧内容区跟随选中项变化
-- 左下 `Compact` 预览展示窄侧栏语义，默认折叠，只保留 glyph rail
-- 右下 `Read Only` 预览展示禁交互对照，结构存在但不响应 touch / key
-- 支持 touch 点击 row 切换项目
-- 支持 touch 点击 pane toggle 收起/展开 pane
-- 支持 `Up / Down / Home / End / Tab / Left / Right / Enter / Space`
+
+- 主区域展示标准 `split_view`，覆盖 `pane open / pane compact / warning item / neutral item` 等关键状态
+- 左下 `compact` 预览展示小尺寸 split view 在压缩布局中的表现
+- 右下 `read only` 预览展示只读成员库态
+- 示例页只保留标题、主 `split_view` 和底部 `compact / read only` 双预览，不再保留外部 guide 和状态回显
 
 目录：
+
 - `example/HelloCustomWidgets/layout/split_view/`
 
 ## 4. 视觉与布局规格
+
 - 画布：`480 x 480`
-- 根布局：`224 x 296`
-- 页面结构：标题 -> guide -> `Standard` -> 主卡 -> 状态文案 -> 分隔线 -> `Compact / Read Only`
-- 主卡尺寸：`194 x 104`
-- 底部双预览容器：`222 x 90`
-- `Compact` 预览：`108 x 74`
-- `Read Only` 预览：`108 x 74`
+- 根布局：`224 x 224`
+- 页面结构：标题 -> 主 `split_view` -> `compact / read only` 双预览
+- 主卡区域：`196 x 104`
+- 底部双预览容器：`216 x 74`
+- `compact` 预览：`104 x 74`
+- `read only` 预览：`104 x 74`
 - 视觉规则：
-  - 使用浅色 page panel + 低噪音边框，不回退到 HMI / 工业面板语言
-  - pane 顶部保留 toggle，展开态显示标题，折叠态只保留图标列
-  - content 区域保留 title / meta / body / footer 的轻量信息层次
-  - compact 版本压缩正文，只保留必要层次
+  - 使用浅灰 page panel + 白底低噪音 pane 容器
+  - 侧栏 rail、内容面板、detail block 和 footer 维持清晰层级，不做场景化装饰
+  - pane 的展开/收起只通过控件本身表达，不依赖外部状态文字
+  - `compact` 与 `read only` 直接通过控件模式表达，不依赖外部标签说明
 
 ## 5. 控件清单
+
 | 变量名 | 类型 | 尺寸 (W x H) | 初始状态 | 用途 |
 | --- | --- | ---: | --- | --- |
-| `root_layout` | `egui_view_linearlayout_t` | 224 x 296 | enabled | 页面根容器 |
-| `title_label` | `egui_view_label_t` | 224 x 18 | `Split View` | 页面标题 |
-| `panel_primary` | `egui_view_split_view_t` | 194 x 104 | pane open | 标准 split view |
-| `panel_compact` | `egui_view_split_view_t` | 108 x 74 | pane compact | compact 预览 |
-| `panel_read_only` | `egui_view_split_view_t` | 108 x 74 | read-only | 只读对照 |
+| `root_layout` | `egui_view_linearlayout_t` | `224 x 224` | enabled | 页面根布局 |
+| `title_label` | `egui_view_label_t` | `224 x 18` | `Split View` | 页面标题 |
+| `panel_primary` | `egui_view_split_view_t` | `196 x 104` | `overview open` | 标准 split view |
+| `panel_compact` | `egui_view_split_view_t` | `104 x 74` | `overview compact` | 紧凑预览 |
+| `panel_read_only` | `egui_view_split_view_t` | `104 x 74` | `members read only` | 只读静态预览 |
 
 ## 6. 状态覆盖矩阵
-- 标准态：pane 展开，row 选中后右侧 content 更新
-- compact pane：pane 折叠，仅显示 glyph rail，可再展开
-- read-only：不响应 touch / key，但保留结构和低饱和反馈
-- 按压态：row / toggle 点击时显示 pressed 反馈
-- 键盘态：
-  - `Up / Down` 切换项目
-  - `Left / Right` 收起/展开 pane
-  - `Home / End` 跳转首尾
-  - `Tab` 循环切换项目
-  - `Enter / Space` 切换 pane
+
+| 状态 / 区域 | 主卡 | Compact | Read only |
+| --- | --- | --- | --- |
+| 默认态 | `overview + pane open` | `overview + pane compact` | `members + read only` |
+| 轮换 1 | `overview + pane compact` | 保持 | 保持 |
+| 轮换 2 | `review + warning` | 保持 | 保持 |
+| 轮换 3 | `archive + neutral` | 保持 | 保持 |
+| 紧凑轮换 | 保持 | `review + pane open` | 保持 |
+| 只读弱化 | 不适用 | 不适用 | tone 弱化、内容可见但不可交互 |
 
 ## 7. `egui_port_get_recording_action()` 录制动作设计
-1. 初始化后立即请求首帧快照，避免首帧未完成布局时出现空白截图
-2. 程序化切到主卡 `pane open` 基线态，抓取标准展开结构
-3. 程序化切到主卡 `pane compact`，抓取折叠 rail 语义
-4. 在主卡折叠态切换到第二、第三项，再展开 pane，覆盖选中项切换后的 detail 变化
-5. 将 compact 预览切到展开态并切换条目，覆盖小尺寸 pane/content 对照
-6. 再把 compact 预览收回 rail，保留 compact pane 收口状态
-7. read-only 预览保持只读对照，不在录制中修改其交互结果
+
+1. 应用默认主状态与 `compact` 状态
+2. 请求第一页截图
+3. 程序化切换主卡到 `pane compact`
+4. 请求第二页截图
+5. 程序化切换主卡到 `review` 选择项
+6. 请求第三页截图
+7. 程序化切换主卡到 `archive` 选择项
+8. 请求第四页截图
+9. 程序化切换 `compact` 到 `review + pane open`
+10. 请求最终截图并保留收尾等待
 
 ## 8. 编译、runtime、截图验收标准
-- 构建命令：
-  - `make all APP=HelloCustomWidgets APP_SUB=layout/split_view PORT=pc`
-- Runtime 命令：
-  - `python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub layout/split_view --timeout 10 --keep-screenshots`
-- 单元测试：
-  - `make all APP=HelloUnitTest PORT=pc_test`
-  - `output\main.exe`
-- 验收重点：
-  - 主卡与两个预览都完整可见，不黑屏、不截断
-  - pane 收起/展开前后结构清晰，不能糊成普通卡片
-  - toggle、短标题、footer pill 需要人工复核居中与留白
-  - read-only 预览点击后不应出现选中变化
+
+```bash
+make all APP=HelloCustomWidgets APP_SUB=layout/split_view PORT=pc
+python scripts/checks/check_touch_release_semantics.py --scope custom --category layout
+python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub layout/split_view --track reference --timeout 10 --keep-screenshots
+make all APP=HelloUnitTest PORT=pc_test
+output\main.exe
+python scripts/checks/check_docs_encoding.py
+```
+
+验收重点：
+
+- 主卡和底部双预览必须完整可见，不能被裁切
+- rail、detail 区、正文和 footer 之间要保留稳定留白
+- 主卡与双预览都必须维持 `Fluent 2 / WPF UI` 低噪音浅色语义
+- 页面中不再出现 guide、状态回显、standard label、section divider、`Compact` / `Read only` 外部标签
+- 底部预览不再承担交互职责，只作为对照展示
 
 ## 9. 已知限制与下一轮迭代计划
-- 当前仍是静态 snapshot 数据，不接真实滚动列表或动态数据源
-- 没有做真实图标资源和动画，仅保留结构语义
-- content 区域正文仍按单行摘要处理，不做长文本换行
-- 如后续沉淀到框架层，可继续补充更通用的数据绑定与焦点管理
+
+- 当前是固定尺寸 reference 实现，未覆盖更长列表和更复杂的多级 pane
+- 当前不做 hover、焦点环、键盘辅助文案等桌面细节
+- 当前 detail 文本仍是静态快照，不接入真实数据源
+- 若后续要沉入框架层，再单独评估与导航容器、内容区域模型的衔接
 
 ## 10. 与现有控件的重叠分析与差异化边界
-- 相比 `master_detail`：本控件强调 pane toggle 与 compact pane 语义
-- 相比 `nav_panel`：本控件不是整页导航容器，而是同屏双栏内容结构
-- 相比旧 `split_resizer`：本控件不再强调 resizer/showcase，而是 Fluent 风格的 pane/content 布局
-- 相比 `list` / `table`：本控件自带右侧内容区，不是纯列表控件
+
+- 相比 `nav_panel`：这里不仅有导航 rail，还有 detail 面板
+- 相比 `data_list_panel`：这里强调 pane 展开/收起，而不只是列表选择
+- 相比 `master_detail`：这里更靠近 `SplitView` 的收起侧栏语义
+- 相比 `settings_panel`：这里是导航/内容双栏结构，而不是设置项分组卡
 
 ## 11. 参考设计系统与开源母本
-- `Fluent 2`：提供标准 SplitView 的视觉方向与 pane 语义
-- `WPF UI`：提供可折叠 pane 的参考组件命名与页面内组织方式
-- `ModernWpf`：补充 Windows Fluent 风格的 SplitView 结构语义
 
-## 12. 对应组件名与保留核心状态
+- 参考设计系统：`Fluent 2`
+- 开源母本：`WPF UI`
+- 次级补充参考：`ModernWpf`
+
+## 12. 对应组件名，以及本次保留的核心状态
+
 - 对应组件名：`SplitView`
-- 本次保留的核心状态：
-  - 标准展开态
-  - compact pane 折叠/展开态
-  - read-only 对照态
-  - row 选中态
-  - 键盘 / touch 切换态
+- 本次保留状态：
+  - `standard`
+  - `compact`
+  - `read only`
+  - `pane open`
+  - `pane compact`
+  - `accent`
+  - `warning`
+  - `neutral`
 
-## 13. 相比参考原型删除的效果或装饰
-- 不做桌面级阴影与半透明材质
-- 不做系统 hover / reveal / transition 动效
-- 不做真实 menu overlay 或外层导航系统整合
-- 不做拖拽式 resizer，只保留 toggle 式 pane 语义
+## 13. 相比参考原型删掉了哪些效果或装饰
+
+- 不做页面级 guide、状态回显、standard label、section label 和 preview label
+- 不做复杂阴影、场景化插画和装饰性背景层
+- 不做 hover、pressed、focus ring 等完整桌面交互细节
+- 不做多级导航树和复杂联动动画
+- 不做页面外部状态桥接，只保留控件自身的 pane 与 selection 语义
 
 ## 14. EGUI 适配时的简化点与约束
-- 固定在 `480 x 480` 下调优，优先保证小屏可读性
-- pane 项数量限制为 `5`
-- compact 版本以窄 rail 表达，不复制完整桌面交互细节
-- 颜色与圆角维持低噪音浅色 Fluent 方向，避免回到旧 showcase 语法
+
+- 使用固定 item 数组驱动，先保证 reference 展示稳定
+- `compact` 与 `read only` 固定放底部双列，便于和主卡直接对照
+- 主卡保留 pane 展开/收起与选择项切换，录制时改为程序化触发
+- 先完成示例级 `split_view`，后续再决定是否沉入通用框架控件

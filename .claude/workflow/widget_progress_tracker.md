@@ -98,6 +98,11 @@
 ## 最近完成的收口动作
 
 - `2026-04-09`
+  - 完成 `layout/split_view` 实现级样式收口：删除 guide / 状态文案 / standard label / section label / preview label 等页面级 chrome，示例页收敛为标题、主 `split_view` 和 `compact / read only` 双预览。
+  - 收紧 `split_view` 根布局与底部双预览尺寸，统一主态、compact 和 read-only palette 到 Fluent / WPF UI 中性浅色 `SplitView` 语法，录制动作改为程序化 pane 与 selection 切换，底部预览不再承担交互职责。
+  - README 重写为当前 reference 结构，移除旧版外部状态回显、guide 点击和页面壳层说明。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=layout/split_view PORT=pc`、`check_touch_release_semantics.py --scope custom --category layout`、`code_runtime_check.py --app HelloCustomWidgets --app-sub layout/split_view --track reference --timeout 10 --keep-screenshots`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`check_docs_encoding.py`。
+- `2026-04-09`
   - 完成 `display/persona_group` 实现级样式收口：删除 guide / 状态文案 / standard label / section label / preview label 等页面级 chrome，示例页收敛为标题、主 `persona_group` 和 `compact / read only` 双预览。
   - 收紧 `persona_group` 根布局与底部双预览尺寸，统一主态、compact 和 read-only palette 到 Fluent / WPF UI 中性浅色 `AvatarGroup` 语法，录制动作改为程序化 snapshot 与焦点成员切换，底部预览不再承担交互职责。
   - README 重写为当前 reference 结构，移除旧版外部状态回显、guide 点击和页面壳层说明。
