@@ -47,7 +47,7 @@
   - 使用浅灰白 page panel + 白底轻边框容器
   - 主数字框保留 label、helper、value field 与 `- / +` 按钮语义
   - `compact` 预览压缩为更轻量的 field + stepper 结构
-  - 只读态移除步进按钮，只保留弱化数值展示
+- 只读态移除步进按钮，只保留弱化数值展示，并抑制后续输入
 
 ## 5. 控件清单
 
@@ -68,7 +68,7 @@
 | 轮换 2 | `32 px` | 保持 | 保持 |
 | 轮换 3 | `28 px` | 保持 | 保持 |
 | 紧凑轮换 | 保持 | `14 ms` | 保持 |
-| 只读弱化 | 不适用 | 不适用 | 移除步进按钮，仅保留弱化数值展示 |
+| 只读弱化 | 不适用 | 不适用 | 移除步进按钮，仅保留弱化数值展示，并在切入时清空 pressed |
 
 ## 7. `egui_port_get_recording_action()` 录制动作设计
 
@@ -100,6 +100,7 @@ python scripts/checks/check_docs_encoding.py
 - 主数字框必须看起来像标准表单数字输入，而不是滚轮或 slider
 - 数值与单位后缀要保持居中，不能贴边
 - 主卡与双预览都必须维持 `Fluent 2 / WPF UI` 低噪音浅色语义
+- `read only` 只做静态展示，不能响应 touch、key 或页面桥接，并且切入时要立即清空 pressed
 - 页面中不再出现 guide、状态回显、standard label、section divider、`Compact` / `Read only` 外部标签
 
 ## 9. 已知限制与后续方向

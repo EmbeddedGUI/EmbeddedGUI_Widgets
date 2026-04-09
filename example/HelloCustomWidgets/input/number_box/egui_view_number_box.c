@@ -59,6 +59,14 @@ static egui_color_t egui_view_number_box_mix_disabled(egui_color_t color)
     return egui_rgb_mix(color, EGUI_COLOR_DARK_GREY, 64);
 }
 
+static void egui_view_number_box_clear_pressed_state(egui_view_t *self)
+{
+    EGUI_LOCAL_INIT(egui_view_number_box_t);
+
+    local->pressed_part = EGUI_VIEW_NUMBER_BOX_PART_NONE;
+    egui_view_set_pressed(self, false);
+}
+
 static int16_t egui_view_number_box_clamp_value(egui_view_number_box_t *local, int16_t value)
 {
     if (value < local->min_value)
@@ -119,7 +127,7 @@ static void egui_view_number_box_get_metrics(egui_view_number_box_t *local, egui
     metrics->content.size.width = region.size.width - pad_x * 2;
     metrics->content.size.height = region.size.height - pad_y * 2;
     metrics->show_meta = local->compact_mode ? 0 : 1;
-    metrics->show_buttons = local->locked_mode ? 0 : 1;
+    metrics->show_buttons = local->read_only_mode ? 0 : 1;
 
     metrics->label_region.location.x = metrics->content.location.x;
     metrics->label_region.location.y = metrics->content.location.y;
@@ -244,14 +252,15 @@ void egui_view_number_box_set_compact_mode(egui_view_t *self, uint8_t compact_mo
 {
     EGUI_LOCAL_INIT(egui_view_number_box_t);
     local->compact_mode = compact_mode ? 1 : 0;
+    egui_view_number_box_clear_pressed_state(self);
     egui_view_invalidate(self);
 }
 
-void egui_view_number_box_set_locked_mode(egui_view_t *self, uint8_t locked_mode)
+void egui_view_number_box_set_read_only_mode(egui_view_t *self, uint8_t read_only_mode)
 {
     EGUI_LOCAL_INIT(egui_view_number_box_t);
-    local->locked_mode = locked_mode ? 1 : 0;
-    local->pressed_part = EGUI_VIEW_NUMBER_BOX_PART_NONE;
+    local->read_only_mode = read_only_mode ? 1 : 0;
+    egui_view_number_box_clear_pressed_state(self);
     egui_view_invalidate(self);
 }
 
@@ -348,14 +357,15 @@ static void egui_view_number_box_on_draw(egui_view_t *self)
     button_icon = accent_color;
     is_enabled = egui_view_get_enable(self) ? 1 : 0;
 
-    if (local->locked_mode)
+    if (local->read_only_mode)
     {
-        surface_color = egui_rgb_mix(surface_color, EGUI_COLOR_HEX(0xFBFCFD), 24);
-        border_color = egui_rgb_mix(border_color, muted_text_color, 18);
+        surface_color = egui_rgb_mix(surface_color, EGUI_COLOR_HEX(0xFCFDFE), 26);
+        border_color = egui_rgb_mix(border_color, muted_text_color, 24);
         text_color = egui_rgb_mix(text_color, muted_text_color, 72);
-        accent_color = egui_rgb_mix(accent_color, muted_text_color, 84);
-        field_fill = egui_rgb_mix(field_fill, surface_color, 34);
-        field_border = egui_rgb_mix(field_border, muted_text_color, 18);
+        muted_text_color = egui_rgb_mix(muted_text_color, surface_color, 14);
+        accent_color = egui_rgb_mix(accent_color, muted_text_color, 88);
+        field_fill = egui_rgb_mix(field_fill, surface_color, 40);
+        field_border = egui_rgb_mix(field_border, muted_text_color, 24);
         button_fill = egui_rgb_mix(button_fill, surface_color, 56);
         button_border = egui_rgb_mix(button_border, muted_text_color, 42);
         button_icon = egui_rgb_mix(button_icon, muted_text_color, 86);
@@ -432,7 +442,7 @@ static void egui_view_number_box_on_draw(egui_view_t *self)
     if (metrics.show_meta && local->helper != NULL)
     {
         egui_view_number_box_draw_text(local->meta_font, self, local->helper, &metrics.helper_region, EGUI_ALIGN_LEFT,
-                                       local->locked_mode ? egui_rgb_mix(muted_text_color, text_color, 12) : muted_text_color);
+                                       local->read_only_mode ? egui_rgb_mix(muted_text_color, text_color, 12) : muted_text_color);
     }
 }
 
@@ -442,8 +452,14 @@ static int egui_view_number_box_on_touch_event(egui_view_t *self, egui_motion_ev
     EGUI_LOCAL_INIT(egui_view_number_box_t);
     uint8_t hit_part;
 
-    if (!egui_view_get_enable(self) || local->locked_mode)
+    if (!egui_view_get_enable(self) || local->read_only_mode)
     {
+        if (self->is_pressed || local->pressed_part != EGUI_VIEW_NUMBER_BOX_PART_NONE)
+        {
+            egui_view_number_box_clear_pressed_state(self);
+            egui_view_invalidate(self);
+        }
+        EGUI_UNUSED(event);
         return 0;
     }
 
@@ -481,6 +497,21 @@ static int egui_view_number_box_on_touch_event(egui_view_t *self, egui_motion_ev
 }
 #endif
 
+#if EGUI_CONFIG_FUNCTION_SUPPORT_KEY
+static int egui_view_number_box_on_key_event(egui_view_t *self, egui_key_event_t *event)
+{
+    EGUI_LOCAL_INIT(egui_view_number_box_t);
+
+    if (!egui_view_get_enable(self) || local->read_only_mode)
+    {
+        EGUI_UNUSED(event);
+        return 0;
+    }
+
+    return egui_view_on_key_event(self, event);
+}
+#endif
+
 const egui_view_api_t EGUI_VIEW_API_TABLE_NAME(egui_view_number_box_t) = {
         .dispatch_touch_event = egui_view_dispatch_touch_event,
 #if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
@@ -498,7 +529,7 @@ const egui_view_api_t EGUI_VIEW_API_TABLE_NAME(egui_view_number_box_t) = {
         .on_detach_from_window = egui_view_on_detach_from_window,
 #if EGUI_CONFIG_FUNCTION_SUPPORT_KEY
         .dispatch_key_event = egui_view_dispatch_key_event,
-        .on_key_event = egui_view_on_key_event,
+        .on_key_event = egui_view_number_box_on_key_event,
 #endif
 };
 
@@ -526,7 +557,7 @@ void egui_view_number_box_init(egui_view_t *self)
     local->max_value = 100;
     local->step = 1;
     local->compact_mode = 0;
-    local->locked_mode = 0;
+    local->read_only_mode = 0;
     local->pressed_part = EGUI_VIEW_NUMBER_BOX_PART_NONE;
     local->value_buffer[0] = '\0';
 

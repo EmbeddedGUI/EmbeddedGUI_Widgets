@@ -98,6 +98,12 @@
 ## 最近完成的收口动作
 
 - `2026-04-10`
+  - 完成 `input/number_box` 二次收口：在原有 `reference` 页面结构基础上，把控件内部的旧 `locked_mode` 语义统一为 `read_only_mode`，并继续压轻只读态 field、border、文字和 accent 的对比度。
+  - `test.c` 新增 `apply_read_only_state()`，让 `read only` 预览在初始化和录制 case `0` 重置时都显式回到只读态；同步微调标题间距和主态 / `compact` / `read only` palette，继续保持底部两个 preview 只承担 reference 对照职责。
+  - `egui_view_number_box.h/.c` 把 `locked_mode` API 收口为 `read_only_mode`，新增统一的 pressed 清理辅助函数，并在 `set_compact_mode()` 和 `set_read_only_mode()` 中同步清理 `pressed_part / is_pressed`；同时补上只读态和 disabled 态对 touch / key 的输入抑制。
+  - `example/HelloUnitTest/test/test_number_box.c` 把旧 `locked_mode` 单测改成 `read_only_mode`，新增“异目标 release 不提交”“切到只读时清空 pressed 并忽略后续 touch / key 输入”和 disabled 抑制回归；README 同步明确 `read only` 需要同时满足 pressed 清理、输入抑制和渲染稳定。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=input/number_box PORT=pc`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category input`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/number_box --track reference --timeout 10 --keep-screenshots`、`python scripts/checks/check_docs_encoding.py`，并人工核对关键帧确认交互切换后的渲染稳定。
+- `2026-04-10`
   - 完成 `feedback/skeleton` 二次收口：在原有 `reference` 页面结构基础上，把控件内部的旧 `locked_mode` 语义统一为 `read_only_mode`，并继续压轻只读态 block、border、accent 和 footer 文案的对比度。
   - `test.c` 把 `apply_read_only_snapshot()` 收口为 `apply_read_only_state()`，让 `read only` 预览在初始化和录制 case `0` 重置时都显式回到只读态；同步微调标题间距和主态 / `compact` / `read only` palette，继续保持底部两个 preview 只承担 reference 对照职责。
   - `egui_view_skeleton.h/.c` 把 `locked_mode` API 收口为 `read_only_mode`，新增统一的 pressed 清理辅助函数，并在 `set_snapshots()`、`set_current_snapshot()`、`set_compact_mode()` 和 `set_read_only_mode()` 中同步清理 `is_pressed`；同时补上只读态和 disabled 态对默认 touch / key click 链路的输入抑制，并统一只读态 timer 的停止 / 恢复语义。

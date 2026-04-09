@@ -50,6 +50,12 @@ static void apply_compact_value(int16_t value)
     egui_view_number_box_set_value(EGUI_VIEW_OF(&box_compact), value);
 }
 
+static void apply_read_only_state(uint8_t enabled)
+{
+    egui_view_number_box_set_read_only_mode(EGUI_VIEW_OF(&box_read_only), enabled);
+    egui_view_number_box_set_value(EGUI_VIEW_OF(&box_read_only), 16);
+}
+
 void test_init_ui(void)
 {
     egui_view_linearlayout_init(EGUI_VIEW_OF(&root_layout));
@@ -64,7 +70,7 @@ void test_init_ui(void)
     egui_view_label_set_align_type(EGUI_VIEW_OF(&title_label), EGUI_ALIGN_CENTER);
     egui_view_label_set_font(EGUI_VIEW_OF(&title_label), (const egui_font_t *)&egui_res_font_montserrat_12_4);
     egui_view_label_set_font_color(EGUI_VIEW_OF(&title_label), EGUI_COLOR_HEX(0x21303F), EGUI_ALPHA_100);
-    egui_view_set_margin(EGUI_VIEW_OF(&title_label), 0, 8, 0, 6);
+    egui_view_set_margin(EGUI_VIEW_OF(&title_label), 0, 6, 0, 6);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label));
 
     egui_view_number_box_init(EGUI_VIEW_OF(&box_primary));
@@ -76,7 +82,7 @@ void test_init_ui(void)
     egui_view_number_box_set_helper(EGUI_VIEW_OF(&box_primary), "0 to 64, step 4");
     egui_view_number_box_set_range(EGUI_VIEW_OF(&box_primary), 0, 64);
     egui_view_number_box_set_step(EGUI_VIEW_OF(&box_primary), 4);
-    egui_view_number_box_set_palette(EGUI_VIEW_OF(&box_primary), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD5DCE4), EGUI_COLOR_HEX(0x1A2734),
+    egui_view_number_box_set_palette(EGUI_VIEW_OF(&box_primary), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD6DDE5), EGUI_COLOR_HEX(0x1A2734),
                                      EGUI_COLOR_HEX(0x6B7A89), EGUI_COLOR_HEX(0x0F6CBD));
     egui_view_set_margin(EGUI_VIEW_OF(&box_primary), 0, 0, 0, 8);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&box_primary));
@@ -101,8 +107,8 @@ void test_init_ui(void)
     egui_view_number_box_set_range(EGUI_VIEW_OF(&box_compact), 0, 24);
     egui_view_number_box_set_step(EGUI_VIEW_OF(&box_compact), 2);
     egui_view_number_box_set_compact_mode(EGUI_VIEW_OF(&box_compact), 1);
-    egui_view_number_box_set_palette(EGUI_VIEW_OF(&box_compact), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD5DCE4), EGUI_COLOR_HEX(0x1A2734),
-                                     EGUI_COLOR_HEX(0x6B7A89), EGUI_COLOR_HEX(0x0F6CBD));
+    egui_view_number_box_set_palette(EGUI_VIEW_OF(&box_compact), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD8DFE6), EGUI_COLOR_HEX(0x1A2734),
+                                     EGUI_COLOR_HEX(0x6B7A89), EGUI_COLOR_HEX(0x2F76B7));
     static egui_view_api_t box_compact_touch_api;
     egui_view_override_api_on_touch(EGUI_VIEW_OF(&box_compact), &box_compact_touch_api, consume_preview_touch);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
@@ -123,9 +129,9 @@ void test_init_ui(void)
     egui_view_number_box_set_meta_font(EGUI_VIEW_OF(&box_read_only), (const egui_font_t *)&egui_res_font_montserrat_8_4);
     egui_view_number_box_set_suffix(EGUI_VIEW_OF(&box_read_only), "px");
     egui_view_number_box_set_compact_mode(EGUI_VIEW_OF(&box_read_only), 1);
-    egui_view_number_box_set_locked_mode(EGUI_VIEW_OF(&box_read_only), 1);
-    egui_view_number_box_set_palette(EGUI_VIEW_OF(&box_read_only), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD5DCE4), EGUI_COLOR_HEX(0x1A2734),
-                                     EGUI_COLOR_HEX(0x6B7A89), EGUI_COLOR_HEX(0x7A8796));
+    egui_view_number_box_set_read_only_mode(EGUI_VIEW_OF(&box_read_only), 1);
+    egui_view_number_box_set_palette(EGUI_VIEW_OF(&box_read_only), EGUI_COLOR_HEX(0xFCFDFE), EGUI_COLOR_HEX(0xDEE4EA), EGUI_COLOR_HEX(0x364452),
+                                     EGUI_COLOR_HEX(0x7A8793), EGUI_COLOR_HEX(0x909CAA));
     static egui_view_api_t box_read_only_touch_api;
     egui_view_override_api_on_touch(EGUI_VIEW_OF(&box_read_only), &box_read_only_touch_api, consume_preview_touch);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
@@ -135,7 +141,7 @@ void test_init_ui(void)
 
     apply_primary_value(24);
     apply_compact_value(12);
-    egui_view_number_box_set_value(EGUI_VIEW_OF(&box_read_only), 16);
+    apply_read_only_state(1);
 
     {
         hello_custom_widgets_demo_apply_title_only_scaffold(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label), NULL, 0);
@@ -165,6 +171,7 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
         {
             apply_primary_value(24);
             apply_compact_value(12);
+            apply_read_only_state(1);
         }
         EGUI_SIM_SET_WAIT(p_action, NUMBER_BOX_RECORD_WAIT);
         return true;
