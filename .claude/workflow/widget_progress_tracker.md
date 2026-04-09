@@ -98,6 +98,10 @@
 ## 最近完成的收口动作
 
 - `2026-04-09`
+  - 完成 `input/toggle_button` 实现级样式收口：删除 guide、状态回显、section divider 和外部 preview 标签，把页面结构统一为标题、主 `toggle_button` 与 `compact / read only` 双预览。
+  - 主按钮保留 `Enter / Space` 键盘闭环与 on/off reference snapshot，底部两个预览收敛为静态对照，不再承担场景切换或标签点击职责。
+  - README 重写为当前 `reference` 结构；已通过 `make all APP=HelloCustomWidgets APP_SUB=input/toggle_button PORT=pc`、`check_touch_release_semantics.py --scope custom --category input`、`code_runtime_check.py --app HelloCustomWidgets --app-sub input/toggle_button --track reference --timeout 10 --keep-screenshots`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`check_docs_encoding.py`。
+- `2026-04-09`
   - 完成 `input/time_picker` 实现级样式收口：移除 guide / 状态文案 / standard label / section divider / preview label 等旧页面 chrome，页面结构统一为标题、主 `time_picker` 与 `compact / read only` 双预览。
   - 统一 `time_picker` reference palette、主控件展开/收起尺寸、底部双预览与录制动作；保留标准时间字段、`12h / 24h` 对照与只读对照，同时把页面空白区和底部预览收敛为最小 dismiss 逻辑，不再承担标签切换职责。
   - README 重写为当前 `reference` 结构；已通过 `make all APP=HelloCustomWidgets APP_SUB=input/time_picker PORT=pc`、`check_touch_release_semantics.py --scope custom --category input`、`code_runtime_check.py --app HelloCustomWidgets --app-sub input/time_picker --track reference --timeout 10 --keep-screenshots`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`check_docs_encoding.py`。
