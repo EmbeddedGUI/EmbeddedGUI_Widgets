@@ -7,7 +7,7 @@
 - 对应组件名：`TreeView`
 - 本次保留状态：`standard`、`branch expanded`、`selection`、`compact`、`read only`
 - 删除效果：页面级 `guide`、状态文案、section label、双列预览壳、可点击 preview 卡、重描边、强高亮引导条
-- EGUI 适配说明：继续复用仓库内 `tree_view` 基础实现，本轮只收口 `reference` 页面结构、示例快照和绘制强度，不修改 `sdk/EmbeddedGUI`
+- EGUI 适配说明：继续复用仓库内 `tree_view` 基础实现，本轮只收口 `reference` 页面结构、示例快照和绘制强度，不修改 `sdk/EmbeddedGUI`；`snapshot / current selection / compact / read only / view disabled` 切换共享同一套 `pressed` 清理语义
 
 ## 1. 为什么需要这个控件
 `tree_view` 用来表达标准层级导航和资源浏览语义，适合文件树、设置分类、目录结构和知识树这类“父子关系可见”的场景。
@@ -88,6 +88,8 @@ python scripts/checks/check_docs_encoding.py
 - 层级缩进、展开箭头、引导线和右侧 meta pill 需要稳定对齐，但不能回到旧版重描边风格。
 - 选中行必须清晰，但不能压过树本身的层级信息。
 - `compact / read only` 不再响应触摸，也不参与焦点循环；其中 `read only` 还需要清空 pressed 状态并忽略键盘输入。
+- `snapshot / current selection / compact / read only / view disabled` 切换后不能残留树行的 `pressed` 高亮或下压位移渲染。
+- `read_only_mode / !enable` 不仅要忽略后续 touch / key 输入，还要在收到新输入时先清理残留 `pressed` 状态。
 - 触摸释放语义必须继续满足“按下与抬起命中同一目标才提交”。
 
 ## 9. 已知限制与后续方向

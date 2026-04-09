@@ -95,6 +95,16 @@ static egui_color_t egui_view_tree_view_mix_disabled(egui_color_t color)
     return egui_rgb_mix(color, EGUI_COLOR_DARK_GREY, 68);
 }
 
+static uint8_t egui_view_tree_view_clear_pressed_state(egui_view_t *self)
+{
+    EGUI_LOCAL_INIT(egui_view_tree_view_t);
+    uint8_t had_pressed = self->is_pressed || local->pressed_index != EGUI_VIEW_TREE_VIEW_INDEX_NONE;
+
+    local->pressed_index = EGUI_VIEW_TREE_VIEW_INDEX_NONE;
+    egui_view_set_pressed(self, false);
+    return had_pressed;
+}
+
 static egui_color_t egui_view_tree_view_tone_color(egui_view_tree_view_t *local, uint8_t tone)
 {
     switch (tone)
@@ -365,6 +375,10 @@ static void egui_view_tree_view_set_current_index_inner(egui_view_t *self, uint8
     if (snapshot == NULL)
     {
         local->current_index = 0;
+        if (egui_view_tree_view_clear_pressed_state(self))
+        {
+            egui_view_invalidate(self);
+        }
         return;
     }
 
@@ -372,6 +386,10 @@ static void egui_view_tree_view_set_current_index_inner(egui_view_t *self, uint8
     if (item_count == 0)
     {
         local->current_index = 0;
+        if (egui_view_tree_view_clear_pressed_state(self))
+        {
+            egui_view_invalidate(self);
+        }
         return;
     }
 
@@ -381,10 +399,15 @@ static void egui_view_tree_view_set_current_index_inner(egui_view_t *self, uint8
     }
     if (local->current_index == index)
     {
+        if (egui_view_tree_view_clear_pressed_state(self))
+        {
+            egui_view_invalidate(self);
+        }
         return;
     }
 
     local->current_index = index;
+    egui_view_tree_view_clear_pressed_state(self);
     if (notify && local->on_selection_changed != NULL)
     {
         local->on_selection_changed(self, index);
@@ -437,7 +460,7 @@ void egui_view_tree_view_set_snapshots(egui_view_t *self, const egui_view_tree_v
     uint8_t item_count;
 
     local->snapshots = snapshots;
-    local->snapshot_count = egui_view_tree_view_clamp_snapshot_count(snapshot_count);
+    local->snapshot_count = snapshots ? egui_view_tree_view_clamp_snapshot_count(snapshot_count) : 0;
     if (local->current_snapshot >= local->snapshot_count)
     {
         local->current_snapshot = 0;
@@ -446,8 +469,7 @@ void egui_view_tree_view_set_snapshots(egui_view_t *self, const egui_view_tree_v
     snapshot = egui_view_tree_view_get_snapshot(local);
     item_count = snapshot == NULL ? 0 : egui_view_tree_view_clamp_item_count(snapshot->item_count);
     local->current_index = egui_view_tree_view_focus_index(snapshot, item_count);
-    local->pressed_index = EGUI_VIEW_TREE_VIEW_INDEX_NONE;
-    egui_view_set_pressed(self, false);
+    egui_view_tree_view_clear_pressed_state(self);
     egui_view_invalidate(self);
 }
 
@@ -463,6 +485,10 @@ void egui_view_tree_view_set_current_snapshot(egui_view_t *self, uint8_t snapsho
     }
     if (local->current_snapshot == snapshot_index)
     {
+        if (egui_view_tree_view_clear_pressed_state(self))
+        {
+            egui_view_invalidate(self);
+        }
         return;
     }
 
@@ -470,8 +496,7 @@ void egui_view_tree_view_set_current_snapshot(egui_view_t *self, uint8_t snapsho
     snapshot = egui_view_tree_view_get_snapshot(local);
     item_count = snapshot == NULL ? 0 : egui_view_tree_view_clamp_item_count(snapshot->item_count);
     local->current_index = egui_view_tree_view_focus_index(snapshot, item_count);
-    local->pressed_index = EGUI_VIEW_TREE_VIEW_INDEX_NONE;
-    egui_view_set_pressed(self, false);
+    egui_view_tree_view_clear_pressed_state(self);
     egui_view_invalidate(self);
 }
 
@@ -516,8 +541,7 @@ void egui_view_tree_view_set_compact_mode(egui_view_t *self, uint8_t compact_mod
 {
     EGUI_LOCAL_INIT(egui_view_tree_view_t);
     local->compact_mode = compact_mode ? 1 : 0;
-    local->pressed_index = EGUI_VIEW_TREE_VIEW_INDEX_NONE;
-    egui_view_set_pressed(self, false);
+    egui_view_tree_view_clear_pressed_state(self);
     egui_view_invalidate(self);
 }
 
@@ -525,8 +549,7 @@ void egui_view_tree_view_set_read_only_mode(egui_view_t *self, uint8_t read_only
 {
     EGUI_LOCAL_INIT(egui_view_tree_view_t);
     local->read_only_mode = read_only_mode ? 1 : 0;
-    local->pressed_index = EGUI_VIEW_TREE_VIEW_INDEX_NONE;
-    egui_view_set_pressed(self, false);
+    egui_view_tree_view_clear_pressed_state(self);
     egui_view_invalidate(self);
 }
 
@@ -850,18 +873,13 @@ static void egui_view_tree_view_on_draw(egui_view_t *self)
 static int egui_view_tree_view_on_touch_event(egui_view_t *self, egui_motion_event_t *event)
 {
     EGUI_LOCAL_INIT(egui_view_tree_view_t);
+    const egui_view_tree_view_snapshot_t *snapshot = egui_view_tree_view_get_snapshot(local);
     uint8_t hit_index;
 
-    if (!egui_view_get_enable(self))
+    if (snapshot == NULL || !egui_view_get_enable(self) || local->read_only_mode)
     {
-        return 0;
-    }
-    if (local->read_only_mode)
-    {
-        if (local->pressed_index != EGUI_VIEW_TREE_VIEW_INDEX_NONE || self->is_pressed)
+        if (egui_view_tree_view_clear_pressed_state(self))
         {
-            local->pressed_index = EGUI_VIEW_TREE_VIEW_INDEX_NONE;
-            egui_view_set_pressed(self, false);
             egui_view_invalidate(self);
         }
         return 0;
@@ -880,20 +898,28 @@ static int egui_view_tree_view_on_touch_event(egui_view_t *self, egui_motion_eve
         egui_view_invalidate(self);
         return 1;
     case EGUI_MOTION_EVENT_ACTION_UP:
+    {
+        uint8_t handled;
+
         hit_index = egui_view_tree_view_hit_item(local, self, event->location.x, event->location.y);
+        handled = (local->pressed_index != EGUI_VIEW_TREE_VIEW_INDEX_NONE) || hit_index != EGUI_VIEW_TREE_VIEW_INDEX_NONE;
         if (local->pressed_index != EGUI_VIEW_TREE_VIEW_INDEX_NONE && local->pressed_index == hit_index)
         {
             egui_view_tree_view_set_current_index_inner(self, hit_index, 1);
         }
-        local->pressed_index = EGUI_VIEW_TREE_VIEW_INDEX_NONE;
-        egui_view_set_pressed(self, false);
-        egui_view_invalidate(self);
-        return hit_index != EGUI_VIEW_TREE_VIEW_INDEX_NONE;
+        if (egui_view_tree_view_clear_pressed_state(self))
+        {
+            egui_view_invalidate(self);
+        }
+        return handled;
+    }
     case EGUI_MOTION_EVENT_ACTION_CANCEL:
-        local->pressed_index = EGUI_VIEW_TREE_VIEW_INDEX_NONE;
-        egui_view_set_pressed(self, false);
-        egui_view_invalidate(self);
-        return 1;
+        if (egui_view_tree_view_clear_pressed_state(self))
+        {
+            egui_view_invalidate(self);
+            return 1;
+        }
+        return 0;
     default:
         return 0;
     }
@@ -904,8 +930,17 @@ static int egui_view_tree_view_on_touch_event(egui_view_t *self, egui_motion_eve
 static int egui_view_tree_view_on_key_event(egui_view_t *self, egui_key_event_t *event)
 {
     EGUI_LOCAL_INIT(egui_view_tree_view_t);
+    const egui_view_tree_view_snapshot_t *snapshot = egui_view_tree_view_get_snapshot(local);
 
-    if (!egui_view_get_enable(self) || event->type != EGUI_KEY_EVENT_ACTION_UP || local->read_only_mode)
+    if (snapshot == NULL || !egui_view_get_enable(self) || local->read_only_mode)
+    {
+        if (egui_view_tree_view_clear_pressed_state(self))
+        {
+            egui_view_invalidate(self);
+        }
+        return 0;
+    }
+    if (event->type != EGUI_KEY_EVENT_ACTION_UP)
     {
         return 0;
     }
@@ -923,7 +958,6 @@ static int egui_view_tree_view_on_key_event(egui_view_t *self, egui_key_event_t 
         return 1;
     case EGUI_KEY_CODE_END:
     {
-        const egui_view_tree_view_snapshot_t *snapshot = egui_view_tree_view_get_snapshot(local);
         uint8_t item_count = snapshot == NULL ? 0 : egui_view_tree_view_clamp_item_count(snapshot->item_count);
 
         if (item_count > 0)
