@@ -55,7 +55,7 @@ struct egui_view_parallax_view
     egui_dim_t page_step;
     uint8_t row_count;
     uint8_t compact_mode;
-    uint8_t locked_mode;
+    uint8_t read_only_mode;
     uint8_t pressed_row;
 };
 
@@ -75,7 +75,7 @@ void egui_view_parallax_view_set_vertical_shift(egui_view_t *self, egui_dim_t ve
 egui_dim_t egui_view_parallax_view_get_vertical_shift(egui_view_t *self);
 void egui_view_parallax_view_set_step_size(egui_view_t *self, egui_dim_t line_step, egui_dim_t page_step);
 void egui_view_parallax_view_set_compact_mode(egui_view_t *self, uint8_t compact_mode);
-void egui_view_parallax_view_set_locked_mode(egui_view_t *self, uint8_t locked_mode);
+void egui_view_parallax_view_set_read_only_mode(egui_view_t *self, uint8_t read_only_mode);
 uint8_t egui_view_parallax_view_get_active_row(egui_view_t *self);
 uint8_t egui_view_parallax_view_get_row_region(egui_view_t *self, uint8_t row_index, egui_region_t *region);
 

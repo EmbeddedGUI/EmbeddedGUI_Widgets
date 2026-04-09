@@ -15,15 +15,15 @@
 #define PARALLAX_PREVIEW_HEIGHT  82
 #define PARALLAX_BOTTOM_WIDTH    218
 #define PARALLAX_BOTTOM_HEIGHT   82
+#define PARALLAX_RECORD_WAIT     90
+#define PARALLAX_RECORD_FRAME_WAIT 170
 
 static egui_view_linearlayout_t root_layout;
 static egui_view_label_t title_label;
 static egui_view_parallax_view_t parallax_primary;
 static egui_view_linearlayout_t bottom_row;
-static egui_view_linearlayout_t compact_column;
 static egui_view_parallax_view_t parallax_compact;
-static egui_view_linearlayout_t locked_column;
-static egui_view_parallax_view_t parallax_locked;
+static egui_view_parallax_view_t parallax_read_only;
 
 EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
 EGUI_BACKGROUND_PARAM_INIT(bg_page_panel_params, &bg_page_panel_param, NULL, NULL);
@@ -44,7 +44,7 @@ static const egui_view_parallax_view_row_t compact_rows[] = {
         {"Quiet Stack", "Tail", 360, EGUI_VIEW_PARALLAX_VIEW_TONE_NEUTRAL},
 };
 
-static const egui_view_parallax_view_row_t locked_rows[] = {
+static const egui_view_parallax_view_row_t read_only_rows[] = {
         {"Audit Layer", "Fixed", 0, EGUI_VIEW_PARALLAX_VIEW_TONE_NEUTRAL},
         {"Review Shelf", "Lock", 180, EGUI_VIEW_PARALLAX_VIEW_TONE_WARNING},
         {"Pinned Notes", "Still", 320, EGUI_VIEW_PARALLAX_VIEW_TONE_SUCCESS},
@@ -83,6 +83,18 @@ static void apply_compact_state(uint8_t index)
     egui_view_parallax_view_set_offset(EGUI_VIEW_OF(&parallax_compact), row->anchor_offset);
 }
 
+static void apply_read_only_state(void)
+{
+    egui_view_parallax_view_set_offset(EGUI_VIEW_OF(&parallax_read_only), read_only_rows[1].anchor_offset);
+}
+
+static int consume_preview_touch(egui_view_t *self, egui_motion_event_t *event)
+{
+    EGUI_UNUSED(self);
+    EGUI_UNUSED(event);
+    return 1;
+}
+
 void test_init_ui(void)
 {
     egui_view_linearlayout_init(EGUI_VIEW_OF(&root_layout));
@@ -97,7 +109,7 @@ void test_init_ui(void)
     egui_view_label_set_align_type(EGUI_VIEW_OF(&title_label), EGUI_ALIGN_CENTER);
     egui_view_label_set_font(EGUI_VIEW_OF(&title_label), (const egui_font_t *)&egui_res_font_montserrat_12_4);
     egui_view_label_set_font_color(EGUI_VIEW_OF(&title_label), EGUI_COLOR_HEX(0x21303F), EGUI_ALPHA_100);
-    egui_view_set_margin(EGUI_VIEW_OF(&title_label), 0, 8, 0, 6);
+    egui_view_set_margin(EGUI_VIEW_OF(&title_label), 0, 8, 0, 4);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label));
 
     egui_view_parallax_view_init(EGUI_VIEW_OF(&parallax_primary));
@@ -118,12 +130,6 @@ void test_init_ui(void)
     egui_view_linearlayout_set_align_type(EGUI_VIEW_OF(&bottom_row), EGUI_ALIGN_VCENTER);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&bottom_row));
 
-    egui_view_linearlayout_init(EGUI_VIEW_OF(&compact_column));
-    egui_view_set_size(EGUI_VIEW_OF(&compact_column), PARALLAX_PREVIEW_WIDTH, PARALLAX_BOTTOM_HEIGHT);
-    egui_view_linearlayout_set_orientation(EGUI_VIEW_OF(&compact_column), 0);
-    egui_view_linearlayout_set_align_type(EGUI_VIEW_OF(&compact_column), EGUI_ALIGN_HCENTER);
-    egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&compact_column));
-
     egui_view_parallax_view_init(EGUI_VIEW_OF(&parallax_compact));
     egui_view_set_size(EGUI_VIEW_OF(&parallax_compact), PARALLAX_PREVIEW_WIDTH, PARALLAX_PREVIEW_HEIGHT);
     egui_view_parallax_view_set_font(EGUI_VIEW_OF(&parallax_compact), (const egui_font_t *)&egui_res_font_montserrat_8_4);
@@ -134,59 +140,52 @@ void test_init_ui(void)
     egui_view_parallax_view_set_vertical_shift(EGUI_VIEW_OF(&parallax_compact), 8);
     egui_view_parallax_view_set_step_size(EGUI_VIEW_OF(&parallax_compact), 60, 180);
     egui_view_parallax_view_set_compact_mode(EGUI_VIEW_OF(&parallax_compact), 1);
-    egui_view_group_add_child(EGUI_VIEW_OF(&compact_column), EGUI_VIEW_OF(&parallax_compact));
+    static egui_view_api_t parallax_compact_touch_api;
+    egui_view_override_api_on_touch(EGUI_VIEW_OF(&parallax_compact), &parallax_compact_touch_api, consume_preview_touch);
+#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
+    egui_view_set_focusable(EGUI_VIEW_OF(&parallax_compact), false);
+#endif
+    egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&parallax_compact));
 
-    egui_view_linearlayout_init(EGUI_VIEW_OF(&locked_column));
-    egui_view_set_size(EGUI_VIEW_OF(&locked_column), PARALLAX_PREVIEW_WIDTH, PARALLAX_BOTTOM_HEIGHT);
-    egui_view_set_margin(EGUI_VIEW_OF(&locked_column), 6, 0, 0, 0);
-    egui_view_linearlayout_set_orientation(EGUI_VIEW_OF(&locked_column), 0);
-    egui_view_linearlayout_set_align_type(EGUI_VIEW_OF(&locked_column), EGUI_ALIGN_HCENTER);
-    egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&locked_column));
-
-    egui_view_parallax_view_init(EGUI_VIEW_OF(&parallax_locked));
-    egui_view_set_size(EGUI_VIEW_OF(&parallax_locked), PARALLAX_PREVIEW_WIDTH, PARALLAX_PREVIEW_HEIGHT);
-    egui_view_parallax_view_set_font(EGUI_VIEW_OF(&parallax_locked), (const egui_font_t *)&egui_res_font_montserrat_8_4);
-    egui_view_parallax_view_set_meta_font(EGUI_VIEW_OF(&parallax_locked), (const egui_font_t *)&egui_res_font_montserrat_8_4);
-    egui_view_parallax_view_set_header(EGUI_VIEW_OF(&parallax_locked), "Read-only", "Depth fixed", "Locked");
-    egui_view_parallax_view_set_rows(EGUI_VIEW_OF(&parallax_locked), locked_rows, 3);
-    egui_view_parallax_view_set_content_metrics(EGUI_VIEW_OF(&parallax_locked), 460, 160);
-    egui_view_parallax_view_set_vertical_shift(EGUI_VIEW_OF(&parallax_locked), 6);
-    egui_view_parallax_view_set_step_size(EGUI_VIEW_OF(&parallax_locked), 60, 180);
-    egui_view_parallax_view_set_compact_mode(EGUI_VIEW_OF(&parallax_locked), 1);
-    egui_view_parallax_view_set_locked_mode(EGUI_VIEW_OF(&parallax_locked), 1);
-    egui_view_parallax_view_set_offset(EGUI_VIEW_OF(&parallax_locked), locked_rows[1].anchor_offset);
-    egui_view_group_add_child(EGUI_VIEW_OF(&locked_column), EGUI_VIEW_OF(&parallax_locked));
+    egui_view_parallax_view_init(EGUI_VIEW_OF(&parallax_read_only));
+    egui_view_set_size(EGUI_VIEW_OF(&parallax_read_only), PARALLAX_PREVIEW_WIDTH, PARALLAX_PREVIEW_HEIGHT);
+    egui_view_set_margin(EGUI_VIEW_OF(&parallax_read_only), 6, 0, 0, 0);
+    egui_view_parallax_view_set_font(EGUI_VIEW_OF(&parallax_read_only), (const egui_font_t *)&egui_res_font_montserrat_8_4);
+    egui_view_parallax_view_set_meta_font(EGUI_VIEW_OF(&parallax_read_only), (const egui_font_t *)&egui_res_font_montserrat_8_4);
+    egui_view_parallax_view_set_header(EGUI_VIEW_OF(&parallax_read_only), "Read only", "Depth fixed", "Archive");
+    egui_view_parallax_view_set_rows(EGUI_VIEW_OF(&parallax_read_only), read_only_rows, 3);
+    egui_view_parallax_view_set_content_metrics(EGUI_VIEW_OF(&parallax_read_only), 460, 160);
+    egui_view_parallax_view_set_vertical_shift(EGUI_VIEW_OF(&parallax_read_only), 6);
+    egui_view_parallax_view_set_step_size(EGUI_VIEW_OF(&parallax_read_only), 60, 180);
+    egui_view_parallax_view_set_compact_mode(EGUI_VIEW_OF(&parallax_read_only), 1);
+    egui_view_parallax_view_set_read_only_mode(EGUI_VIEW_OF(&parallax_read_only), 1);
+    static egui_view_api_t parallax_read_only_touch_api;
+    egui_view_override_api_on_touch(EGUI_VIEW_OF(&parallax_read_only), &parallax_read_only_touch_api, consume_preview_touch);
+#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
+    egui_view_set_focusable(EGUI_VIEW_OF(&parallax_read_only), false);
+#endif
+    egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&parallax_read_only));
 
     apply_primary_state(0);
     apply_compact_state(1);
+    apply_read_only_state();
 
     {
         hello_custom_widgets_demo_apply_title_only_scaffold(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label), NULL, 0);
     }
 
-    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&compact_column));
-    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&locked_column));
     egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&bottom_row));
     egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&root_layout));
 
     egui_core_add_user_root_view(EGUI_VIEW_OF(&root_layout));
     egui_core_layout_childs_user_root_view(EGUI_LAYOUT_VERTICAL, EGUI_ALIGN_HCENTER | EGUI_ALIGN_VCENTER);
     egui_view_invalidate(EGUI_VIEW_OF(&root_layout));
-#if EGUI_CONFIG_RECORDING_TEST
-    recording_request_snapshot();
-#endif
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_request_focus(EGUI_VIEW_OF(&parallax_primary));
 #endif
 }
 
 #if EGUI_CONFIG_RECORDING_TEST
-static void request_page_snapshot(void)
-{
-    egui_view_invalidate(EGUI_VIEW_OF(&root_layout));
-    recording_request_snapshot();
-}
-
 bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_action)
 {
     static int last_action = -1;
@@ -201,39 +200,70 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
         {
             apply_primary_state(0);
             apply_compact_state(1);
-            request_page_snapshot();
+            apply_read_only_state();
         }
-        EGUI_SIM_SET_WAIT(p_action, 220);
+        EGUI_SIM_SET_WAIT(p_action, PARALLAX_RECORD_WAIT);
         return true;
     case 1:
         if (first_call)
         {
-            apply_primary_state(1);
-            request_page_snapshot();
+            recording_request_snapshot();
         }
-        EGUI_SIM_SET_WAIT(p_action, 220);
+        EGUI_SIM_SET_WAIT(p_action, PARALLAX_RECORD_FRAME_WAIT);
         return true;
     case 2:
         if (first_call)
         {
-            apply_primary_state(2);
-            request_page_snapshot();
+            apply_primary_state(1);
         }
-        EGUI_SIM_SET_WAIT(p_action, 220);
+        EGUI_SIM_SET_WAIT(p_action, PARALLAX_RECORD_WAIT);
         return true;
     case 3:
         if (first_call)
         {
-            apply_compact_state(2);
-            request_page_snapshot();
+            recording_request_snapshot();
         }
-        EGUI_SIM_SET_WAIT(p_action, 220);
+        EGUI_SIM_SET_WAIT(p_action, PARALLAX_RECORD_FRAME_WAIT);
         return true;
     case 4:
         if (first_call)
         {
+            apply_primary_state(2);
+        }
+        EGUI_SIM_SET_WAIT(p_action, PARALLAX_RECORD_WAIT);
+        return true;
+    case 5:
+        if (first_call)
+        {
+            recording_request_snapshot();
+        }
+        EGUI_SIM_SET_WAIT(p_action, PARALLAX_RECORD_FRAME_WAIT);
+        return true;
+    case 6:
+        if (first_call)
+        {
+            apply_compact_state(2);
+        }
+        EGUI_SIM_SET_WAIT(p_action, PARALLAX_RECORD_WAIT);
+        return true;
+    case 7:
+        if (first_call)
+        {
+            recording_request_snapshot();
+        }
+        EGUI_SIM_SET_WAIT(p_action, PARALLAX_RECORD_FRAME_WAIT);
+        return true;
+    case 8:
+        if (first_call)
+        {
             apply_primary_state(3);
-            request_page_snapshot();
+        }
+        EGUI_SIM_SET_WAIT(p_action, PARALLAX_RECORD_WAIT);
+        return true;
+    case 9:
+        if (first_call)
+        {
+            recording_request_snapshot();
         }
         EGUI_SIM_SET_WAIT(p_action, 520);
         return true;

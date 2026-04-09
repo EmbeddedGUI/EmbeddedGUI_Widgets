@@ -1,121 +1,131 @@
 # parallax_view 设计说明
 
 ## 参考来源
+
 - 参考设计系统：`Fluent 2`
 - 官方语义参考：`WinUI 3 ParallaxView`
 - 对应组件名：`ParallaxView`
-- 本次保留状态：标准态、offset stepped、hero shift、active row、compact、read-only
-- 删除效果：真实图片背景、惯性滚动、系统级动画、复杂材质阴影、跨容器联动
-- EGUI 适配说明：保留“前景滚动驱动背景慢速位移”的核心语义，用纯绘制 layer 和 offset 映射表达景深，不引入真实滚动容器依赖
+- 本次保留状态：`standard`、`compact`、`read only`、`offset stepped`、`hero shift`、`active row`
+- 本次删除效果：页面级 `guide`、状态回显、外部 preview 标签、旧双列包裹壳、真实图片背景、复杂滚动动画和过重的 hero / row / footer chrome
+- EGUI 适配说明：保留 offset 驱动 hero 慢速位移、active row 和 footer 摘要语义，仅在 `HelloCustomWidgets` 内维护 `reference widget` 版本
 
-## 1. 为什么需要这个控件
-`parallax_view` 用来表达“前景内容滚动时，背景 hero 区域以更慢速度位移”的标准景深语义。它适合 onboarding、内容导览、分段长页面、dashboard hero 和媒体分层封面等场景，重点不是列表本身，而是 scroll offset 与背景层位移的关联。
+## 1. 为什么需要这个控件？
+`parallax_view` 用来表达“前景内容滚动时，背景 hero 区域以更慢速度位移”的标准景深语义。它适合 onboarding、内容导览、长页面摘要和 dashboard hero 等场景，重点不是列表本身，而是 offset 与背景层位移的关联。
 
-## 2. 为什么现有控件不够用
-- `split_view`、`master_detail` 强调双栏结构，不表达单面板内的滚动景深
-- `flip_view`、`coverflow_strip` 强调离散分页与轮播，不表达连续 offset
-- `layer_stack` 有静态层叠效果，但缺少由 offset 驱动的背景位移
-- `scroll_bar` 只表达滚动位置，不承担 hero depth 的视觉语义
+## 2. 为什么现有控件不够用？
+- `split_view`、`master_detail` 强调双栏结构，不表达单卡内的景深滚动。
+- `flip_view` 强调分页切换，不表达连续 offset。
+- `scroll_bar` 只表达滚动位置，不承担 hero depth 的视觉反馈。
+- `card_panel` 更偏静态摘要卡，不处理前景 rows 与背景 hero 的联动。
 
 ## 3. 目标场景与示例概览
-- 主卡展示标准 `parallax_view`：hero 区背景层随 offset 慢速上移，前景 row 列表保持可读
-- 左下 `Compact` 预览展示更紧凑的 parallax 摘要态，只保留核心层次
-- 右下 `Read-only` 预览展示锁定态，对照不可交互时的低噪音视觉
-- 支持 touch 点击 row 跳转到该 row 的 `anchor_offset`
-- 支持 `Up / Down / Home / End / Plus / Minus`
+- 主控件展示标准 `parallax_view`，录制轨道覆盖四组锚点状态：`Hero Banner / Pinned Deck / Quiet Layer / System Cards`。
+- 底部左侧展示 `compact` 静态对照，验证低密度 hero 与 rows 的压缩表达。
+- 底部右侧展示 `read only` 静态对照，验证景深弱化和输入抑制后的被动态。
+- 页面结构统一收口为：标题 -> 主 `parallax_view` -> `compact / read only`。
+- 两个 preview 都禁用 `touch` 和 `focus`，只承担 reference 对照，不再承接页面桥接逻辑。
 
-目录：
-- `example/HelloCustomWidgets/layout/parallax_view/`
+目标目录：`example/HelloCustomWidgets/layout/parallax_view/`
 
 ## 4. 视觉与布局规格
 - 画布：`480 x 480`
 - 根布局：`224 x 304`
-- 页面结构：标题 -> 主卡 -> `Compact / Read-only`
-- 主卡尺寸：`194 x 136`
-- 底部双预览容器：`218 x 82`
-- 单个预览尺寸：`106 x 82`
-- 视觉规则：
-  - 使用浅色 Fluent 风格 card，不回退到重装饰 showcase 语法
-  - 顶部 hero 区保留三层低对比度背景条，随 offset 产生慢速位移
-  - 前景 rows 以低装饰列表方式压在 hero 下方，当前 row 只保留轻量 tone bar 强调
-  - footer pill 固定回显当前 active row，不再额外叠加页面级状态文案
+- 主控件：`194 x 136`
+- 底部对照容器：`218 x 82`
+- `compact` 预览：`106 x 82`
+- `read only` 预览：`106 x 82`
+- 视觉原则：
+  - 使用浅色 Fluent 卡片，不回退到 showcase 式的重装饰 hero。
+  - hero 区域保留低对比三层 background strips，通过 offset 和 vertical shift 表达景深。
+  - 前景 rows 以低噪音列表卡呈现，active row 只保留轻量 tone bar 和弱化边框强调。
+  - footer summary 保持可读，但不能压过 hero 标题和 rows。
+  - `read only` 除了视觉弱化，还必须抑制 touch / key 输入。
 
 ## 5. 控件清单
+
 | 变量名 | 类型 | 尺寸 (W x H) | 初始状态 | 用途 |
 | --- | --- | ---: | --- | --- |
-| `root_layout` | `egui_view_linearlayout_t` | 224 x 304 | enabled | 页面根容器 |
-| `title_label` | `egui_view_label_t` | 224 x 18 | `Parallax View` | 页面标题 |
-| `parallax_primary` | `egui_view_parallax_view_t` | 194 x 136 | `offset=0` | 标准 parallax 主卡 |
-| `parallax_compact` | `egui_view_parallax_view_t` | 106 x 82 | compact | 紧凑预览 |
-| `parallax_locked` | `egui_view_parallax_view_t` | 106 x 82 | compact + locked | 只读对照 |
+| `root_layout` | `egui_view_linearlayout_t` | `224 x 304` | enabled | 页面根容器 |
+| `title_label` | `egui_view_label_t` | `224 x 18` | `Parallax View` | 页面标题 |
+| `parallax_primary` | `egui_view_parallax_view_t` | `194 x 136` | `offset=0` | 主 parallax 卡 |
+| `parallax_compact` | `egui_view_parallax_view_t` | `106 x 82` | `compact` | 紧凑对照 |
+| `parallax_read_only` | `egui_view_parallax_view_t` | `106 x 82` | `compact + read only` | 只读对照 |
 
 ## 6. 状态覆盖矩阵
-- 标准态：`Hero Banner`
-- 切换 1：`Pinned Deck`
-- 切换 2：`Quiet Layer`
-- 切换 3：`System Cards`
-- compact 预览：`Depth Strip` -> `Quiet Stack`
-- read-only：固定在 `Review Shelf`
-- 输入态：
-  - `Up / Down` 按 line step 调整 offset
-  - `Plus / Minus` 按 page step 调整 offset
-  - `Home / End` 跳到首尾
-  - touch row 直接跳到对应 anchor
+
+| 状态 / 区域 | 主控件 | Compact | Read only |
+| --- | --- | --- | --- |
+| 默认态 | `Hero Banner` | `Depth Strip` | `Review Shelf` |
+| 切换 1 | `Pinned Deck` | 保持 | 保持 |
+| 切换 2 | `Quiet Layer` | 保持 | 保持 |
+| 切换 3 | `System Cards` | 保持 | 保持 |
+| 紧凑切换 | 保持 | `Depth Strip -> Quiet Stack` | 保持 |
+| 只读弱化 | 不适用 | 不适用 | hero、rows、footer tone 降低，同时抑制输入 |
 
 ## 7. `egui_port_get_recording_action()` 录制动作设计
-1. 初始化后抓取主卡首态和底部双预览基线快照
-2. 程序化切到 `Pinned Deck`
-3. 程序化切到 `Quiet Layer`
-4. 程序化切换 compact 预览到 `Quiet Stack`
-5. 程序化切到主卡尾态 `System Cards` 并收尾等待
+1. 重置主控件、`compact` 和 `read only` 对照。
+2. 请求第一帧截图。
+3. 程序化切到 `Pinned Deck`。
+4. 请求第二帧截图。
+5. 程序化切到 `Quiet Layer`。
+6. 请求第三帧截图。
+7. 程序化切到 `Quiet Stack` 的 `compact` 对照。
+8. 请求第四帧截图。
+9. 程序化切到主控件尾态 `System Cards`。
+10. 请求最终截图并保留收尾等待。
 
-## 8. 编译、runtime、截图验收标准
-- 构建命令：
-  - `make all APP=HelloCustomWidgets APP_SUB=layout/parallax_view PORT=pc`
-- Runtime 命令：
-  - `python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub layout/parallax_view --timeout 10 --keep-screenshots`
-- 单元测试：
-  - `make all APP=HelloUnitTest PORT=pc_test`
-  - `output\main.exe`
-- 验收重点：
-  - hero 区与 rows 不可重叠到难以识别
-  - 背景层位移必须能从录制截图中看出明显变化
-  - footer pill、progress pill 与右侧短标签需要人工复核居中与留白
-  - compact/read-only 必须一眼可区分
+## 8. 编译、交互、runtime、截图验收标准
+```bash
+make all APP=HelloCustomWidgets APP_SUB=layout/parallax_view PORT=pc
+python scripts/checks/check_touch_release_semantics.py --scope custom --category layout
+python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub layout/parallax_view --track reference --timeout 10 --keep-screenshots
+make all APP=HelloUnitTest PORT=pc_test
+output\main.exe
+python scripts/checks/check_docs_encoding.py
+```
 
-## 9. 已知限制与下一轮迭代计划
-- 当前使用固定 row 数据，不接真实滚动容器
-- 当前以 stepped offset 演示 parallax，不做连续惯性动画
-- 当前背景层是抽象条带，不引入真实图片资源
-- 如后续沉淀到框架层，可再补真实 scroll source 绑定
+验收重点：
+- 主控件和底部 `compact / read only` 对照必须完整可见，不能被裁切。
+- hero layers 的位移变化必须能从关键帧中稳定辨认出来，且不能压住 rows 文本。
+- active row、progress pill 和 footer summary 在主态与切换态下都要保持可辨识。
+- `read only` 需要同时满足视觉弱化和输入抑制，单测必须覆盖 pressed 清理与 touch / key 忽略。
+- 页面中不再出现旧列容器壳、guide、状态回显或额外 preview 标签。
 
-## 10. 与现有控件的重叠分析与差异化边界
-- 相比 `split_view` / `master_detail`：这里是单卡内的深度滚动，不是双栏
-- 相比 `flip_view` / `coverflow_strip`：这里是连续 offset 语义，不是离散翻页
-- 相比 `layer_stack`：这里的层位移由 offset 驱动，而不是静态堆叠
-- 相比 `scroll_bar`：这里重点是 hero depth 反馈，不是标准滚动条输入部件
+## 9. 已知限制与后续方向
+- 当前版本使用固定 `row + anchor_offset` 数据，不接真实滚动容器。
+- 当前只做 stepped offset 的示例级 parallax，不做连续惯性动画。
+- 当前 hero 层是抽象 strips，不引入真实图片或视频资源。
+- 是否下沉到 `src/widget/` 作为通用控件，后续单独评估。
+
+## 10. 与现有控件的边界
+- 相比 `split_view` / `master_detail`：这里是单卡内部的景深滚动，不是双栏布局。
+- 相比 `flip_view`：这里是连续 offset 语义，不是分页翻页。
+- 相比 `scroll_bar`：这里重点是 hero depth 反馈，不是标准滚动条输入。
+- 相比 `card_panel`：这里强调 offset 驱动的层位移，而不是静态摘要卡。
 
 ## 11. 参考设计系统与开源母本
-- `Fluent 2`
-- `WinUI 3 ParallaxView`
+- 参考设计系统：`Fluent 2`
+- 官方语义参考：`WinUI 3 ParallaxView`
 
-## 12. 对应组件名与保留核心状态
+## 12. 对应组件名与本次保留的核心状态
 - 对应组件名：`ParallaxView`
-- 本次保留：
-  - offset stepped
-  - hero shift
-  - active row
-  - compact
-  - read-only
+- 本次保留核心状态：
+  - `standard`
+  - `compact`
+  - `read only`
+  - `offset stepped`
+  - `hero shift`
+  - `active row`
 
-## 13. 相比参考原型删除的效果或装饰
-- 不做真实图片 / 视频背景
-- 不做桌面级滚动动画与材质阴影
-- 不做多源滚动绑定或跨容器 parallax
-- 不做系统级 focus ring 与 hover reveal
+## 13. 相比参考原型删掉了哪些效果或装饰？
+- 删除页面级 `guide`、状态回显、preview 标签和旧双列包裹壳。
+- 删除真实图片 / 视频背景、复杂桌面级滚动动画和材质阴影。
+- 删除跨容器联动和多源滚动绑定。
+- 删除完整 hover、focus ring 等桌面交互细节。
+- 删除重装饰 showcase 风格，只保留 reference 级景深语义。
 
 ## 14. EGUI 适配时的简化点与约束
-- 以固定 `row + anchor_offset` 数组驱动，保证示例可重复验证
-- 通过背景条带位移模拟 depth，不引入额外资源依赖
-- 在 `480 x 480` 页面内优先保证三态对照和文本可读性
-- 当前先沉淀为 `HelloCustomWidgets` custom widget，不下沉到框架核心层
+- 使用固定 `row + anchor_offset` 数据，优先保证 `480 x 480` 下的审阅稳定性。
+- 通过 hero strips 位移模拟 depth，不引入额外资源依赖。
+- `compact` 与 `read only` 直接复用同一控件模式，减少页面级桥接逻辑。
+- `read only` 不仅弱化视觉，也抑制输入，避免语义和交互脱节。

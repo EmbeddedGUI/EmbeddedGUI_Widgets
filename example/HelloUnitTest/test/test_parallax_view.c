@@ -149,7 +149,7 @@ static void test_parallax_view_touch_selects_anchor(void)
     EGUI_TEST_ASSERT_EQUAL_INT(360, last_offset);
 }
 
-static void test_parallax_view_compact_and_locked_ignore_input(void)
+static void test_parallax_view_compact_and_read_only_ignore_input(void)
 {
     egui_region_t region;
 
@@ -163,13 +163,42 @@ static void test_parallax_view_compact_and_locked_ignore_input(void)
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_parallax_view_get_offset(EGUI_VIEW_OF(&test_parallax_view)));
 
     setup_parallax_view();
-    egui_view_parallax_view_set_locked_mode(EGUI_VIEW_OF(&test_parallax_view), 1);
+    egui_view_parallax_view_set_read_only_mode(EGUI_VIEW_OF(&test_parallax_view), 1);
     layout_parallax_view();
     EGUI_TEST_ASSERT_TRUE(egui_view_parallax_view_get_row_region(EGUI_VIEW_OF(&test_parallax_view), 1, &region));
     EGUI_TEST_ASSERT_FALSE(send_key(EGUI_KEY_CODE_PLUS));
     EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, region.location.x + region.size.width / 2, region.location.y + region.size.height / 2));
     EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, region.location.x + region.size.width / 2, region.location.y + region.size.height / 2));
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_parallax_view_get_offset(EGUI_VIEW_OF(&test_parallax_view)));
+}
+
+static void test_parallax_view_read_only_mode_clears_pressed_state(void)
+{
+    egui_region_t region;
+
+    setup_parallax_view();
+    layout_parallax_view();
+    EGUI_TEST_ASSERT_TRUE(egui_view_parallax_view_get_row_region(EGUI_VIEW_OF(&test_parallax_view), 1, &region));
+
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, region.location.x + region.size.width / 2, region.location.y + region.size.height / 2));
+    EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&test_parallax_view)->is_pressed);
+    EGUI_TEST_ASSERT_EQUAL_INT(1, test_parallax_view.pressed_row);
+
+    egui_view_parallax_view_set_read_only_mode(EGUI_VIEW_OF(&test_parallax_view), 1);
+    EGUI_TEST_ASSERT_EQUAL_INT(1, test_parallax_view.read_only_mode);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_parallax_view)->is_pressed);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_PARALLAX_VIEW_INDEX_NONE, test_parallax_view.pressed_row);
+
+    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, region.location.x + region.size.width / 2, region.location.y + region.size.height / 2));
+    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, region.location.x + region.size.width / 2, region.location.y + region.size.height / 2));
+    EGUI_TEST_ASSERT_FALSE(send_key(EGUI_KEY_CODE_END));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_parallax_view_get_offset(EGUI_VIEW_OF(&test_parallax_view)));
+
+    egui_view_parallax_view_set_read_only_mode(EGUI_VIEW_OF(&test_parallax_view), 0);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, test_parallax_view.read_only_mode);
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, region.location.x + region.size.width / 2, region.location.y + region.size.height / 2));
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, region.location.x + region.size.width / 2, region.location.y + region.size.height / 2));
+    EGUI_TEST_ASSERT_EQUAL_INT(180, egui_view_parallax_view_get_offset(EGUI_VIEW_OF(&test_parallax_view)));
 }
 
 static void test_parallax_view_row_region_is_exposed(void)
@@ -191,7 +220,8 @@ void test_parallax_view_run(void)
     EGUI_TEST_RUN(test_parallax_view_active_row_tracks_offset);
     EGUI_TEST_RUN(test_parallax_view_keyboard_navigation);
     EGUI_TEST_RUN(test_parallax_view_touch_selects_anchor);
-    EGUI_TEST_RUN(test_parallax_view_compact_and_locked_ignore_input);
+    EGUI_TEST_RUN(test_parallax_view_compact_and_read_only_ignore_input);
+    EGUI_TEST_RUN(test_parallax_view_read_only_mode_clears_pressed_state);
     EGUI_TEST_RUN(test_parallax_view_row_region_is_exposed);
     EGUI_TEST_SUITE_END();
 }
