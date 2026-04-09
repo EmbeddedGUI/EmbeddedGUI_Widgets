@@ -38,8 +38,9 @@
 - 样式约束：
   - 使用浅灰 page panel、白底卡片和低噪音浅边框。
   - avatar overlap、presence dot、eyebrow、title 和 footer summary 都保留，但强调度要比旧版更轻。
-  - `compact` 直接通过控件模式表达，不再依赖外部标签说明。
-  - `read only` 保留完整成员结构，但 ring、presence 和 footer tone 都需要明显弱化。
+- `compact` 直接通过控件模式表达，不再依赖外部标签说明。
+- `read only` 保留完整成员结构，但 ring、presence 和 footer tone 都需要明显弱化。
+- `snapshot / compact / read only` 切换后不能残留 avatar pressed 高亮，避免成员焦点和 footer summary 停留在旧态。
 
 ## 5. 控件清单
 
@@ -92,6 +93,7 @@ python scripts/checks/check_docs_encoding.py
 - 主控件和底部 `compact / read only` 预览都必须完整可见。
 - avatar overlap、presence dot、标题、角色和 footer summary 之间要保留清晰留白。
 - `accent / success / neutral` 焦点切换需要可辨认，但整体不能回到高对比 showcase 风格。
+- `read only / disabled` 不仅要忽略后续 `touch / key` 输入，还要在新输入或模式切换时清掉残留 `pressed` 渲染。
 - 页面中不再出现 `guide`、状态说明、外部 preview 标签和旧双列包裹壳层。
 - 底部预览只作静态对照展示，不承担点击切换职责。
 
@@ -138,4 +140,5 @@ python scripts/checks/check_docs_encoding.py
 - 使用固定 `snapshot + item` 数据保证录制稳定。
 - `compact / read only` 直接复用同一控件模式，减少额外页面壳层。
 - 通过程序化切换 snapshot 和 focus index 保证 runtime 稳定抓取状态变化。
+- `snapshot / compact / read only / disabled` 共用同一套 `pressed` 清理语义，确保 avatar 焦点、presence tone 和 footer summary 在交互收尾后不残留旧高亮。
 - 当前先作为 `HelloCustomWidgets` 的 `reference widget` 维护，后续是否下沉框架层再单独评估。

@@ -98,6 +98,11 @@
 ## 最近完成的收口动作
 
 - `2026-04-10`
+  - 完成 `display/persona_group` 二次收口：在既有 `reference` 页面结构保持不变的前提下，把工作重点收回到交互行为，补齐 `snapshot / compact / read only / disabled` 切换链路里的 pressed 清理与输入抑制。
+  - `egui_view_persona_group.c` 新增统一的 `egui_view_persona_group_clear_pressed_state()`，让 `set_snapshots()`、`set_current_snapshot()`、`set_current_index()`、`set_compact_mode()` 和 `set_read_only_mode()` 共用同一套 `pressed_index + is_pressed` 清理逻辑；同时把 `read only / disabled` 的 touch 与 key guard 收口到事件入口，确保收到新输入时先清理旧高亮，再拒绝提交。
+  - `example/HelloUnitTest/test/test_persona_group.c` 新增“same index / same snapshot 清 pressed”“compact 切换后恢复点击”“read only / disabled 清理残留 pressed 并忽略后续输入”的交互回归；README 同步明确模式切换后不能残留 avatar pressed 高亮。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=display/persona_group PORT=pc`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category display`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub display/persona_group --track reference --timeout 10 --keep-screenshots`、`python scripts/checks/check_docs_encoding.py`，并把关键帧归档到本地 `iteration_log/` 供验收复核。
+- `2026-04-10`
   - 完成 `display/badge_group` 二次收口：在既有 `reference` 结构不再调整页面骨架的前提下，把工作重点收回到交互行为，补齐 `snapshot / compact / read only / disabled` 切换链路里的 pressed 清理与输入抑制。
   - `egui_view_badge_group.c` 新增统一的 `egui_view_badge_group_clear_pressed_state()`，让 `set_snapshots()`、`set_current_snapshot()`、`set_compact_mode()` 和 `set_read_only_mode()` 都能清掉残留 pressed；同时把 `read only / disabled` 的 touch 与 key guard 收口到事件入口，保证收到新输入时先清理旧高亮，再拒绝提交。
   - `example/HelloUnitTest/test/test_badge_group.c` 新增“same snapshot 清 pressed”“compact 切换后恢复点击”“disabled 清理残留 pressed 并在恢复后再次点击”的交互回归；README 同步明确 `read only` 除了弱化 tone 和抑制输入外，还要求模式切换后不残留 pressed 渲染。

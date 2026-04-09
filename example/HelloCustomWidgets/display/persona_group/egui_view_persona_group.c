@@ -78,6 +78,14 @@ static egui_color_t egui_view_persona_group_mix_disabled(egui_color_t color)
     return egui_rgb_mix(color, EGUI_COLOR_DARK_GREY, 66);
 }
 
+static void egui_view_persona_group_clear_pressed_state(egui_view_t *self)
+{
+    EGUI_LOCAL_INIT(egui_view_persona_group_t);
+
+    local->pressed_index = EGUI_VIEW_PERSONA_GROUP_MAX_ITEMS;
+    egui_view_set_pressed(self, false);
+}
+
 static egui_color_t egui_view_persona_group_presence_color(egui_view_persona_group_t *local, uint8_t presence)
 {
     switch (presence)
@@ -288,6 +296,11 @@ static void egui_view_persona_group_set_current_snapshot_inner(egui_view_t *self
     }
     if (local->current_snapshot == snapshot_index)
     {
+        if (local->pressed_index != EGUI_VIEW_PERSONA_GROUP_MAX_ITEMS || self->is_pressed)
+        {
+            egui_view_persona_group_clear_pressed_state(self);
+            egui_view_invalidate(self);
+        }
         return;
     }
 
@@ -301,7 +314,7 @@ static void egui_view_persona_group_set_current_snapshot_inner(egui_view_t *self
             local->current_index = 0;
         }
     }
-    local->pressed_index = EGUI_VIEW_PERSONA_GROUP_MAX_ITEMS;
+    egui_view_persona_group_clear_pressed_state(self);
     if (notify)
     {
         egui_view_persona_group_notify_change(self, local);
@@ -320,10 +333,16 @@ static void egui_view_persona_group_set_current_index_inner(egui_view_t *self, u
     }
     if (local->current_index == item_index)
     {
+        if (local->pressed_index != EGUI_VIEW_PERSONA_GROUP_MAX_ITEMS || self->is_pressed)
+        {
+            egui_view_persona_group_clear_pressed_state(self);
+            egui_view_invalidate(self);
+        }
         return;
     }
 
     local->current_index = item_index;
+    egui_view_persona_group_clear_pressed_state(self);
     if (notify)
     {
         egui_view_persona_group_notify_change(self, local);
@@ -340,7 +359,7 @@ void egui_view_persona_group_set_snapshots(egui_view_t *self, const egui_view_pe
     local->snapshot_count = egui_view_persona_group_clamp_snapshot_count(snapshot_count);
     local->current_snapshot = 0;
     local->current_index = 0;
-    local->pressed_index = EGUI_VIEW_PERSONA_GROUP_MAX_ITEMS;
+    egui_view_persona_group_clear_pressed_state(self);
 
     snapshot = egui_view_persona_group_get_snapshot(local);
     if (snapshot != NULL && snapshot->item_count > 0)
@@ -401,6 +420,7 @@ void egui_view_persona_group_set_compact_mode(egui_view_t *self, uint8_t compact
 {
     EGUI_LOCAL_INIT(egui_view_persona_group_t);
     local->compact_mode = compact_mode ? 1 : 0;
+    egui_view_persona_group_clear_pressed_state(self);
     egui_view_invalidate(self);
 }
 
@@ -408,8 +428,7 @@ void egui_view_persona_group_set_read_only_mode(egui_view_t *self, uint8_t read_
 {
     EGUI_LOCAL_INIT(egui_view_persona_group_t);
     local->read_only_mode = read_only_mode ? 1 : 0;
-    local->pressed_index = EGUI_VIEW_PERSONA_GROUP_MAX_ITEMS;
-    egui_view_set_pressed(self, false);
+    egui_view_persona_group_clear_pressed_state(self);
     egui_view_invalidate(self);
 }
 
@@ -646,6 +665,11 @@ static int egui_view_persona_group_on_touch_event(egui_view_t *self, egui_motion
 
     if (local->snapshots == NULL || local->snapshot_count == 0 || !egui_view_get_enable(self) || local->read_only_mode)
     {
+        if (local->pressed_index != EGUI_VIEW_PERSONA_GROUP_MAX_ITEMS || self->is_pressed)
+        {
+            egui_view_persona_group_clear_pressed_state(self);
+            egui_view_invalidate(self);
+        }
         return 0;
     }
 
@@ -655,6 +679,11 @@ static int egui_view_persona_group_on_touch_event(egui_view_t *self, egui_motion
         hit_index = egui_view_persona_group_hit_index(local, self, event->location.x, event->location.y);
         if (hit_index >= EGUI_VIEW_PERSONA_GROUP_MAX_ITEMS)
         {
+            if (local->pressed_index != EGUI_VIEW_PERSONA_GROUP_MAX_ITEMS || self->is_pressed)
+            {
+                egui_view_persona_group_clear_pressed_state(self);
+                egui_view_invalidate(self);
+            }
             return 0;
         }
         local->pressed_index = hit_index;
@@ -667,13 +696,11 @@ static int egui_view_persona_group_on_touch_event(egui_view_t *self, egui_motion
         {
             egui_view_persona_group_set_current_index_inner(self, hit_index, 1);
         }
-        local->pressed_index = EGUI_VIEW_PERSONA_GROUP_MAX_ITEMS;
-        egui_view_set_pressed(self, false);
+        egui_view_persona_group_clear_pressed_state(self);
         egui_view_invalidate(self);
         return hit_index < EGUI_VIEW_PERSONA_GROUP_MAX_ITEMS;
     case EGUI_MOTION_EVENT_ACTION_CANCEL:
-        local->pressed_index = EGUI_VIEW_PERSONA_GROUP_MAX_ITEMS;
-        egui_view_set_pressed(self, false);
+        egui_view_persona_group_clear_pressed_state(self);
         egui_view_invalidate(self);
         return 1;
     default:
@@ -689,7 +716,17 @@ static int egui_view_persona_group_on_key_event(egui_view_t *self, egui_key_even
     const egui_view_persona_group_snapshot_t *snapshot = egui_view_persona_group_get_snapshot(local);
     uint8_t next_index;
 
-    if (snapshot == NULL || snapshot->item_count == 0 || !egui_view_get_enable(self) || local->read_only_mode || event->type != EGUI_KEY_EVENT_ACTION_UP)
+    if (!egui_view_get_enable(self) || local->read_only_mode)
+    {
+        if (local->pressed_index != EGUI_VIEW_PERSONA_GROUP_MAX_ITEMS || self->is_pressed)
+        {
+            egui_view_persona_group_clear_pressed_state(self);
+            egui_view_invalidate(self);
+        }
+        return 0;
+    }
+
+    if (snapshot == NULL || snapshot->item_count == 0 || event->type != EGUI_KEY_EVENT_ACTION_UP)
     {
         return 0;
     }
