@@ -34,7 +34,6 @@
 
 | 状态 | 控件名 | 分类 | 开始日期 | 当前阶段 | 目标 |
 | --- | --- | --- | --- | --- | --- |
-| 暂无 | - | - | - | - | - |
 
 ## 当前保留的 Reference 主线控件
 
@@ -96,6 +95,11 @@
 - `toast_stack` -> `Toast`
 
 ## 最近完成的收口动作
+
+- `2026-04-09`
+  - 完成 `feedback/message_bar` 实现级样式收口：移除底部 preview 的旧列容器壳与页面桥接逻辑，页面统一为标题、主 `message_bar` 与 `compact / read only` 静态对照，继续保留 `MessageBar / InfoBar` 的四类 severity、正文与 action 层级语义。
+  - `test.c` 将 `bar_locked` 收口为 `bar_read_only`，底部两个 preview 统一禁用 touch / focus 并补上程序化 `read only` 重置；`egui_view_message_bar.c` 进一步压轻容器 fill / border、severity strip、glyph circle、action button 和 pin chrome；README 重写为当前 `reference` 模板。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=feedback/message_bar PORT=pc`、`check_touch_release_semantics.py --scope custom --category feedback`、`code_runtime_check.py --app HelloCustomWidgets --app-sub feedback/message_bar --track reference --timeout 10 --keep-screenshots`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`check_docs_encoding.py`。
 
 - `2026-04-09`
   - 完成 `navigation/nav_panel` 实现级样式收口：移除底部 preview 的旧列容器壳与 preview 交互桥接逻辑，页面统一为标题、主 `nav_panel` 与 `compact / read only` 静态对照，继续保留 `NavigationView` 的 selected row、compact rail 和 footer 语义。
@@ -232,7 +236,6 @@
 - `2026-04-09`
   - 完成 `feedback/skeleton` 实现级样式收口。
 - `2026-04-09`
-  - 完成 `feedback/message_bar` 实现级样式收口。
 - `2026-04-09`
   - 完成 `feedback/toast_stack` 实现级样式收口。
 - `2026-04-09`
