@@ -34,7 +34,7 @@
 
 | 状态 | 控件名 | 分类 | 开始日期 | 当前阶段 | 目标 |
 | --- | --- | --- | --- | --- | --- |
-| 进行中 | `card_panel` | `display` | `2026-04-09` | `reference 细化` | 收口为标题 + 主控件 + `compact / read only` 静态对照，并继续压轻 header strap、metric chip、footer action chrome |
+| 进行中 | `badge_group` | `display` | `2026-04-09` | `reference 细化` | 收口为标题 + 主控件 + `compact / read only` 静态对照，并继续压轻 focus badge fill、mixed row 对比和 footer summary chrome |
 
 ## 当前保留的 Reference 主线控件
 
@@ -96,6 +96,11 @@
 - `toast_stack` -> `Toast`
 
 ## 最近完成的收口动作
+
+- `2026-04-09`
+  - 完成 `display/card_panel` 实现级样式收口：移除底部 preview 的旧列容器壳，页面统一为标题、主 `card_panel` 与 `compact / read only` 静态对照，继续保留 `Card` 的 badge、summary slot、detail strip 和 action pill 语义。
+  - `test.c` 将 `panel_locked / locked_snapshots` 收口为 `panel_read_only / read_only_snapshots`，底部两个 preview 统一禁用 touch / focus，并在录制起点显式重置主轨道、`compact` 与 `read only` 对照；`egui_view_card_panel.c` 进一步压轻 header strap、metric chip、detail strip、footer line 和 action chrome，并把 `read_only_mode` 再灰蓝化；README 重写为当前 `reference` 模板。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=display/card_panel PORT=pc`、`check_touch_release_semantics.py --scope custom --category display`、`code_runtime_check.py --app HelloCustomWidgets --app-sub display/card_panel --track reference --timeout 10 --keep-screenshots`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`check_docs_encoding.py`。
 
 - `2026-04-09`
   - 完成 `display/persona_group` 实现级样式收口：移除底部 preview 的旧列容器壳，页面统一为标题、主 `persona_group` 与 `compact / read only` 静态对照，继续保留 `AvatarGroup` 的成员重叠、焦点成员、presence 和 overflow 气泡语义。
@@ -249,10 +254,6 @@
 - `2026-04-09`
   - 完成 `layout/split_view` 实现级样式收口：删除 guide / 状态文案 / standard label / section label / preview label 等页面级 chrome，示例页收敛为标题、主 `split_view` 与 `compact / read only` 双预览。
   - 统一 `split_view` 主卡与双预览尺寸、palette 和录制动作；底部预览改为静态对照，不再承担交互职责。
-- `2026-04-09`
-  - 完成 `display/card_panel` 实现级样式收口，移除旧版状态桥接和页面壳。
-- `2026-04-09`
-  - 完成 `display/badge_group` 实现级样式收口，统一到 Fluent / WPF UI 低噪音浅色 reference。
 - `2026-04-09`
   - 完成 `navigation/menu_bar` 实现级样式收口：移除底部 preview 的点击与焦点循环职责，把页面统一为标题、主控件与 `compact / read only` 静态对照，继续压轻 `egui_view_menu_bar.c` 的顶栏当前态、focus ring、panel shadow、separator、row highlight 与 summary strip。
   - 已通过 `make all APP=HelloCustomWidgets APP_SUB=navigation/menu_bar PORT=pc`、`check_touch_release_semantics.py --scope custom --category navigation`、`code_runtime_check.py --app HelloCustomWidgets --app-sub navigation/menu_bar --track reference --timeout 10 --keep-screenshots`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`check_docs_encoding.py`。
