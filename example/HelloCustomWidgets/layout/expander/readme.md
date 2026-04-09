@@ -8,7 +8,7 @@
 - 对应组件名：`Expander` / `CardExpander`
 - 本次保留状态：`expanded`、`collapsed`、`compact`、`read only`、`accent`、`success`、`warning`
 - 删除效果：页面级 guide / 状态文案 / standard label / section divider / preview label、Acrylic、投影、Reveal/Hover 光效、系统级转场动画
-- EGUI 适配说明：保留“标题行 disclosure + 展开 body”的核心语义，在 `480 x 480` 页面里优先保证主卡节奏与 `compact / read only` 对照稳定
+- EGUI 适配说明：保留“标题行 disclosure + 展开 body”的核心语义，在 `480 x 480` 页面里优先保证主卡节奏与 `compact / read only` 对照稳定；`current / expanded / compact / read only / view disabled` 切换共享同一套 `pressed` 清理语义
 
 ## 1. 为什么需要这个控件
 
@@ -100,6 +100,8 @@ python scripts/checks/check_docs_encoding.py
 - header、body、footer 之间要保留稳定留白，collapsed 态不能留下异常空洞
 - 主卡与双预览都必须维持 `Fluent 2 / WPF UI` 低噪音浅色语义
 - 页面中不再出现 guide、状态回显、standard label、section divider、`Compact` / `Read only` 外部标签
+- `current / expanded / compact / read only / view disabled` 切换后不能残留 header 的 `pressed` 高亮或 disclosure chevron 下压位移
+- `read_only_mode / !enable` 不仅要忽略后续 touch / key 输入，还要在收到新输入时清理残留 `pressed` 渲染
 - 底部预览不再承担交互职责，只作为对照展示
 
 ## 9. 已知限制与下一轮迭代计划

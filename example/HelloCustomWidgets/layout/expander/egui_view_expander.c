@@ -67,6 +67,16 @@ static egui_color_t expander_mix_disabled(egui_color_t color)
     return egui_rgb_mix(color, EGUI_COLOR_DARK_GREY, 68);
 }
 
+static uint8_t expander_clear_pressed_state(egui_view_t *self)
+{
+    EGUI_LOCAL_INIT(egui_view_expander_t);
+    uint8_t had_pressed = self->is_pressed || local->pressed_index != EGUI_VIEW_EXPANDER_INDEX_NONE;
+
+    local->pressed_index = EGUI_VIEW_EXPANDER_INDEX_NONE;
+    egui_view_set_pressed(self, false);
+    return had_pressed;
+}
+
 static egui_color_t expander_tone_color(egui_view_expander_t *local, uint8_t tone)
 {
     switch (tone)
@@ -272,10 +282,15 @@ static void expander_set_current_index_inner(egui_view_t *self, uint8_t item_ind
     }
     if (local->current_index == item_index)
     {
+        if (expander_clear_pressed_state(self))
+        {
+            egui_view_invalidate(self);
+        }
         return;
     }
 
     local->current_index = item_index;
+    expander_clear_pressed_state(self);
     if (notify && local->on_selection_changed != NULL)
     {
         local->on_selection_changed(self, item_index);
@@ -302,10 +317,15 @@ static void expander_set_expanded_index_inner(egui_view_t *self, uint8_t item_in
 
     if (local->expanded_index == normalized)
     {
+        if (expander_clear_pressed_state(self))
+        {
+            egui_view_invalidate(self);
+        }
         return;
     }
 
     local->expanded_index = normalized;
+    expander_clear_pressed_state(self);
     if (notify && local->on_expanded_changed != NULL)
     {
         uint8_t callback_index = normalized == EGUI_VIEW_EXPANDER_INDEX_NONE ? local->current_index : normalized;
@@ -342,7 +362,7 @@ void egui_view_expander_set_items(egui_view_t *self, const egui_view_expander_it
     local->item_count = expander_clamp_item_count(item_count);
     local->current_index = 0;
     local->expanded_index = local->item_count > 0 ? 0 : EGUI_VIEW_EXPANDER_INDEX_NONE;
-    local->pressed_index = EGUI_VIEW_EXPANDER_INDEX_NONE;
+    expander_clear_pressed_state(self);
     egui_view_invalidate(self);
 }
 
@@ -415,6 +435,7 @@ void egui_view_expander_set_compact_mode(egui_view_t *self, uint8_t compact_mode
 {
     EGUI_LOCAL_INIT(egui_view_expander_t);
     local->compact_mode = compact_mode ? 1 : 0;
+    expander_clear_pressed_state(self);
     egui_view_invalidate(self);
 }
 
@@ -422,7 +443,7 @@ void egui_view_expander_set_read_only_mode(egui_view_t *self, uint8_t read_only_
 {
     EGUI_LOCAL_INIT(egui_view_expander_t);
     local->read_only_mode = read_only_mode ? 1 : 0;
-    local->pressed_index = EGUI_VIEW_EXPANDER_INDEX_NONE;
+    expander_clear_pressed_state(self);
     egui_view_invalidate(self);
 }
 
@@ -710,6 +731,10 @@ static int egui_view_expander_on_touch_event(egui_view_t *self, egui_motion_even
 
     if (local->items == NULL || local->item_count == 0 || !egui_view_get_enable(self) || local->read_only_mode)
     {
+        if (expander_clear_pressed_state(self))
+        {
+            egui_view_invalidate(self);
+        }
         return 0;
     }
 
@@ -737,14 +762,14 @@ static int egui_view_expander_on_touch_event(egui_view_t *self, egui_motion_even
         {
             expander_toggle_index_inner(self, hit_index);
         }
-        local->pressed_index = EGUI_VIEW_EXPANDER_INDEX_NONE;
-        egui_view_set_pressed(self, false);
+        expander_clear_pressed_state(self);
         egui_view_invalidate(self);
         return hit_index != EGUI_VIEW_EXPANDER_INDEX_NONE ? 1 : 0;
     case EGUI_MOTION_EVENT_ACTION_CANCEL:
-        local->pressed_index = EGUI_VIEW_EXPANDER_INDEX_NONE;
-        egui_view_set_pressed(self, false);
-        egui_view_invalidate(self);
+        if (expander_clear_pressed_state(self))
+        {
+            egui_view_invalidate(self);
+        }
         return 1;
     default:
         return 0;
@@ -760,6 +785,10 @@ static int egui_view_expander_on_key_event(egui_view_t *self, egui_key_event_t *
 
     if (local->items == NULL || local->item_count == 0 || !egui_view_get_enable(self) || local->read_only_mode)
     {
+        if (expander_clear_pressed_state(self))
+        {
+            egui_view_invalidate(self);
+        }
         return 0;
     }
 
