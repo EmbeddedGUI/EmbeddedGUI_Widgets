@@ -119,9 +119,11 @@ static void test_badge_group_set_snapshots_clamp_and_reset_current(void)
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_BADGE_GROUP_MAX_SNAPSHOTS, test_group.snapshot_count);
 
     test_group.current_snapshot = 5;
+    EGUI_VIEW_OF(&test_group)->is_pressed = true;
     egui_view_badge_group_set_snapshots(EGUI_VIEW_OF(&test_group), g_snapshots, 1);
     EGUI_TEST_ASSERT_EQUAL_INT(1, test_group.snapshot_count);
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_badge_group_get_current_snapshot(EGUI_VIEW_OF(&test_group)));
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_group)->is_pressed);
 
     egui_view_badge_group_set_snapshots(EGUI_VIEW_OF(&test_group), NULL, 0);
     EGUI_TEST_ASSERT_EQUAL_INT(0, test_group.snapshot_count);
@@ -135,6 +137,10 @@ static void test_badge_group_set_current_snapshot_ignores_out_of_range(void)
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_badge_group_get_current_snapshot(EGUI_VIEW_OF(&test_group)));
     egui_view_badge_group_set_current_snapshot(EGUI_VIEW_OF(&test_group), 2);
     EGUI_TEST_ASSERT_EQUAL_INT(2, egui_view_badge_group_get_current_snapshot(EGUI_VIEW_OF(&test_group)));
+
+    EGUI_VIEW_OF(&test_group)->is_pressed = true;
+    egui_view_badge_group_set_current_snapshot(EGUI_VIEW_OF(&test_group), 2);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_group)->is_pressed);
 
     egui_view_badge_group_set_current_snapshot(EGUI_VIEW_OF(&test_group), 8);
     EGUI_TEST_ASSERT_EQUAL_INT(2, egui_view_badge_group_get_current_snapshot(EGUI_VIEW_OF(&test_group)));
@@ -153,10 +159,12 @@ static void test_badge_group_font_modes_and_palette_update(void)
     EGUI_TEST_ASSERT_TRUE(test_group.font == (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT);
     EGUI_TEST_ASSERT_TRUE(test_group.meta_font == (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT);
 
+    EGUI_VIEW_OF(&test_group)->is_pressed = true;
     egui_view_badge_group_set_compact_mode(EGUI_VIEW_OF(&test_group), 2);
     egui_view_badge_group_set_read_only_mode(EGUI_VIEW_OF(&test_group), 3);
     EGUI_TEST_ASSERT_EQUAL_INT(1, test_group.compact_mode);
     EGUI_TEST_ASSERT_EQUAL_INT(1, test_group.read_only_mode);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_group)->is_pressed);
 
     egui_view_badge_group_set_compact_mode(EGUI_VIEW_OF(&test_group), 0);
     egui_view_badge_group_set_read_only_mode(EGUI_VIEW_OF(&test_group), 0);
@@ -189,13 +197,23 @@ static void test_badge_group_touch_and_key_click_listener(void)
 
     EGUI_TEST_ASSERT_TRUE(send_key(EGUI_KEY_CODE_ENTER));
     EGUI_TEST_ASSERT_EQUAL_INT(2, click_count);
+}
 
-    egui_view_set_enable(EGUI_VIEW_OF(&test_group), 0);
+static void test_badge_group_compact_mode_clears_pressed_and_keeps_click_behavior(void)
+{
+    setup_group();
+    layout_group();
+
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN));
+    EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&test_group)->is_pressed);
+
+    egui_view_badge_group_set_compact_mode(EGUI_VIEW_OF(&test_group), 1);
+    EGUI_TEST_ASSERT_EQUAL_INT(1, test_group.compact_mode);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_group)->is_pressed);
+
     EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN));
     EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_UP));
-    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_group)->is_pressed);
-    EGUI_TEST_ASSERT_EQUAL_INT(2, click_count);
-    EGUI_TEST_ASSERT_FALSE(send_key(EGUI_KEY_CODE_ENTER));
+    EGUI_TEST_ASSERT_EQUAL_INT(1, click_count);
 }
 
 static void test_badge_group_read_only_mode_clears_pressed_and_ignores_input(void)
@@ -217,6 +235,27 @@ static void test_badge_group_read_only_mode_clears_pressed_and_ignores_input(voi
 
     egui_view_badge_group_set_read_only_mode(EGUI_VIEW_OF(&test_group), 0);
     EGUI_TEST_ASSERT_EQUAL_INT(0, test_group.read_only_mode);
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN));
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_UP));
+    EGUI_TEST_ASSERT_EQUAL_INT(1, click_count);
+}
+
+static void test_badge_group_disabled_ignores_input_and_clears_pressed_state(void)
+{
+    setup_group();
+    layout_group();
+
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN));
+    EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&test_group)->is_pressed);
+
+    egui_view_set_enable(EGUI_VIEW_OF(&test_group), 0);
+    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN));
+    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_UP));
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_group)->is_pressed);
+    EGUI_TEST_ASSERT_FALSE(send_key(EGUI_KEY_CODE_ENTER));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, click_count);
+
+    egui_view_set_enable(EGUI_VIEW_OF(&test_group), 1);
     EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN));
     EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_UP));
     EGUI_TEST_ASSERT_EQUAL_INT(1, click_count);
@@ -257,7 +296,9 @@ void test_badge_group_run(void)
     EGUI_TEST_RUN(test_badge_group_set_current_snapshot_ignores_out_of_range);
     EGUI_TEST_RUN(test_badge_group_font_modes_and_palette_update);
     EGUI_TEST_RUN(test_badge_group_touch_and_key_click_listener);
+    EGUI_TEST_RUN(test_badge_group_compact_mode_clears_pressed_and_keeps_click_behavior);
     EGUI_TEST_RUN(test_badge_group_read_only_mode_clears_pressed_and_ignores_input);
+    EGUI_TEST_RUN(test_badge_group_disabled_ignores_input_and_clears_pressed_state);
     EGUI_TEST_RUN(test_badge_group_internal_helpers_cover_focus_tone_text_and_width);
     EGUI_TEST_SUITE_END();
 }

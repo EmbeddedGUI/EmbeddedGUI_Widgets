@@ -92,6 +92,7 @@ python scripts/checks/check_docs_encoding.py
 - 主控件和底部 `compact / read only` 预览必须完整可见。
 - badge 组合最多两行，不能压到 footer summary。
 - `read only` 预览除了 tone 弱化外，还必须抑制输入，不能再触发点击或键盘激活。
+- `snapshot / compact / read only` 切换后不能残留 `pressed` 高亮，避免交互收尾时渲染停留在旧状态。
 - 主控件录制切换后的关键帧里，focus badge、footer summary 和 mixed row 层级必须仍然清晰。
 - 页面中不再出现旧列容器壳、guide、状态回显和外部 preview 标签。
 
@@ -135,4 +136,5 @@ python scripts/checks/check_docs_encoding.py
 - 使用固定 `snapshot + item` 数据，优先保证 `480 x 480` 下的审阅稳定性。
 - `compact` 与 `read only` 直接复用同一控件模式，减少页面级桥接逻辑。
 - `read only` 不仅弱化视觉，也抑制输入，避免语义和交互脱节。
+- `snapshot / compact / read only` 共用同一套 `pressed` 清理语义，保证模式切换后的卡片、focus badge 和 footer summary 不残留旧高亮。
 - 当前先作为 `HelloCustomWidgets` 的 `reference widget` 维护，后续再评估是否下沉框架层。
