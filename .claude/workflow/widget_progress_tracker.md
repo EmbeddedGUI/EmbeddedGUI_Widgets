@@ -98,6 +98,10 @@
 ## 最近完成的收口动作
 
 - `2026-04-09`
+  - 完成 `navigation/breadcrumb_bar` 实现级样式收口：移除底部 preview 的旧列容器壳与页面级点击轮换逻辑，页面统一为标题、主 `breadcrumb_bar` 与 `compact / read only` 静态对照，继续保留 `BreadcrumbBar` 的层级路径、省略折叠和 current item 语义。
+  - `test.c` 将 `bar_locked` 收口为 `bar_read_only`，底部两个 preview 统一禁用 touch / focus 并改为程序化切换；`egui_view_breadcrumb_bar.c` 进一步压轻容器边框、current item pill、separator chevron 和底部 underline；README 重写为当前 `reference` 模板。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=navigation/breadcrumb_bar PORT=pc`、`check_touch_release_semantics.py --scope custom --category navigation`、`code_runtime_check.py --app HelloCustomWidgets --app-sub navigation/breadcrumb_bar --track reference --timeout 10 --keep-screenshots`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`check_docs_encoding.py`。
+- `2026-04-09`
   - 完成 `navigation/pips_pager` 实现级样式收口：移除底部 preview 的旧双列容器壳，页面统一为标题、主 `pips_pager` 与 `compact / read only` 静态对照，继续保留 `PipsPager` 的 previous / next、当前页和离散 pips 语义。
   - `test.c` 将 `pager_locked` 收口为 `pager_read_only`，底部两个 preview 统一禁用 touch / focus，并为 read-only 预览补上更弱的灰蓝 palette；`egui_view_pips_pager.c` 进一步压轻 previous/next 按钮、inactive dots、current pill、focus ring 和 read-only chrome；README 重写为当前 `reference` 模板。
   - 已通过 `make all APP=HelloCustomWidgets APP_SUB=navigation/pips_pager PORT=pc`、`check_touch_release_semantics.py --scope custom --category navigation`、`code_runtime_check.py --app HelloCustomWidgets --app-sub navigation/pips_pager --track reference --timeout 10 --keep-screenshots`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`check_docs_encoding.py`。
@@ -223,10 +227,6 @@
   - 完成 `feedback/message_bar` 实现级样式收口。
 - `2026-04-09`
   - 完成 `feedback/toast_stack` 实现级样式收口。
-- `2026-04-09`
-- `2026-04-09`
-- `2026-04-09`
-  - 完成 `navigation/breadcrumb_bar` 实现级样式收口。
 - `2026-04-09`
   - 完成 `navigation/tab_strip` 实现级样式收口。
 - `2026-04-09`
