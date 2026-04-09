@@ -8,7 +8,7 @@
 - 对应组件名：`SettingCard` / `SettingsGroup`
 - 本次保留状态：`standard`、`compact`、`read only`、`accent`、`success`、`warning`、`neutral`
 - 本次删除效果：页面级 `guide`、状态回显、外部 preview 标签、旧双列包裹壳、过重的 section row 对比、过重的 value badge 和 footer meta chrome
-- EGUI 适配说明：保留设置卡分组、focus row 驱动 tone、尾部 `value / switch / chevron` 语义和 read-only 对照，仅在 `HelloCustomWidgets` 内维护 `reference widget` 版本
+- EGUI 适配说明：保留设置卡分组、focus row 驱动 tone、尾部 `value / switch / chevron` 语义和 read-only 对照，仅在 `HelloCustomWidgets` 内维护 `reference widget` 版本；`snapshot / compact / read only / disabled` 切换共享同一套 `pressed` 清理语义
 
 ## 1. 为什么需要这个控件？
 `settings_panel` 用来表达一组风格统一的设置卡行，适合设置页、偏好面板和系统信息页。它强调分组卡片、focus row、尾部值和开关语义，而不是普通列表或摘要卡片。
@@ -88,6 +88,8 @@ python scripts/checks/check_docs_encoding.py
 - 主控件和底部 `compact / read only` 对照必须完整可见，不能被裁切。
 - section rows、value badge、switch 和 chevron 在主态与切换态下都要保持可辨识。
 - `read only` 需要同时满足视觉弱化和输入抑制，单测必须覆盖 pressed 清理与 touch / key 忽略。
+- `snapshot / compact / read only / disabled` 切换后不能残留 `pressed` 高亮或下压位移渲染。
+- `read only / disabled` 不仅要忽略后续 touch / key 输入，还要在收到新输入时清理残留 `pressed` 渲染。
 - runtime 关键帧里，snapshot 切换后的 footer meta、focus row 和 section block 层级必须稳定。
 - 页面中不再出现旧列容器壳、guide、状态回显或额外 preview 标签。
 

@@ -47,6 +47,11 @@ static egui_color_t egui_view_settings_panel_mix_disabled(egui_color_t color)
     return egui_rgb_mix(color, EGUI_COLOR_DARK_GREY, 68);
 }
 
+static void egui_view_settings_panel_clear_pressed_state(egui_view_t *self)
+{
+    egui_view_set_pressed(self, false);
+}
+
 static egui_color_t egui_view_settings_panel_tone_color(egui_view_settings_panel_t *local, uint8_t tone)
 {
     switch (tone)
@@ -249,6 +254,7 @@ void egui_view_settings_panel_set_snapshots(egui_view_t *self, const egui_view_s
     {
         local->current_snapshot = 0;
     }
+    egui_view_settings_panel_clear_pressed_state(self);
     egui_view_invalidate(self);
 }
 
@@ -261,9 +267,15 @@ void egui_view_settings_panel_set_current_snapshot(egui_view_t *self, uint8_t sn
     }
     if (local->current_snapshot == snapshot_index)
     {
+        if (self->is_pressed)
+        {
+            egui_view_settings_panel_clear_pressed_state(self);
+            egui_view_invalidate(self);
+        }
         return;
     }
     local->current_snapshot = snapshot_index;
+    egui_view_settings_panel_clear_pressed_state(self);
     egui_view_invalidate(self);
 }
 
@@ -291,6 +303,7 @@ void egui_view_settings_panel_set_compact_mode(egui_view_t *self, uint8_t compac
 {
     EGUI_LOCAL_INIT(egui_view_settings_panel_t);
     local->compact_mode = compact_mode ? 1 : 0;
+    egui_view_settings_panel_clear_pressed_state(self);
     egui_view_invalidate(self);
 }
 
@@ -298,7 +311,7 @@ void egui_view_settings_panel_set_read_only_mode(egui_view_t *self, uint8_t read
 {
     EGUI_LOCAL_INIT(egui_view_settings_panel_t);
     local->read_only_mode = read_only_mode ? 1 : 0;
-    egui_view_set_pressed(self, false);
+    egui_view_settings_panel_clear_pressed_state(self);
     egui_view_invalidate(self);
 }
 
@@ -538,12 +551,14 @@ static int egui_view_settings_panel_on_touch_event(egui_view_t *self, egui_motio
 {
     EGUI_LOCAL_INIT(egui_view_settings_panel_t);
 
-    if (local->read_only_mode)
+    if (local->read_only_mode || !egui_view_get_enable(self))
     {
-        if (event->type == EGUI_MOTION_EVENT_ACTION_UP || event->type == EGUI_MOTION_EVENT_ACTION_CANCEL)
+        if (self->is_pressed)
         {
-            egui_view_set_pressed(self, false);
+            egui_view_settings_panel_clear_pressed_state(self);
+            egui_view_invalidate(self);
         }
+        EGUI_UNUSED(event);
         return 0;
     }
 
@@ -556,8 +571,14 @@ static int egui_view_settings_panel_on_key_event(egui_view_t *self, egui_key_eve
 {
     EGUI_LOCAL_INIT(egui_view_settings_panel_t);
 
-    if (local->read_only_mode)
+    if (local->read_only_mode || !egui_view_get_enable(self))
     {
+        if (self->is_pressed)
+        {
+            egui_view_settings_panel_clear_pressed_state(self);
+            egui_view_invalidate(self);
+        }
+        EGUI_UNUSED(event);
         return 0;
     }
 
