@@ -19,18 +19,18 @@ static void hcw_auto_suggest_box_apply_palette(egui_view_t *self, egui_dim_t col
 
 void hcw_auto_suggest_box_apply_standard_style(egui_view_t *self)
 {
-    hcw_auto_suggest_box_apply_palette(self, 34, 24, 4, EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD7DEE7), EGUI_COLOR_HEX(0x1E2933), EGUI_COLOR_HEX(0x617384),
-                                       EGUI_COLOR_HEX(0xDBEAFE));
+    hcw_auto_suggest_box_apply_palette(self, 34, 24, 4, EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD5DCE4), EGUI_COLOR_HEX(0x1A2734), EGUI_COLOR_HEX(0x6B7A89),
+                                       EGUI_COLOR_HEX(0xEAF3FB));
 }
 
 void hcw_auto_suggest_box_apply_compact_style(egui_view_t *self)
 {
-    hcw_auto_suggest_box_apply_palette(self, 28, 21, 3, EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD3DEDA), EGUI_COLOR_HEX(0x203039), EGUI_COLOR_HEX(0x4E6B67),
-                                       EGUI_COLOR_HEX(0xCCFBF1));
+    hcw_auto_suggest_box_apply_palette(self, 28, 21, 3, EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD5DCE4), EGUI_COLOR_HEX(0x1A2734), EGUI_COLOR_HEX(0x6B7A89),
+                                       EGUI_COLOR_HEX(0xEAF3FB));
 }
 
 void hcw_auto_suggest_box_apply_read_only_style(egui_view_t *self)
 {
-    hcw_auto_suggest_box_apply_palette(self, 28, 21, 3, EGUI_COLOR_HEX(0xFBFCFD), EGUI_COLOR_HEX(0xDBE2E8), EGUI_COLOR_HEX(0x5B6976), EGUI_COLOR_HEX(0x8996A4),
-                                       EGUI_COLOR_HEX(0xE5EAF0));
+    hcw_auto_suggest_box_apply_palette(self, 28, 21, 3, EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD5DCE4), EGUI_COLOR_HEX(0x6B7A89), EGUI_COLOR_HEX(0x7A8796),
+                                       EGUI_COLOR_HEX(0xEEF3F8));
 }

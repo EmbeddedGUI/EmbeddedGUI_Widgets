@@ -209,18 +209,18 @@ static void test_auto_suggest_box_style_helpers_and_params(void)
     EGUI_TEST_ASSERT_EQUAL_INT(34, local->collapsed_height);
     EGUI_TEST_ASSERT_EQUAL_INT(24, local->item_height);
     EGUI_TEST_ASSERT_EQUAL_INT(4, local->max_visible_items);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xD7DEE7).full, local->border_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xD5DCE4).full, local->border_color.full);
 
     hcw_auto_suggest_box_apply_compact_style(EGUI_VIEW_OF(&test_box));
     EGUI_TEST_ASSERT_EQUAL_INT(28, local->collapsed_height);
     EGUI_TEST_ASSERT_EQUAL_INT(21, local->item_height);
     EGUI_TEST_ASSERT_EQUAL_INT(3, local->max_visible_items);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xCCFBF1).full, local->highlight_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xEAF3FB).full, local->highlight_color.full);
 
     hcw_auto_suggest_box_apply_read_only_style(EGUI_VIEW_OF(&test_box));
     EGUI_TEST_ASSERT_EQUAL_INT(28, local->collapsed_height);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xFBFCFD).full, local->bg_color.full);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x8996A4).full, local->arrow_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xFFFFFF).full, local->bg_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x7A8796).full, local->arrow_color.full);
 
     font_before = local->font;
     egui_view_autocomplete_set_font(EGUI_VIEW_OF(&test_box), NULL);
