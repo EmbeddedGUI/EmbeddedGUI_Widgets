@@ -253,14 +253,14 @@ static void egui_view_dialog_sheet_draw_button(egui_view_dialog_sheet_t *local, 
         fill_color = egui_rgb_mix(tone_color, local->surface_color, local->compact_mode ? 42 : 36);
         draw_border = egui_rgb_mix(tone_color, local->surface_color, local->compact_mode ? 14 : 12);
         text_color = local->surface_color;
-        fill_alpha = local->locked_mode ? 26 : 82;
-        border_alpha = local->locked_mode ? 30 : 72;
-        if (local->locked_mode)
+        fill_alpha = local->read_only_mode ? 22 : 82;
+        border_alpha = local->read_only_mode ? 24 : 72;
+        if (local->read_only_mode)
         {
             fill_color = egui_rgb_mix(local->surface_color, tone_color, local->compact_mode ? 5 : 7);
             text_color = tone_color;
-            fill_alpha = local->compact_mode ? 16 : 20;
-            border_alpha = local->compact_mode ? 18 : 22;
+            fill_alpha = local->compact_mode ? 12 : 16;
+            border_alpha = local->compact_mode ? 14 : 18;
         }
     }
 
@@ -456,7 +456,7 @@ static uint8_t egui_view_dialog_sheet_hit_action(egui_view_dialog_sheet_t *local
     }
 
     show_secondary = egui_view_dialog_sheet_has_secondary(snapshot);
-    show_close = snapshot->show_close && !local->compact_mode && !local->locked_mode;
+    show_close = snapshot->show_close && !local->compact_mode && !local->read_only_mode;
     egui_view_dialog_sheet_get_metrics(local, self, show_secondary, show_close, &metrics);
 
     if (show_secondary && egui_region_pt_in_rect(&metrics.secondary_action_region, x, y))
@@ -472,6 +472,12 @@ static uint8_t egui_view_dialog_sheet_hit_action(egui_view_dialog_sheet_t *local
     return EGUI_VIEW_DIALOG_SHEET_ACTION_NONE;
 }
 
+static void egui_view_dialog_sheet_clear_pressed_state(egui_view_t *self, egui_view_dialog_sheet_t *local)
+{
+    local->pressed_action = EGUI_VIEW_DIALOG_SHEET_ACTION_NONE;
+    egui_view_set_pressed(self, false);
+}
+
 static void egui_view_dialog_sheet_set_current_action_inner(egui_view_t *self, uint8_t action_index, uint8_t notify)
 {
     EGUI_LOCAL_INIT(egui_view_dialog_sheet_t);
@@ -480,11 +486,16 @@ static void egui_view_dialog_sheet_set_current_action_inner(egui_view_t *self, u
 
     if (local->current_action == normalized_action)
     {
+        if (self->is_pressed || local->pressed_action != EGUI_VIEW_DIALOG_SHEET_ACTION_NONE)
+        {
+            egui_view_dialog_sheet_clear_pressed_state(self, local);
+            egui_view_invalidate(self);
+        }
         return;
     }
 
     local->current_action = normalized_action;
-    local->pressed_action = EGUI_VIEW_DIALOG_SHEET_ACTION_NONE;
+    egui_view_dialog_sheet_clear_pressed_state(self, local);
     if (notify && local->on_action_changed != NULL)
     {
         local->on_action_changed(self, normalized_action);
@@ -506,7 +517,7 @@ void egui_view_dialog_sheet_set_snapshots(egui_view_t *self, const egui_view_dia
 
     snapshot = egui_view_dialog_sheet_get_snapshot(local);
     local->current_action = egui_view_dialog_sheet_normalize_action(snapshot, snapshot == NULL ? EGUI_VIEW_DIALOG_SHEET_ACTION_NONE : snapshot->focus_action);
-    local->pressed_action = EGUI_VIEW_DIALOG_SHEET_ACTION_NONE;
+    egui_view_dialog_sheet_clear_pressed_state(self, local);
     egui_view_invalidate(self);
 }
 
@@ -521,13 +532,18 @@ void egui_view_dialog_sheet_set_current_snapshot(egui_view_t *self, uint8_t snap
     }
     if (local->current_snapshot == snapshot_index)
     {
+        if (self->is_pressed || local->pressed_action != EGUI_VIEW_DIALOG_SHEET_ACTION_NONE)
+        {
+            egui_view_dialog_sheet_clear_pressed_state(self, local);
+            egui_view_invalidate(self);
+        }
         return;
     }
 
     local->current_snapshot = snapshot_index;
     snapshot = egui_view_dialog_sheet_get_snapshot(local);
     local->current_action = egui_view_dialog_sheet_normalize_action(snapshot, snapshot == NULL ? EGUI_VIEW_DIALOG_SHEET_ACTION_NONE : snapshot->focus_action);
-    local->pressed_action = EGUI_VIEW_DIALOG_SHEET_ACTION_NONE;
+    egui_view_dialog_sheet_clear_pressed_state(self, local);
     egui_view_invalidate(self);
 }
 
@@ -572,14 +588,15 @@ void egui_view_dialog_sheet_set_compact_mode(egui_view_t *self, uint8_t compact_
 {
     EGUI_LOCAL_INIT(egui_view_dialog_sheet_t);
     local->compact_mode = compact_mode ? 1 : 0;
+    egui_view_dialog_sheet_clear_pressed_state(self, local);
     egui_view_invalidate(self);
 }
 
-void egui_view_dialog_sheet_set_locked_mode(egui_view_t *self, uint8_t locked_mode)
+void egui_view_dialog_sheet_set_read_only_mode(egui_view_t *self, uint8_t read_only_mode)
 {
     EGUI_LOCAL_INIT(egui_view_dialog_sheet_t);
-    local->locked_mode = locked_mode ? 1 : 0;
-    local->pressed_action = EGUI_VIEW_DIALOG_SHEET_ACTION_NONE;
+    local->read_only_mode = read_only_mode ? 1 : 0;
+    egui_view_dialog_sheet_clear_pressed_state(self, local);
     egui_view_invalidate(self);
 }
 
@@ -622,6 +639,7 @@ static void egui_view_dialog_sheet_on_draw(egui_view_t *self)
     egui_color_t tag_fill;
     egui_color_t tag_border;
     egui_color_t tag_text;
+    egui_color_t hero_glyph_color;
     egui_color_t handle_color;
     egui_color_t shadow_color;
     egui_region_t preview_region;
@@ -638,7 +656,7 @@ static void egui_view_dialog_sheet_on_draw(egui_view_t *self)
     }
 
     show_secondary = egui_view_dialog_sheet_has_secondary(snapshot);
-    show_close = snapshot->show_close && !local->compact_mode && !local->locked_mode;
+    show_close = snapshot->show_close && !local->compact_mode && !local->read_only_mode;
     enabled = egui_view_get_enable(self) ? 1 : 0;
     egui_view_dialog_sheet_get_metrics(local, self, show_secondary, show_close, &metrics);
     if (metrics.sheet_region.size.width <= 0 || metrics.sheet_region.size.height <= 0)
@@ -662,27 +680,29 @@ static void egui_view_dialog_sheet_on_draw(egui_view_t *self)
     tag_fill = egui_rgb_mix(local->surface_color, tone_color, local->compact_mode ? 8 : 12);
     tag_border = egui_rgb_mix(local->border_color, tone_color, local->compact_mode ? 10 : 14);
     tag_text = tone_color;
+    hero_glyph_color = local->surface_color;
     handle_color = egui_rgb_mix(local->border_color, tone_color, local->compact_mode ? 6 : 8);
     shadow_color = egui_rgb_mix(EGUI_COLOR_BLACK, local->border_color, 18);
 
-    if (local->locked_mode)
+    if (local->read_only_mode)
     {
-        tone_color = egui_rgb_mix(tone_color, local->muted_text_color, 140);
-        overlay_fill = egui_rgb_mix(overlay_fill, local->surface_color, 40);
-        overlay_line = egui_rgb_mix(overlay_line, local->muted_text_color, 72);
-        sheet_fill = egui_rgb_mix(sheet_fill, local->surface_color, 34);
-        sheet_border = egui_rgb_mix(sheet_border, local->muted_text_color, 68);
-        title_color = egui_rgb_mix(title_color, local->muted_text_color, 40);
-        body_color = egui_rgb_mix(body_color, local->muted_text_color, 44);
-        eyebrow_color = egui_rgb_mix(eyebrow_color, local->muted_text_color, 80);
-        hero_fill = egui_rgb_mix(hero_fill, local->surface_color, 44);
-        hero_border = egui_rgb_mix(hero_border, local->muted_text_color, 78);
-        footer_fill = egui_rgb_mix(footer_fill, local->surface_color, 40);
-        footer_border = egui_rgb_mix(footer_border, local->muted_text_color, 72);
-        footer_color = egui_rgb_mix(footer_color, local->muted_text_color, 56);
-        tag_fill = egui_rgb_mix(tag_fill, local->surface_color, 42);
-        tag_border = egui_rgb_mix(tag_border, local->muted_text_color, 78);
-        tag_text = egui_rgb_mix(tag_text, local->muted_text_color, 82);
+        tone_color = egui_rgb_mix(tone_color, local->muted_text_color, 156);
+        overlay_fill = egui_rgb_mix(overlay_fill, local->surface_color, 54);
+        overlay_line = egui_rgb_mix(overlay_line, local->muted_text_color, 84);
+        sheet_fill = egui_rgb_mix(sheet_fill, local->surface_color, 44);
+        sheet_border = egui_rgb_mix(sheet_border, local->muted_text_color, 82);
+        title_color = egui_rgb_mix(title_color, local->muted_text_color, 52);
+        body_color = egui_rgb_mix(body_color, local->muted_text_color, 58);
+        eyebrow_color = egui_rgb_mix(eyebrow_color, local->muted_text_color, 92);
+        hero_fill = egui_rgb_mix(hero_fill, local->surface_color, 56);
+        hero_border = egui_rgb_mix(hero_border, local->muted_text_color, 90);
+        hero_glyph_color = egui_rgb_mix(hero_glyph_color, local->muted_text_color, 40);
+        footer_fill = egui_rgb_mix(footer_fill, local->surface_color, 52);
+        footer_border = egui_rgb_mix(footer_border, local->muted_text_color, 84);
+        footer_color = egui_rgb_mix(footer_color, local->muted_text_color, 68);
+        tag_fill = egui_rgb_mix(tag_fill, local->surface_color, 56);
+        tag_border = egui_rgb_mix(tag_border, local->muted_text_color, 88);
+        tag_text = egui_rgb_mix(tag_text, local->muted_text_color, 96);
     }
 
     if (!enabled)
@@ -703,6 +723,7 @@ static void egui_view_dialog_sheet_on_draw(egui_view_t *self)
         tag_fill = egui_view_dialog_sheet_mix_disabled(tag_fill);
         tag_border = egui_view_dialog_sheet_mix_disabled(tag_border);
         tag_text = egui_view_dialog_sheet_mix_disabled(tag_text);
+        hero_glyph_color = egui_view_dialog_sheet_mix_disabled(hero_glyph_color);
         handle_color = egui_view_dialog_sheet_mix_disabled(handle_color);
         shadow_color = egui_view_dialog_sheet_mix_disabled(shadow_color);
     }
@@ -743,18 +764,18 @@ static void egui_view_dialog_sheet_on_draw(egui_view_t *self)
 
     egui_canvas_draw_round_rectangle_fill(metrics.handle_region.location.x, metrics.handle_region.location.y, metrics.handle_region.size.width,
                                           metrics.handle_region.size.height, metrics.handle_region.size.height / 2, handle_color,
-                                          egui_color_alpha_mix(self->alpha, local->locked_mode ? 16 : (local->compact_mode ? 30 : 40)));
+                                          egui_color_alpha_mix(self->alpha, local->read_only_mode ? 12 : (local->compact_mode ? 30 : 40)));
     egui_canvas_draw_circle_fill(metrics.hero_region.location.x + metrics.hero_region.size.width / 2,
                                  metrics.hero_region.location.y + metrics.hero_region.size.height / 2, metrics.hero_region.size.width / 2, hero_fill,
-                                 egui_color_alpha_mix(self->alpha, local->locked_mode ? 38 : 80));
+                                 egui_color_alpha_mix(self->alpha, local->read_only_mode ? 32 : 80));
     if (!local->compact_mode)
     {
         egui_canvas_draw_circle(metrics.hero_region.location.x + metrics.hero_region.size.width / 2,
                                 metrics.hero_region.location.y + metrics.hero_region.size.height / 2, metrics.hero_region.size.width / 2, 1, hero_border,
-                                egui_color_alpha_mix(self->alpha, local->locked_mode ? 24 : 40));
+                                egui_color_alpha_mix(self->alpha, local->read_only_mode ? 18 : 40));
     }
     egui_view_dialog_sheet_draw_text(local->meta_font, self, egui_view_dialog_sheet_tone_glyph(snapshot->tone), &metrics.hero_region, EGUI_ALIGN_CENTER,
-                                     local->surface_color);
+                                     hero_glyph_color);
 
     if (!local->compact_mode)
     {
@@ -778,11 +799,13 @@ static void egui_view_dialog_sheet_on_draw(egui_view_t *self)
         egui_dim_t summary_h = metrics.footer_region.size.height - (local->compact_mode ? 4 : 2);
         egui_region_t footer_text_draw_region = metrics.footer_text_region;
         egui_dim_t summary_pad_x = local->compact_mode ? 3 : 4;
+        egui_alpha_t summary_fill_alpha = local->read_only_mode ? (local->compact_mode ? 10 : 12) : (local->compact_mode ? 14 : 18);
+        egui_alpha_t summary_border_alpha = local->read_only_mode ? (local->compact_mode ? 12 : 14) : (local->compact_mode ? 16 : 20);
 
         egui_canvas_draw_round_rectangle_fill(metrics.footer_text_region.location.x, summary_y, metrics.footer_text_region.size.width, summary_h, summary_h / 2,
-                                              footer_fill, egui_color_alpha_mix(self->alpha, local->compact_mode ? 14 : 18));
+                                              footer_fill, egui_color_alpha_mix(self->alpha, summary_fill_alpha));
         egui_canvas_draw_round_rectangle(metrics.footer_text_region.location.x, summary_y, metrics.footer_text_region.size.width, summary_h, summary_h / 2, 1,
-                                         footer_border, egui_color_alpha_mix(self->alpha, local->compact_mode ? 16 : 20));
+                                         footer_border, egui_color_alpha_mix(self->alpha, summary_border_alpha));
         if (footer_text_draw_region.size.width > summary_pad_x * 2)
         {
             footer_text_draw_region.location.x += summary_pad_x;
@@ -794,12 +817,15 @@ static void egui_view_dialog_sheet_on_draw(egui_view_t *self)
 
     if (metrics.tag_region.size.width > 0)
     {
+        egui_alpha_t tag_fill_alpha = local->read_only_mode ? 52 : 72;
+        egui_alpha_t tag_border_alpha = local->read_only_mode ? 18 : 24;
+
         egui_canvas_draw_round_rectangle_fill(metrics.tag_region.location.x, metrics.tag_region.location.y, metrics.tag_region.size.width,
                                               metrics.tag_region.size.height, metrics.tag_region.size.height / 2, tag_fill,
-                                              egui_color_alpha_mix(self->alpha, 72));
+                                              egui_color_alpha_mix(self->alpha, tag_fill_alpha));
         egui_canvas_draw_round_rectangle(metrics.tag_region.location.x, metrics.tag_region.location.y, metrics.tag_region.size.width,
                                          metrics.tag_region.size.height, metrics.tag_region.size.height / 2, 1, tag_border,
-                                         egui_color_alpha_mix(self->alpha, 24));
+                                         egui_color_alpha_mix(self->alpha, tag_border_alpha));
         egui_view_dialog_sheet_draw_text(local->meta_font, self, snapshot->tag, &metrics.tag_region, EGUI_ALIGN_CENTER, tag_text);
     }
 
@@ -813,7 +839,7 @@ static void egui_view_dialog_sheet_on_draw(egui_view_t *self)
                                            local->pressed_action == EGUI_VIEW_DIALOG_SHEET_ACTION_SECONDARY, enabled);
     }
 
-    if (local->locked_mode || !enabled)
+    if (local->read_only_mode || !enabled)
     {
         egui_canvas_draw_line(metrics.sheet_region.location.x + (local->compact_mode ? 6 : 8),
                               metrics.sheet_region.location.y + metrics.sheet_region.size.height - (local->compact_mode ? 6 : 8),
@@ -829,7 +855,17 @@ static int egui_view_dialog_sheet_on_touch_event(egui_view_t *self, egui_motion_
     EGUI_LOCAL_INIT(egui_view_dialog_sheet_t);
     uint8_t hit_action;
 
-    if (!egui_view_get_enable(self) || local->locked_mode)
+    if (local->read_only_mode)
+    {
+        if (self->is_pressed || local->pressed_action != EGUI_VIEW_DIALOG_SHEET_ACTION_NONE)
+        {
+            egui_view_dialog_sheet_clear_pressed_state(self, local);
+            egui_view_invalidate(self);
+        }
+        return 0;
+    }
+
+    if (!egui_view_get_enable(self))
     {
         return 0;
     }
@@ -847,18 +883,20 @@ static int egui_view_dialog_sheet_on_touch_event(egui_view_t *self, egui_motion_
         egui_view_invalidate(self);
         return 1;
     case EGUI_MOTION_EVENT_ACTION_UP:
+    {
+        uint8_t was_pressed = self->is_pressed;
+
         hit_action = egui_view_dialog_sheet_hit_action(local, self, event->location.x, event->location.y);
         if (local->pressed_action != EGUI_VIEW_DIALOG_SHEET_ACTION_NONE && local->pressed_action == hit_action)
         {
             egui_view_dialog_sheet_set_current_action_inner(self, hit_action, 1);
         }
-        local->pressed_action = EGUI_VIEW_DIALOG_SHEET_ACTION_NONE;
-        egui_view_set_pressed(self, false);
+        egui_view_dialog_sheet_clear_pressed_state(self, local);
         egui_view_invalidate(self);
-        return hit_action != EGUI_VIEW_DIALOG_SHEET_ACTION_NONE;
+        return was_pressed && hit_action != EGUI_VIEW_DIALOG_SHEET_ACTION_NONE;
+    }
     case EGUI_MOTION_EVENT_ACTION_CANCEL:
-        local->pressed_action = EGUI_VIEW_DIALOG_SHEET_ACTION_NONE;
-        egui_view_set_pressed(self, false);
+        egui_view_dialog_sheet_clear_pressed_state(self, local);
         egui_view_invalidate(self);
         return 1;
     default:
@@ -874,7 +912,17 @@ static int egui_view_dialog_sheet_on_key_event(egui_view_t *self, egui_key_event
     const egui_view_dialog_sheet_snapshot_t *snapshot = egui_view_dialog_sheet_get_snapshot(local);
     uint8_t has_secondary = egui_view_dialog_sheet_has_secondary(snapshot);
 
-    if (!egui_view_get_enable(self) || local->locked_mode || event->type != EGUI_KEY_EVENT_ACTION_UP)
+    if (local->read_only_mode)
+    {
+        if (self->is_pressed || local->pressed_action != EGUI_VIEW_DIALOG_SHEET_ACTION_NONE)
+        {
+            egui_view_dialog_sheet_clear_pressed_state(self, local);
+            egui_view_invalidate(self);
+        }
+        return 0;
+    }
+
+    if (!egui_view_get_enable(self) || event->type != EGUI_KEY_EVENT_ACTION_UP)
     {
         return 0;
     }
@@ -968,7 +1016,7 @@ void egui_view_dialog_sheet_init(egui_view_t *self)
     local->current_snapshot = 0;
     local->current_action = EGUI_VIEW_DIALOG_SHEET_ACTION_NONE;
     local->compact_mode = 0;
-    local->locked_mode = 0;
+    local->read_only_mode = 0;
     local->pressed_action = EGUI_VIEW_DIALOG_SHEET_ACTION_NONE;
 
     egui_view_set_view_name(self, "egui_view_dialog_sheet");

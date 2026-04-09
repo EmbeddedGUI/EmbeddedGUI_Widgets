@@ -22,7 +22,7 @@
 ## 3. 目标场景与示例概览
 - 主控件展示标准 `dialog_sheet`，通过录制动作覆盖 `warning / error / accent / success` 四组 snapshot。
 - 底部左侧展示 `compact` 静态对照，验证紧凑尺寸下的 title、body、tag 和单动作布局。
-- 底部右侧展示 `read only` 静态对照，验证锁定后的灰蓝弱化状态。
+- 底部右侧展示 `read only` 静态对照，验证只读后的灰蓝弱化状态。
 - 页面结构统一收口为：标题 -> 主 `dialog_sheet` -> `compact / read only`。
 - 底部两个 preview 都禁用 touch 和 focus，只做静态 `reference` 对照。
 
@@ -39,7 +39,7 @@
   - 使用浅灰 page panel、低对比 overlay、白底 sheet surface 和柔和浅边框。
   - 保留 handle、hero、eyebrow、title、body、footer summary、tag 和 action row 这些核心层级。
   - `compact` 直接通过控件模式表达，不再依赖外部标签或说明文字。
-  - `read only` 保留完整结构，但 tone、button 和 footer chrome 都需要明显弱化。
+  - `read only` 保留完整结构，但需要同步清空 pressed、抑制 touch / key 输入，并继续弱化 tone、button 和 footer chrome。
 
 ## 5. 控件清单
 
@@ -93,13 +93,14 @@ python scripts/checks/check_docs_encoding.py
 - `warning / error / accent / success` 四态要一眼可辨，但整体不能回到高饱和 showcase 风格。
 - 页面中不再出现 `guide`、状态说明、外部 preview 标签和旧双列包裹壳层。
 - `compact` 与 `read only` 只作静态对照展示，不承担点击切换职责。
+- `read only` 从交互态切入时也必须清空 pressed，避免残留按下渲染。
 - 单测已有的 snapshot、palette、touch 和 key 语义不能回归。
 
 ## 9. 已知限制与后续方向
 - 当前版本仍使用固定 snapshot 数据，不接真实业务状态流。
 - 当前不做真实 modal 动画、遮罩渐变和关闭行为。
 - 当前不做真实图标资源，仅保留 tone glyph。
-- 当前优先验证 `reference` 语义、布局稳定性和视觉收口，不下沉到通用框架层。
+- 当前优先验证 `reference` 语义、布局稳定性、交互切换后的渲染稳定性，不下沉到通用框架层。
 
 ## 10. 与现有控件的边界
 - 相比 `message_bar`：这里强调确认层，不是页内反馈条。
