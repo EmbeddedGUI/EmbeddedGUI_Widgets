@@ -8,7 +8,7 @@
 - 对应组件名：`BreadcrumbBar`
 - 本次保留状态：`standard`、`current item`、`compact`、`read only`
 - 本次删除效果：页面级 `guide`、状态说明、旧双列 preview 包裹壳、preview 点击切换职责、过重 current item 和 separator 强调
-- EGUI 适配说明：继续复用仓库内 `breadcrumb_bar` 基础实现，本轮只收口 `reference` 页面结构、静态对照预览和绘制强度，不修改 `sdk/EmbeddedGUI`
+- EGUI 适配说明：继续复用仓库内 `breadcrumb_bar` 基础实现，本轮只收口 `reference` 页面结构、静态对照预览和绘制强度，不修改 `sdk/EmbeddedGUI`；`snapshot / compact / read only / disabled` 切换共享同一套 `pressed` 清理语义
 
 ## 1. 为什么需要这个控件
 
@@ -95,6 +95,8 @@ python scripts/checks/check_docs_encoding.py
 - 当前项 pill、separator 和底部 underline 需要可辨识，但整体不能回到高噪音 showcase 风格。
 - `compact` 在小尺寸下仍要看得出 `Home / ... / Current` 的层级关系。
 - `read only` 只能做静态展示，不能响应 touch、focus 或键盘；切换到 `read only` 时还要清空 pressed 状态。
+- `snapshot / compact / read only / disabled` 切换后不能残留 `pressed` 高亮或下压位移渲染。
+- `read only / disabled` 不仅要忽略后续 touch / key 输入，还要在收到新输入时清理残留 `pressed` 渲染。
 - `HelloUnitTest` 里已有的 snapshot clamp、palette setter、touch / key click listener 和 helper 语义不能回归。
 
 ## 9. 已知限制与后续方向
