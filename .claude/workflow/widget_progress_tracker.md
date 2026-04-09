@@ -98,6 +98,11 @@
 ## 最近完成的收口动作
 
 - `2026-04-10`
+  - 完成 `input/drop_down_button` 二次收口：在既有 `reference` 页面结构不再调整的前提下，把工作重点收回到交互行为，补齐 `snapshot / compact / read only / disabled` 切换链路里的 pressed 清理与输入抑制，确保交互后的渲染稳定。
+  - `egui_view_drop_down_button.c` 新增统一的 `egui_view_drop_down_button_clear_pressed_state()`，让 `set_snapshots()`、`set_current_snapshot()`、`set_compact_mode()` 和 `set_read_only_mode()` 共用同一套 pressed 清理逻辑；同时把 `read only / disabled` 的 touch 与 key guard 收口到事件入口，收到新输入时会先清理残留 pressed 再拒绝提交。
+  - `example/HelloUnitTest/test/test_drop_down_button.c` 补齐“same snapshot 清 pressed”“compact 切换后清理 pressed 且保留 click”“read only / disabled 清理残留 pressed 并忽略后续 touch / key 输入”的交互回归；README 同步明确模式切换后不能残留 `pressed` 高亮或下压位移渲染。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=input/drop_down_button PORT=pc`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category input`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/drop_down_button --track reference --timeout 10 --keep-screenshots`、`python scripts/checks/check_docs_encoding.py`，并把关键帧归档到本地 `iteration_log/` 供验收复核。
+- `2026-04-10`
   - 完成 `feedback/teaching_tip` 二次收口：在既有 `reference` 页面结构保持不变的前提下，把工作重点收回到交互行为，补齐 `snapshot / compact / read only / disabled` 切换链路里的 pressed 清理与输入抑制。
   - `egui_view_teaching_tip.c` 新增统一的 `egui_view_teaching_tip_clear_pressed_state()`，让 `set_snapshots()`、`set_current_snapshot()`、`set_current_part()`、`set_compact_mode()` 和 `set_read_only_mode()` 共用同一套 `pressed_part + is_pressed` 清理逻辑；同时把 `read only / disabled` 的 touch 与 key guard 收口到事件入口，确保收到新输入时先清理旧高亮，再拒绝提交。
   - `example/HelloUnitTest/test/test_teaching_tip.c` 新增“same snapshot / same part 清 pressed”“compact 切换后恢复点击”“read only / disabled 清理残留 pressed 并忽略后续输入”的交互回归；README 同步明确模式切换后不能残留 target 或 action 的 pressed 高亮。

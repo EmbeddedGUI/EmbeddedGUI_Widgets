@@ -6,7 +6,7 @@
 - 对应组件名：`DropDownButton`
 - 本次保留状态：`standard`、`compact`、`read only`
 - 删除效果：页面级 `guide`、状态回显、`section divider`、外部 `preview` 标签、标签点击切换、场景化 demo 壳、复杂 hover / pressed 动画、真实 flyout 定位与多级菜单
-- EGUI 适配说明：保留“整个按钮都是下拉入口”的核心语义，在 `480 x 480` 画布中优先保证标题层级、主按钮信息密度、底部 `compact / read only` 双预览和键盘闭环稳定
+- EGUI 适配说明：保留“整个按钮都是下拉入口”的核心语义，在 `480 x 480` 画布中优先保证标题层级、主按钮信息密度、底部 `compact / read only` 双预览和键盘闭环稳定；`snapshot / compact / read only / disabled` 切换共享同一套 `pressed` 清理语义
 
 ## 1. 为什么需要这个控件？
 `drop_down_button` 用来表达“单一入口打开一组选项”的标准命令按钮语义。它适合排序、布局切换、主题切换、过滤切换这类场景：用户点击整个按钮即可进入下拉动作，而不是像 `split_button` 那样区分主动作段和菜单段。
@@ -90,6 +90,8 @@ python scripts/checks/check_docs_encoding.py
 - 主控件和底部双预览必须完整可见，不能被裁切
 - 主按钮必须被识别为单一点击面，而不是误读成 `split button`
 - 主控件触摸点击和 `Enter` 键切换都必须生效
+- `snapshot / compact / read only / disabled` 切换后不能残留 `pressed` 高亮或下压位移渲染
+- `read only / disabled` 不仅要忽略后续 touch / key 输入，还要在收到新输入时清理残留 `pressed` 渲染
 - 页面中不再出现旧版 `guide`、状态回显、分隔线和外部 `preview` 标签
 - `compact` 与 `read only` 必须保持 Fluent / WPF UI 风格的低噪音浅色 reference
 
