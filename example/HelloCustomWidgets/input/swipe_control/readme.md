@@ -1,93 +1,137 @@
-# swipe_control
+# swipe_control 自定义控件设计说明
 
-## 1. 为什么需要这个控件
-`swipe_control` 用来表达“列表行内容默认保持整洁，只有在滑动或键盘 reveal 后才暴露上下文操作”的标准交互语义，适合消息收件箱、任务队列、审核列表这类以单行内容为主、但又需要快速操作的场景。
+## 参考来源
+- 参考设计系统：`Fluent 2`
+- 参考开源库：`WPF UI`
+- 次级补充参考：`WinUI SwipeControl`
+- 对应组件名：`SwipeControl`
+- 本次保留状态：`standard`、`compact`、`read only`
+- 删除效果：页面级 `guide`、状态回显、`section divider`、外部 `preview` 标签、标签点击切换、场景化 demo 壳、连续 easing 动画、多 action stack、真实列表容器滚动
+- EGUI 适配说明：保留“单行内容默认收起，仅在 reveal 后暴露左右操作 rail”的核心语义，在 `480 x 480` 画布中优先保证主行层级、底部 `compact / read only` 双预览和键盘 / touch 闭环稳定
+
+## 1. 为什么需要这个控件？
+`swipe_control` 用来表达“列表行内容默认保持整洁，只在用户明确 reveal 时暴露上下文操作”的标准交互语义。它适合消息收件箱、任务队列、审核列表这类以单行内容为主、但又需要快速操作的场景。
 
 ## 2. 为什么现有控件不够用
-- `settings_panel` 和 `data_list_panel` 更偏静态信息行，不承担 reveal actions 的交互语义。
-- `split_button` / `toggle_split_button` 强调点击触发的复合按钮，而不是整行内容卡的滑动暴露操作。
-- `flip_view` 强调整卡翻页浏览，不是单行列表项上的局部 action reveal。
+- `settings_panel` 和 `data_list_panel` 更偏静态信息行，不承担 reveal action 语义
+- `split_button` / `toggle_split_button` 强调按钮级复合入口，不是整行内容卡的侧滑暴露
+- `flip_view` 强调整卡翻页，不是单行列表项上的局部 action reveal
+- 普通 `card` 或 `button` 无法表达 `surface / start action / end action` 三段状态切换
+
+因此这里继续保留 `swipe_control`，但示例页面必须收口到统一的 `Fluent 2 / WPF UI` reference 结构。
 
 ## 3. 目标场景与示例概览
-- 标准态：主行卡默认只显示内容，右键盘或右滑 reveal 起始操作，左键盘或左滑 reveal 末端操作。
-- 状态栏：同步反馈当前 track、当前 reveal 侧和当前行标题。
-- compact 预览：保留同一控件语义，但压缩为更短标题和更轻量 rails。
-- read-only 预览：保留视觉结构，但完全冻结 reveal 交互，验证禁用边界。
+- 主区域展示标准 `swipe_control`，覆盖 `Inbox`、`Planner`、`Review` 三组主线 row snapshot
+- 左下 `compact` 预览展示小尺寸比例压缩后的静态对照
+- 右下 `read only` 预览展示可见但不可交互的锁定态
+- 主控件保留真实 `Right / Left / Tab / Enter / Space / Escape` reveal 闭环
+- 主控件底层仍支持真实 touch：surface swipe reveal、surface tap close、action 点击
+- 页面只保留标题、主 `swipe_control` 和底部 `compact / read only` 双预览，不再保留旧版 `guide`、状态栏、分隔线和 label-click 场景切换
+
+目录：
+- `example/HelloCustomWidgets/input/swipe_control/`
 
 ## 4. 视觉与布局规格
-- 根容器尺寸：`224 x 300`
-- 主控件尺寸：`196 x 118`
-- 紧凑预览尺寸：`104 x 64`
-- 顶部结构：标题、guide、section label
-- 主行要求：内容卡、eyebrow pill、状态 pill、accent rail、footer 文案都要完整可见
-- action rail 要求：`start_action` / `end_action` 文案真实居中，左右留白平衡
+- 画布：`480 x 480`
+- 根布局：`224 x 222`
+- 页面结构：标题 -> 主 `swipe_control` -> `compact / read only` 双预览
+- 主控件：`196 x 118`
+- 底部双预览容器：`216 x 64`
+- `compact` 预览：`104 x 64`
+- `read only` 预览：`104 x 64`
+- 视觉规则：
+  - 使用浅灰白 `page panel` 和低噪音白色 row 容器，避免旧版 demo chrome
+  - 主控件保留 `title + helper + surface row + reveal action rail` 四段层级
+  - `compact` 预览收敛为静态小尺寸对照，不再承担标签切换职责
+  - `read only` 预览通过锁定调色板和输入屏蔽表达冻结态，而不是额外装饰
 
 ## 5. 控件清单
 
-| 变量名 | 类型 | 尺寸 | 初始状态 | 用途 |
-| --- | --- | --- | --- | --- |
-| `swipe_control_primary` | `egui_view_swipe_control_t` | `196 x 118` | `Inbox / surface` | 标准主视图 |
-| `swipe_control_compact` | `egui_view_swipe_control_t` | `104 x 64` | `Compact / surface` | 紧凑态对照 |
-| `swipe_control_locked` | `egui_view_swipe_control_t` | `104 x 64` | `Read only / surface` | 只读态对照 |
-| `primary_tracks` | `swipe_control_track_t[3]` | - | `Inbox` | 主视图切换的行数据轨 |
-| `compact_tracks` | `swipe_control_track_t[2]` | - | `Compact` | 紧凑态切换的数据轨 |
+| 变量名 | 类型 | 尺寸 (W x H) | 初始状态 | 用途 |
+| --- | --- | ---: | --- | --- |
+| `root_layout` | `egui_view_linearlayout_t` | `224 x 222` | enabled | 页面根布局 |
+| `title_label` | `egui_view_label_t` | `224 x 18` | `Swipe Control` | 页面标题 |
+| `swipe_control_primary` | `egui_view_swipe_control_t` | `196 x 118` | `Inbox` | 标准主控件 |
+| `swipe_control_compact` | `egui_view_swipe_control_t` | `104 x 64` | compact | 紧凑静态预览 |
+| `swipe_control_read_only` | `egui_view_swipe_control_t` | `104 x 64` | compact + read only | 只读静态预览 |
 
 ## 6. 状态覆盖矩阵
 
-| Track | Snapshot | 关键状态 | 语义 |
+| 状态 / 区域 | 主控件 | Compact | Read only |
 | --- | --- | --- | --- |
-| `Inbox` | `Invoice follow-up` | 默认 surface | 标准行卡保持关闭态 |
-| `Inbox` | `Pin` | start reveal | 起始侧操作暴露 |
-| `Inbox` | `Delete` | end reveal | 末端侧操作暴露 |
-| `Planner` | `Planner sync` | guide 切换 | 不同数据轨复用同一结构 |
-| `Compact` | `Queue` | 小尺寸对照 | 压缩文案后仍保留 reveal 语义 |
-| `Read only` | `Locked` | 禁用边界 | 视觉保留、交互冻结 |
+| 默认 `Inbox` | 是 | 是 | 否 |
+| `Right` reveal start action | 是 | 否 | 否 |
+| `Left` reveal end action | 是 | 否 | 否 |
+| 切换到 `Planner` row | 是 | 否 | 否 |
+| 切换到第二组 `compact` 对照 | 否 | 是 | 否 |
+| surface tap close | 是 | 否 | 否 |
+| 紧凑静态对照 | 否 | 是 | 是 |
+| 只读锁定 | 否 | 否 | 是 |
 
 ## 7. `egui_port_get_recording_action()` 录制动作设计
-- 首帧等待并截图，确认默认 `Inbox` surface 稳定。
-- 发送 `Right` 键，验证 start action reveal。
-- 发送 `Left` 键，验证 end action reveal。
-- 点击 guide 标签，切换到 `Planner` track，验证标题、helper、状态栏同步变化。
-- 点击 compact 标签，切换紧凑预览数据轨，验证底部对照变化。
+1. 应用默认主控件和 `compact` 预览状态
+2. 抓取首帧 `Inbox` surface reference
+3. 通过 `Right` 键 reveal 起始侧 action
+4. 抓取第二帧 start action 结果
+5. 通过 `Left` 键切到末端 action
+6. 抓取第三帧 end action 结果
+7. 程序化把主控件切到 `Planner`
+8. 抓取第四帧第二组主状态
+9. 程序化把 `compact` 预览切到第二组静态对照
+10. 抓取最终收尾截图并保留静态 `read only` 对照
 
 ## 8. 编译、runtime、截图验收标准
 ```bash
 make all APP=HelloCustomWidgets APP_SUB=input/swipe_control PORT=pc
-python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/swipe_control --timeout 10 --keep-screenshots
+python scripts/checks/check_touch_release_semantics.py --scope custom --category input
+python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/swipe_control --track reference --timeout 10 --keep-screenshots
+make all APP=HelloUnitTest PORT=pc_test
+output\main.exe
+python scripts/checks/check_docs_encoding.py
 ```
 
 验收重点：
-- 不能黑屏、白屏、全空白
-- 主行卡、action rail、状态栏、compact / read-only 对照都必须完整可见
-- 主卡标题、action rail 文案、顶部短词和底部短词都要检查真实居中与留白
-- reveal 后要能从截图中直接看出 start / end 两侧动作变化
+- 主控件和底部双预览必须完整可见，不能被裁切
+- 主行 surface 与左右 action rail 必须层级清晰，不能退化成普通卡片或按钮组
+- 键盘 `Right / Left` reveal 结果必须清晰可辨
+- 页面中不再出现旧版 `guide`、状态回显、分隔线和外部 `preview` 标签
+- `compact` 与 `read only` 必须保持 Fluent / WPF UI 风格的低噪音浅色 reference
 
-## 9. 已知限制与下一轮迭代计划
-- 当前版本用纯绘制内容卡模拟 Fluent 2 `SwipeControl` 的 reveal row，不引入真实列表容器或惯性动画。
-- 当前没有连续像素级滑动动画，只保留离散 reveal state 与键盘 / 触摸闭环。
-- 后续如需更接近真实收件箱，可继续增加多行容器、批量操作和拖动阈值动画。
+## 9. 已知限制与后续方向
+- 当前先做单行 `SwipeControl` reference，不接入真实列表容器
+- 当前不实现连续像素级 reveal 动画和多 action stack
+- 当前 action rail 用文本而不是图标资源表达操作
+- 若后续下沉到框架层，再评估与列表容器、拖动阈值和批量操作的复用边界
 
 ## 10. 与现有控件的重叠分析与差异化边界
-- 区别于 `settings_panel`：这里强调 reveal actions，而不是静态设置行尾部控件。
-- 区别于 `data_list_panel`：这里的核心是单行 action reveal，而不是数据行浏览本身。
-- 区别于 `split_button` / `toggle_split_button`：这里的交互入口是整行内容卡，不是按钮本体。
-- 区别于 `flip_view`：这里不做整卡翻页，只做列表行的局部 action expose。
+- 相比 `settings_panel` / `data_list_panel`：这里的核心是 reveal action，而不是静态信息行
+- 相比 `split_button` / `toggle_split_button`：这里的入口是整行 surface，不是按钮本体
+- 相比 `flip_view`：这里不做整卡翻页，只做单行局部 action expose
+- 相比普通 `card`：这里明确保留 `surface / start action / end action` 三段状态语义
 
 ## 11. 参考设计系统与开源母本
-- Fluent 2 / WinUI `SwipeControl`
-- WPF / Windows inbox-style swipe row 语义
+- 参考设计系统：`Fluent 2`
+- 开源母本：`WPF UI`
+- 次级补充参考：`WinUI SwipeControl`
 
 ## 12. 对应组件名，以及本次保留的核心状态
-- 组件名：`swipe_control`
-- 保留状态：`surface`、`start_action`、`end_action`、`compact`、`read_only`
-- 保留交互：`Left/Right/Home/End/Tab/Enter/Space/Plus/Minus/Escape`、触摸滑动与 surface tap close
+- 对应组件名：`SwipeControl`
+- 本次保留状态：
+  - `standard`
+  - `compact`
+  - `read only`
+  - `surface`
+  - `start action`
+  - `end action`
 
-## 13. 相比参考原型删减了哪些效果或装饰
-- 删除了连续 easing 动画、阴影渐变过渡和多 action stack。
-- 删除了真实列表滚动容器，只保留单行 hero row 语义。
-- 删除了图标资源依赖，使用短文本 action rail 表达操作。
+## 13. 相比参考原型删掉了哪些效果或装饰
+- 不做页面级 `guide`、状态栏、分隔线和外部 `preview` 标签
+- 不做连续 easing 动画、多 action stack 和真实列表滚动容器
+- 不做真实图标资源、阴影层叠和大面积场景化叙事
+- 不做批量操作工具栏和跨行联动
 
 ## 14. EGUI 适配时的简化点与约束
-- 不引入图标资源，使用 `label + hint` 的 action rail 表达操作。
-- 通过 `reveal_state + current_part` 统一键盘与触摸状态机。
-- compact / read-only 直接在同一控件内切换，避免拆分多套绘制逻辑。
+- 使用固定 row snapshot 驱动 reference，优先保证 `480 x 480` 下的稳定审阅
+- 主控件保留 `title + helper + surface row + action rail` 四段结构
+- `compact` 预览通过 `compact_mode + touch/key override` 固定为静态对照
+- `read only` 预览通过 `read_only_mode + compact_mode` 固定为静态锁定态
