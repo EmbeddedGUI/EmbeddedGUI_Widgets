@@ -8,7 +8,7 @@
 - 对应组件名：`ListView` / `ItemsView`
 - 本次保留状态：`standard`、`compact`、`read only`、`accent`、`success`、`warning`
 - 删除效果：页面级 guide / 状态文案 / standard label / section divider / preview label、Acrylic、复杂 hover、虚拟滚动、桌面级列头拖拽
-- EGUI 适配说明：保留数据行卡片、焦点行、title / summary / footer 语义与 `compact / read only` 对照，在 `480 x 480` 页面里优先保证信息密度与留白稳定
+- EGUI 适配说明：保留数据行卡片、焦点行、title / summary / footer 语义与 `compact / read only` 对照，在 `480 x 480` 页面里优先保证信息密度与留白稳定；`selection / snapshot / compact / read only / view disabled` 切换共享同一套 `pressed` 清理语义
 
 ## 1. 为什么需要这个控件
 
@@ -100,6 +100,8 @@ python scripts/checks/check_docs_encoding.py
 - 行内 `glyph`、标题、右侧数值和 footer 之间要保留稳定留白
 - 主卡与双预览都必须维持 `Fluent 2 / WPF UI` 低噪音浅色语义
 - 页面中不再出现 guide、状态回显、standard label、section divider、`Compact` / `Read only` 外部标签
+- `selection / snapshot / compact / read only / view disabled` 切换后不能残留 row 的 `pressed` 高亮或下压位移渲染
+- `read_only_mode / !enable` 不仅要忽略后续 touch / key 输入，还要在收到新输入时清理残留 `pressed` 渲染
 - 底部预览不再承担交互职责，只作为对照展示
 
 ## 9. 已知限制与下一轮迭代计划

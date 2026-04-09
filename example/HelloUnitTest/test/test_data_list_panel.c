@@ -126,25 +126,39 @@ static void test_data_list_panel_set_snapshots_clamp_and_reset_focus(void)
 {
     setup_panel();
 
+    test_panel.current_snapshot = 2;
+    test_panel.current_index = 2;
+    test_panel.pressed_index = 1;
+    egui_view_set_pressed(EGUI_VIEW_OF(&test_panel), true);
     egui_view_data_list_panel_set_snapshots(EGUI_VIEW_OF(&test_panel), g_overflow_snapshots, 6);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_DATA_LIST_PANEL_MAX_SNAPSHOTS, test_panel.snapshot_count);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_data_list_panel_get_current_snapshot(EGUI_VIEW_OF(&test_panel)));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_data_list_panel_get_current_index(EGUI_VIEW_OF(&test_panel)));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_DATA_LIST_PANEL_MAX_ITEMS, test_panel.pressed_index);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_panel)->is_pressed);
 
     test_panel.current_snapshot = 2;
     test_panel.current_index = 2;
     test_panel.pressed_index = 1;
+    egui_view_set_pressed(EGUI_VIEW_OF(&test_panel), true);
     egui_view_data_list_panel_set_snapshots(EGUI_VIEW_OF(&test_panel), &g_invalid_focus_snapshot, 1);
     EGUI_TEST_ASSERT_EQUAL_INT(1, test_panel.snapshot_count);
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_data_list_panel_get_current_snapshot(EGUI_VIEW_OF(&test_panel)));
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_data_list_panel_get_current_index(EGUI_VIEW_OF(&test_panel)));
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_DATA_LIST_PANEL_MAX_ITEMS, test_panel.pressed_index);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_panel)->is_pressed);
     EGUI_TEST_ASSERT_EQUAL_INT(0, changed_count);
     EGUI_TEST_ASSERT_TRUE(egui_view_data_list_panel_get_snapshot(&test_panel) == &g_invalid_focus_snapshot);
     EGUI_TEST_ASSERT_TRUE(egui_view_data_list_panel_get_item(&test_panel) == &g_items_2[0]);
 
+    test_panel.pressed_index = 2;
+    egui_view_set_pressed(EGUI_VIEW_OF(&test_panel), true);
     egui_view_data_list_panel_set_snapshots(EGUI_VIEW_OF(&test_panel), NULL, 0);
     EGUI_TEST_ASSERT_EQUAL_INT(0, test_panel.snapshot_count);
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_data_list_panel_get_current_snapshot(EGUI_VIEW_OF(&test_panel)));
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_data_list_panel_get_current_index(EGUI_VIEW_OF(&test_panel)));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_DATA_LIST_PANEL_MAX_ITEMS, test_panel.pressed_index);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_panel)->is_pressed);
     EGUI_TEST_ASSERT_NULL(egui_view_data_list_panel_get_snapshot(&test_panel));
     EGUI_TEST_ASSERT_NULL(egui_view_data_list_panel_get_item(&test_panel));
 }
@@ -162,21 +176,35 @@ static void test_data_list_panel_snapshot_and_index_guards_notify(void)
     EGUI_TEST_ASSERT_EQUAL_INT(0, last_snapshot);
     EGUI_TEST_ASSERT_EQUAL_INT(2, last_index);
 
+    test_panel.pressed_index = 2;
+    egui_view_set_pressed(EGUI_VIEW_OF(&test_panel), true);
     egui_view_data_list_panel_set_current_index(EGUI_VIEW_OF(&test_panel), 2);
     EGUI_TEST_ASSERT_EQUAL_INT(1, changed_count);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_DATA_LIST_PANEL_MAX_ITEMS, test_panel.pressed_index);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_panel)->is_pressed);
 
     egui_view_data_list_panel_set_current_index(EGUI_VIEW_OF(&test_panel), 9);
     EGUI_TEST_ASSERT_EQUAL_INT(2, egui_view_data_list_panel_get_current_index(EGUI_VIEW_OF(&test_panel)));
     EGUI_TEST_ASSERT_EQUAL_INT(1, changed_count);
 
     test_panel.pressed_index = 1;
+    egui_view_set_pressed(EGUI_VIEW_OF(&test_panel), true);
     egui_view_data_list_panel_set_current_snapshot(EGUI_VIEW_OF(&test_panel), 1);
     EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_data_list_panel_get_current_snapshot(EGUI_VIEW_OF(&test_panel)));
     EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_data_list_panel_get_current_index(EGUI_VIEW_OF(&test_panel)));
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_DATA_LIST_PANEL_MAX_ITEMS, test_panel.pressed_index);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_panel)->is_pressed);
     EGUI_TEST_ASSERT_EQUAL_INT(2, changed_count);
     EGUI_TEST_ASSERT_EQUAL_INT(1, last_snapshot);
     EGUI_TEST_ASSERT_EQUAL_INT(1, last_index);
+
+    test_panel.pressed_index = 1;
+    egui_view_set_pressed(EGUI_VIEW_OF(&test_panel), true);
+    egui_view_data_list_panel_set_current_snapshot(EGUI_VIEW_OF(&test_panel), 1);
+    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_data_list_panel_get_current_snapshot(EGUI_VIEW_OF(&test_panel)));
+    EGUI_TEST_ASSERT_EQUAL_INT(2, changed_count);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_DATA_LIST_PANEL_MAX_ITEMS, test_panel.pressed_index);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_panel)->is_pressed);
 
     egui_view_data_list_panel_set_current_snapshot(EGUI_VIEW_OF(&test_panel), 9);
     EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_data_list_panel_get_current_snapshot(EGUI_VIEW_OF(&test_panel)));
@@ -201,10 +229,12 @@ static void test_data_list_panel_font_modes_palette_and_helpers(void)
     EGUI_TEST_ASSERT_TRUE(test_panel.font == (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT);
     EGUI_TEST_ASSERT_TRUE(test_panel.meta_font == (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT);
 
+    egui_view_set_pressed(EGUI_VIEW_OF(&test_panel), true);
     test_panel.pressed_index = 2;
     egui_view_data_list_panel_set_compact_mode(EGUI_VIEW_OF(&test_panel), 3);
     EGUI_TEST_ASSERT_EQUAL_INT(1, test_panel.compact_mode);
-    EGUI_TEST_ASSERT_EQUAL_INT(2, test_panel.pressed_index);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_DATA_LIST_PANEL_MAX_ITEMS, test_panel.pressed_index);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_panel)->is_pressed);
     egui_view_data_list_panel_set_compact_mode(EGUI_VIEW_OF(&test_panel), 0);
     EGUI_TEST_ASSERT_EQUAL_INT(0, test_panel.compact_mode);
 
@@ -253,6 +283,35 @@ static void test_data_list_panel_font_modes_palette_and_helpers(void)
     test_panel.current_index = 0;
     test_panel.current_snapshot = 9;
     EGUI_TEST_ASSERT_NULL(egui_view_data_list_panel_get_snapshot(&test_panel));
+}
+
+static void test_data_list_panel_compact_mode_clears_pressed_and_keeps_selection_behavior(void)
+{
+    egui_dim_t x1;
+    egui_dim_t y1;
+
+    setup_panel();
+    layout_panel(196, 132);
+    get_row_center(1, &x1, &y1);
+
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x1, y1));
+    EGUI_TEST_ASSERT_EQUAL_INT(1, test_panel.pressed_index);
+    EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&test_panel)->is_pressed);
+
+    egui_view_data_list_panel_set_compact_mode(EGUI_VIEW_OF(&test_panel), 1);
+    EGUI_TEST_ASSERT_EQUAL_INT(1, test_panel.compact_mode);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_DATA_LIST_PANEL_MAX_ITEMS, test_panel.pressed_index);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_panel)->is_pressed);
+
+    egui_view_set_size(EGUI_VIEW_OF(&test_panel), 108, 80);
+    layout_panel(108, 80);
+    get_row_center(1, &x1, &y1);
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x1, y1));
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, x1, y1));
+    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_data_list_panel_get_current_index(EGUI_VIEW_OF(&test_panel)));
+    EGUI_TEST_ASSERT_EQUAL_INT(1, changed_count);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, last_snapshot);
+    EGUI_TEST_ASSERT_EQUAL_INT(1, last_index);
 }
 
 static void test_data_list_panel_metrics_and_hit_testing(void)
@@ -383,14 +442,94 @@ static void test_data_list_panel_keyboard_navigation_and_guards(void)
     EGUI_TEST_ASSERT_FALSE(send_key(EGUI_KEY_CODE_ENTER));
 }
 
+static void test_data_list_panel_read_only_mode_ignores_input_and_clears_pressed_state(void)
+{
+    egui_dim_t x1;
+    egui_dim_t y1;
+
+    setup_panel();
+    layout_panel(196, 132);
+    get_row_center(1, &x1, &y1);
+
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x1, y1));
+    EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&test_panel)->is_pressed);
+
+    egui_view_data_list_panel_set_read_only_mode(EGUI_VIEW_OF(&test_panel), 1);
+    EGUI_TEST_ASSERT_EQUAL_INT(1, test_panel.read_only_mode);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_DATA_LIST_PANEL_MAX_ITEMS, test_panel.pressed_index);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_panel)->is_pressed);
+
+    test_panel.pressed_index = 1;
+    egui_view_set_pressed(EGUI_VIEW_OF(&test_panel), true);
+    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x1, y1));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_DATA_LIST_PANEL_MAX_ITEMS, test_panel.pressed_index);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_panel)->is_pressed);
+    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, x1, y1));
+
+    test_panel.pressed_index = 1;
+    egui_view_set_pressed(EGUI_VIEW_OF(&test_panel), true);
+    EGUI_TEST_ASSERT_FALSE(send_key(EGUI_KEY_CODE_RIGHT));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_DATA_LIST_PANEL_MAX_ITEMS, test_panel.pressed_index);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_panel)->is_pressed);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, changed_count);
+
+    egui_view_data_list_panel_set_read_only_mode(EGUI_VIEW_OF(&test_panel), 0);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, test_panel.read_only_mode);
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x1, y1));
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, x1, y1));
+    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_data_list_panel_get_current_index(EGUI_VIEW_OF(&test_panel)));
+    EGUI_TEST_ASSERT_EQUAL_INT(1, changed_count);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, last_snapshot);
+    EGUI_TEST_ASSERT_EQUAL_INT(1, last_index);
+}
+
+static void test_data_list_panel_view_disabled_ignores_input_and_clears_pressed_state(void)
+{
+    egui_dim_t x1;
+    egui_dim_t y1;
+
+    setup_panel();
+    layout_panel(196, 132);
+    get_row_center(1, &x1, &y1);
+
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x1, y1));
+    EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&test_panel)->is_pressed);
+
+    egui_view_set_enable(EGUI_VIEW_OF(&test_panel), 0);
+    test_panel.pressed_index = 1;
+    egui_view_set_pressed(EGUI_VIEW_OF(&test_panel), true);
+    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x1, y1));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_DATA_LIST_PANEL_MAX_ITEMS, test_panel.pressed_index);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_panel)->is_pressed);
+    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, x1, y1));
+
+    test_panel.pressed_index = 1;
+    egui_view_set_pressed(EGUI_VIEW_OF(&test_panel), true);
+    EGUI_TEST_ASSERT_FALSE(send_key(EGUI_KEY_CODE_RIGHT));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_DATA_LIST_PANEL_MAX_ITEMS, test_panel.pressed_index);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_panel)->is_pressed);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, changed_count);
+
+    egui_view_set_enable(EGUI_VIEW_OF(&test_panel), 1);
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x1, y1));
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, x1, y1));
+    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_data_list_panel_get_current_index(EGUI_VIEW_OF(&test_panel)));
+    EGUI_TEST_ASSERT_EQUAL_INT(1, changed_count);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, last_snapshot);
+    EGUI_TEST_ASSERT_EQUAL_INT(1, last_index);
+}
+
 void test_data_list_panel_run(void)
 {
     EGUI_TEST_SUITE_BEGIN(data_list_panel);
     EGUI_TEST_RUN(test_data_list_panel_set_snapshots_clamp_and_reset_focus);
     EGUI_TEST_RUN(test_data_list_panel_snapshot_and_index_guards_notify);
     EGUI_TEST_RUN(test_data_list_panel_font_modes_palette_and_helpers);
+    EGUI_TEST_RUN(test_data_list_panel_compact_mode_clears_pressed_and_keeps_selection_behavior);
     EGUI_TEST_RUN(test_data_list_panel_metrics_and_hit_testing);
     EGUI_TEST_RUN(test_data_list_panel_touch_updates_selection_and_guards);
     EGUI_TEST_RUN(test_data_list_panel_keyboard_navigation_and_guards);
+    EGUI_TEST_RUN(test_data_list_panel_read_only_mode_ignores_input_and_clears_pressed_state);
+    EGUI_TEST_RUN(test_data_list_panel_view_disabled_ignores_input_and_clears_pressed_state);
     EGUI_TEST_SUITE_END();
 }
