@@ -98,6 +98,10 @@
 ## 最近完成的收口动作
 
 - `2026-04-09`
+  - 完成 `input/drop_down_button` 实现级样式收口：删除 guide、状态回显、section divider、外部 preview 标签和 label-click 场景切换逻辑，把页面结构统一为标题、主 `drop_down_button` 与 `compact / read only` 双预览。
+  - 主控件保留真实触摸点击与 `Enter` 键切换闭环，底部两个预览收敛为静态 reference 对照；README 已重写为当前 `reference` 结构。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=input/drop_down_button PORT=pc`、`check_touch_release_semantics.py --scope custom --category input`、`code_runtime_check.py --app HelloCustomWidgets --app-sub input/drop_down_button --track reference --timeout 10 --keep-screenshots`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`check_docs_encoding.py`。
+- `2026-04-09`
   - 完成 `input/shortcut_recorder` 实现级样式收口：删除 guide、状态回显、section divider、外部 preview 标签和 label-click 场景切换逻辑，把页面结构统一为标题、主 `shortcut_recorder` 与 `compact / read only` 双预览。
   - 主控件保留字段监听、组合键捕获、preset 应用和 clear 的真实触摸 / 键盘闭环，底部两个预览收敛为静态 reference 对照，不再承担额外交互职责。
   - README 重写为当前 `reference` 结构；已通过 `make all APP=HelloCustomWidgets APP_SUB=input/shortcut_recorder PORT=pc`、`check_touch_release_semantics.py --scope custom --category input`、`code_runtime_check.py --app HelloCustomWidgets --app-sub input/shortcut_recorder --track reference --timeout 10 --keep-screenshots`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`check_docs_encoding.py`。
