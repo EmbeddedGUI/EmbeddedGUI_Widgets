@@ -98,6 +98,10 @@
 ## 最近完成的收口动作
 
 - `2026-04-09`
+  - 完成 `layout/data_list_panel` 实现级样式收口：删除 guide / 状态文案 / standard label / section divider / preview label 等页面级 chrome，页面结构收敛为标题、主 `data_list_panel` 与 `compact / read only` 双预览。
+  - 统一 `data_list_panel` 主卡与双预览尺寸、palette 和录制动作；底部预览改为禁用交互的静态对照，不再承担标签点击与状态桥接职责。
+  - README 重写为当前 reference 结构；已通过 `make all APP=HelloCustomWidgets APP_SUB=layout/data_list_panel PORT=pc`、`check_touch_release_semantics.py --scope custom --category layout`、`code_runtime_check.py --app HelloCustomWidgets --app-sub layout/data_list_panel --track reference --timeout 10 --keep-screenshots`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`check_docs_encoding.py`。
+- `2026-04-09`
   - 完成 `layout/settings_panel` 实现级样式收口：删除 guide / 状态文案 / section label / preview label 等页面级 chrome，页面结构收敛为标题、主 `settings_panel` 与 `compact / read only` 双预览。
   - 统一 `settings_panel` palette、底部双预览尺寸与录制节奏；底部预览改为禁用交互的静态对照，不再承担点击轮换职责。
   - README 重写为当前 reference 结构；已通过 `make all APP=HelloCustomWidgets APP_SUB=layout/settings_panel PORT=pc`、`check_touch_release_semantics.py --scope custom --category layout`、`code_runtime_check.py --app HelloCustomWidgets --app-sub layout/settings_panel --track reference --timeout 10 --keep-screenshots`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`check_docs_encoding.py`。
