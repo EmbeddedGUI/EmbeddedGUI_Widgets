@@ -1,14 +1,14 @@
-# tab_strip 自定义控件设计说明
+# tab_strip 设计说明
 
 ## 参考来源
-
 - 参考设计系统：`Fluent 2`
 - 参考开源库：`WPF UI`
-- 次级补充参考：`ModernWpf`
-- 对应组件名：`TabView / TabStrip`
-- 本次保留状态：`standard`、`compact`、`read only`、`current tab`
-- 删减效果：页面级 guide / 状态文案 / section label、图标页签、关闭按钮、拖拽重排、Acrylic 和复杂 hover 动效
-- EGUI 适配说明：保留变宽 tab、轻量 underline 与弱填充选中态，用固定尺寸容器优先保证 `480 x 480` 下的页内导航可读性
+- 平台语义参考：`WinUI TabView`
+- 补充对照控件：`tab_view`、`breadcrumb_bar`
+- 对应组件名：`TabStrip`
+- 本次保留状态：`standard`、`current tab`、`compact`、`read only`
+- 本次删除效果：页面级 `guide`、状态文案、旧双列 preview 包裹壳、preview 交互职责、过重 active tab 与 underline 强调
+- EGUI 适配说明：继续复用仓库内 `tab_strip` 基础实现，本轮只收口 `reference` 页面结构、静态对照预览和绘制强度，不修改 `sdk/EmbeddedGUI`
 
 ## 1. 为什么需要这个控件
 
@@ -16,118 +16,125 @@
 
 ## 2. 为什么现有控件不够用
 
-- `tab_bar` 采用均分宽度，更像基础分页控件，不够接近 Fluent 的轻量 variable-width tab strip
-- `tab_view` 带有 header + content shell，语义比页内标签条更重
-- `breadcrumb_bar` 表达层级路径，不适合平级 section 切换
-- `menu_bar` 和 `nav_panel` 属于命令或常驻导航，不是正文内的横向页签条
+- `tab_view` 带有 header + content shell，语义比页内标签条更重。
+- `breadcrumb_bar` 表达层级路径，不适合平级 section 切换。
+- `menu_bar` 和 `nav_panel` 属于命令或常驻导航，不是正文内的横向页签条。
+- 当前 reference 主线仍需要一版贴近 Fluent / WPF UI 的轻量 `TabStrip`。
 
 ## 3. 目标场景与示例概览
 
-- 主区域展示标准 `tab_strip`，对应 `Overview / Usage / Access` 三个 section
-- 左下 `Compact` 预览展示窄宽度下的轻量双标签条
-- 右下 `Read only` 预览展示只读弱化版标签条
-- 示例页结构收敛为标题、主 `tab_strip` 和 compact / read-only 双预览，不再保留页面级 guide、状态文案和 section label
+- 主控件展示标准 `tab_strip`，覆盖 `Overview`、`Usage`、`Access` 三个 section。
+- 底部左侧展示 `compact` 静态对照，验证窄宽度下的轻量双标签条。
+- 底部右侧展示 `read only` 静态对照，验证冻结交互后的弱化标签条。
+- 页面结构统一收口为：标题 -> 主 `tab_strip` -> `compact / read only`。
+- 旧的 preview 列容器、外部标签和点击桥接逻辑已删除，底部两个 preview 直接挂在同一行容器下。
 
-目标目录：
-
-- `example/HelloCustomWidgets/navigation/tab_strip/`
+目标目录：`example/HelloCustomWidgets/navigation/tab_strip/`
 
 ## 4. 视觉与布局规格
 
-- 画布：`480 x 480`
-- 根布局：`224 x 136`
-- 主标签条：`198 x 44`
-- 底部双预览容器：`216 x 36`
-- `Compact` / `Read only` 预览：`104 x 36`
-- 视觉规则：
-  - 使用浅灰 page panel + 白底轻边框标签容器
-  - 页签按文本内容宽度自然排布，不回退到均分分栏
-  - 当前项只保留弱填充、轻量文字强调和 underline 指示器
-  - `Read only` 通过同一 palette 的统一弱化表达锁定，不额外添加说明标签
-  - 页面只保留控件本体与双预览，不再堆叠说明性 chrome
+- 根容器尺寸：`224 x 136`
+- 主控件尺寸：`198 x 44`
+- 底部对照行尺寸：`216 x 36`
+- `compact` 预览：`104 x 36`
+- `read only` 预览：`104 x 36`
+- 页面结构：标题 + 主控件 + 底部双预览
+- 样式约束：
+  - 使用浅灰 page panel、白色标签条容器和低噪音浅边框。
+  - 页签按文本内容宽度自然排布，不回退到等宽分栏。
+  - 当前项保留轻量填充和 underline，但降低 active fill、文字染色和双层底线强度。
+  - `read only` 使用更弱的灰蓝 palette，只做静态 reference 对照。
 
 ## 5. 控件清单
 
 | 变量名 | 类型 | 尺寸 (W x H) | 初始状态 | 用途 |
 | --- | --- | ---: | --- | --- |
-| `root_layout` | `egui_view_linearlayout_t` | `224 x 136` | enabled | 页面根布局 |
-| `title_label` | `egui_view_label_t` | `224 x 18` | `Tab Strip` | 页面标题 |
-| `bar_primary` | `egui_view_tab_strip_t` | `198 x 44` | `Overview` | 标准标签条 |
-| `bar_compact` | `egui_view_tab_strip_t` | `104 x 36` | `Home` | 紧凑标签条 |
-| `bar_locked` | `egui_view_tab_strip_t` | `104 x 36` | `Audit` | 只读弱化标签条 |
+| `bar_primary` | `egui_view_tab_strip_t` | `198 x 44` | `Overview` | 主 `TabStrip` |
+| `bar_compact` | `egui_view_tab_strip_t` | `104 x 36` | `Home` | 底部 compact 静态对照 |
+| `bar_read_only` | `egui_view_tab_strip_t` | `104 x 36` | `Audit` | 底部 read only 静态对照 |
+| `primary_tabs` | `const char *[3]` | - | `Overview / Usage / Access` | 主控件录制轨道 |
+| `compact_tabs` | `const char *[2]` | - | `Home / Logs` | compact 预览程序化切换 |
+| `read_only_tabs` | `const char *[2]` | - | `Usage / Audit` | read only 固定对照数据 |
 
 ## 6. 状态覆盖矩阵
 
-| 状态 / 区域 | 主标签条 | Compact | Read only |
-| --- | --- | --- | --- |
-| 默认态 | `Overview` | `Home` | `Audit` |
-| current tab | `Overview / Usage / Access` 三项切换 | `Home / Logs` 切换 | 固定为 `Audit` |
-| compact shell | 不适用 | 有 | 有 |
-| read only | 无 | 无 | 有 |
+| 区域 / 轨道 | 状态 | 说明 |
+| --- | --- | --- |
+| 主控件 | `Overview` | 默认主 snapshot，验证标准 tab strip |
+| 主控件 | `Usage` | 程序化切换第二项 |
+| 主控件 | `Access` | 程序化切换第三项 |
+| `compact` | `Home` | 默认 compact 对照 |
+| `compact` | `Logs` | 第二组 compact 对照 |
+| `read only` | `Audit` | 固定只读轨道，禁 touch、禁 focus、禁键盘 |
 
 ## 7. `egui_port_get_recording_action()` 录制动作设计
 
-1. 首帧固定主标签条为 `Overview`、compact 预览为 `Home`
-2. 切到主标签条 `Usage`
-3. 切到主标签条 `Access`
-4. 切到 compact 预览 `Logs`
-5. 每次切换后请求精确截图，确保 runtime 直接抓到稳定状态
+1. 重置主控件、`compact` 和 `read only` 到默认状态。
+2. 请求默认截图。
+3. 程序化切换主控件到 `Usage`。
+4. 请求第二张截图。
+5. 程序化切换主控件到 `Access`。
+6. 请求第三张截图。
+7. 程序化切换 `compact` 到 `Logs`。
+8. 请求最终截图。
 
-## 8. 编译、runtime、截图验收标准
+## 8. 编译、touch、runtime、单测与文档检查
 
 ```bash
 make all APP=HelloCustomWidgets APP_SUB=navigation/tab_strip PORT=pc
-python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub navigation/tab_strip --timeout 10 --keep-screenshots
+python scripts/checks/check_touch_release_semantics.py --scope custom --category navigation
+python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub navigation/tab_strip --track reference --timeout 10 --keep-screenshots
 make all APP=HelloUnitTest PORT=pc_test
 output\main.exe
+python scripts/checks/check_docs_encoding.py
 ```
 
 验收重点：
 
-- 主标签条和底部双预览都必须完整可见，不能再出现大片空白页板
-- variable-width tab 必须保持自然留白，不能退化成均分按钮
-- 当前项 underline 要明显但克制，不出现过厚或高饱和强调
-- `Compact` 在窄宽度下仍要可读
-- `Read only` 弱化后仍能明确看出当前页签
+- 主控件和底部 `compact / read only` 预览都必须完整可见，不能重新长出旧 preview 壳层。
+- variable-width tab 必须保持自然留白，不能退化成均分按钮。
+- 当前项 fill、divider 和 underline 需要可辨识，但整体不能回到高噪音 showcase 风格。
+- `compact` 在窄宽度下仍要保持标签可读。
+- `read only` 只能做静态展示，不能响应 touch、focus 或键盘。
 
 ## 9. 已知限制与后续方向
 
-- 当前版本只覆盖纯文本页签，不做图标、关闭按钮和拖拽重排
-- 文本宽度仍采用轻量估算，没有接入真实字体测量
-- 当前主页面只验证页签条本体，不联动内容面板
+- 当前版本只覆盖纯文本页签，不做图标、关闭按钮和拖拽重排。
+- 文本宽度仍采用轻量估算，没有接入真实字体测量。
+- 当前主页面只验证页签条本体，不联动内容面板。
 
-## 10. 与现有控件的重叠分析与差异化边界
+## 10. 与现有控件的边界
 
-- 相比 `tab_bar`：这里按内容宽度排布，不走等宽分栏
-- 相比 `tab_view`：这里不承载内容面板，只保留页内标签条语义
-- 相比 `breadcrumb_bar`：这里表达平级切换，不表达层级路径
-- 相比 `menu_bar`：这里是页面 section 导航，不是命令分组入口
+- 相比 `tab_view`：这里不承载内容面板，只保留页内标签条语义。
+- 相比 `breadcrumb_bar`：这里表达平级切换，不表达层级路径。
+- 相比 `menu_bar`：这里是页面 section 导航，不是命令分组入口。
+- 相比旧 showcase 页面：这里回到统一的 Fluent reference 结构，不保留外部说明壳层和预览交互桥接逻辑。
 
 ## 11. 参考设计系统与开源母本
 
 - 参考设计系统：`Fluent 2`
-- 开源母本：`WPF UI`
-- 次级补充参考：`ModernWpf`
+- 参考开源库：`WPF UI`
+- 平台语义参考：`WinUI TabView`
 
-## 12. 对应组件名，以及本次保留的核心状态
+## 12. 对应组件名与本次保留的核心状态
 
-- 对应组件名：`TabView / TabStrip`
-- 本次保留状态：
+- 对应组件名：`TabStrip`
+- 本次保留核心状态：
   - `standard`
   - `current tab`
   - `compact`
   - `read only`
 
-## 13. 相比参考原型删掉了哪些效果或装饰
+## 13. 相比参考原型删除的效果或装饰
 
-- 不做页面级 guide、状态栏、section label 与额外说明控件
-- 不做图标页签、关闭按钮和拖拽排序
-- 不做复杂 hover / pressed 过渡、Acrylic 和系统级特效
-- 不做与 `tab_view` 类似的内容面板壳层
+- 删除页面级 `guide`、状态文案、preview 标签和旧的双列 preview 包裹结构。
+- 删除 preview 参与交互和页面桥接的职责。
+- 删除过重 active fill、过亮文字染色和过强双层 underline。
+- 删除与 reference 无关的说明性外壳和场景叙事。
 
 ## 14. EGUI 适配时的简化点与约束
 
-- 使用固定尺寸和轻量 palette，优先保证 `480 x 480` 下的审阅效率
-- 通过近似字符宽度与省略号控制 tab 宽度，不引入复杂布局系统
-- read-only 通过控件内弱化逻辑完成，不再依赖外部标签解释
-- 先完成 reference 版页内导航条，再决定是否上升到框架公共控件
+- 使用固定 tab 数据保证录制稳定。
+- `compact / read only` 直接复用同一控件模式，减少额外页面壳层。
+- 通过程序化切换 current index 保证 runtime 能稳定抓到页签变化。
+- 当前先作为 `HelloCustomWidgets` 的 reference widget 维护，后续是否下沉框架层再单独评估。

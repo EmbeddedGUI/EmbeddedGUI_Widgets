@@ -13,11 +13,11 @@
 #define EGUI_VIEW_TAB_STRIP_STANDARD_LABEL_HEIGHT      18
 #define EGUI_VIEW_TAB_STRIP_STANDARD_LABEL_OFFSET      6
 #define EGUI_VIEW_TAB_STRIP_STANDARD_DIVIDER_OFFSET    9
-#define EGUI_VIEW_TAB_STRIP_STANDARD_FILL_ALPHA        94
-#define EGUI_VIEW_TAB_STRIP_STANDARD_BORDER_ALPHA      66
-#define EGUI_VIEW_TAB_STRIP_STANDARD_ACTIVE_FILL_ALPHA 44
-#define EGUI_VIEW_TAB_STRIP_STANDARD_ACTIVE_FILL_MIX   8
-#define EGUI_VIEW_TAB_STRIP_STANDARD_TEXT_MIX          14
+#define EGUI_VIEW_TAB_STRIP_STANDARD_FILL_ALPHA        92
+#define EGUI_VIEW_TAB_STRIP_STANDARD_BORDER_ALPHA      58
+#define EGUI_VIEW_TAB_STRIP_STANDARD_ACTIVE_FILL_ALPHA 30
+#define EGUI_VIEW_TAB_STRIP_STANDARD_ACTIVE_FILL_MIX   5
+#define EGUI_VIEW_TAB_STRIP_STANDARD_TEXT_MIX          10
 
 #define EGUI_VIEW_TAB_STRIP_COMPACT_BASE_WIDTH        12
 #define EGUI_VIEW_TAB_STRIP_COMPACT_CHAR_WIDTH        4
@@ -30,11 +30,11 @@
 #define EGUI_VIEW_TAB_STRIP_COMPACT_LABEL_HEIGHT      13
 #define EGUI_VIEW_TAB_STRIP_COMPACT_LABEL_OFFSET      3
 #define EGUI_VIEW_TAB_STRIP_COMPACT_DIVIDER_OFFSET    8
-#define EGUI_VIEW_TAB_STRIP_COMPACT_FILL_ALPHA        90
-#define EGUI_VIEW_TAB_STRIP_COMPACT_BORDER_ALPHA      62
-#define EGUI_VIEW_TAB_STRIP_COMPACT_ACTIVE_FILL_ALPHA 36
-#define EGUI_VIEW_TAB_STRIP_COMPACT_ACTIVE_FILL_MIX   6
-#define EGUI_VIEW_TAB_STRIP_COMPACT_TEXT_MIX          18
+#define EGUI_VIEW_TAB_STRIP_COMPACT_FILL_ALPHA        92
+#define EGUI_VIEW_TAB_STRIP_COMPACT_BORDER_ALPHA      56
+#define EGUI_VIEW_TAB_STRIP_COMPACT_ACTIVE_FILL_ALPHA 28
+#define EGUI_VIEW_TAB_STRIP_COMPACT_ACTIVE_FILL_MIX   4
+#define EGUI_VIEW_TAB_STRIP_COMPACT_TEXT_MIX          12
 
 typedef struct egui_view_tab_strip_layout_item egui_view_tab_strip_layout_item_t;
 struct egui_view_tab_strip_layout_item
@@ -404,15 +404,16 @@ static void egui_view_tab_strip_on_draw(egui_view_t *self)
 
     if (local->locked_mode)
     {
-        surface_color = egui_rgb_mix(surface_color, EGUI_COLOR_HEX(0xFBFCFD), 24);
-        border_color = egui_rgb_mix(border_color, muted_text_color, 18);
-        text_color = egui_rgb_mix(text_color, muted_text_color, 70);
-        accent_color = egui_rgb_mix(accent_color, muted_text_color, 86);
+        surface_color = egui_rgb_mix(surface_color, EGUI_COLOR_HEX(0xFBFCFD), 14);
+        border_color = egui_rgb_mix(border_color, muted_text_color, 10);
+        text_color = egui_rgb_mix(text_color, muted_text_color, 42);
+        muted_text_color = egui_rgb_mix(muted_text_color, border_color, 8);
+        accent_color = egui_rgb_mix(accent_color, muted_text_color, 74);
     }
     else if (!local->compact_mode)
     {
-        surface_color = egui_rgb_mix(surface_color, EGUI_COLOR_HEX(0xFFFFFF), 14);
-        border_color = egui_rgb_mix(border_color, EGUI_COLOR_HEX(0xFFFFFF), 24);
+        surface_color = egui_rgb_mix(surface_color, EGUI_COLOR_HEX(0xFFFFFF), 18);
+        border_color = egui_rgb_mix(border_color, EGUI_COLOR_HEX(0xFFFFFF), 16);
     }
 
     if (!is_enabled)
@@ -446,7 +447,7 @@ static void egui_view_tab_strip_on_draw(egui_view_t *self)
     count = egui_view_tab_strip_prepare_layout(local, content_x, content_w, items);
 
     egui_canvas_draw_line(content_x, divider_y, content_x + content_w, divider_y, 1, border_color,
-                          egui_color_alpha_mix(self->alpha, local->compact_mode ? 32 : 28));
+                          egui_color_alpha_mix(self->alpha, local->compact_mode ? 18 : 16));
 
     for (i = 0; i < count; i++)
     {
@@ -472,7 +473,7 @@ static void egui_view_tab_strip_on_draw(egui_view_t *self)
         }
         else if (!local->compact_mode && count > 3)
         {
-            item_text_color = egui_rgb_mix(muted_text_color, text_color, 6);
+            item_text_color = egui_rgb_mix(muted_text_color, text_color, 4);
         }
 
         egui_view_tab_strip_draw_text(local, self, items[i].label, items[i].x, label_y, items[i].width, label_h, item_text_color);
@@ -486,15 +487,16 @@ static void egui_view_tab_strip_on_draw(egui_view_t *self)
             }
             indicator_x = items[i].x + (items[i].width - indicator_w) / 2;
             egui_canvas_draw_line(indicator_x, divider_y, indicator_x + indicator_w, divider_y, 1, accent_color,
-                                  egui_color_alpha_mix(self->alpha, local->locked_mode ? 46 : 86));
+                                  egui_color_alpha_mix(self->alpha, local->locked_mode ? 30 : 52));
             egui_canvas_draw_line(indicator_x, divider_y + 1, indicator_x + indicator_w, divider_y + 1, 1, accent_color,
-                                  egui_color_alpha_mix(self->alpha, local->locked_mode ? 20 : 52));
+                                  egui_color_alpha_mix(self->alpha, local->locked_mode ? 12 : 28));
         }
     }
 
     if (local->locked_mode)
     {
-        egui_canvas_draw_line(content_x + 2, content_y + 1, content_x + content_w - 2, content_y + 1, 1, border_color, egui_color_alpha_mix(self->alpha, 16));
+        egui_canvas_draw_line(content_x + 2, content_y + 1, content_x + content_w - 2, content_y + 1, 1, border_color,
+                              egui_color_alpha_mix(self->alpha, 10));
     }
 }
 
@@ -568,10 +570,10 @@ void egui_view_tab_strip_init(egui_view_t *self)
     local->tab_texts = NULL;
     local->font = (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT;
     local->surface_color = EGUI_COLOR_HEX(0xFFFFFF);
-    local->border_color = EGUI_COLOR_HEX(0xD7DEE7);
+    local->border_color = EGUI_COLOR_HEX(0xD2DBE3);
     local->text_color = EGUI_COLOR_HEX(0x1B2430);
     local->muted_text_color = EGUI_COLOR_HEX(0x657382);
-    local->accent_color = EGUI_COLOR_HEX(0x2563EB);
+    local->accent_color = EGUI_COLOR_HEX(0x0F6CBD);
     local->tab_count = 0;
     local->current_index = 0;
     local->compact_mode = 0;
