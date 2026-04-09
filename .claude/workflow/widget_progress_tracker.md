@@ -98,6 +98,10 @@
 ## 最近完成的收口动作
 
 - `2026-04-09`
+  - 完成 `input/color_picker` 实现级样式收口：删除 guide / 状态文案 / standard label / section divider / preview label 等页面级 chrome，页面结构收敛为标题、主 `color_picker` 与 `compact / read only` 双预览。
+  - 统一 `color_picker` 主卡与双预览尺寸、palette 和录制动作；底部预览改为禁用交互的静态对照，不再承担标签点击与页面状态桥接职责。
+  - README 重写为当前 reference 结构；已通过 `make all APP=HelloCustomWidgets APP_SUB=input/color_picker PORT=pc`、`check_touch_release_semantics.py --scope custom --category input`、`code_runtime_check.py --app HelloCustomWidgets --app-sub input/color_picker --track reference --timeout 10 --keep-screenshots`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`check_docs_encoding.py`。
+- `2026-04-09`
   - 完成 `input/password_box` 实现级样式收口：删除 guide / 状态文案 / standard label / section divider / preview label 等页面级 chrome，页面结构收敛为标题、主 `password_box` 与 `compact / read only` 双预览。
   - 统一 `password_box` 主卡与双预览尺寸、palette 和录制动作；底部预览改为禁用交互的静态对照，不再承担标签点击与页面状态桥接职责。
   - README 重写为当前 reference 结构；已通过 `make all APP=HelloCustomWidgets APP_SUB=input/password_box PORT=pc`、`check_touch_release_semantics.py --scope custom --category input`、`code_runtime_check.py --app HelloCustomWidgets --app-sub input/password_box --track reference --timeout 10 --keep-screenshots`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`check_docs_encoding.py`。
