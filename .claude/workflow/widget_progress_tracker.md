@@ -34,7 +34,7 @@
 
 | 状态 | 控件名 | 分类 | 开始日期 | 当前阶段 | 目标 |
 | --- | --- | --- | --- | --- | --- |
-| 进行中 | `persona_group` | `display` | `2026-04-09` | `reference 细化` | 收口为标题 + 主控件 + `compact / read only` 静态对照，并继续压轻 avatar overlap、presence badge、ring / summary chrome |
+| 进行中 | `card_panel` | `display` | `2026-04-09` | `reference 细化` | 收口为标题 + 主控件 + `compact / read only` 静态对照，并继续压轻 header strap、metric chip、footer action chrome |
 
 ## 当前保留的 Reference 主线控件
 
@@ -96,6 +96,11 @@
 - `toast_stack` -> `Toast`
 
 ## 最近完成的收口动作
+
+- `2026-04-09`
+  - 完成 `display/persona_group` 实现级样式收口：移除底部 preview 的旧列容器壳，页面统一为标题、主 `persona_group` 与 `compact / read only` 静态对照，继续保留 `AvatarGroup` 的成员重叠、焦点成员、presence 和 overflow 气泡语义。
+  - `test.c` 将 `group_readonly / readonly_snapshots` 收口为 `group_read_only / read_only_snapshots`，底部两个 preview 统一禁用 touch / focus，并在录制起点显式重置主轨道、`compact` 与 `read only` 对照；`egui_view_persona_group.c` 进一步压轻 avatar ring、presence badge、overflow bubble、card border 和 footer summary，并把 `read_only_mode` 再灰蓝化；README 重写为当前 `reference` 模板。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=display/persona_group PORT=pc`、`check_touch_release_semantics.py --scope custom --category display`、`code_runtime_check.py --app HelloCustomWidgets --app-sub display/persona_group --track reference --timeout 10 --keep-screenshots`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`check_docs_encoding.py`。
 
 - `2026-04-09`
   - 完成 `feedback/dialog_sheet` 实现级样式收口：移除底部 preview 的旧列容器壳，页面统一为标题、主 `dialog_sheet` 与 `compact / read only` 静态对照，继续保留 `ContentDialog` 的 `warning / error / accent / success` 四态、footer summary、tag 和 primary / secondary action 语义。
@@ -244,8 +249,6 @@
 - `2026-04-09`
   - 完成 `layout/split_view` 实现级样式收口：删除 guide / 状态文案 / standard label / section label / preview label 等页面级 chrome，示例页收敛为标题、主 `split_view` 与 `compact / read only` 双预览。
   - 统一 `split_view` 主卡与双预览尺寸、palette 和录制动作；底部预览改为静态对照，不再承担交互职责。
-- `2026-04-09`
-  - 完成 `display/persona_group` 实现级样式收口，页面结构统一到标题 + 主控件 + 双预览。
 - `2026-04-09`
   - 完成 `display/card_panel` 实现级样式收口，移除旧版状态桥接和页面壳。
 - `2026-04-09`
