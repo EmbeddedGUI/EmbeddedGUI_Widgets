@@ -2,10 +2,10 @@
 
 ## 用途说明
 
-- 本文件用于跟踪 `HelloCustomWidgets` 当前仍保留的主线控件。
+- 本文件用于跟踪 `HelloCustomWidgets` 当前仍保留的 `reference` 主线控件。
 - 每次继续工作前，先读 `.claude/workflow/widget_acceptance_workflow.md` 和本文件。
-- 当前仓库已经清退全部 `showcase` / `deprecated` 控件目录，只保留 `reference` 主线。
-- 后续如果某个控件无法继续证明其 `Fluent 2 / WPF UI` 主线价值，应在这里明确记录删除结论，而不是继续堆积。
+- 当前仓库已经清退全部 `showcase` / `deprecated` 目录，只保留 `reference` 主线。
+- 如果某个控件无法继续证明其 `Fluent 2 / WPF UI` 主线价值，应在这里明确记录删除结论，而不是静默消失。
 
 ## 当前快照
 
@@ -16,7 +16,7 @@
   - `navigation = 10`
   - `display = 3`
   - `feedback = 5`
-- 当前 `widget_catalog.json`、`web/catalog-policy.json` 与默认 web 入口已同步到 `reference-only` 状态。
+- `widget_catalog.json`、`web/catalog-policy.json` 与默认 web 入口已同步到 `reference-only` 状态。
 - 已清退轨道：
   - 全部 `deprecated`
   - 全部 `showcase`
@@ -25,9 +25,9 @@
 ## 当前固定规则
 
 - 第一优先级：统一到 `Fluent 2 / WPF UI` 主线。
-- 一次只处理一个控件或一组边界非常明确的清理动作。
-- 当前控件未完成验收前，不启动下一个控件。
-- 文档、README、workflow 和 web 文案必须保持 UTF-8。
+- 一次只处理一个控件，完成验收和提交后再切下一个。
+- 未完成当前控件前，不启动下一个控件。
+- README、workflow、web 文档必须保持 UTF-8，不允许乱码留仓。
 - 任何“看起来像 HMI / showcase / 场景演示页”的实现都不是默认保留理由。
 
 ## 当前进行中
@@ -98,111 +98,57 @@
 ## 最近完成的收口动作
 
 - `2026-04-09`
-  - 完成 `layout/split_view` 实现级样式收口：删除 guide / 状态文案 / standard label / section label / preview label 等页面级 chrome，示例页收敛为标题、主 `split_view` 和 `compact / read only` 双预览。
-  - 收紧 `split_view` 根布局与底部双预览尺寸，统一主态、compact 和 read-only palette 到 Fluent / WPF UI 中性浅色 `SplitView` 语法，录制动作改为程序化 pane 与 selection 切换，底部预览不再承担交互职责。
-  - README 重写为当前 reference 结构，移除旧版外部状态回显、guide 点击和页面壳层说明。
-  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=layout/split_view PORT=pc`、`check_touch_release_semantics.py --scope custom --category layout`、`code_runtime_check.py --app HelloCustomWidgets --app-sub layout/split_view --track reference --timeout 10 --keep-screenshots`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`check_docs_encoding.py`。
+  - 完成 `layout/settings_panel` 实现级样式收口：删除 guide / 状态文案 / section label / preview label 等页面级 chrome，页面结构收敛为标题、主 `settings_panel` 与 `compact / read only` 双预览。
+  - 统一 `settings_panel` palette、底部双预览尺寸与录制节奏；底部预览改为禁用交互的静态对照，不再承担点击轮换职责。
+  - README 重写为当前 reference 结构；已通过 `make all APP=HelloCustomWidgets APP_SUB=layout/settings_panel PORT=pc`、`check_touch_release_semantics.py --scope custom --category layout`、`code_runtime_check.py --app HelloCustomWidgets --app-sub layout/settings_panel --track reference --timeout 10 --keep-screenshots`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`check_docs_encoding.py`。
 - `2026-04-09`
-  - 完成 `display/persona_group` 实现级样式收口：删除 guide / 状态文案 / standard label / section label / preview label 等页面级 chrome，示例页收敛为标题、主 `persona_group` 和 `compact / read only` 双预览。
-  - 收紧 `persona_group` 根布局与底部双预览尺寸，统一主态、compact 和 read-only palette 到 Fluent / WPF UI 中性浅色 `AvatarGroup` 语法，录制动作改为程序化 snapshot 与焦点成员切换，底部预览不再承担交互职责。
-  - README 重写为当前 reference 结构，移除旧版外部状态回显、guide 点击和页面壳层说明。
-  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=display/persona_group PORT=pc`、`check_touch_release_semantics.py --scope custom --category display`、`code_runtime_check.py --app HelloCustomWidgets --app-sub display/persona_group --track reference --timeout 10 --keep-screenshots`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`check_docs_encoding.py`。
+  - 完成 `layout/split_view` 实现级样式收口：删除 guide / 状态文案 / standard label / section label / preview label 等页面级 chrome，示例页收敛为标题、主 `split_view` 与 `compact / read only` 双预览。
+  - 统一 `split_view` 主卡与双预览尺寸、palette 和录制动作；底部预览改为静态对照，不再承担交互职责。
 - `2026-04-09`
-  - 完成 `display/card_panel` 实现级样式收口：删除 guide / 状态文案 / section label / preview label 等页面级 chrome，示例页收敛为标题、主 `card_panel` 和 `compact / read only` 双预览。
-  - 收紧 `card_panel` 根布局与底部双预览尺寸，统一主态、compact 和 read-only palette 到 Fluent / WPF UI 中性浅色 `Card` 语法，录制动作改为程序化 snapshot 切换，底部预览不再承担交互职责。
-  - README 重写为当前 reference 结构，移除旧版点击轮换、状态回显和页面壳层说明。
-  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=display/card_panel PORT=pc`、`check_touch_release_semantics.py --scope custom --category display`、`code_runtime_check.py --app HelloCustomWidgets --app-sub display/card_panel --track reference --timeout 10 --keep-screenshots`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`check_docs_encoding.py`。
+  - 完成 `display/persona_group` 实现级样式收口，页面结构统一到标题 + 主控件 + 双预览。
 - `2026-04-09`
-  - 完成 `display/badge_group` 实现级样式收口：删除 guide / 状态文案 / section label / preview label 等页面级 chrome，示例页收敛为标题、主 `badge_group` 和 `compact / read only` 双预览。
-  - 收紧 `badge_group` 根布局与底部双预览尺寸，统一主态、compact 和 read-only palette 到 Fluent / WPF UI 中性浅色 `Badge` 语法，录制动作改为程序化 snapshot 切换，底部预览不再承担交互职责。
-  - README 重写为当前 reference 结构，移除旧版外部状态回显、点击轮换和页面壳层说明。
-  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=display/badge_group PORT=pc`、`check_touch_release_semantics.py --scope custom --category display`、`code_runtime_check.py --app HelloCustomWidgets --app-sub display/badge_group --track reference --timeout 10 --keep-screenshots`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`check_docs_encoding.py`。
+  - 完成 `display/card_panel` 实现级样式收口，移除旧版状态桥接和页面壳。
 - `2026-04-09`
-  - 完成 `feedback/teaching_tip` 实现级样式收口：删除 guide / 状态桥接 / section label / 预览标签等页面级 chrome，示例页收敛为标题、主 `teaching_tip` 和 compact / read-only 双预览。
-  - 收紧 `teaching_tip` 根布局与底部双预览尺寸，统一主态、compact 和 read-only palette 到 Fluent / WPF UI 中性浅色 `TeachingTip` 语法，保留关闭态、重开态和键盘焦点闭环，但录制切换不再依赖外部标签。
-  - README 重写为当前 reference 结构，移除旧版 guide 点击、状态桥接和 preview label 交互说明。
-  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=feedback/teaching_tip PORT=pc`、`check_touch_release_semantics.py --scope custom --category feedback`、`code_runtime_check.py --app HelloCustomWidgets --app-sub feedback/teaching_tip --track reference --timeout 10 --keep-screenshots`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`check_docs_encoding.py`。
+  - 完成 `display/badge_group` 实现级样式收口，统一到 Fluent / WPF UI 低噪音浅色 reference。
 - `2026-04-09`
-  - 完成 `feedback/dialog_sheet` 实现级样式收口：删除 guide / 状态文案 / section label / 预览标签等页面级 chrome，示例页收敛为标题、主 `dialog_sheet` 和 compact / read-only 双预览。
-  - 收紧 `dialog_sheet` 根布局与底部双预览尺寸，统一主态、compact 和 read-only palette 到 Fluent / WPF UI 中性浅色 `ContentDialog` 语法，录制动作改为程序化 snapshot 切换。
-  - README 重写为当前 reference 结构，移除旧版状态回显和外部标签驱动说明。
-  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=feedback/dialog_sheet PORT=pc`、`check_touch_release_semantics.py --scope custom --category feedback`、`code_runtime_check.py --app HelloCustomWidgets --app-sub feedback/dialog_sheet --track reference --timeout 10 --keep-screenshots`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`check_docs_encoding.py`。
+  - 完成 `feedback/teaching_tip` 实现级样式收口。
 - `2026-04-09`
-  - 完成 `feedback/skeleton` 实现级样式收口：删除 guide / section label / `Pulse` / `Static` 预览标签等页面级 chrome，示例页收敛为标题、主 `skeleton` 和 compact / read-only 双预览。
-  - 收紧 `skeleton` 根布局与底部双预览尺寸，统一 wave、compact 和 read-only palette 到 Fluent / WPF UI 中性浅色骨架语法，录制动作改为程序化 snapshot 切换。
-  - README 重写为当前 reference 结构，移除旧版点击标签切换与页面壳层说明。
-  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=feedback/skeleton PORT=pc`、`check_touch_release_semantics.py --scope custom --category feedback`、`code_runtime_check.py --app HelloCustomWidgets --app-sub feedback/skeleton --track reference --timeout 10 --keep-screenshots`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`check_docs_encoding.py`。
+  - 完成 `feedback/dialog_sheet` 实现级样式收口。
 - `2026-04-09`
-  - 完成 `feedback/message_bar` 实现级样式收口：删除 guide / 状态栏 / section label / 预览标签等页面级 chrome，示例页收敛为标题、主 `message_bar` 和 compact / read-only 双预览。
-  - 收紧 `message_bar` 根布局与底部双预览尺寸，统一主态、compact 和 read-only palette 到 Fluent / WPF UI 中性浅色 `MessageBar / InfoBar` 语法，录制动作改为程序化 snapshot 切换。
-  - README 重写为当前 reference 结构，移除外部状态回显和 `persistent` 页面壳层叙述。
-  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=feedback/message_bar PORT=pc`、`check_touch_release_semantics.py --scope custom --category feedback`、`code_runtime_check.py --app HelloCustomWidgets --app-sub feedback/message_bar --track reference --timeout 10 --keep-screenshots`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`check_docs_encoding.py`。
+  - 完成 `feedback/skeleton` 实现级样式收口。
 - `2026-04-09`
-  - 完成 `feedback/toast_stack` 实现级样式收口：删除 guide / 状态栏 / section label / 预览标签等页面级 chrome，示例页收敛为标题、主 `toast_stack` 和 compact / read-only 双预览。
-  - 收紧 `toast_stack` 根布局与底部双预览尺寸，统一主态、compact 和 read-only palette 到 Fluent / WPF UI 中性浅色 `Toast / Snackbar` 语法，录制动作改为程序化 snapshot 切换。
-  - README 重写为当前 reference 结构，移除外部状态回显和点击外部标签切换的旧说明。
-  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=feedback/toast_stack PORT=pc`、`check_touch_release_semantics.py --scope custom --category feedback`、`code_runtime_check.py --app HelloCustomWidgets --app-sub feedback/toast_stack --track reference --timeout 10 --keep-screenshots`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`check_docs_encoding.py`。
+  - 完成 `feedback/message_bar` 实现级样式收口。
 - `2026-04-09`
-  - 完成 `navigation/annotated_scroll_bar` 实现级样式收口：删除 guide / 状态栏 / section label / 预览标签等页面级 chrome，示例页收敛为标题、主 `annotated_scroll_bar` 和 compact / read-only 双预览。
-  - 收紧 `annotated_scroll_bar` 根布局与底部双预览尺寸，统一主态、compact 和 read-only palette 到 Fluent / WPF UI 中性浅色 `AnnotatedScrollBar` 语法，录制动作改为程序化 snapshot 切换。
-  - README 重写为当前 reference 结构，移除外部状态回显和隐藏 label 驱动的旧说明。
-  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=navigation/annotated_scroll_bar PORT=pc`、`check_touch_release_semantics.py --scope custom --category navigation`、`code_runtime_check.py --app HelloCustomWidgets --app-sub navigation/annotated_scroll_bar --track reference --timeout 10 --keep-screenshots`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`check_docs_encoding.py`。
+  - 完成 `feedback/toast_stack` 实现级样式收口。
 - `2026-04-09`
-  - 完成 `navigation/tree_view` 实现级样式收口：删除 guide / 状态文案 / section label / 预览标签等页面级 chrome，示例页收敛为标题、主 `tree_view` 和 compact / read-only 双预览。
-  - 收紧 `tree_view` 根布局高度与底部预览区尺寸，保留控件内部 header / caption / footer / selection 语义，统一 palette 到 Fluent / WPF UI 中性浅色 `TreeView` 语法。
-  - README 重写为当前 reference 结构，移除旧版页面壳层和外部状态同步说明残留。
-  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=navigation/tree_view PORT=pc`、`check_touch_release_semantics.py --scope custom --category navigation`、`code_runtime_check.py --app HelloCustomWidgets --app-sub navigation/tree_view --track reference --timeout 10 --keep-screenshots`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`check_docs_encoding.py`。
+  - 完成 `navigation/annotated_scroll_bar` 实现级样式收口。
 - `2026-04-09`
-  - 完成 `navigation/pips_pager` 实现级样式收口：删除 guide / 状态文案 / section label / 预览标签等页面级 chrome，示例页收敛为标题、主 `pips_pager` 和 compact / read-only 双预览。
-  - 收紧 `pips_pager` 根布局高度与底部预览区尺寸，保留控件自身 title / helper / previous-next / pips rail 语义，统一 palette 到 Fluent / WPF UI 中性浅色分页语法。
-  - README 重写为当前 reference 结构，去掉依赖隐藏 guide / compact label 触发 snapshot 的旧说明。
-  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=navigation/pips_pager PORT=pc`、`check_touch_release_semantics.py --scope custom --category navigation`、`code_runtime_check.py --app HelloCustomWidgets --app-sub navigation/pips_pager --track reference --timeout 10 --keep-screenshots`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`check_docs_encoding.py`。
+  - 完成 `navigation/tree_view` 实现级样式收口。
 - `2026-04-09`
-  - 完成 `navigation/breadcrumb_bar` 实现级样式收口：删除 guide / 状态文案 / section label / 预览标签等页面级 chrome，示例页收敛为标题、主 `breadcrumb_bar` 和 compact / read-only 双预览。
-  - 收紧 `breadcrumb_bar` 根布局高度与底部预览区尺寸，统一主态、compact 和 read-only palette 到 Fluent / WPF UI 中性浅色 breadcrumb 语法。
-  - README 重写为当前 reference 结构，把旧的 `narrow` 页面壳描述统一回 `compact / read-only` 双预览语义。
-  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=navigation/breadcrumb_bar PORT=pc`、`check_touch_release_semantics.py --scope custom --category navigation`、`code_runtime_check.py --app HelloCustomWidgets --app-sub navigation/breadcrumb_bar --track reference --timeout 10 --keep-screenshots`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`check_docs_encoding.py`。
+  - 完成 `navigation/pips_pager` 实现级样式收口。
 - `2026-04-09`
-  - 完成 `navigation/tab_strip` 实现级样式收口：删除 guide / 状态文案 / section label / 预览标签等页面级 chrome，示例页收敛为标题、主 `tab_strip` 和 compact / read-only 双预览。
-  - 收紧 `tab_strip` 根布局高度与底部预览区尺寸，统一主态、compact 和 read-only palette 到 Fluent / WPF UI 中性浅色 tab 语法。
-  - README 重写为当前 reference 结构，移除旧版示例页组织、冗长状态文案和页面壳层说明残留。
-  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=navigation/tab_strip PORT=pc`、`check_touch_release_semantics.py --scope custom --category navigation`、`code_runtime_check.py --app HelloCustomWidgets --app-sub navigation/tab_strip --track reference --timeout 10 --keep-screenshots`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`check_docs_encoding.py`。
+  - 完成 `navigation/breadcrumb_bar` 实现级样式收口。
 - `2026-04-09`
-  - 完成 `navigation/nav_panel` 实现级样式收口：删除 guide / 状态文案 / section label / 预览标签等页面级 chrome，示例页收敛为标题、主导航面板与 compact / read-only 双预览。
-  - 压缩 `nav_panel` 根布局与底部双预览宽度，统一主态、compact 和 read-only palette 到 Fluent / WPF UI 中性 `NavigationView` 侧边导航语法。
-  - README 重写为当前 reference 结构，移除旧版示例页组织和冗长场景说明残留。
-  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=navigation/nav_panel PORT=pc`、`check_touch_release_semantics.py --scope custom --category navigation`、`code_runtime_check.py --app HelloCustomWidgets --app-sub navigation/nav_panel --track reference --timeout 10 --keep-screenshots`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`check_docs_encoding.py`。
+  - 完成 `navigation/tab_strip` 实现级样式收口。
 - `2026-04-09`
-  - 完成 `navigation/menu_bar` 实现级样式收口：删除 guide / 状态栏 / section label / 预览标签等页面级 chrome，主页面收敛为标题、主 `menu_bar` 与 compact / read-only 双预览。
-  - 压缩 `menu_bar` 示例页根布局与底部留白，统一主态、compact 和 read-only palette 到 Fluent / WPF UI 中性浅色菜单栏语法。
-  - README 重写为当前 reference 结构，删除历史迭代残留的冗长视觉规则堆积。
-  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=navigation/menu_bar PORT=pc`、`check_touch_release_semantics.py --scope custom --category navigation`、`code_runtime_check.py --app HelloCustomWidgets --app-sub navigation/menu_bar --track reference --timeout 10 --keep-screenshots`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`check_docs_encoding.py`。
+  - 完成 `navigation/nav_panel` 实现级样式收口。
 - `2026-04-09`
-  - 完成 `navigation/tab_view` 实现级样式收口：删除 guide / 状态栏 / section label / 预览标签等页面级 chrome，示例页压缩为标题、主 `tab_view` 与 compact / read-only 双预览。
-  - 收紧 `tab_view` 控件语义：移除 tabs 上方额外的 workspace/helper 说明条，压缩根布局和主卡留白，统一 palette、tab shell、close/add 按钮与内容面板到 Fluent / WPF UI 低噪音工作区风格。
-  - README 同步到 `224 x 224` 根布局与 `198 x 112` 主控件尺寸，compact snapshot 切换改为录制态程序化触发。
-  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=navigation/tab_view PORT=pc`、`check_touch_release_semantics.py --scope custom --category navigation`、`code_runtime_check.py --app HelloCustomWidgets --app-sub navigation/tab_view --track reference --timeout 10 --keep-screenshots`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`check_docs_encoding.py`。
+  - 完成 `navigation/menu_bar` 实现级样式收口。
 - `2026-04-09`
-  - 完成 `navigation/menu_flyout` 实现级样式收口：删除 guide / 状态文案 / section label / 预览标签等页面级 chrome，示例页收敛为标题、主 flyout 与 compact / disabled 双预览。
-  - 收紧 `menu_flyout` 视觉表达：压缩根布局与主卡留白，统一 palette、分隔线、边框与弱阴影语法到 Fluent / WPF UI 中性轻量弹出菜单风格。
-  - 同步修正文档尺寸与结构说明，compact snapshot 文案缩短以避免标题挤压。
-  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=navigation/menu_flyout PORT=pc`、`check_touch_release_semantics.py --scope custom --category navigation`、`code_runtime_check.py --app HelloCustomWidgets --app-sub navigation/menu_flyout --track reference --timeout 10 --keep-screenshots`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`check_docs_encoding.py`。
+  - 完成 `navigation/tab_view` 实现级样式收口。
 - `2026-04-09`
-  - 完成 `navigation/flip_view` 实现级样式收口：示例页删除 guide / 状态栏 / section label 等页面级 chrome，只保留标题、标准主卡和 compact / read-only 双预览。
-  - 收紧 `flip_view` 视觉表达：改回浅底、轻边框、弱阴影、低饱和 accent 的 Fluent / WPF UI 单卡轮播语义，overlay 按钮回归中性 shell。
-  - 录制动作切换为程序化切轨，不再依赖点击隐藏标签；README 与尺寸说明同步到 `224 x 228` / `196 x 122` / `216 x 64`。
-  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=navigation/flip_view PORT=pc`、`check_touch_release_semantics.py --scope custom --category navigation`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`code_runtime_check.py --app HelloCustomWidgets --app-sub navigation/flip_view --track reference --timeout 10 --keep-screenshots`、`check_docs_encoding.py`。
+  - 完成 `navigation/menu_flyout` 实现级样式收口。
+- `2026-04-09`
+  - 完成 `navigation/flip_view` 实现级样式收口。
 - `2026-04-08`
-  - 完成 `layout/parallax_view` 实现级样式收口：移除示例页冗余 chrome / 状态文案，保留标题 + 主卡 + 双预览结构。
-  - 收紧 `parallax_view` 视觉层次：降低外层色偏与装饰噪音，保留 hero shift / active row / compact / read-only 核心语义。
-  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=layout/parallax_view PORT=pc`、`check_touch_release_semantics.py --scope custom --category layout`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`code_runtime_check.py --app HelloCustomWidgets --app-sub layout/parallax_view --track reference --timeout 10 --keep-screenshots`。
+  - 完成 `layout/parallax_view` 实现级样式收口。
 - `2026-04-08`
   - 完成全部 `deprecated` 目录清退。
   - 完成全部 `showcase` 目录清退。
-  - `widget_catalog.json` 收口为 `reference=42 / showcase=0 / deprecated=0`。
-  - web 入口、构建脚本、默认 `APP_SUB` 和 catalog policy 已全部对齐到 `reference-only`。
+  - `widget_catalog.json` 收口到 `reference=42 / showcase=0 / deprecated=0`。
+  - web 入口、构建脚本、默认 `APP_SUB` 与 catalog policy 全部对齐到 `reference-only`。
 - `2026-04-08`
-  - 修复 `HelloCustomWidgets_plan.md`、web 入口文案与脚本帮助文本的历史残留描述。
+  - 修复 `HelloCustomWidgets_plan.md`、web 入口文档与脚本文案中的历史残留描述。
   - 当前默认维护入口统一为 `input/auto_suggest_box`。
 
 ## 已搁置 / 待恢复
@@ -211,9 +157,9 @@
 | --- | --- | --- | --- | --- |
 | 暂无 | - | - | - | - |
 
-## 下一个控件选择前检查清单
+## 下一控件选择前检查清单
 
-1. “当前进行中” 是否为空。
+1. “当前进行中”是否为空。
 2. 拟处理控件是否仍在 `reference` 主线清单内。
 3. 目标是否明确指向 Fluent / WPF UI 语义收口，而不是继续保留场景化装饰。
 4. README、实现、测试与 runtime 验证路径是否都能闭环。
