@@ -34,7 +34,7 @@
 
 | 状态 | 控件名 | 分类 | 开始日期 | 当前阶段 | 目标 |
 | --- | --- | --- | --- | --- | --- |
-| 进行中 | `settings_panel` | `layout` | `2026-04-10` | `reference 细化` | 收口为标题 + 主控件 + `compact / read only` 静态对照，并继续压轻 section row、value badge、footer meta chrome，同时补齐只读输入抑制和交互后渲染验收 |
+| 进行中 | `parallax_view` | `layout` | `2026-04-10` | `reference 细化` | 收口为标题 + 主控件 + `compact / read only` 静态对照，把旧 `locked` 语义统一为 `read only`，并补齐只读输入抑制与交互后渲染验收 |
 
 ## 当前保留的 Reference 主线控件
 
@@ -97,6 +97,12 @@
 
 ## 最近完成的收口动作
 
+- `2026-04-10`
+  - 完成 `layout/settings_panel` 实现级样式收口：页面统一为标题、主 `settings_panel` 与 `compact / read only` 静态对照，保留 `SettingCard / SettingsGroup` 的分组卡片、focus row 和尾部 `value / switch / chevron` 语义，同时继续压轻 section row、value badge 和 footer meta chrome。
+  - `test.c` 删除底部旧双列包裹壳，把 `panel_locked / locked_snapshots` 收口为 `panel_read_only / read_only_snapshots`，补上 `apply_read_only_state()`，并在录制 case `0` 显式重置主卡、`compact` 和 `read only` 对照；底部两个 preview 统一禁用 `touch / focus`，只承担 reference 对照职责。
+  - `egui_view_settings_panel.h/.c` 把 `locked_mode` API 收口为 `read_only_mode`，补齐只读态的 touch / key 输入抑制，并在切到只读时清掉 pressed；同步压轻默认浅灰蓝 palette、section row、switch track、value badge、eyebrow、footer meta 和 focus pill 的对比度。
+  - `example/HelloUnitTest/test/test_settings_panel.c` 同步改用 `set_read_only_mode()`，新增只读态清空 pressed 并忽略 touch / key 输入的交互单测；README 重写为当前 `reference` 模板。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=layout/settings_panel PORT=pc`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category layout`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub layout/settings_panel --track reference --timeout 10 --keep-screenshots`、`python scripts/checks/check_docs_encoding.py`，并人工核对关键帧确认切换后的渲染稳定。
 - `2026-04-10`
   - 完成 `display/badge_group` 实现级样式收口：页面统一为标题、主 `badge_group` 与 `compact / read only` 静态对照，保留 `BadgeGroup` 的多 badge 组合、focus badge 驱动摘要和 mixed row 语义，同时继续压轻 badge fill、focus badge fill、mixed row 对比和 footer summary chrome。
   - `test.c` 删除底部旧列容器壳，把 `group_locked / locked_snapshots` 收口为 `group_read_only / read_only_snapshots`，补上 `apply_read_only_state()`，并在录制 case `0` 显式重置主卡、`compact` 和 `read only` 对照；底部两个 preview 统一禁用 `touch / focus`，只承担 reference 对照职责。
