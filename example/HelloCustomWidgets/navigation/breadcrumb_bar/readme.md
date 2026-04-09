@@ -94,7 +94,7 @@ python scripts/checks/check_docs_encoding.py
 - 主控件和底部 `compact / read only` 预览都必须完整可见，不能重新长出旧 preview 壳层。
 - 当前项 pill、separator 和底部 underline 需要可辨识，但整体不能回到高噪音 showcase 风格。
 - `compact` 在小尺寸下仍要看得出 `Home / ... / Current` 的层级关系。
-- `read only` 只能做静态展示，不能响应 touch、focus 或键盘。
+- `read only` 只能做静态展示，不能响应 touch、focus 或键盘；切换到 `read only` 时还要清空 pressed 状态。
 - `HelloUnitTest` 里已有的 snapshot clamp、palette setter、touch / key click listener 和 helper 语义不能回归。
 
 ## 9. 已知限制与后续方向
@@ -136,5 +136,6 @@ python scripts/checks/check_docs_encoding.py
 
 - 使用固定 `snapshot` 数据保证录制稳定。
 - `compact / read only` 直接复用同一控件模式，减少额外页面壳层。
+- `read only` 直接使用 `read_only_mode`，避免页面语义和控件实现脱节。
 - 通过程序化切换 snapshot 保证 runtime 能稳定抓到路径变化。
 - 当前先作为 `HelloCustomWidgets` 的 reference widget 维护，后续是否下沉框架层再单独评估。

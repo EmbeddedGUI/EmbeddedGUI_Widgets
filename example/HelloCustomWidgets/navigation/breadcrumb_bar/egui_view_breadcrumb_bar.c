@@ -347,6 +347,7 @@ void egui_view_breadcrumb_bar_set_snapshots(egui_view_t *self, const egui_view_b
     {
         local->current_snapshot = 0;
     }
+    egui_view_set_pressed(self, false);
     egui_view_invalidate(self);
 }
 
@@ -362,6 +363,7 @@ void egui_view_breadcrumb_bar_set_current_snapshot(egui_view_t *self, uint8_t sn
         return;
     }
     local->current_snapshot = snapshot_index;
+    egui_view_set_pressed(self, false);
     egui_view_invalidate(self);
 }
 
@@ -382,13 +384,15 @@ void egui_view_breadcrumb_bar_set_compact_mode(egui_view_t *self, uint8_t compac
 {
     EGUI_LOCAL_INIT(egui_view_breadcrumb_bar_t);
     local->compact_mode = compact_mode ? 1 : 0;
+    egui_view_set_pressed(self, false);
     egui_view_invalidate(self);
 }
 
-void egui_view_breadcrumb_bar_set_locked_mode(egui_view_t *self, uint8_t locked_mode)
+void egui_view_breadcrumb_bar_set_read_only_mode(egui_view_t *self, uint8_t read_only_mode)
 {
     EGUI_LOCAL_INIT(egui_view_breadcrumb_bar_t);
-    local->locked_mode = locked_mode ? 1 : 0;
+    local->read_only_mode = read_only_mode ? 1 : 0;
+    egui_view_set_pressed(self, false);
     egui_view_invalidate(self);
 }
 
@@ -477,13 +481,13 @@ static void egui_view_breadcrumb_bar_on_draw(egui_view_t *self)
     container_radius = local->compact_mode ? 5 : 8;
     current_radius = local->compact_mode ? 4 : 6;
 
-    if (local->locked_mode)
+    if (local->read_only_mode)
     {
-        fill_color = egui_rgb_mix(fill_color, EGUI_COLOR_HEX(0xF7F9FB), 30);
-        border_color = egui_rgb_mix(border_color, muted_text_color, 10);
-        text_color = egui_rgb_mix(text_color, muted_text_color, 38);
+        fill_color = egui_rgb_mix(fill_color, EGUI_COLOR_HEX(0xF7F9FB), 34);
+        border_color = egui_rgb_mix(border_color, muted_text_color, 14);
+        text_color = egui_rgb_mix(text_color, muted_text_color, 42);
         muted_text_color = egui_rgb_mix(muted_text_color, border_color, 8);
-        accent_color = egui_rgb_mix(accent_color, muted_text_color, 74);
+        accent_color = egui_rgb_mix(accent_color, muted_text_color, 80);
         fill_alpha = local->compact_mode ? 88 : 86;
         border_alpha = local->compact_mode ? 42 : 40;
     }
@@ -551,12 +555,12 @@ static void egui_view_breadcrumb_bar_on_draw(egui_view_t *self)
         }
         else if (is_current)
         {
-            uint8_t fill_mix = local->locked_mode ? (local->compact_mode ? 2 : 3) : (local->compact_mode ? 6 : 4);
-            uint8_t border_mix = local->locked_mode ? (local->compact_mode ? 6 : 7) : (local->compact_mode ? 12 : 9);
+            uint8_t fill_mix = local->read_only_mode ? (local->compact_mode ? 2 : 3) : (local->compact_mode ? 5 : 4);
+            uint8_t border_mix = local->read_only_mode ? (local->compact_mode ? 5 : 6) : (local->compact_mode ? 10 : 8);
             egui_color_t current_fill = egui_rgb_mix(fill_color, accent_color, fill_mix);
             egui_color_t current_border = egui_rgb_mix(border_color, accent_color, border_mix);
-            egui_alpha_t current_fill_alpha = local->compact_mode ? 80 : 72;
-            egui_alpha_t current_border_alpha = local->compact_mode ? 76 : 66;
+            egui_alpha_t current_fill_alpha = local->compact_mode ? 76 : 68;
+            egui_alpha_t current_border_alpha = local->compact_mode ? 68 : 58;
 
             egui_canvas_draw_round_rectangle_fill(cursor_x, entry_y, entry_width, entry_height, current_radius, current_fill,
                                                   egui_color_alpha_mix(self->alpha, current_fill_alpha));
@@ -589,7 +593,7 @@ static void egui_view_breadcrumb_bar_on_draw(egui_view_t *self)
             egui_dim_t chevron_x = cursor_x + (local->compact_mode ? 4 : 5);
             egui_dim_t chevron_y = center_y;
             egui_color_t chevron_color = local->compact_mode ? muted_text_color : egui_rgb_mix(muted_text_color, accent_color, 5);
-            egui_alpha_t chevron_alpha = local->locked_mode ? 28 : (local->compact_mode ? 38 : 52);
+            egui_alpha_t chevron_alpha = local->read_only_mode ? 24 : (local->compact_mode ? 34 : 46);
 
             egui_canvas_draw_line(chevron_x, chevron_y - 3, chevron_x + 4, chevron_y, 1, chevron_color, egui_color_alpha_mix(self->alpha, chevron_alpha));
             egui_canvas_draw_line(chevron_x, chevron_y + 3, chevron_x + 4, chevron_y, 1, chevron_color, egui_color_alpha_mix(self->alpha, chevron_alpha));
@@ -607,14 +611,52 @@ static void egui_view_breadcrumb_bar_on_draw(egui_view_t *self)
             egui_dim_t accent_start = current_x + 5;
             egui_dim_t accent_end = current_x + current_w - 5;
 
-            egui_canvas_draw_line(accent_start, line_y, accent_end, line_y, 1, accent_color, egui_color_alpha_mix(self->alpha, 44));
+            egui_canvas_draw_line(accent_start, line_y, accent_end, line_y, 1, accent_color,
+                                  egui_color_alpha_mix(self->alpha, local->read_only_mode ? 24 : 40));
         }
     }
 }
 
+#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
+static int egui_view_breadcrumb_bar_on_touch_event(egui_view_t *self, egui_motion_event_t *event)
+{
+    EGUI_LOCAL_INIT(egui_view_breadcrumb_bar_t);
+
+    if (local->read_only_mode)
+    {
+        if (self->is_pressed)
+        {
+            egui_view_set_pressed(self, false);
+            egui_view_invalidate(self);
+        }
+        return 0;
+    }
+
+    return egui_view_on_touch_event(self, event);
+}
+#endif
+
+#if EGUI_CONFIG_FUNCTION_SUPPORT_KEY
+static int egui_view_breadcrumb_bar_on_key_event(egui_view_t *self, egui_key_event_t *event)
+{
+    EGUI_LOCAL_INIT(egui_view_breadcrumb_bar_t);
+
+    if (local->read_only_mode)
+    {
+        return 0;
+    }
+
+    return egui_view_on_key_event(self, event);
+}
+#endif
+
 const egui_view_api_t EGUI_VIEW_API_TABLE_NAME(egui_view_breadcrumb_bar_t) = {
         .dispatch_touch_event = egui_view_dispatch_touch_event,
+#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
+        .on_touch_event = egui_view_breadcrumb_bar_on_touch_event,
+#else
         .on_touch_event = egui_view_on_touch_event,
+#endif
         .on_intercept_touch_event = egui_view_on_intercept_touch_event,
         .compute_scroll = egui_view_compute_scroll,
         .calculate_layout = egui_view_calculate_layout,
@@ -625,7 +667,7 @@ const egui_view_api_t EGUI_VIEW_API_TABLE_NAME(egui_view_breadcrumb_bar_t) = {
         .on_detach_from_window = egui_view_on_detach_from_window,
 #if EGUI_CONFIG_FUNCTION_SUPPORT_KEY
         .dispatch_key_event = egui_view_dispatch_key_event,
-        .on_key_event = egui_view_on_key_event,
+        .on_key_event = egui_view_breadcrumb_bar_on_key_event,
 #endif
 };
 
@@ -647,5 +689,5 @@ void egui_view_breadcrumb_bar_init(egui_view_t *self)
     local->snapshot_count = 0;
     local->current_snapshot = 0;
     local->compact_mode = 0;
-    local->locked_mode = 0;
+    local->read_only_mode = 0;
 }
