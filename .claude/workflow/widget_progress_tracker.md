@@ -98,6 +98,11 @@
 ## 最近完成的收口动作
 
 - `2026-04-09`
+  - 完成 `feedback/teaching_tip` 实现级样式收口：删除 guide / 状态桥接 / section label / 预览标签等页面级 chrome，示例页收敛为标题、主 `teaching_tip` 和 compact / read-only 双预览。
+  - 收紧 `teaching_tip` 根布局与底部双预览尺寸，统一主态、compact 和 read-only palette 到 Fluent / WPF UI 中性浅色 `TeachingTip` 语法，保留关闭态、重开态和键盘焦点闭环，但录制切换不再依赖外部标签。
+  - README 重写为当前 reference 结构，移除旧版 guide 点击、状态桥接和 preview label 交互说明。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=feedback/teaching_tip PORT=pc`、`check_touch_release_semantics.py --scope custom --category feedback`、`code_runtime_check.py --app HelloCustomWidgets --app-sub feedback/teaching_tip --track reference --timeout 10 --keep-screenshots`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`check_docs_encoding.py`。
+- `2026-04-09`
   - 完成 `feedback/dialog_sheet` 实现级样式收口：删除 guide / 状态文案 / section label / 预览标签等页面级 chrome，示例页收敛为标题、主 `dialog_sheet` 和 compact / read-only 双预览。
   - 收紧 `dialog_sheet` 根布局与底部双预览尺寸，统一主态、compact 和 read-only palette 到 Fluent / WPF UI 中性浅色 `ContentDialog` 语法，录制动作改为程序化 snapshot 切换。
   - README 重写为当前 reference 结构，移除旧版状态回显和外部标签驱动说明。
