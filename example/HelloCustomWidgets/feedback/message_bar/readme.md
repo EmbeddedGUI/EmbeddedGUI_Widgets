@@ -22,7 +22,7 @@
 ## 3. 目标场景与示例概览
 - 主控件展示标准 `message_bar`，通过录制动作覆盖 `Info / Success / Warning / Error`。
 - 底部左侧展示 `compact` 静态对照，验证小尺寸下的标题、正文和动作层级。
-- 底部右侧展示 `read only` 静态对照，验证禁用外部交互后的弱化状态。
+- 底部右侧展示 `read only` 静态对照，验证只读后的弱化状态。
 - 页面结构统一收口为：标题 -> 主 `message_bar` -> `compact / read only`。
 - 旧的 preview 列容器、外部标签和页面桥接逻辑全部移除。
 
@@ -39,6 +39,7 @@
   - 使用浅灰 page panel、白底 message bar 和低噪音浅边框。
   - 保留 severity accent、leading glyph、标题 / 正文 / action 层级，但整体回到更柔和的 Fluent / WPF UI 语法。
   - `compact` 与 `read only` 直接通过控件模式表达，不再依赖外部标签。
+  - `read only` 需要同步清空 pressed，并抑制 touch / key 输入。
   - 底部两个 preview 都禁用 touch 和 focus，只做静态 reference 对照。
 
 ## 5. 控件清单
@@ -92,13 +93,13 @@ python scripts/checks/check_docs_encoding.py
 - 主控件和底部 `compact / read only` 预览都必须完整可见。
 - `Info / Success / Warning / Error` 四态需要一眼可辨，但不能回到高饱和 showcase 风格。
 - `compact` 在小尺寸下仍要保留 message bar 的信息层级。
-- `read only` 只做静态展示，不能响应 touch、focus 或页面桥接。
+- `read only` 只做静态展示，不能响应 touch、key、focus 或页面桥接。
 - 单测已有的 snapshot、palette、touch 和 key click 语义不能回归。
 
 ## 9. 已知限制与后续方向
 - 当前版本仍使用固定 snapshot 数据，不接真实业务状态流。
 - 当前不做真实关闭动作、多动作按钮和展开正文。
-- 当前优先验证 `reference` 语义、布局稳定性和视觉收口，不联动外部反馈容器。
+- 当前优先验证 `reference` 语义、布局稳定性、交互切换后的渲染稳定性，不联动外部反馈容器。
 
 ## 10. 与现有控件的边界
 - 相比 `toast_stack`：这里强调单条页内反馈，不是堆叠通知。

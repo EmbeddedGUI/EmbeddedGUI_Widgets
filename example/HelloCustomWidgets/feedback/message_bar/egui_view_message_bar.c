@@ -61,6 +61,11 @@ static uint8_t egui_view_message_bar_text_len(const char *text)
     return length;
 }
 
+static void egui_view_message_bar_clear_pressed_state(egui_view_t *self)
+{
+    egui_view_set_pressed(self, false);
+}
+
 void egui_view_message_bar_set_snapshots(egui_view_t *self, const egui_view_message_bar_snapshot_t *snapshots, uint8_t snapshot_count)
 {
     EGUI_LOCAL_INIT(egui_view_message_bar_t);
@@ -70,6 +75,7 @@ void egui_view_message_bar_set_snapshots(egui_view_t *self, const egui_view_mess
     {
         local->current_snapshot = 0;
     }
+    egui_view_message_bar_clear_pressed_state(self);
     egui_view_invalidate(self);
 }
 
@@ -82,9 +88,15 @@ void egui_view_message_bar_set_current_snapshot(egui_view_t *self, uint8_t snaps
     }
     if (local->current_snapshot == snapshot_index)
     {
+        if (self->is_pressed)
+        {
+            egui_view_message_bar_clear_pressed_state(self);
+            egui_view_invalidate(self);
+        }
         return;
     }
     local->current_snapshot = snapshot_index;
+    egui_view_message_bar_clear_pressed_state(self);
     egui_view_invalidate(self);
 }
 
@@ -105,13 +117,15 @@ void egui_view_message_bar_set_compact_mode(egui_view_t *self, uint8_t compact_m
 {
     EGUI_LOCAL_INIT(egui_view_message_bar_t);
     local->compact_mode = compact_mode ? 1 : 0;
+    egui_view_message_bar_clear_pressed_state(self);
     egui_view_invalidate(self);
 }
 
-void egui_view_message_bar_set_locked_mode(egui_view_t *self, uint8_t locked_mode)
+void egui_view_message_bar_set_read_only_mode(egui_view_t *self, uint8_t read_only_mode)
 {
     EGUI_LOCAL_INIT(egui_view_message_bar_t);
-    local->locked_mode = locked_mode ? 1 : 0;
+    local->read_only_mode = read_only_mode ? 1 : 0;
+    egui_view_message_bar_clear_pressed_state(self);
     egui_view_invalidate(self);
 }
 
@@ -154,6 +168,7 @@ static void egui_view_message_bar_on_draw(egui_view_t *self)
     egui_color_t border_color;
     egui_color_t title_color;
     egui_color_t body_color;
+    egui_color_t glyph_color;
     uint8_t is_enabled;
     egui_dim_t radius;
     egui_dim_t content_x;
@@ -191,6 +206,7 @@ static void egui_view_message_bar_on_draw(egui_view_t *self)
     border_color = egui_rgb_mix(local->border_color, severity_color, local->compact_mode ? 3 : 5);
     title_color = local->text_color;
     body_color = local->muted_text_color;
+    glyph_color = local->surface_color;
     if (!is_enabled)
     {
         severity_color = egui_view_message_bar_mix_disabled(severity_color);
@@ -198,13 +214,16 @@ static void egui_view_message_bar_on_draw(egui_view_t *self)
         border_color = egui_view_message_bar_mix_disabled(border_color);
         title_color = egui_view_message_bar_mix_disabled(title_color);
         body_color = egui_view_message_bar_mix_disabled(body_color);
+        glyph_color = egui_view_message_bar_mix_disabled(glyph_color);
     }
-    else if (local->locked_mode)
+    else if (local->read_only_mode)
     {
-        severity_color = egui_rgb_mix(severity_color, local->muted_text_color, 34);
-        fill_color = egui_rgb_mix(fill_color, local->surface_color, 16);
-        border_color = egui_rgb_mix(border_color, local->muted_text_color, 18);
-        body_color = egui_rgb_mix(body_color, local->text_color, 10);
+        severity_color = egui_rgb_mix(severity_color, local->muted_text_color, 58);
+        fill_color = egui_rgb_mix(fill_color, local->surface_color, 28);
+        border_color = egui_rgb_mix(border_color, local->muted_text_color, 32);
+        title_color = egui_rgb_mix(title_color, local->muted_text_color, 38);
+        body_color = egui_rgb_mix(body_color, local->text_color, 6);
+        glyph_color = egui_rgb_mix(glyph_color, local->muted_text_color, 34);
     }
 
     radius = local->compact_mode ? 6 : 8;
@@ -215,7 +234,7 @@ static void egui_view_message_bar_on_draw(egui_view_t *self)
 
     accent_w = local->compact_mode ? 2 : 3;
     egui_canvas_draw_round_rectangle_fill(region.location.x + 1, region.location.y + 1, accent_w, region.size.height - 2, radius - 2, severity_color,
-                                          egui_color_alpha_mix(self->alpha, local->locked_mode ? 48 : 72));
+                                          egui_color_alpha_mix(self->alpha, local->read_only_mode ? 36 : 72));
 
     content_x = region.location.x + (local->compact_mode ? 8 : 11);
     content_y = region.location.y + (local->compact_mode ? 7 : 10);
@@ -226,11 +245,11 @@ static void egui_view_message_bar_on_draw(egui_view_t *self)
     icon_x = content_x;
     icon_y = content_y;
     egui_canvas_draw_circle_fill(icon_x + icon_size / 2, icon_y + icon_size / 2, icon_size / 2, severity_color,
-                                 egui_color_alpha_mix(self->alpha, local->locked_mode ? EGUI_ALPHA_30 : EGUI_ALPHA_70));
+                                 egui_color_alpha_mix(self->alpha, local->read_only_mode ? 22 : EGUI_ALPHA_70));
     egui_view_message_bar_draw_text(local, self, egui_view_message_bar_severity_glyph(snapshot->severity), icon_x, icon_y - 1, icon_size, icon_size + 2,
-                                    EGUI_ALIGN_CENTER, local->surface_color);
+                                    EGUI_ALIGN_CENTER, glyph_color);
 
-    show_close = snapshot->closable && !local->compact_mode && !local->locked_mode && is_enabled;
+    show_close = snapshot->closable && !local->compact_mode && !local->read_only_mode && is_enabled;
     close_w = show_close ? 10 : 0;
     close_x = content_x + content_w - close_w;
     if (show_close)
@@ -244,7 +263,7 @@ static void egui_view_message_bar_on_draw(egui_view_t *self)
     title_h = local->compact_mode ? 10 : 12;
     egui_view_message_bar_draw_text(local, self, snapshot->title, title_x, content_y - 1, title_w, title_h, EGUI_ALIGN_LEFT, title_color);
 
-    show_action = snapshot->show_action && snapshot->action != NULL && !local->locked_mode;
+    show_action = snapshot->show_action && snapshot->action != NULL && snapshot->action[0] != '\0' && !local->read_only_mode;
     action_h = local->compact_mode ? 12 : 14;
     action_w = local->compact_mode ? 34 : 52;
     if (snapshot->action != NULL)
@@ -294,7 +313,7 @@ static void egui_view_message_bar_on_draw(egui_view_t *self)
         egui_view_message_bar_draw_text(local, self, snapshot->action, action_x + 2, action_y, action_w - 4, action_h, EGUI_ALIGN_CENTER, action_text);
     }
 
-    if (local->locked_mode)
+    if (local->read_only_mode)
     {
         egui_dim_t pin_w = local->compact_mode ? 18 : 26;
         egui_dim_t pin_h = local->compact_mode ? 10 : 11;
@@ -303,21 +322,59 @@ static void egui_view_message_bar_on_draw(egui_view_t *self)
         egui_color_t pin_fill = egui_rgb_mix(local->surface_color, severity_color, 2);
         egui_color_t pin_border = egui_rgb_mix(local->border_color, severity_color, 5);
 
-        egui_canvas_draw_round_rectangle_fill(pin_x, pin_y, pin_w, pin_h, 5, pin_fill, egui_color_alpha_mix(self->alpha, 34));
-        egui_canvas_draw_round_rectangle(pin_x, pin_y, pin_w, pin_h, 5, 1, pin_border, egui_color_alpha_mix(self->alpha, 40));
-        egui_view_message_bar_draw_text(local, self, "Pin", pin_x + 1, pin_y, pin_w - 2, pin_h, EGUI_ALIGN_CENTER, body_color);
+        egui_canvas_draw_round_rectangle_fill(pin_x, pin_y, pin_w, pin_h, 5, pin_fill, egui_color_alpha_mix(self->alpha, 26));
+        egui_canvas_draw_round_rectangle(pin_x, pin_y, pin_w, pin_h, 5, 1, pin_border, egui_color_alpha_mix(self->alpha, 30));
+        egui_view_message_bar_draw_text(local, self, "Read", pin_x + 1, pin_y, pin_w - 2, pin_h, EGUI_ALIGN_CENTER, body_color);
     }
 
-    if (local->locked_mode || !is_enabled)
+    if (local->read_only_mode || !is_enabled)
     {
         egui_canvas_draw_line(content_x + 1, content_y + content_h - 1, content_x + content_w - 1, content_y + content_h - 1, 1, border_color,
                               egui_color_alpha_mix(self->alpha, 24));
     }
 }
 
+#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
+static int egui_view_message_bar_on_touch_event(egui_view_t *self, egui_motion_event_t *event)
+{
+    EGUI_LOCAL_INIT(egui_view_message_bar_t);
+
+    if (local->read_only_mode || !egui_view_get_enable(self))
+    {
+        if (self->is_pressed)
+        {
+            egui_view_message_bar_clear_pressed_state(self);
+            egui_view_invalidate(self);
+        }
+        EGUI_UNUSED(event);
+        return 0;
+    }
+
+    return egui_view_on_touch_event(self, event);
+}
+#endif
+
+#if EGUI_CONFIG_FUNCTION_SUPPORT_KEY
+static int egui_view_message_bar_on_key_event(egui_view_t *self, egui_key_event_t *event)
+{
+    EGUI_LOCAL_INIT(egui_view_message_bar_t);
+
+    if (local->read_only_mode || !egui_view_get_enable(self))
+    {
+        return 0;
+    }
+
+    return egui_view_on_key_event(self, event);
+}
+#endif
+
 const egui_view_api_t EGUI_VIEW_API_TABLE_NAME(egui_view_message_bar_t) = {
         .dispatch_touch_event = egui_view_dispatch_touch_event,
+#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
+        .on_touch_event = egui_view_message_bar_on_touch_event,
+#else
         .on_touch_event = egui_view_on_touch_event,
+#endif
         .on_intercept_touch_event = egui_view_on_intercept_touch_event,
         .compute_scroll = egui_view_compute_scroll,
         .calculate_layout = egui_view_calculate_layout,
@@ -328,7 +385,7 @@ const egui_view_api_t EGUI_VIEW_API_TABLE_NAME(egui_view_message_bar_t) = {
         .on_detach_from_window = egui_view_on_detach_from_window,
 #if EGUI_CONFIG_FUNCTION_SUPPORT_KEY
         .dispatch_key_event = egui_view_dispatch_key_event,
-        .on_key_event = egui_view_on_key_event,
+        .on_key_event = egui_view_message_bar_on_key_event,
 #endif
 };
 
@@ -354,5 +411,5 @@ void egui_view_message_bar_init(egui_view_t *self)
     local->snapshot_count = 0;
     local->current_snapshot = 0;
     local->compact_mode = 0;
-    local->locked_mode = 0;
+    local->read_only_mode = 0;
 }
