@@ -1,138 +1,127 @@
-# tree_view 自定义控件设计说明
+# tree_view 设计说明
 
 ## 参考来源
-
 - 参考设计系统：`Fluent 2`
 - 参考开源库：`WPF UI`
-- 次级补充参考：`ModernWpf`
-- 对应组件名称：`TreeView`
+- 补充参考：`ModernWpf`
+- 对应组件名：`TreeView`
 - 本次保留状态：`standard`、`branch expanded`、`selection`、`compact`、`read only`
-- 删除效果：页面级 guide / 状态文案 / section label / 预览标签、系统级图标资源、拖拽排序、虚拟滚动和复杂展开动画
-- EGUI 适配说明：保留层级缩进、展开箭头、轻量引导线、caption/footer 与选中反馈；在 `480 x 480` 下优先保证层级可读性和双预览结构的稳定性
+- 删除效果：页面级 `guide`、状态文案、section label、双列预览壳、可点击 preview 卡、重描边、强高亮引导条
+- EGUI 适配说明：继续复用仓库内 `tree_view` 基础实现，本轮只收口 `reference` 页面结构、示例快照和绘制强度，不修改 `sdk/EmbeddedGUI`
 
-## 1. 为什么需要这个控件？
+## 1. 为什么需要这个控件
+`tree_view` 用来表达标准层级导航和资源浏览语义，适合文件树、设置分类、目录结构和知识树这类“父子关系可见”的场景。
 
-`tree_view` 用于表达标准层级导航和资源浏览语义，适合文件树、设置分组、目录结构、知识树和工程导航等页面。它强调父子层级、展开状态和当前选中项，而不是普通列表或标签切换。
+## 2. 为什么现有控件不够用
+- `nav_panel` 更接近平铺导航，不表达递进层级。
+- `breadcrumb_bar` 只表达当前位置，不保留兄弟节点和分支展开。
+- `menu_flyout` 是临时命令列表，不适合持续浏览结构。
+- `tab_view` 和 `tab_strip` 负责工作区切换，不负责树状层级。
 
-## 2. 为什么现有控件不够用？
-
-- `nav_panel` 更偏常驻侧边导航，不表达递进层级和父子关系
-- `breadcrumb_bar` 只表达当前位置，不展示同层兄弟节点
-- `menu_flyout` 是局部命令弹出，不适合持续浏览树结构
-- 当前主线缺少一版贴近 Fluent `TreeView` 语义的参考型 custom widget
+因此这里继续保留 `tree_view`，但示例页需要回到统一的 `Fluent / WPF UI` reference 结构。
 
 ## 3. 目标场景与示例概览
-
-- 主卡展示标准 `tree_view`，覆盖不同分支展开与选中切换
-- 左下 `Compact` 预览展示紧凑树列表
-- 右下 `Read only` 预览展示只读弱化态
-- 示例页结构收敛为标题、主 `tree_view` 和 compact / read-only 双预览，不再保留页面级 guide、状态文案和 section label
-
-目标目录：`example/HelloCustomWidgets/navigation/tree_view/`
+- 主控件：展示标准 `TreeView`，保留分支展开、层级缩进、选中项和 meta 摘要。
+- `compact` 预览：保留相同树语义，但压缩为更小尺寸，用于验证小尺寸 reference 收口。
+- `read only` 预览：保留冻结态和固定选择，只作为静态对照，不再承担点击或焦点职责。
+- 页面只保留标题、主 `tree_view` 和底部 `compact / read only` 双预览，不再保留旧的预览列容器和说明性页面 chrome。
 
 ## 4. 视觉与布局规格
-
-- 画布：`480 x 480`
-- 根布局：`224 x 236`
-- 主卡片：`198 x 116`
-- 底部双预览容器：`216 x 80`
-- `Compact` / `Read only` 预览：`104 x 80`
-- 视觉规则：
-  - 使用浅灰 page panel + 白底低噪音树卡片
-  - 保留控件内部 header、caption、list 区和 footer，不再叠加页面外壳说明
-  - 选中行使用弱填充和左侧强调，不压过层级本身
-  - `Compact` 与 `Read only` 通过控件模式表达，不再依赖外围标签
+- 根容器尺寸：`224 x 236`
+- 主控件尺寸：`198 x 116`
+- 底部对照行尺寸：`216 x 80`
+- `compact` 预览：`104 x 80`
+- `read only` 预览：`104 x 80`
+- 页面结构：标题 -> 主 `tree_view` -> `compact / read only`
+- 样式约束：
+  - 保持浅底、白色树卡、轻边框和低噪音引导线。
+  - 选中行只保留轻量填充、细边框和窄侧边强调，不压过树层级。
+  - caption、footer、meta pill 都保留，但要明显弱于主列表内容。
+  - 底部两个 preview 固定为静态 reference 对照，不再参与页面交互闭环。
 
 ## 5. 控件清单
 
 | 变量名 | 类型 | 尺寸 (W x H) | 初始状态 | 用途 |
 | --- | --- | ---: | --- | --- |
-| `root_layout` | `egui_view_linearlayout_t` | `224 x 236` | enabled | 页面根布局 |
-| `title_label` | `egui_view_label_t` | `224 x 18` | `Tree View` | 页面标题 |
-| `tree_primary` | `egui_view_tree_view_t` | `198 x 116` | `Controls open` | 标准树视图 |
-| `tree_compact` | `egui_view_tree_view_t` | `104 x 80` | `Library branch` | 紧凑预览 |
-| `tree_locked` | `egui_view_tree_view_t` | `104 x 80` | `Selection fixed` | 只读预览 |
+| `tree_primary` | `egui_view_tree_view_t` | `198 x 116` | `Controls open` | 主 `TreeView` |
+| `tree_compact` | `egui_view_tree_view_t` | `104 x 80` | compact | 底部紧凑静态对照 |
+| `tree_read_only` | `egui_view_tree_view_t` | `104 x 80` | read only | 底部只读静态对照 |
+| `primary_snapshots` | `egui_view_tree_view_snapshot_t[4]` | - | `Controls / Docs / Resources / Settings` | 主控件录制轨道 |
+| `compact_snapshots` | `egui_view_tree_view_snapshot_t[2]` | - | `Library / Review` | 紧凑预览程序化切换轨道 |
+| `read_only_snapshots` | `egui_view_tree_view_snapshot_t[1]` | - | `Static preview` | 只读预览固定数据 |
 
 ## 6. 状态覆盖矩阵
-
-| 状态 / 区域 | 主卡 | Compact | Read only |
+| 区域 / 轨道 | Snapshot | 关键状态 | 说明 |
 | --- | --- | --- | --- |
-| 默认 | `Controls open` | `Library branch` | `Selection fixed` |
-| 切换 1 | `Docs open` | 保持 | 保持 |
-| 切换 2 | `Resources open` | 保持 | 保持 |
-| 切换 3 | `Settings open` | 保持 | 保持 |
-| 紧凑切换 | 保持 | `Review branch` | 保持 |
-| 只读弱化 | 不适用 | 不适用 | 整体降噪并锁定选择 |
+| 主控件 | `Controls open` | 默认分支 | 保留分层缩进和焦点项 |
+| 主控件 | `Docs open` | 第二条展开轨道 | 验证选中项与 meta 变化 |
+| 主控件 | `Resources open` | 警示 tone | 验证弱高亮和分支层级仍可读 |
+| 主控件 | `Settings open` | 最终收尾态 | 验证列表、caption、footer 一致性 |
+| `compact` | `Library branch` | 紧凑对照 | 验证小尺寸层级与标题收口 |
+| `compact` | `Review branch` | 第二条预览轨道 | 只做程序化切换，不参与交互 |
+| `read only` | `Static preview` | 冻结态摘要 | 固定只读，对外禁用触摸和焦点 |
 
 ## 7. `egui_port_get_recording_action()` 录制动作设计
+1. 重置主控件、`compact` 和 `read only` 到默认 snapshot。
+2. 请求默认截图。
+3. 切到主控件 `Docs open`。
+4. 请求 `Docs` 截图。
+5. 切到主控件 `Resources open`。
+6. 请求 `Resources` 截图。
+7. 程序化切到 `compact / Review branch`。
+8. 请求 `compact` 截图。
+9. 切到主控件 `Settings open`。
+10. 请求最终截图并保留收尾等待。
 
-1. 应用默认主快照与紧凑快照
-2. 稳定后请求默认截图
-3. 切到 `Docs`
-4. 请求 `Docs` 截图
-5. 切到 `Resources`
-6. 请求 `Resources` 截图
-7. 切到 `Compact` 第二组快照
-8. 请求 `Compact` 截图
-9. 切到 `Settings`
-10. 请求最终截图并保留收尾等待
-
-## 8. 编译、runtime、截图验收标准
-
+## 8. 编译、touch、runtime、单测与文档检查
 ```bash
 make all APP=HelloCustomWidgets APP_SUB=navigation/tree_view PORT=pc
-python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub navigation/tree_view --timeout 10 --keep-screenshots
+python scripts/checks/check_touch_release_semantics.py --scope custom --category navigation
+python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub navigation/tree_view --track reference --timeout 10 --keep-screenshots
 make all APP=HelloUnitTest PORT=pc_test
 output\main.exe
+python scripts/checks/check_docs_encoding.py
 ```
 
 验收重点：
+- 主控件和底部 `compact / read only` 预览都必须完整可见，不能裁切。
+- 层级缩进、展开箭头、引导线和右侧 meta pill 需要稳定对齐，但不能回到旧版重描边风格。
+- 选中行必须清晰，但不能压过树本身的层级信息。
+- `compact / read only` 不再响应触摸，也不参与焦点循环。
+- 触摸释放语义必须继续满足“按下与抬起命中同一目标才提交”。
 
-- 主树与底部双预览必须完整可见，不能裁切
-- 层级缩进、展开箭头、引导线与右侧 meta pill 需要稳定对齐
-- 选中行需要清晰，但不能压过树层级本身
-- `Compact` 和 `Read only` 需要一眼可区分，同时保持树结构可读
-- 页面不再出现 guide / 状态条 / section label 这类外部说明壳层
+## 9. 已知限制与后续方向
+- 当前仍用固定 `snapshot + item` 数据，不做真实数据源绑定。
+- 当前不做拖拽排序、虚拟滚动、复选框树和复杂展开动画。
+- 触摸继续只负责切换选中行；分支展开仍通过 snapshot 展示。
 
-## 9. 已知限制与下一轮迭代计划
-
-- 当前仍以固定 snapshot 数据驱动，不做真实数据源绑定
-- 当前不实现拖拽、虚拟滚动和完整桌面级焦点环
-- 当前触摸只负责切换选中行；展开分支通过快照展示
-- 当前主页面只验证树控件本体，不联动外部内容区域
-
-## 10. 与现有控件的重叠分析与差异化边界
-
-- 相比 `nav_panel`：这里强调树层级而不是平铺导航
-- 相比 `breadcrumb_bar`：这里强调可见兄弟节点与分支展开
-- 相比 `menu_flyout`：这里是持续浏览结构，不是临时命令列表
-- 相比 showcase 导航控件：这里回到标准 Fluent reference 语义，不做叙事式装饰
+## 10. 与现有控件的边界
+- 相比 `nav_panel`：这里强调树层级，而不是平铺导航。
+- 相比 `breadcrumb_bar`：这里强调可见兄弟节点与分支展开。
+- 相比 `menu_flyout`：这里是持续浏览结构，不是临时命令列表。
+- 相比 `tab_view`：这里表达层级资源树，不是工作区容器。
 
 ## 11. 参考设计系统与开源母本
-
 - 参考设计系统：`Fluent 2`
-- 开源母本：`WPF UI`
-- 次级补充参考：`ModernWpf`
+- 参考开源库：`WPF UI`
+- 补充参考：`ModernWpf`
 
-## 12. 对应组件名称，以及本次保留的核心状态
-
-- 对应组件名称：`TreeView`
-- 本次保留：
+## 12. 对应组件名与本次保留的核心状态
+- 对应组件名：`TreeView`
+- 本次保留核心状态：
   - `branch expanded`
   - `selection`
   - `compact`
   - `read only`
 
-## 13. 相比参考原型删掉了哪些效果或装饰
-
-- 不做页面级 guide、状态栏、section label 与额外预览标签
-- 不做真实桌面图标资源和复选框体系
-- 不做完整 hover / focus ring / drag target 和整套键盘树导航
-- 不做复杂展开动画与长列表虚拟滚动
+## 13. 相比参考原型删掉的效果或装饰
+- 删掉页面级 guide、状态栏、section label 和旧的双列 preview 包裹结构。
+- 删掉可点击 preview 卡与 preview 轨道的外部交互职责。
+- 删掉复选框树、拖拽排序、虚拟滚动和复杂展开动画。
+- 删掉重描边、厚高亮条和高噪音 caption / footer / meta 胶囊。
 
 ## 14. EGUI 适配时的简化点与约束
-
-- 使用固定 `snapshot + item` 数组保证示例稳定
-- 用轻量 `folder / leaf` glyph 与引导线表达树结构，不引入额外图片资源
-- compact 与 read-only 直接复用同一控件模式，不再依赖外围说明标签
-- 当前优先完成示例级 `tree_view`；是否沉入框架层后续再评估
+- 使用固定 `snapshot + item` 数组驱动层级状态，优先保证 reference 稳定。
+- 底部 `compact / read only` 固定放在同一行，只承担静态对照职责。
+- `read only` 继续复用 `locked_mode`，但页面语义统一表述为 `read only`。
+- 当前先作为 `HelloCustomWidgets` reference 示例维护，后续是否下沉框架层再单独评估。

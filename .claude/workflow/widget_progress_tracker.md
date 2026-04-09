@@ -98,6 +98,10 @@
 ## 最近完成的收口动作
 
 - `2026-04-09`
+  - 完成 `navigation/tree_view` 实现级样式收口：移除底部 preview 的双列包裹结构，把页面统一为标题、主控件与 `compact / read only` 静态对照，继续保留 `TreeView` 的层级缩进、展开分支和选中语义。
+  - `test.c` 把 `tree_locked` 收口为 `tree_read_only`，两个 preview 统一禁用 touch / focus；`egui_view_tree_view.c` 进一步压轻 tree card、list border、selected row、indicator、guide、glyph、caption、footer 和 meta pill；README 重写为当前 `reference` 模板。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=navigation/tree_view PORT=pc`、`check_touch_release_semantics.py --scope custom --category navigation`、`code_runtime_check.py --app HelloCustomWidgets --app-sub navigation/tree_view --track reference --timeout 10 --keep-screenshots`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`check_docs_encoding.py`。
+- `2026-04-09`
   - 完成 `navigation/menu_flyout` 实现级样式收口：继续保留 `MenuFlyout / ContextMenu` 主线语义，删掉底部可点击预览卡职责，把页面统一收口为标题、主控件和 `compact / disabled` 双预览。
   - 主面板命令内容统一改成更中性的业务摘要命令，`egui_view_menu_flyout.c` 进一步压轻圆角、阴影、边框、separator 和行内高亮强度，README 重写为当前 `reference` 模板。
   - 已通过 `make all APP=HelloCustomWidgets APP_SUB=navigation/menu_flyout PORT=pc`、`check_touch_release_semantics.py --scope custom --category navigation`、`code_runtime_check.py --app HelloCustomWidgets --app-sub navigation/menu_flyout --track reference --timeout 10 --keep-screenshots`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`check_docs_encoding.py`。
@@ -213,8 +217,6 @@
   - 完成 `feedback/toast_stack` 实现级样式收口。
 - `2026-04-09`
   - 完成 `navigation/annotated_scroll_bar` 实现级样式收口。
-- `2026-04-09`
-  - 完成 `navigation/tree_view` 实现级样式收口。
 - `2026-04-09`
   - 完成 `navigation/pips_pager` 实现级样式收口。
 - `2026-04-09`

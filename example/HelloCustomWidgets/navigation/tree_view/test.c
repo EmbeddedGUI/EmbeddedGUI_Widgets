@@ -20,10 +20,8 @@ static egui_view_linearlayout_t root_layout;
 static egui_view_label_t title_label;
 static egui_view_tree_view_t tree_primary;
 static egui_view_linearlayout_t bottom_row;
-static egui_view_linearlayout_t compact_column;
 static egui_view_tree_view_t tree_compact;
-static egui_view_linearlayout_t locked_column;
-static egui_view_tree_view_t tree_locked;
+static egui_view_tree_view_t tree_read_only;
 
 EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
 EGUI_BACKGROUND_PARAM_INIT(bg_page_panel_params, &bg_page_panel_param, NULL, NULL);
@@ -93,15 +91,15 @@ static const egui_view_tree_view_snapshot_t compact_snapshots[] = {
         {"Compact", "4 rows", "Review branch", compact_items_1, 4, 2},
 };
 
-static const egui_view_tree_view_item_t locked_items[] = {
+static const egui_view_tree_view_item_t read_only_items[] = {
         {"Workspace", "", 0, EGUI_VIEW_TREE_VIEW_TONE_NEUTRAL, EGUI_VIEW_TREE_VIEW_KIND_FOLDER, 1, 1},
         {"Release", "", 1, EGUI_VIEW_TREE_VIEW_TONE_NEUTRAL, EGUI_VIEW_TREE_VIEW_KIND_LEAF, 0, 0},
         {"Audit", "", 0, EGUI_VIEW_TREE_VIEW_TONE_NEUTRAL, EGUI_VIEW_TREE_VIEW_KIND_FOLDER, 1, 1},
         {"Exports", "", 1, EGUI_VIEW_TREE_VIEW_TONE_NEUTRAL, EGUI_VIEW_TREE_VIEW_KIND_LEAF, 0, 0},
 };
 
-static const egui_view_tree_view_snapshot_t locked_snapshots[] = {
-        {"Read only", "4 rows", "Selection fixed", locked_items, 4, 2},
+static const egui_view_tree_view_snapshot_t read_only_snapshots[] = {
+        {"Read only", "4 rows", "Static preview", read_only_items, 4, 2},
 };
 
 static void apply_primary_snapshot(uint8_t index)
@@ -112,6 +110,11 @@ static void apply_primary_snapshot(uint8_t index)
 static void apply_compact_snapshot(uint8_t index)
 {
     egui_view_tree_view_set_current_snapshot(EGUI_VIEW_OF(&tree_compact), index);
+}
+
+static void apply_read_only_snapshot(uint8_t index)
+{
+    egui_view_tree_view_set_current_snapshot(EGUI_VIEW_OF(&tree_read_only), index);
 }
 
 static int consume_preview_touch(egui_view_t *self, egui_motion_event_t *event)
@@ -135,7 +138,7 @@ void test_init_ui(void)
     egui_view_label_set_align_type(EGUI_VIEW_OF(&title_label), EGUI_ALIGN_CENTER);
     egui_view_label_set_font(EGUI_VIEW_OF(&title_label), (const egui_font_t *)&egui_res_font_montserrat_12_4);
     egui_view_label_set_font_color(EGUI_VIEW_OF(&title_label), EGUI_COLOR_HEX(0x21303F), EGUI_ALPHA_100);
-    egui_view_set_margin(EGUI_VIEW_OF(&title_label), 0, 8, 0, 6);
+    egui_view_set_margin(EGUI_VIEW_OF(&title_label), 0, 8, 0, 4);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label));
 
     egui_view_tree_view_init(EGUI_VIEW_OF(&tree_primary));
@@ -155,12 +158,6 @@ void test_init_ui(void)
     egui_view_linearlayout_set_align_type(EGUI_VIEW_OF(&bottom_row), EGUI_ALIGN_VCENTER);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&bottom_row));
 
-    egui_view_linearlayout_init(EGUI_VIEW_OF(&compact_column));
-    egui_view_set_size(EGUI_VIEW_OF(&compact_column), TREE_VIEW_PREVIEW_WIDTH, TREE_VIEW_BOTTOM_ROW_HEIGHT);
-    egui_view_linearlayout_set_orientation(EGUI_VIEW_OF(&compact_column), 0);
-    egui_view_linearlayout_set_align_type(EGUI_VIEW_OF(&compact_column), EGUI_ALIGN_HCENTER);
-    egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&compact_column));
-
     egui_view_tree_view_init(EGUI_VIEW_OF(&tree_compact));
     egui_view_set_size(EGUI_VIEW_OF(&tree_compact), TREE_VIEW_PREVIEW_WIDTH, TREE_VIEW_PREVIEW_HEIGHT);
     egui_view_tree_view_set_font(EGUI_VIEW_OF(&tree_compact), (const egui_font_t *)&egui_res_font_montserrat_8_4);
@@ -175,41 +172,34 @@ void test_init_ui(void)
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&tree_compact), false);
 #endif
-    egui_view_group_add_child(EGUI_VIEW_OF(&compact_column), EGUI_VIEW_OF(&tree_compact));
+    egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&tree_compact));
 
-    egui_view_linearlayout_init(EGUI_VIEW_OF(&locked_column));
-    egui_view_set_size(EGUI_VIEW_OF(&locked_column), TREE_VIEW_PREVIEW_WIDTH, TREE_VIEW_BOTTOM_ROW_HEIGHT);
-    egui_view_set_margin(EGUI_VIEW_OF(&locked_column), 8, 0, 0, 0);
-    egui_view_linearlayout_set_orientation(EGUI_VIEW_OF(&locked_column), 0);
-    egui_view_linearlayout_set_align_type(EGUI_VIEW_OF(&locked_column), EGUI_ALIGN_HCENTER);
-    egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&locked_column));
-
-    egui_view_tree_view_init(EGUI_VIEW_OF(&tree_locked));
-    egui_view_set_size(EGUI_VIEW_OF(&tree_locked), TREE_VIEW_PREVIEW_WIDTH, TREE_VIEW_PREVIEW_HEIGHT);
-    egui_view_tree_view_set_font(EGUI_VIEW_OF(&tree_locked), (const egui_font_t *)&egui_res_font_montserrat_8_4);
-    egui_view_tree_view_set_meta_font(EGUI_VIEW_OF(&tree_locked), (const egui_font_t *)&egui_res_font_montserrat_8_4);
-    egui_view_tree_view_set_snapshots(EGUI_VIEW_OF(&tree_locked), locked_snapshots, 1);
-    egui_view_tree_view_set_compact_mode(EGUI_VIEW_OF(&tree_locked), 1);
-    egui_view_tree_view_set_locked_mode(EGUI_VIEW_OF(&tree_locked), 1);
-    egui_view_tree_view_set_palette(EGUI_VIEW_OF(&tree_locked), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xF4F7F9), EGUI_COLOR_HEX(0xD5DCE4),
-                                    EGUI_COLOR_HEX(0x1A2734), EGUI_COLOR_HEX(0x6B7A89), EGUI_COLOR_HEX(0x0F6CBD), EGUI_COLOR_HEX(0x0F7B45),
-                                    EGUI_COLOR_HEX(0x9D5D00), EGUI_COLOR_HEX(0x7A8796));
-    static egui_view_api_t tree_locked_touch_api;
-    egui_view_override_api_on_touch(EGUI_VIEW_OF(&tree_locked), &tree_locked_touch_api, consume_preview_touch);
+    egui_view_tree_view_init(EGUI_VIEW_OF(&tree_read_only));
+    egui_view_set_size(EGUI_VIEW_OF(&tree_read_only), TREE_VIEW_PREVIEW_WIDTH, TREE_VIEW_PREVIEW_HEIGHT);
+    egui_view_set_margin(EGUI_VIEW_OF(&tree_read_only), 8, 0, 0, 0);
+    egui_view_tree_view_set_font(EGUI_VIEW_OF(&tree_read_only), (const egui_font_t *)&egui_res_font_montserrat_8_4);
+    egui_view_tree_view_set_meta_font(EGUI_VIEW_OF(&tree_read_only), (const egui_font_t *)&egui_res_font_montserrat_8_4);
+    egui_view_tree_view_set_snapshots(EGUI_VIEW_OF(&tree_read_only), read_only_snapshots, 1);
+    egui_view_tree_view_set_compact_mode(EGUI_VIEW_OF(&tree_read_only), 1);
+    egui_view_tree_view_set_locked_mode(EGUI_VIEW_OF(&tree_read_only), 1);
+    egui_view_tree_view_set_palette(EGUI_VIEW_OF(&tree_read_only), EGUI_COLOR_HEX(0xFBFCFD), EGUI_COLOR_HEX(0xF6F8FA), EGUI_COLOR_HEX(0xD8DFE6),
+                                    EGUI_COLOR_HEX(0x536474), EGUI_COLOR_HEX(0x8896A4), EGUI_COLOR_HEX(0xB3BFCA), EGUI_COLOR_HEX(0xA7BDB6),
+                                    EGUI_COLOR_HEX(0xC3AE88), EGUI_COLOR_HEX(0x9AA7B3));
+    static egui_view_api_t tree_read_only_touch_api;
+    egui_view_override_api_on_touch(EGUI_VIEW_OF(&tree_read_only), &tree_read_only_touch_api, consume_preview_touch);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
-    egui_view_set_focusable(EGUI_VIEW_OF(&tree_locked), false);
+    egui_view_set_focusable(EGUI_VIEW_OF(&tree_read_only), false);
 #endif
-    egui_view_group_add_child(EGUI_VIEW_OF(&locked_column), EGUI_VIEW_OF(&tree_locked));
+    egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&tree_read_only));
 
     apply_primary_snapshot(0);
     apply_compact_snapshot(0);
+    apply_read_only_snapshot(0);
 
     {
         hello_custom_widgets_demo_apply_title_only_scaffold(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label), NULL, 0);
     }
 
-    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&compact_column));
-    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&locked_column));
     egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&bottom_row));
     egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&root_layout));
 
@@ -232,6 +222,7 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
         {
             apply_primary_snapshot(0);
             apply_compact_snapshot(0);
+            apply_read_only_snapshot(0);
         }
         EGUI_SIM_SET_WAIT(p_action, 90);
         return true;
