@@ -98,6 +98,10 @@
 ## 最近完成的收口动作
 
 - `2026-04-09`
+  - 完成 `navigation/flip_view` 实现级样式收口：继续保留 `FlipView` 主线语义，删掉旧示例里的故事化文案和 read-only 锁定叙事，把页面统一收口为标题、主控件和 `compact / read only` 双预览。
+  - 主控件与预览轨道统一改成低噪音业务摘要内容，`egui_view_flip_view.c` 进一步压轻圆角、阴影、边框和按钮强调度，README 重写为当前 `reference` 模板。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=navigation/flip_view PORT=pc`、`check_touch_release_semantics.py --scope custom --category navigation`、`code_runtime_check.py --app HelloCustomWidgets --app-sub navigation/flip_view --track reference --timeout 10 --keep-screenshots`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`check_docs_encoding.py`。
+- `2026-04-09`
   - 完成 `input/calendar_view` 实现级样式收口：删除页面级 guide、状态文案、`Standard` 标签、分隔线、预览标签与 label-click 场景切换逻辑，把页面结构统一为标题、主 `calendar_view` 与 `compact / read only` 双预览。
   - 主控件保留真实 `CalendarView` 区间选择、月份浏览与焦点闭环，页面空白区和底部预览统一改为清焦收口；`compact` 与 `read only` 预览收敛为静态 reference 对照，README 已重写为当前 `reference` 结构。
   - 已通过 `make all APP=HelloCustomWidgets APP_SUB=input/calendar_view PORT=pc`、`check_touch_release_semantics.py --scope custom --category input`、`code_runtime_check.py --app HelloCustomWidgets --app-sub input/calendar_view --track reference --timeout 10 --keep-screenshots`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`check_docs_encoding.py`。
