@@ -1,53 +1,44 @@
-# skeleton 自定义控件设计说明
+# skeleton 设计说明
 
 ## 参考来源
-
 - 参考设计系统：`Fluent 2`
 - 参考开源库：`WPF UI`
-- 次级补充参考：`ModernWpf`
+- 补充对照实现：`ModernWpf`
 - 对应组件名：`Skeleton`
 - 本次保留状态：`wave`、`compact`、`read only`
-- 删减效果：页面级 guide / section label / preview label、额外强调色标签、Acrylic、复杂渐变、真实内容切换动画、长列表无限骨架
-- EGUI 适配说明：使用固定骨架块模板、轻量 wave / pulse 动画和程序化 snapshot 切换，在 `480 x 480` 下优先保证结构可读、层级清晰和低噪音表达
+- 本次删除效果：页面级 `guide`、外部 preview 标签、旧双列预览壳层、过强 placeholder 对比、过亮 wave / pulse 高光
+- EGUI 适配说明：沿用仓库内 `skeleton` 基础实现，本轮只收口 `reference` 页面结构、静态对照预览和视觉强度，不修改 `sdk/EmbeddedGUI`
 
-## 1. 为什么需要这个控件
+## 1. 为什么需要这个控件？
+`skeleton` 用于在真实内容尚未到达时先表达页面结构、信息密度和重点区域，比单纯的 `spinner` 更能说明“内容将会如何排布”，适合文章页、列表页、设置页和轻量卡片占位。
 
-`skeleton` 用来在真实内容尚未到达时，先把页面结构、重点区域和内容密度表达出来。相比单纯的旋转 loading，它更能说明“内容将会长什么样”，适合文章、列表、设置页和卡片面板这类通用页面。
-
-## 2. 为什么现有控件不够用
-
-- `spinner` 只能表达“正在加载”，不能表达页面骨架结构
-- `progress_bar` 更适合线性进度，不适合内容占位
-- 旧 `skeleton_loader` 是深色 showcase 骨架卡，视觉更重，也更偏演示页
-- 当前主线仍需要一版接近 `Fluent 2 / WPF UI` 的浅色、低噪音 skeleton reference
-
-因此这里不继续修补旧结构，而是把 `skeleton` 收敛为统一的 reference 页面。
+## 2. 为什么现有控件不够用？
+- `spinner` 只能表达“正在加载”，不能表达页面骨架结构。
+- `progress_bar` 更适合数值进度，不适合内容占位。
+- 旧版 `skeleton_loader` 更偏 showcase 风格，视觉更重，也不再符合当前 `reference` 主线。
+- 当前 `reference` 主线仍需要一版贴近 Fluent / WPF UI 的浅色 `Skeleton` 示例。
 
 ## 3. 目标场景与示例概览
+- 主控件展示标准 `wave` skeleton，通过录制动作覆盖 `Article / Feed / Settings` 三组页面骨架。
+- 底部左侧展示 `compact` 静态对照，验证小尺寸下的紧凑占位布局与轻量 `pulse` 强调。
+- 底部右侧展示 `read only` 静态对照，验证禁用动画和弱化 chrome 后的只读占位。
+- 页面结构统一收口为：标题 -> 主 `skeleton` -> `compact / read only`。
+- 旧的 preview 列容器、外部标签和页面桥接逻辑全部移除。
 
-- 主卡展示标准 `wave` skeleton，程序化轮换 `Article / Feed / Settings` 三类页面骨架
-- 左下预览展示 `compact` 形态，保留更紧凑的骨架密度和局部 pulse 强调
-- 右下预览展示 `read only` 形态，关闭动画并弱化对比，验证静态占位层级
-- 示例页只保留标题、主骨架卡和底部 `compact / read only` 双预览，不再保留外部说明 chrome
-
-目录：
-
-- `example/HelloCustomWidgets/feedback/skeleton/`
+目标目录：`example/HelloCustomWidgets/feedback/skeleton/`
 
 ## 4. 视觉与布局规格
-
-- 画布：`480 x 480`
-- 根布局：`224 x 224`
-- 页面结构：标题 -> 主骨架卡 -> `compact / read only` 双预览
-- 主骨架卡：`196 x 124`
-- 底部双预览容器：`216 x 60`
+- 根容器尺寸：`224 x 224`
+- 主控件尺寸：`196 x 124`
+- 底部对照行尺寸：`216 x 60`
 - `compact` 预览：`104 x 60`
 - `read only` 预览：`104 x 60`
-- 视觉规则：
-  - 使用浅灰白 page panel + 白底轻边框容器
-  - 骨架块采用统一浅灰填充，不做重阴影和高饱和描边
-  - 主卡保留轻量 wave shimmer，`compact` 保留 pulse 强调，`read only` 关闭动画
-  - accent 仅用于轻度提亮强调块，不再保留旧版青绿色标签语法
+- 页面结构：标题 + 主控件 + 底部双预览
+- 样式约束：
+  - 使用浅灰 page panel、白底 skeleton card 和低噪音浅边框。
+  - 主控件保留轻量 `wave shimmer`，`compact` 保留更柔和的 `pulse` 强调，`read only` 关闭动画。
+  - emphasis block 只做轻量灰蓝提亮，不回到高饱和 showcase 风格。
+  - 底部两个 preview 都禁用 touch 和 focus，只做静态 reference 对照。
 
 ## 5. 控件清单
 
@@ -55,33 +46,35 @@
 | --- | --- | ---: | --- | --- |
 | `root_layout` | `egui_view_linearlayout_t` | `224 x 224` | enabled | 页面根布局 |
 | `title_label` | `egui_view_label_t` | `224 x 18` | `Skeleton` | 页面标题 |
-| `skeleton_primary` | `egui_view_skeleton_t` | `196 x 124` | `Article` | 主 `wave` 骨架 |
-| `skeleton_compact` | `egui_view_skeleton_t` | `104 x 60` | `Compact row` | 紧凑 pulse 预览 |
-| `skeleton_locked` | `egui_view_skeleton_t` | `104 x 60` | `Read only` | 只读静态预览 |
+| `skeleton_primary` | `egui_view_skeleton_t` | `196 x 124` | `Article` | 标准主控件 |
+| `skeleton_compact` | `egui_view_skeleton_t` | `104 x 60` | `Compact row` | `compact` 静态对照 |
+| `skeleton_read_only` | `egui_view_skeleton_t` | `104 x 60` | `Read only` | `read only` 静态对照 |
+| `primary_snapshots` | `egui_view_skeleton_snapshot_t[3]` | - | `Article / Feed / Settings` | 主控件录制轨道 |
+| `compact_snapshots` | `egui_view_skeleton_snapshot_t[2]` | - | `Compact row / Compact tile` | `compact` 程序化切换 |
+| `read_only_snapshots` | `egui_view_skeleton_snapshot_t[1]` | - | `Read only` | `read only` 固定对照数据 |
 
 ## 6. 状态覆盖矩阵
 
-| 状态 / 区域 | 主骨架 | Compact | Read only |
-| --- | --- | --- | --- |
-| 默认态 | `Article` | `Compact row` | `Read only` |
-| 切换 1 | `Feed` | 保持 | 保持 |
-| 切换 2 | `Settings` | 保持 | 保持 |
-| 紧凑切换 | 保持 | `Compact row -> Compact tile` | 保持 |
-| 只读弱化 | 不适用 | 不适用 | 保持无动画、弱对比、只做结构提示 |
+| 区域 / 轨道 | 状态 | 说明 |
+| --- | --- | --- |
+| 主控件 | `Article` | 默认 `wave` |
+| 主控件 | `Feed` | 第二组主控件骨架 |
+| 主控件 | `Settings` | 第三组主控件骨架 |
+| `compact` | `Compact row` | 默认紧凑对照 |
+| `compact` | `Compact tile` | 第二组紧凑对照 |
+| `read only` | `Read only` | 固定只读对照，禁用动画与外部交互 |
 
 ## 7. `egui_port_get_recording_action()` 录制动作设计
+1. 重置主控件、`compact` 和 `read only` 到默认状态。
+2. 请求默认截图。
+3. 程序化切换主控件到 `Feed`。
+4. 请求第二张截图。
+5. 程序化切换主控件到 `Settings`。
+6. 请求第三张截图。
+7. 程序化切换 `compact` 到第二组 snapshot。
+8. 请求最终截图并保留收尾等待。
 
-1. 应用默认主快照与 `compact` 快照
-2. 请求第一页截图
-3. 程序化切换主卡到 `Feed`
-4. 请求第二页截图
-5. 程序化切换主卡到 `Settings`
-6. 请求第三页截图
-7. 程序化切换 `compact` 到第二组快照
-8. 请求最终截图并保留收尾等待
-
-## 8. 编译、runtime、截图验收标准
-
+## 8. 编译、touch、runtime、单测与文档检查
 ```bash
 make all APP=HelloCustomWidgets APP_SUB=feedback/skeleton PORT=pc
 python scripts/checks/check_touch_release_semantics.py --scope custom --category feedback
@@ -92,52 +85,43 @@ python scripts/checks/check_docs_encoding.py
 ```
 
 验收重点：
+- 主控件和底部 `compact / read only` 预览都必须完整可见。
+- `wave`、`compact`、`read only` 三种语义要能从截图直接分辨。
+- 主控件的 shimmer 必须保持轻量，不能回到高噪音 showcase 风格。
+- `read only` 只做静态展示，不能响应 touch、focus 或页面桥接。
+- 单测已有的 snapshot、palette、timer、touch 和 key click 语义不能回归。
 
-- 标题、主骨架和底部双预览都必须完整可见
-- `wave`、`compact`、`read only` 三种语义要能从截图直接分辨
-- 主卡里的 shimmer 必须保持轻量，不能回到高噪音 showcase 风格
-- 页面中不再出现 guide、section divider、`Pulse` / `Static` 外部标签
-- 预览区域不再承担点击切换职责，只作为对照展示
+## 9. 已知限制与后续方向
+- 当前版本仍使用固定 snapshot 数据，不接真实业务骨架配置。
+- 当前 `wave` 和 `pulse` 都是轻量近似动画，不做更复杂的渐变带。
+- 当前优先验证 `reference` 语义、布局稳定性和视觉收口，不扩展成长列表骨架系统。
 
-## 9. 已知限制与下一轮迭代计划
-
-- 当前 shimmer 仍是简化版条带扫光，不是完整渐变波浪
-- 骨架模板仍使用固定 snapshot，未做运行时自由拼装
-- 当前只覆盖小型页面骨架，不包含更长列表和复杂表单
-- 先完成 reference 版收敛，再决定是否沉入框架层
-
-## 10. 与现有控件的重叠分析与差异化边界
-
-- 相比 `skeleton_loader`：本控件更浅、更轻、更标准，不再走深色 showcase 卡路线
-- 相比 `spinner`：本控件表达内容结构，不只是等待状态
-- 相比 `progress_bar`：本控件表达页面骨架，不承担数值进度反馈
-- 相比 `card_panel` 候选方向：本控件只表达“加载前占位”，不承载真实内容卡片
+## 10. 与现有控件的边界
+- 相比 `spinner`：这里表达内容骨架，不只是等待状态。
+- 相比 `progress_bar`：这里表达结构占位，不承担数值进度反馈。
+- 相比旧版 `skeleton_loader`：这里更浅、更轻、更接近 Fluent / WPF UI `reference`。
+- 相比 `card_panel`：这里不承载真实内容卡片，只表达加载前占位。
 
 ## 11. 参考设计系统与开源母本
-
 - 参考设计系统：`Fluent 2`
-- 开源母本：`WPF UI`
-- 次级补充参考：`ModernWpf`
+- 参考开源库：`WPF UI`
+- 补充对照实现：`ModernWpf`
 
-## 12. 对应组件名，以及本次保留的核心状态
-
+## 12. 对应组件名与本次保留的核心状态
 - 对应组件名：`Skeleton`
-- 本次保留状态：
+- 本次保留核心状态：
   - `wave`
   - `compact`
   - `read only`
 
-## 13. 相比参考原型删掉了哪些效果或装饰
-
-- 不做页面级 guide、section label、preview label 和额外状态说明条
-- 不做真实内容淡入切换
-- 不做复杂渐变和高频 shimmer 动画
-- 不做长列表无限滚动骨架
-- 不做阴影、Acrylic、背景模糊和系统级转场
+## 13. 相比参考原型删除的效果或装饰
+- 删除页面级 `guide`、preview 标签和旧双列预览壳层。
+- 删除 preview 参与点击切换、页面桥接和焦点承接的职责。
+- 删除过强的 accent placeholder、过亮 wave band 和过重 read-only chrome。
+- 删除与 `reference` 无关的说明性外壳和场景化叙事。
 
 ## 14. EGUI 适配时的简化点与约束
-
-- 使用固定骨架块模板，优先保证 `480 x 480` 下的审阅效率
-- wave / pulse 动画使用轻量定时刷新，避免引入重型动画系统
-- 通过统一的浅灰白 palette 维持 `Fluent 2 / WPF UI` 低噪音参考页风格
-- 先完成示例级 reference 版本，再决定是否上升到框架公共控件
+- 使用固定 `snapshot` 数据保证录制稳定。
+- `compact / read only` 直接复用同一控件模式，减少额外页面壳层。
+- 通过程序化切换 snapshot 保证 runtime 稳定抓取状态变化。
+- 当前先作为 `HelloCustomWidgets` 的 `reference widget` 维护，后续是否下沉框架层再单独评估。

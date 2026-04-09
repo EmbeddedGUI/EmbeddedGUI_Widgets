@@ -252,16 +252,16 @@ static void egui_view_skeleton_on_draw(egui_view_t *self)
 
     if (local->locked_mode)
     {
-        surface_color = egui_rgb_mix(surface_color, EGUI_COLOR_HEX(0xFAFBFC), 18);
-        border_color = egui_rgb_mix(border_color, EGUI_COLOR_HEX(0xF7F9FB), 30);
-        block_color = egui_rgb_mix(block_color, EGUI_COLOR_HEX(0xF7F9FB), 22);
-        text_color = egui_rgb_mix(text_color, muted_text_color, 76);
-        accent_color = egui_rgb_mix(block_color, muted_text_color, 34);
+        surface_color = egui_rgb_mix(surface_color, EGUI_COLOR_HEX(0xFAFBFC), 12);
+        border_color = egui_rgb_mix(border_color, EGUI_COLOR_HEX(0xF7F9FB), 18);
+        block_color = egui_rgb_mix(block_color, EGUI_COLOR_HEX(0xF8FAFC), 14);
+        text_color = egui_rgb_mix(text_color, muted_text_color, 82);
+        accent_color = egui_rgb_mix(accent_color, muted_text_color, 28);
     }
     else if (!local->compact_mode)
     {
-        surface_color = egui_rgb_mix(surface_color, EGUI_COLOR_HEX(0xFFFFFF), 14);
-        border_color = egui_rgb_mix(border_color, EGUI_COLOR_HEX(0xFFFFFF), 28);
+        surface_color = egui_rgb_mix(surface_color, EGUI_COLOR_HEX(0xFFFFFF), 10);
+        border_color = egui_rgb_mix(border_color, EGUI_COLOR_HEX(0xFFFFFF), 18);
     }
 
     if (!is_enabled)
@@ -275,9 +275,9 @@ static void egui_view_skeleton_on_draw(egui_view_t *self)
     }
 
     egui_canvas_draw_round_rectangle_fill(region.location.x, region.location.y, region.size.width, region.size.height, radius, surface_color,
-                                          egui_color_alpha_mix(self->alpha, local->compact_mode ? 90 : 94));
+                                          egui_color_alpha_mix(self->alpha, local->compact_mode ? 86 : 90));
     egui_canvas_draw_round_rectangle(region.location.x, region.location.y, region.size.width, region.size.height, radius, 1, border_color,
-                                     egui_color_alpha_mix(self->alpha, local->compact_mode ? 66 : 70));
+                                     egui_color_alpha_mix(self->alpha, local->compact_mode ? 54 : 60));
 
     content_x = region.location.x + (local->compact_mode ? 8 : 10);
     content_y = region.location.y + (local->compact_mode ? 8 : 10);
@@ -316,26 +316,26 @@ static void egui_view_skeleton_on_draw(egui_view_t *self)
         }
 
         is_emphasis = (i == snapshot->emphasis_block) || (i == local->emphasis_block);
-        fill_color = egui_rgb_mix(block_color, accent_color, is_emphasis ? 9 : 2);
-        line_color = egui_rgb_mix(border_color, accent_color, is_emphasis ? 18 : 4);
+        fill_color = egui_rgb_mix(block_color, accent_color, is_emphasis ? 7 : 1);
+        line_color = egui_rgb_mix(border_color, accent_color, is_emphasis ? 14 : 3);
 
         if (local->animation_mode == EGUI_VIEW_SKELETON_ANIM_PULSE && is_emphasis && !local->locked_mode)
         {
-            fill_color = egui_rgb_mix(block_color, accent_color, pulse_mix);
-            line_color = egui_rgb_mix(border_color, accent_color, pulse_mix + 8);
+            fill_color = egui_rgb_mix(block_color, accent_color, 8 + pulse_mix / 2);
+            line_color = egui_rgb_mix(border_color, accent_color, 12 + pulse_mix / 2);
         }
 
-        egui_canvas_draw_round_rectangle_fill(x, y, w, h, block->radius, fill_color, egui_color_alpha_mix(self->alpha, local->compact_mode ? 72 : 84));
+        egui_canvas_draw_round_rectangle_fill(x, y, w, h, block->radius, fill_color, egui_color_alpha_mix(self->alpha, local->compact_mode ? 62 : 76));
         egui_canvas_draw_round_rectangle(x, y, w, h, block->radius, 1, line_color,
-                                         egui_color_alpha_mix(self->alpha, local->compact_mode ? (is_emphasis ? 54 : 22) : (is_emphasis ? 62 : 28)));
+                                         egui_color_alpha_mix(self->alpha, local->compact_mode ? (is_emphasis ? 38 : 16) : (is_emphasis ? 48 : 22)));
 
         if (local->animation_mode == EGUI_VIEW_SKELETON_ANIM_WAVE && !local->locked_mode)
         {
             egui_dim_t overlap_x0;
             egui_dim_t overlap_x1;
-            egui_color_t band_color = egui_rgb_mix(block_color, accent_color, is_emphasis ? 18 : 12);
+            egui_color_t band_color = egui_rgb_mix(block_color, accent_color, is_emphasis ? 12 : 7);
 
-            band_width = local->compact_mode ? 10 : 14;
+            band_width = local->compact_mode ? 9 : 12;
             block_right = content_width + (local->compact_mode ? 16 : 24);
             band_x = content_x - band_width + ((egui_dim_t)local->anim_phase * block_right) / 24;
             overlap_x0 = EGUI_MAX(x + 1, band_x);
@@ -343,7 +343,7 @@ static void egui_view_skeleton_on_draw(egui_view_t *self)
             if (overlap_x1 > overlap_x0)
             {
                 egui_canvas_draw_round_rectangle_fill(overlap_x0, y + 1, overlap_x1 - overlap_x0, h - 2, EGUI_MIN(block->radius, 3), band_color,
-                                                      egui_color_alpha_mix(self->alpha, is_emphasis ? 46 : 30));
+                                                      egui_color_alpha_mix(self->alpha, is_emphasis ? 32 : 18));
             }
         }
     }
@@ -396,11 +396,11 @@ void egui_view_skeleton_init(egui_view_t *self)
     local->snapshots = NULL;
     local->font = (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT;
     local->surface_color = EGUI_COLOR_HEX(0xFFFFFF);
-    local->border_color = EGUI_COLOR_HEX(0xD7E0E8);
+    local->border_color = EGUI_COLOR_HEX(0xD2DBE3);
     local->block_color = EGUI_COLOR_HEX(0xE7EDF3);
     local->text_color = EGUI_COLOR_HEX(0x5E6F80);
     local->muted_text_color = EGUI_COLOR_HEX(0x8592A1);
-    local->accent_color = EGUI_COLOR_HEX(0x74A9F9);
+    local->accent_color = EGUI_COLOR_HEX(0x8AB7EA);
     local->snapshot_count = 0;
     local->current_snapshot = 0;
     local->emphasis_block = 0xFF;

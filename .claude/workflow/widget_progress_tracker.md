@@ -34,6 +34,7 @@
 
 | 状态 | 控件名 | 分类 | 开始日期 | 当前阶段 | 目标 |
 | --- | --- | --- | --- | --- | --- |
+| 进行中 | `teaching_tip` | `feedback` | `2026-04-09` | `reference 细化` | 收口为标题 + 主控件 + `compact / read only` 静态对照，并继续压轻 callout surface、pointer tail、hero / close / action chrome |
 
 ## 当前保留的 Reference 主线控件
 
@@ -95,6 +96,11 @@
 - `toast_stack` -> `Toast`
 
 ## 最近完成的收口动作
+
+- `2026-04-09`
+  - 完成 `feedback/skeleton` 实现级样式收口：移除底部 preview 的旧列容器壳与页面桥接逻辑，页面统一为标题、主 `skeleton` 与 `compact / read only` 静态对照，继续保留 `Skeleton` 的 `wave` 主态、`compact` 脉冲占位和 `read only` 静态占位语义。
+  - `test.c` 将 `skeleton_locked` 收口为 `skeleton_read_only`，底部两个 preview 统一禁用 touch / focus 并补上程序化 `read only` 重置；`egui_view_skeleton.c` 进一步压轻容器 fill / border、placeholder emphasis、wave band、pulse 对比和 read-only chrome；README 重写为当前 `reference` 模板。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=feedback/skeleton PORT=pc`、`check_touch_release_semantics.py --scope custom --category feedback`、`code_runtime_check.py --app HelloCustomWidgets --app-sub feedback/skeleton --track reference --timeout 10 --keep-screenshots`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`check_docs_encoding.py`。
 
 - `2026-04-09`
   - 完成 `feedback/toast_stack` 实现级样式收口：移除底部 preview 的旧列容器壳与页面桥接逻辑，页面统一为标题、主 `toast_stack` 与 `compact / read only` 静态对照，继续保留 `Toast / Snackbar` 的前卡、后两层叠卡、正文、action 和 meta 层级语义。
@@ -238,8 +244,6 @@
   - 完成 `feedback/teaching_tip` 实现级样式收口。
 - `2026-04-09`
   - 完成 `feedback/dialog_sheet` 实现级样式收口。
-- `2026-04-09`
-  - 完成 `feedback/skeleton` 实现级样式收口。
 - `2026-04-09`
 - `2026-04-09`
 - `2026-04-09`
