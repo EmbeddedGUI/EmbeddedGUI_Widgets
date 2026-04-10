@@ -55,6 +55,7 @@ void egui_view_toast_stack_set_read_only_mode(egui_view_t *self, uint8_t read_on
 void egui_view_toast_stack_set_palette(egui_view_t *self, egui_color_t surface_color, egui_color_t border_color, egui_color_t text_color,
                                        egui_color_t muted_text_color, egui_color_t accent_color, egui_color_t info_color, egui_color_t success_color,
                                        egui_color_t warning_color, egui_color_t error_color);
+void egui_view_toast_stack_override_static_preview_api(egui_view_t *self, egui_view_api_t *api);
 
 #ifdef __cplusplus
 }

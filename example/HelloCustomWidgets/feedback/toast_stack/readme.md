@@ -24,6 +24,9 @@
 - 底部左侧展示 `compact` 静态对照，保留前卡与两层叠卡语义。
 - 底部右侧展示 `read only` 静态对照，验证只读状态下的弱化 stacked toast。
 - 页面结构统一收口为：标题 -> 主 `toast_stack` -> `compact / read only`。
+- 两个 preview 统一通过 `egui_view_toast_stack_override_static_preview_api()` 收口：
+  - preview 自身吞掉 `touch / key`，不改 `current_snapshot`，也不触发 click。
+  - preview 点击时只负责清主控件 focus，用于 runtime 复核交互后的收尾渲染。
 - 旧的 preview 列容器、外部标签和页面桥接逻辑全部移除。
 
 目标目录：`example/HelloCustomWidgets/feedback/toast_stack/`
@@ -39,7 +42,8 @@
   - 使用浅灰 page panel、白底 stacked toast 和低噪音浅边框。
   - 保留 severity strip、前卡标题、正文、action 和 meta 层级，但整体回到更柔和的 Fluent / WPF UI 语法。
   - 两层后卡只保留叠卡关系和标题摘要，不再加额外页面说明壳层。
-  - 底部两个 preview 都禁用 touch 和 focus，只做静态 reference 对照。
+  - 底部两个 preview 不承接真实交互；`touch / key` 统一被 static preview API 吞掉，点击仅用于清主控件 focus。
+  - 主控件继续遵守 same-target release：`DOWN(A) -> MOVE(B) -> UP(B)` 不提交，回到 `A` 后 `UP(A)` 才提交。
 
 ## 5. 控件清单
 
@@ -64,7 +68,7 @@
 | 主控件 | `Upload failed` | `Error` |
 | `compact` | `Quota alert` | 默认 `compact` 对照 |
 | `compact` | `Upload failed` | 第二组 `compact` 对照 |
-| `read only` | `Policy note` | 固定只读对照，禁用 touch / focus |
+| `read only` | `Policy note` | 固定只读对照；static preview 吞掉 `touch / key`，点击只清主控件 focus |
 
 ## 7. `egui_port_get_recording_action()` 录制动作设计
 1. 重置主控件、`compact` 和 `read only` 到默认状态。
@@ -75,16 +79,21 @@
 6. 请求第三张截图。
 7. 程序化切换主控件到 `Error`。
 8. 请求第四张截图。
-9. 程序化切换 `compact` 到第二组 snapshot。
-10. 请求最终截图并保留收尾等待。
+9. 程序化切换 `compact` 到第二组 snapshot，并让主控件请求 focus。
+10. 请求 `compact` 第二组 snapshot 截图。
+11. 点击 `compact` preview，只清主控件 focus。
+12. 请求 preview 点击后的收尾截图。
+13. 再请求最终稳定帧，确认没有残留 focus ring、pressed 或整屏污染。
 
 ## 8. 编译、touch、runtime、单测与文档检查
 ```bash
+make clean APP=HelloCustomWidgets APP_SUB=feedback/toast_stack PORT=pc
 make all APP=HelloCustomWidgets APP_SUB=feedback/toast_stack PORT=pc
-python scripts/checks/check_touch_release_semantics.py --scope custom --category feedback
-python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub feedback/toast_stack --track reference --timeout 10 --keep-screenshots
+make clean APP=HelloUnitTest PORT=pc_test
 make all APP=HelloUnitTest PORT=pc_test
 output\main.exe
+python scripts/checks/check_touch_release_semantics.py --scope custom --category feedback
+python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub feedback/toast_stack --track reference --timeout 10 --keep-screenshots
 python scripts/checks/check_docs_encoding.py
 ```
 
@@ -92,9 +101,11 @@ python scripts/checks/check_docs_encoding.py
 - 主控件和底部 `compact / read only` 预览都必须完整可见。
 - `Info / Success / Warning / Error` 四态需要一眼可辨，但不能回到高饱和 showcase 风格。
 - 前卡、后两层叠卡、action pill 和 meta pill 仍要保持清晰层级。
-- `read only` 只做静态展示，不能响应 touch、key、focus 或页面桥接。
-- `read only` 从交互态切入时也必须清空 pressed，避免残留按下渲染。
-- 单测已有的 snapshot、palette、touch 和 key click 语义不能回归。
+- 主控件必须通过 same-target release / cancel 回归：移出命中区后不能误提交，回到原目标后释放才提交。
+- `read only / disabled` 不仅要忽略后续 `touch / key` 输入，还要在新输入或模式切换时清掉残留 `pressed` 渲染。
+- static preview 必须吞掉 `touch / key`，且不能改 `current_snapshot`，也不能触发 click。
+- preview 点击后的收尾帧和最终稳定帧都必须回稳，不能残留 focus ring、pressed、黑白屏、裁切或整屏污染。
+- 单测必须覆盖 setter 清理 pressed、same-target release / cancel、`read only / disabled` guard 清理残留 pressed，以及 static preview 吞掉 `touch / key` 且不改 `current_snapshot`。
 
 ## 9. 已知限制与后续方向
 - 当前版本仍使用固定 snapshot 数据，不接真实通知队列。
@@ -131,5 +142,7 @@ python scripts/checks/check_docs_encoding.py
 ## 14. EGUI 适配时的简化点与约束
 - 使用固定 `snapshot` 数据和固定叠卡偏移保证录制稳定。
 - `compact / read only` 直接复用同一控件模式，减少额外页面壳层。
+- 主控件遵守 same-target release，并在 `read only / disabled` 输入守卫与各类 setter 里共用同一套残留 `pressed` 清理语义。
+- `compact / read only` 统一通过 `egui_view_toast_stack_override_static_preview_api()` 收口，吞掉 `touch / key`，不改 `current_snapshot`，点击仅用于清主控件 focus。
 - 通过程序化切换 snapshot 保证 runtime 稳定抓取状态变化。
 - 当前先作为 `HelloCustomWidgets` 的 `reference widget` 维护，后续是否下沉框架层再单独评估。
