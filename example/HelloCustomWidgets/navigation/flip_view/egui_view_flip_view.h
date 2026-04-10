@@ -67,6 +67,7 @@ void egui_view_flip_view_set_read_only_mode(egui_view_t *self, uint8_t read_only
 void egui_view_flip_view_set_on_changed_listener(egui_view_t *self, egui_view_on_flip_view_changed_listener_t listener);
 uint8_t egui_view_flip_view_get_part_region(egui_view_t *self, uint8_t part, egui_region_t *region);
 uint8_t egui_view_flip_view_handle_navigation_key(egui_view_t *self, uint8_t key_code);
+void egui_view_flip_view_override_static_preview_api(egui_view_t *self, egui_view_api_t *api);
 
 #ifdef __cplusplus
 }

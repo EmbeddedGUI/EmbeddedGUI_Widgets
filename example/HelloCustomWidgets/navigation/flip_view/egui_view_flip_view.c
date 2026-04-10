@@ -42,11 +42,23 @@ static uint8_t flip_view_has_text(const char *text)
 
 static uint8_t flip_view_clear_pressed_state(egui_view_t *self, egui_view_flip_view_t *local)
 {
-    uint8_t had_pressed = self->is_pressed || local->pressed_part != EGUI_VIEW_FLIP_VIEW_PART_NONE;
+    uint8_t had_pressed = (uint8_t)(self->is_pressed || local->pressed_part != EGUI_VIEW_FLIP_VIEW_PART_NONE);
+
+    if (!had_pressed)
+    {
+        return 0;
+    }
 
     local->pressed_part = EGUI_VIEW_FLIP_VIEW_PART_NONE;
-    egui_view_set_pressed(self, false);
-    return had_pressed;
+    if (self->is_pressed)
+    {
+        egui_view_set_pressed(self, false);
+    }
+    else
+    {
+        egui_view_invalidate(self);
+    }
+    return 1;
 }
 
 static void flip_view_draw_round_fill_safe(egui_dim_t x, egui_dim_t y, egui_dim_t w, egui_dim_t h, egui_dim_t radius, egui_color_t color, egui_alpha_t alpha)
@@ -171,9 +183,9 @@ static uint8_t flip_view_part_enabled(egui_view_flip_view_t *local, egui_view_t 
 static void flip_view_set_current_part_inner(egui_view_t *self, uint8_t part, uint8_t notify)
 {
     EGUI_LOCAL_INIT(egui_view_flip_view_t);
-    uint8_t had_pressed = flip_view_clear_pressed_state(self, local);
     uint8_t changed = 0;
 
+    flip_view_clear_pressed_state(self, local);
     if (local->item_count == 0 || local->items == NULL)
     {
         if (local->current_part != EGUI_VIEW_FLIP_VIEW_PART_NONE)
@@ -181,7 +193,7 @@ static void flip_view_set_current_part_inner(egui_view_t *self, uint8_t part, ui
             local->current_part = EGUI_VIEW_FLIP_VIEW_PART_NONE;
             changed = 1;
         }
-        if (changed || had_pressed)
+        if (changed)
         {
             egui_view_invalidate(self);
         }
@@ -197,11 +209,11 @@ static void flip_view_set_current_part_inner(egui_view_t *self, uint8_t part, ui
         local->current_part = part;
         changed = 1;
     }
-    if (changed || had_pressed)
+    if (changed)
     {
         egui_view_invalidate(self);
     }
-    if (notify)
+    if (notify && changed)
     {
         flip_view_notify(self);
     }
@@ -210,17 +222,13 @@ static void flip_view_set_current_part_inner(egui_view_t *self, uint8_t part, ui
 static void flip_view_set_current_index_inner(egui_view_t *self, uint8_t current_index, uint8_t notify)
 {
     EGUI_LOCAL_INIT(egui_view_flip_view_t);
-    uint8_t had_pressed = flip_view_clear_pressed_state(self, local);
     uint8_t changed = 0;
 
+    flip_view_clear_pressed_state(self, local);
     if (local->item_count == 0 || local->items == NULL)
     {
         local->current_index = 0;
         local->current_part = EGUI_VIEW_FLIP_VIEW_PART_NONE;
-        if (had_pressed)
-        {
-            egui_view_invalidate(self);
-        }
         return;
     }
     flip_view_normalize_state(local);
@@ -233,11 +241,11 @@ static void flip_view_set_current_index_inner(egui_view_t *self, uint8_t current
         local->current_index = current_index;
         changed = 1;
     }
-    if (changed || had_pressed)
+    if (changed)
     {
         egui_view_invalidate(self);
     }
-    if (notify)
+    if (notify && changed)
     {
         flip_view_notify(self);
     }
@@ -329,6 +337,7 @@ static void flip_view_get_metrics(egui_view_flip_view_t *local, egui_view_t *sel
 void egui_view_flip_view_set_font(egui_view_t *self, const egui_font_t *font)
 {
     EGUI_LOCAL_INIT(egui_view_flip_view_t);
+    flip_view_clear_pressed_state(self, local);
     local->font = font ? font : (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT;
     egui_view_invalidate(self);
 }
@@ -336,6 +345,7 @@ void egui_view_flip_view_set_font(egui_view_t *self, const egui_font_t *font)
 void egui_view_flip_view_set_meta_font(egui_view_t *self, const egui_font_t *font)
 {
     EGUI_LOCAL_INIT(egui_view_flip_view_t);
+    flip_view_clear_pressed_state(self, local);
     local->meta_font = font ? font : (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT;
     egui_view_invalidate(self);
 }
@@ -343,6 +353,7 @@ void egui_view_flip_view_set_meta_font(egui_view_t *self, const egui_font_t *fon
 void egui_view_flip_view_set_title(egui_view_t *self, const char *title)
 {
     EGUI_LOCAL_INIT(egui_view_flip_view_t);
+    flip_view_clear_pressed_state(self, local);
     local->title = title;
     egui_view_invalidate(self);
 }
@@ -350,6 +361,7 @@ void egui_view_flip_view_set_title(egui_view_t *self, const char *title)
 void egui_view_flip_view_set_helper(egui_view_t *self, const char *helper)
 {
     EGUI_LOCAL_INIT(egui_view_flip_view_t);
+    flip_view_clear_pressed_state(self, local);
     local->helper = helper;
     egui_view_invalidate(self);
 }
@@ -358,6 +370,7 @@ void egui_view_flip_view_set_palette(egui_view_t *self, egui_color_t surface_col
                                      egui_color_t muted_text_color, egui_color_t inactive_color)
 {
     EGUI_LOCAL_INIT(egui_view_flip_view_t);
+    flip_view_clear_pressed_state(self, local);
     local->surface_color = surface_color;
     local->border_color = border_color;
     local->text_color = text_color;
@@ -834,13 +847,11 @@ static int egui_view_flip_view_on_touch_event(egui_view_t *self, egui_motion_eve
 {
     EGUI_LOCAL_INIT(egui_view_flip_view_t);
     uint8_t hit_part;
+    uint8_t same_target;
 
     if (local->compact_mode || local->read_only_mode || local->item_count == 0 || local->items == NULL || !egui_view_get_enable(self))
     {
-        if (flip_view_clear_pressed_state(self, local))
-        {
-            egui_view_invalidate(self);
-        }
+        flip_view_clear_pressed_state(self, local);
         return 0;
     }
     flip_view_normalize_state(local);
@@ -849,32 +860,63 @@ static int egui_view_flip_view_on_touch_event(egui_view_t *self, egui_motion_eve
     {
     case EGUI_MOTION_EVENT_ACTION_DOWN:
         hit_part = flip_view_hit_part(local, self, event->location.x, event->location.y);
-        if (hit_part == EGUI_VIEW_FLIP_VIEW_PART_NONE)
+        if (hit_part == EGUI_VIEW_FLIP_VIEW_PART_NONE || (hit_part != EGUI_VIEW_FLIP_VIEW_PART_SURFACE && !flip_view_part_enabled(local, self, hit_part)))
         {
-            if (flip_view_clear_pressed_state(self, local))
-            {
-                egui_view_invalidate(self);
-            }
+            flip_view_clear_pressed_state(self, local);
             return 0;
+        }
+        same_target = (uint8_t)(local->pressed_part == hit_part);
+        if (same_target && self->is_pressed)
+        {
+            return 1;
         }
         local->pressed_part = hit_part;
         local->current_part = hit_part;
-        egui_view_set_pressed(self, true);
-        egui_view_invalidate(self);
+        if (!self->is_pressed)
+        {
+            egui_view_set_pressed(self, true);
+        }
+        else
+        {
+            egui_view_invalidate(self);
+        }
+        return 1;
+    case EGUI_MOTION_EVENT_ACTION_MOVE:
+        if (local->pressed_part == EGUI_VIEW_FLIP_VIEW_PART_NONE)
+        {
+            return 0;
+        }
+        hit_part = flip_view_hit_part(local, self, event->location.x, event->location.y);
+        same_target = (uint8_t)(hit_part == local->pressed_part);
+        if (same_target)
+        {
+            if (!self->is_pressed)
+            {
+                egui_view_set_pressed(self, true);
+            }
+            return 1;
+        }
+        if (self->is_pressed)
+        {
+            egui_view_set_pressed(self, false);
+        }
         return 1;
     case EGUI_MOTION_EVENT_ACTION_UP:
     {
         uint8_t handled;
+        uint8_t pressed_part;
 
         hit_part = flip_view_hit_part(local, self, event->location.x, event->location.y);
         handled = (local->pressed_part != EGUI_VIEW_FLIP_VIEW_PART_NONE) || hit_part != EGUI_VIEW_FLIP_VIEW_PART_NONE;
-        if (hit_part == local->pressed_part)
+        same_target = (uint8_t)(local->pressed_part != EGUI_VIEW_FLIP_VIEW_PART_NONE && local->pressed_part == hit_part);
+        pressed_part = local->pressed_part;
+        if (same_target && self->is_pressed)
         {
-            if (hit_part == EGUI_VIEW_FLIP_VIEW_PART_PREVIOUS)
+            if (pressed_part == EGUI_VIEW_FLIP_VIEW_PART_PREVIOUS)
             {
                 flip_view_change_index(self, -1, EGUI_VIEW_FLIP_VIEW_PART_PREVIOUS);
             }
-            else if (hit_part == EGUI_VIEW_FLIP_VIEW_PART_NEXT)
+            else if (pressed_part == EGUI_VIEW_FLIP_VIEW_PART_NEXT)
             {
                 flip_view_change_index(self, 1, EGUI_VIEW_FLIP_VIEW_PART_NEXT);
             }
@@ -885,19 +927,11 @@ static int egui_view_flip_view_on_touch_event(egui_view_t *self, egui_motion_eve
                 flip_view_notify(self);
             }
         }
-        if (flip_view_clear_pressed_state(self, local))
-        {
-            egui_view_invalidate(self);
-        }
+        flip_view_clear_pressed_state(self, local);
         return handled;
     }
     case EGUI_MOTION_EVENT_ACTION_CANCEL:
-        if (flip_view_clear_pressed_state(self, local))
-        {
-            egui_view_invalidate(self);
-            return 1;
-        }
-        return 0;
+        return flip_view_clear_pressed_state(self, local);
     default:
         return 0;
     }
@@ -910,10 +944,7 @@ static int egui_view_flip_view_on_key_event(egui_view_t *self, egui_key_event_t 
 
     if (!egui_view_get_enable(self) || local->read_only_mode || local->compact_mode || local->item_count == 0 || local->items == NULL)
     {
-        if (flip_view_clear_pressed_state(self, local))
-        {
-            egui_view_invalidate(self);
-        }
+        flip_view_clear_pressed_state(self, local);
         return 0;
     }
     if (event->type != EGUI_KEY_EVENT_ACTION_UP)
@@ -929,6 +960,39 @@ static int egui_view_flip_view_on_key_event(egui_view_t *self, egui_key_event_t 
     return egui_view_on_key_event(self, event);
 }
 #endif
+
+#if EGUI_CONFIG_FUNCTION_SUPPORT_KEY
+static int egui_view_flip_view_on_static_key_event(egui_view_t *self, egui_key_event_t *event)
+{
+    EGUI_LOCAL_INIT(egui_view_flip_view_t);
+
+    EGUI_UNUSED(event);
+    flip_view_clear_pressed_state(self, local);
+    return 1;
+}
+#endif
+
+#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
+static int egui_view_flip_view_on_static_touch_event(egui_view_t *self, egui_motion_event_t *event)
+{
+    EGUI_LOCAL_INIT(egui_view_flip_view_t);
+
+    EGUI_UNUSED(event);
+    flip_view_clear_pressed_state(self, local);
+    return 1;
+}
+#endif
+
+void egui_view_flip_view_override_static_preview_api(egui_view_t *self, egui_view_api_t *api)
+{
+    egui_view_copy_api(self, api);
+#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
+    api->on_touch_event = egui_view_flip_view_on_static_touch_event;
+#endif
+#if EGUI_CONFIG_FUNCTION_SUPPORT_KEY
+    api->on_key_event = egui_view_flip_view_on_static_key_event;
+#endif
+}
 
 const egui_view_api_t EGUI_VIEW_API_TABLE_NAME(egui_view_flip_view_t) = {
         .dispatch_touch_event = egui_view_dispatch_touch_event,
