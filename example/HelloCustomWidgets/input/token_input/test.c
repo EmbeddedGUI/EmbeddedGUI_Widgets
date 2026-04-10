@@ -48,6 +48,8 @@ static egui_view_linearlayout_t compact_column;
 static egui_view_token_input_t editor_compact;
 static egui_view_linearlayout_t read_only_column;
 static egui_view_token_input_t editor_read_only;
+static egui_view_api_t editor_compact_api;
+static egui_view_api_t editor_read_only_api;
 
 EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
 EGUI_BACKGROUND_PARAM_INIT(bg_page_panel_params, &bg_page_panel_param, NULL, NULL);
@@ -73,10 +75,21 @@ static const token_input_snapshot_t compact_snapshots[] = {
 
 static const token_input_snapshot_t read_only_snapshot = {NULL, read_only_tokens, 5};
 
-static int consume_preview_touch(egui_view_t *self, egui_motion_event_t *event)
+static void dismiss_primary_token_input(void)
+{
+#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
+    egui_view_clear_focus(EGUI_VIEW_OF(&editor_primary));
+#endif
+}
+
+static int dismiss_primary_focus_on_preview_touch(egui_view_t *self, egui_motion_event_t *event)
 {
     EGUI_UNUSED(self);
-    EGUI_UNUSED(event);
+
+    if (event->type == EGUI_MOTION_EVENT_ACTION_DOWN)
+    {
+        dismiss_primary_token_input();
+    }
     return 1;
 }
 
@@ -157,8 +170,10 @@ void test_init_ui(void)
     egui_view_token_input_set_palette(EGUI_VIEW_OF(&editor_compact), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(TOKEN_INPUT_STANDARD_BORDER),
                                       EGUI_COLOR_HEX(TOKEN_INPUT_STANDARD_TEXT), EGUI_COLOR_HEX(TOKEN_INPUT_STANDARD_MUTED),
                                       EGUI_COLOR_HEX(TOKEN_INPUT_STANDARD_ACCENT), EGUI_COLOR_HEX(TOKEN_INPUT_STANDARD_SHADOW));
-    static egui_view_api_t editor_compact_touch_api;
-    egui_view_override_api_on_touch(EGUI_VIEW_OF(&editor_compact), &editor_compact_touch_api, consume_preview_touch);
+    egui_view_token_input_override_static_preview_api(EGUI_VIEW_OF(&editor_compact), &editor_compact_api);
+#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
+    editor_compact_api.on_touch = dismiss_primary_focus_on_preview_touch;
+#endif
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&editor_compact), false);
 #endif
@@ -180,8 +195,10 @@ void test_init_ui(void)
     egui_view_token_input_set_palette(EGUI_VIEW_OF(&editor_read_only), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(TOKEN_INPUT_STANDARD_BORDER),
                                       EGUI_COLOR_HEX(TOKEN_INPUT_READ_ONLY_TEXT), EGUI_COLOR_HEX(TOKEN_INPUT_READ_ONLY_MUTED),
                                       EGUI_COLOR_HEX(TOKEN_INPUT_READ_ONLY_ACCENT), EGUI_COLOR_HEX(TOKEN_INPUT_READ_ONLY_SHADOW));
-    static egui_view_api_t editor_read_only_touch_api;
-    egui_view_override_api_on_touch(EGUI_VIEW_OF(&editor_read_only), &editor_read_only_touch_api, consume_preview_touch);
+    egui_view_token_input_override_static_preview_api(EGUI_VIEW_OF(&editor_read_only), &editor_read_only_api);
+#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
+    editor_read_only_api.on_touch = dismiss_primary_focus_on_preview_touch;
+#endif
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&editor_read_only), false);
 #endif
@@ -346,6 +363,16 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
         EGUI_SIM_SET_WAIT(p_action, TOKEN_INPUT_RECORD_WAIT);
         return true;
     case 11:
+        if (first_call)
+        {
+            request_page_snapshot();
+        }
+        EGUI_SIM_SET_WAIT(p_action, TOKEN_INPUT_RECORD_WAIT);
+        return true;
+    case 12:
+        set_click_token_part(p_action, EGUI_VIEW_OF(&editor_compact), 0, TOKEN_INPUT_RECORD_WAIT);
+        return true;
+    case 13:
         if (first_call)
         {
             request_page_snapshot();

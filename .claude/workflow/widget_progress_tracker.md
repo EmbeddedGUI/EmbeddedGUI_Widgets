@@ -34,7 +34,7 @@
 
 | 状态 | 控件名 | 分类 | 开始日期 | 当前阶段 | 目标 |
 | --- | --- | --- | --- | --- | --- |
-| 进行中 | `token_input` | `input` | `2026-04-10` | 交互收口与验证 | 复核 `draft / commit / remove / compact overflow / read only / disabled / preview touch-key` 链路里的状态清理、same-target release 与隐藏输入恢复语义、静态 preview 收口与渲染回归 |
+| 暂无 | - | - | - | - | - |
 
 ## 当前保留的 Reference 主线控件
 
@@ -96,6 +96,12 @@
 - `toast_stack` -> `Toast`
 
 ## 最近完成的收口动作
+
+- `2026-04-10`
+  - 完成 `input/token_input` 二次收口：在既有 `reference` 页面结构不再调整的前提下，把工作重点收回到交互行为，补齐 `draft / commit / remove / compact overflow / read only / disabled / preview touch-key` 链路里的状态清理、same-target release、隐藏输入恢复与静态 preview 收口，同时继续保留符合 Fluent / WPF UI 语义的多 token 输入、提交与删除闭环。
+  - `egui_view_token_input.c/.h` 新增统一的 `token_input_clear_pressed_state()` 与 `egui_view_token_input_override_static_preview_api()`；让 `set_font()`、`set_meta_font()`、`set_palette()`、`set_placeholder()`、`set_tokens()`、`add_token()`、`remove_token()`、`clear_draft()`、`set_current_part()`、`set_compact_mode()`、`set_read_only_mode()` 以及 `touch / key guard` 都先清理残留 `pressed_part / pressed_remove / is_pressed`，并把 `ACTION_UP / ACTION_CANCEL` 收口到同一套清理逻辑；同时修正 remove 图标的非拖拽 same-target release 语义，保证 `DOWN(A) -> UP(B)` 不误删，overflow 隐藏输入位后仍保留 draft 与待恢复焦点。
+  - `example/HelloCustomWidgets/input/token_input/test.c` 把底部 `compact / read only` 预览改成统一 static preview API，并补上最小 `dismiss_primary_focus_on_preview_touch()` 用于点击预览时清主控件焦点；`example/HelloUnitTest/test/test_token_input.c` 补齐 “setter 清理 pressed”“same-target release 语义”“touch cancel 清理且不 notify”“read only / disabled guard 清理残留 pressed”“static preview 吞掉 touch / key 且不改 token_count / draft / current part / restore_input_focus” 的交互回归；README 同步重写为 UTF-8 中文版并明确 hidden input restore、静态 preview 与验收标准。
+  - 已通过 `make clean APP=HelloUnitTest PORT=pc_test`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`make clean APP=HelloCustomWidgets APP_SUB=input/token_input PORT=pc`、`make all APP=HelloCustomWidgets APP_SUB=input/token_input PORT=pc`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category input`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/token_input --track reference --timeout 10 --keep-screenshots`、`python scripts/checks/check_docs_encoding.py`，并复核 `runtime_check_output/HelloCustomWidgets_input_token_input/default/frame_0000.png`、`frame_0003.png`、`frame_0006.png`、`frame_0009.png`、`frame_0013.png` 的渲染结果，确认主控件、overflow 摘要与底部 preview 都没有黑白屏、裁切或残留 `pressed` 污染。
 
 - `2026-04-10`
   - 完成 `input/shortcut_recorder` 二次收口：在既有 `reference` 页面结构不再调整的前提下，把工作重点收回到交互行为，补齐 `listening / capture / preset / clear / compact / read only / disabled / preview touch-key` 链路里的状态清理、静态 preview 收口与渲染回归，继续保留符合 Fluent / WPF UI 语义的快捷键录入、preset 应用与清空动作。

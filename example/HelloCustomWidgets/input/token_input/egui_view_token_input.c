@@ -44,6 +44,29 @@ struct egui_view_token_input_metrics
 
 static void token_input_get_metrics(egui_view_token_input_t *local, egui_view_t *self, egui_view_token_input_metrics_t *metrics);
 
+static uint8_t token_input_clear_pressed_state(egui_view_t *self, egui_view_token_input_t *local)
+{
+    uint8_t was_pressed = self->is_pressed ? 1 : 0;
+    uint8_t had_pressed = (uint8_t)(was_pressed || local->pressed_part != EGUI_VIEW_TOKEN_INPUT_PART_NONE || local->pressed_remove);
+
+    if (!had_pressed)
+    {
+        return 0;
+    }
+
+    local->pressed_part = EGUI_VIEW_TOKEN_INPUT_PART_NONE;
+    local->pressed_remove = 0;
+    if (was_pressed)
+    {
+        egui_view_set_pressed(self, false);
+    }
+    else
+    {
+        egui_view_invalidate(self);
+    }
+    return 1;
+}
+
 static uint8_t token_input_is_part_visible_in_metrics(uint8_t part, const egui_view_token_input_metrics_t *metrics)
 {
     if (metrics == NULL)
@@ -576,6 +599,7 @@ static void egui_view_token_input_on_draw(egui_view_t *self)
     egui_color_t muted_color = local->muted_text_color;
     egui_color_t accent_color = local->accent_color;
     egui_color_t shadow_color = local->shadow_color;
+    egui_color_t frame_border_color;
     uint8_t enabled = egui_view_get_enable(self) ? 1 : 0;
     const char *input_text;
     char overflow_text[4] = "+0";
@@ -609,11 +633,16 @@ static void egui_view_token_input_on_draw(egui_view_t *self)
     egui_canvas_draw_round_rectangle_fill(region.location.x, region.location.y + 2, region.size.width, region.size.height,
                                           local->compact_mode ? TOKEN_COMPACT_RADIUS + 1 : TOKEN_STD_RADIUS + 1, shadow_color,
                                           egui_color_alpha_mix(self->alpha, enabled ? 16 : 10));
+    frame_border_color = border_color;
+    if (self->is_focused && enabled && !local->read_only_mode)
+    {
+        frame_border_color = egui_rgb_mix(border_color, accent_color, 24);
+    }
     egui_canvas_draw_round_rectangle_fill(region.location.x, region.location.y, region.size.width, region.size.height,
                                           local->compact_mode ? TOKEN_COMPACT_RADIUS : TOKEN_STD_RADIUS, surface_color, egui_color_alpha_mix(self->alpha, 96));
     egui_canvas_draw_round_rectangle(region.location.x, region.location.y, region.size.width, region.size.height,
-                                     local->compact_mode ? TOKEN_COMPACT_RADIUS : TOKEN_STD_RADIUS, 1,
-                                     self->is_focused ? egui_rgb_mix(border_color, accent_color, 24) : border_color, egui_color_alpha_mix(self->alpha, 58));
+                                     local->compact_mode ? TOKEN_COMPACT_RADIUS : TOKEN_STD_RADIUS, 1, frame_border_color,
+                                     egui_color_alpha_mix(self->alpha, 58));
 
     token_input_get_metrics(local, self, &metrics);
     for (index = 0; index < metrics.visible_token_count; index++)
@@ -923,16 +952,19 @@ static int egui_view_token_input_on_touch_event(egui_view_t *self, egui_motion_e
 {
     EGUI_LOCAL_INIT(egui_view_token_input_t);
     uint8_t hit_part;
+    uint8_t hit_remove = 0;
 
     if (!egui_view_get_enable(self) || local->read_only_mode)
     {
+        token_input_clear_pressed_state(self, local);
         return 0;
     }
 
     switch (event->type)
     {
     case EGUI_MOTION_EVENT_ACTION_DOWN:
-        hit_part = token_input_hit_part(local, self, event->location.x, event->location.y, &local->pressed_remove);
+        token_input_clear_pressed_state(self, local);
+        hit_part = token_input_hit_part(local, self, event->location.x, event->location.y, &hit_remove);
         if (hit_part == EGUI_VIEW_TOKEN_INPUT_PART_NONE)
         {
             return 0;
@@ -944,6 +976,7 @@ static int egui_view_token_input_on_touch_event(egui_view_t *self, egui_motion_e
         }
 #endif
         local->pressed_part = hit_part;
+        local->pressed_remove = hit_remove;
         local->restore_input_focus = 0;
         local->current_part = hit_part;
         egui_view_set_pressed(self, true);
@@ -956,10 +989,10 @@ static int egui_view_token_input_on_touch_event(egui_view_t *self, egui_motion_e
         }
         {
             uint8_t is_pressed = 0;
-            uint8_t hit_remove = 0;
+            uint8_t move_hit_remove = 0;
 
-            hit_part = token_input_hit_part(local, self, event->location.x, event->location.y, &hit_remove);
-            if (local->pressed_part == hit_part && local->pressed_remove == hit_remove)
+            hit_part = token_input_hit_part(local, self, event->location.x, event->location.y, &move_hit_remove);
+            if (local->pressed_part == hit_part && local->pressed_remove == move_hit_remove)
             {
                 is_pressed = 1;
             }
@@ -975,19 +1008,20 @@ static int egui_view_token_input_on_touch_event(egui_view_t *self, egui_motion_e
         uint8_t pressed_part = local->pressed_part;
         uint8_t pressed_remove = local->pressed_remove;
         uint8_t was_pressed = self->is_pressed;
-        uint8_t hit_remove = 0;
         uint8_t should_remove = 0;
 
         hit_part = token_input_hit_part(local, self, event->location.x, event->location.y, &hit_remove);
+        if (pressed_part == EGUI_VIEW_TOKEN_INPUT_PART_NONE)
+        {
+            return token_input_clear_pressed_state(self, local) ? 1 : (hit_part != EGUI_VIEW_TOKEN_INPUT_PART_NONE ? 1 : 0);
+        }
         should_remove = was_pressed && pressed_part != EGUI_VIEW_TOKEN_INPUT_PART_NONE && pressed_part == hit_part && pressed_remove && hit_remove;
         if (!should_remove && was_pressed && pressed_part != EGUI_VIEW_TOKEN_INPUT_PART_NONE && pressed_part == hit_part && pressed_remove == hit_remove)
         {
             local->restore_input_focus = 0;
             local->current_part = hit_part;
         }
-        local->pressed_part = EGUI_VIEW_TOKEN_INPUT_PART_NONE;
-        local->pressed_remove = 0;
-        egui_view_set_pressed(self, false);
+        token_input_clear_pressed_state(self, local);
         if (should_remove)
         {
             egui_view_token_input_remove_token(self, hit_part);
@@ -997,11 +1031,7 @@ static int egui_view_token_input_on_touch_event(egui_view_t *self, egui_motion_e
         egui_view_invalidate(self);
         return hit_part != EGUI_VIEW_TOKEN_INPUT_PART_NONE ? 1 : 0;
     case EGUI_MOTION_EVENT_ACTION_CANCEL:
-        local->pressed_part = EGUI_VIEW_TOKEN_INPUT_PART_NONE;
-        local->pressed_remove = 0;
-        egui_view_set_pressed(self, false);
-        egui_view_invalidate(self);
-        return 1;
+        return token_input_clear_pressed_state(self, local);
     default:
         return 0;
     }
@@ -1011,6 +1041,9 @@ static int egui_view_token_input_on_touch_event(egui_view_t *self, egui_motion_e
 #if EGUI_CONFIG_FUNCTION_SUPPORT_KEY
 static int egui_view_token_input_on_key_event(egui_view_t *self, egui_key_event_t *event)
 {
+    EGUI_LOCAL_INIT(egui_view_token_input_t);
+
+    token_input_clear_pressed_state(self, local);
     switch (event->type)
     {
     case EGUI_KEY_EVENT_ACTION_DOWN:
@@ -1041,6 +1074,39 @@ static int egui_view_token_input_on_key_event(egui_view_t *self, egui_key_event_
     }
 }
 #endif
+
+#if EGUI_CONFIG_FUNCTION_SUPPORT_KEY
+static int egui_view_token_input_on_static_key_event(egui_view_t *self, egui_key_event_t *event)
+{
+    EGUI_LOCAL_INIT(egui_view_token_input_t);
+
+    EGUI_UNUSED(event);
+    token_input_clear_pressed_state(self, local);
+    return 1;
+}
+#endif
+
+#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
+static int egui_view_token_input_on_static_touch_event(egui_view_t *self, egui_motion_event_t *event)
+{
+    EGUI_LOCAL_INIT(egui_view_token_input_t);
+
+    EGUI_UNUSED(event);
+    token_input_clear_pressed_state(self, local);
+    return 1;
+}
+#endif
+
+void egui_view_token_input_override_static_preview_api(egui_view_t *self, egui_view_api_t *api)
+{
+    egui_view_copy_api(self, api);
+#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
+    api->on_touch_event = egui_view_token_input_on_static_touch_event;
+#endif
+#if EGUI_CONFIG_FUNCTION_SUPPORT_KEY
+    api->on_key_event = egui_view_token_input_on_static_key_event;
+#endif
+}
 
 static egui_view_api_t EGUI_VIEW_API_TABLE_NAME(egui_view_token_input_t) = {
         .draw = egui_view_draw,
@@ -1100,23 +1166,32 @@ void egui_view_token_input_init(egui_view_t *self)
 void egui_view_token_input_set_font(egui_view_t *self, const egui_font_t *font)
 {
     EGUI_LOCAL_INIT(egui_view_token_input_t);
+    uint8_t had_pressed = token_input_clear_pressed_state(self, local);
 
     local->font = font == NULL ? (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT : font;
-    egui_view_invalidate(self);
+    if (!had_pressed)
+    {
+        egui_view_invalidate(self);
+    }
 }
 
 void egui_view_token_input_set_meta_font(egui_view_t *self, const egui_font_t *font)
 {
     EGUI_LOCAL_INIT(egui_view_token_input_t);
+    uint8_t had_pressed = token_input_clear_pressed_state(self, local);
 
     local->meta_font = font == NULL ? (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT : font;
-    egui_view_invalidate(self);
+    if (!had_pressed)
+    {
+        egui_view_invalidate(self);
+    }
 }
 
 void egui_view_token_input_set_palette(egui_view_t *self, egui_color_t surface_color, egui_color_t border_color, egui_color_t text_color,
                                        egui_color_t muted_text_color, egui_color_t accent_color, egui_color_t shadow_color)
 {
     EGUI_LOCAL_INIT(egui_view_token_input_t);
+    uint8_t had_pressed = token_input_clear_pressed_state(self, local);
 
     local->surface_color = surface_color;
     local->border_color = border_color;
@@ -1124,20 +1199,28 @@ void egui_view_token_input_set_palette(egui_view_t *self, egui_color_t surface_c
     local->muted_text_color = muted_text_color;
     local->accent_color = accent_color;
     local->shadow_color = shadow_color;
-    egui_view_invalidate(self);
+    if (!had_pressed)
+    {
+        egui_view_invalidate(self);
+    }
 }
 
 void egui_view_token_input_set_placeholder(egui_view_t *self, const char *placeholder)
 {
     EGUI_LOCAL_INIT(egui_view_token_input_t);
+    uint8_t had_pressed = token_input_clear_pressed_state(self, local);
 
     token_input_copy_text(local->placeholder, sizeof(local->placeholder), placeholder);
-    egui_view_invalidate(self);
+    if (!had_pressed)
+    {
+        egui_view_invalidate(self);
+    }
 }
 
 void egui_view_token_input_set_tokens(egui_view_t *self, const char **tokens, uint8_t count)
 {
     EGUI_LOCAL_INIT(egui_view_token_input_t);
+    uint8_t had_pressed = token_input_clear_pressed_state(self, local);
     uint8_t index;
 
     local->token_count = 0;
@@ -1159,7 +1242,10 @@ void egui_view_token_input_set_tokens(egui_view_t *self, const char **tokens, ui
     local->draft_text[0] = '\0';
     token_input_normalize_state(local);
     token_input_normalize_state_for_layout(local, self);
-    egui_view_invalidate(self);
+    if (!had_pressed)
+    {
+        egui_view_invalidate(self);
+    }
 }
 
 uint8_t egui_view_token_input_add_token(egui_view_t *self, const char *text)
@@ -1167,6 +1253,7 @@ uint8_t egui_view_token_input_add_token(egui_view_t *self, const char *text)
     EGUI_LOCAL_INIT(egui_view_token_input_t);
     char normalized[EGUI_VIEW_TOKEN_INPUT_MAX_TOKEN_LEN + 1];
 
+    token_input_clear_pressed_state(self, local);
     if (local->token_count >= EGUI_VIEW_TOKEN_INPUT_MAX_TOKENS)
     {
         return 0;
@@ -1188,6 +1275,7 @@ uint8_t egui_view_token_input_remove_token(egui_view_t *self, uint8_t index)
 {
     EGUI_LOCAL_INIT(egui_view_token_input_t);
 
+    token_input_clear_pressed_state(self, local);
     if (index >= local->token_count)
     {
         return 0;
@@ -1230,6 +1318,7 @@ void egui_view_token_input_clear_draft(egui_view_t *self)
 {
     EGUI_LOCAL_INIT(egui_view_token_input_t);
 
+    token_input_clear_pressed_state(self, local);
     local->draft_len = 0;
     local->draft_text[0] = '\0';
     token_input_normalize_state(local);
@@ -1242,6 +1331,7 @@ void egui_view_token_input_set_current_part(egui_view_t *self, uint8_t part)
     EGUI_LOCAL_INIT(egui_view_token_input_t);
     egui_view_token_input_metrics_t metrics;
 
+    token_input_clear_pressed_state(self, local);
     if (self->region.size.width > 0 && self->region.size.height > 0)
     {
         token_input_get_metrics(local, self, &metrics);
@@ -1271,16 +1361,21 @@ uint8_t egui_view_token_input_get_current_part(egui_view_t *self)
 void egui_view_token_input_set_compact_mode(egui_view_t *self, uint8_t compact_mode)
 {
     EGUI_LOCAL_INIT(egui_view_token_input_t);
+    uint8_t had_pressed = token_input_clear_pressed_state(self, local);
 
     local->compact_mode = compact_mode ? 1 : 0;
     token_input_normalize_state_for_layout(local, self);
-    egui_view_invalidate(self);
+    if (!had_pressed)
+    {
+        egui_view_invalidate(self);
+    }
 }
 
 void egui_view_token_input_set_read_only_mode(egui_view_t *self, uint8_t read_only_mode)
 {
     EGUI_LOCAL_INIT(egui_view_token_input_t);
     uint8_t next_mode = read_only_mode ? 1 : 0;
+    uint8_t had_pressed = token_input_clear_pressed_state(self, local);
 
     if (next_mode && !local->read_only_mode && local->draft_len > 0 && local->current_part == EGUI_VIEW_TOKEN_INPUT_PART_INPUT)
     {
@@ -1289,7 +1384,10 @@ void egui_view_token_input_set_read_only_mode(egui_view_t *self, uint8_t read_on
     local->read_only_mode = next_mode;
     token_input_normalize_state(local);
     token_input_normalize_state_for_layout(local, self);
-    egui_view_invalidate(self);
+    if (!had_pressed)
+    {
+        egui_view_invalidate(self);
+    }
 }
 
 void egui_view_token_input_set_on_changed_listener(egui_view_t *self, egui_view_on_token_input_changed_listener_t listener)

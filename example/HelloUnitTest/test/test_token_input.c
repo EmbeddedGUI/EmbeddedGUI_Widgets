@@ -8,6 +8,8 @@
 #include "../../HelloCustomWidgets/input/token_input/egui_view_token_input.c"
 
 static egui_view_token_input_t test_token_input;
+static egui_view_token_input_t preview_token_input;
+static egui_view_api_t preview_api;
 static uint8_t g_changed_token_count = 0xFF;
 static uint8_t g_changed_part = EGUI_VIEW_TOKEN_INPUT_PART_NONE;
 static uint8_t g_changed_count = 0;
@@ -36,7 +38,18 @@ static void setup_token_input(const char **tokens, uint8_t count)
     reset_changed_state();
 }
 
-static void layout_token_input(egui_dim_t x, egui_dim_t y, egui_dim_t width, egui_dim_t height)
+static void setup_preview_token_input(const char **tokens, uint8_t count)
+{
+    egui_view_token_input_init(EGUI_VIEW_OF(&preview_token_input));
+    egui_view_set_size(EGUI_VIEW_OF(&preview_token_input), 106, 48);
+    egui_view_token_input_set_placeholder(EGUI_VIEW_OF(&preview_token_input), "Add");
+    egui_view_token_input_set_tokens(EGUI_VIEW_OF(&preview_token_input), tokens, count);
+    egui_view_token_input_set_compact_mode(EGUI_VIEW_OF(&preview_token_input), 1);
+    egui_view_token_input_set_current_part(EGUI_VIEW_OF(&preview_token_input), 0);
+    egui_view_token_input_override_static_preview_api(EGUI_VIEW_OF(&preview_token_input), &preview_api);
+}
+
+static void layout_view(egui_view_t *view, egui_dim_t x, egui_dim_t y, egui_dim_t width, egui_dim_t height)
 {
     egui_region_t region;
 
@@ -44,11 +57,21 @@ static void layout_token_input(egui_dim_t x, egui_dim_t y, egui_dim_t width, egu
     region.location.y = y;
     region.size.width = width;
     region.size.height = height;
-    egui_view_layout(EGUI_VIEW_OF(&test_token_input), &region);
-    egui_region_copy(&EGUI_VIEW_OF(&test_token_input)->region_screen, &region);
+    egui_view_layout(view, &region);
+    egui_region_copy(&view->region_screen, &region);
 }
 
-static int send_touch_event(uint8_t type, egui_dim_t x, egui_dim_t y)
+static void layout_token_input(egui_dim_t x, egui_dim_t y, egui_dim_t width, egui_dim_t height)
+{
+    layout_view(EGUI_VIEW_OF(&test_token_input), x, y, width, height);
+}
+
+static void layout_preview_token_input(void)
+{
+    layout_view(EGUI_VIEW_OF(&preview_token_input), 12, 18, 106, 48);
+}
+
+static int send_touch_to_view(egui_view_t *view, uint8_t type, egui_dim_t x, egui_dim_t y)
 {
     egui_motion_event_t event;
 
@@ -56,17 +79,51 @@ static int send_touch_event(uint8_t type, egui_dim_t x, egui_dim_t y)
     event.type = type;
     event.location.x = x;
     event.location.y = y;
-    return EGUI_VIEW_OF(&test_token_input)->api->on_touch_event(EGUI_VIEW_OF(&test_token_input), &event);
+    return view->api->on_touch_event(view, &event);
 }
 
-static int send_key_event(uint8_t type, uint8_t key_code)
+static int send_key_to_view(egui_view_t *view, uint8_t type, uint8_t key_code)
 {
     egui_key_event_t event;
 
     memset(&event, 0, sizeof(event));
     event.type = type;
     event.key_code = key_code;
-    return EGUI_VIEW_OF(&test_token_input)->api->on_key_event(EGUI_VIEW_OF(&test_token_input), &event);
+    return view->api->on_key_event(view, &event);
+}
+
+static int send_touch_event(uint8_t type, egui_dim_t x, egui_dim_t y)
+{
+    return send_touch_to_view(EGUI_VIEW_OF(&test_token_input), type, x, y);
+}
+
+static int send_preview_touch_event(uint8_t type, egui_dim_t x, egui_dim_t y)
+{
+    return send_touch_to_view(EGUI_VIEW_OF(&preview_token_input), type, x, y);
+}
+
+static int send_key_event(uint8_t type, uint8_t key_code)
+{
+    return send_key_to_view(EGUI_VIEW_OF(&test_token_input), type, key_code);
+}
+
+static int send_preview_key_event(uint8_t type, uint8_t key_code)
+{
+    return send_key_to_view(EGUI_VIEW_OF(&preview_token_input), type, key_code);
+}
+
+static void seed_pressed_state(uint8_t part, uint8_t pressed_remove)
+{
+    EGUI_VIEW_OF(&test_token_input)->is_pressed = 1;
+    test_token_input.pressed_part = part;
+    test_token_input.pressed_remove = pressed_remove ? 1 : 0;
+}
+
+static void assert_pressed_cleared(void)
+{
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_token_input)->is_pressed);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_TOKEN_INPUT_PART_NONE, test_token_input.pressed_part);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, test_token_input.pressed_remove);
 }
 
 static void assert_changed_state(uint8_t count, uint8_t token_count, uint8_t part)
@@ -256,6 +313,7 @@ static void test_token_input_release_requires_same_remove_target(void)
     EGUI_TEST_ASSERT_TRUE(strcmp("beta", egui_view_token_input_get_token(EGUI_VIEW_OF(&test_token_input), 1)) == 0);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_TOKEN_INPUT_PART_NONE, test_token_input.pressed_part);
     EGUI_TEST_ASSERT_EQUAL_INT(0, test_token_input.pressed_remove);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_token_input)->is_pressed);
     assert_changed_state(0, 0xFF, EGUI_VIEW_TOKEN_INPUT_PART_NONE);
 
     setup_token_input(tokens, 3);
@@ -554,6 +612,7 @@ static void test_token_input_set_tokens_clears_hidden_pressed_state_for_overflow
     test_token_input.current_part = EGUI_VIEW_TOKEN_INPUT_PART_INPUT;
     test_token_input.pressed_part = EGUI_VIEW_TOKEN_INPUT_PART_INPUT;
     test_token_input.pressed_remove = 1;
+    EGUI_VIEW_OF(&test_token_input)->is_pressed = 1;
 
     egui_view_token_input_set_tokens(EGUI_VIEW_OF(&test_token_input), overflow_tokens, 5);
     for (index = 0; index < 5; index++)
@@ -568,6 +627,7 @@ static void test_token_input_set_tokens_clears_hidden_pressed_state_for_overflow
     EGUI_TEST_ASSERT_EQUAL_INT(last_visible, test_token_input.current_part);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_TOKEN_INPUT_PART_NONE, test_token_input.pressed_part);
     EGUI_TEST_ASSERT_EQUAL_INT(0, test_token_input.pressed_remove);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_token_input)->is_pressed);
 }
 
 static void test_token_input_set_read_only_mode_clears_input_pressed_state_after_layout(void)
@@ -579,11 +639,13 @@ static void test_token_input_set_read_only_mode_clears_input_pressed_state_after
     test_token_input.current_part = EGUI_VIEW_TOKEN_INPUT_PART_INPUT;
     test_token_input.pressed_part = EGUI_VIEW_TOKEN_INPUT_PART_INPUT;
     test_token_input.pressed_remove = 1;
+    EGUI_VIEW_OF(&test_token_input)->is_pressed = 1;
 
     egui_view_token_input_set_read_only_mode(EGUI_VIEW_OF(&test_token_input), 1);
     EGUI_TEST_ASSERT_EQUAL_INT(0, test_token_input.current_part);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_TOKEN_INPUT_PART_NONE, test_token_input.pressed_part);
     EGUI_TEST_ASSERT_EQUAL_INT(0, test_token_input.pressed_remove);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_token_input)->is_pressed);
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_token_input_get_current_part(EGUI_VIEW_OF(&test_token_input)));
 }
 
@@ -942,6 +1004,124 @@ static void test_token_input_read_only_and_disabled_key_guard(void)
     EGUI_TEST_ASSERT_EQUAL_INT(0, g_changed_count);
 }
 
+static void test_token_input_setters_clear_pressed_state(void)
+{
+    static const char *tokens[] = {"alpha", "beta"};
+    static const char *next_tokens[] = {"ui", "qa", "ops"};
+
+    setup_token_input(tokens, 2);
+
+    seed_pressed_state(0, 1);
+    egui_view_token_input_set_font(EGUI_VIEW_OF(&test_token_input), NULL);
+    assert_pressed_cleared();
+
+    seed_pressed_state(0, 1);
+    egui_view_token_input_set_meta_font(EGUI_VIEW_OF(&test_token_input), NULL);
+    assert_pressed_cleared();
+
+    seed_pressed_state(0, 1);
+    egui_view_token_input_set_palette(EGUI_VIEW_OF(&test_token_input), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD7DFE7), EGUI_COLOR_HEX(0x1F2A35),
+                                      EGUI_COLOR_HEX(0x7A8794), EGUI_COLOR_HEX(0x4A86E8), EGUI_COLOR_HEX(0xDCE5EE));
+    assert_pressed_cleared();
+
+    seed_pressed_state(0, 1);
+    egui_view_token_input_set_placeholder(EGUI_VIEW_OF(&test_token_input), "People");
+    assert_pressed_cleared();
+
+    seed_pressed_state(0, 1);
+    egui_view_token_input_set_tokens(EGUI_VIEW_OF(&test_token_input), next_tokens, 3);
+    assert_pressed_cleared();
+
+    seed_pressed_state(0, 1);
+    EGUI_TEST_ASSERT_TRUE(egui_view_token_input_add_token(EGUI_VIEW_OF(&test_token_input), "net"));
+    assert_pressed_cleared();
+
+    seed_pressed_state(0, 1);
+    EGUI_TEST_ASSERT_TRUE(egui_view_token_input_remove_token(EGUI_VIEW_OF(&test_token_input), 0));
+    assert_pressed_cleared();
+
+    test_token_input.draft_len = 3;
+    memcpy(test_token_input.draft_text, "ops", 4);
+    seed_pressed_state(EGUI_VIEW_TOKEN_INPUT_PART_INPUT, 0);
+    egui_view_token_input_clear_draft(EGUI_VIEW_OF(&test_token_input));
+    assert_pressed_cleared();
+
+    seed_pressed_state(0, 1);
+    egui_view_token_input_set_current_part(EGUI_VIEW_OF(&test_token_input), EGUI_VIEW_TOKEN_INPUT_PART_INPUT);
+    assert_pressed_cleared();
+
+    seed_pressed_state(0, 1);
+    egui_view_token_input_set_compact_mode(EGUI_VIEW_OF(&test_token_input), 1);
+    assert_pressed_cleared();
+
+    setup_token_input(tokens, 2);
+    seed_pressed_state(EGUI_VIEW_TOKEN_INPUT_PART_INPUT, 0);
+    egui_view_token_input_set_read_only_mode(EGUI_VIEW_OF(&test_token_input), 1);
+    assert_pressed_cleared();
+}
+
+static void test_token_input_touch_cancel_clears_pressed_state_without_notify(void)
+{
+    static const char *tokens[] = {"alpha", "beta", "gamma"};
+    egui_region_t remove_region;
+    egui_dim_t x;
+    egui_dim_t y;
+
+    setup_token_input(tokens, 3);
+    layout_token_input(12, 18, 196, 92);
+    EGUI_TEST_ASSERT_TRUE(egui_view_token_input_get_remove_region(EGUI_VIEW_OF(&test_token_input), 1, &remove_region));
+    x = remove_region.location.x + remove_region.size.width / 2;
+    y = remove_region.location.y + remove_region.size.height / 2;
+
+    EGUI_TEST_ASSERT_TRUE(send_touch_event(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
+    EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&test_token_input)->is_pressed);
+    EGUI_TEST_ASSERT_EQUAL_INT(1, test_token_input.pressed_part);
+    EGUI_TEST_ASSERT_EQUAL_INT(1, test_token_input.pressed_remove);
+
+    EGUI_TEST_ASSERT_TRUE(send_touch_event(EGUI_MOTION_EVENT_ACTION_CANCEL, x, y));
+    assert_pressed_cleared();
+    EGUI_TEST_ASSERT_EQUAL_INT(3, egui_view_token_input_get_token_count(EGUI_VIEW_OF(&test_token_input)));
+    assert_changed_state(0, 0xFF, EGUI_VIEW_TOKEN_INPUT_PART_NONE);
+}
+
+static void test_token_input_read_only_and_disabled_guards_clear_pressed_state(void)
+{
+    static const char *tokens[] = {"alpha", "beta"};
+    egui_region_t token_region;
+    egui_dim_t x;
+    egui_dim_t y;
+
+    setup_token_input(tokens, 2);
+    egui_view_token_input_set_read_only_mode(EGUI_VIEW_OF(&test_token_input), 1);
+    layout_token_input(12, 18, 196, 92);
+    EGUI_TEST_ASSERT_TRUE(egui_view_token_input_get_part_region(EGUI_VIEW_OF(&test_token_input), 0, &token_region));
+    x = token_region.location.x + token_region.size.width / 2;
+    y = token_region.location.y + token_region.size.height / 2;
+
+    seed_pressed_state(0, 1);
+    EGUI_TEST_ASSERT_TRUE(send_key_event(EGUI_KEY_EVENT_ACTION_DOWN, EGUI_KEY_CODE_RIGHT));
+    assert_pressed_cleared();
+    seed_pressed_state(0, 1);
+    EGUI_TEST_ASSERT_FALSE(send_touch_event(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
+    assert_pressed_cleared();
+    assert_changed_state(0, 0xFF, EGUI_VIEW_TOKEN_INPUT_PART_NONE);
+
+    setup_token_input(tokens, 2);
+    layout_token_input(12, 18, 196, 92);
+    EGUI_TEST_ASSERT_TRUE(egui_view_token_input_get_part_region(EGUI_VIEW_OF(&test_token_input), 0, &token_region));
+    x = token_region.location.x + token_region.size.width / 2;
+    y = token_region.location.y + token_region.size.height / 2;
+    egui_view_set_enable(EGUI_VIEW_OF(&test_token_input), 0);
+
+    seed_pressed_state(0, 1);
+    EGUI_TEST_ASSERT_TRUE(send_key_event(EGUI_KEY_EVENT_ACTION_DOWN, EGUI_KEY_CODE_BACKSPACE));
+    assert_pressed_cleared();
+    seed_pressed_state(0, 1);
+    EGUI_TEST_ASSERT_FALSE(send_touch_event(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
+    assert_pressed_cleared();
+    assert_changed_state(0, 0xFF, EGUI_VIEW_TOKEN_INPUT_PART_NONE);
+}
+
 static void test_token_input_read_only_toggle_restores_draft_input_focus(void)
 {
     static const char *tokens[] = {"alpha", "beta"};
@@ -1270,6 +1450,44 @@ static void test_token_input_set_tokens_skips_empty_and_whitespace_entries(void)
     EGUI_TEST_ASSERT_EQUAL_INT(0, g_changed_count);
 }
 
+static void test_token_input_static_preview_consumes_input_and_clears_pressed_state(void)
+{
+    static const char *tokens[] = {"ui", "qa", "ops"};
+    egui_region_t remove_region;
+    egui_dim_t x;
+    egui_dim_t y;
+
+    setup_preview_token_input(tokens, 3);
+    layout_preview_token_input();
+    EGUI_TEST_ASSERT_TRUE(egui_view_token_input_get_remove_region(EGUI_VIEW_OF(&preview_token_input), 0, &remove_region));
+    x = remove_region.location.x + remove_region.size.width / 2;
+    y = remove_region.location.y + remove_region.size.height / 2;
+
+    EGUI_VIEW_OF(&preview_token_input)->is_pressed = 1;
+    preview_token_input.pressed_part = 0;
+    preview_token_input.pressed_remove = 1;
+    EGUI_TEST_ASSERT_TRUE(send_preview_touch_event(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&preview_token_input)->is_pressed);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_TOKEN_INPUT_PART_NONE, preview_token_input.pressed_part);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, preview_token_input.pressed_remove);
+    EGUI_TEST_ASSERT_EQUAL_INT(3, egui_view_token_input_get_token_count(EGUI_VIEW_OF(&preview_token_input)));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_token_input_get_current_part(EGUI_VIEW_OF(&preview_token_input)));
+    EGUI_TEST_ASSERT_TRUE(strcmp("", egui_view_token_input_get_draft_text(EGUI_VIEW_OF(&preview_token_input))) == 0);
+
+    EGUI_VIEW_OF(&preview_token_input)->is_pressed = 1;
+    preview_token_input.pressed_part = 0;
+    preview_token_input.pressed_remove = 0;
+    EGUI_TEST_ASSERT_TRUE(send_preview_key_event(EGUI_KEY_EVENT_ACTION_DOWN, EGUI_KEY_CODE_BACKSPACE));
+    EGUI_TEST_ASSERT_TRUE(send_preview_key_event(EGUI_KEY_EVENT_ACTION_UP, EGUI_KEY_CODE_BACKSPACE));
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&preview_token_input)->is_pressed);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_TOKEN_INPUT_PART_NONE, preview_token_input.pressed_part);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, preview_token_input.pressed_remove);
+    EGUI_TEST_ASSERT_EQUAL_INT(3, egui_view_token_input_get_token_count(EGUI_VIEW_OF(&preview_token_input)));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_token_input_get_current_part(EGUI_VIEW_OF(&preview_token_input)));
+    EGUI_TEST_ASSERT_TRUE(strcmp("", egui_view_token_input_get_draft_text(EGUI_VIEW_OF(&preview_token_input))) == 0);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, preview_token_input.restore_input_focus);
+}
+
 void test_token_input_run(void)
 {
     EGUI_TEST_SUITE_BEGIN(token_input);
@@ -1292,6 +1510,9 @@ void test_token_input_run(void)
     EGUI_TEST_RUN(test_token_input_add_token_normalizes_internal_focus_for_overflow_layout);
     EGUI_TEST_RUN(test_token_input_set_tokens_clears_hidden_pressed_state_for_overflow_layout);
     EGUI_TEST_RUN(test_token_input_set_read_only_mode_clears_input_pressed_state_after_layout);
+    EGUI_TEST_RUN(test_token_input_setters_clear_pressed_state);
+    EGUI_TEST_RUN(test_token_input_touch_cancel_clears_pressed_state_without_notify);
+    EGUI_TEST_RUN(test_token_input_read_only_and_disabled_guards_clear_pressed_state);
     EGUI_TEST_RUN(test_token_input_compact_hides_input_when_wrapped_outside_view);
     EGUI_TEST_RUN(test_token_input_hidden_input_ignores_printable_keys);
     EGUI_TEST_RUN(test_token_input_hidden_input_keeps_existing_draft_without_commit);
@@ -1314,6 +1535,7 @@ void test_token_input_run(void)
     EGUI_TEST_RUN(test_token_input_add_token_clamps_at_max_capacity);
     EGUI_TEST_RUN(test_token_input_add_token_trims_surrounding_whitespace);
     EGUI_TEST_RUN(test_token_input_set_tokens_skips_empty_and_whitespace_entries);
+    EGUI_TEST_RUN(test_token_input_static_preview_consumes_input_and_clears_pressed_state);
 
     EGUI_TEST_SUITE_END();
 }
