@@ -101,6 +101,9 @@ python scripts/checks/check_docs_encoding.py
 - 图标、文本和左右留白必须均衡，不能出现图标压字或文本贴边
 - 页面中不再出现 guide、状态回显、section divider 和外部 preview 标签
 - `compact` 与 `read only` 必须保持 Fluent / WPF UI 的低噪音浅色 reference
+- 主按钮的 setter 更新、样式切换、`touch cancel`、`!enable` guard 和 key guard 之后都不能残留 `pressed` 覆盖层
+- `Enter / Space` 只允许在完整 `ACTION_DOWN -> ACTION_UP` 闭环后切换状态；无关按键不能留下残留 `pressed`
+- 底部 `compact / read only` 预览必须吞掉 touch / key 输入，并在收到输入后立即清理残留 `pressed`，保证静态对照渲染稳定
 
 ## 9. 已知限制与后续方向
 
@@ -144,4 +147,5 @@ python scripts/checks/check_docs_encoding.py
 - 基于现有 `egui_view_toggle_button` 核心控件做示例级 reference 收口，不下沉到框架层
 - 颜色与圆角由当前目录的样式包装统一收敛
 - 主按钮保留最小键盘闭环，底部 `compact` 与 `read only` 固定为静态对照
+- 本轮示例层额外补了一层 touch / key 包装，用来统一清理 `pressed`、拦截禁用态输入，并保证静态 preview 不会误切换
 - 先完成示例级审阅稳定性，再评估是否抽象出更完整的 read-only / focus API

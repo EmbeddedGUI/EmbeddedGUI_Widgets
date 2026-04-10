@@ -59,33 +59,13 @@ static const toggle_button_snapshot_t read_only_snapshot = {
 static uint8_t current_primary_snapshot = 0;
 static uint8_t current_compact_snapshot = 0;
 
-static int consume_preview_touch(egui_view_t *self, egui_motion_event_t *event)
-{
-    EGUI_UNUSED(self);
-
-    if (event->type == EGUI_MOTION_EVENT_ACTION_UP || event->type == EGUI_MOTION_EVENT_ACTION_CANCEL)
-    {
-        egui_view_set_pressed(self, false);
-    }
-    return 1;
-}
-
-#if EGUI_CONFIG_FUNCTION_SUPPORT_KEY
-static int consume_preview_key(egui_view_t *self, egui_key_event_t *event)
-{
-    EGUI_UNUSED(self);
-    EGUI_UNUSED(event);
-    return 1;
-}
-#endif
-
 static void apply_snapshot_to_button(egui_view_toggle_button_t *button, const toggle_button_snapshot_t *snapshot)
 {
     button->on_color = snapshot->on_color;
     button->off_color = snapshot->off_color;
     egui_view_toggle_button_set_icon(EGUI_VIEW_OF(button), snapshot->icon);
     egui_view_toggle_button_set_text(EGUI_VIEW_OF(button), snapshot->text);
-    egui_view_toggle_button_set_toggled(EGUI_VIEW_OF(button), snapshot->toggled);
+    hcw_toggle_button_set_toggled(EGUI_VIEW_OF(button), snapshot->toggled);
 }
 
 static void apply_primary_snapshot(uint8_t index)
@@ -131,10 +111,8 @@ void test_init_ui(void)
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&button_primary), true);
 #endif
-#if EGUI_CONFIG_FUNCTION_SUPPORT_KEY
-    static egui_view_api_t button_primary_key_api;
-    egui_view_override_api_on_key(EGUI_VIEW_OF(&button_primary), &button_primary_key_api, hcw_toggle_button_on_key_event);
-#endif
+    static egui_view_api_t button_primary_interaction_api;
+    hcw_toggle_button_override_interaction_api(EGUI_VIEW_OF(&button_primary), &button_primary_interaction_api);
     egui_view_set_margin(EGUI_VIEW_OF(&button_primary), 0, 0, 0, 8);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&button_primary));
 
@@ -150,11 +128,8 @@ void test_init_ui(void)
     egui_view_toggle_button_set_icon_font(EGUI_VIEW_OF(&button_compact), EGUI_FONT_ICON_MS_16);
     hcw_toggle_button_apply_compact_style(EGUI_VIEW_OF(&button_compact));
     egui_view_set_padding(EGUI_VIEW_OF(&button_compact), 1, 1, 0, 0);
-    static egui_view_api_t button_compact_touch_api;
-    egui_view_override_api_on_touch(EGUI_VIEW_OF(&button_compact), &button_compact_touch_api, consume_preview_touch);
-#if EGUI_CONFIG_FUNCTION_SUPPORT_KEY
-    egui_view_override_api_on_key(EGUI_VIEW_OF(&button_compact), &button_compact_touch_api, consume_preview_key);
-#endif
+    static egui_view_api_t button_compact_preview_api;
+    hcw_toggle_button_override_static_preview_api(EGUI_VIEW_OF(&button_compact), &button_compact_preview_api);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&button_compact), false);
 #endif
@@ -167,11 +142,8 @@ void test_init_ui(void)
     egui_view_toggle_button_set_icon_font(EGUI_VIEW_OF(&button_read_only), EGUI_FONT_ICON_MS_16);
     hcw_toggle_button_apply_read_only_style(EGUI_VIEW_OF(&button_read_only));
     egui_view_set_padding(EGUI_VIEW_OF(&button_read_only), 1, 1, 0, 0);
-    static egui_view_api_t button_read_only_touch_api;
-    egui_view_override_api_on_touch(EGUI_VIEW_OF(&button_read_only), &button_read_only_touch_api, consume_preview_touch);
-#if EGUI_CONFIG_FUNCTION_SUPPORT_KEY
-    egui_view_override_api_on_key(EGUI_VIEW_OF(&button_read_only), &button_read_only_touch_api, consume_preview_key);
-#endif
+    static egui_view_api_t button_read_only_preview_api;
+    hcw_toggle_button_override_static_preview_api(EGUI_VIEW_OF(&button_read_only), &button_read_only_preview_api);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&button_read_only), false);
 #endif

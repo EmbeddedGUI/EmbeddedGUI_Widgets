@@ -10,6 +10,9 @@ extern "C" {
 void hcw_toggle_button_apply_standard_style(egui_view_t *self);
 void hcw_toggle_button_apply_compact_style(egui_view_t *self);
 void hcw_toggle_button_apply_read_only_style(egui_view_t *self);
+void hcw_toggle_button_set_toggled(egui_view_t *self, uint8_t is_toggled);
+void hcw_toggle_button_override_interaction_api(egui_view_t *self, egui_view_api_t *api);
+void hcw_toggle_button_override_static_preview_api(egui_view_t *self, egui_view_api_t *api);
 int hcw_toggle_button_on_key_event(egui_view_t *self, egui_key_event_t *event);
 
 #ifdef __cplusplus
