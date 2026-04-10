@@ -34,7 +34,7 @@
 
 | 状态 | 控件名 | 分类 | 开始日期 | 当前阶段 | 目标 |
 | --- | --- | --- | --- | --- | --- |
-| 暂无 | - | - | - | - | - |
+| 进行中 | `token_input` | `input` | `2026-04-10` | 交互收口与验证 | 复核 `draft / commit / remove / compact overflow / read only / disabled / preview touch-key` 链路里的状态清理、same-target release 与隐藏输入恢复语义、静态 preview 收口与渲染回归 |
 
 ## 当前保留的 Reference 主线控件
 
