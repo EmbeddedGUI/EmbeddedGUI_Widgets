@@ -78,12 +78,27 @@ static egui_color_t egui_view_persona_group_mix_disabled(egui_color_t color)
     return egui_rgb_mix(color, EGUI_COLOR_DARK_GREY, 66);
 }
 
-static void egui_view_persona_group_clear_pressed_state(egui_view_t *self)
+static uint8_t egui_view_persona_group_clear_pressed_state(egui_view_t *self)
 {
     EGUI_LOCAL_INIT(egui_view_persona_group_t);
+    uint8_t was_pressed = self->is_pressed ? 1 : 0;
+    uint8_t had_pressed = (uint8_t)(was_pressed || local->pressed_index != EGUI_VIEW_PERSONA_GROUP_MAX_ITEMS);
+
+    if (!had_pressed)
+    {
+        return 0;
+    }
 
     local->pressed_index = EGUI_VIEW_PERSONA_GROUP_MAX_ITEMS;
-    egui_view_set_pressed(self, false);
+    if (was_pressed)
+    {
+        egui_view_set_pressed(self, false);
+    }
+    else
+    {
+        egui_view_invalidate(self);
+    }
+    return 1;
 }
 
 static egui_color_t egui_view_persona_group_presence_color(egui_view_persona_group_t *local, uint8_t presence)
@@ -109,6 +124,15 @@ static const egui_view_persona_group_snapshot_t *egui_view_persona_group_get_sna
     }
 
     return &local->snapshots[local->current_snapshot];
+}
+
+static uint8_t egui_view_persona_group_focus_index(const egui_view_persona_group_snapshot_t *snapshot, uint8_t item_count)
+{
+    if (snapshot == NULL || item_count == 0 || snapshot->focus_index >= item_count)
+    {
+        return 0;
+    }
+    return snapshot->focus_index;
 }
 
 static const egui_view_persona_group_item_t *egui_view_persona_group_get_item(egui_view_persona_group_t *local)
@@ -289,16 +313,20 @@ static void egui_view_persona_group_set_current_snapshot_inner(egui_view_t *self
 {
     EGUI_LOCAL_INIT(egui_view_persona_group_t);
     const egui_view_persona_group_snapshot_t *snapshot;
+    uint8_t item_count;
 
     if (local->snapshots == NULL || local->snapshot_count == 0 || snapshot_index >= local->snapshot_count)
     {
+        if (egui_view_persona_group_clear_pressed_state(self))
+        {
+            egui_view_invalidate(self);
+        }
         return;
     }
     if (local->current_snapshot == snapshot_index)
     {
-        if (local->pressed_index != EGUI_VIEW_PERSONA_GROUP_MAX_ITEMS || self->is_pressed)
+        if (egui_view_persona_group_clear_pressed_state(self))
         {
-            egui_view_persona_group_clear_pressed_state(self);
             egui_view_invalidate(self);
         }
         return;
@@ -306,13 +334,14 @@ static void egui_view_persona_group_set_current_snapshot_inner(egui_view_t *self
 
     local->current_snapshot = snapshot_index;
     snapshot = egui_view_persona_group_get_snapshot(local);
-    if (snapshot != NULL)
+    item_count = snapshot == NULL ? 0 : egui_view_persona_group_clamp_item_count(snapshot->item_count);
+    if (snapshot != NULL && snapshot->items != NULL && item_count > 0)
     {
-        local->current_index = snapshot->focus_index;
-        if (local->current_index >= snapshot->item_count)
-        {
-            local->current_index = 0;
-        }
+        local->current_index = egui_view_persona_group_focus_index(snapshot, item_count);
+    }
+    else
+    {
+        local->current_index = 0;
     }
     egui_view_persona_group_clear_pressed_state(self);
     if (notify)
@@ -326,16 +355,29 @@ static void egui_view_persona_group_set_current_index_inner(egui_view_t *self, u
 {
     EGUI_LOCAL_INIT(egui_view_persona_group_t);
     const egui_view_persona_group_snapshot_t *snapshot = egui_view_persona_group_get_snapshot(local);
+    uint8_t item_count = snapshot == NULL ? 0 : egui_view_persona_group_clamp_item_count(snapshot->item_count);
 
-    if (snapshot == NULL || snapshot->items == NULL || snapshot->item_count == 0 || item_index >= snapshot->item_count)
+    if (snapshot == NULL || snapshot->items == NULL || item_count == 0)
     {
+        local->current_index = 0;
+        if (egui_view_persona_group_clear_pressed_state(self))
+        {
+            egui_view_invalidate(self);
+        }
+        return;
+    }
+    if (item_index >= item_count)
+    {
+        if (egui_view_persona_group_clear_pressed_state(self))
+        {
+            egui_view_invalidate(self);
+        }
         return;
     }
     if (local->current_index == item_index)
     {
-        if (local->pressed_index != EGUI_VIEW_PERSONA_GROUP_MAX_ITEMS || self->is_pressed)
+        if (egui_view_persona_group_clear_pressed_state(self))
         {
-            egui_view_persona_group_clear_pressed_state(self);
             egui_view_invalidate(self);
         }
         return;
@@ -354,21 +396,19 @@ void egui_view_persona_group_set_snapshots(egui_view_t *self, const egui_view_pe
 {
     EGUI_LOCAL_INIT(egui_view_persona_group_t);
     const egui_view_persona_group_snapshot_t *snapshot;
+    uint8_t item_count;
 
     local->snapshots = snapshots;
-    local->snapshot_count = egui_view_persona_group_clamp_snapshot_count(snapshot_count);
+    local->snapshot_count = snapshots == NULL ? 0 : egui_view_persona_group_clamp_snapshot_count(snapshot_count);
     local->current_snapshot = 0;
     local->current_index = 0;
     egui_view_persona_group_clear_pressed_state(self);
 
     snapshot = egui_view_persona_group_get_snapshot(local);
-    if (snapshot != NULL && snapshot->item_count > 0)
+    item_count = snapshot == NULL ? 0 : egui_view_persona_group_clamp_item_count(snapshot->item_count);
+    if (snapshot != NULL && snapshot->items != NULL && item_count > 0)
     {
-        local->current_index = snapshot->focus_index;
-        if (local->current_index >= snapshot->item_count)
-        {
-            local->current_index = 0;
-        }
+        local->current_index = egui_view_persona_group_focus_index(snapshot, item_count);
     }
 
     egui_view_invalidate(self);
@@ -405,6 +445,7 @@ void egui_view_persona_group_set_on_focus_changed_listener(egui_view_t *self, eg
 void egui_view_persona_group_set_font(egui_view_t *self, const egui_font_t *font)
 {
     EGUI_LOCAL_INIT(egui_view_persona_group_t);
+    egui_view_persona_group_clear_pressed_state(self);
     local->font = font ? font : (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT;
     egui_view_invalidate(self);
 }
@@ -412,6 +453,7 @@ void egui_view_persona_group_set_font(egui_view_t *self, const egui_font_t *font
 void egui_view_persona_group_set_meta_font(egui_view_t *self, const egui_font_t *font)
 {
     EGUI_LOCAL_INIT(egui_view_persona_group_t);
+    egui_view_persona_group_clear_pressed_state(self);
     local->meta_font = font ? font : (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT;
     egui_view_invalidate(self);
 }
@@ -419,16 +461,16 @@ void egui_view_persona_group_set_meta_font(egui_view_t *self, const egui_font_t 
 void egui_view_persona_group_set_compact_mode(egui_view_t *self, uint8_t compact_mode)
 {
     EGUI_LOCAL_INIT(egui_view_persona_group_t);
-    local->compact_mode = compact_mode ? 1 : 0;
     egui_view_persona_group_clear_pressed_state(self);
+    local->compact_mode = compact_mode ? 1 : 0;
     egui_view_invalidate(self);
 }
 
 void egui_view_persona_group_set_read_only_mode(egui_view_t *self, uint8_t read_only_mode)
 {
     EGUI_LOCAL_INIT(egui_view_persona_group_t);
-    local->read_only_mode = read_only_mode ? 1 : 0;
     egui_view_persona_group_clear_pressed_state(self);
+    local->read_only_mode = read_only_mode ? 1 : 0;
     egui_view_invalidate(self);
 }
 
@@ -437,6 +479,7 @@ void egui_view_persona_group_set_palette(egui_view_t *self, egui_color_t surface
                                          egui_color_t warning_color, egui_color_t neutral_color)
 {
     EGUI_LOCAL_INIT(egui_view_persona_group_t);
+    egui_view_persona_group_clear_pressed_state(self);
 
     local->surface_color = surface_color;
     local->border_color = border_color;
@@ -632,12 +675,13 @@ static void egui_view_persona_group_on_draw(egui_view_t *self)
         {
             continue;
         }
-        egui_view_persona_group_draw_avatar(self, local, &snapshot->items[i], &metrics.avatar_regions[i], 0, i == local->pressed_index);
+        egui_view_persona_group_draw_avatar(self, local, &snapshot->items[i], &metrics.avatar_regions[i], 0,
+                                            (uint8_t)(self->is_pressed && i == local->pressed_index));
     }
     if (local->current_index < item_count)
     {
         egui_view_persona_group_draw_avatar(self, local, &snapshot->items[local->current_index], &metrics.avatar_regions[local->current_index], 1,
-                                            local->current_index == local->pressed_index);
+                                            (uint8_t)(self->is_pressed && local->current_index == local->pressed_index));
     }
 
     egui_view_persona_group_draw_text(local->font, self, item->name, &metrics.name_region, EGUI_ALIGN_CENTER, title_color);
@@ -661,15 +705,13 @@ static void egui_view_persona_group_on_draw(egui_view_t *self)
 static int egui_view_persona_group_on_touch_event(egui_view_t *self, egui_motion_event_t *event)
 {
     EGUI_LOCAL_INIT(egui_view_persona_group_t);
+    const egui_view_persona_group_snapshot_t *snapshot = egui_view_persona_group_get_snapshot(local);
     uint8_t hit_index;
+    uint8_t same_target;
 
-    if (local->snapshots == NULL || local->snapshot_count == 0 || !egui_view_get_enable(self) || local->read_only_mode)
+    if (snapshot == NULL || !egui_view_get_enable(self) || local->read_only_mode)
     {
-        if (local->pressed_index != EGUI_VIEW_PERSONA_GROUP_MAX_ITEMS || self->is_pressed)
-        {
-            egui_view_persona_group_clear_pressed_state(self);
-            egui_view_invalidate(self);
-        }
+        egui_view_persona_group_clear_pressed_state(self);
         return 0;
     }
 
@@ -679,30 +721,59 @@ static int egui_view_persona_group_on_touch_event(egui_view_t *self, egui_motion
         hit_index = egui_view_persona_group_hit_index(local, self, event->location.x, event->location.y);
         if (hit_index >= EGUI_VIEW_PERSONA_GROUP_MAX_ITEMS)
         {
-            if (local->pressed_index != EGUI_VIEW_PERSONA_GROUP_MAX_ITEMS || self->is_pressed)
-            {
-                egui_view_persona_group_clear_pressed_state(self);
-                egui_view_invalidate(self);
-            }
+            egui_view_persona_group_clear_pressed_state(self);
             return 0;
         }
+        same_target = (uint8_t)(local->pressed_index == hit_index);
+        if (same_target && self->is_pressed)
+        {
+            return 1;
+        }
         local->pressed_index = hit_index;
-        egui_view_set_pressed(self, true);
-        egui_view_invalidate(self);
+        if (!self->is_pressed)
+        {
+            egui_view_set_pressed(self, true);
+        }
+        else
+        {
+            egui_view_invalidate(self);
+        }
+        return 1;
+    case EGUI_MOTION_EVENT_ACTION_MOVE:
+        if (local->pressed_index == EGUI_VIEW_PERSONA_GROUP_MAX_ITEMS)
+        {
+            return 0;
+        }
+        hit_index = egui_view_persona_group_hit_index(local, self, event->location.x, event->location.y);
+        if (hit_index == local->pressed_index)
+        {
+            if (!self->is_pressed)
+            {
+                egui_view_set_pressed(self, true);
+            }
+            return 1;
+        }
+        if (self->is_pressed)
+        {
+            egui_view_set_pressed(self, false);
+        }
         return 1;
     case EGUI_MOTION_EVENT_ACTION_UP:
+    {
+        uint8_t handled;
+
         hit_index = egui_view_persona_group_hit_index(local, self, event->location.x, event->location.y);
-        if (local->pressed_index == hit_index && hit_index < EGUI_VIEW_PERSONA_GROUP_MAX_ITEMS)
+        handled = (uint8_t)((local->pressed_index != EGUI_VIEW_PERSONA_GROUP_MAX_ITEMS) || hit_index < EGUI_VIEW_PERSONA_GROUP_MAX_ITEMS);
+        same_target = (uint8_t)(local->pressed_index != EGUI_VIEW_PERSONA_GROUP_MAX_ITEMS && local->pressed_index == hit_index);
+        if (same_target && self->is_pressed)
         {
             egui_view_persona_group_set_current_index_inner(self, hit_index, 1);
         }
         egui_view_persona_group_clear_pressed_state(self);
-        egui_view_invalidate(self);
-        return hit_index < EGUI_VIEW_PERSONA_GROUP_MAX_ITEMS;
+        return handled;
+    }
     case EGUI_MOTION_EVENT_ACTION_CANCEL:
-        egui_view_persona_group_clear_pressed_state(self);
-        egui_view_invalidate(self);
-        return 1;
+        return egui_view_persona_group_clear_pressed_state(self);
     default:
         return 0;
     }
@@ -714,19 +785,16 @@ static int egui_view_persona_group_on_key_event(egui_view_t *self, egui_key_even
 {
     EGUI_LOCAL_INIT(egui_view_persona_group_t);
     const egui_view_persona_group_snapshot_t *snapshot = egui_view_persona_group_get_snapshot(local);
+    uint8_t item_count = snapshot == NULL ? 0 : egui_view_persona_group_clamp_item_count(snapshot->item_count);
     uint8_t next_index;
 
-    if (!egui_view_get_enable(self) || local->read_only_mode)
+    if (snapshot == NULL || !egui_view_get_enable(self) || local->read_only_mode)
     {
-        if (local->pressed_index != EGUI_VIEW_PERSONA_GROUP_MAX_ITEMS || self->is_pressed)
-        {
-            egui_view_persona_group_clear_pressed_state(self);
-            egui_view_invalidate(self);
-        }
+        egui_view_persona_group_clear_pressed_state(self);
         return 0;
     }
 
-    if (snapshot == NULL || snapshot->item_count == 0 || event->type != EGUI_KEY_EVENT_ACTION_UP)
+    if (item_count == 0 || event->type != EGUI_KEY_EVENT_ACTION_UP)
     {
         return 0;
     }
@@ -740,18 +808,18 @@ static int egui_view_persona_group_on_key_event(egui_view_t *self, egui_key_even
         return 1;
     case EGUI_KEY_CODE_RIGHT:
     case EGUI_KEY_CODE_DOWN:
-        next_index = local->current_index + 1 < snapshot->item_count ? (local->current_index + 1) : (snapshot->item_count - 1);
+        next_index = local->current_index + 1 < item_count ? (local->current_index + 1) : (item_count - 1);
         egui_view_persona_group_set_current_index_inner(self, next_index, 1);
         return 1;
     case EGUI_KEY_CODE_HOME:
         egui_view_persona_group_set_current_index_inner(self, 0, 1);
         return 1;
     case EGUI_KEY_CODE_END:
-        egui_view_persona_group_set_current_index_inner(self, snapshot->item_count - 1, 1);
+        egui_view_persona_group_set_current_index_inner(self, item_count - 1, 1);
         return 1;
     case EGUI_KEY_CODE_TAB:
         next_index = local->current_index + 1;
-        if (next_index >= snapshot->item_count)
+        if (next_index >= item_count)
         {
             next_index = 0;
         }
@@ -762,6 +830,35 @@ static int egui_view_persona_group_on_key_event(egui_view_t *self, egui_key_even
     }
 }
 #endif
+
+#if EGUI_CONFIG_FUNCTION_SUPPORT_KEY
+static int egui_view_persona_group_on_static_key_event(egui_view_t *self, egui_key_event_t *event)
+{
+    EGUI_UNUSED(event);
+    egui_view_persona_group_clear_pressed_state(self);
+    return 1;
+}
+#endif
+
+#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
+static int egui_view_persona_group_on_static_touch_event(egui_view_t *self, egui_motion_event_t *event)
+{
+    EGUI_UNUSED(event);
+    egui_view_persona_group_clear_pressed_state(self);
+    return 1;
+}
+#endif
+
+void egui_view_persona_group_override_static_preview_api(egui_view_t *self, egui_view_api_t *api)
+{
+    egui_view_copy_api(self, api);
+#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
+    api->on_touch_event = egui_view_persona_group_on_static_touch_event;
+#endif
+#if EGUI_CONFIG_FUNCTION_SUPPORT_KEY
+    api->on_key_event = egui_view_persona_group_on_static_key_event;
+#endif
+}
 
 const egui_view_api_t EGUI_VIEW_API_TABLE_NAME(egui_view_persona_group_t) = {
         .dispatch_touch_event = egui_view_dispatch_touch_event,

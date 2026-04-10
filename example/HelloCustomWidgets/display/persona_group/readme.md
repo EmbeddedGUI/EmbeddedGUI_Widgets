@@ -24,7 +24,8 @@
 - 底部左侧展示 `compact` 静态对照，验证小尺寸下的成员重叠和单行摘要。
 - 底部右侧展示 `read only` 静态对照，验证只读态下的灰蓝弱化结果。
 - 页面结构统一收口为：标题 -> 主 `persona_group` -> `compact / read only`。
-- 底部两个 preview 都禁用 touch 和 focus，只做静态 `reference` 对照。
+- 底部两个 preview 统一挂载 static preview API，吞掉 `touch / key` 输入，不切换 snapshot，也不驱动焦点成员变化。
+- runtime 录制会补一次 `compact preview` 点击，用来验证 preview touch 之后主控件 focus、pressed 和最终稳定帧的收尾都正常。
 
 目标目录：`example/HelloCustomWidgets/display/persona_group/`
 
@@ -76,16 +77,21 @@
 6. 请求第三张截图。
 7. 程序化切换主控件到 `Archive`。
 8. 请求第四张截图。
-9. 程序化切换 `compact` 到第二组 snapshot。
-10. 请求最终截图并保留收尾等待。
+9. 程序化切换 `compact` 到第二组 snapshot，并重新请求主控件 focus。
+10. 请求 `compact` 第二快照截图。
+11. 点击一次 `compact preview`，验证 preview touch 只负责清主控件 focus，不触发 preview 内部状态切换。
+12. 请求 preview 点击后的收尾帧。
+13. 再请求一次最终稳定帧，确认页面没有残留 `pressed`、整屏污染或黑白屏。
 
 ## 8. 编译、touch、runtime、单测与文档检查
 ```bash
+make clean APP=HelloUnitTest PORT=pc_test
+make all APP=HelloUnitTest PORT=pc_test
+output\main.exe
+make clean APP=HelloCustomWidgets APP_SUB=display/persona_group PORT=pc
 make all APP=HelloCustomWidgets APP_SUB=display/persona_group PORT=pc
 python scripts/checks/check_touch_release_semantics.py --scope custom --category display
 python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub display/persona_group --track reference --timeout 10 --keep-screenshots
-make all APP=HelloUnitTest PORT=pc_test
-output\main.exe
 python scripts/checks/check_docs_encoding.py
 ```
 
@@ -93,9 +99,10 @@ python scripts/checks/check_docs_encoding.py
 - 主控件和底部 `compact / read only` 预览都必须完整可见。
 - avatar overlap、presence dot、标题、角色和 footer summary 之间要保留清晰留白。
 - `accent / success / neutral` 焦点切换需要可辨认，但整体不能回到高对比 showcase 风格。
+- 交互语义必须满足 `same-target release`：`DOWN(A) -> MOVE(B) -> UP(B)` 不提交，只有回到 A 后 `UP(A)` 才提交。
 - `read only / disabled` 不仅要忽略后续 `touch / key` 输入，还要在新输入或模式切换时清掉残留 `pressed` 渲染。
+- preview 必须统一吞掉 `touch / key`，preview 点击后只能清主控件 focus，不能误改 `current_snapshot / current_index`，也不能污染最终稳定帧。
 - 页面中不再出现 `guide`、状态说明、外部 preview 标签和旧双列包裹壳层。
-- 底部预览只作静态对照展示，不承担点击切换职责。
 
 ## 9. 已知限制与后续方向
 - 当前版本仍使用固定 snapshot 数据，不接真实头像资源和团队模型。
@@ -139,6 +146,8 @@ python scripts/checks/check_docs_encoding.py
 ## 14. EGUI 适配时的简化点与约束
 - 使用固定 `snapshot + item` 数据保证录制稳定。
 - `compact / read only` 直接复用同一控件模式，减少额外页面壳层。
+- 底部 preview 统一通过 static preview API 吞掉 `touch / key`，不承担交互切换职责。
 - 通过程序化切换 snapshot 和 focus index 保证 runtime 稳定抓取状态变化。
 - `snapshot / compact / read only / disabled` 共用同一套 `pressed` 清理语义，确保 avatar 焦点、presence tone 和 footer summary 在交互收尾后不残留旧高亮。
+- `persona_group` 的 touch 交互按 non-dragging 控件收口到 `same-target release`，同时补齐 preview 点击后的 focus 收尾和最终稳定帧复核。
 - 当前先作为 `HelloCustomWidgets` 的 `reference widget` 维护，后续是否下沉框架层再单独评估。

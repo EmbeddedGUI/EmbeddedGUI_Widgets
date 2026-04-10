@@ -8,6 +8,8 @@
 #include "../../HelloCustomWidgets/display/persona_group/egui_view_persona_group.c"
 
 static egui_view_persona_group_t test_group;
+static egui_view_persona_group_t preview_group;
+static egui_view_api_t preview_api;
 static uint8_t changed_count;
 static uint8_t last_snapshot;
 static uint8_t last_index;
@@ -71,19 +73,42 @@ static void setup_group(void)
     reset_listener_state();
 }
 
-static void layout_group(egui_dim_t width, egui_dim_t height)
+static void setup_preview_group(void)
+{
+    egui_view_persona_group_init(EGUI_VIEW_OF(&preview_group));
+    egui_view_set_size(EGUI_VIEW_OF(&preview_group), 104, 76);
+    egui_view_persona_group_set_snapshots(EGUI_VIEW_OF(&preview_group), g_snapshots, 3);
+    egui_view_persona_group_set_current_snapshot(EGUI_VIEW_OF(&preview_group), 1);
+    egui_view_persona_group_set_current_index(EGUI_VIEW_OF(&preview_group), 2);
+    egui_view_persona_group_set_compact_mode(EGUI_VIEW_OF(&preview_group), 1);
+    egui_view_persona_group_set_on_focus_changed_listener(EGUI_VIEW_OF(&preview_group), on_focus_changed);
+    egui_view_persona_group_override_static_preview_api(EGUI_VIEW_OF(&preview_group), &preview_api);
+    reset_listener_state();
+}
+
+static void layout_view(egui_view_t *view, egui_dim_t x, egui_dim_t y, egui_dim_t width, egui_dim_t height)
 {
     egui_region_t region;
 
-    region.location.x = 10;
-    region.location.y = 20;
+    region.location.x = x;
+    region.location.y = y;
     region.size.width = width;
     region.size.height = height;
-    egui_view_layout(EGUI_VIEW_OF(&test_group), &region);
-    egui_region_copy(&EGUI_VIEW_OF(&test_group)->region_screen, &region);
+    egui_view_layout(view, &region);
+    egui_region_copy(&view->region_screen, &region);
 }
 
-static int send_touch(uint8_t type, egui_dim_t x, egui_dim_t y)
+static void layout_group(void)
+{
+    layout_view(EGUI_VIEW_OF(&test_group), 10, 20, 194, 114);
+}
+
+static void layout_preview_group(void)
+{
+    layout_view(EGUI_VIEW_OF(&preview_group), 12, 18, 104, 76);
+}
+
+static int send_touch_to_view(egui_view_t *view, uint8_t type, egui_dim_t x, egui_dim_t y)
 {
     egui_motion_event_t event;
 
@@ -91,10 +116,10 @@ static int send_touch(uint8_t type, egui_dim_t x, egui_dim_t y)
     event.type = type;
     event.location.x = x;
     event.location.y = y;
-    return EGUI_VIEW_OF(&test_group)->api->on_touch_event(EGUI_VIEW_OF(&test_group), &event);
+    return view->api->on_touch_event(view, &event);
 }
 
-static int send_key(uint8_t key_code)
+static int send_key_to_view(egui_view_t *view, uint8_t key_code)
 {
     egui_key_event_t event;
     int handled = 0;
@@ -102,67 +127,115 @@ static int send_key(uint8_t key_code)
     memset(&event, 0, sizeof(event));
     event.type = EGUI_KEY_EVENT_ACTION_DOWN;
     event.key_code = key_code;
-    handled |= EGUI_VIEW_OF(&test_group)->api->on_key_event(EGUI_VIEW_OF(&test_group), &event);
+    handled |= view->api->on_key_event(view, &event);
     event.type = EGUI_KEY_EVENT_ACTION_UP;
-    handled |= EGUI_VIEW_OF(&test_group)->api->on_key_event(EGUI_VIEW_OF(&test_group), &event);
+    handled |= view->api->on_key_event(view, &event);
     return handled;
 }
 
-static void get_metrics(egui_view_persona_group_metrics_t *metrics)
+static int send_touch(uint8_t type, egui_dim_t x, egui_dim_t y)
 {
-    egui_view_persona_group_get_metrics(&test_group, EGUI_VIEW_OF(&test_group), metrics);
+    return send_touch_to_view(EGUI_VIEW_OF(&test_group), type, x, y);
 }
 
-static void get_avatar_center(uint8_t index, egui_dim_t *x, egui_dim_t *y)
+static int send_preview_touch(uint8_t type, egui_dim_t x, egui_dim_t y)
+{
+    return send_touch_to_view(EGUI_VIEW_OF(&preview_group), type, x, y);
+}
+
+static int send_key(uint8_t key_code)
+{
+    return send_key_to_view(EGUI_VIEW_OF(&test_group), key_code);
+}
+
+static int send_preview_key(uint8_t key_code)
+{
+    return send_key_to_view(EGUI_VIEW_OF(&preview_group), key_code);
+}
+
+static void get_view_center(egui_view_t *view, egui_dim_t *x, egui_dim_t *y)
+{
+    *x = view->region_screen.location.x + view->region_screen.size.width / 2;
+    *y = view->region_screen.location.y + view->region_screen.size.height / 2;
+}
+
+static void get_view_outside_point(egui_view_t *view, egui_dim_t *x, egui_dim_t *y)
+{
+    *x = view->region_screen.location.x - 6;
+    *y = view->region_screen.location.y + view->region_screen.size.height / 2;
+}
+
+static void get_group_metrics(egui_view_persona_group_t *group, egui_view_t *view, egui_view_persona_group_metrics_t *metrics)
+{
+    egui_view_persona_group_get_metrics(group, view, metrics);
+}
+
+static void get_avatar_center(egui_view_persona_group_t *group, egui_view_t *view, uint8_t index, egui_dim_t *x, egui_dim_t *y)
 {
     egui_view_persona_group_metrics_t metrics;
 
-    get_metrics(&metrics);
+    get_group_metrics(group, view, &metrics);
     *x = metrics.avatar_regions[index].location.x + metrics.avatar_regions[index].size.width / 2;
     *y = metrics.avatar_regions[index].location.y + metrics.avatar_regions[index].size.height / 2;
 }
 
-static void test_persona_group_set_snapshots_clamp_and_reset_focus(void)
+static void seed_pressed_state(egui_view_persona_group_t *group, egui_view_t *view, uint8_t pressed_index, uint8_t visual_pressed)
+{
+    group->pressed_index = pressed_index;
+    egui_view_set_pressed(view, visual_pressed ? true : false);
+}
+
+static void assert_pressed_cleared(egui_view_persona_group_t *group, egui_view_t *view)
+{
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_PERSONA_GROUP_MAX_ITEMS, group->pressed_index);
+    EGUI_TEST_ASSERT_FALSE(view->is_pressed);
+}
+
+static void test_persona_group_set_snapshots_clamps_and_clears_pressed_state(void)
 {
     setup_group();
 
+    test_group.current_snapshot = EGUI_VIEW_PERSONA_GROUP_MAX_SNAPSHOTS;
+    seed_pressed_state(&test_group, EGUI_VIEW_OF(&test_group), 1, 1);
     egui_view_persona_group_set_snapshots(EGUI_VIEW_OF(&test_group), g_overflow_snapshots, 6);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_PERSONA_GROUP_MAX_SNAPSHOTS, test_group.snapshot_count);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_persona_group_get_current_snapshot(EGUI_VIEW_OF(&test_group)));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_persona_group_get_current_index(EGUI_VIEW_OF(&test_group)));
+    assert_pressed_cleared(&test_group, EGUI_VIEW_OF(&test_group));
 
-    test_group.current_snapshot = 2;
-    test_group.current_index = 2;
-    test_group.pressed_index = 1;
-    egui_view_set_pressed(EGUI_VIEW_OF(&test_group), true);
+    seed_pressed_state(&test_group, EGUI_VIEW_OF(&test_group), 2, 1);
     egui_view_persona_group_set_snapshots(EGUI_VIEW_OF(&test_group), &g_invalid_focus_snapshot, 1);
     EGUI_TEST_ASSERT_EQUAL_INT(1, test_group.snapshot_count);
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_persona_group_get_current_snapshot(EGUI_VIEW_OF(&test_group)));
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_persona_group_get_current_index(EGUI_VIEW_OF(&test_group)));
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_PERSONA_GROUP_MAX_ITEMS, test_group.pressed_index);
-    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_group)->is_pressed);
-    EGUI_TEST_ASSERT_EQUAL_INT(0, changed_count);
+    assert_pressed_cleared(&test_group, EGUI_VIEW_OF(&test_group));
     EGUI_TEST_ASSERT_TRUE(egui_view_persona_group_get_snapshot(&test_group) == &g_invalid_focus_snapshot);
+    EGUI_TEST_ASSERT_TRUE(egui_view_persona_group_get_item(&test_group) == &g_items_2[0]);
 
+    seed_pressed_state(&test_group, EGUI_VIEW_OF(&test_group), 1, 1);
     egui_view_persona_group_set_snapshots(EGUI_VIEW_OF(&test_group), NULL, 0);
     EGUI_TEST_ASSERT_EQUAL_INT(0, test_group.snapshot_count);
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_persona_group_get_current_snapshot(EGUI_VIEW_OF(&test_group)));
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_persona_group_get_current_index(EGUI_VIEW_OF(&test_group)));
     EGUI_TEST_ASSERT_NULL(egui_view_persona_group_get_snapshot(&test_group));
     EGUI_TEST_ASSERT_NULL(egui_view_persona_group_get_item(&test_group));
+    assert_pressed_cleared(&test_group, EGUI_VIEW_OF(&test_group));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, changed_count);
 }
 
-static void test_persona_group_snapshot_and_index_guards_notify(void)
+static void test_persona_group_snapshot_and_setters_clear_pressed_state(void)
 {
+    egui_color_t surface = EGUI_COLOR_HEX(0x101112);
+    egui_color_t border = EGUI_COLOR_HEX(0x202122);
+    egui_color_t section = EGUI_COLOR_HEX(0x303132);
+    egui_color_t text = EGUI_COLOR_HEX(0x404142);
+    egui_color_t muted = EGUI_COLOR_HEX(0x505152);
+    egui_color_t accent = EGUI_COLOR_HEX(0x606162);
+    egui_color_t success = EGUI_COLOR_HEX(0x707172);
+    egui_color_t warning = EGUI_COLOR_HEX(0x808182);
+    egui_color_t neutral = EGUI_COLOR_HEX(0x909192);
+
     setup_group();
-
-    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_persona_group_get_current_snapshot(EGUI_VIEW_OF(&test_group)));
-    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_persona_group_get_current_index(EGUI_VIEW_OF(&test_group)));
-
-    test_group.pressed_index = 1;
-    egui_view_set_pressed(EGUI_VIEW_OF(&test_group), true);
-    egui_view_persona_group_set_current_index(EGUI_VIEW_OF(&test_group), 0);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_PERSONA_GROUP_MAX_ITEMS, test_group.pressed_index);
-    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_group)->is_pressed);
-    EGUI_TEST_ASSERT_EQUAL_INT(0, changed_count);
 
     egui_view_persona_group_set_current_index(EGUI_VIEW_OF(&test_group), 2);
     EGUI_TEST_ASSERT_EQUAL_INT(2, egui_view_persona_group_get_current_index(EGUI_VIEW_OF(&test_group)));
@@ -170,122 +243,106 @@ static void test_persona_group_snapshot_and_index_guards_notify(void)
     EGUI_TEST_ASSERT_EQUAL_INT(0, last_snapshot);
     EGUI_TEST_ASSERT_EQUAL_INT(2, last_index);
 
-    test_group.pressed_index = 1;
-    egui_view_set_pressed(EGUI_VIEW_OF(&test_group), true);
-    egui_view_persona_group_set_current_snapshot(EGUI_VIEW_OF(&test_group), 0);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_PERSONA_GROUP_MAX_ITEMS, test_group.pressed_index);
-    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_group)->is_pressed);
-    EGUI_TEST_ASSERT_EQUAL_INT(1, changed_count);
-
+    seed_pressed_state(&test_group, EGUI_VIEW_OF(&test_group), 1, 1);
     egui_view_persona_group_set_current_index(EGUI_VIEW_OF(&test_group), 2);
+    EGUI_TEST_ASSERT_EQUAL_INT(2, egui_view_persona_group_get_current_index(EGUI_VIEW_OF(&test_group)));
     EGUI_TEST_ASSERT_EQUAL_INT(1, changed_count);
+    assert_pressed_cleared(&test_group, EGUI_VIEW_OF(&test_group));
 
+    seed_pressed_state(&test_group, EGUI_VIEW_OF(&test_group), 1, 1);
     egui_view_persona_group_set_current_index(EGUI_VIEW_OF(&test_group), 9);
     EGUI_TEST_ASSERT_EQUAL_INT(2, egui_view_persona_group_get_current_index(EGUI_VIEW_OF(&test_group)));
     EGUI_TEST_ASSERT_EQUAL_INT(1, changed_count);
+    assert_pressed_cleared(&test_group, EGUI_VIEW_OF(&test_group));
 
-    test_group.pressed_index = 1;
-    egui_view_set_pressed(EGUI_VIEW_OF(&test_group), true);
+    seed_pressed_state(&test_group, EGUI_VIEW_OF(&test_group), 1, 1);
     egui_view_persona_group_set_current_snapshot(EGUI_VIEW_OF(&test_group), 1);
     EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_persona_group_get_current_snapshot(EGUI_VIEW_OF(&test_group)));
     EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_persona_group_get_current_index(EGUI_VIEW_OF(&test_group)));
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_PERSONA_GROUP_MAX_ITEMS, test_group.pressed_index);
-    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_group)->is_pressed);
     EGUI_TEST_ASSERT_EQUAL_INT(2, changed_count);
     EGUI_TEST_ASSERT_EQUAL_INT(1, last_snapshot);
     EGUI_TEST_ASSERT_EQUAL_INT(1, last_index);
+    assert_pressed_cleared(&test_group, EGUI_VIEW_OF(&test_group));
 
+    seed_pressed_state(&test_group, EGUI_VIEW_OF(&test_group), 2, 1);
+    egui_view_persona_group_set_current_snapshot(EGUI_VIEW_OF(&test_group), 1);
+    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_persona_group_get_current_snapshot(EGUI_VIEW_OF(&test_group)));
+    EGUI_TEST_ASSERT_EQUAL_INT(2, changed_count);
+    assert_pressed_cleared(&test_group, EGUI_VIEW_OF(&test_group));
+
+    seed_pressed_state(&test_group, EGUI_VIEW_OF(&test_group), 2, 1);
     egui_view_persona_group_set_current_snapshot(EGUI_VIEW_OF(&test_group), 9);
     EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_persona_group_get_current_snapshot(EGUI_VIEW_OF(&test_group)));
     EGUI_TEST_ASSERT_EQUAL_INT(2, changed_count);
+    assert_pressed_cleared(&test_group, EGUI_VIEW_OF(&test_group));
 
-    egui_view_persona_group_set_current_snapshot(EGUI_VIEW_OF(&test_group), 2);
-    EGUI_TEST_ASSERT_EQUAL_INT(2, egui_view_persona_group_get_current_snapshot(EGUI_VIEW_OF(&test_group)));
-    EGUI_TEST_ASSERT_EQUAL_INT(2, egui_view_persona_group_get_current_index(EGUI_VIEW_OF(&test_group)));
-    EGUI_TEST_ASSERT_EQUAL_INT(3, changed_count);
-    EGUI_TEST_ASSERT_EQUAL_INT(2, last_snapshot);
-    EGUI_TEST_ASSERT_EQUAL_INT(2, last_index);
-}
-
-static void test_persona_group_font_modes_palette_and_helpers(void)
-{
-    egui_color_t sample = EGUI_COLOR_HEX(0x123456);
-
-    setup_group();
-
+    seed_pressed_state(&test_group, EGUI_VIEW_OF(&test_group), 1, 1);
     egui_view_persona_group_set_font(EGUI_VIEW_OF(&test_group), NULL);
-    egui_view_persona_group_set_meta_font(EGUI_VIEW_OF(&test_group), NULL);
     EGUI_TEST_ASSERT_TRUE(test_group.font == (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT);
+    assert_pressed_cleared(&test_group, EGUI_VIEW_OF(&test_group));
+
+    seed_pressed_state(&test_group, EGUI_VIEW_OF(&test_group), 1, 1);
+    egui_view_persona_group_set_meta_font(EGUI_VIEW_OF(&test_group), NULL);
     EGUI_TEST_ASSERT_TRUE(test_group.meta_font == (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT);
+    assert_pressed_cleared(&test_group, EGUI_VIEW_OF(&test_group));
 
-    egui_view_set_pressed(EGUI_VIEW_OF(&test_group), true);
-    test_group.pressed_index = 2;
-    egui_view_persona_group_set_compact_mode(EGUI_VIEW_OF(&test_group), 3);
+    seed_pressed_state(&test_group, EGUI_VIEW_OF(&test_group), 1, 1);
+    egui_view_persona_group_set_palette(EGUI_VIEW_OF(&test_group), surface, border, section, text, muted, accent, success, warning, neutral);
+    EGUI_TEST_ASSERT_EQUAL_INT(surface.full, test_group.surface_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(border.full, test_group.border_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(section.full, test_group.section_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(text.full, test_group.text_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(muted.full, test_group.muted_text_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(accent.full, test_group.accent_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(success.full, test_group.success_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(warning.full, test_group.warning_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(neutral.full, test_group.neutral_color.full);
+    assert_pressed_cleared(&test_group, EGUI_VIEW_OF(&test_group));
+
+    seed_pressed_state(&test_group, EGUI_VIEW_OF(&test_group), 1, 1);
+    egui_view_persona_group_set_compact_mode(EGUI_VIEW_OF(&test_group), 2);
     EGUI_TEST_ASSERT_EQUAL_INT(1, test_group.compact_mode);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_PERSONA_GROUP_MAX_ITEMS, test_group.pressed_index);
-    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_group)->is_pressed);
-    egui_view_persona_group_set_compact_mode(EGUI_VIEW_OF(&test_group), 0);
-    EGUI_TEST_ASSERT_EQUAL_INT(0, test_group.compact_mode);
+    assert_pressed_cleared(&test_group, EGUI_VIEW_OF(&test_group));
 
-    egui_view_set_pressed(EGUI_VIEW_OF(&test_group), true);
-    test_group.pressed_index = 1;
-    egui_view_persona_group_set_read_only_mode(EGUI_VIEW_OF(&test_group), 2);
+    seed_pressed_state(&test_group, EGUI_VIEW_OF(&test_group), 1, 1);
+    egui_view_persona_group_set_read_only_mode(EGUI_VIEW_OF(&test_group), 3);
     EGUI_TEST_ASSERT_EQUAL_INT(1, test_group.read_only_mode);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_PERSONA_GROUP_MAX_ITEMS, test_group.pressed_index);
-    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_group)->is_pressed);
-    egui_view_persona_group_set_read_only_mode(EGUI_VIEW_OF(&test_group), 0);
-    EGUI_TEST_ASSERT_EQUAL_INT(0, test_group.read_only_mode);
-
-    egui_view_persona_group_set_palette(EGUI_VIEW_OF(&test_group), EGUI_COLOR_HEX(0x101112), EGUI_COLOR_HEX(0x202122), EGUI_COLOR_HEX(0x303132),
-                                        EGUI_COLOR_HEX(0x404142), EGUI_COLOR_HEX(0x505152), EGUI_COLOR_HEX(0x606162), EGUI_COLOR_HEX(0x707172),
-                                        EGUI_COLOR_HEX(0x808182), EGUI_COLOR_HEX(0x909192));
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x101112).full, test_group.surface_color.full);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x202122).full, test_group.border_color.full);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x303132).full, test_group.section_color.full);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x404142).full, test_group.text_color.full);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x505152).full, test_group.muted_text_color.full);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x606162).full, test_group.accent_color.full);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x707172).full, test_group.success_color.full);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x808182).full, test_group.warning_color.full);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x909192).full, test_group.neutral_color.full);
-
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_PERSONA_GROUP_MAX_SNAPSHOTS, egui_view_persona_group_clamp_snapshot_count(9));
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_PERSONA_GROUP_MAX_ITEMS, egui_view_persona_group_clamp_item_count(9));
-    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_persona_group_text_len(NULL));
-    EGUI_TEST_ASSERT_EQUAL_INT(4, egui_view_persona_group_text_len("Lena"));
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x707172).full, egui_view_persona_group_presence_color(&test_group, EGUI_VIEW_PERSONA_GROUP_PRESENCE_LIVE).full);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x808182).full, egui_view_persona_group_presence_color(&test_group, EGUI_VIEW_PERSONA_GROUP_PRESENCE_BUSY).full);
-    EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(EGUI_COLOR_HEX(0x808182), EGUI_COLOR_HEX(0x606162), 38).full,
-                               egui_view_persona_group_presence_color(&test_group, EGUI_VIEW_PERSONA_GROUP_PRESENCE_AWAY).full);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x909192).full, egui_view_persona_group_presence_color(&test_group, EGUI_VIEW_PERSONA_GROUP_PRESENCE_IDLE).full);
-    EGUI_TEST_ASSERT_EQUAL_INT(54, egui_view_persona_group_footer_width("Design", 0, 60));
-    EGUI_TEST_ASSERT_EQUAL_INT(34, egui_view_persona_group_footer_width("Team", 1, 40));
-    EGUI_TEST_ASSERT_EQUAL_INT(30, egui_view_persona_group_footer_width("Long", 0, 30));
-    EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(sample, EGUI_COLOR_DARK_GREY, 66).full, egui_view_persona_group_mix_disabled(sample).full);
-
-    EGUI_TEST_ASSERT_TRUE(egui_view_persona_group_get_snapshot(&test_group) == &g_snapshots[0]);
-    EGUI_TEST_ASSERT_TRUE(egui_view_persona_group_get_item(&test_group) == &g_items_0[0]);
-    test_group.current_index = 9;
-    EGUI_TEST_ASSERT_NULL(egui_view_persona_group_get_item(&test_group));
-    test_group.current_index = 0;
-    test_group.current_snapshot = 9;
-    EGUI_TEST_ASSERT_NULL(egui_view_persona_group_get_snapshot(&test_group));
+    assert_pressed_cleared(&test_group, EGUI_VIEW_OF(&test_group));
 }
 
-static void test_persona_group_metrics_and_hit_testing(void)
+static void test_persona_group_metrics_hit_testing_and_helpers(void)
 {
     egui_view_persona_group_metrics_t metrics;
-    egui_dim_t x0;
-    egui_dim_t y0;
+    egui_color_t sample = EGUI_COLOR_HEX(0x123456);
+    egui_dim_t x1;
+    egui_dim_t y1;
     egui_dim_t x3;
     egui_dim_t y3;
     egui_dim_t overflow_x;
     egui_dim_t overflow_y;
 
     setup_group();
-    layout_group(194, 114);
-    get_metrics(&metrics);
+    layout_group();
+    get_group_metrics(&test_group, EGUI_VIEW_OF(&test_group), &metrics);
 
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_PERSONA_GROUP_MAX_SNAPSHOTS, egui_view_persona_group_clamp_snapshot_count(9));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_PERSONA_GROUP_MAX_ITEMS, egui_view_persona_group_clamp_item_count(9));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_persona_group_text_len(NULL));
+    EGUI_TEST_ASSERT_EQUAL_INT(4, egui_view_persona_group_text_len("Lena"));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_persona_group_focus_index(&g_invalid_focus_snapshot, 3));
+    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_persona_group_focus_index(&g_snapshots[1], 4));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x0F7B45).full,
+                               egui_view_persona_group_presence_color(&test_group, EGUI_VIEW_PERSONA_GROUP_PRESENCE_LIVE).full);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x9D5D00).full,
+                               egui_view_persona_group_presence_color(&test_group, EGUI_VIEW_PERSONA_GROUP_PRESENCE_BUSY).full);
+    EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(EGUI_COLOR_HEX(0x9D5D00), EGUI_COLOR_HEX(0x0F6CBD), 24).full,
+                               egui_view_persona_group_presence_color(&test_group, EGUI_VIEW_PERSONA_GROUP_PRESENCE_AWAY).full);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x7A8796).full,
+                               egui_view_persona_group_presence_color(&test_group, EGUI_VIEW_PERSONA_GROUP_PRESENCE_IDLE).full);
+    EGUI_TEST_ASSERT_EQUAL_INT(54, egui_view_persona_group_footer_width("Design", 0, 60));
+    EGUI_TEST_ASSERT_EQUAL_INT(34, egui_view_persona_group_footer_width("Team", 1, 40));
+    EGUI_TEST_ASSERT_EQUAL_INT(30, egui_view_persona_group_footer_width("Long", 0, 30));
+    EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(sample, EGUI_COLOR_DARK_GREY, 66).full, egui_view_persona_group_mix_disabled(sample).full);
     EGUI_TEST_ASSERT_TRUE(metrics.content_region.size.width > 0);
     EGUI_TEST_ASSERT_TRUE(metrics.avatar_regions[0].size.width > 0);
     EGUI_TEST_ASSERT_TRUE(metrics.avatar_regions[1].location.x > metrics.avatar_regions[0].location.x);
@@ -296,73 +353,77 @@ static void test_persona_group_metrics_and_hit_testing(void)
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_PERSONA_GROUP_STANDARD_FOOTER_HEIGHT, metrics.footer_region.size.height);
     EGUI_TEST_ASSERT_EQUAL_INT(8, metrics.role_region.size.height);
 
-    get_avatar_center(0, &x0, &y0);
-    get_avatar_center(3, &x3, &y3);
+    get_avatar_center(&test_group, EGUI_VIEW_OF(&test_group), 1, &x1, &y1);
+    get_avatar_center(&test_group, EGUI_VIEW_OF(&test_group), 3, &x3, &y3);
     overflow_x = metrics.overflow_region.location.x + metrics.overflow_region.size.width / 2;
     overflow_y = metrics.overflow_region.location.y + metrics.overflow_region.size.height / 2;
 
-    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_persona_group_hit_index(&test_group, EGUI_VIEW_OF(&test_group), x0, y0));
+    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_persona_group_hit_index(&test_group, EGUI_VIEW_OF(&test_group), x1, y1));
     EGUI_TEST_ASSERT_EQUAL_INT(3, egui_view_persona_group_hit_index(&test_group, EGUI_VIEW_OF(&test_group), x3, y3));
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_PERSONA_GROUP_MAX_ITEMS,
                                egui_view_persona_group_hit_index(&test_group, EGUI_VIEW_OF(&test_group), overflow_x, overflow_y));
-    EGUI_TEST_ASSERT_EQUAL_INT(
-            EGUI_VIEW_PERSONA_GROUP_MAX_ITEMS,
-            egui_view_persona_group_hit_index(&test_group, EGUI_VIEW_OF(&test_group), metrics.content_region.location.x, metrics.content_region.location.y));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_PERSONA_GROUP_MAX_ITEMS,
+                               egui_view_persona_group_hit_index(&test_group, EGUI_VIEW_OF(&test_group), metrics.content_region.location.x,
+                                                                 metrics.content_region.location.y));
 
     egui_view_persona_group_set_compact_mode(EGUI_VIEW_OF(&test_group), 1);
     egui_view_set_size(EGUI_VIEW_OF(&test_group), 106, 76);
-    layout_group(106, 76);
-    get_metrics(&metrics);
+    layout_view(EGUI_VIEW_OF(&test_group), 10, 20, 106, 76);
+    get_group_metrics(&test_group, EGUI_VIEW_OF(&test_group), &metrics);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_PERSONA_GROUP_COMPACT_TITLE_HEIGHT, metrics.title_region.size.height);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_PERSONA_GROUP_COMPACT_FOOTER_HEIGHT, metrics.footer_region.size.height);
     EGUI_TEST_ASSERT_EQUAL_INT(0, metrics.role_region.size.height);
-    EGUI_TEST_ASSERT_TRUE(metrics.avatar_regions[2].size.width > 0);
 }
 
-static void test_persona_group_touch_updates_focus_and_guards(void)
+static void test_persona_group_touch_same_target_release_and_cancel_behavior(void)
 {
     egui_dim_t x1;
     egui_dim_t y1;
     egui_dim_t x2;
     egui_dim_t y2;
+    egui_dim_t outside_x;
+    egui_dim_t outside_y;
 
     setup_group();
-    layout_group(194, 114);
-    get_avatar_center(1, &x1, &y1);
-    get_avatar_center(2, &x2, &y2);
+    layout_group();
+    get_avatar_center(&test_group, EGUI_VIEW_OF(&test_group), 1, &x1, &y1);
+    get_avatar_center(&test_group, EGUI_VIEW_OF(&test_group), 2, &x2, &y2);
+    get_view_outside_point(EGUI_VIEW_OF(&test_group), &outside_x, &outside_y);
 
-    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, 0, 0));
+    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, outside_x, outside_y));
+    assert_pressed_cleared(&test_group, EGUI_VIEW_OF(&test_group));
 
-    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x2, y2));
-    EGUI_TEST_ASSERT_EQUAL_INT(2, test_group.pressed_index);
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x1, y1));
+    EGUI_TEST_ASSERT_EQUAL_INT(1, test_group.pressed_index);
     EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&test_group)->is_pressed);
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_MOVE, x2, y2));
+    EGUI_TEST_ASSERT_EQUAL_INT(1, test_group.pressed_index);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_group)->is_pressed);
     EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, x2, y2));
-    EGUI_TEST_ASSERT_EQUAL_INT(2, egui_view_persona_group_get_current_index(EGUI_VIEW_OF(&test_group)));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_persona_group_get_current_index(EGUI_VIEW_OF(&test_group)));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, changed_count);
+    assert_pressed_cleared(&test_group, EGUI_VIEW_OF(&test_group));
+
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x1, y1));
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_MOVE, x2, y2));
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_group)->is_pressed);
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_MOVE, x1, y1));
+    EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&test_group)->is_pressed);
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, x1, y1));
+    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_persona_group_get_current_index(EGUI_VIEW_OF(&test_group)));
     EGUI_TEST_ASSERT_EQUAL_INT(1, changed_count);
     EGUI_TEST_ASSERT_EQUAL_INT(0, last_snapshot);
-    EGUI_TEST_ASSERT_EQUAL_INT(2, last_index);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_PERSONA_GROUP_MAX_ITEMS, test_group.pressed_index);
-    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_group)->is_pressed);
+    EGUI_TEST_ASSERT_EQUAL_INT(1, last_index);
+    assert_pressed_cleared(&test_group, EGUI_VIEW_OF(&test_group));
 
-    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x1, y1));
-    EGUI_TEST_ASSERT_EQUAL_INT(1, test_group.pressed_index);
-    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_CANCEL, x1, y1));
-    EGUI_TEST_ASSERT_EQUAL_INT(2, egui_view_persona_group_get_current_index(EGUI_VIEW_OF(&test_group)));
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x2, y2));
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_CANCEL, x2, y2));
     EGUI_TEST_ASSERT_EQUAL_INT(1, changed_count);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_PERSONA_GROUP_MAX_ITEMS, test_group.pressed_index);
-    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_group)->is_pressed);
-
-    egui_view_persona_group_set_read_only_mode(EGUI_VIEW_OF(&test_group), 1);
-    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x1, y1));
-    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, x1, y1));
-
-    egui_view_persona_group_set_read_only_mode(EGUI_VIEW_OF(&test_group), 0);
-    egui_view_set_enable(EGUI_VIEW_OF(&test_group), 0);
-    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x1, y1));
-    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, x1, y1));
+    assert_pressed_cleared(&test_group, EGUI_VIEW_OF(&test_group));
+    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_CANCEL, x2, y2));
 }
 
-static void test_persona_group_compact_read_only_disabled_clear_pressed_and_ignore_input(void)
+static void test_persona_group_read_only_and_disabled_guards_clear_pressed_state(void)
 {
     egui_dim_t x1;
     egui_dim_t y1;
@@ -370,53 +431,47 @@ static void test_persona_group_compact_read_only_disabled_clear_pressed_and_igno
     egui_dim_t y2;
 
     setup_group();
-    layout_group(194, 114);
-    get_avatar_center(1, &x1, &y1);
+    layout_group();
+    get_avatar_center(&test_group, EGUI_VIEW_OF(&test_group), 1, &x1, &y1);
+    get_avatar_center(&test_group, EGUI_VIEW_OF(&test_group), 2, &x2, &y2);
 
     EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x1, y1));
-    EGUI_TEST_ASSERT_EQUAL_INT(1, test_group.pressed_index);
     EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&test_group)->is_pressed);
-
-    egui_view_persona_group_set_compact_mode(EGUI_VIEW_OF(&test_group), 1);
-    EGUI_TEST_ASSERT_EQUAL_INT(1, test_group.compact_mode);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_PERSONA_GROUP_MAX_ITEMS, test_group.pressed_index);
-    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_group)->is_pressed);
-
-    get_avatar_center(2, &x2, &y2);
-    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x2, y2));
-    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, x2, y2));
-    EGUI_TEST_ASSERT_EQUAL_INT(2, egui_view_persona_group_get_current_index(EGUI_VIEW_OF(&test_group)));
-    EGUI_TEST_ASSERT_EQUAL_INT(1, changed_count);
-
-    get_avatar_center(1, &x1, &y1);
-    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x1, y1));
-    EGUI_TEST_ASSERT_EQUAL_INT(1, test_group.pressed_index);
 
     egui_view_persona_group_set_read_only_mode(EGUI_VIEW_OF(&test_group), 1);
     EGUI_TEST_ASSERT_EQUAL_INT(1, test_group.read_only_mode);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_PERSONA_GROUP_MAX_ITEMS, test_group.pressed_index);
-    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_group)->is_pressed);
+    assert_pressed_cleared(&test_group, EGUI_VIEW_OF(&test_group));
+
+    seed_pressed_state(&test_group, EGUI_VIEW_OF(&test_group), 1, 1);
     EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x1, y1));
-    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, x1, y1));
+    assert_pressed_cleared(&test_group, EGUI_VIEW_OF(&test_group));
+
+    seed_pressed_state(&test_group, EGUI_VIEW_OF(&test_group), 1, 1);
     EGUI_TEST_ASSERT_FALSE(send_key(EGUI_KEY_CODE_RIGHT));
-    EGUI_TEST_ASSERT_EQUAL_INT(1, changed_count);
+    assert_pressed_cleared(&test_group, EGUI_VIEW_OF(&test_group));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, changed_count);
 
     egui_view_persona_group_set_read_only_mode(EGUI_VIEW_OF(&test_group), 0);
     EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x1, y1));
-    EGUI_TEST_ASSERT_EQUAL_INT(1, test_group.pressed_index);
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, x1, y1));
+    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_persona_group_get_current_index(EGUI_VIEW_OF(&test_group)));
+    EGUI_TEST_ASSERT_EQUAL_INT(1, changed_count);
 
+    seed_pressed_state(&test_group, EGUI_VIEW_OF(&test_group), 2, 1);
     egui_view_set_enable(EGUI_VIEW_OF(&test_group), 0);
-    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x1, y1));
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_PERSONA_GROUP_MAX_ITEMS, test_group.pressed_index);
-    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_group)->is_pressed);
-    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, x1, y1));
+    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x2, y2));
+    assert_pressed_cleared(&test_group, EGUI_VIEW_OF(&test_group));
+
+    seed_pressed_state(&test_group, EGUI_VIEW_OF(&test_group), 2, 1);
     EGUI_TEST_ASSERT_FALSE(send_key(EGUI_KEY_CODE_RIGHT));
+    assert_pressed_cleared(&test_group, EGUI_VIEW_OF(&test_group));
+    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, x2, y2));
     EGUI_TEST_ASSERT_EQUAL_INT(1, changed_count);
 
     egui_view_set_enable(EGUI_VIEW_OF(&test_group), 1);
-    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x1, y1));
-    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, x1, y1));
-    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_persona_group_get_current_index(EGUI_VIEW_OF(&test_group)));
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x2, y2));
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, x2, y2));
+    EGUI_TEST_ASSERT_EQUAL_INT(2, egui_view_persona_group_get_current_index(EGUI_VIEW_OF(&test_group)));
     EGUI_TEST_ASSERT_EQUAL_INT(2, changed_count);
 }
 
@@ -431,8 +486,6 @@ static void test_persona_group_keyboard_navigation_and_guards(void)
     EGUI_TEST_ASSERT_TRUE(send_key(EGUI_KEY_CODE_RIGHT));
     EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_persona_group_get_current_index(EGUI_VIEW_OF(&test_group)));
     EGUI_TEST_ASSERT_EQUAL_INT(1, changed_count);
-    EGUI_TEST_ASSERT_EQUAL_INT(0, last_snapshot);
-    EGUI_TEST_ASSERT_EQUAL_INT(1, last_index);
 
     EGUI_TEST_ASSERT_TRUE(send_key(EGUI_KEY_CODE_DOWN));
     EGUI_TEST_ASSERT_EQUAL_INT(2, egui_view_persona_group_get_current_index(EGUI_VIEW_OF(&test_group)));
@@ -453,28 +506,41 @@ static void test_persona_group_keyboard_navigation_and_guards(void)
     EGUI_TEST_ASSERT_TRUE(send_key(EGUI_KEY_CODE_UP));
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_persona_group_get_current_index(EGUI_VIEW_OF(&test_group)));
     EGUI_TEST_ASSERT_EQUAL_INT(4, changed_count);
+}
 
-    egui_view_persona_group_set_current_snapshot(EGUI_VIEW_OF(&test_group), 1);
-    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_persona_group_get_current_snapshot(EGUI_VIEW_OF(&test_group)));
-    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_persona_group_get_current_index(EGUI_VIEW_OF(&test_group)));
+static void test_persona_group_static_preview_consumes_input_and_clears_pressed_state(void)
+{
+    egui_dim_t x;
+    egui_dim_t y;
 
-    egui_view_persona_group_set_read_only_mode(EGUI_VIEW_OF(&test_group), 1);
-    EGUI_TEST_ASSERT_FALSE(send_key(EGUI_KEY_CODE_RIGHT));
-    egui_view_persona_group_set_read_only_mode(EGUI_VIEW_OF(&test_group), 0);
-    egui_view_set_enable(EGUI_VIEW_OF(&test_group), 0);
-    EGUI_TEST_ASSERT_FALSE(send_key(EGUI_KEY_CODE_RIGHT));
-    EGUI_TEST_ASSERT_FALSE(send_key(EGUI_KEY_CODE_ENTER));
+    setup_preview_group();
+    layout_preview_group();
+    get_view_center(EGUI_VIEW_OF(&preview_group), &x, &y);
+
+    seed_pressed_state(&preview_group, EGUI_VIEW_OF(&preview_group), 2, 1);
+    EGUI_TEST_ASSERT_TRUE(send_preview_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
+    assert_pressed_cleared(&preview_group, EGUI_VIEW_OF(&preview_group));
+    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_persona_group_get_current_snapshot(EGUI_VIEW_OF(&preview_group)));
+    EGUI_TEST_ASSERT_EQUAL_INT(2, egui_view_persona_group_get_current_index(EGUI_VIEW_OF(&preview_group)));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, changed_count);
+
+    seed_pressed_state(&preview_group, EGUI_VIEW_OF(&preview_group), 1, 1);
+    EGUI_TEST_ASSERT_TRUE(send_preview_key(EGUI_KEY_CODE_ENTER));
+    assert_pressed_cleared(&preview_group, EGUI_VIEW_OF(&preview_group));
+    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_persona_group_get_current_snapshot(EGUI_VIEW_OF(&preview_group)));
+    EGUI_TEST_ASSERT_EQUAL_INT(2, egui_view_persona_group_get_current_index(EGUI_VIEW_OF(&preview_group)));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, changed_count);
 }
 
 void test_persona_group_run(void)
 {
     EGUI_TEST_SUITE_BEGIN(persona_group);
-    EGUI_TEST_RUN(test_persona_group_set_snapshots_clamp_and_reset_focus);
-    EGUI_TEST_RUN(test_persona_group_snapshot_and_index_guards_notify);
-    EGUI_TEST_RUN(test_persona_group_font_modes_palette_and_helpers);
-    EGUI_TEST_RUN(test_persona_group_metrics_and_hit_testing);
-    EGUI_TEST_RUN(test_persona_group_touch_updates_focus_and_guards);
-    EGUI_TEST_RUN(test_persona_group_compact_read_only_disabled_clear_pressed_and_ignore_input);
+    EGUI_TEST_RUN(test_persona_group_set_snapshots_clamps_and_clears_pressed_state);
+    EGUI_TEST_RUN(test_persona_group_snapshot_and_setters_clear_pressed_state);
+    EGUI_TEST_RUN(test_persona_group_metrics_hit_testing_and_helpers);
+    EGUI_TEST_RUN(test_persona_group_touch_same_target_release_and_cancel_behavior);
+    EGUI_TEST_RUN(test_persona_group_read_only_and_disabled_guards_clear_pressed_state);
     EGUI_TEST_RUN(test_persona_group_keyboard_navigation_and_guards);
+    EGUI_TEST_RUN(test_persona_group_static_preview_consumes_input_and_clears_pressed_state);
     EGUI_TEST_SUITE_END();
 }
