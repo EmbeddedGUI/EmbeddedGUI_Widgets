@@ -8,7 +8,7 @@
 - 对应组件名：`NavigationView`
 - 本次保留状态：`standard`、`selected`、`compact`、`read only`
 - 本次删除效果：页面级 `guide`、状态文案、旧双列 preview 包裹壳、preview 交互职责、过重 selected row 与 footer chrome
-- EGUI 适配说明：继续复用仓库内 `nav_panel` 基础实现，本轮只收口 `reference` 页面结构、静态对照预览和绘制强度，不修改 `sdk/EmbeddedGUI`；`items / current selection / compact / read only / view disabled` 切换共享同一套 `pressed` 清理语义
+- EGUI 适配说明：继续复用仓库内 `nav_panel` 基础实现，本轮只收口 `reference` 页面结构、静态对照预览和绘制强度，不修改 `sdk/EmbeddedGUI`；`items / header / footer / footer badge / font / meta font / palette / current selection / compact / read only / view disabled / static preview` 全部共享同一套 `pressed` 清理语义
 
 ## 1. 为什么需要这个控件
 
@@ -68,6 +68,16 @@
 | `compact` | `Rules` | 第二组 compact 对照 |
 | `read only` | `Teams` | 固定只读轨道，禁 touch、禁 focus、禁键盘 |
 
+- 主控件继续保留真实 touch / key 导航闭环，并补齐 same-target release 语义：
+  - `DOWN(A) -> MOVE(B) -> UP(B)` 不提交选择。
+  - `DOWN(A) -> MOVE(B) -> MOVE(A) -> UP(A)` 才提交选择。
+- `set_header_text()`、`set_footer_text()`、`set_footer_badge()`、`set_font()`、`set_meta_font()`、`set_palette()`、`set_items()`、`set_current_index()`、`set_compact_mode()`、`set_read_only_mode()` 都会先清理残留 `pressed_index / is_pressed`。
+- `read_only_mode` 或 `!enable` 时，新的 touch / key 输入会先清掉残留 `pressed`，然后直接拒绝提交。
+- 底部 `compact / read only` 预览统一通过 `egui_view_nav_panel_override_static_preview_api()` 收口：
+  - preview 会吞掉 touch / key 输入。
+  - preview 只清残留 `pressed`，不改 `current_index`，也不触发 selection changed。
+  - preview 点击只保留最小收尾逻辑：清主控件 focus，不承担任何额外切换职责。
+
 ## 7. `egui_port_get_recording_action()` 录制动作设计
 
 1. 重置主控件、`compact` 和 `read only` 到默认状态。
@@ -79,16 +89,22 @@
 7. 程序化回切主控件到 `Library`。
 8. 请求第四张截图。
 9. 程序化切换 `compact` 到 `Rules`。
-10. 请求最终截图。
+10. 请求 `compact` 切换后的截图。
+11. 点击 `compact` 预览，确认 static preview 只做清焦收尾。
+12. 输出 preview 点击后的收尾帧与最终稳定帧。
 
 ## 8. 编译、touch、runtime、单测与文档检查
 
 ```bash
+make clean APP=HelloUnitTest PORT=pc_test
+make all APP=HelloUnitTest PORT=pc_test
+output\main.exe
+
+make clean APP=HelloCustomWidgets APP_SUB=navigation/nav_panel PORT=pc
 make all APP=HelloCustomWidgets APP_SUB=navigation/nav_panel PORT=pc
 python scripts/checks/check_touch_release_semantics.py --scope custom --category navigation
 python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub navigation/nav_panel --track reference --timeout 10 --keep-screenshots
-make all APP=HelloUnitTest PORT=pc_test
-output\main.exe
+
 python scripts/checks/check_docs_encoding.py
 ```
 
@@ -98,9 +114,16 @@ python scripts/checks/check_docs_encoding.py
 - header、selected row、indicator、badge 和 footer 需要可辨识，但整体不能回到高噪音 showcase 风格。
 - `compact` 在窄宽度下仍要保持 rail 语义清晰。
 - `read only` 只能做静态展示，不能响应 touch、focus 或键盘；切换到 `read_only_mode` 时还要清空 pressed 状态。
-- `items / current selection / compact / read only / view disabled` 切换后不能残留 row 的 `pressed` 高亮或下压位移渲染。
-- `read_only_mode / !enable` 不仅要忽略后续 touch / key 输入，还要在收到新输入时先清理残留 `pressed` 状态。
-- `HelloUnitTest` 里已有的 selection clamp、metrics/hit testing、touch 选择、键盘导航和 `read only` / disabled 语义不能回归。
+- `items / header / footer / palette / current selection / compact / read only / view disabled` 切换后不能残留 row 的 `pressed` 高亮或下压位移渲染。
+- 主控件必须满足 same-target release：`DOWN(A) -> MOVE(B) -> UP(B)` 不提交，只有回到 A 后 `UP(A)` 才提交。
+- `read_only_mode / !enable` 和 static preview 不仅要忽略后续 touch / key 输入，还要在收到新输入时先清理残留 `pressed` 状态。
+- 需要抽查 runtime 输出中的以下关键帧：
+  - 默认帧
+  - 主控件 `Library / People / Library` 切换帧
+  - `compact` 切换帧
+  - preview 点击后的收尾帧
+  - 最终稳定帧
+- `HelloUnitTest` 里已有的 selection clamp、metrics/hit testing、same-target release、键盘导航、static preview 和 `read only` / disabled guard 语义不能回归。
 
 ## 9. 已知限制与后续方向
 
@@ -142,5 +165,6 @@ python scripts/checks/check_docs_encoding.py
 - 使用固定导航项数据保证录制稳定。
 - `compact / read only` 直接复用同一控件模式，减少额外页面壳层。
 - `read only` 直接使用 `read_only_mode`，避免页面语义和控件实现脱节。
-- 通过程序化切换 current index 保证 runtime 能稳定抓到导航状态。
+- 通过程序化切换 current index，再补一个 preview 点击收尾帧，保证 runtime 能稳定抓到导航状态和交互收尾。
+- 通过统一的 `clear_pressed_state()` 与 static preview API，把 setter、guard、preview 的状态清理收口到同一套语义。
 - 当前先作为 `HelloCustomWidgets` 的 reference widget 维护，后续是否下沉框架层再单独评估。

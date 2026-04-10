@@ -8,6 +8,8 @@
 #include "../../HelloCustomWidgets/navigation/nav_panel/egui_view_nav_panel.c"
 
 static egui_view_nav_panel_t test_nav_panel;
+static egui_view_nav_panel_t preview_nav_panel;
+static egui_view_api_t preview_api;
 static uint8_t g_selection_index;
 static uint8_t g_selection_count;
 
@@ -46,19 +48,42 @@ static void setup_nav_panel(void)
     reset_listener_state();
 }
 
-static void layout_nav_panel(egui_dim_t width, egui_dim_t height)
+static void setup_preview_nav_panel(uint8_t current_index)
+{
+    egui_view_nav_panel_init(EGUI_VIEW_OF(&preview_nav_panel));
+    egui_view_set_size(EGUI_VIEW_OF(&preview_nav_panel), 58, 74);
+    egui_view_nav_panel_set_items(EGUI_VIEW_OF(&preview_nav_panel), g_items_primary, 3);
+    egui_view_nav_panel_set_footer_badge(EGUI_VIEW_OF(&preview_nav_panel), "S");
+    egui_view_nav_panel_set_compact_mode(EGUI_VIEW_OF(&preview_nav_panel), 1);
+    egui_view_nav_panel_set_current_index(EGUI_VIEW_OF(&preview_nav_panel), current_index);
+    egui_view_nav_panel_set_on_selection_changed_listener(EGUI_VIEW_OF(&preview_nav_panel), on_selection_changed);
+    egui_view_nav_panel_override_static_preview_api(EGUI_VIEW_OF(&preview_nav_panel), &preview_api);
+    reset_listener_state();
+}
+
+static void layout_view(egui_view_t *view, egui_dim_t x, egui_dim_t y, egui_dim_t width, egui_dim_t height)
 {
     egui_region_t region;
 
-    region.location.x = 10;
-    region.location.y = 20;
+    region.location.x = x;
+    region.location.y = y;
     region.size.width = width;
     region.size.height = height;
-    egui_view_layout(EGUI_VIEW_OF(&test_nav_panel), &region);
-    egui_region_copy(&EGUI_VIEW_OF(&test_nav_panel)->region_screen, &region);
+    egui_view_layout(view, &region);
+    egui_region_copy(&view->region_screen, &region);
 }
 
-static int send_touch(uint8_t type, egui_dim_t x, egui_dim_t y)
+static void layout_nav_panel(egui_dim_t width, egui_dim_t height)
+{
+    layout_view(EGUI_VIEW_OF(&test_nav_panel), 10, 20, width, height);
+}
+
+static void layout_preview_nav_panel(void)
+{
+    layout_view(EGUI_VIEW_OF(&preview_nav_panel), 12, 18, 58, 74);
+}
+
+static int send_touch_to_view(egui_view_t *view, uint8_t type, egui_dim_t x, egui_dim_t y)
 {
     egui_motion_event_t event;
 
@@ -66,28 +91,38 @@ static int send_touch(uint8_t type, egui_dim_t x, egui_dim_t y)
     event.type = type;
     event.location.x = x;
     event.location.y = y;
-    return EGUI_VIEW_OF(&test_nav_panel)->api->on_touch_event(EGUI_VIEW_OF(&test_nav_panel), &event);
+    return view->api->on_touch_event(view, &event);
+}
+
+static int send_touch(uint8_t type, egui_dim_t x, egui_dim_t y)
+{
+    return send_touch_to_view(EGUI_VIEW_OF(&test_nav_panel), type, x, y);
+}
+
+static int send_key_to_view(egui_view_t *view, uint8_t type, uint8_t key_code)
+{
+    egui_key_event_t event;
+
+    memset(&event, 0, sizeof(event));
+    event.type = type;
+    event.key_code = key_code;
+    return view->api->on_key_event(view, &event);
 }
 
 static int send_key(uint8_t key_code)
 {
-    egui_key_event_t event;
     int handled = 0;
 
-    memset(&event, 0, sizeof(event));
-    event.type = EGUI_KEY_EVENT_ACTION_DOWN;
-    event.key_code = key_code;
-    handled |= EGUI_VIEW_OF(&test_nav_panel)->api->on_key_event(EGUI_VIEW_OF(&test_nav_panel), &event);
-    event.type = EGUI_KEY_EVENT_ACTION_UP;
-    handled |= EGUI_VIEW_OF(&test_nav_panel)->api->on_key_event(EGUI_VIEW_OF(&test_nav_panel), &event);
+    handled |= send_key_to_view(EGUI_VIEW_OF(&test_nav_panel), EGUI_KEY_EVENT_ACTION_DOWN, key_code);
+    handled |= send_key_to_view(EGUI_VIEW_OF(&test_nav_panel), EGUI_KEY_EVENT_ACTION_UP, key_code);
     return handled;
 }
 
-static uint8_t get_item_center(uint8_t item_index, egui_dim_t *x, egui_dim_t *y)
+static uint8_t get_item_center_for_panel(egui_view_nav_panel_t *panel, uint8_t item_index, egui_dim_t *x, egui_dim_t *y)
 {
     egui_view_nav_panel_metrics_t metrics;
 
-    egui_view_nav_panel_get_metrics(&test_nav_panel, EGUI_VIEW_OF(&test_nav_panel), &metrics);
+    egui_view_nav_panel_get_metrics(panel, EGUI_VIEW_OF(panel), &metrics);
     if (item_index >= metrics.visible_item_count)
     {
         return 0;
@@ -98,44 +133,64 @@ static uint8_t get_item_center(uint8_t item_index, egui_dim_t *x, egui_dim_t *y)
     return 1;
 }
 
+static uint8_t get_item_center(uint8_t item_index, egui_dim_t *x, egui_dim_t *y)
+{
+    return get_item_center_for_panel(&test_nav_panel, item_index, x, y);
+}
+
+static uint8_t get_preview_item_center(uint8_t item_index, egui_dim_t *x, egui_dim_t *y)
+{
+    return get_item_center_for_panel(&preview_nav_panel, item_index, x, y);
+}
+
+static void seed_pressed_state(egui_view_nav_panel_t *panel, uint8_t index, uint8_t visual_pressed)
+{
+    egui_view_set_pressed(EGUI_VIEW_OF(panel), 0);
+    panel->pressed_index = index;
+    if (visual_pressed)
+    {
+        egui_view_set_pressed(EGUI_VIEW_OF(panel), 1);
+    }
+}
+
+static void assert_pressed_cleared(egui_view_nav_panel_t *panel)
+{
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_NAV_PANEL_INDEX_NONE, panel->pressed_index);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(panel)->is_pressed);
+}
+
 static void test_nav_panel_set_items_and_current_index_clamp(void)
 {
     setup_nav_panel();
 
     test_nav_panel.current_index = 9;
-    test_nav_panel.pressed_index = 3;
-    egui_view_set_pressed(EGUI_VIEW_OF(&test_nav_panel), 1);
+    seed_pressed_state(&test_nav_panel, 3, 1);
     egui_view_nav_panel_set_items(EGUI_VIEW_OF(&test_nav_panel), g_items_overflow, 5);
     EGUI_TEST_ASSERT_EQUAL_INT(5, test_nav_panel.item_count);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_NAV_PANEL_MAX_ITEMS, egui_view_nav_panel_get_visible_item_count(&test_nav_panel));
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_nav_panel_get_current_index(EGUI_VIEW_OF(&test_nav_panel)));
     EGUI_TEST_ASSERT_NOT_NULL(egui_view_nav_panel_get_item(&test_nav_panel, 3));
     EGUI_TEST_ASSERT_NULL(egui_view_nav_panel_get_item(&test_nav_panel, 4));
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_NAV_PANEL_INDEX_NONE, test_nav_panel.pressed_index);
-    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_nav_panel)->is_pressed);
+    assert_pressed_cleared(&test_nav_panel);
 
     egui_view_nav_panel_set_current_index(EGUI_VIEW_OF(&test_nav_panel), 9);
     EGUI_TEST_ASSERT_EQUAL_INT(3, egui_view_nav_panel_get_current_index(EGUI_VIEW_OF(&test_nav_panel)));
     EGUI_TEST_ASSERT_EQUAL_INT(1, g_selection_count);
     EGUI_TEST_ASSERT_EQUAL_INT(3, g_selection_index);
 
-    test_nav_panel.pressed_index = 3;
-    egui_view_set_pressed(EGUI_VIEW_OF(&test_nav_panel), 1);
+    seed_pressed_state(&test_nav_panel, 3, 1);
     egui_view_nav_panel_set_current_index(EGUI_VIEW_OF(&test_nav_panel), 3);
     EGUI_TEST_ASSERT_EQUAL_INT(1, g_selection_count);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_NAV_PANEL_INDEX_NONE, test_nav_panel.pressed_index);
-    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_nav_panel)->is_pressed);
+    assert_pressed_cleared(&test_nav_panel);
 
-    test_nav_panel.pressed_index = 2;
-    egui_view_set_pressed(EGUI_VIEW_OF(&test_nav_panel), 1);
+    seed_pressed_state(&test_nav_panel, 2, 1);
     egui_view_nav_panel_set_items(EGUI_VIEW_OF(&test_nav_panel), NULL, 0);
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_nav_panel_get_visible_item_count(&test_nav_panel));
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_nav_panel_get_current_index(EGUI_VIEW_OF(&test_nav_panel)));
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_NAV_PANEL_INDEX_NONE, test_nav_panel.pressed_index);
-    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_nav_panel)->is_pressed);
+    assert_pressed_cleared(&test_nav_panel);
 }
 
-static void test_nav_panel_font_palette_and_helper_functions(void)
+static void test_nav_panel_setters_clear_pressed_state_and_helpers(void)
 {
     egui_view_nav_panel_item_t fallback_item = {"Files", ""};
     egui_view_nav_panel_item_t empty_item = {NULL, NULL};
@@ -143,20 +198,45 @@ static void test_nav_panel_font_palette_and_helper_functions(void)
 
     setup_nav_panel();
 
+    seed_pressed_state(&test_nav_panel, 2, 1);
+    egui_view_nav_panel_set_header_text(EGUI_VIEW_OF(&test_nav_panel), "Shell");
+    assert_pressed_cleared(&test_nav_panel);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Shell", test_nav_panel.header_text) == 0);
+
+    seed_pressed_state(&test_nav_panel, 2, 0);
+    egui_view_nav_panel_set_footer_text(EGUI_VIEW_OF(&test_nav_panel), "Profile");
+    assert_pressed_cleared(&test_nav_panel);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Profile", test_nav_panel.footer_text) == 0);
+
+    seed_pressed_state(&test_nav_panel, 2, 1);
+    egui_view_nav_panel_set_footer_badge(EGUI_VIEW_OF(&test_nav_panel), "P");
+    assert_pressed_cleared(&test_nav_panel);
+    EGUI_TEST_ASSERT_TRUE(strcmp("P", test_nav_panel.footer_badge) == 0);
+
+    seed_pressed_state(&test_nav_panel, 2, 1);
     egui_view_nav_panel_set_font(EGUI_VIEW_OF(&test_nav_panel), NULL);
-    egui_view_nav_panel_set_meta_font(EGUI_VIEW_OF(&test_nav_panel), NULL);
+    assert_pressed_cleared(&test_nav_panel);
     EGUI_TEST_ASSERT_TRUE(test_nav_panel.font == (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT);
+
+    seed_pressed_state(&test_nav_panel, 2, 0);
+    egui_view_nav_panel_set_meta_font(EGUI_VIEW_OF(&test_nav_panel), NULL);
+    assert_pressed_cleared(&test_nav_panel);
     EGUI_TEST_ASSERT_TRUE(test_nav_panel.meta_font == (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT);
 
-    test_nav_panel.pressed_index = 2;
+    seed_pressed_state(&test_nav_panel, 2, 1);
     egui_view_nav_panel_set_compact_mode(EGUI_VIEW_OF(&test_nav_panel), 2);
-    egui_view_nav_panel_set_read_only_mode(EGUI_VIEW_OF(&test_nav_panel), 3);
+    assert_pressed_cleared(&test_nav_panel);
     EGUI_TEST_ASSERT_EQUAL_INT(1, test_nav_panel.compact_mode);
-    EGUI_TEST_ASSERT_EQUAL_INT(1, test_nav_panel.read_only_mode);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_NAV_PANEL_INDEX_NONE, test_nav_panel.pressed_index);
 
+    seed_pressed_state(&test_nav_panel, 2, 0);
+    egui_view_nav_panel_set_read_only_mode(EGUI_VIEW_OF(&test_nav_panel), 3);
+    assert_pressed_cleared(&test_nav_panel);
+    EGUI_TEST_ASSERT_EQUAL_INT(1, test_nav_panel.read_only_mode);
+
+    seed_pressed_state(&test_nav_panel, 1, 1);
     egui_view_nav_panel_set_palette(EGUI_VIEW_OF(&test_nav_panel), EGUI_COLOR_HEX(0x101112), EGUI_COLOR_HEX(0x202122), EGUI_COLOR_HEX(0x303132),
                                     EGUI_COLOR_HEX(0x404142), EGUI_COLOR_HEX(0x505152));
+    assert_pressed_cleared(&test_nav_panel);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x101112).full, test_nav_panel.surface_color.full);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x202122).full, test_nav_panel.border_color.full);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x303132).full, test_nav_panel.text_color.full);
@@ -198,33 +278,48 @@ static void test_nav_panel_metrics_and_hit_testing(void)
     EGUI_TEST_ASSERT_TRUE(metrics.item_regions[2].location.y > metrics.item_regions[1].location.y);
 }
 
-static void test_nav_panel_touch_selects_item_and_cancel_resets_pressed_state(void)
+static void test_nav_panel_touch_same_target_release_and_cancel_behavior(void)
 {
-    egui_dim_t x;
-    egui_dim_t y;
+    egui_dim_t x0;
+    egui_dim_t y0;
+    egui_dim_t x1;
+    egui_dim_t y1;
 
     setup_nav_panel();
+    egui_view_nav_panel_set_current_index(EGUI_VIEW_OF(&test_nav_panel), 2);
+    reset_listener_state();
     layout_nav_panel(198, 112);
-    EGUI_TEST_ASSERT_TRUE(get_item_center(2, &x, &y));
+    EGUI_TEST_ASSERT_TRUE(get_item_center(0, &x0, &y0));
+    EGUI_TEST_ASSERT_TRUE(get_item_center(1, &x1, &y1));
 
-    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
-    EGUI_TEST_ASSERT_EQUAL_INT(2, test_nav_panel.pressed_index);
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x0, y0));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, test_nav_panel.pressed_index);
     EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&test_nav_panel)->is_pressed);
-
-    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, x, y));
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_MOVE, x1, y1));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, test_nav_panel.pressed_index);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_nav_panel)->is_pressed);
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, x1, y1));
     EGUI_TEST_ASSERT_EQUAL_INT(2, egui_view_nav_panel_get_current_index(EGUI_VIEW_OF(&test_nav_panel)));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, g_selection_count);
+    assert_pressed_cleared(&test_nav_panel);
+
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x0, y0));
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_MOVE, x1, y1));
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_nav_panel)->is_pressed);
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_MOVE, x0, y0));
+    EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&test_nav_panel)->is_pressed);
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, x0, y0));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_nav_panel_get_current_index(EGUI_VIEW_OF(&test_nav_panel)));
     EGUI_TEST_ASSERT_EQUAL_INT(1, g_selection_count);
-    EGUI_TEST_ASSERT_EQUAL_INT(2, g_selection_index);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_NAV_PANEL_INDEX_NONE, test_nav_panel.pressed_index);
-    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_nav_panel)->is_pressed);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, g_selection_index);
+    assert_pressed_cleared(&test_nav_panel);
 
-    EGUI_TEST_ASSERT_TRUE(get_item_center(1, &x, &y));
-    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x1, y1));
     EGUI_TEST_ASSERT_EQUAL_INT(1, test_nav_panel.pressed_index);
-    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_CANCEL, x, y));
-    EGUI_TEST_ASSERT_EQUAL_INT(2, egui_view_nav_panel_get_current_index(EGUI_VIEW_OF(&test_nav_panel)));
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_NAV_PANEL_INDEX_NONE, test_nav_panel.pressed_index);
-    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_nav_panel)->is_pressed);
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_CANCEL, x1, y1));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_nav_panel_get_current_index(EGUI_VIEW_OF(&test_nav_panel)));
+    EGUI_TEST_ASSERT_EQUAL_INT(1, g_selection_count);
+    assert_pressed_cleared(&test_nav_panel);
 }
 
 static void test_nav_panel_keyboard_navigation(void)
@@ -260,8 +355,7 @@ static void test_nav_panel_compact_mode_clears_pressed_and_keeps_selection_behav
     egui_view_nav_panel_set_compact_mode(EGUI_VIEW_OF(&test_nav_panel), 1);
     EGUI_TEST_ASSERT_EQUAL_INT(1, test_nav_panel.compact_mode);
     EGUI_TEST_ASSERT_EQUAL_INT(2, egui_view_nav_panel_get_current_index(EGUI_VIEW_OF(&test_nav_panel)));
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_NAV_PANEL_INDEX_NONE, test_nav_panel.pressed_index);
-    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_nav_panel)->is_pressed);
+    assert_pressed_cleared(&test_nav_panel);
 
     layout_nav_panel(58, 74);
     EGUI_TEST_ASSERT_TRUE(get_item_center(0, &x, &y));
@@ -272,7 +366,7 @@ static void test_nav_panel_compact_mode_clears_pressed_and_keeps_selection_behav
     EGUI_TEST_ASSERT_EQUAL_INT(0, g_selection_index);
 }
 
-static void test_nav_panel_read_only_mode_clears_pressed_and_ignores_input(void)
+static void test_nav_panel_read_only_and_view_disabled_guards_clear_pressed_state(void)
 {
     egui_dim_t x;
     egui_dim_t y;
@@ -287,16 +381,15 @@ static void test_nav_panel_read_only_mode_clears_pressed_and_ignores_input(void)
 
     egui_view_nav_panel_set_read_only_mode(EGUI_VIEW_OF(&test_nav_panel), 1);
     EGUI_TEST_ASSERT_EQUAL_INT(1, test_nav_panel.read_only_mode);
-    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_nav_panel)->is_pressed);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_NAV_PANEL_INDEX_NONE, test_nav_panel.pressed_index);
-    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
-    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, x, y));
+    assert_pressed_cleared(&test_nav_panel);
 
-    test_nav_panel.pressed_index = 1;
-    egui_view_set_pressed(EGUI_VIEW_OF(&test_nav_panel), 1);
+    seed_pressed_state(&test_nav_panel, 1, 1);
+    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
+    assert_pressed_cleared(&test_nav_panel);
+
+    seed_pressed_state(&test_nav_panel, 1, 1);
     EGUI_TEST_ASSERT_FALSE(send_key(EGUI_KEY_CODE_END));
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_NAV_PANEL_INDEX_NONE, test_nav_panel.pressed_index);
-    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_nav_panel)->is_pressed);
+    assert_pressed_cleared(&test_nav_panel);
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_nav_panel_get_current_index(EGUI_VIEW_OF(&test_nav_panel)));
     EGUI_TEST_ASSERT_EQUAL_INT(0, g_selection_count);
 
@@ -305,31 +398,20 @@ static void test_nav_panel_read_only_mode_clears_pressed_and_ignores_input(void)
     EGUI_TEST_ASSERT_TRUE(send_key(EGUI_KEY_CODE_END));
     EGUI_TEST_ASSERT_EQUAL_INT(2, egui_view_nav_panel_get_current_index(EGUI_VIEW_OF(&test_nav_panel)));
     EGUI_TEST_ASSERT_EQUAL_INT(1, g_selection_count);
-}
 
-static void test_nav_panel_disabled_ignores_input_and_clears_pressed_state(void)
-{
-    egui_dim_t x;
-    egui_dim_t y;
-
-    setup_nav_panel();
-    layout_nav_panel(198, 112);
-    EGUI_TEST_ASSERT_TRUE(get_item_center(1, &x, &y));
-
+    egui_view_nav_panel_set_current_index(EGUI_VIEW_OF(&test_nav_panel), 0);
+    reset_listener_state();
     EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
     EGUI_TEST_ASSERT_EQUAL_INT(1, test_nav_panel.pressed_index);
     EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&test_nav_panel)->is_pressed);
     egui_view_set_enable(EGUI_VIEW_OF(&test_nav_panel), 0);
     EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_NAV_PANEL_INDEX_NONE, test_nav_panel.pressed_index);
-    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_nav_panel)->is_pressed);
+    assert_pressed_cleared(&test_nav_panel);
     EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, x, y));
 
-    test_nav_panel.pressed_index = 1;
-    egui_view_set_pressed(EGUI_VIEW_OF(&test_nav_panel), 1);
+    seed_pressed_state(&test_nav_panel, 1, 1);
     EGUI_TEST_ASSERT_FALSE(send_key(EGUI_KEY_CODE_END));
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_NAV_PANEL_INDEX_NONE, test_nav_panel.pressed_index);
-    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_nav_panel)->is_pressed);
+    assert_pressed_cleared(&test_nav_panel);
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_nav_panel_get_current_index(EGUI_VIEW_OF(&test_nav_panel)));
     EGUI_TEST_ASSERT_EQUAL_INT(0, g_selection_count);
 
@@ -341,16 +423,39 @@ static void test_nav_panel_disabled_ignores_input_and_clears_pressed_state(void)
     EGUI_TEST_ASSERT_EQUAL_INT(1, g_selection_index);
 }
 
+static void test_nav_panel_static_preview_consumes_input_and_clears_pressed_state(void)
+{
+    egui_dim_t x;
+    egui_dim_t y;
+
+    setup_preview_nav_panel(1);
+    layout_preview_nav_panel();
+    EGUI_TEST_ASSERT_TRUE(get_preview_item_center(1, &x, &y));
+
+    seed_pressed_state(&preview_nav_panel, 1, 1);
+    EGUI_TEST_ASSERT_TRUE(send_touch_to_view(EGUI_VIEW_OF(&preview_nav_panel), EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
+    assert_pressed_cleared(&preview_nav_panel);
+    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_nav_panel_get_current_index(EGUI_VIEW_OF(&preview_nav_panel)));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, g_selection_count);
+
+    seed_pressed_state(&preview_nav_panel, 1, 0);
+    EGUI_TEST_ASSERT_TRUE(send_key_to_view(EGUI_VIEW_OF(&preview_nav_panel), EGUI_KEY_EVENT_ACTION_DOWN, EGUI_KEY_CODE_END));
+    EGUI_TEST_ASSERT_TRUE(send_key_to_view(EGUI_VIEW_OF(&preview_nav_panel), EGUI_KEY_EVENT_ACTION_UP, EGUI_KEY_CODE_END));
+    assert_pressed_cleared(&preview_nav_panel);
+    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_nav_panel_get_current_index(EGUI_VIEW_OF(&preview_nav_panel)));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, g_selection_count);
+}
+
 void test_nav_panel_run(void)
 {
     EGUI_TEST_SUITE_BEGIN(nav_panel);
     EGUI_TEST_RUN(test_nav_panel_set_items_and_current_index_clamp);
-    EGUI_TEST_RUN(test_nav_panel_font_palette_and_helper_functions);
+    EGUI_TEST_RUN(test_nav_panel_setters_clear_pressed_state_and_helpers);
     EGUI_TEST_RUN(test_nav_panel_metrics_and_hit_testing);
-    EGUI_TEST_RUN(test_nav_panel_touch_selects_item_and_cancel_resets_pressed_state);
+    EGUI_TEST_RUN(test_nav_panel_touch_same_target_release_and_cancel_behavior);
     EGUI_TEST_RUN(test_nav_panel_keyboard_navigation);
     EGUI_TEST_RUN(test_nav_panel_compact_mode_clears_pressed_and_keeps_selection_behavior);
-    EGUI_TEST_RUN(test_nav_panel_read_only_mode_clears_pressed_and_ignores_input);
-    EGUI_TEST_RUN(test_nav_panel_disabled_ignores_input_and_clears_pressed_state);
+    EGUI_TEST_RUN(test_nav_panel_read_only_and_view_disabled_guards_clear_pressed_state);
+    EGUI_TEST_RUN(test_nav_panel_static_preview_consumes_input_and_clears_pressed_state);
     EGUI_TEST_SUITE_END();
 }

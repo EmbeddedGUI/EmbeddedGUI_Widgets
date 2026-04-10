@@ -152,11 +152,24 @@ static void egui_view_nav_panel_draw_text(const egui_font_t *font, egui_view_t *
 
 static uint8_t egui_view_nav_panel_clear_pressed_state(egui_view_t *self, egui_view_nav_panel_t *local)
 {
-    uint8_t had_pressed = self->is_pressed || local->pressed_index != EGUI_VIEW_NAV_PANEL_INDEX_NONE;
+    uint8_t was_pressed = self->is_pressed ? 1 : 0;
+    uint8_t had_pressed = (uint8_t)(was_pressed || local->pressed_index != EGUI_VIEW_NAV_PANEL_INDEX_NONE);
+
+    if (!had_pressed)
+    {
+        return 0;
+    }
 
     local->pressed_index = EGUI_VIEW_NAV_PANEL_INDEX_NONE;
-    egui_view_set_pressed(self, false);
-    return had_pressed;
+    if (was_pressed)
+    {
+        egui_view_set_pressed(self, false);
+    }
+    else
+    {
+        egui_view_invalidate(self);
+    }
+    return 1;
 }
 
 static void egui_view_nav_panel_set_current_index_inner(egui_view_t *self, uint8_t index, uint8_t notify)
@@ -198,14 +211,18 @@ static void egui_view_nav_panel_set_current_index_inner(egui_view_t *self, uint8
 void egui_view_nav_panel_set_items(egui_view_t *self, const egui_view_nav_panel_item_t *items, uint8_t item_count)
 {
     EGUI_LOCAL_INIT(egui_view_nav_panel_t);
+    uint8_t had_pressed = egui_view_nav_panel_clear_pressed_state(self, local);
+
     local->items = items;
     local->item_count = item_count;
     if (local->current_index >= egui_view_nav_panel_get_visible_item_count(local))
     {
         local->current_index = 0;
     }
-    egui_view_nav_panel_clear_pressed_state(self, local);
-    egui_view_invalidate(self);
+    if (!had_pressed)
+    {
+        egui_view_invalidate(self);
+    }
 }
 
 void egui_view_nav_panel_set_current_index(egui_view_t *self, uint8_t index)
@@ -222,36 +239,61 @@ uint8_t egui_view_nav_panel_get_current_index(egui_view_t *self)
 void egui_view_nav_panel_set_header_text(egui_view_t *self, const char *text)
 {
     EGUI_LOCAL_INIT(egui_view_nav_panel_t);
+    uint8_t had_pressed = egui_view_nav_panel_clear_pressed_state(self, local);
+
     local->header_text = text;
-    egui_view_invalidate(self);
+    if (!had_pressed)
+    {
+        egui_view_invalidate(self);
+    }
 }
 
 void egui_view_nav_panel_set_footer_text(egui_view_t *self, const char *text)
 {
     EGUI_LOCAL_INIT(egui_view_nav_panel_t);
+    uint8_t had_pressed = egui_view_nav_panel_clear_pressed_state(self, local);
+
     local->footer_text = text;
-    egui_view_invalidate(self);
+    if (!had_pressed)
+    {
+        egui_view_invalidate(self);
+    }
 }
 
 void egui_view_nav_panel_set_footer_badge(egui_view_t *self, const char *text)
 {
     EGUI_LOCAL_INIT(egui_view_nav_panel_t);
+    uint8_t had_pressed = egui_view_nav_panel_clear_pressed_state(self, local);
+
     local->footer_badge = text;
-    egui_view_invalidate(self);
+    if (!had_pressed)
+    {
+        egui_view_invalidate(self);
+    }
 }
 
 void egui_view_nav_panel_set_font(egui_view_t *self, const egui_font_t *font)
 {
     EGUI_LOCAL_INIT(egui_view_nav_panel_t);
+    uint8_t had_pressed = egui_view_nav_panel_clear_pressed_state(self, local);
+
     local->font = font ? font : (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT;
-    egui_view_invalidate(self);
+    if (!had_pressed)
+    {
+        egui_view_invalidate(self);
+    }
 }
 
 void egui_view_nav_panel_set_meta_font(egui_view_t *self, const egui_font_t *font)
 {
     EGUI_LOCAL_INIT(egui_view_nav_panel_t);
+    uint8_t had_pressed = egui_view_nav_panel_clear_pressed_state(self, local);
+
     local->meta_font = font ? font : (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT;
-    egui_view_invalidate(self);
+    if (!had_pressed)
+    {
+        egui_view_invalidate(self);
+    }
 }
 
 void egui_view_nav_panel_set_on_selection_changed_listener(egui_view_t *self, egui_view_on_nav_panel_selection_changed_listener_t listener)
@@ -263,29 +305,42 @@ void egui_view_nav_panel_set_on_selection_changed_listener(egui_view_t *self, eg
 void egui_view_nav_panel_set_compact_mode(egui_view_t *self, uint8_t compact_mode)
 {
     EGUI_LOCAL_INIT(egui_view_nav_panel_t);
+    uint8_t had_pressed = egui_view_nav_panel_clear_pressed_state(self, local);
+
     local->compact_mode = compact_mode ? 1 : 0;
-    egui_view_nav_panel_clear_pressed_state(self, local);
-    egui_view_invalidate(self);
+    if (!had_pressed)
+    {
+        egui_view_invalidate(self);
+    }
 }
 
 void egui_view_nav_panel_set_read_only_mode(egui_view_t *self, uint8_t read_only_mode)
 {
     EGUI_LOCAL_INIT(egui_view_nav_panel_t);
+    uint8_t had_pressed = egui_view_nav_panel_clear_pressed_state(self, local);
+
     local->read_only_mode = read_only_mode ? 1 : 0;
-    egui_view_nav_panel_clear_pressed_state(self, local);
-    egui_view_invalidate(self);
+    if (!had_pressed)
+    {
+        egui_view_invalidate(self);
+    }
 }
 
 void egui_view_nav_panel_set_palette(egui_view_t *self, egui_color_t surface_color, egui_color_t border_color, egui_color_t text_color,
                                      egui_color_t muted_text_color, egui_color_t accent_color)
 {
     EGUI_LOCAL_INIT(egui_view_nav_panel_t);
+    uint8_t had_pressed = egui_view_nav_panel_clear_pressed_state(self, local);
+
     local->surface_color = surface_color;
     local->border_color = border_color;
     local->text_color = text_color;
     local->muted_text_color = muted_text_color;
     local->accent_color = accent_color;
-    egui_view_invalidate(self);
+    if (!had_pressed)
+    {
+        egui_view_invalidate(self);
+    }
 }
 
 static void egui_view_nav_panel_draw_standard_item(egui_view_t *self, egui_view_nav_panel_t *local, const egui_region_t *item_region,
@@ -531,9 +586,38 @@ static int egui_view_nav_panel_on_touch_event(egui_view_t *self, egui_motion_eve
         {
             return 0;
         }
+        if (local->pressed_index == hit_index && self->is_pressed)
+        {
+            return 1;
+        }
         local->pressed_index = hit_index;
-        egui_view_set_pressed(self, true);
-        egui_view_invalidate(self);
+        if (!self->is_pressed)
+        {
+            egui_view_set_pressed(self, true);
+        }
+        else
+        {
+            egui_view_invalidate(self);
+        }
+        return 1;
+    case EGUI_MOTION_EVENT_ACTION_MOVE:
+        if (local->pressed_index == EGUI_VIEW_NAV_PANEL_INDEX_NONE)
+        {
+            return 0;
+        }
+        hit_index = egui_view_nav_panel_hit_item(local, self, event->location.x, event->location.y);
+        if (hit_index == local->pressed_index)
+        {
+            if (!self->is_pressed)
+            {
+                egui_view_set_pressed(self, true);
+            }
+            return 1;
+        }
+        if (self->is_pressed)
+        {
+            egui_view_set_pressed(self, false);
+        }
         return 1;
     case EGUI_MOTION_EVENT_ACTION_UP:
     {
@@ -541,23 +625,15 @@ static int egui_view_nav_panel_on_touch_event(egui_view_t *self, egui_motion_eve
 
         hit_index = egui_view_nav_panel_hit_item(local, self, event->location.x, event->location.y);
         handled = (local->pressed_index != EGUI_VIEW_NAV_PANEL_INDEX_NONE) || hit_index != EGUI_VIEW_NAV_PANEL_INDEX_NONE;
-        if (local->pressed_index != EGUI_VIEW_NAV_PANEL_INDEX_NONE && local->pressed_index == hit_index)
+        if (local->pressed_index != EGUI_VIEW_NAV_PANEL_INDEX_NONE && self->is_pressed && local->pressed_index == hit_index)
         {
             egui_view_nav_panel_set_current_index_inner(self, hit_index, 1);
         }
-        if (egui_view_nav_panel_clear_pressed_state(self, local))
-        {
-            egui_view_invalidate(self);
-        }
+        egui_view_nav_panel_clear_pressed_state(self, local);
         return handled;
     }
     case EGUI_MOTION_EVENT_ACTION_CANCEL:
-        if (egui_view_nav_panel_clear_pressed_state(self, local))
-        {
-            egui_view_invalidate(self);
-            return 1;
-        }
-        return 0;
+        return egui_view_nav_panel_clear_pressed_state(self, local);
     default:
         return 0;
     }
@@ -611,6 +687,37 @@ static int egui_view_nav_panel_on_key_event(egui_view_t *self, egui_key_event_t 
     return 1;
 }
 #endif
+
+#if EGUI_CONFIG_FUNCTION_SUPPORT_KEY
+static int egui_view_nav_panel_on_static_key_event(egui_view_t *self, egui_key_event_t *event)
+{
+    EGUI_LOCAL_INIT(egui_view_nav_panel_t);
+    EGUI_UNUSED(event);
+    egui_view_nav_panel_clear_pressed_state(self, local);
+    return 1;
+}
+#endif
+
+#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
+static int egui_view_nav_panel_on_static_touch_event(egui_view_t *self, egui_motion_event_t *event)
+{
+    EGUI_LOCAL_INIT(egui_view_nav_panel_t);
+    EGUI_UNUSED(event);
+    egui_view_nav_panel_clear_pressed_state(self, local);
+    return 1;
+}
+#endif
+
+void egui_view_nav_panel_override_static_preview_api(egui_view_t *self, egui_view_api_t *api)
+{
+    egui_view_copy_api(self, api);
+#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
+    api->on_touch_event = egui_view_nav_panel_on_static_touch_event;
+#endif
+#if EGUI_CONFIG_FUNCTION_SUPPORT_KEY
+    api->on_key_event = egui_view_nav_panel_on_static_key_event;
+#endif
+}
 
 const egui_view_api_t EGUI_VIEW_API_TABLE_NAME(egui_view_nav_panel_t) = {
         .dispatch_touch_event = egui_view_dispatch_touch_event,

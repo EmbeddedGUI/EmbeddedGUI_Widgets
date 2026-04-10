@@ -34,7 +34,6 @@
 
 | 状态 | 控件名 | 分类 | 开始日期 | 当前阶段 | 目标 |
 | --- | --- | --- | --- | --- | --- |
-| 进行中 | `nav_panel` | `navigation` | `2026-04-10` | 交互收口与验证 | 复核 `selection / pane toggle / compact / read only / disabled / preview touch-key` 链路里的状态清理、静态 preview 与交互后渲染回归 |
 
 ## 当前保留的 Reference 主线控件
 
@@ -96,6 +95,12 @@
 - `toast_stack` -> `Toast`
 
 ## 最近完成的收口动作
+
+- `2026-04-10`
+  - 完成 `navigation/nav_panel` 二次收口：在既有 `reference` 页面结构不再调整的前提下，把工作重点收回到交互行为，补齐 `selection / same-target release / compact / read only / disabled / preview touch-key` 链路里的状态清理、静态 preview 输入吞掉与渲染回归，同时继续保留符合 Fluent / WPF UI 语义的 `NavigationView` rail、selected indicator、badge 与 footer。
+  - `egui_view_nav_panel.c/.h` 让 `clear_pressed_state()` 统一覆盖 `pressed_index / is_pressed`，并新增 `egui_view_nav_panel_override_static_preview_api()`；让 `set_header_text()`、`set_footer_text()`、`set_footer_badge()`、`set_font()`、`set_meta_font()`、`set_palette()`、`set_items()`、`set_compact_mode()`、`set_read_only_mode()` 以及 `touch / key guard` 都先清理残留 pressed；补上 `ACTION_MOVE` 下的 same-target release 语义，保证 `DOWN(A) -> MOVE(B) -> UP(B)` 不提交，只有回到 A 后 `UP(A)` 才提交。
+  - `example/HelloCustomWidgets/navigation/nav_panel/test.c` 把底部 `compact / read only` 预览改成统一 static preview API，并补上 `dismiss_primary_focus_on_preview_touch()` 用于点击 preview 时只清主控件 focus；runtime 录制新增 `compact` preview 点击后的收尾帧与最终稳定帧。`example/HelloUnitTest/test/test_nav_panel.c` 补齐 “setter 清理 pressed”“same-target release 与 cancel”“read only / view disabled guard 清理残留 pressed”“static preview 吞掉 touch / key 且不改 current_index” 的交互回归；README 同步明确 static preview、same-target release、preview 点击收口与验收标准。
+  - 已通过 `make clean APP=HelloUnitTest PORT=pc_test`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`make clean APP=HelloCustomWidgets APP_SUB=navigation/nav_panel PORT=pc`、`make all APP=HelloCustomWidgets APP_SUB=navigation/nav_panel PORT=pc`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category navigation`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub navigation/nav_panel --track reference --timeout 10 --keep-screenshots`、`python scripts/checks/check_docs_encoding.py`，并复核 `runtime_check_output/HelloCustomWidgets_navigation_nav_panel/default/frame_0000.png`、`frame_0002.png`、`frame_0004.png`、`frame_0006.png`、`frame_0008.png`、`frame_0010.png`、`frame_0012.png` 的输出尺寸、均值与帧差异框，确认变化集中在主控件与底部 preview 区域，preview 点击后的收尾帧和最终稳定帧都没有黑白屏、裁切或残留 `pressed` 污染。
 
 - `2026-04-10`
   - 完成 `navigation/menu_flyout` 二次收口：在既有 `reference` 页面结构不再调整的前提下，把工作重点收回到交互行为，补齐 `snapshot / invoke / same-target release / compact / disabled / preview touch-key` 链路里的状态清理、静态 preview 输入吞掉与渲染回归，同时继续保留符合 Fluent / WPF UI 语义的触发按钮、弹出菜单、危险项与辅助说明。
