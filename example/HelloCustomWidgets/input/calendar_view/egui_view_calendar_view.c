@@ -131,6 +131,30 @@ static egui_color_t calendar_view_mix_disabled(egui_color_t color)
     return egui_rgb_mix(color, EGUI_COLOR_DARK_GREY, 68);
 }
 
+static uint8_t calendar_view_clear_pressed_state(egui_view_t *self, egui_view_calendar_view_t *local)
+{
+    uint8_t was_pressed = self->is_pressed ? 1 : 0;
+    uint8_t had_pressed = was_pressed || local->pressed_part != EGUI_VIEW_CALENDAR_VIEW_PART_NONE || local->pressed_day != 0;
+
+    if (!had_pressed)
+    {
+        return 0;
+    }
+
+    local->pressed_part = EGUI_VIEW_CALENDAR_VIEW_PART_NONE;
+    local->pressed_day = 0;
+    if (was_pressed)
+    {
+        egui_view_set_pressed(self, false);
+    }
+    else
+    {
+        egui_view_invalidate(self);
+    }
+
+    return 1;
+}
+
 static uint8_t calendar_view_region_contains_point(const egui_region_t *region, egui_dim_t x, egui_dim_t y)
 {
     return (x >= region->location.x && x < region->location.x + region->size.width && y >= region->location.y && y < region->location.y + region->size.height)
@@ -964,6 +988,7 @@ static uint8_t calendar_view_hit_part(egui_view_calendar_view_t *local, egui_vie
 void egui_view_calendar_view_set_range(egui_view_t *self, uint16_t year, uint8_t month, uint8_t start_day, uint8_t end_day)
 {
     EGUI_LOCAL_INIT(egui_view_calendar_view_t);
+    uint8_t had_pressed = calendar_view_clear_pressed_state(self, local);
 
     calendar_view_normalize_display_month(&year, &month);
     calendar_view_normalize_day_pair(year, month, &start_day, &end_day);
@@ -981,7 +1006,10 @@ void egui_view_calendar_view_set_range(egui_view_t *self, uint16_t year, uint8_t
         local->focus_day = end_day;
     }
     calendar_view_clamp_focus_day(local);
-    egui_view_invalidate(self);
+    if (!had_pressed)
+    {
+        egui_view_invalidate(self);
+    }
 }
 
 uint16_t egui_view_calendar_view_get_selection_year(egui_view_t *self)
@@ -1062,12 +1090,20 @@ uint8_t egui_view_calendar_view_get_first_day_of_week(egui_view_t *self)
 void egui_view_calendar_view_set_display_month(egui_view_t *self, uint16_t year, uint8_t month)
 {
     EGUI_LOCAL_INIT(egui_view_calendar_view_t);
+    uint8_t had_pressed = calendar_view_clear_pressed_state(self, local);
 
     if (!calendar_view_assign_display_month(local, year, month))
     {
+        if (had_pressed)
+        {
+            egui_view_invalidate(self);
+        }
         return;
     }
-    egui_view_invalidate(self);
+    if (!had_pressed)
+    {
+        egui_view_invalidate(self);
+    }
     calendar_view_emit_display_month_changed(self, local);
 }
 
@@ -1130,43 +1166,54 @@ void egui_view_calendar_view_set_on_display_month_changed_listener(egui_view_t *
 void egui_view_calendar_view_set_compact_mode(egui_view_t *self, uint8_t compact_mode)
 {
     EGUI_LOCAL_INIT(egui_view_calendar_view_t);
+    uint8_t had_pressed = calendar_view_clear_pressed_state(self, local);
 
     compact_mode = compact_mode ? 1 : 0;
     if (local->compact_mode == compact_mode)
     {
+        if (had_pressed)
+        {
+            egui_view_invalidate(self);
+        }
         return;
     }
     local->compact_mode = compact_mode;
-    local->pressed_part = EGUI_VIEW_CALENDAR_VIEW_PART_NONE;
-    local->pressed_day = 0;
-    egui_view_set_pressed(self, false);
-    egui_view_invalidate(self);
+    if (!had_pressed)
+    {
+        egui_view_invalidate(self);
+    }
 }
 
 void egui_view_calendar_view_set_read_only_mode(egui_view_t *self, uint8_t read_only_mode)
 {
     EGUI_LOCAL_INIT(egui_view_calendar_view_t);
+    uint8_t had_pressed = calendar_view_clear_pressed_state(self, local);
 
     read_only_mode = read_only_mode ? 1 : 0;
     if (local->read_only_mode == read_only_mode)
     {
+        if (had_pressed)
+        {
+            egui_view_invalidate(self);
+        }
         return;
     }
     local->read_only_mode = read_only_mode;
-    local->pressed_part = EGUI_VIEW_CALENDAR_VIEW_PART_NONE;
-    local->pressed_day = 0;
-    egui_view_set_pressed(self, false);
     if (read_only_mode && local->editing_range)
     {
         calendar_view_restore_committed_selection(self, 0);
     }
-    egui_view_invalidate(self);
+    if (!had_pressed)
+    {
+        egui_view_invalidate(self);
+    }
 }
 
 void egui_view_calendar_view_set_palette(egui_view_t *self, egui_color_t surface_color, egui_color_t border_color, egui_color_t text_color,
                                          egui_color_t muted_text_color, egui_color_t accent_color, egui_color_t today_color)
 {
     EGUI_LOCAL_INIT(egui_view_calendar_view_t);
+    uint8_t had_pressed = calendar_view_clear_pressed_state(self, local);
 
     local->surface_color = surface_color;
     local->border_color = border_color;
@@ -1174,11 +1221,17 @@ void egui_view_calendar_view_set_palette(egui_view_t *self, egui_color_t surface
     local->muted_text_color = muted_text_color;
     local->accent_color = accent_color;
     local->today_color = today_color;
-    egui_view_invalidate(self);
+    if (!had_pressed)
+    {
+        egui_view_invalidate(self);
+    }
 }
 
 void egui_view_calendar_view_set_current_part(egui_view_t *self, uint8_t part)
 {
+    EGUI_LOCAL_INIT(egui_view_calendar_view_t);
+
+    calendar_view_clear_pressed_state(self, local);
     calendar_view_set_current_part_inner(self, part);
 }
 
@@ -1370,9 +1423,7 @@ static void egui_view_calendar_view_on_focus_change(egui_view_t *self, int is_fo
         return;
     }
 
-    local->pressed_part = EGUI_VIEW_CALENDAR_VIEW_PART_NONE;
-    local->pressed_day = 0;
-    egui_view_set_pressed(self, false);
+    calendar_view_clear_pressed_state(self, local);
     if (local->editing_range)
     {
         calendar_view_restore_committed_selection(self, 1);
@@ -1394,6 +1445,7 @@ static int egui_view_calendar_view_on_touch_event(egui_view_t *self, egui_motion
 
     if (!egui_view_get_enable(self) || local->read_only_mode || local->compact_mode)
     {
+        calendar_view_clear_pressed_state(self, local);
         return 0;
     }
 
@@ -1440,11 +1492,7 @@ static int egui_view_calendar_view_on_touch_event(egui_view_t *self, egui_motion
         }
         return 0;
     case EGUI_MOTION_EVENT_ACTION_CANCEL:
-        local->pressed_part = EGUI_VIEW_CALENDAR_VIEW_PART_NONE;
-        local->pressed_day = 0;
-        egui_view_set_pressed(self, false);
-        egui_view_invalidate(self);
-        return 1;
+        return calendar_view_clear_pressed_state(self, local);
     case EGUI_MOTION_EVENT_ACTION_UP:
     {
         uint8_t pressed_part = local->pressed_part;
@@ -1475,10 +1523,7 @@ static int egui_view_calendar_view_on_touch_event(egui_view_t *self, egui_motion
                 }
             }
         }
-        local->pressed_part = EGUI_VIEW_CALENDAR_VIEW_PART_NONE;
-        local->pressed_day = 0;
-        egui_view_set_pressed(self, false);
-        egui_view_invalidate(self);
+        calendar_view_clear_pressed_state(self, local);
         return hit_part != EGUI_VIEW_CALENDAR_VIEW_PART_NONE ? 1 : 0;
     }
     default:
@@ -1490,6 +1535,14 @@ static int egui_view_calendar_view_on_touch_event(egui_view_t *self, egui_motion
 #if EGUI_CONFIG_FUNCTION_SUPPORT_KEY
 static int egui_view_calendar_view_on_key_event(egui_view_t *self, egui_key_event_t *event)
 {
+    EGUI_LOCAL_INIT(egui_view_calendar_view_t);
+
+    if (!egui_view_get_enable(self) || local->read_only_mode || local->compact_mode)
+    {
+        calendar_view_clear_pressed_state(self, local);
+        return 0;
+    }
+
     if (event->type != EGUI_KEY_EVENT_ACTION_UP)
     {
         switch (event->key_code)
@@ -1518,7 +1571,38 @@ static int egui_view_calendar_view_on_key_event(egui_view_t *self, egui_key_even
     }
     return egui_view_on_key_event(self, event);
 }
+
+static int egui_view_calendar_view_on_static_key_event(egui_view_t *self, egui_key_event_t *event)
+{
+    EGUI_LOCAL_INIT(egui_view_calendar_view_t);
+
+    EGUI_UNUSED(event);
+    calendar_view_clear_pressed_state(self, local);
+    return 1;
+}
 #endif
+
+#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
+static int egui_view_calendar_view_on_static_touch_event(egui_view_t *self, egui_motion_event_t *event)
+{
+    EGUI_LOCAL_INIT(egui_view_calendar_view_t);
+
+    EGUI_UNUSED(event);
+    calendar_view_clear_pressed_state(self, local);
+    return 1;
+}
+#endif
+
+void egui_view_calendar_view_override_static_preview_api(egui_view_t *self, egui_view_api_t *api)
+{
+    egui_view_copy_api(self, api);
+#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
+    api->on_touch_event = egui_view_calendar_view_on_static_touch_event;
+#endif
+#if EGUI_CONFIG_FUNCTION_SUPPORT_KEY
+    api->on_key_event = egui_view_calendar_view_on_static_key_event;
+#endif
+}
 
 const egui_view_api_t EGUI_VIEW_API_TABLE_NAME(egui_view_calendar_view_t) = {
         .dispatch_touch_event = egui_view_dispatch_touch_event,

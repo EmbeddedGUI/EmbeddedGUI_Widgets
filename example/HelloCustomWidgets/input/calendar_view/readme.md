@@ -94,6 +94,8 @@ python scripts/checks/check_docs_encoding.py
 验收重点：
 - 主 `CalendarView` 的 month title、weekday header 和 day grid 必须完整可见
 - `anchor` 预览、区间提交和 `browse month` 的层级必须清晰
+- `set_range / display month / palette / current part / compact / read only` 切换后不能残留 `pressed_part / pressed_day / is_pressed` 污染
+- 底部 `compact / read only` 预览必须统一吞掉 touch / key 输入，并在收到输入后立即清理残留 `pressed` 渲染
 - `compact` 与 `read only` 必须是低噪音静态 reference，不再出现页面级标签
 - 页面中不再出现 `guide`、状态行、分隔线和 preview label
 
@@ -133,4 +135,4 @@ python scripts/checks/check_docs_encoding.py
 - 直接复用 `calendar_view` 基础实现，避免在示例页重复搭状态桥
 - 用统一浅色 palette 收口到 `Fluent 2 / WPF UI` reference 方向
 - 主控件保留真实 touch / key 区间选择与月份浏览闭环
-- 页面空白区和底部双预览只负责清焦，不再承担演示切换逻辑
+- 页面空白区和底部双预览只负责清焦，底部双预览通过统一 static preview API 吞输入，不再承担演示切换逻辑

@@ -44,6 +44,8 @@ static egui_view_calendar_view_t calendar_primary;
 static egui_view_linearlayout_t bottom_row;
 static egui_view_calendar_view_t calendar_compact;
 static egui_view_calendar_view_t calendar_read_only;
+static egui_view_api_t calendar_compact_api;
+static egui_view_api_t calendar_read_only_api;
 
 EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
 EGUI_BACKGROUND_PARAM_INIT(bg_page_panel_params, &bg_page_panel_param, NULL, NULL);
@@ -70,7 +72,7 @@ static void dismiss_primary_focus(void)
 #endif
 }
 
-static int consume_preview_touch(egui_view_t *self, egui_motion_event_t *event)
+static int dismiss_primary_focus_on_preview_touch(egui_view_t *self, egui_motion_event_t *event)
 {
     EGUI_UNUSED(self);
 
@@ -177,8 +179,10 @@ void test_init_ui(void)
     egui_view_calendar_view_set_compact_mode(EGUI_VIEW_OF(&calendar_compact), 1);
     egui_view_calendar_view_set_palette(EGUI_VIEW_OF(&calendar_compact), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD5DCE4), EGUI_COLOR_HEX(0x1A2734),
                                         EGUI_COLOR_HEX(0x6B7A89), EGUI_COLOR_HEX(0x0F6CBD), EGUI_COLOR_HEX(0x0F6CBD));
-    static egui_view_api_t compact_touch_api;
-    egui_view_override_api_on_touch(EGUI_VIEW_OF(&calendar_compact), &compact_touch_api, consume_preview_touch);
+    egui_view_calendar_view_override_static_preview_api(EGUI_VIEW_OF(&calendar_compact), &calendar_compact_api);
+#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
+    calendar_compact_api.on_touch = dismiss_primary_focus_on_preview_touch;
+#endif
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&calendar_compact), false);
 #endif
@@ -194,8 +198,10 @@ void test_init_ui(void)
     egui_view_calendar_view_set_read_only_mode(EGUI_VIEW_OF(&calendar_read_only), 1);
     egui_view_calendar_view_set_palette(EGUI_VIEW_OF(&calendar_read_only), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD5DCE4), EGUI_COLOR_HEX(0x6B7A89),
                                         EGUI_COLOR_HEX(0x7A8796), EGUI_COLOR_HEX(0x7A8796), EGUI_COLOR_HEX(0x7A8796));
-    static egui_view_api_t read_only_touch_api;
-    egui_view_override_api_on_touch(EGUI_VIEW_OF(&calendar_read_only), &read_only_touch_api, consume_preview_touch);
+    egui_view_calendar_view_override_static_preview_api(EGUI_VIEW_OF(&calendar_read_only), &calendar_read_only_api);
+#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
+    calendar_read_only_api.on_touch = dismiss_primary_focus_on_preview_touch;
+#endif
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&calendar_read_only), false);
 #endif

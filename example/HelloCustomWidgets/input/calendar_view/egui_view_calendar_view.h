@@ -84,6 +84,7 @@ void egui_view_calendar_view_set_current_part(egui_view_t *self, uint8_t part);
 uint8_t egui_view_calendar_view_get_current_part(egui_view_t *self);
 uint8_t egui_view_calendar_view_handle_navigation_key(egui_view_t *self, uint8_t key_code);
 uint8_t egui_view_calendar_view_get_part_region(egui_view_t *self, uint8_t part, egui_region_t *region);
+void egui_view_calendar_view_override_static_preview_api(egui_view_t *self, egui_view_api_t *api);
 
 #ifdef __cplusplus
 }
