@@ -34,7 +34,7 @@
 
 | 状态 | 控件名 | 分类 | 开始日期 | 当前阶段 | 目标 |
 | --- | --- | --- | --- | --- | --- |
-| 暂无 | - | - | - | - | - |
+| 进行中 | `tab_strip` | `navigation` | `2026-04-10` | 交互收口与验证 | 复核 `tab select / same-target release / compact / read only / disabled / preview touch-key` 链路里的状态清理、静态 preview 与交互后渲染回归 |
 
 ## 当前保留的 Reference 主线控件
 
