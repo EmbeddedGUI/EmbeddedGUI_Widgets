@@ -37,6 +37,8 @@ static egui_view_rating_control_t control_primary;
 static egui_view_linearlayout_t bottom_row;
 static egui_view_rating_control_t control_compact;
 static egui_view_rating_control_t control_read_only;
+static egui_view_api_t compact_api;
+static egui_view_api_t read_only_api;
 
 EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
 EGUI_BACKGROUND_PARAM_INIT(bg_page_panel_params, &bg_page_panel_param, NULL, NULL);
@@ -64,26 +66,23 @@ static const rating_demo_snapshot_t compact_snapshots[] = {
 
 static const rating_demo_snapshot_t read_only_snapshot = {"", "", "", primary_labels_0, 6, 5, 4, 0};
 
-static int consume_preview_touch(egui_view_t *self, egui_motion_event_t *event)
+static void dismiss_primary_rating_control(void)
 {
-    EGUI_UNUSED(self);
-
-    if (event->type == EGUI_MOTION_EVENT_ACTION_UP || event->type == EGUI_MOTION_EVENT_ACTION_CANCEL)
-    {
-        egui_view_set_pressed(self, 0);
-    }
-
-    return 1;
-}
-
-#if EGUI_CONFIG_FUNCTION_SUPPORT_KEY
-static int consume_preview_key(egui_view_t *self, egui_key_event_t *event)
-{
-    EGUI_UNUSED(self);
-    EGUI_UNUSED(event);
-    return 1;
-}
+#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
+    egui_view_clear_focus(EGUI_VIEW_OF(&control_primary));
 #endif
+}
+
+static int dismiss_primary_focus_on_preview_touch(egui_view_t *self, egui_motion_event_t *event)
+{
+    EGUI_UNUSED(self);
+
+    if (event->type == EGUI_MOTION_EVENT_ACTION_DOWN)
+    {
+        dismiss_primary_rating_control();
+    }
+    return 1;
+}
 
 static void apply_snapshot(egui_view_t *view, const rating_demo_snapshot_t *snapshot)
 {
@@ -186,10 +185,9 @@ void test_init_ui(void)
     egui_view_rating_control_set_compact_mode(EGUI_VIEW_OF(&control_compact), 1);
     egui_view_rating_control_set_palette(EGUI_VIEW_OF(&control_compact), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xDADFE5), EGUI_COLOR_HEX(0x2B3138),
                                          EGUI_COLOR_HEX(0x74808C), EGUI_COLOR_HEX(0xC78C16), EGUI_COLOR_HEX(0xE0E6EC));
-    static egui_view_api_t compact_api;
-    egui_view_override_api_on_touch(EGUI_VIEW_OF(&control_compact), &compact_api, consume_preview_touch);
-#if EGUI_CONFIG_FUNCTION_SUPPORT_KEY
-    egui_view_override_api_on_key(EGUI_VIEW_OF(&control_compact), &compact_api, consume_preview_key);
+    egui_view_rating_control_override_static_preview_api(EGUI_VIEW_OF(&control_compact), &compact_api);
+#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
+    compact_api.on_touch = dismiss_primary_focus_on_preview_touch;
 #endif
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&control_compact), 0);
@@ -205,10 +203,9 @@ void test_init_ui(void)
     egui_view_rating_control_set_read_only_mode(EGUI_VIEW_OF(&control_read_only), 1);
     egui_view_rating_control_set_palette(EGUI_VIEW_OF(&control_read_only), EGUI_COLOR_HEX(0xFBFCFD), EGUI_COLOR_HEX(0xD9E1E8), EGUI_COLOR_HEX(0x596878),
                                          EGUI_COLOR_HEX(0x8C98A5), EGUI_COLOR_HEX(0x9DA9B5), EGUI_COLOR_HEX(0xE3E9EF));
-    static egui_view_api_t read_only_api;
-    egui_view_override_api_on_touch(EGUI_VIEW_OF(&control_read_only), &read_only_api, consume_preview_touch);
-#if EGUI_CONFIG_FUNCTION_SUPPORT_KEY
-    egui_view_override_api_on_key(EGUI_VIEW_OF(&control_read_only), &read_only_api, consume_preview_key);
+    egui_view_rating_control_override_static_preview_api(EGUI_VIEW_OF(&control_read_only), &read_only_api);
+#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
+    read_only_api.on_touch = dismiss_primary_focus_on_preview_touch;
 #endif
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&control_read_only), 0);

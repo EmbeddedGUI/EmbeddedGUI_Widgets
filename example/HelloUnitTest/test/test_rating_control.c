@@ -8,6 +8,8 @@
 #include "../../HelloCustomWidgets/input/rating_control/egui_view_rating_control.c"
 
 static egui_view_rating_control_t test_rating_control;
+static egui_view_rating_control_t preview_rating_control;
+static egui_view_api_t preview_api;
 static uint8_t g_changed_value = 0xFF;
 static uint8_t g_changed_part = EGUI_VIEW_RATING_CONTROL_PART_NONE;
 static uint8_t g_changed_count = 0;
@@ -30,11 +32,24 @@ static void on_rating_changed(egui_view_t *self, uint8_t value, uint8_t part)
 static void setup_rating_control(uint8_t value)
 {
     egui_view_rating_control_init(EGUI_VIEW_OF(&test_rating_control));
+    egui_view_set_size(EGUI_VIEW_OF(&test_rating_control), 196, 92);
     egui_view_rating_control_set_item_count(EGUI_VIEW_OF(&test_rating_control), 5);
     egui_view_rating_control_set_clear_enabled(EGUI_VIEW_OF(&test_rating_control), 1);
     egui_view_rating_control_set_on_changed_listener(EGUI_VIEW_OF(&test_rating_control), on_rating_changed);
     egui_view_rating_control_set_value(EGUI_VIEW_OF(&test_rating_control), value);
     reset_changed_state();
+}
+
+static void setup_preview_rating_control(uint8_t value)
+{
+    egui_view_rating_control_init(EGUI_VIEW_OF(&preview_rating_control));
+    egui_view_set_size(EGUI_VIEW_OF(&preview_rating_control), 106, 42);
+    egui_view_rating_control_set_item_count(EGUI_VIEW_OF(&preview_rating_control), 5);
+    egui_view_rating_control_set_clear_enabled(EGUI_VIEW_OF(&preview_rating_control), 1);
+    egui_view_rating_control_set_value(EGUI_VIEW_OF(&preview_rating_control), value);
+    egui_view_rating_control_set_current_part(EGUI_VIEW_OF(&preview_rating_control), value > 0 ? value : 1);
+    egui_view_rating_control_set_compact_mode(EGUI_VIEW_OF(&preview_rating_control), 1);
+    egui_view_rating_control_override_static_preview_api(EGUI_VIEW_OF(&preview_rating_control), &preview_api);
 }
 
 static void layout_rating_control(egui_dim_t x, egui_dim_t y, egui_dim_t width, egui_dim_t height)
@@ -47,6 +62,27 @@ static void layout_rating_control(egui_dim_t x, egui_dim_t y, egui_dim_t width, 
     region.size.height = height;
     egui_view_layout(EGUI_VIEW_OF(&test_rating_control), &region);
     egui_region_copy(&EGUI_VIEW_OF(&test_rating_control)->region_screen, &region);
+}
+
+static void layout_preview_rating_control(egui_dim_t x, egui_dim_t y)
+{
+    egui_region_t region;
+
+    region.location.x = x;
+    region.location.y = y;
+    region.size.width = 106;
+    region.size.height = 42;
+    egui_view_layout(EGUI_VIEW_OF(&preview_rating_control), &region);
+    egui_region_copy(&EGUI_VIEW_OF(&preview_rating_control)->region_screen, &region);
+}
+
+static void get_part_center(egui_view_t *view, uint8_t part, egui_dim_t *x, egui_dim_t *y)
+{
+    egui_region_t region;
+
+    EGUI_TEST_ASSERT_TRUE(egui_view_rating_control_get_part_region(view, part, &region));
+    *x = region.location.x + region.size.width / 2;
+    *y = region.location.y + region.size.height / 2;
 }
 
 static int send_touch_event(uint8_t type, egui_dim_t x, egui_dim_t y)
@@ -70,11 +106,101 @@ static int send_key_event(uint8_t type, uint8_t key_code)
     return EGUI_VIEW_OF(&test_rating_control)->api->on_key_event(EGUI_VIEW_OF(&test_rating_control), &event);
 }
 
+static int send_preview_touch_event(uint8_t type, egui_dim_t x, egui_dim_t y)
+{
+    egui_motion_event_t event;
+
+    memset(&event, 0, sizeof(event));
+    event.type = type;
+    event.location.x = x;
+    event.location.y = y;
+    return EGUI_VIEW_OF(&preview_rating_control)->api->on_touch_event(EGUI_VIEW_OF(&preview_rating_control), &event);
+}
+
+static int send_preview_key_event(uint8_t type, uint8_t key_code)
+{
+    egui_key_event_t event;
+
+    memset(&event, 0, sizeof(event));
+    event.type = type;
+    event.key_code = key_code;
+    return EGUI_VIEW_OF(&preview_rating_control)->api->on_key_event(EGUI_VIEW_OF(&preview_rating_control), &event);
+}
+
 static void assert_changed_state(uint8_t count, uint8_t value, uint8_t part)
 {
     EGUI_TEST_ASSERT_EQUAL_INT(count, g_changed_count);
     EGUI_TEST_ASSERT_EQUAL_INT(value, g_changed_value);
     EGUI_TEST_ASSERT_EQUAL_INT(part, g_changed_part);
+}
+
+static void test_rating_control_setters_clear_pressed_state(void)
+{
+    static const char *labels[] = {"0", "1", "2", "3", "4", "5"};
+
+    setup_rating_control(5);
+
+    EGUI_VIEW_OF(&test_rating_control)->is_pressed = 1;
+    test_rating_control.pressed_part = 5;
+    egui_view_rating_control_set_item_count(EGUI_VIEW_OF(&test_rating_control), 3);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_rating_control)->is_pressed);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_RATING_CONTROL_PART_NONE, test_rating_control.pressed_part);
+    EGUI_TEST_ASSERT_EQUAL_INT(3, test_rating_control.item_count);
+    EGUI_TEST_ASSERT_EQUAL_INT(3, egui_view_rating_control_get_value(EGUI_VIEW_OF(&test_rating_control)));
+    EGUI_TEST_ASSERT_EQUAL_INT(3, egui_view_rating_control_get_current_part(EGUI_VIEW_OF(&test_rating_control)));
+
+    EGUI_VIEW_OF(&test_rating_control)->is_pressed = 1;
+    test_rating_control.pressed_part = 3;
+    egui_view_rating_control_set_value(EGUI_VIEW_OF(&test_rating_control), 2);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_rating_control)->is_pressed);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_RATING_CONTROL_PART_NONE, test_rating_control.pressed_part);
+    EGUI_TEST_ASSERT_EQUAL_INT(2, egui_view_rating_control_get_value(EGUI_VIEW_OF(&test_rating_control)));
+    EGUI_TEST_ASSERT_EQUAL_INT(2, egui_view_rating_control_get_current_part(EGUI_VIEW_OF(&test_rating_control)));
+
+    EGUI_VIEW_OF(&test_rating_control)->is_pressed = 1;
+    test_rating_control.pressed_part = 2;
+    egui_view_rating_control_set_current_part(EGUI_VIEW_OF(&test_rating_control), 1);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_rating_control)->is_pressed);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_RATING_CONTROL_PART_NONE, test_rating_control.pressed_part);
+    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_rating_control_get_current_part(EGUI_VIEW_OF(&test_rating_control)));
+
+    EGUI_VIEW_OF(&test_rating_control)->is_pressed = 1;
+    test_rating_control.pressed_part = 1;
+    egui_view_rating_control_set_value_labels(EGUI_VIEW_OF(&test_rating_control), labels, EGUI_ARRAY_SIZE(labels));
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_rating_control)->is_pressed);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_RATING_CONTROL_PART_NONE, test_rating_control.pressed_part);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_ARRAY_SIZE(labels), test_rating_control.label_count);
+
+    EGUI_VIEW_OF(&test_rating_control)->is_pressed = 1;
+    test_rating_control.pressed_part = 1;
+    egui_view_rating_control_set_palette(EGUI_VIEW_OF(&test_rating_control), EGUI_COLOR_HEX(0x101112), EGUI_COLOR_HEX(0x202122), EGUI_COLOR_HEX(0x303132),
+                                         EGUI_COLOR_HEX(0x404142), EGUI_COLOR_HEX(0x505152), EGUI_COLOR_HEX(0x606162));
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_rating_control)->is_pressed);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_RATING_CONTROL_PART_NONE, test_rating_control.pressed_part);
+
+    egui_view_rating_control_set_value(EGUI_VIEW_OF(&test_rating_control), 2);
+    egui_view_rating_control_set_current_part(EGUI_VIEW_OF(&test_rating_control), EGUI_VIEW_RATING_CONTROL_PART_CLEAR);
+    EGUI_VIEW_OF(&test_rating_control)->is_pressed = 1;
+    test_rating_control.pressed_part = EGUI_VIEW_RATING_CONTROL_PART_CLEAR;
+    egui_view_rating_control_set_clear_enabled(EGUI_VIEW_OF(&test_rating_control), 0);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_rating_control)->is_pressed);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_RATING_CONTROL_PART_NONE, test_rating_control.pressed_part);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, test_rating_control.clear_enabled);
+    EGUI_TEST_ASSERT_EQUAL_INT(2, egui_view_rating_control_get_current_part(EGUI_VIEW_OF(&test_rating_control)));
+
+    EGUI_VIEW_OF(&test_rating_control)->is_pressed = 1;
+    test_rating_control.pressed_part = 2;
+    egui_view_rating_control_set_compact_mode(EGUI_VIEW_OF(&test_rating_control), 1);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_rating_control)->is_pressed);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_RATING_CONTROL_PART_NONE, test_rating_control.pressed_part);
+    EGUI_TEST_ASSERT_EQUAL_INT(1, test_rating_control.compact_mode);
+
+    EGUI_VIEW_OF(&test_rating_control)->is_pressed = 1;
+    test_rating_control.pressed_part = 2;
+    egui_view_rating_control_set_read_only_mode(EGUI_VIEW_OF(&test_rating_control), 1);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_rating_control)->is_pressed);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_RATING_CONTROL_PART_NONE, test_rating_control.pressed_part);
+    EGUI_TEST_ASSERT_EQUAL_INT(1, test_rating_control.read_only_mode);
 }
 
 static void test_rating_control_enter_clear_commits_zero(void)
@@ -559,6 +685,51 @@ static void test_rating_control_touch_ignored_when_read_only_or_disabled(void)
     EGUI_TEST_ASSERT_EQUAL_INT(0, g_changed_count);
 }
 
+static void test_rating_control_read_only_and_disabled_guards_clear_pressed_state(void)
+{
+    egui_dim_t x;
+    egui_dim_t y;
+
+    setup_rating_control(4);
+    layout_rating_control(12, 18, 196, 92);
+    get_part_center(EGUI_VIEW_OF(&test_rating_control), 2, &x, &y);
+
+    egui_view_rating_control_set_read_only_mode(EGUI_VIEW_OF(&test_rating_control), 1);
+    EGUI_VIEW_OF(&test_rating_control)->is_pressed = 1;
+    test_rating_control.pressed_part = 2;
+    EGUI_TEST_ASSERT_FALSE(send_touch_event(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_rating_control)->is_pressed);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_RATING_CONTROL_PART_NONE, test_rating_control.pressed_part);
+    EGUI_VIEW_OF(&test_rating_control)->is_pressed = 1;
+    test_rating_control.pressed_part = 2;
+    EGUI_TEST_ASSERT_TRUE(send_key_event(EGUI_KEY_EVENT_ACTION_DOWN, EGUI_KEY_CODE_RIGHT));
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_rating_control)->is_pressed);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_RATING_CONTROL_PART_NONE, test_rating_control.pressed_part);
+    EGUI_VIEW_OF(&test_rating_control)->is_pressed = 1;
+    test_rating_control.pressed_part = 2;
+    EGUI_TEST_ASSERT_FALSE(send_key_event(EGUI_KEY_EVENT_ACTION_UP, EGUI_KEY_CODE_RIGHT));
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_rating_control)->is_pressed);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_RATING_CONTROL_PART_NONE, test_rating_control.pressed_part);
+
+    egui_view_rating_control_set_read_only_mode(EGUI_VIEW_OF(&test_rating_control), 0);
+    egui_view_set_enable(EGUI_VIEW_OF(&test_rating_control), 0);
+    EGUI_VIEW_OF(&test_rating_control)->is_pressed = 1;
+    test_rating_control.pressed_part = 2;
+    EGUI_TEST_ASSERT_FALSE(send_touch_event(EGUI_MOTION_EVENT_ACTION_UP, x, y));
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_rating_control)->is_pressed);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_RATING_CONTROL_PART_NONE, test_rating_control.pressed_part);
+    EGUI_VIEW_OF(&test_rating_control)->is_pressed = 1;
+    test_rating_control.pressed_part = 2;
+    EGUI_TEST_ASSERT_TRUE(send_key_event(EGUI_KEY_EVENT_ACTION_DOWN, EGUI_KEY_CODE_RIGHT));
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_rating_control)->is_pressed);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_RATING_CONTROL_PART_NONE, test_rating_control.pressed_part);
+    EGUI_VIEW_OF(&test_rating_control)->is_pressed = 1;
+    test_rating_control.pressed_part = 2;
+    EGUI_TEST_ASSERT_FALSE(send_key_event(EGUI_KEY_EVENT_ACTION_UP, EGUI_KEY_CODE_RIGHT));
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_rating_control)->is_pressed);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_RATING_CONTROL_PART_NONE, test_rating_control.pressed_part);
+}
+
 static void test_rating_control_key_event_action_down_consumes_navigation_without_commit(void)
 {
     setup_rating_control(3);
@@ -614,10 +785,39 @@ static void test_rating_control_key_event_disabled_down_is_consumed_but_up_is_qu
     EGUI_TEST_ASSERT_EQUAL_INT(0, g_changed_count);
 }
 
+static void test_rating_control_static_preview_consumes_input_and_clears_pressed_state(void)
+{
+    egui_dim_t x;
+    egui_dim_t y;
+
+    setup_preview_rating_control(4);
+    layout_preview_rating_control(12, 18);
+    get_part_center(EGUI_VIEW_OF(&preview_rating_control), 4, &x, &y);
+
+    EGUI_VIEW_OF(&preview_rating_control)->is_pressed = 1;
+    preview_rating_control.pressed_part = 4;
+    EGUI_TEST_ASSERT_TRUE(send_preview_touch_event(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&preview_rating_control)->is_pressed);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_RATING_CONTROL_PART_NONE, preview_rating_control.pressed_part);
+    EGUI_TEST_ASSERT_EQUAL_INT(4, egui_view_rating_control_get_value(EGUI_VIEW_OF(&preview_rating_control)));
+    EGUI_TEST_ASSERT_EQUAL_INT(4, egui_view_rating_control_get_current_part(EGUI_VIEW_OF(&preview_rating_control)));
+
+    egui_view_rating_control_set_current_part(EGUI_VIEW_OF(&preview_rating_control), 2);
+    EGUI_VIEW_OF(&preview_rating_control)->is_pressed = 1;
+    preview_rating_control.pressed_part = 2;
+    EGUI_TEST_ASSERT_TRUE(send_preview_key_event(EGUI_KEY_EVENT_ACTION_DOWN, EGUI_KEY_CODE_RIGHT));
+    EGUI_TEST_ASSERT_TRUE(send_preview_key_event(EGUI_KEY_EVENT_ACTION_UP, EGUI_KEY_CODE_RIGHT));
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&preview_rating_control)->is_pressed);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_RATING_CONTROL_PART_NONE, preview_rating_control.pressed_part);
+    EGUI_TEST_ASSERT_EQUAL_INT(4, egui_view_rating_control_get_value(EGUI_VIEW_OF(&preview_rating_control)));
+    EGUI_TEST_ASSERT_EQUAL_INT(2, egui_view_rating_control_get_current_part(EGUI_VIEW_OF(&preview_rating_control)));
+}
+
 void test_rating_control_run(void)
 {
     EGUI_TEST_SUITE_BEGIN(rating_control);
 
+    EGUI_TEST_RUN(test_rating_control_setters_clear_pressed_state);
     EGUI_TEST_RUN(test_rating_control_enter_clear_commits_zero);
     EGUI_TEST_RUN(test_rating_control_space_clear_commits_zero);
     EGUI_TEST_RUN(test_rating_control_escape_on_clear_commits_zero);
@@ -647,11 +847,13 @@ void test_rating_control_run(void)
     EGUI_TEST_RUN(test_rating_control_touch_drag_to_new_star_commits_latest_part);
     EGUI_TEST_RUN(test_rating_control_touch_cancel_clears_pressed_state_without_commit);
     EGUI_TEST_RUN(test_rating_control_touch_ignored_when_read_only_or_disabled);
+    EGUI_TEST_RUN(test_rating_control_read_only_and_disabled_guards_clear_pressed_state);
     EGUI_TEST_RUN(test_rating_control_key_event_action_down_consumes_navigation_without_commit);
     EGUI_TEST_RUN(test_rating_control_key_event_action_up_commits_navigation);
     EGUI_TEST_RUN(test_rating_control_key_event_unknown_key_falls_back);
     EGUI_TEST_RUN(test_rating_control_key_event_read_only_down_is_consumed_but_up_is_quiet);
     EGUI_TEST_RUN(test_rating_control_key_event_disabled_down_is_consumed_but_up_is_quiet);
+    EGUI_TEST_RUN(test_rating_control_static_preview_consumes_input_and_clears_pressed_state);
 
     EGUI_TEST_SUITE_END();
 }

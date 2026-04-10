@@ -52,6 +52,28 @@ static uint8_t rating_is_clear_visible(egui_view_rating_control_t *local)
     return (!local->compact_mode && !local->read_only_mode && local->clear_enabled && local->current_value > 0) ? 1 : 0;
 }
 
+static uint8_t rating_control_clear_pressed_state(egui_view_t *self, egui_view_rating_control_t *local)
+{
+    uint8_t was_pressed = self->is_pressed ? 1 : 0;
+    uint8_t had_pressed = was_pressed || local->pressed_part != EGUI_VIEW_RATING_CONTROL_PART_NONE;
+
+    if (!had_pressed)
+    {
+        return 0;
+    }
+
+    local->pressed_part = EGUI_VIEW_RATING_CONTROL_PART_NONE;
+    if (was_pressed)
+    {
+        egui_view_set_pressed(self, false);
+    }
+    else
+    {
+        egui_view_invalidate(self);
+    }
+    return 1;
+}
+
 static uint8_t rating_is_part_visible(egui_view_rating_control_t *local, uint8_t part)
 {
     if (rating_is_star(local, part))
@@ -506,7 +528,7 @@ uint8_t egui_view_rating_control_get_part_region(egui_view_t *self, uint8_t part
 
 static void rating_draw_clear(egui_view_t *self, egui_view_rating_control_t *local, const egui_region_t *region)
 {
-    uint8_t focused = local->current_part == EGUI_VIEW_RATING_CONTROL_PART_CLEAR ? 1 : 0;
+    uint8_t focused = (self->is_focused && local->current_part == EGUI_VIEW_RATING_CONTROL_PART_CLEAR && egui_view_get_enable(self) && !local->read_only_mode) ? 1 : 0;
     uint8_t pressed = local->pressed_part == EGUI_VIEW_RATING_CONTROL_PART_CLEAR ? 1 : 0;
     egui_color_t fill_color = egui_rgb_mix(local->surface_color, focused ? local->accent_color : local->muted_text_color, pressed ? 18 : (focused ? 12 : 8));
     egui_color_t border_color = egui_rgb_mix(local->border_color, focused ? local->accent_color : local->muted_text_color, pressed ? 34 : (focused ? 28 : 16));
@@ -595,7 +617,7 @@ static void egui_view_rating_control_on_draw(egui_view_t *self)
     {
         egui_region_t *item_region = &metrics.item_regions[index];
         uint8_t selected = (index + 1 <= preview_value) ? 1 : 0;
-        uint8_t focused = (local->current_part == (uint8_t)(index + 1) && enabled && !local->read_only_mode) ? 1 : 0;
+        uint8_t focused = (self->is_focused && local->current_part == (uint8_t)(index + 1) && enabled && !local->read_only_mode) ? 1 : 0;
         uint8_t pressed = local->pressed_part == (uint8_t)(index + 1) ? 1 : 0;
         egui_color_t fill_color =
                 selected ? accent_color : egui_rgb_mix(surface_color, muted_color, local->compact_mode ? RC_COMPACT_EMPTY_MIX : RC_STD_EMPTY_MIX);
@@ -645,6 +667,7 @@ static int egui_view_rating_control_on_touch_event(egui_view_t *self, egui_motio
 
     if (!egui_view_get_enable(self) || local->read_only_mode)
     {
+        rating_control_clear_pressed_state(self, local);
         return 0;
     }
 
@@ -696,19 +719,19 @@ static int egui_view_rating_control_on_touch_event(egui_view_t *self, egui_motio
         {
             hit_part = EGUI_VIEW_RATING_CONTROL_PART_NONE;
         }
+        if (local->pressed_part == EGUI_VIEW_RATING_CONTROL_PART_NONE)
+        {
+            rating_control_clear_pressed_state(self, local);
+            return hit_part != EGUI_VIEW_RATING_CONTROL_PART_NONE ? 1 : 0;
+        }
         if (local->pressed_part != EGUI_VIEW_RATING_CONTROL_PART_NONE && local->pressed_part == hit_part)
         {
             rating_commit(self, hit_part);
         }
-        local->pressed_part = EGUI_VIEW_RATING_CONTROL_PART_NONE;
-        egui_view_set_pressed(self, false);
-        egui_view_invalidate(self);
+        rating_control_clear_pressed_state(self, local);
         return hit_part != EGUI_VIEW_RATING_CONTROL_PART_NONE ? 1 : 0;
     case EGUI_MOTION_EVENT_ACTION_CANCEL:
-        local->pressed_part = EGUI_VIEW_RATING_CONTROL_PART_NONE;
-        egui_view_set_pressed(self, false);
-        egui_view_invalidate(self);
-        return 1;
+        return rating_control_clear_pressed_state(self, local);
     default:
         return 0;
     }
@@ -725,9 +748,11 @@ static uint8_t rating_handle_navigation_key_inner(egui_view_t *self, uint8_t key
 
     if (!egui_view_get_enable(self) || local->read_only_mode)
     {
+        rating_control_clear_pressed_state(self, local);
         return 0;
     }
 
+    rating_control_clear_pressed_state(self, local);
     rating_normalize_state(local);
     count = rating_collect_parts(local, parts, EGUI_VIEW_RATING_CONTROL_MAX_ITEMS + 1);
     if (count == 0)
@@ -820,6 +845,8 @@ uint8_t egui_view_rating_control_handle_navigation_key(egui_view_t *self, uint8_
 #if EGUI_CONFIG_FUNCTION_SUPPORT_KEY
 static int egui_view_rating_control_on_key_event(egui_view_t *self, egui_key_event_t *event)
 {
+    EGUI_LOCAL_INIT(egui_view_rating_control_t);
+
     if (event->type != EGUI_KEY_EVENT_ACTION_UP)
     {
         switch (event->key_code)
@@ -834,6 +861,7 @@ static int egui_view_rating_control_on_key_event(egui_view_t *self, egui_key_eve
         case EGUI_KEY_CODE_ENTER:
         case EGUI_KEY_CODE_SPACE:
         case EGUI_KEY_CODE_ESCAPE:
+            rating_control_clear_pressed_state(self, local);
             return 1;
         default:
             return 0;
@@ -869,6 +897,7 @@ void egui_view_rating_control_set_palette(egui_view_t *self, egui_color_t surfac
                                           egui_color_t muted_text_color, egui_color_t accent_color, egui_color_t shadow_color)
 {
     EGUI_LOCAL_INIT(egui_view_rating_control_t);
+    uint8_t had_pressed = rating_control_clear_pressed_state(self, local);
 
     local->surface_color = surface_color;
     local->border_color = border_color;
@@ -876,22 +905,30 @@ void egui_view_rating_control_set_palette(egui_view_t *self, egui_color_t surfac
     local->muted_text_color = muted_text_color;
     local->accent_color = accent_color;
     local->shadow_color = shadow_color;
-    egui_view_invalidate(self);
+    if (!had_pressed)
+    {
+        egui_view_invalidate(self);
+    }
 }
 
 void egui_view_rating_control_set_item_count(egui_view_t *self, uint8_t item_count)
 {
     EGUI_LOCAL_INIT(egui_view_rating_control_t);
+    uint8_t had_pressed = rating_control_clear_pressed_state(self, local);
 
     local->item_count = item_count;
     rating_normalize_state(local);
-    egui_view_invalidate(self);
+    if (!had_pressed)
+    {
+        egui_view_invalidate(self);
+    }
 }
 
 void egui_view_rating_control_set_value(egui_view_t *self, uint8_t value)
 {
     EGUI_LOCAL_INIT(egui_view_rating_control_t);
 
+    rating_control_clear_pressed_state(self, local);
     if (value > local->item_count)
     {
         value = local->item_count;
@@ -913,6 +950,9 @@ uint8_t egui_view_rating_control_get_value(egui_view_t *self)
 
 void egui_view_rating_control_set_current_part(egui_view_t *self, uint8_t part)
 {
+    EGUI_LOCAL_INIT(egui_view_rating_control_t);
+
+    rating_control_clear_pressed_state(self, local);
     rating_set_current_part_inner(self, part, 1);
 }
 
@@ -952,6 +992,7 @@ void egui_view_rating_control_set_high_label(egui_view_t *self, const char *labe
 void egui_view_rating_control_set_value_labels(egui_view_t *self, const char **labels, uint8_t label_count)
 {
     EGUI_LOCAL_INIT(egui_view_rating_control_t);
+    uint8_t had_pressed = rating_control_clear_pressed_state(self, local);
 
     local->value_labels = labels;
     local->label_count = label_count;
@@ -959,34 +1000,100 @@ void egui_view_rating_control_set_value_labels(egui_view_t *self, const char **l
     {
         local->label_count = EGUI_VIEW_RATING_CONTROL_MAX_ITEMS + 1;
     }
-    egui_view_invalidate(self);
+    if (!had_pressed)
+    {
+        egui_view_invalidate(self);
+    }
 }
 
 void egui_view_rating_control_set_compact_mode(egui_view_t *self, uint8_t compact_mode)
 {
     EGUI_LOCAL_INIT(egui_view_rating_control_t);
+    uint8_t normalized = compact_mode ? 1 : 0;
+    uint8_t had_pressed = rating_control_clear_pressed_state(self, local);
 
-    local->compact_mode = compact_mode ? 1 : 0;
+    if (local->compact_mode == normalized)
+    {
+        return;
+    }
+
+    local->compact_mode = normalized;
     rating_normalize_state(local);
-    egui_view_invalidate(self);
+    if (!had_pressed)
+    {
+        egui_view_invalidate(self);
+    }
 }
 
 void egui_view_rating_control_set_read_only_mode(egui_view_t *self, uint8_t read_only_mode)
 {
     EGUI_LOCAL_INIT(egui_view_rating_control_t);
+    uint8_t normalized = read_only_mode ? 1 : 0;
+    uint8_t had_pressed = rating_control_clear_pressed_state(self, local);
 
-    local->read_only_mode = read_only_mode ? 1 : 0;
+    if (local->read_only_mode == normalized)
+    {
+        return;
+    }
+
+    local->read_only_mode = normalized;
     rating_normalize_state(local);
-    egui_view_invalidate(self);
+    if (!had_pressed)
+    {
+        egui_view_invalidate(self);
+    }
 }
 
 void egui_view_rating_control_set_clear_enabled(egui_view_t *self, uint8_t clear_enabled)
 {
     EGUI_LOCAL_INIT(egui_view_rating_control_t);
+    uint8_t normalized = clear_enabled ? 1 : 0;
+    uint8_t had_pressed = rating_control_clear_pressed_state(self, local);
 
-    local->clear_enabled = clear_enabled ? 1 : 0;
+    if (local->clear_enabled == normalized)
+    {
+        return;
+    }
+
+    local->clear_enabled = normalized;
     rating_normalize_state(local);
-    egui_view_invalidate(self);
+    if (!had_pressed)
+    {
+        egui_view_invalidate(self);
+    }
+}
+
+#if EGUI_CONFIG_FUNCTION_SUPPORT_KEY
+static int egui_view_rating_control_on_static_key_event(egui_view_t *self, egui_key_event_t *event)
+{
+    EGUI_LOCAL_INIT(egui_view_rating_control_t);
+
+    EGUI_UNUSED(event);
+    rating_control_clear_pressed_state(self, local);
+    return 1;
+}
+#endif
+
+#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
+static int egui_view_rating_control_on_static_touch_event(egui_view_t *self, egui_motion_event_t *event)
+{
+    EGUI_LOCAL_INIT(egui_view_rating_control_t);
+
+    EGUI_UNUSED(event);
+    rating_control_clear_pressed_state(self, local);
+    return 1;
+}
+#endif
+
+void egui_view_rating_control_override_static_preview_api(egui_view_t *self, egui_view_api_t *api)
+{
+    egui_view_copy_api(self, api);
+#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
+    api->on_touch_event = egui_view_rating_control_on_static_touch_event;
+#endif
+#if EGUI_CONFIG_FUNCTION_SUPPORT_KEY
+    api->on_key_event = egui_view_rating_control_on_static_key_event;
+#endif
 }
 
 const egui_view_api_t EGUI_VIEW_API_TABLE_NAME(egui_view_rating_control_t) = {

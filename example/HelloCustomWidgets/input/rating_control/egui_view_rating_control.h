@@ -61,6 +61,7 @@ void egui_view_rating_control_set_read_only_mode(egui_view_t *self, uint8_t read
 void egui_view_rating_control_set_clear_enabled(egui_view_t *self, uint8_t clear_enabled);
 uint8_t egui_view_rating_control_get_part_region(egui_view_t *self, uint8_t part, egui_region_t *region);
 uint8_t egui_view_rating_control_handle_navigation_key(egui_view_t *self, uint8_t key_code);
+void egui_view_rating_control_override_static_preview_api(egui_view_t *self, egui_view_api_t *api);
 
 #ifdef __cplusplus
 }
