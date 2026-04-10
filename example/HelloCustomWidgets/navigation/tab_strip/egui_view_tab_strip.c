@@ -61,11 +61,24 @@ static egui_color_t egui_view_tab_strip_mix_disabled(egui_color_t color)
 static uint8_t egui_view_tab_strip_clear_pressed_state(egui_view_t *self)
 {
     EGUI_LOCAL_INIT(egui_view_tab_strip_t);
-    uint8_t had_pressed = self->is_pressed || local->pressed_index != EGUI_VIEW_TAB_STRIP_INDEX_NONE;
+    uint8_t was_pressed = self->is_pressed ? 1 : 0;
+    uint8_t had_pressed = (uint8_t)(was_pressed || local->pressed_index != EGUI_VIEW_TAB_STRIP_INDEX_NONE);
+
+    if (!had_pressed)
+    {
+        return 0;
+    }
 
     local->pressed_index = EGUI_VIEW_TAB_STRIP_INDEX_NONE;
-    egui_view_set_pressed(self, false);
-    return had_pressed;
+    if (was_pressed)
+    {
+        egui_view_set_pressed(self, false);
+    }
+    else
+    {
+        egui_view_invalidate(self);
+    }
+    return 1;
 }
 
 static uint8_t egui_view_tab_strip_text_len(const char *text)
@@ -261,6 +274,7 @@ static uint8_t egui_view_tab_strip_prepare_layout(egui_view_tab_strip_t *local, 
 void egui_view_tab_strip_set_tabs(egui_view_t *self, const char **tab_texts, uint8_t tab_count)
 {
     EGUI_LOCAL_INIT(egui_view_tab_strip_t);
+    uint8_t had_pressed = egui_view_tab_strip_clear_pressed_state(self);
 
     local->tab_texts = tab_texts;
     local->tab_count = tab_texts ? egui_view_tab_strip_clamp_tab_count(tab_count) : 0;
@@ -268,34 +282,38 @@ void egui_view_tab_strip_set_tabs(egui_view_t *self, const char **tab_texts, uin
     {
         local->current_index = 0;
     }
-    egui_view_tab_strip_clear_pressed_state(self);
-    egui_view_invalidate(self);
+    if (!had_pressed)
+    {
+        egui_view_invalidate(self);
+    }
 }
 
 void egui_view_tab_strip_set_current_index(egui_view_t *self, uint8_t index)
 {
     EGUI_LOCAL_INIT(egui_view_tab_strip_t);
+    uint8_t had_pressed;
 
     if (local->tab_count == 0 || index >= local->tab_count)
     {
+        egui_view_tab_strip_clear_pressed_state(self);
         return;
     }
     if (local->current_index == index)
     {
-        if (egui_view_tab_strip_clear_pressed_state(self))
-        {
-            egui_view_invalidate(self);
-        }
+        egui_view_tab_strip_clear_pressed_state(self);
         return;
     }
 
+    had_pressed = egui_view_tab_strip_clear_pressed_state(self);
     local->current_index = index;
-    egui_view_tab_strip_clear_pressed_state(self);
     if (local->on_tab_changed)
     {
         local->on_tab_changed(self, index);
     }
-    egui_view_invalidate(self);
+    if (!had_pressed)
+    {
+        egui_view_invalidate(self);
+    }
 }
 
 uint8_t egui_view_tab_strip_get_current_index(egui_view_t *self)
@@ -313,36 +331,54 @@ void egui_view_tab_strip_set_on_tab_changed_listener(egui_view_t *self, egui_vie
 void egui_view_tab_strip_set_font(egui_view_t *self, const egui_font_t *font)
 {
     EGUI_LOCAL_INIT(egui_view_tab_strip_t);
+    uint8_t had_pressed = egui_view_tab_strip_clear_pressed_state(self);
+
     local->font = font ? font : (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT;
-    egui_view_invalidate(self);
+    if (!had_pressed)
+    {
+        egui_view_invalidate(self);
+    }
 }
 
 void egui_view_tab_strip_set_compact_mode(egui_view_t *self, uint8_t compact_mode)
 {
     EGUI_LOCAL_INIT(egui_view_tab_strip_t);
+    uint8_t had_pressed = egui_view_tab_strip_clear_pressed_state(self);
+
     local->compact_mode = compact_mode ? 1 : 0;
-    egui_view_tab_strip_clear_pressed_state(self);
-    egui_view_invalidate(self);
+    if (!had_pressed)
+    {
+        egui_view_invalidate(self);
+    }
 }
 
 void egui_view_tab_strip_set_read_only_mode(egui_view_t *self, uint8_t read_only_mode)
 {
     EGUI_LOCAL_INIT(egui_view_tab_strip_t);
+    uint8_t had_pressed = egui_view_tab_strip_clear_pressed_state(self);
+
     local->read_only_mode = read_only_mode ? 1 : 0;
-    egui_view_tab_strip_clear_pressed_state(self);
-    egui_view_invalidate(self);
+    if (!had_pressed)
+    {
+        egui_view_invalidate(self);
+    }
 }
 
 void egui_view_tab_strip_set_palette(egui_view_t *self, egui_color_t surface_color, egui_color_t border_color, egui_color_t text_color,
                                      egui_color_t muted_text_color, egui_color_t accent_color)
 {
     EGUI_LOCAL_INIT(egui_view_tab_strip_t);
+    uint8_t had_pressed = egui_view_tab_strip_clear_pressed_state(self);
+
     local->surface_color = surface_color;
     local->border_color = border_color;
     local->text_color = text_color;
     local->muted_text_color = muted_text_color;
     local->accent_color = accent_color;
-    egui_view_invalidate(self);
+    if (!had_pressed)
+    {
+        egui_view_invalidate(self);
+    }
 }
 
 static void egui_view_tab_strip_draw_text(egui_view_tab_strip_t *local, egui_view_t *self, const char *text, egui_dim_t x, egui_dim_t y, egui_dim_t width,
@@ -523,13 +559,11 @@ static int egui_view_tab_strip_on_touch_event(egui_view_t *self, egui_motion_eve
 {
     EGUI_LOCAL_INIT(egui_view_tab_strip_t);
     uint8_t hit_index;
+    uint8_t same_target;
 
     if (!egui_view_get_enable(self) || local->tab_count == 0 || local->read_only_mode)
     {
-        if (egui_view_tab_strip_clear_pressed_state(self))
-        {
-            egui_view_invalidate(self);
-        }
+        egui_view_tab_strip_clear_pressed_state(self);
         return 0;
     }
 
@@ -537,33 +571,61 @@ static int egui_view_tab_strip_on_touch_event(egui_view_t *self, egui_motion_eve
     {
     case EGUI_MOTION_EVENT_ACTION_DOWN:
         hit_index = egui_view_tab_strip_resolve_hit(local, self, event->location.x);
+        if (hit_index == EGUI_VIEW_TAB_STRIP_INDEX_NONE)
+        {
+            egui_view_tab_strip_clear_pressed_state(self);
+            return 0;
+        }
+        same_target = (uint8_t)(local->pressed_index == hit_index);
+        if (same_target && self->is_pressed)
+        {
+            return 1;
+        }
         local->pressed_index = hit_index;
-        egui_view_set_pressed(self, hit_index != EGUI_VIEW_TAB_STRIP_INDEX_NONE);
-        egui_view_invalidate(self);
-        return hit_index != EGUI_VIEW_TAB_STRIP_INDEX_NONE;
+        if (!self->is_pressed)
+        {
+            egui_view_set_pressed(self, true);
+        }
+        else
+        {
+            egui_view_invalidate(self);
+        }
+        return 1;
+    case EGUI_MOTION_EVENT_ACTION_MOVE:
+        if (local->pressed_index == EGUI_VIEW_TAB_STRIP_INDEX_NONE)
+        {
+            return 0;
+        }
+        hit_index = egui_view_tab_strip_resolve_hit(local, self, event->location.x);
+        if (hit_index == local->pressed_index)
+        {
+            if (!self->is_pressed)
+            {
+                egui_view_set_pressed(self, true);
+            }
+            return 1;
+        }
+        if (self->is_pressed)
+        {
+            egui_view_set_pressed(self, false);
+        }
+        return 1;
     case EGUI_MOTION_EVENT_ACTION_UP:
     {
         uint8_t handled;
 
         hit_index = egui_view_tab_strip_resolve_hit(local, self, event->location.x);
         handled = (local->pressed_index != EGUI_VIEW_TAB_STRIP_INDEX_NONE) || hit_index != EGUI_VIEW_TAB_STRIP_INDEX_NONE;
-        if (local->pressed_index != EGUI_VIEW_TAB_STRIP_INDEX_NONE && local->pressed_index == hit_index)
+        same_target = (uint8_t)(local->pressed_index != EGUI_VIEW_TAB_STRIP_INDEX_NONE && local->pressed_index == hit_index);
+        if (same_target && self->is_pressed)
         {
             egui_view_tab_strip_set_current_index(self, hit_index);
         }
-        if (egui_view_tab_strip_clear_pressed_state(self))
-        {
-            egui_view_invalidate(self);
-        }
+        egui_view_tab_strip_clear_pressed_state(self);
         return handled;
     }
     case EGUI_MOTION_EVENT_ACTION_CANCEL:
-        if (egui_view_tab_strip_clear_pressed_state(self))
-        {
-            egui_view_invalidate(self);
-            return 1;
-        }
-        return 0;
+        return egui_view_tab_strip_clear_pressed_state(self);
     default:
         return 0;
     }
@@ -577,10 +639,7 @@ static int egui_view_tab_strip_on_key_event(egui_view_t *self, egui_key_event_t 
 
     if (!egui_view_get_enable(self) || local->read_only_mode || local->tab_count == 0)
     {
-        if (egui_view_tab_strip_clear_pressed_state(self))
-        {
-            egui_view_invalidate(self);
-        }
+        egui_view_tab_strip_clear_pressed_state(self);
         return 0;
     }
     if (event->type != EGUI_KEY_EVENT_ACTION_UP)
@@ -610,6 +669,35 @@ static int egui_view_tab_strip_on_key_event(egui_view_t *self, egui_key_event_t 
     }
 }
 #endif
+
+#if EGUI_CONFIG_FUNCTION_SUPPORT_KEY
+static int egui_view_tab_strip_on_static_key_event(egui_view_t *self, egui_key_event_t *event)
+{
+    EGUI_UNUSED(event);
+    egui_view_tab_strip_clear_pressed_state(self);
+    return 1;
+}
+#endif
+
+#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
+static int egui_view_tab_strip_on_static_touch_event(egui_view_t *self, egui_motion_event_t *event)
+{
+    EGUI_UNUSED(event);
+    egui_view_tab_strip_clear_pressed_state(self);
+    return 1;
+}
+#endif
+
+void egui_view_tab_strip_override_static_preview_api(egui_view_t *self, egui_view_api_t *api)
+{
+    egui_view_copy_api(self, api);
+#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
+    api->on_touch_event = egui_view_tab_strip_on_static_touch_event;
+#endif
+#if EGUI_CONFIG_FUNCTION_SUPPORT_KEY
+    api->on_key_event = egui_view_tab_strip_on_static_key_event;
+#endif
+}
 
 const egui_view_api_t EGUI_VIEW_API_TABLE_NAME(egui_view_tab_strip_t) = {
         .dispatch_touch_event = egui_view_dispatch_touch_event,
