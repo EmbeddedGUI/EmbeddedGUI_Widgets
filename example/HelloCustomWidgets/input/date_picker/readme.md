@@ -104,6 +104,8 @@ python scripts/checks/check_docs_encoding.py
 - 主 `DatePicker` 展开态和收起态都必须完整可见
 - 月份标题、weekday header、日期网格和选中日必须层级清晰
 - `compact` 与 `read only` 对照必须低噪音且明显区分
+- `set_date / display month / first day of week / palette / compact / read only / opened` 切换后不能残留 `pressed_part / pressed_day / is_pressed` 污染
+- 底部 `compact / read only` 预览必须统一吞掉 touch / key 输入，并在收到输入后立即清理残留 `pressed` 渲染
 - 页面中不再出现 guide、状态行、分隔线和 preview label
 
 ## 9. 已知限制与后续方向
@@ -148,4 +150,4 @@ python scripts/checks/check_docs_encoding.py
 - 直接复用 `date_picker` 基础实现，避免在示例页重复造状态桥
 - 用统一浅色 palette 收口到 `Fluent 2 / WPF UI` reference 方向
 - 通过示例页高度同步保留主控件展开 / 收起时的合理留白
-- 底部双预览固定为静态对照，只负责失焦收口，不再承担演示逻辑
+- 底部双预览固定为静态对照，只负责失焦收口，并通过统一 static preview API 吞掉 touch / key 输入，不再承担演示逻辑

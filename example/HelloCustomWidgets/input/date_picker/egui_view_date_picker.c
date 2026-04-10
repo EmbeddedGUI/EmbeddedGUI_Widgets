@@ -141,6 +141,29 @@ static egui_color_t date_picker_mix_disabled(egui_color_t color)
     return egui_rgb_mix(color, EGUI_COLOR_DARK_GREY, 68);
 }
 
+static uint8_t date_picker_clear_pressed_state(egui_view_t *self, egui_view_date_picker_t *local)
+{
+    uint8_t was_pressed = self->is_pressed ? 1 : 0;
+    uint8_t had_pressed = was_pressed || local->pressed_part != EGUI_VIEW_DATE_PICKER_PART_NONE || local->pressed_day != 0;
+
+    if (!had_pressed)
+    {
+        return 0;
+    }
+
+    local->pressed_part = EGUI_VIEW_DATE_PICKER_PART_NONE;
+    local->pressed_day = 0;
+    if (was_pressed)
+    {
+        egui_view_set_pressed(self, false);
+    }
+    else
+    {
+        egui_view_invalidate(self);
+    }
+    return 1;
+}
+
 static void date_picker_format_date_field(uint16_t year, uint8_t month, uint8_t day, uint8_t compact_mode, char *buffer)
 {
     if (compact_mode)
@@ -223,6 +246,7 @@ static void date_picker_commit_date(egui_view_t *self, uint16_t year, uint8_t mo
     EGUI_LOCAL_INIT(egui_view_date_picker_t);
     uint8_t date_changed;
     uint8_t panel_changed;
+    uint8_t had_pressed = date_picker_clear_pressed_state(self, local);
 
     date_picker_normalize_date(&year, &month, &day);
     date_changed = (local->year != year || local->month != month || local->day != day) ? 1 : 0;
@@ -238,7 +262,10 @@ static void date_picker_commit_date(egui_view_t *self, uint16_t year, uint8_t mo
     local->panel_year = year;
     local->panel_month = month;
     local->preserve_display_month_on_open = 0;
-    egui_view_invalidate(self);
+    if (!had_pressed)
+    {
+        egui_view_invalidate(self);
+    }
     if (notify && panel_changed)
     {
         date_picker_emit_display_month_changed(self, local);
@@ -253,6 +280,7 @@ static void date_picker_set_open_inner(egui_view_t *self, uint8_t opened, uint8_
 {
     EGUI_LOCAL_INIT(egui_view_date_picker_t);
     uint8_t panel_changed = 0;
+    uint8_t had_pressed = date_picker_clear_pressed_state(self, local);
 
     if (local->compact_mode || local->read_only_mode || !egui_view_get_enable(self))
     {
@@ -279,12 +307,12 @@ static void date_picker_set_open_inner(egui_view_t *self, uint8_t opened, uint8_
     else
     {
         panel_changed = date_picker_assign_display_month(local, local->year, local->month);
-        local->pressed_part = EGUI_VIEW_DATE_PICKER_PART_NONE;
-        local->pressed_day = 0;
-        egui_view_set_pressed(self, false);
     }
     local->open_mode = opened;
-    egui_view_invalidate(self);
+    if (!had_pressed)
+    {
+        egui_view_invalidate(self);
+    }
     if (notify && panel_changed)
     {
         date_picker_emit_display_month_changed(self, local);
@@ -300,6 +328,7 @@ static void date_picker_shift_panel_month(egui_view_t *self, int8_t delta)
     EGUI_LOCAL_INIT(egui_view_date_picker_t);
     int year = local->panel_year;
     int month = local->panel_month + delta;
+    uint8_t had_pressed = date_picker_clear_pressed_state(self, local);
 
     while (month < 1)
     {
@@ -318,7 +347,10 @@ static void date_picker_shift_panel_month(egui_view_t *self, int8_t delta)
 
     if (date_picker_assign_display_month(local, (uint16_t)year, (uint8_t)month))
     {
-        egui_view_invalidate(self);
+        if (!had_pressed)
+        {
+            egui_view_invalidate(self);
+        }
         date_picker_emit_display_month_changed(self, local);
     }
 }
@@ -421,17 +453,22 @@ uint8_t egui_view_date_picker_get_day(egui_view_t *self)
 void egui_view_date_picker_set_today(egui_view_t *self, uint16_t year, uint8_t month, uint8_t day)
 {
     EGUI_LOCAL_INIT(egui_view_date_picker_t);
+    uint8_t had_pressed = date_picker_clear_pressed_state(self, local);
 
     date_picker_normalize_date(&year, &month, &day);
     local->today_year = year;
     local->today_month = month;
     local->today_day = day;
-    egui_view_invalidate(self);
+    if (!had_pressed)
+    {
+        egui_view_invalidate(self);
+    }
 }
 
 void egui_view_date_picker_set_first_day_of_week(egui_view_t *self, uint8_t first_day_of_week)
 {
     EGUI_LOCAL_INIT(egui_view_date_picker_t);
+    uint8_t had_pressed = date_picker_clear_pressed_state(self, local);
 
     first_day_of_week = first_day_of_week ? 1 : 0;
     if (local->first_day_of_week == first_day_of_week)
@@ -439,7 +476,10 @@ void egui_view_date_picker_set_first_day_of_week(egui_view_t *self, uint8_t firs
         return;
     }
     local->first_day_of_week = first_day_of_week;
-    egui_view_invalidate(self);
+    if (!had_pressed)
+    {
+        egui_view_invalidate(self);
+    }
 }
 
 uint8_t egui_view_date_picker_get_first_day_of_week(egui_view_t *self)
@@ -451,6 +491,7 @@ uint8_t egui_view_date_picker_get_first_day_of_week(egui_view_t *self)
 void egui_view_date_picker_set_display_month(egui_view_t *self, uint16_t year, uint8_t month)
 {
     EGUI_LOCAL_INIT(egui_view_date_picker_t);
+    uint8_t had_pressed = date_picker_clear_pressed_state(self, local);
 
     if (!date_picker_assign_display_month(local, year, month))
     {
@@ -461,7 +502,10 @@ void egui_view_date_picker_set_display_month(egui_view_t *self, uint16_t year, u
     {
         local->preserve_display_month_on_open = 1;
     }
-    egui_view_invalidate(self);
+    if (!had_pressed)
+    {
+        egui_view_invalidate(self);
+    }
     date_picker_emit_display_month_changed(self, local);
 }
 
@@ -541,6 +585,7 @@ void egui_view_date_picker_set_on_display_month_changed_listener(egui_view_t *se
 void egui_view_date_picker_set_compact_mode(egui_view_t *self, uint8_t compact_mode)
 {
     EGUI_LOCAL_INIT(egui_view_date_picker_t);
+    uint8_t had_pressed = date_picker_clear_pressed_state(self, local);
 
     compact_mode = compact_mode ? 1 : 0;
     if (local->compact_mode == compact_mode)
@@ -553,12 +598,16 @@ void egui_view_date_picker_set_compact_mode(egui_view_t *self, uint8_t compact_m
         date_picker_set_open_inner(self, 0, 1);
         return;
     }
-    egui_view_invalidate(self);
+    if (!had_pressed)
+    {
+        egui_view_invalidate(self);
+    }
 }
 
 void egui_view_date_picker_set_read_only_mode(egui_view_t *self, uint8_t read_only_mode)
 {
     EGUI_LOCAL_INIT(egui_view_date_picker_t);
+    uint8_t had_pressed = date_picker_clear_pressed_state(self, local);
 
     read_only_mode = read_only_mode ? 1 : 0;
     if (local->read_only_mode == read_only_mode)
@@ -571,13 +620,17 @@ void egui_view_date_picker_set_read_only_mode(egui_view_t *self, uint8_t read_on
         date_picker_set_open_inner(self, 0, 1);
         return;
     }
-    egui_view_invalidate(self);
+    if (!had_pressed)
+    {
+        egui_view_invalidate(self);
+    }
 }
 
 void egui_view_date_picker_set_palette(egui_view_t *self, egui_color_t surface_color, egui_color_t border_color, egui_color_t text_color,
                                        egui_color_t muted_text_color, egui_color_t accent_color, egui_color_t today_color)
 {
     EGUI_LOCAL_INIT(egui_view_date_picker_t);
+    uint8_t had_pressed = date_picker_clear_pressed_state(self, local);
 
     local->surface_color = surface_color;
     local->border_color = border_color;
@@ -585,7 +638,10 @@ void egui_view_date_picker_set_palette(egui_view_t *self, egui_color_t surface_c
     local->muted_text_color = muted_text_color;
     local->accent_color = accent_color;
     local->today_color = today_color;
-    egui_view_invalidate(self);
+    if (!had_pressed)
+    {
+        egui_view_invalidate(self);
+    }
 }
 
 static void date_picker_draw_text(const egui_font_t *font, egui_view_t *self, const char *text, const egui_region_t *region, uint8_t align, egui_color_t color)
@@ -1134,9 +1190,7 @@ static void egui_view_date_picker_on_focus_change(egui_view_t *self, int is_focu
         return;
     }
 
-    local->pressed_part = EGUI_VIEW_DATE_PICKER_PART_NONE;
-    local->pressed_day = 0;
-    egui_view_set_pressed(self, false);
+    date_picker_clear_pressed_state(self, local);
 
     if (local->open_mode)
     {
@@ -1155,8 +1209,9 @@ static int egui_view_date_picker_on_touch_event(egui_view_t *self, egui_motion_e
     uint8_t hit_part;
     uint8_t hit_day;
 
-    if (!egui_view_get_enable(self) || local->read_only_mode)
+    if (!egui_view_get_enable(self) || local->read_only_mode || local->compact_mode)
     {
+        date_picker_clear_pressed_state(self, local);
         return 0;
     }
 
@@ -1209,10 +1264,7 @@ static int egui_view_date_picker_on_touch_event(egui_view_t *self, egui_motion_e
                 date_picker_commit_date(self, local->panel_year, local->panel_month, hit_day, 1);
             }
         }
-        local->pressed_part = EGUI_VIEW_DATE_PICKER_PART_NONE;
-        local->pressed_day = 0;
-        egui_view_set_pressed(self, false);
-        egui_view_invalidate(self);
+        date_picker_clear_pressed_state(self, local);
         return hit_part != EGUI_VIEW_DATE_PICKER_PART_NONE ? 1 : 0;
     }
     case EGUI_MOTION_EVENT_ACTION_MOVE:
@@ -1238,11 +1290,7 @@ static int egui_view_date_picker_on_touch_event(egui_view_t *self, egui_motion_e
         }
         return 0;
     case EGUI_MOTION_EVENT_ACTION_CANCEL:
-        local->pressed_part = EGUI_VIEW_DATE_PICKER_PART_NONE;
-        local->pressed_day = 0;
-        egui_view_set_pressed(self, false);
-        egui_view_invalidate(self);
-        return 1;
+        return date_picker_clear_pressed_state(self, local);
     default:
         return 0;
     }
@@ -1254,11 +1302,13 @@ static int egui_view_date_picker_on_key_event(egui_view_t *self, egui_key_event_
 {
     EGUI_LOCAL_INIT(egui_view_date_picker_t);
 
-    if (!egui_view_get_enable(self) || local->read_only_mode)
+    if (!egui_view_get_enable(self) || local->read_only_mode || local->compact_mode)
     {
+        date_picker_clear_pressed_state(self, local);
         return 0;
     }
 
+    date_picker_clear_pressed_state(self, local);
     if (event->type != EGUI_KEY_EVENT_ACTION_UP)
     {
         switch (event->key_code)
@@ -1362,7 +1412,38 @@ static int egui_view_date_picker_on_key_event(egui_view_t *self, egui_key_event_
         return egui_view_on_key_event(self, event);
     }
 }
+
+static int egui_view_date_picker_on_static_key_event(egui_view_t *self, egui_key_event_t *event)
+{
+    EGUI_LOCAL_INIT(egui_view_date_picker_t);
+
+    EGUI_UNUSED(event);
+    date_picker_clear_pressed_state(self, local);
+    return 1;
+}
 #endif
+
+#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
+static int egui_view_date_picker_on_static_touch_event(egui_view_t *self, egui_motion_event_t *event)
+{
+    EGUI_LOCAL_INIT(egui_view_date_picker_t);
+
+    EGUI_UNUSED(event);
+    date_picker_clear_pressed_state(self, local);
+    return 1;
+}
+#endif
+
+void egui_view_date_picker_override_static_preview_api(egui_view_t *self, egui_view_api_t *api)
+{
+    egui_view_copy_api(self, api);
+#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
+    api->on_touch_event = egui_view_date_picker_on_static_touch_event;
+#endif
+#if EGUI_CONFIG_FUNCTION_SUPPORT_KEY
+    api->on_key_event = egui_view_date_picker_on_static_key_event;
+#endif
+}
 
 const egui_view_api_t EGUI_VIEW_API_TABLE_NAME(egui_view_date_picker_t) = {
         .dispatch_touch_event = egui_view_dispatch_touch_event,
