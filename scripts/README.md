@@ -34,6 +34,8 @@ This repository keeps only the scripts needed for standalone custom-widget work.
   Rewrite `widget_catalog.json` into canonical order and sync it with actual `HelloCustomWidgets` directories.
 - `python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --refresh-existing`
   Refresh `web/demos/demos.json` and bundled README files from existing web demo artifacts without rebuilding WASM.
+- `python scripts/web/web_smoke_check.py`
+  Run headless browser smoke checks for `web/demos/`, capture one screenshot per demo, and generate a contact sheet for manual visual review.
 
 ## Principle
 
