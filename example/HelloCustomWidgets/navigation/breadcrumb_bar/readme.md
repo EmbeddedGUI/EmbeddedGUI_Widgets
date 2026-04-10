@@ -8,7 +8,7 @@
 - 对应组件名：`BreadcrumbBar`
 - 本次保留状态：`standard`、`current item`、`compact`、`read only`
 - 本次删除效果：页面级 `guide`、状态说明、旧双列 preview 包裹壳、preview 点击切换职责、过重 current item 和 separator 强调
-- EGUI 适配说明：继续复用仓库内 `breadcrumb_bar` 基础实现，本轮只收口 `reference` 页面结构、静态对照预览和绘制强度，不修改 `sdk/EmbeddedGUI`；`snapshot / compact / read only / disabled` 切换共享同一套 `pressed` 清理语义
+- EGUI 适配说明：继续复用仓库内 `breadcrumb_bar` 基础实现，本轮只收口 `reference` 页面结构、静态对照预览和绘制强度，不修改 `sdk/EmbeddedGUI`；`snapshot / compact / read only / disabled` 切换共享同一套 `pressed` 清理语义，并把 `same-target release`、`static preview` 与 preview 点击后的 focus/渲染收尾纳入统一验收
 
 ## 1. 为什么需要这个控件
 
@@ -66,6 +66,8 @@
 | `compact` | `Compact bills` | 默认 compact 对照 |
 | `compact` | `Compact access` | 第二组 compact 折叠路径 |
 | `read only` | `Static preview` | 固定只读轨道，禁 touch、禁 focus、禁键盘 |
+| 交互语义 | `same-target release` | `DOWN(A) -> MOVE(B) -> UP(B)` 不提交，只有回到 A 后 `UP(A)` 才提交 |
+| 交互语义 | `static preview` | preview 吞掉 `touch / key`，只负责清残留 `pressed`，不改 snapshot、不触发 click |
 
 ## 7. `egui_port_get_recording_action()` 录制动作设计
 
@@ -75,15 +77,20 @@
 4. 请求第二张截图。
 5. 程序化切换主控件到 `Review path`。
 6. 请求第三张截图。
-7. 程序化切换 `compact` 到 `Compact access`。
-8. 请求最终截图。
+7. 程序化切换 `compact` 到 `Compact access`，并重新请求主控件 focus。
+8. 请求第四张截图。
+9. 点击 `compact` preview，只做主控件 focus 收尾，不允许误改 snapshot。
+10. 请求 preview 点击后的收尾帧。
+11. 再请求最终稳定帧，确认没有残留 `pressed` 或整屏污染。
 
 ## 8. 编译、touch、runtime、单测与文档检查
 
 ```bash
+make clean APP=HelloCustomWidgets APP_SUB=navigation/breadcrumb_bar PORT=pc
 make all APP=HelloCustomWidgets APP_SUB=navigation/breadcrumb_bar PORT=pc
 python scripts/checks/check_touch_release_semantics.py --scope custom --category navigation
 python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub navigation/breadcrumb_bar --track reference --timeout 10 --keep-screenshots
+make clean APP=HelloUnitTest PORT=pc_test
 make all APP=HelloUnitTest PORT=pc_test
 output\main.exe
 python scripts/checks/check_docs_encoding.py
@@ -95,9 +102,12 @@ python scripts/checks/check_docs_encoding.py
 - 当前项 pill、separator 和底部 underline 需要可辨识，但整体不能回到高噪音 showcase 风格。
 - `compact` 在小尺寸下仍要看得出 `Home / ... / Current` 的层级关系。
 - `read only` 只能做静态展示，不能响应 touch、focus 或键盘；切换到 `read only` 时还要清空 pressed 状态。
+- `same-target release` 必须满足 `DOWN(A) -> MOVE(B) -> UP(B)` 不提交，`DOWN(A) -> MOVE(B) -> MOVE(A) -> UP(A)` 才提交。
+- `static preview` 必须吞掉 `touch / key`，只做主控件 focus 收尾，不能误改 snapshot 或触发 click。
 - `snapshot / compact / read only / disabled` 切换后不能残留 `pressed` 高亮或下压位移渲染。
 - `read only / disabled` 不仅要忽略后续 touch / key 输入，还要在收到新输入时清理残留 `pressed` 渲染。
-- `HelloUnitTest` 里已有的 snapshot clamp、palette setter、touch / key click listener 和 helper 语义不能回归。
+- runtime 关键帧至少要复核默认态、`Forms path`、`Review path`、`Compact access`、preview 点击收尾帧和最终稳定帧，确认没有黑白屏、裁切、整屏污染或残留 `pressed`。
+- `HelloUnitTest` 里已有的 snapshot clamp、palette setter、touch / key click listener、`same-target release / cancel` 和 helper 语义不能回归。
 
 ## 9. 已知限制与后续方向
 
@@ -140,4 +150,5 @@ python scripts/checks/check_docs_encoding.py
 - `compact / read only` 直接复用同一控件模式，减少额外页面壳层。
 - `read only` 直接使用 `read_only_mode`，避免页面语义和控件实现脱节。
 - 通过程序化切换 snapshot 保证 runtime 能稳定抓到路径变化。
+- preview 使用控件自己的 `static preview API`，不再依赖页面外部 `consume_preview_touch` 兜底。
 - 当前先作为 `HelloCustomWidgets` 的 reference widget 维护，后续是否下沉框架层再单独评估。

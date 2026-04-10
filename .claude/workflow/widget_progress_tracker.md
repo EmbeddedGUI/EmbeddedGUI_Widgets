@@ -34,7 +34,7 @@
 
 | 状态 | 控件名 | 分类 | 开始日期 | 当前阶段 | 目标 |
 | --- | --- | --- | --- | --- | --- |
-| 进行中 | `breadcrumb_bar` | `navigation` | `2026-04-10` | 交互回归复核 | 复核 `same-target release / static preview / preview touch 焦点收口 / 交互后渲染`，确认是否要按当前 tree_view / tab_strip 同一标准补齐 |
+| 暂无 | - | - | - | - | - |
 
 ## 当前保留的 Reference 主线控件
 
@@ -97,6 +97,11 @@
 
 ## 最近完成的收口动作
 
+- `2026-04-10`
+  - 完成 `navigation/breadcrumb_bar` 二次收口：在既有 `reference` 页面结构不再调整的前提下，把工作重点收回到交互行为，补齐 `same-target release / compact / read only / disabled / preview touch-key` 链路里的状态清理、静态 preview 输入吞掉与交互后渲染回归，同时继续保留符合 Fluent / WPF UI 语义的层级路径、省略折叠、current item 与底部双 preview 对照。
+  - `egui_view_breadcrumb_bar.c/.h` 让 `egui_view_breadcrumb_bar_clear_pressed_state()` 返回统一 cleared 语义；让 `set_snapshots()`、`set_current_snapshot()`、`set_font()`、`set_compact_mode()`、`set_read_only_mode()`、`set_palette()` 以及 `touch / key guard` 都先清理残留 pressed，再决定是否刷新；同时新增 `egui_view_breadcrumb_bar_override_static_preview_api()`，让静态 preview 统一吞掉 `touch / key`，只负责清残留 pressed，不改 snapshot，也不触发 click。
+  - `example/HelloCustomWidgets/navigation/breadcrumb_bar/test.c` 把底部 `compact / read only` 预览改成统一 static preview API，并补上 `dismiss_primary_focus_on_preview_touch()` 用于点击 preview 时只清主控件 focus；runtime 录制新增 `compact` 第二快照、preview 点击后的收尾帧与最终稳定帧。`example/HelloUnitTest/test/test_breadcrumb_bar.c` 补齐 “setter 清理 pressed”“same-target release 与 cancel”“compact / read only / disabled guard 清理残留 pressed”“static preview 吞掉 touch / key 且不改 current_snapshot” 的交互回归；README 同步明确 static preview、same-target release、preview 点击收口与验收标准。
+  - 已通过 `make clean APP=HelloUnitTest PORT=pc_test`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`make clean APP=HelloCustomWidgets APP_SUB=navigation/breadcrumb_bar PORT=pc`、`make all APP=HelloCustomWidgets APP_SUB=navigation/breadcrumb_bar PORT=pc`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category navigation`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub navigation/breadcrumb_bar --track reference --timeout 10 --keep-screenshots`、`python scripts/checks/check_docs_encoding.py`，并复核 `runtime_check_output/HelloCustomWidgets_navigation_breadcrumb_bar/default/frame_0000.png`、`frame_0002.png`、`frame_0004.png`、`frame_0006.png`、`frame_0008.png`、`frame_0010.png` 的输出尺寸、均值与帧差异范围，确认变化集中在主控件与底部 preview 区域，preview 点击后的收尾帧和最终稳定帧都没有黑白屏、裁切或残留 `pressed` 污染。
 - `2026-04-10`
   - 完成 `navigation/tree_view` 二次收口：在既有 `reference` 页面结构不再调整的前提下，把工作重点收回到交互行为，补齐 `selection / same-target release / compact / read only / disabled / preview touch-key` 链路里的状态清理、静态 preview 输入吞掉与交互后渲染回归，同时继续保留符合 Fluent / WPF UI 语义的层级缩进、展开分支、selected row 与底部双 preview 对照。
   - `egui_view_tree_view.c/.h` 让 `egui_view_tree_view_clear_pressed_state()` 统一覆盖 `pressed_index / is_pressed` 并返回统一 cleared 语义；让 `set_snapshots()`、`set_current_snapshot()`、`set_current_index()`、`set_font()`、`set_meta_font()`、`set_compact_mode()`、`set_read_only_mode()`、`set_palette()` 以及 `touch / key guard` 都先清理残留 pressed；补上 `ACTION_MOVE` 下的 same-target release 逻辑，保证 `DOWN(A) -> MOVE(B) -> UP(B)` 不提交，只有回到 A 后 `UP(A)` 才提交；同时新增 `egui_view_tree_view_override_static_preview_api()`，让静态 preview 统一吞掉 touch / key，只负责清残留 pressed，不改 `current_index`，也不 notify。
@@ -293,11 +298,6 @@
   - `example/HelloUnitTest/test/test_menu_flyout.c` 补齐“same snapshot 清 pressed”“compact 切换后清理 pressed 且保留 click”“disabled_mode / !enable 清理残留 pressed 并忽略后续 touch / key 输入”的交互回归；README 同步明确模式切换后不能残留 `pressed` 高亮或下压位移渲染。
   - 已通过 `make all APP=HelloCustomWidgets APP_SUB=navigation/menu_flyout PORT=pc`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category navigation`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub navigation/menu_flyout --track reference --timeout 10 --keep-screenshots`、`python scripts/checks/check_docs_encoding.py`，并把关键帧归档到本地 `iteration_log/` 供验收复核。
 - `2026-04-10`
-  - 完成 `navigation/breadcrumb_bar` 二次收口：在既有 `reference` 页面结构不再调整的前提下，把工作重点收回到交互行为，补齐 `snapshot / compact / read only / disabled` 切换链路里的 pressed 清理与输入抑制，确保交互后的渲染稳定。
-  - `egui_view_breadcrumb_bar.c` 新增统一的 `egui_view_breadcrumb_bar_clear_pressed_state()`，让 `set_snapshots()`、`set_current_snapshot()`、`set_compact_mode()` 和 `set_read_only_mode()` 共用同一套 pressed 清理逻辑；同时把 `read only / disabled` 的 touch 与 key guard 收口到事件入口，收到新输入时会先清理残留 pressed 再拒绝提交。
-  - `example/HelloUnitTest/test/test_breadcrumb_bar.c` 补齐“same snapshot 清 pressed”“compact 切换后清理 pressed 且保留 click”“read only / disabled 清理残留 pressed 并忽略后续 touch / key 输入”的交互回归；README 同步明确模式切换后不能残留 `pressed` 高亮或下压位移渲染。
-  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=navigation/breadcrumb_bar PORT=pc`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category navigation`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub navigation/breadcrumb_bar --track reference --timeout 10 --keep-screenshots`、`python scripts/checks/check_docs_encoding.py`，并把关键帧归档到本地 `iteration_log/` 供验收复核。
-- `2026-04-10`
   - 完成 `layout/settings_panel` 二次收口：在既有 `reference` 页面结构不再调整的前提下，把工作重点收回到交互行为，补齐 `snapshot / compact / read only / disabled` 切换链路里的 pressed 清理与输入抑制，确保交互后的渲染稳定。
   - `egui_view_settings_panel.c` 新增统一的 `egui_view_settings_panel_clear_pressed_state()`，让 `set_snapshots()`、`set_current_snapshot()`、`set_compact_mode()` 和 `set_read_only_mode()` 共用同一套 pressed 清理逻辑；同时把 `read only / disabled` 的 touch 与 key guard 收口到事件入口，收到新输入时会先清理残留 pressed 再拒绝提交。
   - `example/HelloUnitTest/test/test_settings_panel.c` 补齐“same snapshot 清 pressed”“compact 切换后清理 pressed 且保留 click”“read only / disabled 清理残留 pressed 并忽略后续 touch / key 输入”的交互回归；README 同步明确模式切换后不能残留 `pressed` 高亮或下压位移渲染。
@@ -374,12 +374,6 @@
   - `egui_view_nav_panel.h/.c` 把 `locked_mode` API 收口为 `read_only_mode`，并在 `set_items()`、`set_current_index()`、`set_compact_mode()` 和 `set_read_only_mode()` 中统一清理 pressed / `pressed_index`；同时补上 `Up / Down / Home / End` 键盘导航，以及只读态对 touch / key 的输入抑制。
   - `example/HelloUnitTest/test/test_nav_panel.c` 把旧 `locked_mode` 单测改成 `read_only_mode`，新增键盘导航测试和“切到只读时清空 pressed 并忽略后续 touch / key 输入”的交互回归；README 同步明确 `read only` 需要同时满足 pressed 清理、输入抑制和静态展示语义。
   - 已通过 `make all APP=HelloCustomWidgets APP_SUB=navigation/nav_panel PORT=pc`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category navigation`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub navigation/nav_panel --track reference --timeout 10 --keep-screenshots`、`python scripts/checks/check_docs_encoding.py`，并人工核对关键帧确认交互切换后的渲染稳定。
-- `2026-04-10`
-  - 完成 `navigation/breadcrumb_bar` 二次收口：在原有 `reference` 页面结构基础上，把控件内部的旧 `locked_mode` 语义统一为 `read_only_mode`，并继续压轻只读态 fill、border、text、accent、current pill、separator chevron 和 underline 的对比度。
-  - `test.c` 新增 `apply_read_only_state()`，让 `read only` 预览在初始化和录制 case `0` 重置时都显式回到只读态；同步微调标题间距和 `read only` palette，继续保持底部两个 preview 只承担 reference 对照职责。
-  - `egui_view_breadcrumb_bar.h/.c` 把 `locked_mode` API 收口为 `read_only_mode`，并在 `set_snapshots()`、`set_current_snapshot()`、`set_compact_mode()` 和 `set_read_only_mode()` 中统一清理 pressed；同时补上只读态对 touch / key 的输入抑制，确保交互切换后不会残留按下渲染。
-  - `example/HelloUnitTest/test/test_breadcrumb_bar.c` 把旧 `locked_mode` 单测改成 `read_only_mode`，新增“切到只读时清空 pressed 并忽略后续 touch / key 输入”的交互回归；README 同步明确 `read only` 需要同时满足 pressed 清理、输入抑制和静态展示语义。
-  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=navigation/breadcrumb_bar PORT=pc`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category navigation`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub navigation/breadcrumb_bar --track reference --timeout 10 --keep-screenshots`、`python scripts/checks/check_docs_encoding.py`，并人工核对关键帧确认交互切换后的渲染稳定。
 - `2026-04-10`
   - 完成 `navigation/tab_strip` 二次收口：在原有 `reference` 页面结构基础上，把控件内部的旧 `locked_mode` 语义统一为 `read_only_mode`，并继续压轻容器边框、active fill、divider、underline 和只读态 chrome 的对比度。
   - `test.c` 新增 `apply_read_only_state()`，让 `read only` 预览在初始化和录制 case `0` 重置时都显式回到只读态；同步微调标题间距和 `read only` palette，继续保持底部两个 preview 只承担 reference 对照职责。
