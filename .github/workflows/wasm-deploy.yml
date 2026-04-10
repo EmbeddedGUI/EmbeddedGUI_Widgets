@@ -47,6 +47,17 @@ jobs:
           path: output/ci_web_smoke
           if-no-files-found: ignore
 
+      - name: Append web smoke summary
+        if: always()
+        run: |
+          if [ -f output/ci_web_smoke/summary.md ]; then
+            cat output/ci_web_smoke/summary.md >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "## Web Smoke Check" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "- \`output/ci_web_smoke/summary.md\` not found." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:

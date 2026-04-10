@@ -220,11 +220,55 @@ def screenshot_metrics(path: Path) -> dict:
     }
 
 
+def project_relative(path: Path) -> str:
+    try:
+        return str(path.resolve().relative_to(PROJECT_ROOT)).replace("\\", "/")
+    except ValueError:
+        return str(path.resolve())
+
+
 def build_output_dir(path_arg: str) -> Path:
     if path_arg:
         return (PROJECT_ROOT / path_arg).resolve() if not Path(path_arg).is_absolute() else Path(path_arg).resolve()
     stamp = datetime.now().strftime("web_smoke_check_%Y%m%d_%H%M%S")
     return PROJECT_ROOT / "output" / stamp
+
+
+def render_summary_markdown(summary: dict, summary_path: Path, summary_md_path: Path) -> str:
+    lines = [
+        "## Web Smoke Check",
+        "",
+        f"- Generated: `{summary['generatedAt']}`",
+        f"- Browser: `{summary['browser']}`",
+        f"- Manifest: `{summary['manifest']}`",
+        f"- Web root: `{summary['webRoot']}`",
+        f"- Output: `{project_relative(summary_path.parent)}`",
+        f"- Result: `{summary['passed']}/{summary['total']}` passed",
+        f"- Window size: `{summary['windowSize'][0]}x{summary['windowSize'][1]}`",
+        f"- Virtual time budget: `{summary['virtualTimeBudgetMs']} ms`",
+        f"- JSON summary: `{project_relative(summary_path)}`",
+        f"- Markdown summary: `{project_relative(summary_md_path)}`",
+    ]
+
+    contact_sheet = summary.get("contactSheet")
+    if contact_sheet:
+        lines.append(f"- Contact sheet: `{contact_sheet}`")
+
+    if summary["failed"] > 0:
+        lines.extend(["", "### Failed Demos", ""])
+        for item in summary["results"]:
+            if not item["ok"]:
+                lines.append(
+                    f"- `{item['name']}`: status=`{item['status'] or 'missing'}`, "
+                    f"canvas=`{item['canvasSize'][0]}x{item['canvasSize'][1]}`, "
+                    f"ratio=`{item['metrics']['nonBlackRatio']}`, "
+                    f"colors=`{item['metrics']['uniqueColors']}`, "
+                    f"screenshot=`{item['screenshot']}`, stderr=`{item['stderr']}`"
+                )
+    else:
+        lines.extend(["", "All selected demos passed smoke check."])
+
+    return "\n".join(lines) + "\n"
 
 
 def create_contact_sheet(output_dir: Path, results: list[dict], window_size: tuple[int, int]) -> Path | None:
@@ -335,9 +379,9 @@ def run_demo(browser: str, port: int, entry: dict, output_dir: Path, profile_dir
         "status": status,
         "title": title,
         "canvasSize": canvas_size,
-        "screenshot": str(screenshot_path.relative_to(PROJECT_ROOT)).replace("\\", "/"),
-        "dom": str(dom_path.relative_to(PROJECT_ROOT)).replace("\\", "/"),
-        "stderr": str(stderr_path.relative_to(PROJECT_ROOT)).replace("\\", "/"),
+        "screenshot": project_relative(screenshot_path),
+        "dom": project_relative(dom_path),
+        "stderr": project_relative(stderr_path),
         "metrics": metrics,
         "ok": ok,
     }
@@ -415,14 +459,16 @@ def main() -> int:
             "passed": sum(1 for item in results if item["ok"]),
             "failed": len(failures),
             "failedNames": failures,
-            "contactSheet": (
-                str(contact_sheet_path.relative_to(PROJECT_ROOT)).replace("\\", "/") if contact_sheet_path is not None else None
-            ),
+            "contactSheet": project_relative(contact_sheet_path) if contact_sheet_path is not None else None,
             "results": results,
         }
         summary_path = output_dir / "summary.json"
+        summary_md_path = output_dir / "summary.md"
+        summary["summaryMarkdown"] = project_relative(summary_md_path)
         summary_path.write_text(json.dumps(summary, indent=2, ensure_ascii=False), encoding="utf-8")
+        summary_md_path.write_text(render_summary_markdown(summary, summary_path, summary_md_path), encoding="utf-8")
         print(f"SUMMARY {summary_path}", flush=True)
+        print(f"SUMMARY_MD {summary_md_path}", flush=True)
         print(f"PASSED {summary['passed']}/{summary['total']}", flush=True)
         if contact_sheet_path is not None:
             print(f"CONTACT_SHEET {contact_sheet_path}", flush=True)

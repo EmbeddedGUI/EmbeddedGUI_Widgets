@@ -32,6 +32,7 @@ STATUS_SKIP = "SKIP"
 DEFAULT_RUNTIME_JOBS = 2
 DEFAULT_WASM_OUTPUT_DIR = PROJECT_ROOT / "output" / "release_check_wasm" / "demos"
 DEFAULT_WEB_SMOKE_ROOT = PROJECT_ROOT / "output" / "release_check_wasm"
+DEFAULT_WEB_SMOKE_OUTPUT_DIR = DEFAULT_WEB_SMOKE_ROOT / "web_smoke"
 
 
 def banner(text: str) -> None:
@@ -131,6 +132,8 @@ def build_steps(args: argparse.Namespace) -> list[tuple[str, str, list[list[str]
         str(DEFAULT_WEB_SMOKE_ROOT),
         "--manifest",
         str(DEFAULT_WASM_OUTPUT_DIR / "demos.json"),
+        "--output-dir",
+        str(DEFAULT_WEB_SMOKE_OUTPUT_DIR),
     ]
     if args.web_smoke_browser:
         web_smoke_cmd += ["--browser", args.web_smoke_browser]

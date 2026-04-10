@@ -10,6 +10,7 @@
 #include "test/test_color_picker.h"
 #include "test/test_command_bar.h"
 #include "test/test_data_list_panel.h"
+#include "test/test_demo_scaffold.h"
 #include "test/test_date_picker.h"
 #include "test/test_dialog_sheet.h"
 #include "test/test_drop_down_button.h"
@@ -61,6 +62,7 @@ void uicode_create_ui(void)
     test_color_picker_run();
     test_command_bar_run();
     test_data_list_panel_run();
+    test_demo_scaffold_run();
     test_date_picker_run();
     test_dialog_sheet_run();
     test_drop_down_button_run();
