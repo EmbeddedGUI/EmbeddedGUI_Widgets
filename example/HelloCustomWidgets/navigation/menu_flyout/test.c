@@ -22,6 +22,8 @@ static egui_view_menu_flyout_t flyout_primary;
 static egui_view_linearlayout_t bottom_row;
 static egui_view_menu_flyout_t flyout_compact;
 static egui_view_menu_flyout_t flyout_disabled;
+static egui_view_api_t flyout_compact_api;
+static egui_view_api_t flyout_disabled_api;
 
 EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
 EGUI_BACKGROUND_PARAM_INIT(bg_page_panel_params, &bg_page_panel_param, NULL, NULL);
@@ -101,10 +103,21 @@ static void apply_compact_snapshot(uint8_t index)
     egui_view_menu_flyout_set_current_snapshot(EGUI_VIEW_OF(&flyout_compact), index);
 }
 
-static int consume_preview_touch(egui_view_t *self, egui_motion_event_t *event)
+static void dismiss_primary_menu_flyout(void)
+{
+#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
+    egui_view_clear_focus(EGUI_VIEW_OF(&flyout_primary));
+#endif
+}
+
+static int dismiss_primary_focus_on_preview_touch(egui_view_t *self, egui_motion_event_t *event)
 {
     EGUI_UNUSED(self);
-    EGUI_UNUSED(event);
+
+    if (event->type == EGUI_MOTION_EVENT_ACTION_DOWN)
+    {
+        dismiss_primary_menu_flyout();
+    }
     return 1;
 }
 
@@ -114,6 +127,19 @@ static void on_primary_click(egui_view_t *self)
 
     apply_primary_snapshot(next);
 }
+
+#if EGUI_CONFIG_RECORDING_TEST
+static void set_click_view_center(egui_sim_action_t *p_action, egui_view_t *view, int interval_ms)
+{
+    p_action->type = EGUI_SIM_ACTION_CLICK;
+    p_action->x1 = view->region_screen.location.x + view->region_screen.size.width / 2;
+    p_action->y1 = view->region_screen.location.y + view->region_screen.size.height / 2;
+    p_action->x2 = 0;
+    p_action->y2 = 0;
+    p_action->steps = 0;
+    p_action->interval_ms = interval_ms;
+}
+#endif
 
 void test_init_ui(void)
 {
@@ -159,8 +185,10 @@ void test_init_ui(void)
     egui_view_menu_flyout_set_palette(EGUI_VIEW_OF(&flyout_compact), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD5DCE4), EGUI_COLOR_HEX(0x1A2734),
                                       EGUI_COLOR_HEX(0x6B7A89), EGUI_COLOR_HEX(0x0F6CBD), EGUI_COLOR_HEX(0x0F7B45), EGUI_COLOR_HEX(0x9D5D00),
                                       EGUI_COLOR_HEX(0xC42B1C), EGUI_COLOR_HEX(0xD0D7DE));
-    static egui_view_api_t flyout_compact_touch_api;
-    egui_view_override_api_on_touch(EGUI_VIEW_OF(&flyout_compact), &flyout_compact_touch_api, consume_preview_touch);
+    egui_view_menu_flyout_override_static_preview_api(EGUI_VIEW_OF(&flyout_compact), &flyout_compact_api);
+#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
+    flyout_compact_api.on_touch = dismiss_primary_focus_on_preview_touch;
+#endif
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&flyout_compact), false);
 #endif
@@ -177,8 +205,10 @@ void test_init_ui(void)
     egui_view_menu_flyout_set_palette(EGUI_VIEW_OF(&flyout_disabled), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD5DCE4), EGUI_COLOR_HEX(0x1A2734),
                                       EGUI_COLOR_HEX(0x6B7A89), EGUI_COLOR_HEX(0x0F6CBD), EGUI_COLOR_HEX(0x0F7B45), EGUI_COLOR_HEX(0x9D5D00),
                                       EGUI_COLOR_HEX(0xC42B1C), EGUI_COLOR_HEX(0xD0D7DE));
-    static egui_view_api_t flyout_disabled_touch_api;
-    egui_view_override_api_on_touch(EGUI_VIEW_OF(&flyout_disabled), &flyout_disabled_touch_api, consume_preview_touch);
+    egui_view_menu_flyout_override_static_preview_api(EGUI_VIEW_OF(&flyout_disabled), &flyout_disabled_api);
+#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
+    flyout_disabled_api.on_touch = dismiss_primary_focus_on_preview_touch;
+#endif
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&flyout_disabled), false);
 #endif
@@ -245,6 +275,16 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
         if (first_call)
         {
             apply_primary_snapshot(3);
+            recording_request_snapshot();
+        }
+        EGUI_SIM_SET_WAIT(p_action, 240);
+        return true;
+    case 5:
+        set_click_view_center(p_action, EGUI_VIEW_OF(&flyout_compact), 240);
+        return true;
+    case 6:
+        if (first_call)
+        {
             recording_request_snapshot();
         }
         EGUI_SIM_SET_WAIT(p_action, 640);

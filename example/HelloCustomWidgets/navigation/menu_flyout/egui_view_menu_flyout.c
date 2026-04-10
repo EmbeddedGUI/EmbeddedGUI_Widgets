@@ -50,9 +50,17 @@ static egui_color_t egui_view_menu_flyout_mix_disabled(egui_color_t color)
     return egui_rgb_mix(color, EGUI_COLOR_DARK_GREY, 68);
 }
 
-static void egui_view_menu_flyout_clear_pressed_state(egui_view_t *self)
+static uint8_t egui_view_menu_flyout_clear_pressed_state(egui_view_t *self)
 {
+    uint8_t was_pressed = self->is_pressed ? 1 : 0;
+
+    if (!was_pressed)
+    {
+        return 0;
+    }
+
     egui_view_set_pressed(self, false);
+    return 1;
 }
 
 static egui_color_t egui_view_menu_flyout_tone_color(egui_view_menu_flyout_t *local, uint8_t tone)
@@ -210,11 +218,7 @@ void egui_view_menu_flyout_set_current_snapshot(egui_view_t *self, uint8_t snaps
 
     if (local->current_snapshot == snapshot_index)
     {
-        if (self->is_pressed)
-        {
-            egui_view_menu_flyout_clear_pressed_state(self);
-            egui_view_invalidate(self);
-        }
+        egui_view_menu_flyout_clear_pressed_state(self);
         return;
     }
 
@@ -232,35 +236,49 @@ uint8_t egui_view_menu_flyout_get_current_snapshot(egui_view_t *self)
 void egui_view_menu_flyout_set_font(egui_view_t *self, const egui_font_t *font)
 {
     EGUI_LOCAL_INIT(egui_view_menu_flyout_t);
+    uint8_t had_pressed = egui_view_menu_flyout_clear_pressed_state(self);
 
     local->font = font ? font : (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT;
-    egui_view_invalidate(self);
+    if (!had_pressed)
+    {
+        egui_view_invalidate(self);
+    }
 }
 
 void egui_view_menu_flyout_set_meta_font(egui_view_t *self, const egui_font_t *font)
 {
     EGUI_LOCAL_INIT(egui_view_menu_flyout_t);
+    uint8_t had_pressed = egui_view_menu_flyout_clear_pressed_state(self);
 
     local->meta_font = font ? font : (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT;
-    egui_view_invalidate(self);
+    if (!had_pressed)
+    {
+        egui_view_invalidate(self);
+    }
 }
 
 void egui_view_menu_flyout_set_compact_mode(egui_view_t *self, uint8_t compact_mode)
 {
     EGUI_LOCAL_INIT(egui_view_menu_flyout_t);
+    uint8_t had_pressed = egui_view_menu_flyout_clear_pressed_state(self);
 
     local->compact_mode = compact_mode ? 1 : 0;
-    egui_view_menu_flyout_clear_pressed_state(self);
-    egui_view_invalidate(self);
+    if (!had_pressed)
+    {
+        egui_view_invalidate(self);
+    }
 }
 
 void egui_view_menu_flyout_set_disabled_mode(egui_view_t *self, uint8_t disabled_mode)
 {
     EGUI_LOCAL_INIT(egui_view_menu_flyout_t);
+    uint8_t had_pressed = egui_view_menu_flyout_clear_pressed_state(self);
 
     local->disabled_mode = disabled_mode ? 1 : 0;
-    egui_view_menu_flyout_clear_pressed_state(self);
-    egui_view_invalidate(self);
+    if (!had_pressed)
+    {
+        egui_view_invalidate(self);
+    }
 }
 
 void egui_view_menu_flyout_set_palette(egui_view_t *self, egui_color_t surface_color, egui_color_t border_color, egui_color_t text_color,
@@ -268,6 +286,7 @@ void egui_view_menu_flyout_set_palette(egui_view_t *self, egui_color_t surface_c
                                        egui_color_t danger_color, egui_color_t shadow_color)
 {
     EGUI_LOCAL_INIT(egui_view_menu_flyout_t);
+    uint8_t had_pressed = egui_view_menu_flyout_clear_pressed_state(self);
 
     local->surface_color = surface_color;
     local->border_color = border_color;
@@ -278,7 +297,10 @@ void egui_view_menu_flyout_set_palette(egui_view_t *self, egui_color_t surface_c
     local->warning_color = warning_color;
     local->danger_color = danger_color;
     local->shadow_color = shadow_color;
-    egui_view_invalidate(self);
+    if (!had_pressed)
+    {
+        egui_view_invalidate(self);
+    }
 }
 
 static void egui_view_menu_flyout_on_draw(egui_view_t *self)
@@ -371,11 +393,7 @@ static int egui_view_menu_flyout_on_touch_event(egui_view_t *self, egui_motion_e
 
     if (local->disabled_mode || !egui_view_get_enable(self))
     {
-        if (self->is_pressed)
-        {
-            egui_view_menu_flyout_clear_pressed_state(self);
-            egui_view_invalidate(self);
-        }
+        egui_view_menu_flyout_clear_pressed_state(self);
         EGUI_UNUSED(event);
         return 0;
     }
@@ -391,11 +409,7 @@ static int egui_view_menu_flyout_on_key_event(egui_view_t *self, egui_key_event_
 
     if (local->disabled_mode || !egui_view_get_enable(self))
     {
-        if (self->is_pressed)
-        {
-            egui_view_menu_flyout_clear_pressed_state(self);
-            egui_view_invalidate(self);
-        }
+        egui_view_menu_flyout_clear_pressed_state(self);
         EGUI_UNUSED(event);
         return 0;
     }
@@ -403,6 +417,35 @@ static int egui_view_menu_flyout_on_key_event(egui_view_t *self, egui_key_event_
     return egui_view_on_key_event(self, event);
 }
 #endif
+
+#if EGUI_CONFIG_FUNCTION_SUPPORT_KEY
+static int egui_view_menu_flyout_on_static_key_event(egui_view_t *self, egui_key_event_t *event)
+{
+    EGUI_UNUSED(event);
+    egui_view_menu_flyout_clear_pressed_state(self);
+    return 1;
+}
+#endif
+
+#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
+static int egui_view_menu_flyout_on_static_touch_event(egui_view_t *self, egui_motion_event_t *event)
+{
+    EGUI_UNUSED(event);
+    egui_view_menu_flyout_clear_pressed_state(self);
+    return 1;
+}
+#endif
+
+void egui_view_menu_flyout_override_static_preview_api(egui_view_t *self, egui_view_api_t *api)
+{
+    egui_view_copy_api(self, api);
+#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
+    api->on_touch_event = egui_view_menu_flyout_on_static_touch_event;
+#endif
+#if EGUI_CONFIG_FUNCTION_SUPPORT_KEY
+    api->on_key_event = egui_view_menu_flyout_on_static_key_event;
+#endif
+}
 
 const egui_view_api_t EGUI_VIEW_API_TABLE_NAME(egui_view_menu_flyout_t) = {
         .dispatch_touch_event = egui_view_dispatch_touch_event,

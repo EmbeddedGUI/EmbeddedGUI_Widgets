@@ -64,6 +64,7 @@ void egui_view_menu_flyout_set_font(egui_view_t *self, const egui_font_t *font);
 void egui_view_menu_flyout_set_meta_font(egui_view_t *self, const egui_font_t *font);
 void egui_view_menu_flyout_set_compact_mode(egui_view_t *self, uint8_t compact_mode);
 void egui_view_menu_flyout_set_disabled_mode(egui_view_t *self, uint8_t disabled_mode);
+void egui_view_menu_flyout_override_static_preview_api(egui_view_t *self, egui_view_api_t *api);
 void egui_view_menu_flyout_set_palette(egui_view_t *self, egui_color_t surface_color, egui_color_t border_color, egui_color_t text_color,
                                        egui_color_t muted_text_color, egui_color_t accent_color, egui_color_t success_color, egui_color_t warning_color,
                                        egui_color_t danger_color, egui_color_t shadow_color);

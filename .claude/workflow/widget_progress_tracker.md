@@ -34,7 +34,6 @@
 
 | 状态 | 控件名 | 分类 | 开始日期 | 当前阶段 | 目标 |
 | --- | --- | --- | --- | --- | --- |
-| 进行中 | `menu_flyout` | `navigation` | `2026-04-10` | 交互收口与验证 | 复核 `snapshot / invoke / same-target release / compact / disabled / preview touch-key` 链路里的状态清理、静态 preview 与交互后渲染回归 |
 
 ## 当前保留的 Reference 主线控件
 
@@ -96,6 +95,12 @@
 - `toast_stack` -> `Toast`
 
 ## 最近完成的收口动作
+
+- `2026-04-10`
+  - 完成 `navigation/menu_flyout` 二次收口：在既有 `reference` 页面结构不再调整的前提下，把工作重点收回到交互行为，补齐 `snapshot / invoke / same-target release / compact / disabled / preview touch-key` 链路里的状态清理、静态 preview 输入吞掉与渲染回归，同时继续保留符合 Fluent / WPF UI 语义的触发按钮、弹出菜单、危险项与辅助说明。
+  - `egui_view_menu_flyout.c/.h` 让 `egui_view_menu_flyout_clear_pressed_state()` 返回统一 cleared 语义，并新增 `egui_view_menu_flyout_override_static_preview_api()`；让 `set_font()`、`set_meta_font()`、`set_palette()`、`set_compact_mode()`、`set_disabled_mode()` 以及 `touch / key guard` 都先清理残留 `pressed_item / is_pressed`，把 `ACTION_CANCEL` 与 key 入口收口到同一套清理逻辑，同时让静态 preview 统一吞掉 touch / key 输入，只负责清残留 pressed，不改 snapshot，也不触发 click。
+  - `example/HelloCustomWidgets/navigation/menu_flyout/test.c` 把底部 `compact / disabled` 预览改成统一 static preview API，并补上 `dismiss_primary_focus_on_preview_touch()` 用于点击 preview 时只清主控件 focus；`example/HelloUnitTest/test/test_menu_flyout.c` 补齐 “setter 清理 pressed”“touch cancel 清理且不触发 side effect”“disabled / view disabled guard 清理残留 pressed”“static preview 吞掉 touch / key 且不改 current snapshot / invoke 状态” 的交互回归；README 同步明确静态 preview、preview 点击收口与验收标准。
+  - 已通过 `make clean APP=HelloUnitTest PORT=pc_test`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`make clean APP=HelloCustomWidgets APP_SUB=navigation/menu_flyout PORT=pc`、`make all APP=HelloCustomWidgets APP_SUB=navigation/menu_flyout PORT=pc`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category navigation`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub navigation/menu_flyout --track reference --timeout 10 --keep-screenshots`、`python scripts/checks/check_docs_encoding.py`，并复核 `runtime_check_output/HelloCustomWidgets_navigation_menu_flyout/default/frame_0000.png`、`frame_0002.png`、`frame_0004.png`、`frame_0006.png`、`frame_0007.png` 的输出尺寸、均值与帧差异框，确认变化集中在主控件与底部 preview 区域，preview 点击后的收尾帧稳定，对整屏没有黑白屏、裁切或残留 `pressed` 污染。
 
 - `2026-04-10`
   - 完成 `navigation/tab_view` 二次收口：在既有 `reference` 页面结构不再调整的前提下，把工作重点收回到交互行为，补齐 `tab select / close / restore / compact / read only / disabled / preview touch-key` 链路里的状态清理、静态 preview 输入吞掉与渲染回归，同时继续保留符合 Fluent / WPF UI 语义的页签头、内容体、关闭当前页签与恢复隐藏页签闭环。
