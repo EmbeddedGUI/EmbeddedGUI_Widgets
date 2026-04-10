@@ -24,6 +24,7 @@
 - 主控件：展示标准 `TabView`，保留 tab header、content body、关闭当前页签和恢复隐藏页签入口。
 - `compact` 预览：保留相同语义，但压缩 body chrome 和文本密度，用于验证小尺寸 reference 收口。
 - `read only` 预览：保留冻结态和内容摘要，只作为静态对照，不再承担点击职责。
+- 底部两个 preview 统一走静态 preview API，吞掉 touch / key 输入；点击 preview 只负责清主控件焦点。
 - 页面只保留标题、主 `tab_view` 和底部 `compact / read only` 双预览，不再保留 guide、状态栏和额外说明条。
 
 ## 4. 视觉与布局规格
@@ -69,22 +70,29 @@
 4. 通过 `+` 恢复已关闭页签。
 5. 切到 `Ops workspace` snapshot。
 6. 程序化切换 `compact` 到第二条预览轨道。
+7. 点击 `compact` preview，验证静态 preview 只清主控件 focus。
+8. 输出结束帧。
 
 ## 8. 编译、touch、runtime、单测与文档检查
 ```bash
-make all APP=HelloCustomWidgets APP_SUB=navigation/tab_view PORT=pc
-python scripts/checks/check_touch_release_semantics.py --scope custom --category navigation
-python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub navigation/tab_view --track reference --timeout 10 --keep-screenshots
+make clean APP=HelloUnitTest PORT=pc_test
 make all APP=HelloUnitTest PORT=pc_test
 output\main.exe
+
+make clean APP=HelloCustomWidgets APP_SUB=navigation/tab_view PORT=pc
+make all APP=HelloCustomWidgets APP_SUB=navigation/tab_view PORT=pc
+
+python scripts/checks/check_touch_release_semantics.py --scope custom --category navigation
+python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub navigation/tab_view --track reference --timeout 10 --keep-screenshots
 python scripts/checks/check_docs_encoding.py
 ```
 
 验收重点：
 - header、body、footer 和底部 `compact / read only` 预览都必须完整可见。
 - active tab、close、add、body card 和 footer pill 必须可辨识，但不能回到旧的重按钮化风格。
-- `compact / read only` 不再响应触摸，也不承担页面状态切换职责。
-- `snapshot / current tab / current part / compact / read only / view disabled` 切换后不能残留 tab、close 或 add 的 `pressed` 高亮与下压渲染。
+- `compact / read only` preview 必须统一吞掉 touch / key，不再承担页面状态切换职责。
+- 点击 preview 只能清主控件 focus，不能切换 snapshot、current tab 或触发 close / restore。
+- `set_font()`、`set_meta_font()`、`set_palette()`、`snapshot / current tab / current part / compact / read only / view disabled` 切换后都不能残留 tab、close 或 add 的 `pressed` 高亮与下压渲染。
 - `read_only_mode / !enable` 不仅要忽略后续 touch / key 输入，还要在收到新输入时先清理残留 `pressed` 状态。
 - `close current tab` 与 `restore closed tabs` 的行为不能回归。
 

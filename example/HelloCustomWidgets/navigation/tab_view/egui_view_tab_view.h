@@ -101,6 +101,7 @@ void egui_view_tab_view_set_font(egui_view_t *self, const egui_font_t *font);
 void egui_view_tab_view_set_meta_font(egui_view_t *self, const egui_font_t *font);
 void egui_view_tab_view_set_compact_mode(egui_view_t *self, uint8_t compact_mode);
 void egui_view_tab_view_set_read_only_mode(egui_view_t *self, uint8_t read_only_mode);
+void egui_view_tab_view_override_static_preview_api(egui_view_t *self, egui_view_api_t *api);
 void egui_view_tab_view_set_palette(egui_view_t *self, egui_color_t surface_color, egui_color_t border_color, egui_color_t section_color,
                                     egui_color_t text_color, egui_color_t muted_text_color, egui_color_t accent_color, egui_color_t success_color,
                                     egui_color_t warning_color, egui_color_t neutral_color);

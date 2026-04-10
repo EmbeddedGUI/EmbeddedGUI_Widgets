@@ -22,6 +22,8 @@ static egui_view_tab_view_t tab_view_primary;
 static egui_view_linearlayout_t bottom_row;
 static egui_view_tab_view_t tab_view_compact;
 static egui_view_tab_view_t tab_view_read_only;
+static egui_view_api_t tab_view_compact_api;
+static egui_view_api_t tab_view_read_only_api;
 
 EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
 EGUI_BACKGROUND_PARAM_INIT(bg_page_panel_params, &bg_page_panel_param, NULL, NULL);
@@ -78,12 +80,36 @@ static const egui_view_tab_view_snapshot_t read_only_snapshots[] = {
         {"Read only", "Static reference preview", read_only_tabs, 2, 0, 0},
 };
 
-static int consume_preview_touch(egui_view_t *self, egui_motion_event_t *event)
+static void dismiss_primary_tab_view(void)
+{
+#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
+    egui_view_clear_focus(EGUI_VIEW_OF(&tab_view_primary));
+#endif
+}
+
+static int dismiss_primary_focus_on_preview_touch(egui_view_t *self, egui_motion_event_t *event)
 {
     EGUI_UNUSED(self);
-    EGUI_UNUSED(event);
+
+    if (event->type == EGUI_MOTION_EVENT_ACTION_DOWN)
+    {
+        dismiss_primary_tab_view();
+    }
     return 1;
 }
+
+#if EGUI_CONFIG_RECORDING_TEST
+static void set_click_view_center(egui_sim_action_t *p_action, egui_view_t *view, int interval_ms)
+{
+    p_action->type = EGUI_SIM_ACTION_CLICK;
+    p_action->x1 = view->region_screen.location.x + view->region_screen.size.width / 2;
+    p_action->y1 = view->region_screen.location.y + view->region_screen.size.height / 2;
+    p_action->x2 = 0;
+    p_action->y2 = 0;
+    p_action->steps = 0;
+    p_action->interval_ms = interval_ms;
+}
+#endif
 
 void test_init_ui(void)
 {
@@ -128,8 +154,10 @@ void test_init_ui(void)
     egui_view_tab_view_set_palette(EGUI_VIEW_OF(&tab_view_compact), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD5DCE4), EGUI_COLOR_HEX(0xF4F7F9),
                                    EGUI_COLOR_HEX(0x1A2734), EGUI_COLOR_HEX(0x6B7A89), EGUI_COLOR_HEX(0x0F6CBD), EGUI_COLOR_HEX(0x0F7B45),
                                    EGUI_COLOR_HEX(0x9D5D00), EGUI_COLOR_HEX(0x6B7A89));
-    static egui_view_api_t tab_view_compact_touch_api;
-    egui_view_override_api_on_touch(EGUI_VIEW_OF(&tab_view_compact), &tab_view_compact_touch_api, consume_preview_touch);
+    egui_view_tab_view_override_static_preview_api(EGUI_VIEW_OF(&tab_view_compact), &tab_view_compact_api);
+#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
+    tab_view_compact_api.on_touch = dismiss_primary_focus_on_preview_touch;
+#endif
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&tab_view_compact), false);
 #endif
@@ -146,8 +174,10 @@ void test_init_ui(void)
     egui_view_tab_view_set_palette(EGUI_VIEW_OF(&tab_view_read_only), EGUI_COLOR_HEX(0xFBFCFD), EGUI_COLOR_HEX(0xDBE2E8), EGUI_COLOR_HEX(0xF6F8FA),
                                    EGUI_COLOR_HEX(0x536474), EGUI_COLOR_HEX(0x8896A4), EGUI_COLOR_HEX(0xB3BFCA), EGUI_COLOR_HEX(0xA7BDB6),
                                    EGUI_COLOR_HEX(0xC3AE88), EGUI_COLOR_HEX(0x9AA7B3));
-    static egui_view_api_t tab_view_read_only_touch_api;
-    egui_view_override_api_on_touch(EGUI_VIEW_OF(&tab_view_read_only), &tab_view_read_only_touch_api, consume_preview_touch);
+    egui_view_tab_view_override_static_preview_api(EGUI_VIEW_OF(&tab_view_read_only), &tab_view_read_only_api);
+#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
+    tab_view_read_only_api.on_touch = dismiss_primary_focus_on_preview_touch;
+#endif
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&tab_view_read_only), false);
 #endif
@@ -181,6 +211,9 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
             egui_view_tab_view_set_current_tab(EGUI_VIEW_OF(&tab_view_primary), 0);
             egui_view_tab_view_set_current_snapshot(EGUI_VIEW_OF(&tab_view_compact), 0);
             egui_view_tab_view_set_current_snapshot(EGUI_VIEW_OF(&tab_view_read_only), 0);
+#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
+            egui_view_request_focus(EGUI_VIEW_OF(&tab_view_primary));
+#endif
             recording_request_snapshot();
         }
         EGUI_SIM_SET_WAIT(p_action, 180);
@@ -221,6 +254,19 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
         if (first_call)
         {
             egui_view_tab_view_set_current_snapshot(EGUI_VIEW_OF(&tab_view_compact), 1);
+#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
+            egui_view_request_focus(EGUI_VIEW_OF(&tab_view_primary));
+#endif
+            recording_request_snapshot();
+        }
+        EGUI_SIM_SET_WAIT(p_action, 180);
+        return true;
+    case 6:
+        set_click_view_center(p_action, EGUI_VIEW_OF(&tab_view_compact), 180);
+        return true;
+    case 7:
+        if (first_call)
+        {
             recording_request_snapshot();
         }
         EGUI_SIM_SET_WAIT(p_action, 360);
