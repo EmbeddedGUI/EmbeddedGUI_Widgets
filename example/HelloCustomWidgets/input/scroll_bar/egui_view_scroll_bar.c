@@ -53,6 +53,18 @@ static uint8_t scroll_bar_has_text(const char *text)
     return (text != NULL && text[0] != '\0') ? 1 : 0;
 }
 
+static uint8_t scroll_bar_clear_pressed_state(egui_view_t *self, egui_view_scroll_bar_t *local)
+{
+    uint8_t had_pressed =
+            self->is_pressed || local->pressed_part != EGUI_VIEW_SCROLL_BAR_PART_NONE || local->pressed_track_direction != 0 || local->thumb_dragging;
+
+    local->pressed_part = EGUI_VIEW_SCROLL_BAR_PART_NONE;
+    local->pressed_track_direction = 0;
+    local->thumb_dragging = 0;
+    egui_view_set_pressed(self, false);
+    return had_pressed;
+}
+
 static egui_dim_t scroll_bar_get_max_offset_inner(egui_view_scroll_bar_t *local)
 {
     return local->content_length > local->viewport_length ? (local->content_length - local->viewport_length) : 0;
@@ -436,21 +448,30 @@ static uint8_t scroll_bar_apply_offset(egui_view_t *self, egui_dim_t offset, uin
     return 1;
 }
 
-static void scroll_bar_set_current_part_inner(egui_view_t *self, uint8_t part)
+static void scroll_bar_set_current_part_inner(egui_view_t *self, uint8_t part, uint8_t clear_pressed)
 {
     EGUI_LOCAL_INIT(egui_view_scroll_bar_t);
+    uint8_t had_pressed = 0;
+    uint8_t changed = 0;
 
+    if (clear_pressed)
+    {
+        had_pressed = scroll_bar_clear_pressed_state(self, local);
+    }
+    scroll_bar_normalize_state(local);
     if (part != EGUI_VIEW_SCROLL_BAR_PART_DECREASE && part != EGUI_VIEW_SCROLL_BAR_PART_THUMB && part != EGUI_VIEW_SCROLL_BAR_PART_INCREASE)
     {
-        return;
+        part = EGUI_VIEW_SCROLL_BAR_PART_THUMB;
     }
-    if (local->current_part == part)
+    if (local->current_part != part)
     {
-        return;
+        local->current_part = part;
+        changed = 1;
     }
-
-    local->current_part = part;
-    egui_view_invalidate(self);
+    if (changed || had_pressed)
+    {
+        egui_view_invalidate(self);
+    }
 }
 
 static uint8_t scroll_bar_hit_part(egui_view_scroll_bar_t *local, egui_view_t *self, egui_dim_t x, egui_dim_t y)
@@ -788,8 +809,13 @@ static int egui_view_scroll_bar_on_touch_event(egui_view_t *self, egui_motion_ev
 
     if (!egui_view_get_enable(self) || local->read_only_mode || local->compact_mode)
     {
+        if (scroll_bar_clear_pressed_state(self, local))
+        {
+            egui_view_invalidate(self);
+        }
         return 0;
     }
+    scroll_bar_normalize_state(local);
 
     switch (event->type)
     {
@@ -797,6 +823,10 @@ static int egui_view_scroll_bar_on_touch_event(egui_view_t *self, egui_motion_ev
         hit_part = scroll_bar_hit_part(local, self, event->location.x, event->location.y);
         if (hit_part == EGUI_VIEW_SCROLL_BAR_PART_NONE)
         {
+            if (scroll_bar_clear_pressed_state(self, local))
+            {
+                egui_view_invalidate(self);
+            }
             return 0;
         }
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
@@ -814,15 +844,15 @@ static int egui_view_scroll_bar_on_touch_event(egui_view_t *self, egui_motion_ev
         egui_view_set_pressed(self, true);
         if (hit_part == EGUI_VIEW_SCROLL_BAR_PART_DECREASE)
         {
-            scroll_bar_set_current_part_inner(self, EGUI_VIEW_SCROLL_BAR_PART_DECREASE);
+            scroll_bar_set_current_part_inner(self, EGUI_VIEW_SCROLL_BAR_PART_DECREASE, 0);
         }
         else if (hit_part == EGUI_VIEW_SCROLL_BAR_PART_INCREASE)
         {
-            scroll_bar_set_current_part_inner(self, EGUI_VIEW_SCROLL_BAR_PART_INCREASE);
+            scroll_bar_set_current_part_inner(self, EGUI_VIEW_SCROLL_BAR_PART_INCREASE, 0);
         }
         else
         {
-            scroll_bar_set_current_part_inner(self, EGUI_VIEW_SCROLL_BAR_PART_THUMB);
+            scroll_bar_set_current_part_inner(self, EGUI_VIEW_SCROLL_BAR_PART_THUMB, 0);
         }
         egui_view_invalidate(self);
         return 1;
@@ -842,6 +872,9 @@ static int egui_view_scroll_bar_on_touch_event(egui_view_t *self, egui_motion_ev
         }
         return 1;
     case EGUI_MOTION_EVENT_ACTION_UP:
+    {
+        uint8_t handled;
+
         hit_part = scroll_bar_hit_part(local, self, event->location.x, event->location.y);
         if (local->thumb_dragging)
         {
@@ -867,19 +900,20 @@ static int egui_view_scroll_bar_on_touch_event(egui_view_t *self, egui_motion_ev
             }
         }
 
-        local->pressed_part = EGUI_VIEW_SCROLL_BAR_PART_NONE;
-        local->pressed_track_direction = 0;
-        local->thumb_dragging = 0;
-        egui_view_set_pressed(self, false);
-        egui_view_invalidate(self);
-        return 1;
+        handled = scroll_bar_clear_pressed_state(self, local);
+        if (handled)
+        {
+            egui_view_invalidate(self);
+        }
+        return handled || hit_part != EGUI_VIEW_SCROLL_BAR_PART_NONE;
+    }
     case EGUI_MOTION_EVENT_ACTION_CANCEL:
-        local->pressed_part = EGUI_VIEW_SCROLL_BAR_PART_NONE;
-        local->pressed_track_direction = 0;
-        local->thumb_dragging = 0;
-        egui_view_set_pressed(self, false);
-        egui_view_invalidate(self);
-        return 1;
+        if (scroll_bar_clear_pressed_state(self, local))
+        {
+            egui_view_invalidate(self);
+            return 1;
+        }
+        return 0;
     default:
         return 0;
     }
@@ -890,6 +924,11 @@ uint8_t egui_view_scroll_bar_handle_navigation_key(egui_view_t *self, uint8_t ke
 {
     EGUI_LOCAL_INIT(egui_view_scroll_bar_t);
 
+    if (scroll_bar_clear_pressed_state(self, local))
+    {
+        egui_view_invalidate(self);
+    }
+    scroll_bar_normalize_state(local);
     if (!egui_view_get_enable(self) || local->read_only_mode || local->compact_mode)
     {
         return 0;
@@ -900,39 +939,39 @@ uint8_t egui_view_scroll_bar_handle_navigation_key(egui_view_t *self, uint8_t ke
     case EGUI_KEY_CODE_TAB:
         if (local->current_part == EGUI_VIEW_SCROLL_BAR_PART_DECREASE)
         {
-            scroll_bar_set_current_part_inner(self, EGUI_VIEW_SCROLL_BAR_PART_THUMB);
+            scroll_bar_set_current_part_inner(self, EGUI_VIEW_SCROLL_BAR_PART_THUMB, 0);
         }
         else if (local->current_part == EGUI_VIEW_SCROLL_BAR_PART_THUMB)
         {
-            scroll_bar_set_current_part_inner(self, EGUI_VIEW_SCROLL_BAR_PART_INCREASE);
+            scroll_bar_set_current_part_inner(self, EGUI_VIEW_SCROLL_BAR_PART_INCREASE, 0);
         }
         else
         {
-            scroll_bar_set_current_part_inner(self, EGUI_VIEW_SCROLL_BAR_PART_DECREASE);
+            scroll_bar_set_current_part_inner(self, EGUI_VIEW_SCROLL_BAR_PART_DECREASE, 0);
         }
         return 1;
     case EGUI_KEY_CODE_UP:
-        scroll_bar_set_current_part_inner(self, EGUI_VIEW_SCROLL_BAR_PART_THUMB);
+        scroll_bar_set_current_part_inner(self, EGUI_VIEW_SCROLL_BAR_PART_THUMB, 0);
         scroll_bar_apply_offset(self, local->offset - local->line_step, 1, EGUI_VIEW_SCROLL_BAR_PART_THUMB);
         return 1;
     case EGUI_KEY_CODE_DOWN:
-        scroll_bar_set_current_part_inner(self, EGUI_VIEW_SCROLL_BAR_PART_THUMB);
+        scroll_bar_set_current_part_inner(self, EGUI_VIEW_SCROLL_BAR_PART_THUMB, 0);
         scroll_bar_apply_offset(self, local->offset + local->line_step, 1, EGUI_VIEW_SCROLL_BAR_PART_THUMB);
         return 1;
     case EGUI_KEY_CODE_HOME:
-        scroll_bar_set_current_part_inner(self, EGUI_VIEW_SCROLL_BAR_PART_THUMB);
+        scroll_bar_set_current_part_inner(self, EGUI_VIEW_SCROLL_BAR_PART_THUMB, 0);
         scroll_bar_apply_offset(self, 0, 1, EGUI_VIEW_SCROLL_BAR_PART_THUMB);
         return 1;
     case EGUI_KEY_CODE_END:
-        scroll_bar_set_current_part_inner(self, EGUI_VIEW_SCROLL_BAR_PART_THUMB);
+        scroll_bar_set_current_part_inner(self, EGUI_VIEW_SCROLL_BAR_PART_THUMB, 0);
         scroll_bar_apply_offset(self, scroll_bar_get_max_offset_inner(local), 1, EGUI_VIEW_SCROLL_BAR_PART_THUMB);
         return 1;
     case EGUI_KEY_CODE_MINUS:
-        scroll_bar_set_current_part_inner(self, EGUI_VIEW_SCROLL_BAR_PART_THUMB);
+        scroll_bar_set_current_part_inner(self, EGUI_VIEW_SCROLL_BAR_PART_THUMB, 0);
         scroll_bar_apply_offset(self, local->offset - local->page_step, 1, EGUI_VIEW_SCROLL_BAR_PART_TRACK);
         return 1;
     case EGUI_KEY_CODE_PLUS:
-        scroll_bar_set_current_part_inner(self, EGUI_VIEW_SCROLL_BAR_PART_THUMB);
+        scroll_bar_set_current_part_inner(self, EGUI_VIEW_SCROLL_BAR_PART_THUMB, 0);
         scroll_bar_apply_offset(self, local->offset + local->page_step, 1, EGUI_VIEW_SCROLL_BAR_PART_TRACK);
         return 1;
     case EGUI_KEY_CODE_ENTER:
@@ -953,7 +992,7 @@ uint8_t egui_view_scroll_bar_handle_navigation_key(egui_view_t *self, uint8_t ke
     case EGUI_KEY_CODE_ESCAPE:
         if (local->current_part != EGUI_VIEW_SCROLL_BAR_PART_THUMB)
         {
-            scroll_bar_set_current_part_inner(self, EGUI_VIEW_SCROLL_BAR_PART_THUMB);
+            scroll_bar_set_current_part_inner(self, EGUI_VIEW_SCROLL_BAR_PART_THUMB, 0);
             return 1;
         }
         return 0;
@@ -967,6 +1006,10 @@ static int egui_view_scroll_bar_on_key_event(egui_view_t *self, egui_key_event_t
 {
     EGUI_LOCAL_INIT(egui_view_scroll_bar_t);
 
+    if (scroll_bar_clear_pressed_state(self, local))
+    {
+        egui_view_invalidate(self);
+    }
     if (!egui_view_get_enable(self) || local->read_only_mode || local->compact_mode)
     {
         return 0;
@@ -1012,12 +1055,8 @@ static void egui_view_scroll_bar_on_focus_change(egui_view_t *self, int is_focus
         return;
     }
 
-    if (local->pressed_part != EGUI_VIEW_SCROLL_BAR_PART_NONE || local->thumb_dragging)
+    if (scroll_bar_clear_pressed_state(self, local))
     {
-        local->pressed_part = EGUI_VIEW_SCROLL_BAR_PART_NONE;
-        local->pressed_track_direction = 0;
-        local->thumb_dragging = 0;
-        egui_view_set_pressed(self, false);
         needs_invalidate = 1;
     }
     if (local->current_part != EGUI_VIEW_SCROLL_BAR_PART_THUMB)
@@ -1083,6 +1122,7 @@ void egui_view_scroll_bar_set_content_metrics(egui_view_t *self, egui_dim_t cont
     EGUI_LOCAL_INIT(egui_view_scroll_bar_t);
     egui_dim_t old_offset = local->offset;
 
+    scroll_bar_clear_pressed_state(self, local);
     local->content_length = content_length;
     local->viewport_length = viewport_length;
     scroll_bar_normalize_state(local);
@@ -1111,6 +1151,7 @@ void egui_view_scroll_bar_set_step_size(egui_view_t *self, egui_dim_t line_step,
 {
     EGUI_LOCAL_INIT(egui_view_scroll_bar_t);
 
+    scroll_bar_clear_pressed_state(self, local);
     local->line_step = line_step;
     local->page_step = page_step;
     scroll_bar_normalize_state(local);
@@ -1120,8 +1161,13 @@ void egui_view_scroll_bar_set_step_size(egui_view_t *self, egui_dim_t line_step,
 void egui_view_scroll_bar_set_offset(egui_view_t *self, egui_dim_t offset)
 {
     EGUI_LOCAL_INIT(egui_view_scroll_bar_t);
+    uint8_t had_pressed = scroll_bar_clear_pressed_state(self, local);
+
     scroll_bar_normalize_state(local);
-    scroll_bar_apply_offset(self, offset, 1, local->current_part);
+    if (!scroll_bar_apply_offset(self, offset, 1, local->current_part) && had_pressed)
+    {
+        egui_view_invalidate(self);
+    }
 }
 
 egui_dim_t egui_view_scroll_bar_get_offset(egui_view_t *self)
@@ -1140,7 +1186,7 @@ egui_dim_t egui_view_scroll_bar_get_max_offset(egui_view_t *self)
 
 void egui_view_scroll_bar_set_current_part(egui_view_t *self, uint8_t part)
 {
-    scroll_bar_set_current_part_inner(self, part);
+    scroll_bar_set_current_part_inner(self, part, 1);
 }
 
 uint8_t egui_view_scroll_bar_get_current_part(egui_view_t *self)
@@ -1153,39 +1199,49 @@ uint8_t egui_view_scroll_bar_get_current_part(egui_view_t *self)
 void egui_view_scroll_bar_set_compact_mode(egui_view_t *self, uint8_t compact_mode)
 {
     EGUI_LOCAL_INIT(egui_view_scroll_bar_t);
+    uint8_t changed = 0;
+    uint8_t had_pressed;
 
     compact_mode = compact_mode ? 1 : 0;
-    if (local->compact_mode == compact_mode)
+    had_pressed = scroll_bar_clear_pressed_state(self, local);
+    if (local->compact_mode != compact_mode)
     {
-        return;
+        local->compact_mode = compact_mode;
+        changed = 1;
     }
-
-    local->compact_mode = compact_mode;
-    local->pressed_part = EGUI_VIEW_SCROLL_BAR_PART_NONE;
-    local->pressed_track_direction = 0;
-    local->thumb_dragging = 0;
-    local->current_part = EGUI_VIEW_SCROLL_BAR_PART_THUMB;
-    egui_view_set_pressed(self, false);
-    egui_view_invalidate(self);
+    if (local->compact_mode && local->current_part != EGUI_VIEW_SCROLL_BAR_PART_THUMB)
+    {
+        local->current_part = EGUI_VIEW_SCROLL_BAR_PART_THUMB;
+        changed = 1;
+    }
+    if (changed || had_pressed)
+    {
+        egui_view_invalidate(self);
+    }
 }
 
 void egui_view_scroll_bar_set_read_only_mode(egui_view_t *self, uint8_t read_only_mode)
 {
     EGUI_LOCAL_INIT(egui_view_scroll_bar_t);
+    uint8_t changed = 0;
+    uint8_t had_pressed;
 
     read_only_mode = read_only_mode ? 1 : 0;
-    if (local->read_only_mode == read_only_mode)
+    had_pressed = scroll_bar_clear_pressed_state(self, local);
+    if (local->read_only_mode != read_only_mode)
     {
-        return;
+        local->read_only_mode = read_only_mode;
+        changed = 1;
     }
-
-    local->read_only_mode = read_only_mode;
-    local->pressed_part = EGUI_VIEW_SCROLL_BAR_PART_NONE;
-    local->pressed_track_direction = 0;
-    local->thumb_dragging = 0;
-    local->current_part = EGUI_VIEW_SCROLL_BAR_PART_THUMB;
-    egui_view_set_pressed(self, false);
-    egui_view_invalidate(self);
+    if (local->read_only_mode && local->current_part != EGUI_VIEW_SCROLL_BAR_PART_THUMB)
+    {
+        local->current_part = EGUI_VIEW_SCROLL_BAR_PART_THUMB;
+        changed = 1;
+    }
+    if (changed || had_pressed)
+    {
+        egui_view_invalidate(self);
+    }
 }
 
 void egui_view_scroll_bar_set_on_changed_listener(egui_view_t *self, egui_view_on_scroll_bar_changed_listener_t listener)

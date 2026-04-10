@@ -98,6 +98,11 @@ python scripts/checks/check_docs_encoding.py
 - 键盘 `Down / + / End` 结果必须清晰可辨
 - 页面中不再出现旧版 `guide`、状态回显、分隔线和外部 `preview` 标签
 - `compact` 与 `read only` 必须保持 Fluent / WPF UI 风格的低噪音浅色 reference
+- `content metrics / step size / offset / current part / compact / read only / view disabled` 切换链路需要共用同一套 `pressed` 清理语义
+- setter 更新、模式切换或焦点丢失后，不能残留 `decrease / track / thumb / increase` 的 `pressed` 高亮、下压位移或拖拽态渲染
+- `compact / read_only_mode / !enable` 收到新的 touch 或 key 输入时，必须先清理残留 pressed，再拒绝后续交互
+- 触摸释放语义必须继续满足“按下与抬起命中同一目标才提交”
+- unit test 中已有的键盘步进、按钮点击、track page、thumb drag、`touch cancel` 与 `compact / read only / !enable` 输入抑制语义不能回归
 
 ## 9. 已知限制与后续方向
 - 当前先做纵向 `ScrollBar` reference，不覆盖横向方向
@@ -138,3 +143,4 @@ python scripts/checks/check_docs_encoding.py
 - 主控件保留 `label + helper + viewport preview + rail` 四段结构
 - `compact` 预览通过 `compact_mode + touch/key override` 固定为静态对照
 - `read only` 预览通过 `read_only_mode + compact_mode` 固定为静态锁定态
+- 交互收口阶段统一要求 setter、模式切换、禁用 guard、`touch cancel` 和 focus lost 都能清理残留 `pressed`，确保交互后的渲染稳定
