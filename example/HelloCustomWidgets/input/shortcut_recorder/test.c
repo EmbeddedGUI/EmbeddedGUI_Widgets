@@ -36,6 +36,8 @@ static egui_view_shortcut_recorder_t recorder_primary;
 static egui_view_linearlayout_t bottom_row;
 static egui_view_shortcut_recorder_t recorder_compact;
 static egui_view_shortcut_recorder_t recorder_read_only;
+static egui_view_api_t recorder_compact_api;
+static egui_view_api_t recorder_read_only_api;
 
 EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
 EGUI_BACKGROUND_PARAM_INIT(bg_page_panel_params, &bg_page_panel_param, NULL, NULL);
@@ -66,6 +68,24 @@ static const shortcut_scene_t compact_scenes[] = {
         {1, EGUI_KEY_CODE_P, 1, 1, 0, EGUI_VIEW_SHORTCUT_RECORDER_PART_FIELD, 0},
         {1, EGUI_KEY_CODE_1, 0, 1, 0, EGUI_VIEW_SHORTCUT_RECORDER_PART_FIELD, 1},
 };
+
+static void dismiss_primary_shortcut_recorder(void)
+{
+#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
+    egui_view_clear_focus(EGUI_VIEW_OF(&recorder_primary));
+#endif
+}
+
+static int dismiss_primary_focus_on_preview_touch(egui_view_t *self, egui_motion_event_t *event)
+{
+    EGUI_UNUSED(self);
+
+    if (event->type == EGUI_MOTION_EVENT_ACTION_DOWN)
+    {
+        dismiss_primary_shortcut_recorder();
+    }
+    return 1;
+}
 
 static void apply_scene_to_recorder(egui_view_shortcut_recorder_t *recorder, const shortcut_scene_t *scene)
 {
@@ -106,14 +126,14 @@ static void apply_primary_key(uint8_t key_code, uint8_t is_shift, uint8_t is_ctr
     EGUI_VIEW_OF(&recorder_primary)->api->dispatch_key_event(EGUI_VIEW_OF(&recorder_primary), &event);
 }
 
-static void get_primary_part_center(uint8_t part, uint8_t preset_index, int *x, int *y)
+static void get_part_center(egui_view_t *view, uint8_t part, uint8_t preset_index, int *x, int *y)
 {
     egui_region_t region = {0};
 
-    if (!egui_view_shortcut_recorder_get_part_region(EGUI_VIEW_OF(&recorder_primary), part, preset_index, &region))
+    if (!egui_view_shortcut_recorder_get_part_region(view, part, preset_index, &region))
     {
-        *x = EGUI_VIEW_OF(&recorder_primary)->region_screen.location.x + EGUI_VIEW_OF(&recorder_primary)->region_screen.size.width / 2;
-        *y = EGUI_VIEW_OF(&recorder_primary)->region_screen.location.y + EGUI_VIEW_OF(&recorder_primary)->region_screen.size.height / 2;
+        *x = view->region_screen.location.x + view->region_screen.size.width / 2;
+        *y = view->region_screen.location.y + view->region_screen.size.height / 2;
         return;
     }
 
@@ -145,6 +165,9 @@ void test_init_ui(void)
     egui_view_shortcut_recorder_set_meta_font(EGUI_VIEW_OF(&recorder_primary), (const egui_font_t *)&egui_res_font_montserrat_8_4);
     egui_view_shortcut_recorder_set_header(EGUI_VIEW_OF(&recorder_primary), "Quick launch", "Capture a shortcut", "Ready to capture");
     egui_view_shortcut_recorder_set_presets(EGUI_VIEW_OF(&recorder_primary), primary_presets, EGUI_ARRAY_SIZE(primary_presets));
+#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
+    egui_view_set_focusable(EGUI_VIEW_OF(&recorder_primary), 1);
+#endif
     egui_view_set_margin(EGUI_VIEW_OF(&recorder_primary), 0, 0, 0, 8);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&recorder_primary));
 
@@ -164,6 +187,13 @@ void test_init_ui(void)
     egui_view_shortcut_recorder_set_palette(EGUI_VIEW_OF(&recorder_compact), EGUI_COLOR_HEX(0xFCFFFE), EGUI_COLOR_HEX(0xCBE4DE), EGUI_COLOR_HEX(0x12463F),
                                             EGUI_COLOR_HEX(0x5B7D77), EGUI_COLOR_HEX(0x0F766E), EGUI_COLOR_HEX(0xD97706), EGUI_COLOR_HEX(0x0F766E),
                                             EGUI_COLOR_HEX(0xBE5168));
+    egui_view_shortcut_recorder_override_static_preview_api(EGUI_VIEW_OF(&recorder_compact), &recorder_compact_api);
+#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
+    recorder_compact_api.on_touch = dismiss_primary_focus_on_preview_touch;
+#endif
+#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
+    egui_view_set_focusable(EGUI_VIEW_OF(&recorder_compact), 0);
+#endif
     egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&recorder_compact));
 
     egui_view_shortcut_recorder_init(EGUI_VIEW_OF(&recorder_read_only));
@@ -178,6 +208,13 @@ void test_init_ui(void)
     egui_view_shortcut_recorder_set_palette(EGUI_VIEW_OF(&recorder_read_only), EGUI_COLOR_HEX(0xFBFCFD), EGUI_COLOR_HEX(0xD7DFE6), EGUI_COLOR_HEX(0x54616D),
                                             EGUI_COLOR_HEX(0x8A97A3), EGUI_COLOR_HEX(0x93A3B4), EGUI_COLOR_HEX(0xD97706), EGUI_COLOR_HEX(0x93A3B4),
                                             EGUI_COLOR_HEX(0xBE5168));
+    egui_view_shortcut_recorder_override_static_preview_api(EGUI_VIEW_OF(&recorder_read_only), &recorder_read_only_api);
+#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
+    recorder_read_only_api.on_touch = dismiss_primary_focus_on_preview_touch;
+#endif
+#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
+    egui_view_set_focusable(EGUI_VIEW_OF(&recorder_read_only), 0);
+#endif
     egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&recorder_read_only));
 
     apply_primary_scene(0);
@@ -190,6 +227,9 @@ void test_init_ui(void)
 
     egui_core_add_user_root_view(EGUI_VIEW_OF(&root_layout));
     egui_core_layout_childs_user_root_view(EGUI_LAYOUT_VERTICAL, EGUI_ALIGN_HCENTER | EGUI_ALIGN_VCENTER);
+#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
+    egui_view_request_focus(EGUI_VIEW_OF(&recorder_primary));
+#endif
     egui_view_invalidate(EGUI_VIEW_OF(&root_layout));
 }
 
@@ -221,11 +261,11 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
         EGUI_SIM_SET_WAIT(p_action, SHORTCUT_RECORD_FRAME);
         return true;
     case 2:
-        get_primary_part_center(EGUI_VIEW_SHORTCUT_RECORDER_PART_FIELD, 0, &x, &y);
-        p_action->type = EGUI_SIM_ACTION_CLICK;
-        p_action->x1 = x;
-        p_action->y1 = y;
-        p_action->interval_ms = 240;
+        if (first_call)
+        {
+            apply_primary_key(EGUI_KEY_CODE_ENTER, 0, 0);
+        }
+        EGUI_SIM_SET_WAIT(p_action, SHORTCUT_RECORD_WAIT);
         return true;
     case 3:
         if (first_call)
@@ -274,6 +314,20 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
         EGUI_SIM_SET_WAIT(p_action, SHORTCUT_RECORD_WAIT);
         return true;
     case 9:
+        if (first_call)
+        {
+            recording_request_snapshot();
+        }
+        EGUI_SIM_SET_WAIT(p_action, SHORTCUT_RECORD_FRAME);
+        return true;
+    case 10:
+        get_part_center(EGUI_VIEW_OF(&recorder_compact), EGUI_VIEW_SHORTCUT_RECORDER_PART_FIELD, 0, &x, &y);
+        p_action->type = EGUI_SIM_ACTION_CLICK;
+        p_action->x1 = x;
+        p_action->y1 = y;
+        p_action->interval_ms = 240;
+        return true;
+    case 11:
         if (first_call)
         {
             recording_request_snapshot();

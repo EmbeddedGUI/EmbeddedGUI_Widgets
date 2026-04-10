@@ -46,6 +46,30 @@ static uint8_t shortcut_recorder_has_text(const char *text)
     return (text != NULL && text[0] != '\0') ? 1 : 0;
 }
 
+static uint8_t shortcut_recorder_clear_pressed_state(egui_view_t *self, egui_view_shortcut_recorder_t *local)
+{
+    uint8_t was_pressed = self->is_pressed ? 1 : 0;
+    uint8_t had_pressed =
+            was_pressed || local->pressed_part != EGUI_VIEW_SHORTCUT_RECORDER_PART_NONE || local->pressed_preset != 0 ? 1 : 0;
+
+    if (!had_pressed)
+    {
+        return 0;
+    }
+
+    local->pressed_part = EGUI_VIEW_SHORTCUT_RECORDER_PART_NONE;
+    local->pressed_preset = 0;
+    if (was_pressed)
+    {
+        egui_view_set_pressed(self, false);
+    }
+    else
+    {
+        egui_view_invalidate(self);
+    }
+    return 1;
+}
+
 static uint8_t shortcut_recorder_region_contains_point(const egui_region_t *region, egui_dim_t x, egui_dim_t y)
 {
     if (region == NULL)
@@ -696,7 +720,7 @@ static void shortcut_recorder_draw_field(egui_view_shortcut_recorder_t *local, e
         shortcut_recorder_draw_binding_tokens(local, self, &token_region, field_fill, text_color, muted_text_color);
     }
 
-    if (local->current_part == EGUI_VIEW_SHORTCUT_RECORDER_PART_FIELD && !local->read_only_mode)
+    if (self->is_focused && egui_view_get_enable(self) && local->current_part == EGUI_VIEW_SHORTCUT_RECORDER_PART_FIELD && !local->read_only_mode)
     {
         shortcut_recorder_draw_focus(self, &metrics->field_region, local->compact_mode ? SR_COMPACT_RADIUS : SR_STD_RADIUS, focus_color);
     }
@@ -740,7 +764,8 @@ static void shortcut_recorder_draw_preset_row(egui_view_shortcut_recorder_t *loc
     shortcut_recorder_draw_text(local->meta_font, self, binding_text, &binding_region, EGUI_ALIGN_RIGHT | EGUI_ALIGN_VCENTER,
                                 preset_index == local->current_preset ? text_color : muted_text_color);
 
-    if (local->current_part == EGUI_VIEW_SHORTCUT_RECORDER_PART_PRESET && preset_index == local->current_preset && !local->read_only_mode)
+    if (self->is_focused && egui_view_get_enable(self) && local->current_part == EGUI_VIEW_SHORTCUT_RECORDER_PART_PRESET &&
+        preset_index == local->current_preset && !local->read_only_mode)
     {
         shortcut_recorder_draw_focus(self, region, region->size.height / 2, local->accent_color);
     }
@@ -766,7 +791,7 @@ static void shortcut_recorder_draw_footer(egui_view_shortcut_recorder_t *local, 
                                          egui_rgb_mix(border_color, local->danger_color, 22), egui_color_alpha_mix(self->alpha, 52));
         shortcut_recorder_draw_text(local->meta_font, self, "Clear", &metrics->clear_region, EGUI_ALIGN_CENTER, text_color);
 
-        if (local->current_part == EGUI_VIEW_SHORTCUT_RECORDER_PART_CLEAR && !local->read_only_mode)
+        if (self->is_focused && egui_view_get_enable(self) && local->current_part == EGUI_VIEW_SHORTCUT_RECORDER_PART_CLEAR && !local->read_only_mode)
         {
             shortcut_recorder_draw_focus(self, &metrics->clear_region, metrics->clear_region.size.height / 2, local->danger_color);
         }
@@ -857,16 +882,24 @@ static int egui_view_shortcut_recorder_on_touch_event(egui_view_t *self, egui_mo
     shortcut_recorder_normalize_state(local);
     if (!egui_view_get_enable(self) || local->compact_mode || local->read_only_mode)
     {
+        shortcut_recorder_clear_pressed_state(self, local);
         return 0;
     }
 
     switch (event->type)
     {
     case EGUI_MOTION_EVENT_ACTION_DOWN:
+        shortcut_recorder_clear_pressed_state(self, local);
         if (!shortcut_recorder_hit_test(self, event->location.x, event->location.y, &hit_part, &hit_preset))
         {
             return 0;
         }
+#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
+        if (self->is_focusable)
+        {
+            egui_view_request_focus(self);
+        }
+#endif
         local->pressed_part = hit_part;
         local->pressed_preset = hit_preset;
         if (hit_part == EGUI_VIEW_SHORTCUT_RECORDER_PART_PRESET)
@@ -877,13 +910,19 @@ static int egui_view_shortcut_recorder_on_touch_event(egui_view_t *self, egui_mo
         egui_view_set_pressed(self, 1);
         egui_view_invalidate(self);
         return 1;
+    case EGUI_MOTION_EVENT_ACTION_MOVE:
+        return local->pressed_part != EGUI_VIEW_SHORTCUT_RECORDER_PART_NONE ? 1 : 0;
     case EGUI_MOTION_EVENT_ACTION_UP:
-        egui_view_set_pressed(self, 0);
+        if (shortcut_recorder_hit_test(self, event->location.x, event->location.y, &hit_part, &hit_preset) == 0)
+        {
+            hit_part = EGUI_VIEW_SHORTCUT_RECORDER_PART_NONE;
+            hit_preset = 0;
+        }
         if (local->pressed_part == EGUI_VIEW_SHORTCUT_RECORDER_PART_NONE)
         {
-            return 0;
+            return shortcut_recorder_clear_pressed_state(self, local) ? 1 : (hit_part != EGUI_VIEW_SHORTCUT_RECORDER_PART_NONE ? 1 : 0);
         }
-        if (shortcut_recorder_hit_test(self, event->location.x, event->location.y, &hit_part, &hit_preset) && hit_part == local->pressed_part &&
+        if (hit_part == local->pressed_part &&
             (hit_part != EGUI_VIEW_SHORTCUT_RECORDER_PART_PRESET || hit_preset == local->pressed_preset))
         {
             if (hit_part == EGUI_VIEW_SHORTCUT_RECORDER_PART_FIELD)
@@ -899,16 +938,10 @@ static int egui_view_shortcut_recorder_on_touch_event(egui_view_t *self, egui_mo
                 shortcut_recorder_clear_binding_inner(self, 1);
             }
         }
-        local->pressed_part = EGUI_VIEW_SHORTCUT_RECORDER_PART_NONE;
-        local->pressed_preset = 0;
-        egui_view_invalidate(self);
+        shortcut_recorder_clear_pressed_state(self, local);
         return 1;
     case EGUI_MOTION_EVENT_ACTION_CANCEL:
-        egui_view_set_pressed(self, 0);
-        local->pressed_part = EGUI_VIEW_SHORTCUT_RECORDER_PART_NONE;
-        local->pressed_preset = 0;
-        egui_view_invalidate(self);
-        return 1;
+        return shortcut_recorder_clear_pressed_state(self, local);
     default:
         return 0;
     }
@@ -923,9 +956,11 @@ static int egui_view_shortcut_recorder_on_key_event(egui_view_t *self, egui_key_
     shortcut_recorder_normalize_state(local);
     if (!egui_view_get_enable(self) || local->compact_mode || local->read_only_mode)
     {
+        shortcut_recorder_clear_pressed_state(self, local);
         return 0;
     }
 
+    shortcut_recorder_clear_pressed_state(self, local);
     if (event->type == EGUI_KEY_EVENT_ACTION_UP)
     {
         switch (event->key_code)
@@ -1039,6 +1074,39 @@ static int egui_view_shortcut_recorder_on_key_event(egui_view_t *self, egui_key_
 }
 #endif
 
+#if EGUI_CONFIG_FUNCTION_SUPPORT_KEY
+static int egui_view_shortcut_recorder_on_static_key_event(egui_view_t *self, egui_key_event_t *event)
+{
+    EGUI_LOCAL_INIT(egui_view_shortcut_recorder_t);
+
+    EGUI_UNUSED(event);
+    shortcut_recorder_clear_pressed_state(self, local);
+    return 1;
+}
+#endif
+
+#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
+static int egui_view_shortcut_recorder_on_static_touch_event(egui_view_t *self, egui_motion_event_t *event)
+{
+    EGUI_LOCAL_INIT(egui_view_shortcut_recorder_t);
+
+    EGUI_UNUSED(event);
+    shortcut_recorder_clear_pressed_state(self, local);
+    return 1;
+}
+#endif
+
+void egui_view_shortcut_recorder_override_static_preview_api(egui_view_t *self, egui_view_api_t *api)
+{
+    egui_view_copy_api(self, api);
+#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
+    api->on_touch_event = egui_view_shortcut_recorder_on_static_touch_event;
+#endif
+#if EGUI_CONFIG_FUNCTION_SUPPORT_KEY
+    api->on_key_event = egui_view_shortcut_recorder_on_static_key_event;
+#endif
+}
+
 const egui_view_api_t EGUI_VIEW_API_TABLE_NAME(egui_view_shortcut_recorder_t) = {
         .dispatch_touch_event = egui_view_dispatch_touch_event,
 #if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
@@ -1118,11 +1186,15 @@ void egui_view_shortcut_recorder_set_meta_font(egui_view_t *self, const egui_fon
 void egui_view_shortcut_recorder_set_header(egui_view_t *self, const char *title, const char *helper, const char *footer_prefix)
 {
     EGUI_LOCAL_INIT(egui_view_shortcut_recorder_t);
+    uint8_t had_pressed = shortcut_recorder_clear_pressed_state(self, local);
 
     local->title = title;
     local->helper = helper;
     local->footer_prefix = footer_prefix;
-    egui_view_invalidate(self);
+    if (!had_pressed)
+    {
+        egui_view_invalidate(self);
+    }
 }
 
 void egui_view_shortcut_recorder_set_palette(egui_view_t *self, egui_color_t surface_color, egui_color_t border_color, egui_color_t text_color,
@@ -1130,6 +1202,7 @@ void egui_view_shortcut_recorder_set_palette(egui_view_t *self, egui_color_t sur
                                              egui_color_t danger_color)
 {
     EGUI_LOCAL_INIT(egui_view_shortcut_recorder_t);
+    uint8_t had_pressed = shortcut_recorder_clear_pressed_state(self, local);
 
     local->surface_color = surface_color;
     local->border_color = border_color;
@@ -1139,31 +1212,47 @@ void egui_view_shortcut_recorder_set_palette(egui_view_t *self, egui_color_t sur
     local->listening_color = listening_color;
     local->preview_color = preview_color;
     local->danger_color = danger_color;
-    egui_view_invalidate(self);
+    if (!had_pressed)
+    {
+        egui_view_invalidate(self);
+    }
 }
 
 void egui_view_shortcut_recorder_set_presets(egui_view_t *self, const egui_view_shortcut_recorder_preset_t *presets, uint8_t preset_count)
 {
     EGUI_LOCAL_INIT(egui_view_shortcut_recorder_t);
+    uint8_t had_pressed = shortcut_recorder_clear_pressed_state(self, local);
 
     local->presets = presets;
     local->preset_count = presets == NULL ? 0 : preset_count;
     shortcut_recorder_normalize_state(local);
-    egui_view_invalidate(self);
+    if (!had_pressed)
+    {
+        egui_view_invalidate(self);
+    }
 }
 
 void egui_view_shortcut_recorder_set_binding(egui_view_t *self, uint8_t key_code, uint8_t is_shift, uint8_t is_ctrl)
 {
+    EGUI_LOCAL_INIT(egui_view_shortcut_recorder_t);
+
+    shortcut_recorder_clear_pressed_state(self, local);
     shortcut_recorder_set_binding_inner(self, key_code, is_shift, is_ctrl, 0);
 }
 
 void egui_view_shortcut_recorder_commit_binding(egui_view_t *self, uint8_t key_code, uint8_t is_shift, uint8_t is_ctrl)
 {
+    EGUI_LOCAL_INIT(egui_view_shortcut_recorder_t);
+
+    shortcut_recorder_clear_pressed_state(self, local);
     shortcut_recorder_set_binding_inner(self, key_code, is_shift, is_ctrl, 1);
 }
 
 void egui_view_shortcut_recorder_clear_binding(egui_view_t *self)
 {
+    EGUI_LOCAL_INIT(egui_view_shortcut_recorder_t);
+
+    shortcut_recorder_clear_pressed_state(self, local);
     shortcut_recorder_clear_binding_inner(self, 0);
 }
 
@@ -1204,6 +1293,9 @@ void egui_view_shortcut_recorder_get_binding_text(egui_view_t *self, char *buffe
 
 void egui_view_shortcut_recorder_set_listening(egui_view_t *self, uint8_t listening)
 {
+    EGUI_LOCAL_INIT(egui_view_shortcut_recorder_t);
+
+    shortcut_recorder_clear_pressed_state(self, local);
     shortcut_recorder_set_listening_inner(self, listening, 0);
 }
 
@@ -1216,11 +1308,17 @@ uint8_t egui_view_shortcut_recorder_is_listening(egui_view_t *self)
 
 void egui_view_shortcut_recorder_apply_preset(egui_view_t *self, uint8_t preset_index)
 {
+    EGUI_LOCAL_INIT(egui_view_shortcut_recorder_t);
+
+    shortcut_recorder_clear_pressed_state(self, local);
     shortcut_recorder_apply_preset_inner(self, preset_index, 0);
 }
 
 void egui_view_shortcut_recorder_set_current_part(egui_view_t *self, uint8_t part)
 {
+    EGUI_LOCAL_INIT(egui_view_shortcut_recorder_t);
+
+    shortcut_recorder_clear_pressed_state(self, local);
     shortcut_recorder_set_current_part_inner(self, part, 0);
 }
 
@@ -1233,6 +1331,9 @@ uint8_t egui_view_shortcut_recorder_get_current_part(egui_view_t *self)
 
 void egui_view_shortcut_recorder_set_current_preset(egui_view_t *self, uint8_t preset_index)
 {
+    EGUI_LOCAL_INIT(egui_view_shortcut_recorder_t);
+
+    shortcut_recorder_clear_pressed_state(self, local);
     shortcut_recorder_set_current_preset_inner(self, preset_index, 0);
 }
 
@@ -1246,19 +1347,27 @@ uint8_t egui_view_shortcut_recorder_get_current_preset(egui_view_t *self)
 void egui_view_shortcut_recorder_set_compact_mode(egui_view_t *self, uint8_t compact_mode)
 {
     EGUI_LOCAL_INIT(egui_view_shortcut_recorder_t);
+    uint8_t had_pressed = shortcut_recorder_clear_pressed_state(self, local);
 
     local->compact_mode = compact_mode ? 1 : 0;
     shortcut_recorder_normalize_state(local);
-    egui_view_invalidate(self);
+    if (!had_pressed)
+    {
+        egui_view_invalidate(self);
+    }
 }
 
 void egui_view_shortcut_recorder_set_read_only_mode(egui_view_t *self, uint8_t read_only_mode)
 {
     EGUI_LOCAL_INIT(egui_view_shortcut_recorder_t);
+    uint8_t had_pressed = shortcut_recorder_clear_pressed_state(self, local);
 
     local->read_only_mode = read_only_mode ? 1 : 0;
     shortcut_recorder_normalize_state(local);
-    egui_view_invalidate(self);
+    if (!had_pressed)
+    {
+        egui_view_invalidate(self);
+    }
 }
 
 void egui_view_shortcut_recorder_set_on_changed_listener(egui_view_t *self, egui_view_on_shortcut_recorder_changed_listener_t listener)

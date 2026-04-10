@@ -85,6 +85,7 @@ uint8_t egui_view_shortcut_recorder_get_current_preset(egui_view_t *self);
 void egui_view_shortcut_recorder_set_compact_mode(egui_view_t *self, uint8_t compact_mode);
 void egui_view_shortcut_recorder_set_read_only_mode(egui_view_t *self, uint8_t read_only_mode);
 void egui_view_shortcut_recorder_set_on_changed_listener(egui_view_t *self, egui_view_on_shortcut_recorder_changed_listener_t listener);
+void egui_view_shortcut_recorder_override_static_preview_api(egui_view_t *self, egui_view_api_t *api);
 uint8_t egui_view_shortcut_recorder_get_part_region(egui_view_t *self, uint8_t part, uint8_t preset_index, egui_region_t *region);
 
 #ifdef __cplusplus
