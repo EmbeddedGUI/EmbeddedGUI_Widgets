@@ -108,6 +108,36 @@ static void test_number_box_step_normalization(void)
     EGUI_TEST_ASSERT_EQUAL_INT(5, test_box.step);
 }
 
+static void test_number_box_setters_clear_pressed_state_and_clamp(void)
+{
+    setup_number_box();
+
+    test_box.pressed_part = EGUI_VIEW_NUMBER_BOX_PART_DEC;
+    egui_view_set_pressed(EGUI_VIEW_OF(&test_box), true);
+    egui_view_number_box_set_range(EGUI_VIEW_OF(&test_box), 20, 10);
+    EGUI_TEST_ASSERT_EQUAL_INT(10, test_box.min_value);
+    EGUI_TEST_ASSERT_EQUAL_INT(20, test_box.max_value);
+    EGUI_TEST_ASSERT_EQUAL_INT(20, egui_view_number_box_get_value(EGUI_VIEW_OF(&test_box)));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_NUMBER_BOX_PART_NONE, test_box.pressed_part);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_box)->is_pressed);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, changed_count);
+
+    test_box.pressed_part = EGUI_VIEW_NUMBER_BOX_PART_INC;
+    egui_view_set_pressed(EGUI_VIEW_OF(&test_box), true);
+    egui_view_number_box_set_step(EGUI_VIEW_OF(&test_box), 0);
+    EGUI_TEST_ASSERT_EQUAL_INT(1, test_box.step);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_NUMBER_BOX_PART_NONE, test_box.pressed_part);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_box)->is_pressed);
+
+    test_box.pressed_part = EGUI_VIEW_NUMBER_BOX_PART_DEC;
+    egui_view_set_pressed(EGUI_VIEW_OF(&test_box), true);
+    egui_view_number_box_set_value(EGUI_VIEW_OF(&test_box), 20);
+    EGUI_TEST_ASSERT_EQUAL_INT(20, egui_view_number_box_get_value(EGUI_VIEW_OF(&test_box)));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_NUMBER_BOX_PART_NONE, test_box.pressed_part);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_box)->is_pressed);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, changed_count);
+}
+
 static void test_number_box_font_modes_and_palette(void)
 {
     static const char *value_label = "Value";
@@ -214,6 +244,55 @@ static void test_number_box_release_on_different_target_does_not_commit(void)
     EGUI_TEST_ASSERT_EQUAL_INT(0, changed_count);
 }
 
+static void test_number_box_compact_mode_clears_pressed_and_ignores_input(void)
+{
+    egui_view_number_box_metrics_t metrics;
+    egui_dim_t inc_x;
+    egui_dim_t inc_y;
+
+    setup_number_box();
+    layout_number_box(10, 20, 196, 70);
+    egui_view_number_box_get_metrics(&test_box, EGUI_VIEW_OF(&test_box), &metrics);
+    inc_x = metrics.inc_region.location.x + metrics.inc_region.size.width / 2;
+    inc_y = metrics.inc_region.location.y + metrics.inc_region.size.height / 2;
+
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, inc_x, inc_y));
+    EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&test_box)->is_pressed);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_NUMBER_BOX_PART_INC, test_box.pressed_part);
+
+    egui_view_number_box_set_compact_mode(EGUI_VIEW_OF(&test_box), 1);
+    EGUI_TEST_ASSERT_EQUAL_INT(1, test_box.compact_mode);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_box)->is_pressed);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_NUMBER_BOX_PART_NONE, test_box.pressed_part);
+
+    test_box.pressed_part = EGUI_VIEW_NUMBER_BOX_PART_DEC;
+    egui_view_set_pressed(EGUI_VIEW_OF(&test_box), true);
+    egui_view_number_box_set_compact_mode(EGUI_VIEW_OF(&test_box), 1);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_NUMBER_BOX_PART_NONE, test_box.pressed_part);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_box)->is_pressed);
+
+    test_box.pressed_part = EGUI_VIEW_NUMBER_BOX_PART_INC;
+    egui_view_set_pressed(EGUI_VIEW_OF(&test_box), true);
+    EGUI_TEST_ASSERT_FALSE(send_key(EGUI_KEY_CODE_ENTER));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_NUMBER_BOX_PART_NONE, test_box.pressed_part);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_box)->is_pressed);
+
+    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, inc_x, inc_y));
+    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, inc_x, inc_y));
+    EGUI_TEST_ASSERT_EQUAL_INT(24, egui_view_number_box_get_value(EGUI_VIEW_OF(&test_box)));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, changed_count);
+
+    egui_view_number_box_set_compact_mode(EGUI_VIEW_OF(&test_box), 0);
+    layout_number_box(10, 20, 196, 70);
+    egui_view_number_box_get_metrics(&test_box, EGUI_VIEW_OF(&test_box), &metrics);
+    inc_x = metrics.inc_region.location.x + metrics.inc_region.size.width / 2;
+    inc_y = metrics.inc_region.location.y + metrics.inc_region.size.height / 2;
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, inc_x, inc_y));
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, inc_x, inc_y));
+    EGUI_TEST_ASSERT_EQUAL_INT(28, egui_view_number_box_get_value(EGUI_VIEW_OF(&test_box)));
+    EGUI_TEST_ASSERT_EQUAL_INT(1, changed_count);
+}
+
 static void test_number_box_read_only_mode_clears_pressed_and_ignores_input(void)
 {
     egui_view_number_box_metrics_t metrics;
@@ -234,9 +313,18 @@ static void test_number_box_read_only_mode_clears_pressed_and_ignores_input(void
     EGUI_TEST_ASSERT_EQUAL_INT(1, test_box.read_only_mode);
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_box)->is_pressed);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_NUMBER_BOX_PART_NONE, test_box.pressed_part);
+    test_box.pressed_part = EGUI_VIEW_NUMBER_BOX_PART_DEC;
+    egui_view_set_pressed(EGUI_VIEW_OF(&test_box), true);
+    egui_view_number_box_set_read_only_mode(EGUI_VIEW_OF(&test_box), 1);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_NUMBER_BOX_PART_NONE, test_box.pressed_part);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_box)->is_pressed);
+    test_box.pressed_part = EGUI_VIEW_NUMBER_BOX_PART_INC;
+    egui_view_set_pressed(EGUI_VIEW_OF(&test_box), true);
     EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, inc_x, inc_y));
     EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, inc_x, inc_y));
     EGUI_TEST_ASSERT_FALSE(send_key(EGUI_KEY_CODE_ENTER));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_NUMBER_BOX_PART_NONE, test_box.pressed_part);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_box)->is_pressed);
     EGUI_TEST_ASSERT_EQUAL_INT(24, egui_view_number_box_get_value(EGUI_VIEW_OF(&test_box)));
     EGUI_TEST_ASSERT_EQUAL_INT(0, changed_count);
 
@@ -248,7 +336,7 @@ static void test_number_box_read_only_mode_clears_pressed_and_ignores_input(void
     EGUI_TEST_ASSERT_EQUAL_INT(1, changed_count);
 }
 
-static void test_number_box_disabled_ignores_input(void)
+static void test_number_box_disabled_ignores_input_and_clears_pressed_state(void)
 {
     egui_view_number_box_metrics_t metrics;
     egui_dim_t inc_x;
@@ -268,6 +356,12 @@ static void test_number_box_disabled_ignores_input(void)
     EGUI_TEST_ASSERT_FALSE(send_key(EGUI_KEY_CODE_ENTER));
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_box)->is_pressed);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_NUMBER_BOX_PART_NONE, test_box.pressed_part);
+
+    test_box.pressed_part = EGUI_VIEW_NUMBER_BOX_PART_DEC;
+    egui_view_set_pressed(EGUI_VIEW_OF(&test_box), true);
+    EGUI_TEST_ASSERT_FALSE(send_key(EGUI_KEY_CODE_ENTER));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_NUMBER_BOX_PART_NONE, test_box.pressed_part);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_box)->is_pressed);
     EGUI_TEST_ASSERT_EQUAL_INT(24, egui_view_number_box_get_value(EGUI_VIEW_OF(&test_box)));
     EGUI_TEST_ASSERT_EQUAL_INT(0, changed_count);
 }
@@ -291,6 +385,7 @@ static void test_number_box_touch_cancel_clears_pressed_state(void)
     EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_CANCEL, dec_x, dec_y));
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_box)->is_pressed);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_NUMBER_BOX_PART_NONE, test_box.pressed_part);
+    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_CANCEL, dec_x, dec_y));
     EGUI_TEST_ASSERT_EQUAL_INT(24, egui_view_number_box_get_value(EGUI_VIEW_OF(&test_box)));
     EGUI_TEST_ASSERT_EQUAL_INT(0, changed_count);
 }
@@ -300,11 +395,13 @@ void test_number_box_run(void)
     EGUI_TEST_SUITE_BEGIN(number_box);
     EGUI_TEST_RUN(test_number_box_range_and_value_clamp);
     EGUI_TEST_RUN(test_number_box_step_normalization);
+    EGUI_TEST_RUN(test_number_box_setters_clear_pressed_state_and_clamp);
     EGUI_TEST_RUN(test_number_box_font_modes_and_palette);
     EGUI_TEST_RUN(test_number_box_touch_increment_and_decrement);
     EGUI_TEST_RUN(test_number_box_release_on_different_target_does_not_commit);
+    EGUI_TEST_RUN(test_number_box_compact_mode_clears_pressed_and_ignores_input);
     EGUI_TEST_RUN(test_number_box_read_only_mode_clears_pressed_and_ignores_input);
-    EGUI_TEST_RUN(test_number_box_disabled_ignores_input);
+    EGUI_TEST_RUN(test_number_box_disabled_ignores_input_and_clears_pressed_state);
     EGUI_TEST_RUN(test_number_box_touch_cancel_clears_pressed_state);
     EGUI_TEST_SUITE_END();
 }

@@ -102,6 +102,11 @@ python scripts/checks/check_docs_encoding.py
 - 主卡与双预览都必须维持 `Fluent 2 / WPF UI` 低噪音浅色语义
 - `read only` 只做静态展示，不能响应 touch、key 或页面桥接，并且切入时要立即清空 pressed
 - 页面中不再出现 guide、状态回显、standard label、section divider、`Compact` / `Read only` 外部标签
+- `value / range / step / compact / read only / view disabled` 切换链路需要共用同一套 `pressed` 清理语义
+- setter 更新、模式切换后和 `touch cancel` 后，不能残留 `- / +` 的 `pressed` 高亮
+- `compact / read_only_mode / !enable` 收到新的 touch 或 key 输入时，必须先清理残留 pressed，再拒绝后续交互
+- 触摸释放语义必须继续满足“按下与抬起命中同一目标才提交”
+- unit test 中已有的步进点击、异目标释放、`compact / read only / !enable` 输入抑制和 `touch cancel` 语义不能回归
 
 ## 9. 已知限制与后续方向
 
@@ -145,4 +150,5 @@ python scripts/checks/check_docs_encoding.py
 - 使用固定整数范围和步进，优先保证 `480 x 480` 页面里的可审阅性
 - 通过轻量 `- / +` 按钮承载交互，不引入复杂文本输入状态机
 - `compact` 与 `read only` 固定放底部双列，便于和主卡直接对照
+- 交互收口阶段统一要求 setter、模式切换、禁用 guard 和 `touch cancel` 都能清理残留 `pressed`，确保交互后的渲染稳定
 - 先完成示例级数字框，再决定是否上升到框架公共控件

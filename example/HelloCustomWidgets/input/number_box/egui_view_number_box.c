@@ -59,12 +59,14 @@ static egui_color_t egui_view_number_box_mix_disabled(egui_color_t color)
     return egui_rgb_mix(color, EGUI_COLOR_DARK_GREY, 64);
 }
 
-static void egui_view_number_box_clear_pressed_state(egui_view_t *self)
+static uint8_t egui_view_number_box_clear_pressed_state(egui_view_t *self)
 {
     EGUI_LOCAL_INIT(egui_view_number_box_t);
+    uint8_t had_pressed = self->is_pressed || local->pressed_part != EGUI_VIEW_NUMBER_BOX_PART_NONE;
 
     local->pressed_part = EGUI_VIEW_NUMBER_BOX_PART_NONE;
     egui_view_set_pressed(self, false);
+    return had_pressed;
 }
 
 static int16_t egui_view_number_box_clamp_value(egui_view_number_box_t *local, int16_t value)
@@ -170,7 +172,15 @@ static void egui_view_number_box_get_metrics(egui_view_number_box_t *local, egui
 
 void egui_view_number_box_set_value(egui_view_t *self, int16_t value)
 {
+    EGUI_LOCAL_INIT(egui_view_number_box_t);
+    uint8_t had_pressed = egui_view_number_box_clear_pressed_state(self);
+    int16_t old_value = local->value;
+
     egui_view_number_box_commit_value(self, value);
+    if (had_pressed && old_value == local->value)
+    {
+        egui_view_invalidate(self);
+    }
 }
 
 int16_t egui_view_number_box_get_value(egui_view_t *self)
@@ -183,6 +193,7 @@ void egui_view_number_box_set_range(egui_view_t *self, int16_t min_value, int16_
 {
     EGUI_LOCAL_INIT(egui_view_number_box_t);
 
+    egui_view_number_box_clear_pressed_state(self);
     if (min_value > max_value)
     {
         int16_t temp = min_value;
@@ -199,12 +210,17 @@ void egui_view_number_box_set_range(egui_view_t *self, int16_t min_value, int16_
 void egui_view_number_box_set_step(egui_view_t *self, int16_t step)
 {
     EGUI_LOCAL_INIT(egui_view_number_box_t);
+    uint8_t had_pressed = egui_view_number_box_clear_pressed_state(self);
 
     if (step <= 0)
     {
         step = 1;
     }
     local->step = step;
+    if (had_pressed)
+    {
+        egui_view_invalidate(self);
+    }
 }
 
 void egui_view_number_box_set_label(egui_view_t *self, const char *label)
@@ -251,17 +267,39 @@ void egui_view_number_box_set_on_value_changed_listener(egui_view_t *self, egui_
 void egui_view_number_box_set_compact_mode(egui_view_t *self, uint8_t compact_mode)
 {
     EGUI_LOCAL_INIT(egui_view_number_box_t);
-    local->compact_mode = compact_mode ? 1 : 0;
-    egui_view_number_box_clear_pressed_state(self);
-    egui_view_invalidate(self);
+    uint8_t changed = 0;
+    uint8_t had_pressed;
+
+    compact_mode = compact_mode ? 1 : 0;
+    had_pressed = egui_view_number_box_clear_pressed_state(self);
+    if (local->compact_mode != compact_mode)
+    {
+        local->compact_mode = compact_mode;
+        changed = 1;
+    }
+    if (changed || had_pressed)
+    {
+        egui_view_invalidate(self);
+    }
 }
 
 void egui_view_number_box_set_read_only_mode(egui_view_t *self, uint8_t read_only_mode)
 {
     EGUI_LOCAL_INIT(egui_view_number_box_t);
-    local->read_only_mode = read_only_mode ? 1 : 0;
-    egui_view_number_box_clear_pressed_state(self);
-    egui_view_invalidate(self);
+    uint8_t changed = 0;
+    uint8_t had_pressed;
+
+    read_only_mode = read_only_mode ? 1 : 0;
+    had_pressed = egui_view_number_box_clear_pressed_state(self);
+    if (local->read_only_mode != read_only_mode)
+    {
+        local->read_only_mode = read_only_mode;
+        changed = 1;
+    }
+    if (changed || had_pressed)
+    {
+        egui_view_invalidate(self);
+    }
 }
 
 void egui_view_number_box_set_palette(egui_view_t *self, egui_color_t surface_color, egui_color_t border_color, egui_color_t text_color,
@@ -452,11 +490,10 @@ static int egui_view_number_box_on_touch_event(egui_view_t *self, egui_motion_ev
     EGUI_LOCAL_INIT(egui_view_number_box_t);
     uint8_t hit_part;
 
-    if (!egui_view_get_enable(self) || local->read_only_mode)
+    if (!egui_view_get_enable(self) || local->read_only_mode || local->compact_mode)
     {
-        if (self->is_pressed || local->pressed_part != EGUI_VIEW_NUMBER_BOX_PART_NONE)
+        if (egui_view_number_box_clear_pressed_state(self))
         {
-            egui_view_number_box_clear_pressed_state(self);
             egui_view_invalidate(self);
         }
         EGUI_UNUSED(event);
@@ -469,6 +506,10 @@ static int egui_view_number_box_on_touch_event(egui_view_t *self, egui_motion_ev
         hit_part = egui_view_number_box_hit_part(local, self, event->location.x, event->location.y);
         if (hit_part == EGUI_VIEW_NUMBER_BOX_PART_NONE)
         {
+            if (egui_view_number_box_clear_pressed_state(self))
+            {
+                egui_view_invalidate(self);
+            }
             return 0;
         }
         local->pressed_part = hit_part;
@@ -476,21 +517,29 @@ static int egui_view_number_box_on_touch_event(egui_view_t *self, egui_motion_ev
         egui_view_invalidate(self);
         return 1;
     case EGUI_MOTION_EVENT_ACTION_UP:
+    {
+        uint8_t handled;
+
         hit_part = egui_view_number_box_hit_part(local, self, event->location.x, event->location.y);
         if (local->pressed_part != EGUI_VIEW_NUMBER_BOX_PART_NONE && local->pressed_part == hit_part)
         {
             int16_t delta = hit_part == EGUI_VIEW_NUMBER_BOX_PART_INC ? local->step : (int16_t)(-local->step);
             egui_view_number_box_commit_value(self, (int16_t)(local->value + delta));
         }
-        local->pressed_part = EGUI_VIEW_NUMBER_BOX_PART_NONE;
-        egui_view_set_pressed(self, false);
-        egui_view_invalidate(self);
-        return hit_part != EGUI_VIEW_NUMBER_BOX_PART_NONE;
+        handled = egui_view_number_box_clear_pressed_state(self);
+        if (handled)
+        {
+            egui_view_invalidate(self);
+        }
+        return handled || hit_part != EGUI_VIEW_NUMBER_BOX_PART_NONE;
+    }
     case EGUI_MOTION_EVENT_ACTION_CANCEL:
-        local->pressed_part = EGUI_VIEW_NUMBER_BOX_PART_NONE;
-        egui_view_set_pressed(self, false);
-        egui_view_invalidate(self);
-        return 1;
+        if (egui_view_number_box_clear_pressed_state(self))
+        {
+            egui_view_invalidate(self);
+            return 1;
+        }
+        return 0;
     default:
         return 0;
     }
@@ -502,7 +551,11 @@ static int egui_view_number_box_on_key_event(egui_view_t *self, egui_key_event_t
 {
     EGUI_LOCAL_INIT(egui_view_number_box_t);
 
-    if (!egui_view_get_enable(self) || local->read_only_mode)
+    if (egui_view_number_box_clear_pressed_state(self))
+    {
+        egui_view_invalidate(self);
+    }
+    if (!egui_view_get_enable(self) || local->read_only_mode || local->compact_mode)
     {
         EGUI_UNUSED(event);
         return 0;
