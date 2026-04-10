@@ -1,5 +1,9 @@
 #include "demo_scaffold.h"
 
+#define HELLO_CUSTOM_WIDGETS_TITLE_ONLY_MAIN_GAP     14
+#define HELLO_CUSTOM_WIDGETS_TITLE_ONLY_PREVIEW_GAP  20
+#define HELLO_CUSTOM_WIDGETS_TITLE_ONLY_SIDE_INSET   6
+
 static egui_dim_t scale_width(egui_dim_t value)
 {
     if (value <= 0)
@@ -84,10 +88,138 @@ void hello_custom_widgets_demo_hide_views(egui_view_t **views, uint8_t count)
     }
 }
 
+static uint8_t collect_visible_group_children(egui_view_t *parent, egui_view_t **children, uint8_t max_count)
+{
+    egui_dnode_t *node;
+    uint8_t count = 0;
+
+    if (parent == NULL || children == NULL || max_count == 0)
+    {
+        return 0;
+    }
+
+    if (parent->api == NULL || parent->api->draw != egui_view_group_draw)
+    {
+        return 0;
+    }
+
+    EGUI_DLIST_FOR_EACH_NODE(&EGUI_CAST_TO(egui_view_group_t, parent)->childs, node)
+    {
+        egui_view_t *child = EGUI_DLIST_ENTRY(node, egui_view_t, node);
+
+        if (child->is_gone)
+        {
+            continue;
+        }
+
+        children[count++] = child;
+        if (count >= max_count)
+        {
+            break;
+        }
+    }
+
+    return count;
+}
+
+static egui_dim_t measure_linear_extent(egui_view_t *container, uint8_t is_horizontal)
+{
+    egui_view_t *children[4] = {NULL};
+    egui_dim_t extent = 0;
+    uint8_t count;
+    uint8_t i;
+
+    if (container == NULL)
+    {
+        return 0;
+    }
+
+    extent = is_horizontal ? (container->padding.left + container->padding.right) : (container->padding.top + container->padding.bottom);
+    count = collect_visible_group_children(container, children, EGUI_ARRAY_SIZE(children));
+    for (i = 0; i < count; ++i)
+    {
+        egui_view_t *child = children[i];
+
+        if (is_horizontal)
+        {
+            extent += child->margin.left + child->region.size.width + child->margin.right;
+        }
+        else
+        {
+            extent += child->margin.top + child->region.size.height + child->margin.bottom;
+        }
+    }
+
+    return extent;
+}
+
+static void tune_title_only_preview_row(egui_view_t *root, egui_view_t *row)
+{
+    egui_view_t *children[4] = {NULL};
+    egui_dim_t desired_width;
+    egui_dim_t min_root_width;
+    uint8_t count;
+    uint8_t i;
+
+    if (row == NULL)
+    {
+        return;
+    }
+
+    count = collect_visible_group_children(row, children, EGUI_ARRAY_SIZE(children));
+    for (i = 1; i < count; ++i)
+    {
+        if (children[i]->margin.left < HELLO_CUSTOM_WIDGETS_TITLE_ONLY_PREVIEW_GAP)
+        {
+            children[i]->margin.left = HELLO_CUSTOM_WIDGETS_TITLE_ONLY_PREVIEW_GAP;
+        }
+    }
+
+    desired_width = measure_linear_extent(row, 1);
+    if (desired_width > row->region.size.width)
+    {
+        row->region.size.width = desired_width;
+    }
+
+    if (root == NULL)
+    {
+        return;
+    }
+
+    min_root_width = row->region.size.width + HELLO_CUSTOM_WIDGETS_TITLE_ONLY_SIDE_INSET * 2;
+    if (min_root_width > root->region.size.width)
+    {
+        root->region.size.width = EGUI_MIN((egui_dim_t)HELLO_CUSTOM_WIDGETS_CANVAS_WIDTH, min_root_width);
+    }
+}
+
 void hello_custom_widgets_demo_apply_title_only_scaffold(egui_view_t *root, egui_view_t *title, egui_view_t **chrome_views, uint8_t chrome_view_count)
 {
+    egui_view_t *children[3] = {NULL};
+    egui_dim_t desired_height;
+    uint8_t child_count;
+
     hello_custom_widgets_demo_scale_tree(root);
     hello_custom_widgets_demo_hide_views(chrome_views, chrome_view_count);
+
+    child_count = collect_visible_group_children(root, children, EGUI_ARRAY_SIZE(children));
+    if (child_count >= 2 && children[1] != NULL && children[1]->margin.bottom < HELLO_CUSTOM_WIDGETS_TITLE_ONLY_MAIN_GAP)
+    {
+        children[1]->margin.bottom = HELLO_CUSTOM_WIDGETS_TITLE_ONLY_MAIN_GAP;
+    }
+    if (child_count >= 3)
+    {
+        tune_title_only_preview_row(root, children[2]);
+    }
+
+    if (root != NULL)
+    {
+        desired_height = measure_linear_extent(root, 0);
+        if (desired_height > root->region.size.height)
+        {
+            root->region.size.height = EGUI_MIN((egui_dim_t)HELLO_CUSTOM_WIDGETS_CANVAS_HEIGHT, desired_height);
+        }
+    }
 
     if (title != NULL)
     {
