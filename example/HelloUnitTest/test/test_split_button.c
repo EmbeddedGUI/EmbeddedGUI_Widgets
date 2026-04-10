@@ -87,6 +87,41 @@ static int send_key(uint8_t key_code)
     return handled;
 }
 
+static void test_split_button_setters_clear_pressed_state(void)
+{
+    setup_button();
+
+    test_button.pressed_part = EGUI_VIEW_SPLIT_BUTTON_PART_PRIMARY;
+    egui_view_set_pressed(EGUI_VIEW_OF(&test_button), true);
+    egui_view_split_button_set_snapshots(EGUI_VIEW_OF(&test_button), g_snapshots, 4);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_SPLIT_BUTTON_PART_NONE, test_button.pressed_part);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_button)->is_pressed);
+
+    test_button.pressed_part = EGUI_VIEW_SPLIT_BUTTON_PART_MENU;
+    egui_view_set_pressed(EGUI_VIEW_OF(&test_button), true);
+    egui_view_split_button_set_current_snapshot(EGUI_VIEW_OF(&test_button), 0);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_SPLIT_BUTTON_PART_NONE, test_button.pressed_part);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_button)->is_pressed);
+
+    test_button.pressed_part = EGUI_VIEW_SPLIT_BUTTON_PART_PRIMARY;
+    egui_view_set_pressed(EGUI_VIEW_OF(&test_button), true);
+    egui_view_split_button_set_current_part(EGUI_VIEW_OF(&test_button), EGUI_VIEW_SPLIT_BUTTON_PART_PRIMARY);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_SPLIT_BUTTON_PART_NONE, test_button.pressed_part);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_button)->is_pressed);
+
+    test_button.pressed_part = EGUI_VIEW_SPLIT_BUTTON_PART_MENU;
+    egui_view_set_pressed(EGUI_VIEW_OF(&test_button), true);
+    egui_view_split_button_set_compact_mode(EGUI_VIEW_OF(&test_button), 0);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_SPLIT_BUTTON_PART_NONE, test_button.pressed_part);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_button)->is_pressed);
+
+    test_button.pressed_part = EGUI_VIEW_SPLIT_BUTTON_PART_PRIMARY;
+    egui_view_set_pressed(EGUI_VIEW_OF(&test_button), true);
+    egui_view_split_button_set_disabled_mode(EGUI_VIEW_OF(&test_button), 0);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_SPLIT_BUTTON_PART_NONE, test_button.pressed_part);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_button)->is_pressed);
+}
+
 static void test_split_button_set_snapshots_clamp_and_resolve_default_part(void)
 {
     setup_button();
@@ -150,14 +185,18 @@ static void test_split_button_font_modes_and_palette(void)
     EGUI_TEST_ASSERT_TRUE(test_button.meta_font == (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT);
 
     test_button.pressed_part = EGUI_VIEW_SPLIT_BUTTON_PART_MENU;
+    egui_view_set_pressed(EGUI_VIEW_OF(&test_button), true);
     egui_view_split_button_set_compact_mode(EGUI_VIEW_OF(&test_button), 2);
     EGUI_TEST_ASSERT_EQUAL_INT(1, test_button.compact_mode);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_SPLIT_BUTTON_PART_NONE, test_button.pressed_part);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_button)->is_pressed);
 
     test_button.pressed_part = EGUI_VIEW_SPLIT_BUTTON_PART_PRIMARY;
+    egui_view_set_pressed(EGUI_VIEW_OF(&test_button), true);
     egui_view_split_button_set_disabled_mode(EGUI_VIEW_OF(&test_button), 3);
     EGUI_TEST_ASSERT_EQUAL_INT(1, test_button.disabled_mode);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_SPLIT_BUTTON_PART_NONE, test_button.pressed_part);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_button)->is_pressed);
 
     egui_view_split_button_set_palette(EGUI_VIEW_OF(&test_button), EGUI_COLOR_HEX(0x101112), EGUI_COLOR_HEX(0x202122), EGUI_COLOR_HEX(0x303132),
                                        EGUI_COLOR_HEX(0x404142), EGUI_COLOR_HEX(0x505152), EGUI_COLOR_HEX(0x606162), EGUI_COLOR_HEX(0x707172),
@@ -239,6 +278,52 @@ static void test_split_button_touch_cancel_clears_pressed_state(void)
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_button)->is_pressed);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_SPLIT_BUTTON_PART_NONE, test_button.pressed_part);
     EGUI_TEST_ASSERT_EQUAL_INT(0, changed_count);
+    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_CANCEL, primary_x, primary_y));
+}
+
+static void test_split_button_compact_mode_clears_pressed_and_ignores_input(void)
+{
+    egui_view_split_button_metrics_t metrics;
+    const egui_view_split_button_snapshot_t *snapshot;
+    egui_dim_t primary_x;
+    egui_dim_t primary_y;
+
+    setup_button();
+    layout_button();
+    snapshot = egui_view_split_button_get_snapshot(&test_button);
+    egui_view_split_button_get_metrics(&test_button, EGUI_VIEW_OF(&test_button), snapshot, &metrics);
+    primary_x = metrics.primary_region.location.x + metrics.primary_region.size.width / 2;
+    primary_y = metrics.primary_region.location.y + metrics.primary_region.size.height / 2;
+
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, primary_x, primary_y));
+    EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&test_button)->is_pressed);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_SPLIT_BUTTON_PART_PRIMARY, test_button.pressed_part);
+
+    egui_view_split_button_set_compact_mode(EGUI_VIEW_OF(&test_button), 1);
+    EGUI_TEST_ASSERT_EQUAL_INT(1, test_button.compact_mode);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_SPLIT_BUTTON_PART_NONE, test_button.pressed_part);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_button)->is_pressed);
+
+    test_button.pressed_part = EGUI_VIEW_SPLIT_BUTTON_PART_MENU;
+    egui_view_set_pressed(EGUI_VIEW_OF(&test_button), true);
+    EGUI_TEST_ASSERT_FALSE(send_key(EGUI_KEY_CODE_RIGHT));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_SPLIT_BUTTON_PART_NONE, test_button.pressed_part);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_button)->is_pressed);
+
+    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, primary_x, primary_y));
+    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, primary_x, primary_y));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_SPLIT_BUTTON_PART_PRIMARY, egui_view_split_button_get_current_part(EGUI_VIEW_OF(&test_button)));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, changed_count);
+
+    egui_view_split_button_set_compact_mode(EGUI_VIEW_OF(&test_button), 0);
+    layout_button();
+    snapshot = egui_view_split_button_get_snapshot(&test_button);
+    egui_view_split_button_get_metrics(&test_button, EGUI_VIEW_OF(&test_button), snapshot, &metrics);
+    primary_x = metrics.primary_region.location.x + metrics.primary_region.size.width / 2;
+    primary_y = metrics.primary_region.location.y + metrics.primary_region.size.height / 2;
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, primary_x, primary_y));
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, primary_x, primary_y));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, changed_count);
 }
 
 static void test_split_button_keyboard_navigation_and_fallback(void)
@@ -277,7 +362,7 @@ static void test_split_button_keyboard_navigation_and_fallback(void)
     EGUI_TEST_ASSERT_EQUAL_INT(0, changed_count);
 }
 
-static void test_split_button_disabled_mode_ignores_input(void)
+static void test_split_button_disabled_mode_ignores_input_and_clears_pressed_state(void)
 {
     egui_view_split_button_metrics_t metrics;
     const egui_view_split_button_snapshot_t *snapshot;
@@ -285,29 +370,48 @@ static void test_split_button_disabled_mode_ignores_input(void)
     egui_dim_t primary_y;
 
     setup_button();
-    egui_view_split_button_set_disabled_mode(EGUI_VIEW_OF(&test_button), 1);
     layout_button();
     snapshot = egui_view_split_button_get_snapshot(&test_button);
     egui_view_split_button_get_metrics(&test_button, EGUI_VIEW_OF(&test_button), snapshot, &metrics);
     primary_x = metrics.primary_region.location.x + metrics.primary_region.size.width / 2;
     primary_y = metrics.primary_region.location.y + metrics.primary_region.size.height / 2;
 
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, primary_x, primary_y));
+    EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&test_button)->is_pressed);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_SPLIT_BUTTON_PART_PRIMARY, test_button.pressed_part);
+
+    egui_view_split_button_set_disabled_mode(EGUI_VIEW_OF(&test_button), 1);
+    EGUI_TEST_ASSERT_EQUAL_INT(1, test_button.disabled_mode);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_SPLIT_BUTTON_PART_NONE, test_button.pressed_part);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_button)->is_pressed);
+
     EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, primary_x, primary_y));
     EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, primary_x, primary_y));
+    test_button.pressed_part = EGUI_VIEW_SPLIT_BUTTON_PART_MENU;
+    egui_view_set_pressed(EGUI_VIEW_OF(&test_button), true);
     EGUI_TEST_ASSERT_FALSE(send_key(EGUI_KEY_CODE_RIGHT));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_SPLIT_BUTTON_PART_NONE, test_button.pressed_part);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_button)->is_pressed);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_SPLIT_BUTTON_PART_PRIMARY, egui_view_split_button_get_current_part(EGUI_VIEW_OF(&test_button)));
     EGUI_TEST_ASSERT_EQUAL_INT(0, changed_count);
+
+    egui_view_split_button_set_disabled_mode(EGUI_VIEW_OF(&test_button), 0);
+    EGUI_TEST_ASSERT_TRUE(send_key(EGUI_KEY_CODE_RIGHT));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_SPLIT_BUTTON_PART_MENU, egui_view_split_button_get_current_part(EGUI_VIEW_OF(&test_button)));
+    EGUI_TEST_ASSERT_EQUAL_INT(1, changed_count);
 }
 
 void test_split_button_run(void)
 {
     EGUI_TEST_SUITE_BEGIN(split_button);
+    EGUI_TEST_RUN(test_split_button_setters_clear_pressed_state);
     EGUI_TEST_RUN(test_split_button_set_snapshots_clamp_and_resolve_default_part);
     EGUI_TEST_RUN(test_split_button_snapshot_and_part_guards);
     EGUI_TEST_RUN(test_split_button_font_modes_and_palette);
     EGUI_TEST_RUN(test_split_button_touch_switches_part_and_notifies);
     EGUI_TEST_RUN(test_split_button_touch_cancel_clears_pressed_state);
+    EGUI_TEST_RUN(test_split_button_compact_mode_clears_pressed_and_ignores_input);
     EGUI_TEST_RUN(test_split_button_keyboard_navigation_and_fallback);
-    EGUI_TEST_RUN(test_split_button_disabled_mode_ignores_input);
+    EGUI_TEST_RUN(test_split_button_disabled_mode_ignores_input_and_clears_pressed_state);
     EGUI_TEST_SUITE_END();
 }

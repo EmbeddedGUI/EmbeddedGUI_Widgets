@@ -101,6 +101,15 @@ static egui_color_t egui_view_split_button_mix_disabled(egui_color_t color)
     return egui_rgb_mix(color, EGUI_COLOR_DARK_GREY, 68);
 }
 
+static uint8_t egui_view_split_button_clear_pressed_state(egui_view_t *self, egui_view_split_button_t *local)
+{
+    uint8_t had_pressed = self->is_pressed || local->pressed_part != EGUI_VIEW_SPLIT_BUTTON_PART_NONE;
+
+    local->pressed_part = EGUI_VIEW_SPLIT_BUTTON_PART_NONE;
+    egui_view_set_pressed(self, false);
+    return had_pressed;
+}
+
 static uint8_t egui_view_split_button_part_is_enabled(egui_view_split_button_t *local, egui_view_t *self, const egui_view_split_button_snapshot_t *snapshot,
                                                       uint8_t part)
 {
@@ -251,18 +260,32 @@ static uint8_t egui_view_split_button_hit_part(egui_view_split_button_t *local, 
     return EGUI_VIEW_SPLIT_BUTTON_PART_NONE;
 }
 
-static void egui_view_split_button_set_current_part_inner(egui_view_t *self, uint8_t part, uint8_t notify)
+static void egui_view_split_button_set_current_part_inner(egui_view_t *self, uint8_t part, uint8_t notify, uint8_t clear_pressed)
 {
     EGUI_LOCAL_INIT(egui_view_split_button_t);
     const egui_view_split_button_snapshot_t *snapshot = egui_view_split_button_get_snapshot(local);
+    uint8_t had_pressed = 0;
+
+    if (clear_pressed)
+    {
+        had_pressed = egui_view_split_button_clear_pressed_state(self, local);
+    }
 
     if (!egui_view_split_button_part_is_enabled(local, self, snapshot, part))
     {
+        if (had_pressed)
+        {
+            egui_view_invalidate(self);
+        }
         return;
     }
 
     if (local->current_part == part)
     {
+        if (had_pressed)
+        {
+            egui_view_invalidate(self);
+        }
         return;
     }
 
@@ -279,6 +302,7 @@ void egui_view_split_button_set_snapshots(egui_view_t *self, const egui_view_spl
     EGUI_LOCAL_INIT(egui_view_split_button_t);
     const egui_view_split_button_snapshot_t *snapshot;
 
+    egui_view_split_button_clear_pressed_state(self, local);
     local->snapshots = snapshots;
     local->snapshot_count = egui_view_split_button_clamp_snapshot_count(snapshot_count);
     if (local->current_snapshot >= local->snapshot_count)
@@ -288,7 +312,6 @@ void egui_view_split_button_set_snapshots(egui_view_t *self, const egui_view_spl
 
     snapshot = egui_view_split_button_get_snapshot(local);
     local->current_part = egui_view_split_button_resolve_default_part(local, self, snapshot);
-    local->pressed_part = EGUI_VIEW_SPLIT_BUTTON_PART_NONE;
     egui_view_invalidate(self);
 }
 
@@ -296,20 +319,28 @@ void egui_view_split_button_set_current_snapshot(egui_view_t *self, uint8_t snap
 {
     EGUI_LOCAL_INIT(egui_view_split_button_t);
     const egui_view_split_button_snapshot_t *snapshot;
+    uint8_t had_pressed = egui_view_split_button_clear_pressed_state(self, local);
 
     if (local->snapshot_count == 0 || snapshot_index >= local->snapshot_count)
     {
+        if (had_pressed)
+        {
+            egui_view_invalidate(self);
+        }
         return;
     }
     if (local->current_snapshot == snapshot_index)
     {
+        if (had_pressed)
+        {
+            egui_view_invalidate(self);
+        }
         return;
     }
 
     local->current_snapshot = snapshot_index;
     snapshot = egui_view_split_button_get_snapshot(local);
     local->current_part = egui_view_split_button_resolve_default_part(local, self, snapshot);
-    local->pressed_part = EGUI_VIEW_SPLIT_BUTTON_PART_NONE;
     egui_view_invalidate(self);
 }
 
@@ -321,7 +352,7 @@ uint8_t egui_view_split_button_get_current_snapshot(egui_view_t *self)
 
 void egui_view_split_button_set_current_part(egui_view_t *self, uint8_t part)
 {
-    egui_view_split_button_set_current_part_inner(self, part, 1);
+    egui_view_split_button_set_current_part_inner(self, part, 1, 1);
 }
 
 uint8_t egui_view_split_button_get_current_part(egui_view_t *self)
@@ -353,17 +384,39 @@ void egui_view_split_button_set_meta_font(egui_view_t *self, const egui_font_t *
 void egui_view_split_button_set_compact_mode(egui_view_t *self, uint8_t compact_mode)
 {
     EGUI_LOCAL_INIT(egui_view_split_button_t);
-    local->compact_mode = compact_mode ? 1 : 0;
-    local->pressed_part = EGUI_VIEW_SPLIT_BUTTON_PART_NONE;
-    egui_view_invalidate(self);
+    uint8_t changed = 0;
+    uint8_t had_pressed;
+
+    compact_mode = compact_mode ? 1 : 0;
+    had_pressed = egui_view_split_button_clear_pressed_state(self, local);
+    if (local->compact_mode != compact_mode)
+    {
+        local->compact_mode = compact_mode;
+        changed = 1;
+    }
+    if (changed || had_pressed)
+    {
+        egui_view_invalidate(self);
+    }
 }
 
 void egui_view_split_button_set_disabled_mode(egui_view_t *self, uint8_t disabled_mode)
 {
     EGUI_LOCAL_INIT(egui_view_split_button_t);
-    local->disabled_mode = disabled_mode ? 1 : 0;
-    local->pressed_part = EGUI_VIEW_SPLIT_BUTTON_PART_NONE;
-    egui_view_invalidate(self);
+    uint8_t changed = 0;
+    uint8_t had_pressed;
+
+    disabled_mode = disabled_mode ? 1 : 0;
+    had_pressed = egui_view_split_button_clear_pressed_state(self, local);
+    if (local->disabled_mode != disabled_mode)
+    {
+        local->disabled_mode = disabled_mode;
+        changed = 1;
+    }
+    if (changed || had_pressed)
+    {
+        egui_view_invalidate(self);
+    }
 }
 
 void egui_view_split_button_set_palette(egui_view_t *self, egui_color_t surface_color, egui_color_t border_color, egui_color_t text_color,
@@ -588,8 +641,12 @@ static int egui_view_split_button_on_touch_event(egui_view_t *self, egui_motion_
     const egui_view_split_button_snapshot_t *snapshot = egui_view_split_button_get_snapshot(local);
     uint8_t hit_part;
 
-    if (snapshot == NULL || !egui_view_get_enable(self) || local->disabled_mode)
+    if (snapshot == NULL || !egui_view_get_enable(self) || local->disabled_mode || local->compact_mode)
     {
+        if (egui_view_split_button_clear_pressed_state(self, local))
+        {
+            egui_view_invalidate(self);
+        }
         return 0;
     }
 
@@ -599,6 +656,10 @@ static int egui_view_split_button_on_touch_event(egui_view_t *self, egui_motion_
         hit_part = egui_view_split_button_hit_part(local, self, event->location.x, event->location.y);
         if (!egui_view_split_button_part_is_enabled(local, self, snapshot, hit_part))
         {
+            if (egui_view_split_button_clear_pressed_state(self, local))
+            {
+                egui_view_invalidate(self);
+            }
             return 0;
         }
         local->pressed_part = hit_part;
@@ -606,20 +667,28 @@ static int egui_view_split_button_on_touch_event(egui_view_t *self, egui_motion_
         egui_view_invalidate(self);
         return 1;
     case EGUI_MOTION_EVENT_ACTION_UP:
+    {
+        uint8_t handled;
+
         hit_part = egui_view_split_button_hit_part(local, self, event->location.x, event->location.y);
         if (local->pressed_part == hit_part && egui_view_split_button_part_is_enabled(local, self, snapshot, hit_part))
         {
-            egui_view_split_button_set_current_part_inner(self, hit_part, 1);
+            egui_view_split_button_set_current_part_inner(self, hit_part, 1, 0);
         }
-        local->pressed_part = EGUI_VIEW_SPLIT_BUTTON_PART_NONE;
-        egui_view_set_pressed(self, false);
-        egui_view_invalidate(self);
-        return hit_part != EGUI_VIEW_SPLIT_BUTTON_PART_NONE;
+        handled = egui_view_split_button_clear_pressed_state(self, local);
+        if (handled)
+        {
+            egui_view_invalidate(self);
+        }
+        return handled || hit_part != EGUI_VIEW_SPLIT_BUTTON_PART_NONE;
+    }
     case EGUI_MOTION_EVENT_ACTION_CANCEL:
-        local->pressed_part = EGUI_VIEW_SPLIT_BUTTON_PART_NONE;
-        egui_view_set_pressed(self, false);
-        egui_view_invalidate(self);
-        return 1;
+        if (egui_view_split_button_clear_pressed_state(self, local))
+        {
+            egui_view_invalidate(self);
+            return 1;
+        }
+        return 0;
     default:
         return 0;
     }
@@ -634,7 +703,11 @@ static int egui_view_split_button_on_key_event(egui_view_t *self, egui_key_event
     uint8_t current_part;
     uint8_t next_part;
 
-    if (snapshot == NULL || !egui_view_get_enable(self) || local->disabled_mode || event->type != EGUI_KEY_EVENT_ACTION_UP)
+    if (egui_view_split_button_clear_pressed_state(self, local))
+    {
+        egui_view_invalidate(self);
+    }
+    if (snapshot == NULL || !egui_view_get_enable(self) || local->disabled_mode || local->compact_mode || event->type != EGUI_KEY_EVENT_ACTION_UP)
     {
         return 0;
     }
@@ -646,25 +719,25 @@ static int egui_view_split_button_on_key_event(egui_view_t *self, egui_key_event
     case EGUI_KEY_CODE_HOME:
         if (egui_view_split_button_part_is_enabled(local, self, snapshot, EGUI_VIEW_SPLIT_BUTTON_PART_PRIMARY))
         {
-            egui_view_split_button_set_current_part_inner(self, EGUI_VIEW_SPLIT_BUTTON_PART_PRIMARY, 1);
+            egui_view_split_button_set_current_part_inner(self, EGUI_VIEW_SPLIT_BUTTON_PART_PRIMARY, 1, 0);
         }
         return 1;
     case EGUI_KEY_CODE_RIGHT:
     case EGUI_KEY_CODE_END:
         if (egui_view_split_button_part_is_enabled(local, self, snapshot, EGUI_VIEW_SPLIT_BUTTON_PART_MENU))
         {
-            egui_view_split_button_set_current_part_inner(self, EGUI_VIEW_SPLIT_BUTTON_PART_MENU, 1);
+            egui_view_split_button_set_current_part_inner(self, EGUI_VIEW_SPLIT_BUTTON_PART_MENU, 1, 0);
         }
         return 1;
     case EGUI_KEY_CODE_TAB:
         next_part = current_part == EGUI_VIEW_SPLIT_BUTTON_PART_PRIMARY ? EGUI_VIEW_SPLIT_BUTTON_PART_MENU : EGUI_VIEW_SPLIT_BUTTON_PART_PRIMARY;
         if (egui_view_split_button_part_is_enabled(local, self, snapshot, next_part))
         {
-            egui_view_split_button_set_current_part_inner(self, next_part, 1);
+            egui_view_split_button_set_current_part_inner(self, next_part, 1, 0);
         }
         else if (egui_view_split_button_part_is_enabled(local, self, snapshot, current_part))
         {
-            egui_view_split_button_set_current_part_inner(self, current_part, 1);
+            egui_view_split_button_set_current_part_inner(self, current_part, 1, 0);
         }
         return 1;
     default:
