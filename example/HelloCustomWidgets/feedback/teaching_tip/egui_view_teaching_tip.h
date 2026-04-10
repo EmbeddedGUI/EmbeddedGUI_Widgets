@@ -84,6 +84,7 @@ void egui_view_teaching_tip_set_read_only_mode(egui_view_t *self, uint8_t read_o
 void egui_view_teaching_tip_set_palette(egui_view_t *self, egui_color_t surface_color, egui_color_t border_color, egui_color_t text_color,
                                         egui_color_t muted_text_color, egui_color_t accent_color, egui_color_t success_color, egui_color_t warning_color,
                                         egui_color_t neutral_color, egui_color_t shadow_color);
+void egui_view_teaching_tip_override_static_preview_api(egui_view_t *self, egui_view_api_t *api);
 uint8_t egui_view_teaching_tip_get_part_region(egui_view_t *self, uint8_t part, egui_region_t *region);
 uint8_t egui_view_teaching_tip_handle_navigation_key(egui_view_t *self, uint8_t key_code);
 

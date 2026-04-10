@@ -34,7 +34,7 @@
 
 | 状态 | 控件名 | 分类 | 开始日期 | 当前阶段 | 目标 |
 | --- | --- | --- | --- | --- | --- |
-| 进行中 | `teaching_tip` | `feedback` | `2026-04-10` | 交互回归复核 | 复核 `same-target release / static preview / compact / read only / disabled / preview touch 焦点收口 / 交互后渲染`，确认是否需要按当前 `message_bar / skeleton / tree_view / breadcrumb_bar / persona_group / card_panel / flip_view` 同一标准补齐 |
+| 暂无 | - | - | - | - | - |
 
 ## 当前保留的 Reference 主线控件
 
@@ -96,6 +96,12 @@
 - `toast_stack` -> `Toast`
 
 ## 最近完成的收口动作
+
+- `2026-04-10`
+  - 完成 `feedback/teaching_tip` 三次收口：在既有 `reference` 页面结构不再调整的前提下，把工作重点收回到交互行为，补齐 `same-target release / static preview / compact / read only / disabled / preview touch 焦点收口 / 交互后渲染`，继续保留符合 Fluent / WPF UI 语义的 anchored callout、`top / bottom placement`、`warning`、closed / reopen 与底部双 preview 对照。
+  - `egui_view_teaching_tip.c/.h` 让 `egui_view_teaching_tip_clear_pressed_state()` 返回统一 cleared 语义，使 `set_snapshots()`、`set_current_snapshot()`、`set_font()`、`set_meta_font()`、`set_compact_mode()`、`set_read_only_mode()`、`set_palette()` 以及 `touch / key guard` 都先清理残留 `pressed_part + is_pressed`；同时补上 `ACTION_MOVE` 下的 same-target release 逻辑，并新增 `egui_view_teaching_tip_override_static_preview_api()`，让静态 preview 统一吞掉 `touch / key`，只负责清残留 pressed，不改 `current_snapshot / current_part`，也不触发 click。
+  - `example/HelloCustomWidgets/feedback/teaching_tip/test.c` 把底部 `compact / read only` preview 改成控件自己的 static preview API，并补上 `dismiss_primary_focus_on_preview_touch()` 用于点击 preview 时只清主控件 focus；runtime 录制新增 `compact` 第二快照、主控件 request focus、preview 点击后的收尾帧与最终稳定帧。`example/HelloUnitTest/test/test_teaching_tip.c` 补齐 “setter 清理 pressed”“same-target release 与 cancel”“read only / disabled guard 清理残留 pressed”“static preview 吞掉 touch / key 且不改 current_snapshot / current_part” 的交互回归；README 同步明确 static preview、same-target release、preview 点击收口与验收标准。
+  - 已通过 `make clean APP=HelloCustomWidgets APP_SUB=feedback/teaching_tip PORT=pc`、`make all APP=HelloCustomWidgets APP_SUB=feedback/teaching_tip PORT=pc`、`make clean APP=HelloUnitTest PORT=pc_test`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category feedback`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub feedback/teaching_tip --track reference --timeout 10 --keep-screenshots`、`python scripts/checks/check_docs_encoding.py`，并复核 `runtime_check_output/HelloCustomWidgets_feedback_teaching_tip/default/frame_0000.png`、`frame_0012.png`、`frame_0022.png`、`frame_0024.png`、`frame_0026.png` 的渲染结果，确认主控件与底部 preview 全程完整可见，preview 点击后的收尾帧和最终稳定帧都没有黑白屏、裁切、整屏污染或残留 `pressed / focus`。
 
 - `2026-04-10`
   - 完成 `feedback/skeleton` 三次收口：在既有 `reference` 页面结构不再调整的前提下，把工作重点收回到交互行为，补齐 `same-target release / static preview / compact / read only / disabled / preview touch 焦点收口 / 动画定时器 / 交互后渲染`，继续保留符合 Fluent / WPF UI 语义的 `Skeleton` 主占位、`compact` 脉冲占位和 `read only` 静态占位对照。

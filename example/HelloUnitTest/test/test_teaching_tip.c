@@ -8,6 +8,8 @@
 #include "../../HelloCustomWidgets/feedback/teaching_tip/egui_view_teaching_tip.c"
 
 static egui_view_teaching_tip_t test_tip;
+static egui_view_teaching_tip_t preview_tip;
+static egui_view_api_t preview_api;
 static uint8_t changed_count;
 static uint8_t last_part;
 
@@ -113,6 +115,17 @@ static void setup_tip(void)
     reset_changed_state();
 }
 
+static void setup_preview_tip(void)
+{
+    egui_view_teaching_tip_init(EGUI_VIEW_OF(&preview_tip));
+    egui_view_set_size(EGUI_VIEW_OF(&preview_tip), 196, 132);
+    egui_view_teaching_tip_set_snapshots(EGUI_VIEW_OF(&preview_tip), g_snapshots, 3);
+    egui_view_teaching_tip_set_current_snapshot(EGUI_VIEW_OF(&preview_tip), 1);
+    egui_view_teaching_tip_set_current_part(EGUI_VIEW_OF(&preview_tip), EGUI_VIEW_TEACHING_TIP_PART_SECONDARY);
+    egui_view_teaching_tip_override_static_preview_api(EGUI_VIEW_OF(&preview_tip), &preview_api);
+    reset_changed_state();
+}
+
 static void layout_tip(void)
 {
     egui_region_t region;
@@ -125,7 +138,19 @@ static void layout_tip(void)
     egui_region_copy(&EGUI_VIEW_OF(&test_tip)->region_screen, &region);
 }
 
-static int send_touch(uint8_t type, egui_dim_t x, egui_dim_t y)
+static void layout_preview_tip(void)
+{
+    egui_region_t region;
+
+    region.location.x = 24;
+    region.location.y = 28;
+    region.size.width = 196;
+    region.size.height = 132;
+    egui_view_layout(EGUI_VIEW_OF(&preview_tip), &region);
+    egui_region_copy(&EGUI_VIEW_OF(&preview_tip)->region_screen, &region);
+}
+
+static int send_touch_to_view(egui_view_t *view, uint8_t type, egui_dim_t x, egui_dim_t y)
 {
     egui_motion_event_t event;
 
@@ -133,10 +158,10 @@ static int send_touch(uint8_t type, egui_dim_t x, egui_dim_t y)
     event.type = type;
     event.location.x = x;
     event.location.y = y;
-    return EGUI_VIEW_OF(&test_tip)->api->on_touch_event(EGUI_VIEW_OF(&test_tip), &event);
+    return view->api->on_touch_event(view, &event);
 }
 
-static int send_key(uint8_t key_code)
+static int send_key_to_view(egui_view_t *view, uint8_t key_code)
 {
     egui_key_event_t event;
     int handled = 0;
@@ -144,10 +169,30 @@ static int send_key(uint8_t key_code)
     memset(&event, 0, sizeof(event));
     event.type = EGUI_KEY_EVENT_ACTION_DOWN;
     event.key_code = key_code;
-    handled |= EGUI_VIEW_OF(&test_tip)->api->on_key_event(EGUI_VIEW_OF(&test_tip), &event);
+    handled |= view->api->on_key_event(view, &event);
     event.type = EGUI_KEY_EVENT_ACTION_UP;
-    handled |= EGUI_VIEW_OF(&test_tip)->api->on_key_event(EGUI_VIEW_OF(&test_tip), &event);
+    handled |= view->api->on_key_event(view, &event);
     return handled;
+}
+
+static int send_touch(uint8_t type, egui_dim_t x, egui_dim_t y)
+{
+    return send_touch_to_view(EGUI_VIEW_OF(&test_tip), type, x, y);
+}
+
+static int send_preview_touch(uint8_t type, egui_dim_t x, egui_dim_t y)
+{
+    return send_touch_to_view(EGUI_VIEW_OF(&preview_tip), type, x, y);
+}
+
+static int send_key(uint8_t key_code)
+{
+    return send_key_to_view(EGUI_VIEW_OF(&test_tip), key_code);
+}
+
+static int send_preview_key(uint8_t key_code)
+{
+    return send_key_to_view(EGUI_VIEW_OF(&preview_tip), key_code);
 }
 
 static void get_metrics(egui_view_teaching_tip_metrics_t *metrics)
@@ -162,6 +207,18 @@ static void get_region_center(egui_region_t *region, egui_dim_t *x, egui_dim_t *
 {
     *x = region->location.x + region->size.width / 2;
     *y = region->location.y + region->size.height / 2;
+}
+
+static void seed_pressed_state(egui_view_teaching_tip_t *tip, uint8_t part)
+{
+    tip->pressed_part = part;
+    egui_view_set_pressed(EGUI_VIEW_OF(tip), true);
+}
+
+static void assert_pressed_cleared(egui_view_teaching_tip_t *tip)
+{
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_TEACHING_TIP_PART_NONE, tip->pressed_part);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(tip)->is_pressed);
 }
 
 static void test_teaching_tip_set_snapshots_clamp_and_default_part(void)
@@ -233,8 +290,10 @@ static void test_teaching_tip_snapshot_and_part_guards(void)
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_TEACHING_TIP_PART_NONE, test_tip.pressed_part);
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_tip)->is_pressed);
 
+    seed_pressed_state(&test_tip, EGUI_VIEW_TEACHING_TIP_PART_CLOSE);
     egui_view_teaching_tip_set_current_snapshot(EGUI_VIEW_OF(&test_tip), 9);
     EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_teaching_tip_get_current_snapshot(EGUI_VIEW_OF(&test_tip)));
+    assert_pressed_cleared(&test_tip);
 
     egui_view_teaching_tip_set_snapshots(EGUI_VIEW_OF(&test_tip), &g_secondary_only_snapshot, 1);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_TEACHING_TIP_PART_SECONDARY, egui_view_teaching_tip_get_current_part(EGUI_VIEW_OF(&test_tip)));
@@ -255,29 +314,31 @@ static void test_teaching_tip_font_palette_and_internal_helpers(void)
 
     setup_tip();
 
+    seed_pressed_state(&test_tip, EGUI_VIEW_TEACHING_TIP_PART_PRIMARY);
     egui_view_teaching_tip_set_font(EGUI_VIEW_OF(&test_tip), NULL);
-    egui_view_teaching_tip_set_meta_font(EGUI_VIEW_OF(&test_tip), NULL);
     EGUI_TEST_ASSERT_TRUE(test_tip.font == (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT);
-    EGUI_TEST_ASSERT_TRUE(test_tip.meta_font == (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT);
+    assert_pressed_cleared(&test_tip);
 
-    test_tip.pressed_part = EGUI_VIEW_TEACHING_TIP_PART_PRIMARY;
-    egui_view_set_pressed(EGUI_VIEW_OF(&test_tip), true);
+    seed_pressed_state(&test_tip, EGUI_VIEW_TEACHING_TIP_PART_PRIMARY);
+    egui_view_teaching_tip_set_meta_font(EGUI_VIEW_OF(&test_tip), NULL);
+    EGUI_TEST_ASSERT_TRUE(test_tip.meta_font == (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT);
+    assert_pressed_cleared(&test_tip);
+
+    seed_pressed_state(&test_tip, EGUI_VIEW_TEACHING_TIP_PART_PRIMARY);
     egui_view_teaching_tip_set_compact_mode(EGUI_VIEW_OF(&test_tip), 2);
     EGUI_TEST_ASSERT_EQUAL_INT(1, test_tip.compact_mode);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_TEACHING_TIP_PART_NONE, test_tip.pressed_part);
-    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_tip)->is_pressed);
+    assert_pressed_cleared(&test_tip);
     egui_view_teaching_tip_set_compact_mode(EGUI_VIEW_OF(&test_tip), 0);
     EGUI_TEST_ASSERT_EQUAL_INT(0, test_tip.compact_mode);
 
-    test_tip.pressed_part = EGUI_VIEW_TEACHING_TIP_PART_SECONDARY;
-    egui_view_set_pressed(EGUI_VIEW_OF(&test_tip), true);
+    seed_pressed_state(&test_tip, EGUI_VIEW_TEACHING_TIP_PART_SECONDARY);
     egui_view_teaching_tip_set_read_only_mode(EGUI_VIEW_OF(&test_tip), 3);
     EGUI_TEST_ASSERT_EQUAL_INT(1, test_tip.read_only_mode);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_TEACHING_TIP_PART_NONE, test_tip.pressed_part);
-    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_tip)->is_pressed);
+    assert_pressed_cleared(&test_tip);
     egui_view_teaching_tip_set_read_only_mode(EGUI_VIEW_OF(&test_tip), 0);
     EGUI_TEST_ASSERT_EQUAL_INT(0, test_tip.read_only_mode);
 
+    seed_pressed_state(&test_tip, EGUI_VIEW_TEACHING_TIP_PART_CLOSE);
     egui_view_teaching_tip_set_palette(EGUI_VIEW_OF(&test_tip), EGUI_COLOR_HEX(0x101112), EGUI_COLOR_HEX(0x202122), EGUI_COLOR_HEX(0x303132),
                                        EGUI_COLOR_HEX(0x404142), EGUI_COLOR_HEX(0x505152), EGUI_COLOR_HEX(0x606162), EGUI_COLOR_HEX(0x707172),
                                        EGUI_COLOR_HEX(0x808182), EGUI_COLOR_HEX(0x909192));
@@ -290,6 +351,7 @@ static void test_teaching_tip_font_palette_and_internal_helpers(void)
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x707172).full, test_tip.warning_color.full);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x808182).full, test_tip.neutral_color.full);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x909192).full, test_tip.shadow_color.full);
+    assert_pressed_cleared(&test_tip);
 
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_TEACHING_TIP_MAX_SNAPSHOTS, egui_view_teaching_tip_clamp_snapshot_count(9));
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_teaching_tip_text_len(NULL));
@@ -405,7 +467,7 @@ static void test_teaching_tip_metrics_and_hit_testing(void)
     EGUI_TEST_ASSERT_FALSE(egui_view_teaching_tip_get_part_region(EGUI_VIEW_OF(&test_tip), EGUI_VIEW_TEACHING_TIP_PART_PRIMARY, &primary_region));
 }
 
-static void test_teaching_tip_touch_interaction_and_cancel(void)
+static void test_teaching_tip_touch_same_target_release_and_cancel(void)
 {
     egui_region_t target_region;
     egui_region_t primary_region;
@@ -436,22 +498,26 @@ static void test_teaching_tip_touch_interaction_and_cancel(void)
     EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, secondary_x, secondary_y));
     EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&test_tip)->is_pressed);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_TEACHING_TIP_PART_SECONDARY, test_tip.pressed_part);
-    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, secondary_x, secondary_y));
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_MOVE, target_x, target_y));
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_tip)->is_pressed);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_TEACHING_TIP_PART_NONE, test_tip.pressed_part);
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, target_x, target_y));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_TEACHING_TIP_PART_PRIMARY, egui_view_teaching_tip_get_current_part(EGUI_VIEW_OF(&test_tip)));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, changed_count);
+    assert_pressed_cleared(&test_tip);
+
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, secondary_x, secondary_y));
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_MOVE, target_x, target_y));
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_tip)->is_pressed);
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_MOVE, secondary_x, secondary_y));
+    EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&test_tip)->is_pressed);
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, secondary_x, secondary_y));
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_TEACHING_TIP_PART_SECONDARY, egui_view_teaching_tip_get_current_part(EGUI_VIEW_OF(&test_tip)));
     EGUI_TEST_ASSERT_EQUAL_INT(1, changed_count);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_TEACHING_TIP_PART_SECONDARY, last_part);
 
-    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, close_x, close_y));
-    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, target_x, target_y));
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_TEACHING_TIP_PART_SECONDARY, egui_view_teaching_tip_get_current_part(EGUI_VIEW_OF(&test_tip)));
-    EGUI_TEST_ASSERT_EQUAL_INT(1, changed_count);
-
     EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, primary_x, primary_y));
     EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_CANCEL, primary_x, primary_y));
-    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_tip)->is_pressed);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_TEACHING_TIP_PART_NONE, test_tip.pressed_part);
+    assert_pressed_cleared(&test_tip);
     EGUI_TEST_ASSERT_EQUAL_INT(1, changed_count);
 
     EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, close_x, close_y));
@@ -571,11 +637,12 @@ static void test_teaching_tip_read_only_mode_clears_pressed_and_ignores_input(vo
 
     egui_view_teaching_tip_set_read_only_mode(EGUI_VIEW_OF(&test_tip), 1);
     EGUI_TEST_ASSERT_EQUAL_INT(1, test_tip.read_only_mode);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_TEACHING_TIP_PART_NONE, test_tip.pressed_part);
-    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_tip)->is_pressed);
+    assert_pressed_cleared(&test_tip);
     EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, primary_x, primary_y));
     EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, primary_x, primary_y));
+    seed_pressed_state(&test_tip, EGUI_VIEW_TEACHING_TIP_PART_PRIMARY);
     EGUI_TEST_ASSERT_FALSE(send_key(EGUI_KEY_CODE_LEFT));
+    assert_pressed_cleared(&test_tip);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_TEACHING_TIP_PART_PRIMARY, egui_view_teaching_tip_get_current_part(EGUI_VIEW_OF(&test_tip)));
     EGUI_TEST_ASSERT_EQUAL_INT(0, changed_count);
 
@@ -608,10 +675,11 @@ static void test_teaching_tip_disabled_ignores_input_and_clears_pressed_state(vo
 
     egui_view_set_enable(EGUI_VIEW_OF(&test_tip), 0);
     EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, primary_x, primary_y));
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_TEACHING_TIP_PART_NONE, test_tip.pressed_part);
-    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_tip)->is_pressed);
+    assert_pressed_cleared(&test_tip);
     EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, primary_x, primary_y));
+    seed_pressed_state(&test_tip, EGUI_VIEW_TEACHING_TIP_PART_PRIMARY);
     EGUI_TEST_ASSERT_FALSE(send_key(EGUI_KEY_CODE_LEFT));
+    assert_pressed_cleared(&test_tip);
     EGUI_TEST_ASSERT_EQUAL_INT(0, changed_count);
 
     egui_view_set_enable(EGUI_VIEW_OF(&test_tip), 1);
@@ -624,6 +692,33 @@ static void test_teaching_tip_disabled_ignores_input_and_clears_pressed_state(vo
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_TEACHING_TIP_PART_TARGET, last_part);
 }
 
+static void test_teaching_tip_static_preview_consumes_input_and_clears_pressed_state(void)
+{
+    egui_region_t secondary_region;
+    egui_dim_t secondary_x;
+    egui_dim_t secondary_y;
+
+    setup_preview_tip();
+    layout_preview_tip();
+
+    EGUI_TEST_ASSERT_TRUE(egui_view_teaching_tip_get_part_region(EGUI_VIEW_OF(&preview_tip), EGUI_VIEW_TEACHING_TIP_PART_SECONDARY, &secondary_region));
+    get_region_center(&secondary_region, &secondary_x, &secondary_y);
+
+    seed_pressed_state(&preview_tip, EGUI_VIEW_TEACHING_TIP_PART_SECONDARY);
+    EGUI_TEST_ASSERT_TRUE(send_preview_touch(EGUI_MOTION_EVENT_ACTION_DOWN, secondary_x, secondary_y));
+    assert_pressed_cleared(&preview_tip);
+    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_teaching_tip_get_current_snapshot(EGUI_VIEW_OF(&preview_tip)));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_TEACHING_TIP_PART_SECONDARY, egui_view_teaching_tip_get_current_part(EGUI_VIEW_OF(&preview_tip)));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, changed_count);
+
+    seed_pressed_state(&preview_tip, EGUI_VIEW_TEACHING_TIP_PART_SECONDARY);
+    EGUI_TEST_ASSERT_TRUE(send_preview_key(EGUI_KEY_CODE_ENTER));
+    assert_pressed_cleared(&preview_tip);
+    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_teaching_tip_get_current_snapshot(EGUI_VIEW_OF(&preview_tip)));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_TEACHING_TIP_PART_SECONDARY, egui_view_teaching_tip_get_current_part(EGUI_VIEW_OF(&preview_tip)));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, changed_count);
+}
+
 void test_teaching_tip_run(void)
 {
     EGUI_TEST_SUITE_BEGIN(teaching_tip);
@@ -631,10 +726,11 @@ void test_teaching_tip_run(void)
     EGUI_TEST_RUN(test_teaching_tip_snapshot_and_part_guards);
     EGUI_TEST_RUN(test_teaching_tip_font_palette_and_internal_helpers);
     EGUI_TEST_RUN(test_teaching_tip_metrics_and_hit_testing);
-    EGUI_TEST_RUN(test_teaching_tip_touch_interaction_and_cancel);
+    EGUI_TEST_RUN(test_teaching_tip_touch_same_target_release_and_cancel);
     EGUI_TEST_RUN(test_teaching_tip_compact_mode_clears_pressed_and_keeps_input_behavior);
     EGUI_TEST_RUN(test_teaching_tip_read_only_mode_clears_pressed_and_ignores_input);
     EGUI_TEST_RUN(test_teaching_tip_disabled_ignores_input_and_clears_pressed_state);
+    EGUI_TEST_RUN(test_teaching_tip_static_preview_consumes_input_and_clears_pressed_state);
     EGUI_TEST_RUN(test_teaching_tip_keyboard_navigation_and_guards);
     EGUI_TEST_SUITE_END();
 }
