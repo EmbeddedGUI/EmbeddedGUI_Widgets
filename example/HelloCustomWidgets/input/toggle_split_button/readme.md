@@ -103,6 +103,11 @@ python scripts/checks/check_docs_encoding.py
 - checked 与 unchecked 两态必须一眼可辨，不能退回普通 split button
 - 页面中不再出现 guide、状态回显、section divider 和外部 preview 标签
 - `compact` 与 `read only` 必须保持 Fluent / WPF UI 的低噪音浅色 reference
+- `checked / current snapshot / current part / compact / read only` 切换链路需要共用同一套 `pressed` 清理语义
+- setter 更新、模式切换和 `touch cancel` 后，不能残留 `primary / menu` 的 `pressed` 高亮
+- `compact / read_only_mode / !enable` 收到新的 touch 或 key 输入时，必须先清理残留 pressed，再拒绝后续交互
+- 触摸释放语义必须继续满足“按下与抬起命中同一分段才提交”
+- unit test 中已有的 checked 切换、snapshot 循环、`compact / read only` 输入抑制和 `touch cancel` 语义不能回归
 
 ## 9. 已知限制与后续方向
 
@@ -148,4 +153,5 @@ python scripts/checks/check_docs_encoding.py
 - 用固定 snapshot 驱动，优先保证 `480 x 480` 页面里的稳定 reference
 - 主控件保留 `title + checked badge + split row + helper` 四段结构
 - 底部 `compact` 与 `read only` 固定为静态对照，不再承担额外交互
+- 交互收口阶段统一要求 setter、模式切换、`touch cancel` 和 key guard 都能清理残留 `pressed`，确保交互后的渲染稳定
 - 先完成示例级审阅稳定性，再决定是否抽象到框架公共层
