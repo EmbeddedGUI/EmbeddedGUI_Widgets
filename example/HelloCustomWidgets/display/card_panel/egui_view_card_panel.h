@@ -57,6 +57,7 @@ void egui_view_card_panel_set_read_only_mode(egui_view_t *self, uint8_t read_onl
 void egui_view_card_panel_set_palette(egui_view_t *self, egui_color_t surface_color, egui_color_t border_color, egui_color_t text_color,
                                       egui_color_t muted_text_color, egui_color_t accent_color, egui_color_t success_color, egui_color_t warning_color,
                                       egui_color_t neutral_color);
+void egui_view_card_panel_override_static_preview_api(egui_view_t *self, egui_view_api_t *api);
 
 #ifdef __cplusplus
 }
