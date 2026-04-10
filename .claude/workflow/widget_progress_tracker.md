@@ -34,7 +34,7 @@
 
 | 状态 | 控件名 | 分类 | 开始日期 | 当前阶段 | 目标 |
 | --- | --- | --- | --- | --- | --- |
-| 暂无 | - | - | - | - | - |
+| 进行中 | `badge_group` | `display` | `2026-04-10` | 交互回归复核 | 复核 `same-target release / static preview / preview touch 焦点收口 / 交互后渲染`，确认是否要按当前 breadcrumb_bar / tree_view 同一标准补齐 |
 
 ## 当前保留的 Reference 主线控件
 
