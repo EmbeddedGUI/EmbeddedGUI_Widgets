@@ -7,7 +7,7 @@
 - 对应组件名：`TreeView`
 - 本次保留状态：`standard`、`branch expanded`、`selection`、`compact`、`read only`
 - 删除效果：页面级 `guide`、状态文案、section label、双列预览壳、可点击 preview 卡、重描边、强高亮引导条
-- EGUI 适配说明：继续复用仓库内 `tree_view` 基础实现，本轮只收口 `reference` 页面结构、示例快照和绘制强度，不修改 `sdk/EmbeddedGUI`；`snapshot / current selection / compact / read only / view disabled` 切换共享同一套 `pressed` 清理语义
+- EGUI 适配说明：继续复用仓库内 `tree_view` 基础实现，本轮重点收口 `reference` 页面结构、same-target release、static preview 语义和 `pressed` 清理，不修改 `sdk/EmbeddedGUI`
 
 ## 1. 为什么需要这个控件
 `tree_view` 用来表达标准层级导航和资源浏览语义，适合文件树、设置分类、目录结构和知识树这类“父子关系可见”的场景。
@@ -23,8 +23,9 @@
 ## 3. 目标场景与示例概览
 - 主控件：展示标准 `TreeView`，保留分支展开、层级缩进、选中项和 meta 摘要。
 - `compact` 预览：保留相同树语义，但压缩为更小尺寸，用于验证小尺寸 reference 收口。
-- `read only` 预览：保留冻结态和固定选择，只作为静态对照，不再承担点击或焦点职责，并显式抑制 touch / key 输入。
+- `read only` 预览：保留冻结态和固定选择，只作为静态对照，不再承担切换职责，并显式抑制 touch / key 输入。
 - 页面只保留标题、主 `tree_view` 和底部 `compact / read only` 双预览，不再保留旧的预览列容器和说明性页面 chrome。
+- preview 只负责静态对照和最小收尾：点击 preview 只清主控件 focus，不再改主控件选中项。
 
 ## 4. 视觉与布局规格
 - 根容器尺寸：`224 x 236`
@@ -59,7 +60,18 @@
 | 主控件 | `Settings open` | 最终收尾态 | 验证列表、caption、footer 一致性 |
 | `compact` | `Library branch` | 紧凑对照 | 验证小尺寸层级与标题收口 |
 | `compact` | `Review branch` | 第二条预览轨道 | 只做程序化切换，不参与交互 |
-| `read only` | `Static preview` | 冻结态摘要 | 固定只读，对外禁用触摸和焦点 |
+| `read only` | `Static preview` | 冻结态摘要 | 固定只读，对外禁用触摸、键盘与焦点 |
+
+- 主控件继续保留真实 touch / key 选择闭环，并补齐 same-target release：
+  - `DOWN(A) -> MOVE(B) -> UP(B)` 不提交。
+  - `DOWN(A) -> MOVE(B) -> MOVE(A) -> UP(A)` 才提交。
+- `set_snapshots()`、`set_current_snapshot()`、`set_current_index()`、`set_font()`、`set_meta_font()`、`set_palette()`、`set_compact_mode()`、`set_read_only_mode()` 都会先清理残留 `pressed_index / is_pressed`。
+- `read_only_mode`、`!enable` 收到新的 touch / key 输入时，会先清掉残留 pressed，再拒绝提交。
+- 底部 preview 统一通过 `egui_view_tree_view_override_static_preview_api()` 收口：
+  - 吞掉 touch / key 输入。
+  - 只清残留 pressed，不改 `current_index`。
+  - 不触发 `on_selection_changed`。
+  - demo 侧只额外挂一个最小 preview 点击收尾：清主控件 focus。
 
 ## 7. `egui_port_get_recording_action()` 录制动作设计
 1. 重置主控件、`compact` 和 `read only` 到默认 snapshot。
@@ -68,18 +80,25 @@
 4. 请求 `Docs` 截图。
 5. 切到主控件 `Resources open`。
 6. 请求 `Resources` 截图。
-7. 程序化切到 `compact / Review branch`。
+7. 程序化切到 `compact / Review branch`，并重新请求主控件 focus。
 8. 请求 `compact` 截图。
 9. 切到主控件 `Settings open`。
-10. 请求最终截图并保留收尾等待。
+10. 请求 `Settings` 截图。
+11. 点击 `compact` preview，验证 static preview 只做焦点收尾。
+12. 输出 preview 点击后的收尾帧。
+13. 再输出最终稳定帧，确认没有残留 pressed 或整屏污染。
 
 ## 8. 编译、touch、runtime、单测与文档检查
 ```bash
+make clean APP=HelloUnitTest PORT=pc_test
+make all APP=HelloUnitTest PORT=pc_test
+output\main.exe
+
+make clean APP=HelloCustomWidgets APP_SUB=navigation/tree_view PORT=pc
 make all APP=HelloCustomWidgets APP_SUB=navigation/tree_view PORT=pc
 python scripts/checks/check_touch_release_semantics.py --scope custom --category navigation
 python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub navigation/tree_view --track reference --timeout 10 --keep-screenshots
-make all APP=HelloUnitTest PORT=pc_test
-output\main.exe
+
 python scripts/checks/check_docs_encoding.py
 ```
 
@@ -87,10 +106,12 @@ python scripts/checks/check_docs_encoding.py
 - 主控件和底部 `compact / read only` 预览都必须完整可见，不能裁切。
 - 层级缩进、展开箭头、引导线和右侧 meta pill 需要稳定对齐，但不能回到旧版重描边风格。
 - 选中行必须清晰，但不能压过树本身的层级信息。
-- `compact / read only` 不再响应触摸，也不参与焦点循环；其中 `read only` 还需要清空 pressed 状态并忽略键盘输入。
+- `DOWN(A) -> MOVE(B) -> UP(B)` 不能误提交，只有回到 `A` 才能提交。
+- `ACTION_CANCEL` 只能清理 pressed，不能误改 `current_index` 或误触发监听器。
+- `compact / read only` preview 统一走 static preview API，不再响应切换；点击 preview 只允许清主控件 focus。
 - `snapshot / current selection / compact / read only / view disabled` 切换后不能残留树行的 `pressed` 高亮或下压位移渲染。
 - `read_only_mode / !enable` 不仅要忽略后续 touch / key 输入，还要在收到新输入时先清理残留 `pressed` 状态。
-- 触摸释放语义必须继续满足“按下与抬起命中同一目标才提交”。
+- runtime 关键帧要额外复核 preview 点击后的收尾帧和最终稳定帧，确认没有黑白屏、裁切、整屏污染或残留 `pressed`。
 
 ## 9. 已知限制与后续方向
 - 当前仍用固定 `snapshot + item` 数据，不做真实数据源绑定。
