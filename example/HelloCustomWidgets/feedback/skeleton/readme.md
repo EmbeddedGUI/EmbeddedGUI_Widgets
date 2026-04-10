@@ -23,7 +23,10 @@
 - 底部左侧展示 `compact` 静态对照，验证小尺寸下的紧凑占位布局与轻量 `pulse` 强调。
 - 底部右侧展示 `read only` 静态对照，验证禁用动画和弱化 chrome 后的只读占位。
 - 页面结构统一收口为：标题 -> 主 `skeleton` -> `compact / read only`。
-- 旧的 preview 列容器、外部标签和页面桥接逻辑全部移除。
+- 两个 preview 统一通过 `egui_view_skeleton_override_static_preview_api()` 收口：
+  - preview 自身吞掉 `touch / key`，不改 `current_snapshot / emphasis_block`，也不触发 click。
+  - preview 点击时只负责清主控件 focus，用于 runtime 复核交互后的收尾渲染。
+- 旧的 preview 列容器、外部标签和页面桥接切换逻辑全部移除。
 
 目标目录：`example/HelloCustomWidgets/feedback/skeleton/`
 
@@ -38,7 +41,9 @@
   - 使用浅灰 page panel、白底 skeleton card 和低噪音浅边框。
   - 主控件保留轻量 `wave shimmer`，`compact` 保留更柔和的 `pulse` 强调，`read only` 关闭动画并弱化 chrome。
   - emphasis block 只做轻量灰蓝提亮，不回到高饱和 showcase 风格。
-  - 底部两个 preview 都禁用 touch 和 focus，只做静态 reference 对照。
+  - 底部两个 preview 不承接真实交互，只保留静态对照职责；`touch / key` 统一被 static preview API 吞掉，点击仅用于清主控件 focus。
+  - 主控件继续遵守 same-target release：`DOWN(A) -> MOVE(B) -> UP(B)` 不提交，回到 `A` 后 `UP(A)` 才提交。
+  - `read only` 切入后必须立即停掉 timer；退出 `read only` 时只有在 `animation_mode != none` 时才允许恢复 timer。
 
 ## 5. 控件清单
 
@@ -62,7 +67,7 @@
 | 主控件 | `Settings` | 第三组主控件骨架 |
 | `compact` | `Compact row` | 默认紧凑对照 |
 | `compact` | `Compact tile` | 第二组紧凑对照 |
-| `read only` | `Read only` | 固定只读对照，禁用动画与外部交互，并在切入时清空 pressed |
+| `read only` | `Read only` | 固定只读对照，static preview 吞掉 `touch / key`，点击只清主控件 focus，并在切入时停掉 timer |
 
 ## 7. `egui_port_get_recording_action()` 录制动作设计
 1. 重置主控件、`compact` 和 `read only` 到默认状态。
@@ -71,16 +76,21 @@
 4. 请求第二张截图。
 5. 程序化切换主控件到 `Settings`。
 6. 请求第三张截图。
-7. 程序化切换 `compact` 到第二组 snapshot。
-8. 请求最终截图并保留收尾等待。
+7. 程序化切换 `compact` 到第二组 snapshot，并让主控件进入 focus 态。
+8. 请求 `compact` 切换后的截图。
+9. 点击 `compact` preview，只清主控件 focus。
+10. 请求 preview 点击后的收尾截图。
+11. 再请求一张最终稳定帧，确认交互后没有残留 `pressed`、focus 污染、黑白屏或裁切。
 
 ## 8. 编译、touch、runtime、单测与文档检查
 ```bash
+make clean APP=HelloCustomWidgets APP_SUB=feedback/skeleton PORT=pc
 make all APP=HelloCustomWidgets APP_SUB=feedback/skeleton PORT=pc
-python scripts/checks/check_touch_release_semantics.py --scope custom --category feedback
-python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub feedback/skeleton --track reference --timeout 10 --keep-screenshots
+make clean APP=HelloUnitTest PORT=pc_test
 make all APP=HelloUnitTest PORT=pc_test
 output\main.exe
+python scripts/checks/check_touch_release_semantics.py --scope custom --category feedback
+python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub feedback/skeleton --track reference --timeout 10 --keep-screenshots
 python scripts/checks/check_docs_encoding.py
 ```
 
@@ -88,9 +98,11 @@ python scripts/checks/check_docs_encoding.py
 - 主控件和底部 `compact / read only` 预览都必须完整可见。
 - `wave`、`compact`、`read only` 三种语义要能从截图直接分辨。
 - 主控件的 shimmer 必须保持轻量，不能回到高噪音 showcase 风格。
-- `read only` 只做静态展示，不能响应 touch、focus 或页面桥接，并且切入时要立即停掉 timer。
+- `read only` 只做静态展示，不能响应 click，并且切入时要立即停掉 timer。
 - 退出 `read only` 后，只有在动画模式允许时才恢复 timer。
-- 单测已有的 snapshot、palette、timer、touch 和 key click 语义不能回归，并要覆盖 `read only / disabled` 的输入抑制。
+- 主控件必须通过 same-target release / cancel 回归：移出命中区后不能误触发，回到原目标后释放才可提交。
+- preview 点击后的收尾帧和最终稳定帧都必须回稳，不能残留 focus ring、pressed、黑白屏或裁切污染。
+- 单测必须覆盖 snapshot、palette、timer、same-target release、cancel、read only / disabled guard，以及 static preview 吞 `touch / key` 且不改 `current_snapshot / emphasis_block`。
 
 ## 9. 已知限制与后续方向
 - 当前版本仍使用固定 snapshot 数据，不接真实业务骨架配置。
@@ -117,7 +129,7 @@ python scripts/checks/check_docs_encoding.py
 
 ## 13. 相比参考原型删除的效果或装饰
 - 删除页面级 `guide`、preview 标签和旧双列预览壳层。
-- 删除 preview 参与点击切换、页面桥接和焦点承接的职责。
+- 删除 preview 参与 snapshot 切换和页面桥接的职责，只保留静态对照与主控件 focus 收口。
 - 删除过强的 accent placeholder、过亮 wave band 和过重 read-only chrome。
 - 删除与 `reference` 无关的说明性外壳和场景化叙事。
 

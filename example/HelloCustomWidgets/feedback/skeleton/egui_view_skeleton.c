@@ -25,9 +25,14 @@ static egui_color_t egui_view_skeleton_mix_disabled(egui_color_t color)
     return egui_rgb_mix(color, EGUI_COLOR_DARK_GREY, 62);
 }
 
-static void egui_view_skeleton_clear_pressed_state(egui_view_t *self)
+static uint8_t egui_view_skeleton_clear_pressed_state(egui_view_t *self)
 {
+    if (!self->is_pressed)
+    {
+        return 0;
+    }
     egui_view_set_pressed(self, false);
+    return 1;
 }
 
 static void egui_view_skeleton_tick(egui_timer_t *timer)
@@ -68,14 +73,15 @@ static void egui_view_skeleton_stop_timer(egui_view_t *self)
 void egui_view_skeleton_set_snapshots(egui_view_t *self, const egui_view_skeleton_snapshot_t *snapshots, uint8_t snapshot_count)
 {
     EGUI_LOCAL_INIT(egui_view_skeleton_t);
+    uint8_t had_pressed = egui_view_skeleton_clear_pressed_state(self);
 
     local->snapshots = snapshots;
-    local->snapshot_count = egui_view_skeleton_clamp_snapshot_count(snapshot_count);
+    local->snapshot_count = snapshots == NULL ? 0 : egui_view_skeleton_clamp_snapshot_count(snapshot_count);
     if (local->current_snapshot >= local->snapshot_count)
     {
         local->current_snapshot = 0;
     }
-    egui_view_skeleton_clear_pressed_state(self);
+    EGUI_UNUSED(had_pressed);
     egui_view_invalidate(self);
 }
 
@@ -85,13 +91,16 @@ void egui_view_skeleton_set_current_snapshot(egui_view_t *self, uint8_t snapshot
 
     if (local->snapshot_count == 0 || snapshot_index >= local->snapshot_count)
     {
+        if (egui_view_skeleton_clear_pressed_state(self))
+        {
+            egui_view_invalidate(self);
+        }
         return;
     }
     if (local->current_snapshot == snapshot_index)
     {
-        if (self->is_pressed)
+        if (egui_view_skeleton_clear_pressed_state(self))
         {
-            egui_view_skeleton_clear_pressed_state(self);
             egui_view_invalidate(self);
         }
         return;
@@ -111,42 +120,49 @@ uint8_t egui_view_skeleton_get_current_snapshot(egui_view_t *self)
 void egui_view_skeleton_set_emphasis_block(egui_view_t *self, uint8_t block_index)
 {
     EGUI_LOCAL_INIT(egui_view_skeleton_t);
+    uint8_t had_pressed = egui_view_skeleton_clear_pressed_state(self);
 
     local->emphasis_block = block_index;
+    EGUI_UNUSED(had_pressed);
     egui_view_invalidate(self);
 }
 
 void egui_view_skeleton_set_font(egui_view_t *self, const egui_font_t *font)
 {
     EGUI_LOCAL_INIT(egui_view_skeleton_t);
+    uint8_t had_pressed = egui_view_skeleton_clear_pressed_state(self);
 
     local->font = font ? font : (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT;
+    EGUI_UNUSED(had_pressed);
     egui_view_invalidate(self);
 }
 
 void egui_view_skeleton_set_show_footer(egui_view_t *self, uint8_t show_footer)
 {
     EGUI_LOCAL_INIT(egui_view_skeleton_t);
+    uint8_t had_pressed = egui_view_skeleton_clear_pressed_state(self);
 
     local->show_footer = show_footer ? 1 : 0;
+    EGUI_UNUSED(had_pressed);
     egui_view_invalidate(self);
 }
 
 void egui_view_skeleton_set_compact_mode(egui_view_t *self, uint8_t compact_mode)
 {
     EGUI_LOCAL_INIT(egui_view_skeleton_t);
+    uint8_t had_pressed = egui_view_skeleton_clear_pressed_state(self);
 
     local->compact_mode = compact_mode ? 1 : 0;
-    egui_view_skeleton_clear_pressed_state(self);
+    EGUI_UNUSED(had_pressed);
     egui_view_invalidate(self);
 }
 
 void egui_view_skeleton_set_read_only_mode(egui_view_t *self, uint8_t read_only_mode)
 {
     EGUI_LOCAL_INIT(egui_view_skeleton_t);
+    uint8_t had_pressed = egui_view_skeleton_clear_pressed_state(self);
 
     local->read_only_mode = read_only_mode ? 1 : 0;
-    egui_view_skeleton_clear_pressed_state(self);
     if (local->read_only_mode)
     {
         egui_view_skeleton_stop_timer(self);
@@ -155,12 +171,14 @@ void egui_view_skeleton_set_read_only_mode(egui_view_t *self, uint8_t read_only_
     {
         egui_view_skeleton_start_timer(self);
     }
+    EGUI_UNUSED(had_pressed);
     egui_view_invalidate(self);
 }
 
 void egui_view_skeleton_set_animation_mode(egui_view_t *self, uint8_t animation_mode)
 {
     EGUI_LOCAL_INIT(egui_view_skeleton_t);
+    uint8_t had_pressed = egui_view_skeleton_clear_pressed_state(self);
 
     if (animation_mode > EGUI_VIEW_SKELETON_ANIM_PULSE)
     {
@@ -175,6 +193,7 @@ void egui_view_skeleton_set_animation_mode(egui_view_t *self, uint8_t animation_
     {
         egui_view_skeleton_start_timer(self);
     }
+    EGUI_UNUSED(had_pressed);
     egui_view_invalidate(self);
 }
 
@@ -182,6 +201,7 @@ void egui_view_skeleton_set_palette(egui_view_t *self, egui_color_t surface_colo
                                     egui_color_t muted_text_color, egui_color_t accent_color)
 {
     EGUI_LOCAL_INIT(egui_view_skeleton_t);
+    uint8_t had_pressed = egui_view_skeleton_clear_pressed_state(self);
 
     local->surface_color = surface_color;
     local->border_color = border_color;
@@ -189,6 +209,7 @@ void egui_view_skeleton_set_palette(egui_view_t *self, egui_color_t surface_colo
     local->text_color = text_color;
     local->muted_text_color = muted_text_color;
     local->accent_color = accent_color;
+    EGUI_UNUSED(had_pressed);
     egui_view_invalidate(self);
 }
 
@@ -395,9 +416,8 @@ static int egui_view_skeleton_on_touch_event(egui_view_t *self, egui_motion_even
 
     if (local->read_only_mode || !egui_view_get_enable(self))
     {
-        if (self->is_pressed)
+        if (egui_view_skeleton_clear_pressed_state(self))
         {
-            egui_view_skeleton_clear_pressed_state(self);
             egui_view_invalidate(self);
         }
         EGUI_UNUSED(event);
@@ -415,6 +435,10 @@ static int egui_view_skeleton_on_key_event(egui_view_t *self, egui_key_event_t *
 
     if (local->read_only_mode || !egui_view_get_enable(self))
     {
+        if (egui_view_skeleton_clear_pressed_state(self))
+        {
+            egui_view_invalidate(self);
+        }
         EGUI_UNUSED(event);
         return 0;
     }
@@ -422,6 +446,35 @@ static int egui_view_skeleton_on_key_event(egui_view_t *self, egui_key_event_t *
     return egui_view_on_key_event(self, event);
 }
 #endif
+
+#if EGUI_CONFIG_FUNCTION_SUPPORT_KEY
+static int egui_view_skeleton_on_static_key_event(egui_view_t *self, egui_key_event_t *event)
+{
+    EGUI_UNUSED(event);
+    egui_view_skeleton_clear_pressed_state(self);
+    return 1;
+}
+#endif
+
+#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
+static int egui_view_skeleton_on_static_touch_event(egui_view_t *self, egui_motion_event_t *event)
+{
+    EGUI_UNUSED(event);
+    egui_view_skeleton_clear_pressed_state(self);
+    return 1;
+}
+#endif
+
+void egui_view_skeleton_override_static_preview_api(egui_view_t *self, egui_view_api_t *api)
+{
+    egui_view_copy_api(self, api);
+#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
+    api->on_touch_event = egui_view_skeleton_on_static_touch_event;
+#endif
+#if EGUI_CONFIG_FUNCTION_SUPPORT_KEY
+    api->on_key_event = egui_view_skeleton_on_static_key_event;
+#endif
+}
 
 const egui_view_api_t EGUI_VIEW_API_TABLE_NAME(egui_view_skeleton_t) = {
         .dispatch_touch_event = egui_view_dispatch_touch_event,

@@ -71,6 +71,7 @@ void egui_view_skeleton_set_read_only_mode(egui_view_t *self, uint8_t read_only_
 void egui_view_skeleton_set_animation_mode(egui_view_t *self, uint8_t animation_mode);
 void egui_view_skeleton_set_palette(egui_view_t *self, egui_color_t surface_color, egui_color_t border_color, egui_color_t block_color, egui_color_t text_color,
                                     egui_color_t muted_text_color, egui_color_t accent_color);
+void egui_view_skeleton_override_static_preview_api(egui_view_t *self, egui_view_api_t *api);
 
 #ifdef __cplusplus
 }
