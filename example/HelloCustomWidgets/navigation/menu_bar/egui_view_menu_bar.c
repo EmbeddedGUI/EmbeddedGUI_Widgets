@@ -359,11 +359,28 @@ static void egui_view_menu_bar_notify_item_activated(egui_view_t *self, egui_vie
     local->on_item_activated(self, local->current_snapshot, local->current_item);
 }
 
-static void egui_view_menu_bar_clear_pressed_state(egui_view_t *self, egui_view_menu_bar_t *local)
+static uint8_t egui_view_menu_bar_clear_pressed_state(egui_view_t *self, egui_view_menu_bar_t *local)
 {
+    uint8_t was_pressed = self->is_pressed ? 1 : 0;
+    uint8_t had_pressed =
+            (uint8_t)(was_pressed || local->pressed_item != EGUI_VIEW_MENU_BAR_ITEM_NONE || local->pressed_menu != EGUI_VIEW_MENU_BAR_HIT_NONE);
+
+    if (!had_pressed)
+    {
+        return 0;
+    }
+
     local->pressed_item = EGUI_VIEW_MENU_BAR_ITEM_NONE;
     local->pressed_menu = EGUI_VIEW_MENU_BAR_HIT_NONE;
-    egui_view_set_pressed(self, false);
+    if (was_pressed)
+    {
+        egui_view_set_pressed(self, false);
+    }
+    else
+    {
+        egui_view_invalidate(self);
+    }
+    return 1;
 }
 
 static void egui_view_menu_bar_apply_snapshot(egui_view_t *self, uint8_t snapshot_index, uint8_t notify)
@@ -699,17 +716,25 @@ uint8_t egui_view_menu_bar_hit_menu(egui_view_t *self, egui_dim_t x, egui_dim_t 
 void egui_view_menu_bar_set_font(egui_view_t *self, const egui_font_t *font)
 {
     EGUI_LOCAL_INIT(egui_view_menu_bar_t);
+    uint8_t had_pressed = egui_view_menu_bar_clear_pressed_state(self, local);
 
     local->font = font ? font : (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT;
-    egui_view_invalidate(self);
+    if (!had_pressed)
+    {
+        egui_view_invalidate(self);
+    }
 }
 
 void egui_view_menu_bar_set_meta_font(egui_view_t *self, const egui_font_t *font)
 {
     EGUI_LOCAL_INIT(egui_view_menu_bar_t);
+    uint8_t had_pressed = egui_view_menu_bar_clear_pressed_state(self, local);
 
     local->meta_font = font ? font : (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT;
-    egui_view_invalidate(self);
+    if (!had_pressed)
+    {
+        egui_view_invalidate(self);
+    }
 }
 
 void egui_view_menu_bar_set_on_selection_changed_listener(egui_view_t *self, egui_view_on_menu_bar_selection_changed_listener_t listener)
@@ -729,19 +754,25 @@ void egui_view_menu_bar_set_on_item_activated_listener(egui_view_t *self, egui_v
 void egui_view_menu_bar_set_compact_mode(egui_view_t *self, uint8_t compact_mode)
 {
     EGUI_LOCAL_INIT(egui_view_menu_bar_t);
+    uint8_t had_pressed = egui_view_menu_bar_clear_pressed_state(self, local);
 
     local->compact_mode = compact_mode ? 1 : 0;
-    egui_view_menu_bar_clear_pressed_state(self, local);
-    egui_view_invalidate(self);
+    if (!had_pressed)
+    {
+        egui_view_invalidate(self);
+    }
 }
 
 void egui_view_menu_bar_set_read_only_mode(egui_view_t *self, uint8_t read_only_mode)
 {
     EGUI_LOCAL_INIT(egui_view_menu_bar_t);
+    uint8_t had_pressed = egui_view_menu_bar_clear_pressed_state(self, local);
 
     local->read_only_mode = read_only_mode ? 1 : 0;
-    egui_view_menu_bar_clear_pressed_state(self, local);
-    egui_view_invalidate(self);
+    if (!had_pressed)
+    {
+        egui_view_invalidate(self);
+    }
 }
 
 void egui_view_menu_bar_set_palette(egui_view_t *self, egui_color_t surface_color, egui_color_t border_color, egui_color_t text_color,
@@ -749,6 +780,7 @@ void egui_view_menu_bar_set_palette(egui_view_t *self, egui_color_t surface_colo
                                     egui_color_t danger_color, egui_color_t shadow_color)
 {
     EGUI_LOCAL_INIT(egui_view_menu_bar_t);
+    uint8_t had_pressed = egui_view_menu_bar_clear_pressed_state(self, local);
 
     local->surface_color = surface_color;
     local->border_color = border_color;
@@ -759,7 +791,10 @@ void egui_view_menu_bar_set_palette(egui_view_t *self, egui_color_t surface_colo
     local->warning_color = warning_color;
     local->danger_color = danger_color;
     local->shadow_color = shadow_color;
-    egui_view_invalidate(self);
+    if (!had_pressed)
+    {
+        egui_view_invalidate(self);
+    }
 }
 
 static uint8_t egui_view_menu_bar_get_summary_strip_region(egui_view_menu_bar_t *local, const egui_region_t *region, egui_region_t *strip_region)
@@ -1562,16 +1597,13 @@ static int egui_view_menu_bar_on_touch_event(egui_view_t *self, egui_motion_even
 
     if (local->read_only_mode)
     {
-        if (self->is_pressed || local->pressed_item != EGUI_VIEW_MENU_BAR_ITEM_NONE || local->pressed_menu != EGUI_VIEW_MENU_BAR_HIT_NONE)
-        {
-            egui_view_menu_bar_clear_pressed_state(self, local);
-            egui_view_invalidate(self);
-        }
+        egui_view_menu_bar_clear_pressed_state(self, local);
         return 0;
     }
 
     if (snapshot == NULL || !egui_view_get_enable(self))
     {
+        egui_view_menu_bar_clear_pressed_state(self, local);
         return 0;
     }
 
@@ -1581,6 +1613,7 @@ static int egui_view_menu_bar_on_touch_event(egui_view_t *self, egui_motion_even
     switch (event->type)
     {
     case EGUI_MOTION_EVENT_ACTION_DOWN:
+        egui_view_menu_bar_clear_pressed_state(self, local);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
         if (self->is_focusable)
         {
@@ -1671,9 +1704,7 @@ static int egui_view_menu_bar_on_touch_event(egui_view_t *self, egui_motion_even
         }
         return 0;
     case EGUI_MOTION_EVENT_ACTION_CANCEL:
-        egui_view_menu_bar_clear_pressed_state(self, local);
-        egui_view_invalidate(self);
-        return 1;
+        return egui_view_menu_bar_clear_pressed_state(self, local);
     default:
         return 0;
     }
@@ -1706,13 +1737,9 @@ static int egui_view_menu_bar_on_key_event(egui_view_t *self, egui_key_event_t *
     uint8_t target_snapshot;
     uint8_t snapshot_index;
 
+    egui_view_menu_bar_clear_pressed_state(self, local);
     if (local->read_only_mode)
     {
-        if (local->pressed_item != EGUI_VIEW_MENU_BAR_ITEM_NONE)
-        {
-            local->pressed_item = EGUI_VIEW_MENU_BAR_ITEM_NONE;
-            egui_view_invalidate(self);
-        }
         return 0;
     }
 
@@ -1791,6 +1818,39 @@ static int egui_view_menu_bar_on_key_event(egui_view_t *self, egui_key_event_t *
     }
 }
 #endif
+
+#if EGUI_CONFIG_FUNCTION_SUPPORT_KEY
+static int egui_view_menu_bar_on_static_key_event(egui_view_t *self, egui_key_event_t *event)
+{
+    EGUI_LOCAL_INIT(egui_view_menu_bar_t);
+
+    EGUI_UNUSED(event);
+    egui_view_menu_bar_clear_pressed_state(self, local);
+    return 1;
+}
+#endif
+
+#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
+static int egui_view_menu_bar_on_static_touch_event(egui_view_t *self, egui_motion_event_t *event)
+{
+    EGUI_LOCAL_INIT(egui_view_menu_bar_t);
+
+    EGUI_UNUSED(event);
+    egui_view_menu_bar_clear_pressed_state(self, local);
+    return 1;
+}
+#endif
+
+void egui_view_menu_bar_override_static_preview_api(egui_view_t *self, egui_view_api_t *api)
+{
+    egui_view_copy_api(self, api);
+#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
+    api->on_touch_event = egui_view_menu_bar_on_static_touch_event;
+#endif
+#if EGUI_CONFIG_FUNCTION_SUPPORT_KEY
+    api->on_key_event = egui_view_menu_bar_on_static_key_event;
+#endif
+}
 
 const egui_view_api_t EGUI_VIEW_API_TABLE_NAME(egui_view_menu_bar_t) = {
         .dispatch_touch_event = egui_view_dispatch_touch_event,

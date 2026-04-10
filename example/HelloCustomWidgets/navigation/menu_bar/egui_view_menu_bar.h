@@ -92,6 +92,7 @@ void egui_view_menu_bar_set_on_selection_changed_listener(egui_view_t *self, egu
 void egui_view_menu_bar_set_on_item_activated_listener(egui_view_t *self, egui_view_on_menu_bar_item_activated_listener_t listener);
 void egui_view_menu_bar_set_compact_mode(egui_view_t *self, uint8_t compact_mode);
 void egui_view_menu_bar_set_read_only_mode(egui_view_t *self, uint8_t read_only_mode);
+void egui_view_menu_bar_override_static_preview_api(egui_view_t *self, egui_view_api_t *api);
 void egui_view_menu_bar_set_palette(egui_view_t *self, egui_color_t surface_color, egui_color_t border_color, egui_color_t text_color,
                                     egui_color_t muted_text_color, egui_color_t accent_color, egui_color_t success_color, egui_color_t warning_color,
                                     egui_color_t danger_color, egui_color_t shadow_color);
