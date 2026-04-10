@@ -421,6 +421,7 @@ void egui_view_expander_set_font(egui_view_t *self, const egui_font_t *font)
 {
     EGUI_LOCAL_INIT(egui_view_expander_t);
     local->font = font ? font : (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT;
+    expander_clear_pressed_state(self);
     egui_view_invalidate(self);
 }
 
@@ -428,6 +429,7 @@ void egui_view_expander_set_meta_font(egui_view_t *self, const egui_font_t *font
 {
     EGUI_LOCAL_INIT(egui_view_expander_t);
     local->meta_font = font ? font : (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT;
+    expander_clear_pressed_state(self);
     egui_view_invalidate(self);
 }
 
@@ -462,6 +464,7 @@ void egui_view_expander_set_palette(egui_view_t *self, egui_color_t surface_colo
     local->success_color = success_color;
     local->warning_color = warning_color;
     local->neutral_color = neutral_color;
+    expander_clear_pressed_state(self);
     egui_view_invalidate(self);
 }
 
@@ -728,6 +731,7 @@ static int egui_view_expander_on_touch_event(egui_view_t *self, egui_motion_even
 {
     EGUI_LOCAL_INIT(egui_view_expander_t);
     uint8_t hit_index;
+    uint8_t same_target;
 
     if (local->items == NULL || local->item_count == 0 || !egui_view_get_enable(self) || local->read_only_mode)
     {
@@ -744,6 +748,10 @@ static int egui_view_expander_on_touch_event(egui_view_t *self, egui_motion_even
         hit_index = expander_hit_index(local, self, event->location.x, event->location.y);
         if (hit_index == EGUI_VIEW_EXPANDER_INDEX_NONE)
         {
+            if (expander_clear_pressed_state(self))
+            {
+                egui_view_invalidate(self);
+            }
             return 0;
         }
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
@@ -756,21 +764,50 @@ static int egui_view_expander_on_touch_event(egui_view_t *self, egui_motion_even
         egui_view_set_pressed(self, true);
         egui_view_invalidate(self);
         return 1;
-    case EGUI_MOTION_EVENT_ACTION_UP:
+    case EGUI_MOTION_EVENT_ACTION_MOVE:
+        if (local->pressed_index == EGUI_VIEW_EXPANDER_INDEX_NONE)
+        {
+            return 0;
+        }
         hit_index = expander_hit_index(local, self, event->location.x, event->location.y);
-        if (local->pressed_index != EGUI_VIEW_EXPANDER_INDEX_NONE && local->pressed_index == hit_index)
+        same_target = (uint8_t)(local->pressed_index == hit_index);
+        if (same_target)
+        {
+            if (!self->is_pressed)
+            {
+                egui_view_set_pressed(self, true);
+            }
+            return 1;
+        }
+        if (self->is_pressed)
+        {
+            egui_view_set_pressed(self, false);
+        }
+        return 1;
+    case EGUI_MOTION_EVENT_ACTION_UP:
+    {
+        uint8_t handled;
+
+        hit_index = expander_hit_index(local, self, event->location.x, event->location.y);
+        handled = (uint8_t)(local->pressed_index != EGUI_VIEW_EXPANDER_INDEX_NONE || hit_index != EGUI_VIEW_EXPANDER_INDEX_NONE);
+        same_target = (uint8_t)(local->pressed_index != EGUI_VIEW_EXPANDER_INDEX_NONE && local->pressed_index == hit_index);
+        if (same_target && self->is_pressed)
         {
             expander_toggle_index_inner(self, hit_index);
         }
-        expander_clear_pressed_state(self);
-        egui_view_invalidate(self);
-        return hit_index != EGUI_VIEW_EXPANDER_INDEX_NONE ? 1 : 0;
-    case EGUI_MOTION_EVENT_ACTION_CANCEL:
         if (expander_clear_pressed_state(self))
         {
             egui_view_invalidate(self);
         }
-        return 1;
+        return handled;
+    }
+    case EGUI_MOTION_EVENT_ACTION_CANCEL:
+        if (expander_clear_pressed_state(self))
+        {
+            egui_view_invalidate(self);
+            return 1;
+        }
+        return 0;
     default:
         return 0;
     }
@@ -833,6 +870,43 @@ static int egui_view_expander_on_key_event(egui_view_t *self, egui_key_event_t *
     }
 }
 #endif
+
+#if EGUI_CONFIG_FUNCTION_SUPPORT_KEY
+static int egui_view_expander_on_static_key_event(egui_view_t *self, egui_key_event_t *event)
+{
+    EGUI_UNUSED(event);
+
+    if (expander_clear_pressed_state(self))
+    {
+        egui_view_invalidate(self);
+    }
+    return 1;
+}
+#endif
+
+#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
+static int egui_view_expander_on_static_touch_event(egui_view_t *self, egui_motion_event_t *event)
+{
+    EGUI_UNUSED(event);
+
+    if (expander_clear_pressed_state(self))
+    {
+        egui_view_invalidate(self);
+    }
+    return 1;
+}
+#endif
+
+void egui_view_expander_override_static_preview_api(egui_view_t *self, egui_view_api_t *api)
+{
+    egui_view_copy_api(self, api);
+#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
+    api->on_touch_event = egui_view_expander_on_static_touch_event;
+#endif
+#if EGUI_CONFIG_FUNCTION_SUPPORT_KEY
+    api->on_key_event = egui_view_expander_on_static_key_event;
+#endif
+}
 
 const egui_view_api_t EGUI_VIEW_API_TABLE_NAME(egui_view_expander_t) = {
         .dispatch_touch_event = egui_view_dispatch_touch_event,

@@ -8,6 +8,8 @@
 #include "../../HelloCustomWidgets/layout/expander/egui_view_expander.c"
 
 static egui_view_expander_t test_expander;
+static egui_view_expander_t preview_expander;
+static egui_view_api_t preview_api;
 static uint8_t g_selection_count;
 static uint8_t g_last_selection_index;
 static uint8_t g_expanded_count;
@@ -21,8 +23,10 @@ static const egui_view_expander_item_t g_items[] = {
 };
 
 static const egui_view_expander_item_t g_overflow_items[] = {
-        {"A", "Alpha", "1", "A", "A", "Open", EGUI_VIEW_EXPANDER_TONE_ACCENT, 0},  {"B", "Beta", "2", "B", "B", "Open", EGUI_VIEW_EXPANDER_TONE_SUCCESS, 0},
-        {"C", "Gamma", "3", "C", "C", "Open", EGUI_VIEW_EXPANDER_TONE_WARNING, 0}, {"D", "Delta", "4", "D", "D", "Open", EGUI_VIEW_EXPANDER_TONE_NEUTRAL, 0},
+        {"A", "Alpha", "1", "A", "A", "Open", EGUI_VIEW_EXPANDER_TONE_ACCENT, 0},
+        {"B", "Beta", "2", "B", "B", "Open", EGUI_VIEW_EXPANDER_TONE_SUCCESS, 0},
+        {"C", "Gamma", "3", "C", "C", "Open", EGUI_VIEW_EXPANDER_TONE_WARNING, 0},
+        {"D", "Delta", "4", "D", "D", "Open", EGUI_VIEW_EXPANDER_TONE_NEUTRAL, 0},
         {"E", "Echo", "5", "E", "E", "Open", EGUI_VIEW_EXPANDER_TONE_ACCENT, 0},
 };
 
@@ -63,19 +67,43 @@ static void setup_expander(void)
     reset_listener_state();
 }
 
-static void layout_expander(egui_dim_t width, egui_dim_t height)
+static void setup_preview_expander(void)
+{
+    egui_view_expander_init(EGUI_VIEW_OF(&preview_expander));
+    egui_view_set_size(EGUI_VIEW_OF(&preview_expander), 104, 76);
+    egui_view_expander_set_items(EGUI_VIEW_OF(&preview_expander), g_items, 3);
+    egui_view_expander_set_current_index(EGUI_VIEW_OF(&preview_expander), 1);
+    egui_view_expander_set_expanded_index(EGUI_VIEW_OF(&preview_expander), 1);
+    egui_view_expander_set_compact_mode(EGUI_VIEW_OF(&preview_expander), 1);
+    egui_view_expander_set_on_selection_changed_listener(EGUI_VIEW_OF(&preview_expander), on_selection_changed);
+    egui_view_expander_set_on_expanded_changed_listener(EGUI_VIEW_OF(&preview_expander), on_expanded_changed);
+    egui_view_expander_override_static_preview_api(EGUI_VIEW_OF(&preview_expander), &preview_api);
+    reset_listener_state();
+}
+
+static void layout_view(egui_view_t *view, egui_dim_t x, egui_dim_t y, egui_dim_t width, egui_dim_t height)
 {
     egui_region_t region;
 
-    region.location.x = 10;
-    region.location.y = 20;
+    region.location.x = x;
+    region.location.y = y;
     region.size.width = width;
     region.size.height = height;
-    egui_view_layout(EGUI_VIEW_OF(&test_expander), &region);
-    egui_region_copy(&EGUI_VIEW_OF(&test_expander)->region_screen, &region);
+    egui_view_layout(view, &region);
+    egui_region_copy(&view->region_screen, &region);
 }
 
-static int send_touch(uint8_t type, egui_dim_t x, egui_dim_t y)
+static void layout_expander(egui_dim_t width, egui_dim_t height)
+{
+    layout_view(EGUI_VIEW_OF(&test_expander), 10, 20, width, height);
+}
+
+static void layout_preview_expander(void)
+{
+    layout_view(EGUI_VIEW_OF(&preview_expander), 12, 18, 104, 76);
+}
+
+static int send_touch_to_view(egui_view_t *view, uint8_t type, egui_dim_t x, egui_dim_t y)
 {
     egui_motion_event_t event;
 
@@ -83,10 +111,10 @@ static int send_touch(uint8_t type, egui_dim_t x, egui_dim_t y)
     event.type = type;
     event.location.x = x;
     event.location.y = y;
-    return EGUI_VIEW_OF(&test_expander)->api->on_touch_event(EGUI_VIEW_OF(&test_expander), &event);
+    return view->api->on_touch_event(view, &event);
 }
 
-static int send_key(uint8_t key_code)
+static int send_key_to_view(egui_view_t *view, uint8_t key_code)
 {
     egui_key_event_t event;
     int handled = 0;
@@ -94,10 +122,54 @@ static int send_key(uint8_t key_code)
     memset(&event, 0, sizeof(event));
     event.type = EGUI_KEY_EVENT_ACTION_DOWN;
     event.key_code = key_code;
-    handled |= EGUI_VIEW_OF(&test_expander)->api->on_key_event(EGUI_VIEW_OF(&test_expander), &event);
+    handled |= view->api->on_key_event(view, &event);
     event.type = EGUI_KEY_EVENT_ACTION_UP;
-    handled |= EGUI_VIEW_OF(&test_expander)->api->on_key_event(EGUI_VIEW_OF(&test_expander), &event);
+    handled |= view->api->on_key_event(view, &event);
     return handled;
+}
+
+static int send_touch(uint8_t type, egui_dim_t x, egui_dim_t y)
+{
+    return send_touch_to_view(EGUI_VIEW_OF(&test_expander), type, x, y);
+}
+
+static int send_preview_touch(uint8_t type, egui_dim_t x, egui_dim_t y)
+{
+    return send_touch_to_view(EGUI_VIEW_OF(&preview_expander), type, x, y);
+}
+
+static int send_key(uint8_t key_code)
+{
+    return send_key_to_view(EGUI_VIEW_OF(&test_expander), key_code);
+}
+
+static int send_preview_key(uint8_t key_code)
+{
+    return send_key_to_view(EGUI_VIEW_OF(&preview_expander), key_code);
+}
+
+static void seed_pressed_state(egui_view_expander_t *widget, egui_view_t *view, uint8_t pressed_index, uint8_t visual_pressed)
+{
+    widget->pressed_index = pressed_index;
+    egui_view_set_pressed(view, visual_pressed ? true : false);
+}
+
+static void assert_pressed_cleared(egui_view_expander_t *widget, egui_view_t *view)
+{
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_EXPANDER_INDEX_NONE, widget->pressed_index);
+    EGUI_TEST_ASSERT_FALSE(view->is_pressed);
+}
+
+static void get_view_center(egui_view_t *view, egui_dim_t *x, egui_dim_t *y)
+{
+    *x = view->region_screen.location.x + view->region_screen.size.width / 2;
+    *y = view->region_screen.location.y + view->region_screen.size.height / 2;
+}
+
+static void get_view_outside_point(egui_view_t *view, egui_dim_t *x, egui_dim_t *y)
+{
+    *x = view->region_screen.location.x - 4;
+    *y = view->region_screen.location.y - 4;
 }
 
 static void get_metrics(egui_view_expander_metrics_t *metrics)
@@ -120,14 +192,12 @@ static void test_expander_set_items_clamp_and_listener_guards(void)
 
     test_expander.current_index = 7;
     test_expander.expanded_index = 8;
-    test_expander.pressed_index = 2;
-    egui_view_set_pressed(EGUI_VIEW_OF(&test_expander), true);
+    seed_pressed_state(&test_expander, EGUI_VIEW_OF(&test_expander), 2, 1);
     egui_view_expander_set_items(EGUI_VIEW_OF(&test_expander), g_overflow_items, 5);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_EXPANDER_MAX_ITEMS, egui_view_expander_get_item_count(EGUI_VIEW_OF(&test_expander)));
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_expander_get_current_index(EGUI_VIEW_OF(&test_expander)));
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_expander_get_expanded_index(EGUI_VIEW_OF(&test_expander)));
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_EXPANDER_INDEX_NONE, test_expander.pressed_index);
-    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_expander)->is_pressed);
+    assert_pressed_cleared(&test_expander, EGUI_VIEW_OF(&test_expander));
     EGUI_TEST_ASSERT_TRUE(expander_get_current_item(&test_expander) == &g_overflow_items[0]);
 
     egui_view_expander_set_current_index(EGUI_VIEW_OF(&test_expander), 2);
@@ -135,12 +205,10 @@ static void test_expander_set_items_clamp_and_listener_guards(void)
     EGUI_TEST_ASSERT_EQUAL_INT(1, g_selection_count);
     EGUI_TEST_ASSERT_EQUAL_INT(2, g_last_selection_index);
 
-    test_expander.pressed_index = 2;
-    egui_view_set_pressed(EGUI_VIEW_OF(&test_expander), true);
+    seed_pressed_state(&test_expander, EGUI_VIEW_OF(&test_expander), 2, 1);
     egui_view_expander_set_current_index(EGUI_VIEW_OF(&test_expander), 2);
     EGUI_TEST_ASSERT_EQUAL_INT(1, g_selection_count);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_EXPANDER_INDEX_NONE, test_expander.pressed_index);
-    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_expander)->is_pressed);
+    assert_pressed_cleared(&test_expander, EGUI_VIEW_OF(&test_expander));
 
     egui_view_expander_set_current_index(EGUI_VIEW_OF(&test_expander), 9);
     EGUI_TEST_ASSERT_EQUAL_INT(3, egui_view_expander_get_current_index(EGUI_VIEW_OF(&test_expander)));
@@ -153,12 +221,10 @@ static void test_expander_set_items_clamp_and_listener_guards(void)
     EGUI_TEST_ASSERT_EQUAL_INT(3, g_last_expanded_index);
     EGUI_TEST_ASSERT_EQUAL_INT(1, g_last_expanded_value);
 
-    test_expander.pressed_index = 3;
-    egui_view_set_pressed(EGUI_VIEW_OF(&test_expander), true);
+    seed_pressed_state(&test_expander, EGUI_VIEW_OF(&test_expander), 3, 1);
     egui_view_expander_set_expanded_index(EGUI_VIEW_OF(&test_expander), 3);
     EGUI_TEST_ASSERT_EQUAL_INT(1, g_expanded_count);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_EXPANDER_INDEX_NONE, test_expander.pressed_index);
-    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_expander)->is_pressed);
+    assert_pressed_cleared(&test_expander, EGUI_VIEW_OF(&test_expander));
 
     egui_view_expander_set_items(EGUI_VIEW_OF(&test_expander), NULL, 0);
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_expander_get_item_count(EGUI_VIEW_OF(&test_expander)));
@@ -167,35 +233,50 @@ static void test_expander_set_items_clamp_and_listener_guards(void)
     EGUI_TEST_ASSERT_TRUE(expander_get_current_item(&test_expander) == NULL);
 }
 
-static void test_expander_font_palette_and_helpers(void)
+static void test_expander_font_palette_helpers_and_expand_listener(void)
 {
     egui_color_t sample = EGUI_COLOR_HEX(0x123456);
 
     setup_expander();
 
+    seed_pressed_state(&test_expander, EGUI_VIEW_OF(&test_expander), 1, 1);
     egui_view_expander_set_font(EGUI_VIEW_OF(&test_expander), NULL);
-    egui_view_expander_set_meta_font(EGUI_VIEW_OF(&test_expander), NULL);
     EGUI_TEST_ASSERT_TRUE(test_expander.font == (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT);
-    EGUI_TEST_ASSERT_TRUE(test_expander.meta_font == (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT);
+    assert_pressed_cleared(&test_expander, EGUI_VIEW_OF(&test_expander));
 
-    egui_view_set_pressed(EGUI_VIEW_OF(&test_expander), true);
-    test_expander.pressed_index = 1;
+    seed_pressed_state(&test_expander, EGUI_VIEW_OF(&test_expander), 1, 1);
+    egui_view_expander_set_meta_font(EGUI_VIEW_OF(&test_expander), NULL);
+    EGUI_TEST_ASSERT_TRUE(test_expander.meta_font == (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT);
+    assert_pressed_cleared(&test_expander, EGUI_VIEW_OF(&test_expander));
+
+    seed_pressed_state(&test_expander, EGUI_VIEW_OF(&test_expander), 1, 1);
     egui_view_expander_set_compact_mode(EGUI_VIEW_OF(&test_expander), 2);
     EGUI_TEST_ASSERT_EQUAL_INT(1, test_expander.compact_mode);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_EXPANDER_INDEX_NONE, test_expander.pressed_index);
-    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_expander)->is_pressed);
+    assert_pressed_cleared(&test_expander, EGUI_VIEW_OF(&test_expander));
     egui_view_expander_set_compact_mode(EGUI_VIEW_OF(&test_expander), 0);
     EGUI_TEST_ASSERT_EQUAL_INT(0, test_expander.compact_mode);
 
-    egui_view_set_pressed(EGUI_VIEW_OF(&test_expander), true);
-    test_expander.pressed_index = 2;
+    seed_pressed_state(&test_expander, EGUI_VIEW_OF(&test_expander), 1, 1);
+    egui_view_expander_set_expanded_index(EGUI_VIEW_OF(&test_expander), 0);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, g_expanded_count);
+    assert_pressed_cleared(&test_expander, EGUI_VIEW_OF(&test_expander));
+
+    seed_pressed_state(&test_expander, EGUI_VIEW_OF(&test_expander), 2, 1);
+    egui_view_expander_set_expanded_index(EGUI_VIEW_OF(&test_expander), EGUI_VIEW_EXPANDER_INDEX_NONE);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_EXPANDER_INDEX_NONE, egui_view_expander_get_expanded_index(EGUI_VIEW_OF(&test_expander)));
+    EGUI_TEST_ASSERT_EQUAL_INT(1, g_expanded_count);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, g_last_expanded_index);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, g_last_expanded_value);
+    assert_pressed_cleared(&test_expander, EGUI_VIEW_OF(&test_expander));
+
+    seed_pressed_state(&test_expander, EGUI_VIEW_OF(&test_expander), 2, 1);
     egui_view_expander_set_read_only_mode(EGUI_VIEW_OF(&test_expander), 3);
     EGUI_TEST_ASSERT_EQUAL_INT(1, test_expander.read_only_mode);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_EXPANDER_INDEX_NONE, test_expander.pressed_index);
-    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_expander)->is_pressed);
+    assert_pressed_cleared(&test_expander, EGUI_VIEW_OF(&test_expander));
     egui_view_expander_set_read_only_mode(EGUI_VIEW_OF(&test_expander), 0);
     EGUI_TEST_ASSERT_EQUAL_INT(0, test_expander.read_only_mode);
 
+    seed_pressed_state(&test_expander, EGUI_VIEW_OF(&test_expander), 2, 1);
     egui_view_expander_set_palette(EGUI_VIEW_OF(&test_expander), EGUI_COLOR_HEX(0x101112), EGUI_COLOR_HEX(0x202122), EGUI_COLOR_HEX(0x303132),
                                    EGUI_COLOR_HEX(0x404142), EGUI_COLOR_HEX(0x505152), EGUI_COLOR_HEX(0x606162), EGUI_COLOR_HEX(0x707172),
                                    EGUI_COLOR_HEX(0x808182), EGUI_COLOR_HEX(0x909192));
@@ -208,6 +289,7 @@ static void test_expander_font_palette_and_helpers(void)
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x707172).full, test_expander.success_color.full);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x808182).full, test_expander.warning_color.full);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x909192).full, test_expander.neutral_color.full);
+    assert_pressed_cleared(&test_expander, EGUI_VIEW_OF(&test_expander));
 
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_EXPANDER_MAX_ITEMS, expander_clamp_item_count(9));
     EGUI_TEST_ASSERT_EQUAL_INT(0, expander_text_len(NULL));
@@ -222,6 +304,12 @@ static void test_expander_font_palette_and_helpers(void)
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x909192).full, expander_tone_color(&test_expander, EGUI_VIEW_EXPANDER_TONE_NEUTRAL).full);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x606162).full, expander_tone_color(&test_expander, 99).full);
     EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(sample, EGUI_COLOR_DARK_GREY, 68).full, expander_mix_disabled(sample).full);
+
+    egui_view_expander_toggle_current(EGUI_VIEW_OF(&test_expander));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_expander_get_expanded_index(EGUI_VIEW_OF(&test_expander)));
+    EGUI_TEST_ASSERT_EQUAL_INT(2, g_expanded_count);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, g_last_expanded_index);
+    EGUI_TEST_ASSERT_EQUAL_INT(1, g_last_expanded_value);
 }
 
 static void test_expander_metrics_and_hit_testing(void)
@@ -263,24 +351,44 @@ static void test_expander_metrics_and_hit_testing(void)
     EGUI_TEST_ASSERT_TRUE(metrics.body_regions[0].size.height <= EGUI_VIEW_EXPANDER_COMPACT_BODY_HEIGHT);
 }
 
-static void test_expander_touch_toggle_and_cancel(void)
+static void test_expander_touch_same_target_release_and_cancel_behavior(void)
 {
-    egui_dim_t x0;
-    egui_dim_t y0;
-    egui_dim_t x1;
-    egui_dim_t y1;
+    egui_dim_t header0_x;
+    egui_dim_t header0_y;
+    egui_dim_t header1_x;
+    egui_dim_t header1_y;
+    egui_dim_t header2_x;
+    egui_dim_t header2_y;
+    egui_dim_t outside_x;
+    egui_dim_t outside_y;
 
     setup_expander();
     layout_expander(194, 110);
-    get_header_center(0, &x0, &y0);
-    get_header_center(1, &x1, &y1);
+    get_header_center(0, &header0_x, &header0_y);
+    get_header_center(1, &header1_x, &header1_y);
+    get_header_center(2, &header2_x, &header2_y);
+    get_view_outside_point(EGUI_VIEW_OF(&test_expander), &outside_x, &outside_y);
 
     EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, 0, 0));
 
-    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x1, y1));
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, header1_x, header1_y));
     EGUI_TEST_ASSERT_EQUAL_INT(1, test_expander.pressed_index);
     EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&test_expander)->is_pressed);
-    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, x1, y1));
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_MOVE, outside_x, outside_y));
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_expander)->is_pressed);
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, outside_x, outside_y));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_expander_get_current_index(EGUI_VIEW_OF(&test_expander)));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_expander_get_expanded_index(EGUI_VIEW_OF(&test_expander)));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, g_selection_count);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, g_expanded_count);
+    assert_pressed_cleared(&test_expander, EGUI_VIEW_OF(&test_expander));
+
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, header1_x, header1_y));
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_MOVE, outside_x, outside_y));
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_expander)->is_pressed);
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_MOVE, header1_x, header1_y));
+    EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&test_expander)->is_pressed);
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, header1_x, header1_y));
     EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_expander_get_current_index(EGUI_VIEW_OF(&test_expander)));
     EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_expander_get_expanded_index(EGUI_VIEW_OF(&test_expander)));
     EGUI_TEST_ASSERT_EQUAL_INT(1, g_selection_count);
@@ -288,24 +396,31 @@ static void test_expander_touch_toggle_and_cancel(void)
     EGUI_TEST_ASSERT_EQUAL_INT(1, g_expanded_count);
     EGUI_TEST_ASSERT_EQUAL_INT(1, g_last_expanded_index);
     EGUI_TEST_ASSERT_EQUAL_INT(1, g_last_expanded_value);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_EXPANDER_INDEX_NONE, test_expander.pressed_index);
-    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_expander)->is_pressed);
+    assert_pressed_cleared(&test_expander, EGUI_VIEW_OF(&test_expander));
 
-    get_header_center(1, &x1, &y1);
-    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x1, y1));
-    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, x1, y1));
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_EXPANDER_INDEX_NONE, egui_view_expander_get_expanded_index(EGUI_VIEW_OF(&test_expander)));
-    EGUI_TEST_ASSERT_EQUAL_INT(1, g_selection_count);
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, header2_x, header2_y));
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_MOVE, outside_x, outside_y));
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_expander)->is_pressed);
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_MOVE, header2_x, header2_y));
+    EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&test_expander)->is_pressed);
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, header2_x, header2_y));
+    EGUI_TEST_ASSERT_EQUAL_INT(2, egui_view_expander_get_current_index(EGUI_VIEW_OF(&test_expander)));
+    EGUI_TEST_ASSERT_EQUAL_INT(2, egui_view_expander_get_expanded_index(EGUI_VIEW_OF(&test_expander)));
+    EGUI_TEST_ASSERT_EQUAL_INT(2, g_selection_count);
+    EGUI_TEST_ASSERT_EQUAL_INT(2, g_last_selection_index);
     EGUI_TEST_ASSERT_EQUAL_INT(2, g_expanded_count);
-    EGUI_TEST_ASSERT_EQUAL_INT(1, g_last_expanded_index);
-    EGUI_TEST_ASSERT_EQUAL_INT(0, g_last_expanded_value);
+    EGUI_TEST_ASSERT_EQUAL_INT(2, g_last_expanded_index);
+    EGUI_TEST_ASSERT_EQUAL_INT(1, g_last_expanded_value);
+    assert_pressed_cleared(&test_expander, EGUI_VIEW_OF(&test_expander));
 
-    get_header_center(0, &x0, &y0);
-    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x0, y0));
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, header0_x, header0_y));
     EGUI_TEST_ASSERT_EQUAL_INT(0, test_expander.pressed_index);
-    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_CANCEL, x0, y0));
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_EXPANDER_INDEX_NONE, test_expander.pressed_index);
-    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_expander)->is_pressed);
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_CANCEL, header0_x, header0_y));
+    EGUI_TEST_ASSERT_EQUAL_INT(2, egui_view_expander_get_current_index(EGUI_VIEW_OF(&test_expander)));
+    EGUI_TEST_ASSERT_EQUAL_INT(2, egui_view_expander_get_expanded_index(EGUI_VIEW_OF(&test_expander)));
+    EGUI_TEST_ASSERT_EQUAL_INT(2, g_selection_count);
+    EGUI_TEST_ASSERT_EQUAL_INT(2, g_expanded_count);
+    assert_pressed_cleared(&test_expander, EGUI_VIEW_OF(&test_expander));
 }
 
 static void test_expander_compact_mode_clears_pressed_and_keeps_toggle_behavior(void)
@@ -323,8 +438,7 @@ static void test_expander_compact_mode_clears_pressed_and_keeps_toggle_behavior(
 
     egui_view_expander_set_compact_mode(EGUI_VIEW_OF(&test_expander), 1);
     EGUI_TEST_ASSERT_EQUAL_INT(1, test_expander.compact_mode);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_EXPANDER_INDEX_NONE, test_expander.pressed_index);
-    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_expander)->is_pressed);
+    assert_pressed_cleared(&test_expander, EGUI_VIEW_OF(&test_expander));
 
     get_header_center(1, &x1, &y1);
     EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x1, y1));
@@ -392,21 +506,16 @@ static void test_expander_read_only_mode_ignores_input_and_clears_pressed_state(
 
     egui_view_expander_set_read_only_mode(EGUI_VIEW_OF(&test_expander), 1);
     EGUI_TEST_ASSERT_EQUAL_INT(1, test_expander.read_only_mode);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_EXPANDER_INDEX_NONE, test_expander.pressed_index);
-    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_expander)->is_pressed);
+    assert_pressed_cleared(&test_expander, EGUI_VIEW_OF(&test_expander));
 
-    test_expander.pressed_index = 1;
-    egui_view_set_pressed(EGUI_VIEW_OF(&test_expander), true);
+    seed_pressed_state(&test_expander, EGUI_VIEW_OF(&test_expander), 1, 1);
     EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x1, y1));
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_EXPANDER_INDEX_NONE, test_expander.pressed_index);
-    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_expander)->is_pressed);
+    assert_pressed_cleared(&test_expander, EGUI_VIEW_OF(&test_expander));
     EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, x1, y1));
 
-    test_expander.pressed_index = 1;
-    egui_view_set_pressed(EGUI_VIEW_OF(&test_expander), true);
+    seed_pressed_state(&test_expander, EGUI_VIEW_OF(&test_expander), 1, 1);
     EGUI_TEST_ASSERT_FALSE(send_key(EGUI_KEY_CODE_DOWN));
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_EXPANDER_INDEX_NONE, test_expander.pressed_index);
-    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_expander)->is_pressed);
+    assert_pressed_cleared(&test_expander, EGUI_VIEW_OF(&test_expander));
     EGUI_TEST_ASSERT_EQUAL_INT(0, g_selection_count);
     EGUI_TEST_ASSERT_EQUAL_INT(0, g_expanded_count);
 
@@ -433,18 +542,14 @@ static void test_expander_view_disabled_ignores_input_and_clears_pressed_state(v
     EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&test_expander)->is_pressed);
 
     egui_view_set_enable(EGUI_VIEW_OF(&test_expander), 0);
-    test_expander.pressed_index = 1;
-    egui_view_set_pressed(EGUI_VIEW_OF(&test_expander), true);
+    seed_pressed_state(&test_expander, EGUI_VIEW_OF(&test_expander), 1, 1);
     EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x1, y1));
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_EXPANDER_INDEX_NONE, test_expander.pressed_index);
-    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_expander)->is_pressed);
+    assert_pressed_cleared(&test_expander, EGUI_VIEW_OF(&test_expander));
     EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, x1, y1));
 
-    test_expander.pressed_index = 1;
-    egui_view_set_pressed(EGUI_VIEW_OF(&test_expander), true);
+    seed_pressed_state(&test_expander, EGUI_VIEW_OF(&test_expander), 1, 1);
     EGUI_TEST_ASSERT_FALSE(send_key(EGUI_KEY_CODE_ENTER));
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_EXPANDER_INDEX_NONE, test_expander.pressed_index);
-    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_expander)->is_pressed);
+    assert_pressed_cleared(&test_expander, EGUI_VIEW_OF(&test_expander));
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_expander_get_current_index(EGUI_VIEW_OF(&test_expander)));
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_expander_get_expanded_index(EGUI_VIEW_OF(&test_expander)));
     EGUI_TEST_ASSERT_EQUAL_INT(0, g_selection_count);
@@ -457,6 +562,32 @@ static void test_expander_view_disabled_ignores_input_and_clears_pressed_state(v
     EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_expander_get_expanded_index(EGUI_VIEW_OF(&test_expander)));
     EGUI_TEST_ASSERT_EQUAL_INT(1, g_selection_count);
     EGUI_TEST_ASSERT_EQUAL_INT(1, g_expanded_count);
+}
+
+static void test_expander_static_preview_consumes_input_and_clears_pressed_state(void)
+{
+    egui_dim_t x;
+    egui_dim_t y;
+
+    setup_preview_expander();
+    layout_preview_expander();
+    get_view_center(EGUI_VIEW_OF(&preview_expander), &x, &y);
+
+    seed_pressed_state(&preview_expander, EGUI_VIEW_OF(&preview_expander), 2, 1);
+    EGUI_TEST_ASSERT_TRUE(send_preview_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
+    assert_pressed_cleared(&preview_expander, EGUI_VIEW_OF(&preview_expander));
+    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_expander_get_current_index(EGUI_VIEW_OF(&preview_expander)));
+    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_expander_get_expanded_index(EGUI_VIEW_OF(&preview_expander)));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, g_selection_count);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, g_expanded_count);
+
+    seed_pressed_state(&preview_expander, EGUI_VIEW_OF(&preview_expander), 1, 1);
+    EGUI_TEST_ASSERT_TRUE(send_preview_key(EGUI_KEY_CODE_ENTER));
+    assert_pressed_cleared(&preview_expander, EGUI_VIEW_OF(&preview_expander));
+    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_expander_get_current_index(EGUI_VIEW_OF(&preview_expander)));
+    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_expander_get_expanded_index(EGUI_VIEW_OF(&preview_expander)));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, g_selection_count);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, g_expanded_count);
 }
 
 static void test_expander_read_only_disabled_and_empty_guards(void)
@@ -488,13 +619,14 @@ void test_expander_run(void)
 {
     EGUI_TEST_SUITE_BEGIN(expander);
     EGUI_TEST_RUN(test_expander_set_items_clamp_and_listener_guards);
-    EGUI_TEST_RUN(test_expander_font_palette_and_helpers);
+    EGUI_TEST_RUN(test_expander_font_palette_helpers_and_expand_listener);
     EGUI_TEST_RUN(test_expander_metrics_and_hit_testing);
-    EGUI_TEST_RUN(test_expander_touch_toggle_and_cancel);
+    EGUI_TEST_RUN(test_expander_touch_same_target_release_and_cancel_behavior);
     EGUI_TEST_RUN(test_expander_compact_mode_clears_pressed_and_keeps_toggle_behavior);
     EGUI_TEST_RUN(test_expander_keyboard_navigation_and_guards);
     EGUI_TEST_RUN(test_expander_read_only_mode_ignores_input_and_clears_pressed_state);
     EGUI_TEST_RUN(test_expander_view_disabled_ignores_input_and_clears_pressed_state);
+    EGUI_TEST_RUN(test_expander_static_preview_consumes_input_and_clears_pressed_state);
     EGUI_TEST_RUN(test_expander_read_only_disabled_and_empty_guards);
     EGUI_TEST_SUITE_END();
 }
