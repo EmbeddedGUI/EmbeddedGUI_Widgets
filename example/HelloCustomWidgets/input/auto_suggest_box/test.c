@@ -36,6 +36,8 @@ static egui_view_linearlayout_t compact_column;
 static egui_view_autocomplete_t control_compact;
 static egui_view_linearlayout_t read_only_column;
 static egui_view_autocomplete_t control_read_only;
+static egui_view_api_t control_compact_api;
+static egui_view_api_t control_read_only_api;
 static uint8_t ui_ready = 0;
 
 EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
@@ -64,13 +66,6 @@ static const auto_suggest_snapshot_t compact_snapshots[] = {
 
 static const char *read_only_suggestions[] = {"Pinned", "Recent", "Saved"};
 
-static int consume_preview_touch(egui_view_t *self, egui_motion_event_t *event)
-{
-    EGUI_UNUSED(self);
-    EGUI_UNUSED(event);
-    return 1;
-}
-
 static void relayout_demo(void)
 {
     if (!ui_ready)
@@ -87,8 +82,8 @@ static void relayout_demo(void)
 
 static void apply_snapshot(egui_view_t *view, const auto_suggest_snapshot_t *snapshot)
 {
-    egui_view_autocomplete_set_suggestions(view, snapshot->suggestions, snapshot->suggestion_count);
-    egui_view_autocomplete_set_current_index(view, snapshot->selected_index);
+    hcw_auto_suggest_box_set_suggestions(view, snapshot->suggestions, snapshot->suggestion_count);
+    hcw_auto_suggest_box_set_current_index(view, snapshot->selected_index);
     egui_view_autocomplete_collapse(view);
 }
 
@@ -105,8 +100,8 @@ static void apply_compact_snapshot(uint8_t index)
 
 static void apply_read_only_state(void)
 {
-    egui_view_autocomplete_set_suggestions(EGUI_VIEW_OF(&control_read_only), read_only_suggestions, EGUI_ARRAY_SIZE(read_only_suggestions));
-    egui_view_autocomplete_set_current_index(EGUI_VIEW_OF(&control_read_only), 1);
+    hcw_auto_suggest_box_set_suggestions(EGUI_VIEW_OF(&control_read_only), read_only_suggestions, EGUI_ARRAY_SIZE(read_only_suggestions));
+    hcw_auto_suggest_box_set_current_index(EGUI_VIEW_OF(&control_read_only), 1);
     egui_view_autocomplete_collapse(EGUI_VIEW_OF(&control_read_only));
 }
 
@@ -150,8 +145,7 @@ void test_init_ui(void)
     egui_view_set_size(EGUI_VIEW_OF(&control_compact), AUTO_SUGGEST_BOX_PREVIEW_WIDTH, AUTO_SUGGEST_BOX_PREVIEW_HEIGHT);
     egui_view_autocomplete_set_font(EGUI_VIEW_OF(&control_compact), (const egui_font_t *)&egui_res_font_montserrat_10_4);
     hcw_auto_suggest_box_apply_compact_style(EGUI_VIEW_OF(&control_compact));
-    static egui_view_api_t control_compact_touch_api;
-    egui_view_override_api_on_touch(EGUI_VIEW_OF(&control_compact), &control_compact_touch_api, consume_preview_touch);
+    hcw_auto_suggest_box_override_static_preview_api(EGUI_VIEW_OF(&control_compact), &control_compact_api);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&control_compact), false);
 #endif
@@ -168,8 +162,7 @@ void test_init_ui(void)
     egui_view_set_size(EGUI_VIEW_OF(&control_read_only), AUTO_SUGGEST_BOX_PREVIEW_WIDTH, AUTO_SUGGEST_BOX_PREVIEW_HEIGHT);
     egui_view_autocomplete_set_font(EGUI_VIEW_OF(&control_read_only), (const egui_font_t *)&egui_res_font_montserrat_10_4);
     hcw_auto_suggest_box_apply_read_only_style(EGUI_VIEW_OF(&control_read_only));
-    static egui_view_api_t control_read_only_touch_api;
-    egui_view_override_api_on_touch(EGUI_VIEW_OF(&control_read_only), &control_read_only_touch_api, consume_preview_touch);
+    hcw_auto_suggest_box_override_static_preview_api(EGUI_VIEW_OF(&control_read_only), &control_read_only_api);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&control_read_only), false);
 #endif

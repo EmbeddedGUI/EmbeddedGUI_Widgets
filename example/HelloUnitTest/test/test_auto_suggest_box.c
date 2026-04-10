@@ -8,6 +8,8 @@
 #include "../../HelloCustomWidgets/input/auto_suggest_box/egui_view_auto_suggest_box.c"
 
 static egui_view_autocomplete_t test_box;
+static egui_view_autocomplete_t preview_box;
+static egui_view_api_t preview_api;
 static uint8_t g_selected_count;
 static uint8_t g_last_selected;
 
@@ -53,6 +55,28 @@ static void layout_box(egui_dim_t x, egui_dim_t y, egui_dim_t width, egui_dim_t 
     egui_region_copy(&EGUI_VIEW_OF(&test_box)->region_screen, &region);
 }
 
+static void setup_preview_box(void)
+{
+    egui_view_autocomplete_init(EGUI_VIEW_OF(&preview_box));
+    egui_view_set_size(EGUI_VIEW_OF(&preview_box), 104, 28);
+    hcw_auto_suggest_box_set_suggestions(EGUI_VIEW_OF(&preview_box), g_commands, 2);
+    hcw_auto_suggest_box_set_current_index(EGUI_VIEW_OF(&preview_box), 1);
+    hcw_auto_suggest_box_apply_compact_style(EGUI_VIEW_OF(&preview_box));
+    hcw_auto_suggest_box_override_static_preview_api(EGUI_VIEW_OF(&preview_box), &preview_api);
+}
+
+static void layout_preview_box(void)
+{
+    egui_region_t region;
+
+    region.location.x = 10;
+    region.location.y = 20;
+    region.size.width = 104;
+    region.size.height = 28;
+    egui_view_layout(EGUI_VIEW_OF(&preview_box), &region);
+    egui_region_copy(&EGUI_VIEW_OF(&preview_box)->region_screen, &region);
+}
+
 static int send_touch(uint8_t type, egui_dim_t x, egui_dim_t y)
 {
     egui_motion_event_t event;
@@ -75,6 +99,31 @@ static int send_key(uint8_t key_code)
     handled |= EGUI_VIEW_OF(&test_box)->api->dispatch_key_event(EGUI_VIEW_OF(&test_box), &event);
     event.type = EGUI_KEY_EVENT_ACTION_UP;
     handled |= EGUI_VIEW_OF(&test_box)->api->dispatch_key_event(EGUI_VIEW_OF(&test_box), &event);
+    return handled;
+}
+
+static int send_preview_touch(uint8_t type, egui_dim_t x, egui_dim_t y)
+{
+    egui_motion_event_t event;
+
+    memset(&event, 0, sizeof(event));
+    event.type = type;
+    event.location.x = x;
+    event.location.y = y;
+    return EGUI_VIEW_OF(&preview_box)->api->on_touch_event(EGUI_VIEW_OF(&preview_box), &event);
+}
+
+static int send_preview_key(uint8_t key_code)
+{
+    egui_key_event_t event;
+    int handled = 0;
+
+    memset(&event, 0, sizeof(event));
+    event.type = EGUI_KEY_EVENT_ACTION_DOWN;
+    event.key_code = key_code;
+    handled |= EGUI_VIEW_OF(&preview_box)->api->on_key_event(EGUI_VIEW_OF(&preview_box), &event);
+    event.type = EGUI_KEY_EVENT_ACTION_UP;
+    handled |= EGUI_VIEW_OF(&preview_box)->api->on_key_event(EGUI_VIEW_OF(&preview_box), &event);
     return handled;
 }
 
@@ -265,6 +314,50 @@ static void test_auto_suggest_box_style_helpers_and_params(void)
     EGUI_TEST_ASSERT_TRUE(strcmp("Deploy API", egui_view_autocomplete_get_current_text(EGUI_VIEW_OF(&params_box))) == 0);
 }
 
+static void test_auto_suggest_box_wrapper_setters_clear_interaction_state(void)
+{
+    egui_view_combobox_t *local;
+
+    setup_box();
+    layout_box(10, 20, 180, 34);
+    local = (egui_view_combobox_t *)EGUI_VIEW_OF(&test_box);
+
+    egui_view_autocomplete_expand(EGUI_VIEW_OF(&test_box));
+    EGUI_VIEW_OF(&test_box)->is_pressed = 1;
+    local->pressed_is_header = 1;
+    local->pressed_index = EGUI_VIEW_COMBOBOX_PRESSED_NONE;
+    hcw_auto_suggest_box_set_suggestions(EGUI_VIEW_OF(&test_box), g_commands, 2);
+    EGUI_TEST_ASSERT_FALSE(egui_view_autocomplete_is_expanded(EGUI_VIEW_OF(&test_box)));
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_box)->is_pressed);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_COMBOBOX_PRESSED_NONE, local->pressed_index);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, local->pressed_is_header);
+    EGUI_TEST_ASSERT_EQUAL_INT(2, egui_view_autocomplete_get_suggestion_count(EGUI_VIEW_OF(&test_box)));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_autocomplete_get_current_index(EGUI_VIEW_OF(&test_box)));
+
+    egui_view_autocomplete_expand(EGUI_VIEW_OF(&test_box));
+    EGUI_VIEW_OF(&test_box)->is_pressed = 1;
+    local->pressed_is_header = 0;
+    local->pressed_index = 1;
+    hcw_auto_suggest_box_set_current_index(EGUI_VIEW_OF(&test_box), 1);
+    EGUI_TEST_ASSERT_FALSE(egui_view_autocomplete_is_expanded(EGUI_VIEW_OF(&test_box)));
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_box)->is_pressed);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_COMBOBOX_PRESSED_NONE, local->pressed_index);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, local->pressed_is_header);
+    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_autocomplete_get_current_index(EGUI_VIEW_OF(&test_box)));
+
+    egui_view_autocomplete_expand(EGUI_VIEW_OF(&test_box));
+    EGUI_VIEW_OF(&test_box)->is_pressed = 1;
+    local->pressed_is_header = 1;
+    local->pressed_index = EGUI_VIEW_COMBOBOX_PRESSED_NONE;
+    hcw_auto_suggest_box_apply_compact_style(EGUI_VIEW_OF(&test_box));
+    EGUI_TEST_ASSERT_FALSE(egui_view_autocomplete_is_expanded(EGUI_VIEW_OF(&test_box)));
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_box)->is_pressed);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_COMBOBOX_PRESSED_NONE, local->pressed_index);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, local->pressed_is_header);
+    EGUI_TEST_ASSERT_EQUAL_INT(28, local->collapsed_height);
+    EGUI_TEST_ASSERT_EQUAL_INT(21, local->item_height);
+}
+
 static void test_auto_suggest_box_touch_expand_select_and_fit_height(void)
 {
     egui_view_combobox_t *local = (egui_view_combobox_t *)EGUI_VIEW_OF(&test_box);
@@ -358,13 +451,50 @@ static void test_auto_suggest_box_disabled_and_empty_guard_input(void)
     EGUI_TEST_ASSERT_FALSE(egui_view_autocomplete_is_expanded(EGUI_VIEW_OF(&test_box)));
 }
 
+static void test_auto_suggest_box_static_preview_consumes_input_and_clears_interaction_state(void)
+{
+    egui_view_combobox_t *local;
+    egui_dim_t x;
+    egui_dim_t y;
+
+    setup_preview_box();
+    layout_preview_box();
+    local = (egui_view_combobox_t *)EGUI_VIEW_OF(&preview_box);
+
+    egui_view_autocomplete_expand(EGUI_VIEW_OF(&preview_box));
+    EGUI_VIEW_OF(&preview_box)->is_pressed = 1;
+    local->pressed_is_header = 0;
+    local->pressed_index = 1;
+    x = EGUI_VIEW_OF(&preview_box)->region_screen.location.x + EGUI_VIEW_OF(&preview_box)->region_screen.size.width / 2;
+    y = EGUI_VIEW_OF(&preview_box)->region_screen.location.y + local->collapsed_height / 2;
+    EGUI_TEST_ASSERT_TRUE(send_preview_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
+    EGUI_TEST_ASSERT_FALSE(egui_view_autocomplete_is_expanded(EGUI_VIEW_OF(&preview_box)));
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&preview_box)->is_pressed);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_COMBOBOX_PRESSED_NONE, local->pressed_index);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, local->pressed_is_header);
+    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_autocomplete_get_current_index(EGUI_VIEW_OF(&preview_box)));
+
+    egui_view_autocomplete_expand(EGUI_VIEW_OF(&preview_box));
+    EGUI_VIEW_OF(&preview_box)->is_pressed = 1;
+    local->pressed_is_header = 1;
+    local->pressed_index = EGUI_VIEW_COMBOBOX_PRESSED_NONE;
+    EGUI_TEST_ASSERT_TRUE(send_preview_key(EGUI_KEY_CODE_DOWN));
+    EGUI_TEST_ASSERT_FALSE(egui_view_autocomplete_is_expanded(EGUI_VIEW_OF(&preview_box)));
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&preview_box)->is_pressed);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_COMBOBOX_PRESSED_NONE, local->pressed_index);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, local->pressed_is_header);
+    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_autocomplete_get_current_index(EGUI_VIEW_OF(&preview_box)));
+}
+
 void test_auto_suggest_box_run(void)
 {
     EGUI_TEST_SUITE_BEGIN(auto_suggest_box);
     EGUI_TEST_RUN(test_auto_suggest_box_suggestions_current_index_and_text);
     EGUI_TEST_RUN(test_auto_suggest_box_style_helpers_and_params);
+    EGUI_TEST_RUN(test_auto_suggest_box_wrapper_setters_clear_interaction_state);
     EGUI_TEST_RUN(test_auto_suggest_box_touch_expand_select_and_fit_height);
     EGUI_TEST_RUN(test_auto_suggest_box_keyboard_navigation_and_commit);
     EGUI_TEST_RUN(test_auto_suggest_box_disabled_and_empty_guard_input);
+    EGUI_TEST_RUN(test_auto_suggest_box_static_preview_consumes_input_and_clears_interaction_state);
     EGUI_TEST_SUITE_END();
 }

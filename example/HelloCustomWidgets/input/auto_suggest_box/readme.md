@@ -105,6 +105,8 @@ python scripts/checks/check_docs_encoding.py
 - 主建议框、展开列表和底部双预览必须完整可见
 - 展开列表边框、文字和当前高亮项都要清晰可辨
 - 主控件必须像标准 `AutoSuggestBox`，而不是状态展示卡片
+- `set_suggestions / current index / style helper` 切换后不能残留展开态、header pressed 或 item pressed 高亮
+- 底部 `compact / read only` 预览必须统一吞掉 touch / key 输入，并在收到输入后立即清理残留展开态与 pressed 渲染
 - `compact` 与 `read only` 必须是静态对照，不再承担标签切换职责
 - 页面中不再出现 guide、状态文案、standard label、section divider 和外部 preview label
 
@@ -148,6 +150,7 @@ python scripts/checks/check_docs_encoding.py
 ## 14. EGUI 适配时的简化点与约束
 
 - 直接复用 `autocomplete/combobox` 基础结构，避免新增重复基础控件
-- 通过样式 helper 统一 Reference Track 颜色和尺寸
+- 通过样式 helper 和示例层 setter 统一 Reference Track 颜色、尺寸与交互状态清理
 - 用程序化 `expand/collapse` 与键盘事件替代页面标签点击
+- `compact / read only` 预览通过统一的 static preview override 固定为静态对照
 - 先完成示例级 `AutoSuggestBox`，再决定是否继续补 placeholder / 过滤能力
