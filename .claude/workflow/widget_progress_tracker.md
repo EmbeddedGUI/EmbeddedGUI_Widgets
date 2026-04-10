@@ -34,6 +34,7 @@
 
 | 状态 | 控件名 | 分类 | 开始日期 | 当前阶段 | 目标 |
 | --- | --- | --- | --- | --- | --- |
+| 进行中 | `teaching_tip` | `feedback` | `2026-04-10` | 交互回归复核 | 复核 `same-target release / static preview / compact / read only / disabled / preview touch 焦点收口 / 交互后渲染`，确认是否需要按当前 `message_bar / skeleton / tree_view / breadcrumb_bar / persona_group / card_panel / flip_view` 同一标准补齐 |
 
 ## 当前保留的 Reference 主线控件
 
