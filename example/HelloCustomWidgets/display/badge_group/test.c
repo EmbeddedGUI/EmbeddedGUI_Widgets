@@ -17,8 +17,6 @@
 #define BADGE_GROUP_BOTTOM_ROW_HEIGHT 84
 #define BADGE_GROUP_RECORD_WAIT       90
 #define BADGE_GROUP_RECORD_FRAME_WAIT 170
-#define PRIMARY_SNAPSHOT_COUNT        ((uint8_t)(sizeof(primary_snapshots) / sizeof(primary_snapshots[0])))
-#define COMPACT_SNAPSHOT_COUNT        ((uint8_t)(sizeof(compact_snapshots) / sizeof(compact_snapshots[0])))
 
 static egui_view_linearlayout_t root_layout;
 static egui_view_label_t title_label;
@@ -26,14 +24,14 @@ static egui_view_badge_group_t group_primary;
 static egui_view_linearlayout_t bottom_row;
 static egui_view_badge_group_t group_compact;
 static egui_view_badge_group_t group_read_only;
+static egui_view_api_t group_compact_api;
+static egui_view_api_t group_read_only_api;
 
 EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
 EGUI_BACKGROUND_PARAM_INIT(bg_page_panel_params, &bg_page_panel_param, NULL, NULL);
 EGUI_BACKGROUND_COLOR_STATIC_CONST_INIT(bg_page_panel, &bg_page_panel_params);
 
 static const char *title_text = "Badge Group";
-static uint8_t primary_snapshot_index = 0;
-static uint8_t compact_snapshot_index = 0;
 
 static const egui_view_badge_group_item_t primary_items_0[] = {
         {"Review", "4", 0, 1, 0},
@@ -94,29 +92,59 @@ static const egui_view_badge_group_snapshot_t read_only_snapshots[] = {
         {"ARCHIVE", "Read only", "", "Muted preview.", read_only_items_0, 2, 0},
 };
 
-static int consume_preview_touch(egui_view_t *self, egui_motion_event_t *event)
-{
-    EGUI_UNUSED(self);
-    EGUI_UNUSED(event);
-    return 1;
-}
-
 static void apply_primary_snapshot(uint8_t index)
 {
-    primary_snapshot_index = (uint8_t)(index % PRIMARY_SNAPSHOT_COUNT);
-    egui_view_badge_group_set_current_snapshot(EGUI_VIEW_OF(&group_primary), primary_snapshot_index);
+    egui_view_badge_group_set_current_snapshot(EGUI_VIEW_OF(&group_primary),
+                                               index % (sizeof(primary_snapshots) / sizeof(primary_snapshots[0])));
 }
 
 static void apply_compact_snapshot(uint8_t index)
 {
-    compact_snapshot_index = (uint8_t)(index % COMPACT_SNAPSHOT_COUNT);
-    egui_view_badge_group_set_current_snapshot(EGUI_VIEW_OF(&group_compact), compact_snapshot_index);
+    egui_view_badge_group_set_current_snapshot(EGUI_VIEW_OF(&group_compact),
+                                               index % (sizeof(compact_snapshots) / sizeof(compact_snapshots[0])));
+}
+
+static void apply_read_only_snapshot(void)
+{
+    egui_view_badge_group_set_current_snapshot(EGUI_VIEW_OF(&group_read_only), 0);
 }
 
 static void apply_read_only_state(void)
 {
-    egui_view_badge_group_set_current_snapshot(EGUI_VIEW_OF(&group_read_only), 0);
+    apply_read_only_snapshot();
+    egui_view_badge_group_set_read_only_mode(EGUI_VIEW_OF(&group_read_only), 1);
 }
+
+static void dismiss_primary_badge_group_focus(void)
+{
+#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
+    egui_view_clear_focus(EGUI_VIEW_OF(&group_primary));
+#endif
+}
+
+static int dismiss_primary_focus_on_preview_touch(egui_view_t *self, egui_motion_event_t *event)
+{
+    EGUI_UNUSED(self);
+
+    if (event->type == EGUI_MOTION_EVENT_ACTION_DOWN)
+    {
+        dismiss_primary_badge_group_focus();
+    }
+    return 1;
+}
+
+#if EGUI_CONFIG_RECORDING_TEST
+static void set_click_view_center(egui_sim_action_t *p_action, egui_view_t *view, int interval_ms)
+{
+    p_action->type = EGUI_SIM_ACTION_CLICK;
+    p_action->x1 = view->region_screen.location.x + view->region_screen.size.width / 2;
+    p_action->y1 = view->region_screen.location.y + view->region_screen.size.height / 2;
+    p_action->x2 = 0;
+    p_action->y2 = 0;
+    p_action->steps = 0;
+    p_action->interval_ms = interval_ms;
+}
+#endif
 
 void test_init_ui(void)
 {
@@ -154,15 +182,17 @@ void test_init_ui(void)
 
     egui_view_badge_group_init(EGUI_VIEW_OF(&group_compact));
     egui_view_set_size(EGUI_VIEW_OF(&group_compact), BADGE_GROUP_PREVIEW_WIDTH, BADGE_GROUP_PREVIEW_HEIGHT);
-    egui_view_badge_group_set_snapshots(EGUI_VIEW_OF(&group_compact), compact_snapshots, COMPACT_SNAPSHOT_COUNT);
+    egui_view_badge_group_set_snapshots(EGUI_VIEW_OF(&group_compact), compact_snapshots, 2);
     egui_view_badge_group_set_font(EGUI_VIEW_OF(&group_compact), (const egui_font_t *)&egui_res_font_montserrat_8_4);
     egui_view_badge_group_set_meta_font(EGUI_VIEW_OF(&group_compact), (const egui_font_t *)&egui_res_font_montserrat_8_4);
     egui_view_badge_group_set_compact_mode(EGUI_VIEW_OF(&group_compact), 1);
     egui_view_badge_group_set_palette(EGUI_VIEW_OF(&group_compact), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD2DBE3), EGUI_COLOR_HEX(0x1A2734),
                                       EGUI_COLOR_HEX(0x6B7A89), EGUI_COLOR_HEX(0x0F6CBD), EGUI_COLOR_HEX(0x0F7B45), EGUI_COLOR_HEX(0x9D5D00),
                                       EGUI_COLOR_HEX(0x7A8796));
-    static egui_view_api_t group_compact_touch_api;
-    egui_view_override_api_on_touch(EGUI_VIEW_OF(&group_compact), &group_compact_touch_api, consume_preview_touch);
+    egui_view_badge_group_override_static_preview_api(EGUI_VIEW_OF(&group_compact), &group_compact_api);
+#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
+    group_compact_api.on_touch = dismiss_primary_focus_on_preview_touch;
+#endif
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&group_compact), false);
 #endif
@@ -179,8 +209,10 @@ void test_init_ui(void)
     egui_view_badge_group_set_palette(EGUI_VIEW_OF(&group_read_only), EGUI_COLOR_HEX(0xFBFCFD), EGUI_COLOR_HEX(0xD8DFE6), EGUI_COLOR_HEX(0x233241),
                                       EGUI_COLOR_HEX(0x708091), EGUI_COLOR_HEX(0x98A5B2), EGUI_COLOR_HEX(0xA7B4BF), EGUI_COLOR_HEX(0xB8B0A2),
                                       EGUI_COLOR_HEX(0xB4BDC8));
-    static egui_view_api_t group_read_only_touch_api;
-    egui_view_override_api_on_touch(EGUI_VIEW_OF(&group_read_only), &group_read_only_touch_api, consume_preview_touch);
+    egui_view_badge_group_override_static_preview_api(EGUI_VIEW_OF(&group_read_only), &group_read_only_api);
+#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
+    group_read_only_api.on_touch = dismiss_primary_focus_on_preview_touch;
+#endif
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&group_read_only), false);
 #endif
@@ -273,10 +305,33 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
         if (first_call)
         {
             apply_compact_snapshot(1);
+#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
+            egui_view_request_focus(EGUI_VIEW_OF(&group_primary));
+#endif
         }
         EGUI_SIM_SET_WAIT(p_action, BADGE_GROUP_RECORD_WAIT);
         return true;
     case 9:
+        if (first_call)
+        {
+            recording_request_snapshot();
+        }
+        EGUI_SIM_SET_WAIT(p_action, BADGE_GROUP_RECORD_FRAME_WAIT);
+        return true;
+    case 10:
+        if (first_call)
+        {
+            set_click_view_center(p_action, EGUI_VIEW_OF(&group_compact), BADGE_GROUP_RECORD_WAIT);
+        }
+        return true;
+    case 11:
+        if (first_call)
+        {
+            recording_request_snapshot();
+        }
+        EGUI_SIM_SET_WAIT(p_action, BADGE_GROUP_RECORD_FRAME_WAIT);
+        return true;
+    case 12:
         if (first_call)
         {
             recording_request_snapshot();
