@@ -57,10 +57,21 @@ static const password_box_snapshot_t compact_snapshots[] = {
         {NULL, NULL, "Quick PIN", "A-1709"},
 };
 
-static int consume_preview_touch(egui_view_t *self, egui_motion_event_t *event)
+static void dismiss_primary_password_box(void)
+{
+#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
+    egui_view_clear_focus(EGUI_VIEW_OF(&box_primary));
+#endif
+}
+
+static int dismiss_primary_focus_on_preview_touch(egui_view_t *self, egui_motion_event_t *event)
 {
     EGUI_UNUSED(self);
-    EGUI_UNUSED(event);
+
+    if (event->type == EGUI_MOTION_EVENT_ACTION_DOWN)
+    {
+        dismiss_primary_password_box();
+    }
     return 1;
 }
 
@@ -141,8 +152,11 @@ void test_init_ui(void)
     egui_view_password_box_set_compact_mode(EGUI_VIEW_OF(&box_compact), 1);
     egui_view_password_box_set_palette(EGUI_VIEW_OF(&box_compact), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD5DCE4), EGUI_COLOR_HEX(0x1A2734),
                                        EGUI_COLOR_HEX(0x6B7A89), EGUI_COLOR_HEX(0x0F6CBD));
-    static egui_view_api_t box_compact_touch_api;
-    egui_view_override_api_on_touch(EGUI_VIEW_OF(&box_compact), &box_compact_touch_api, consume_preview_touch);
+    static egui_view_api_t box_compact_api;
+    egui_view_password_box_override_static_preview_api(EGUI_VIEW_OF(&box_compact), &box_compact_api);
+#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
+    box_compact_api.on_touch = dismiss_primary_focus_on_preview_touch;
+#endif
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&box_compact), false);
 #endif
@@ -163,8 +177,11 @@ void test_init_ui(void)
     egui_view_password_box_set_read_only_mode(EGUI_VIEW_OF(&box_read_only), 1);
     egui_view_password_box_set_palette(EGUI_VIEW_OF(&box_read_only), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD5DCE4), EGUI_COLOR_HEX(0x1A2734),
                                        EGUI_COLOR_HEX(0x6B7A89), EGUI_COLOR_HEX(0x7A8796));
-    static egui_view_api_t box_read_only_touch_api;
-    egui_view_override_api_on_touch(EGUI_VIEW_OF(&box_read_only), &box_read_only_touch_api, consume_preview_touch);
+    static egui_view_api_t box_read_only_api;
+    egui_view_password_box_override_static_preview_api(EGUI_VIEW_OF(&box_read_only), &box_read_only_api);
+#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
+    box_read_only_api.on_touch = dismiss_primary_focus_on_preview_touch;
+#endif
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&box_read_only), false);
 #endif

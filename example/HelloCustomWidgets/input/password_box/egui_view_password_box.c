@@ -81,6 +81,28 @@ static uint8_t password_box_is_reveal_visible(egui_view_password_box_t *local)
     return local->text_len > 0 ? 1 : 0;
 }
 
+static uint8_t password_box_clear_pressed_state(egui_view_t *self, egui_view_password_box_t *local)
+{
+    uint8_t was_pressed = self->is_pressed ? 1 : 0;
+    uint8_t had_pressed = was_pressed || local->pressed_part != EGUI_VIEW_PASSWORD_BOX_PART_NONE;
+
+    if (!had_pressed)
+    {
+        return 0;
+    }
+
+    local->pressed_part = EGUI_VIEW_PASSWORD_BOX_PART_NONE;
+    if (was_pressed)
+    {
+        egui_view_set_pressed(self, false);
+    }
+    else
+    {
+        egui_view_invalidate(self);
+    }
+    return 1;
+}
+
 static void password_box_notify_changed(egui_view_t *self, uint8_t part)
 {
     EGUI_LOCAL_INIT(egui_view_password_box_t);
@@ -287,6 +309,8 @@ void egui_view_password_box_set_text(egui_view_t *self, const char *text)
     EGUI_LOCAL_INIT(egui_view_password_box_t);
     size_t len = 0;
 
+    password_box_clear_pressed_state(self, local);
+
     if (text != NULL)
     {
         len = strlen(text);
@@ -459,6 +483,9 @@ static void password_box_set_current_part_inner(egui_view_t *self, uint8_t part,
 
 void egui_view_password_box_set_current_part(egui_view_t *self, uint8_t part)
 {
+    EGUI_LOCAL_INIT(egui_view_password_box_t);
+
+    password_box_clear_pressed_state(self, local);
     password_box_set_current_part_inner(self, part, 1);
 }
 
@@ -472,7 +499,15 @@ uint8_t egui_view_password_box_get_current_part(egui_view_t *self)
 void egui_view_password_box_set_compact_mode(egui_view_t *self, uint8_t compact_mode)
 {
     EGUI_LOCAL_INIT(egui_view_password_box_t);
-    local->compact_mode = compact_mode ? 1 : 0;
+    uint8_t normalized = compact_mode ? 1 : 0;
+
+    password_box_clear_pressed_state(self, local);
+    if (local->compact_mode == normalized)
+    {
+        return;
+    }
+
+    local->compact_mode = normalized;
     password_box_update_scroll(self);
     egui_view_invalidate(self);
 }
@@ -480,8 +515,15 @@ void egui_view_password_box_set_compact_mode(egui_view_t *self, uint8_t compact_
 void egui_view_password_box_set_read_only_mode(egui_view_t *self, uint8_t read_only_mode)
 {
     EGUI_LOCAL_INIT(egui_view_password_box_t);
-    local->read_only_mode = read_only_mode ? 1 : 0;
-    local->pressed_part = EGUI_VIEW_PASSWORD_BOX_PART_NONE;
+    uint8_t normalized = read_only_mode ? 1 : 0;
+
+    password_box_clear_pressed_state(self, local);
+    if (local->read_only_mode == normalized)
+    {
+        return;
+    }
+
+    local->read_only_mode = normalized;
     if (local->read_only_mode)
     {
         local->revealed = 0;
@@ -496,6 +538,7 @@ void egui_view_password_box_set_revealed(egui_view_t *self, uint8_t revealed)
     EGUI_LOCAL_INIT(egui_view_password_box_t);
     uint8_t next = (revealed && password_box_is_reveal_visible(local)) ? 1 : 0;
 
+    password_box_clear_pressed_state(self, local);
     if (local->revealed == next)
     {
         return;
@@ -579,12 +622,17 @@ void egui_view_password_box_set_palette(egui_view_t *self, egui_color_t surface_
                                         egui_color_t muted_text_color, egui_color_t accent_color)
 {
     EGUI_LOCAL_INIT(egui_view_password_box_t);
+    uint8_t had_pressed = password_box_clear_pressed_state(self, local);
+
     local->surface_color = surface_color;
     local->border_color = border_color;
     local->text_color = text_color;
     local->muted_text_color = muted_text_color;
     local->accent_color = accent_color;
-    egui_view_invalidate(self);
+    if (!had_pressed)
+    {
+        egui_view_invalidate(self);
+    }
 }
 
 static uint8_t password_box_hit_test(egui_view_password_box_t *local, egui_view_t *self, egui_dim_t x, egui_dim_t y)
@@ -646,7 +694,7 @@ static void password_box_draw_row(egui_view_password_box_t *local, egui_view_t *
     egui_dim_t pad_y = local->compact_mode ? PASSWORD_BOX_COMPACT_FIELD_PAD_Y : PASSWORD_BOX_STD_FIELD_PAD_Y;
     egui_dim_t row_radius = local->compact_mode ? PASSWORD_BOX_COMPACT_ROW_RADIUS : PASSWORD_BOX_STD_ROW_RADIUS;
 
-    if (self->is_focused && local->current_part == EGUI_VIEW_PASSWORD_BOX_PART_FIELD)
+    if (self->is_focused && !local->compact_mode && local->current_part == EGUI_VIEW_PASSWORD_BOX_PART_FIELD)
     {
         row_border = egui_rgb_mix(local->accent_color, local->border_color, 8);
     }
@@ -690,7 +738,8 @@ static void password_box_draw_row(egui_view_password_box_t *local, egui_view_t *
         egui_canvas_draw_text(local->font, display_text, text_x, text_y, text_color, self->alpha);
     }
 
-    if (self->is_focused && !local->read_only_mode && local->current_part == EGUI_VIEW_PASSWORD_BOX_PART_FIELD && local->cursor_visible)
+    if (self->is_focused && !local->read_only_mode && !local->compact_mode && local->current_part == EGUI_VIEW_PASSWORD_BOX_PART_FIELD &&
+        local->cursor_visible)
     {
         cursor_x = text_region.location.x + password_box_get_text_width_to_pos(local, local->cursor_pos) - local->scroll_offset_x;
         if (local->font != NULL)
@@ -709,7 +758,7 @@ static void password_box_draw_row(egui_view_password_box_t *local, egui_view_t *
         egui_color_t reveal_text = egui_rgb_mix(local->text_color, local->accent_color, local->revealed ? 18 : 10);
         const char *glyph = local->revealed ? EGUI_ICON_MS_VISIBILITY_OFF : EGUI_ICON_MS_VISIBILITY;
 
-        if (self->is_focused && local->current_part == EGUI_VIEW_PASSWORD_BOX_PART_REVEAL)
+        if (self->is_focused && !local->compact_mode && local->current_part == EGUI_VIEW_PASSWORD_BOX_PART_REVEAL)
         {
             reveal_fill = egui_rgb_mix(reveal_fill, local->accent_color, 10);
             reveal_border = egui_rgb_mix(reveal_border, local->accent_color, 10);
@@ -776,12 +825,13 @@ static int egui_view_password_box_on_touch_event(egui_view_t *self, egui_motion_
 
     if (!egui_view_get_enable(self))
     {
-        if (event->type == EGUI_MOTION_EVENT_ACTION_UP || event->type == EGUI_MOTION_EVENT_ACTION_CANCEL)
-        {
-            local->pressed_part = EGUI_VIEW_PASSWORD_BOX_PART_NONE;
-            egui_view_set_pressed(self, false);
-        }
+        password_box_clear_pressed_state(self, local);
         return self->is_clickable ? 1 : 0;
+    }
+    if (local->read_only_mode || local->compact_mode)
+    {
+        password_box_clear_pressed_state(self, local);
+        return 0;
     }
 
     hit_part = password_box_hit_test(local, self, event->location.x, event->location.y);
@@ -813,6 +863,7 @@ static int egui_view_password_box_on_touch_event(egui_view_t *self, egui_motion_
     case EGUI_MOTION_EVENT_ACTION_UP:
         if (local->pressed_part == EGUI_VIEW_PASSWORD_BOX_PART_NONE)
         {
+            password_box_clear_pressed_state(self, local);
             return hit_part != EGUI_VIEW_PASSWORD_BOX_PART_NONE ? 1 : 0;
         }
         if (local->pressed_part == hit_part)
@@ -826,31 +877,29 @@ static int egui_view_password_box_on_touch_event(egui_view_t *self, egui_motion_
                 password_box_set_current_part_inner(self, EGUI_VIEW_PASSWORD_BOX_PART_FIELD, 0);
             }
         }
-        local->pressed_part = EGUI_VIEW_PASSWORD_BOX_PART_NONE;
-        egui_view_set_pressed(self, false);
-        egui_view_invalidate(self);
+        password_box_clear_pressed_state(self, local);
         return 1;
     case EGUI_MOTION_EVENT_ACTION_CANCEL:
-        local->pressed_part = EGUI_VIEW_PASSWORD_BOX_PART_NONE;
-        egui_view_set_pressed(self, false);
-        egui_view_invalidate(self);
-        return 1;
+        return password_box_clear_pressed_state(self, local);
     default:
         return 0;
     }
 }
 #endif
+
 static uint8_t password_box_handle_navigation_key_inner(egui_view_t *self, uint8_t key_code)
 {
 #if EGUI_CONFIG_FUNCTION_SUPPORT_KEY
     EGUI_LOCAL_INIT(egui_view_password_box_t);
     uint8_t reveal_visible;
 
-    if (!egui_view_get_enable(self) || local->read_only_mode)
+    if (!egui_view_get_enable(self) || local->read_only_mode || local->compact_mode)
     {
+        password_box_clear_pressed_state(self, local);
         return 0;
     }
 
+    password_box_clear_pressed_state(self, local);
     password_box_normalize_state(local);
     reveal_visible = password_box_is_reveal_visible(local);
 
@@ -951,11 +1000,13 @@ static int egui_view_password_box_on_key_event(egui_view_t *self, egui_key_event
     EGUI_LOCAL_INIT(egui_view_password_box_t);
     char ch;
 
-    if (!egui_view_get_enable(self) || local->read_only_mode)
+    if (!egui_view_get_enable(self) || local->read_only_mode || local->compact_mode)
     {
+        password_box_clear_pressed_state(self, local);
         return 0;
     }
 
+    password_box_clear_pressed_state(self, local);
     if (event->type == EGUI_KEY_EVENT_ACTION_UP)
     {
         if (password_box_handle_navigation_key_inner(self, event->key_code))
@@ -999,6 +1050,39 @@ static int egui_view_password_box_on_key_event(egui_view_t *self, egui_key_event
     return 0;
 }
 #endif
+
+#if EGUI_CONFIG_FUNCTION_SUPPORT_KEY
+static int egui_view_password_box_on_static_key_event(egui_view_t *self, egui_key_event_t *event)
+{
+    EGUI_LOCAL_INIT(egui_view_password_box_t);
+
+    EGUI_UNUSED(event);
+    password_box_clear_pressed_state(self, local);
+    return 1;
+}
+#endif
+
+#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
+static int egui_view_password_box_on_static_touch_event(egui_view_t *self, egui_motion_event_t *event)
+{
+    EGUI_LOCAL_INIT(egui_view_password_box_t);
+
+    EGUI_UNUSED(event);
+    password_box_clear_pressed_state(self, local);
+    return 1;
+}
+#endif
+
+void egui_view_password_box_override_static_preview_api(egui_view_t *self, egui_view_api_t *api)
+{
+    egui_view_copy_api(self, api);
+#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
+    api->on_touch_event = egui_view_password_box_on_static_touch_event;
+#endif
+#if EGUI_CONFIG_FUNCTION_SUPPORT_KEY
+    api->on_key_event = egui_view_password_box_on_static_key_event;
+#endif
+}
 
 void egui_view_password_box_init(egui_view_t *self)
 {
