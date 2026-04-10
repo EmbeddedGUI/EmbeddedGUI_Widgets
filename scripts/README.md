@@ -11,7 +11,7 @@ This repository keeps only the scripts needed for standalone custom-widget work.
 - `code_runtime_check.py`
   Runtime screenshot verification for widget demos.
 - `release_check.py`
-  Release-style manual check entrypoint that chains touch audit, compile, unit tests, runtime verification, and WASM build verification.
+  Release-style manual check entrypoint that chains touch audit, compile, unit tests, runtime verification, WASM build verification, and browser-side web smoke checks.
 - `ci_local_check.py`
   Fast local CI wrapper for one widget category or the full widget set.
 

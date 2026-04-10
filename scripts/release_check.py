@@ -14,7 +14,7 @@ import time
 SCRIPT_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = SCRIPT_DIR.parent
 
-ALL_STEP_NAMES = ["catalog", "touch", "compile", "unit_test", "runtime", "wasm"]
+ALL_STEP_NAMES = ["catalog", "touch", "compile", "unit_test", "runtime", "wasm", "web_smoke"]
 STEP_DESCRIPTIONS = {
     "catalog": "Widget catalog consistency check",
     "touch": "Custom widget touch release semantics check",
@@ -22,6 +22,7 @@ STEP_DESCRIPTIONS = {
     "unit_test": "HelloUnitTest build and run",
     "runtime": "HelloCustomWidgets runtime verification",
     "wasm": "WASM demo build verification",
+    "web_smoke": "Headless browser smoke check for built web demos",
 }
 
 BANNER_WIDTH = 72
@@ -30,6 +31,7 @@ STATUS_FAIL = "FAIL"
 STATUS_SKIP = "SKIP"
 DEFAULT_RUNTIME_JOBS = 2
 DEFAULT_WASM_OUTPUT_DIR = PROJECT_ROOT / "output" / "release_check_wasm" / "demos"
+DEFAULT_WEB_SMOKE_ROOT = PROJECT_ROOT / "output" / "release_check_wasm"
 
 
 def banner(text: str) -> None:
@@ -122,6 +124,19 @@ def build_steps(args: argparse.Namespace) -> list[tuple[str, str, list[list[str]
     else:
         wasm_commands = [wasm_common_args + ["--clean"]]
 
+    web_smoke_cmd = [
+        py,
+        str(SCRIPT_DIR / "web" / "web_smoke_check.py"),
+        "--web-root",
+        str(DEFAULT_WEB_SMOKE_ROOT),
+        "--manifest",
+        str(DEFAULT_WASM_OUTPUT_DIR / "demos.json"),
+    ]
+    if args.web_smoke_browser:
+        web_smoke_cmd += ["--browser", args.web_smoke_browser]
+    if args.web_smoke_max_demos > 0:
+        web_smoke_cmd += ["--max-demos", str(args.web_smoke_max_demos)]
+
     return [
         ("catalog", STEP_DESCRIPTIONS["catalog"], [catalog_cmd]),
         ("touch", STEP_DESCRIPTIONS["touch"], [touch_cmd]),
@@ -129,6 +144,7 @@ def build_steps(args: argparse.Namespace) -> list[tuple[str, str, list[list[str]
         ("unit_test", STEP_DESCRIPTIONS["unit_test"], [unit_test_cmd]),
         ("runtime", STEP_DESCRIPTIONS["runtime"], [runtime_cmd]),
         ("wasm", STEP_DESCRIPTIONS["wasm"], wasm_commands),
+        ("web_smoke", STEP_DESCRIPTIONS["web_smoke"], [web_smoke_cmd]),
     ]
 
 
@@ -184,8 +200,8 @@ def parse_args() -> argparse.Namespace:
             f"Available steps: {', '.join(ALL_STEP_NAMES)}\n"
             "\nExamples:\n"
             "  python scripts/release_check.py\n"
-            "  python scripts/release_check.py --skip wasm\n"
-            "  python scripts/release_check.py --category input --skip wasm\n"
+            "  python scripts/release_check.py --skip wasm,web_smoke\n"
+            "  python scripts/release_check.py --category input --skip wasm,web_smoke\n"
             "  python scripts/release_check.py --keep-going --skip runtime\n"
         ),
     )
@@ -198,6 +214,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--runtime-jobs", type=int, default=DEFAULT_RUNTIME_JOBS, help=f"Forward to scripts/code_runtime_check.py --jobs (default: {DEFAULT_RUNTIME_JOBS}).")
     parser.add_argument("--wasm-jobs", type=int, default=0, help="Forward to scripts/web/wasm_build_demos.py --jobs.")
     parser.add_argument("--wasm-make-jobs", type=int, default=0, help="Forward to scripts/web/wasm_build_demos.py --make-jobs.")
+    parser.add_argument("--web-smoke-browser", type=str, default="", help="Forward to scripts/web/web_smoke_check.py --browser.")
+    parser.add_argument("--web-smoke-max-demos", type=int, default=0, help="Forward to scripts/web/web_smoke_check.py --max-demos.")
     return parser.parse_args()
 
 
