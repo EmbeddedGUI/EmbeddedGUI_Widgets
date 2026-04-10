@@ -97,6 +97,28 @@ static egui_color_t time_picker_mix_disabled(egui_color_t color)
     return egui_rgb_mix(color, EGUI_COLOR_DARK_GREY, 68);
 }
 
+static uint8_t time_picker_clear_pressed_state(egui_view_t *self, egui_view_time_picker_t *local)
+{
+    uint8_t was_pressed = self->is_pressed ? 1 : 0;
+    uint8_t had_pressed = was_pressed || local->pressed_part != EGUI_VIEW_TIME_PICKER_PART_NONE;
+
+    if (!had_pressed)
+    {
+        return 0;
+    }
+
+    local->pressed_part = EGUI_VIEW_TIME_PICKER_PART_NONE;
+    if (was_pressed)
+    {
+        egui_view_set_pressed(self, false);
+    }
+    else
+    {
+        egui_view_invalidate(self);
+    }
+    return 1;
+}
+
 static void time_picker_format_2d(uint8_t value, char *buffer)
 {
     buffer[0] = (char)('0' + (value / 10) % 10);
@@ -183,6 +205,7 @@ static void time_picker_commit_time(egui_view_t *self, uint8_t hour24, uint8_t m
 {
     EGUI_LOCAL_INIT(egui_view_time_picker_t);
     uint8_t rounded_minute = time_picker_round_minute(minute, local->minute_step);
+    uint8_t had_pressed = time_picker_clear_pressed_state(self, local);
 
     if (hour24 > 23)
     {
@@ -196,7 +219,10 @@ static void time_picker_commit_time(egui_view_t *self, uint8_t hour24, uint8_t m
 
     local->hour24 = hour24;
     local->minute = rounded_minute;
-    egui_view_invalidate(self);
+    if (!had_pressed)
+    {
+        egui_view_invalidate(self);
+    }
     if (notify)
     {
         time_picker_emit_time_changed(self, local);
@@ -206,6 +232,7 @@ static void time_picker_commit_time(egui_view_t *self, uint8_t hour24, uint8_t m
 static void time_picker_set_open_inner(egui_view_t *self, uint8_t opened, uint8_t notify)
 {
     EGUI_LOCAL_INIT(egui_view_time_picker_t);
+    uint8_t had_pressed = time_picker_clear_pressed_state(self, local);
 
     if (local->compact_mode || local->read_only_mode || !egui_view_get_enable(self))
     {
@@ -219,7 +246,10 @@ static void time_picker_set_open_inner(egui_view_t *self, uint8_t opened, uint8_
     }
 
     local->open_mode = opened;
-    egui_view_invalidate(self);
+    if (!had_pressed)
+    {
+        egui_view_invalidate(self);
+    }
     if (notify)
     {
         time_picker_emit_open_changed(self, local);
@@ -229,6 +259,7 @@ static void time_picker_set_open_inner(egui_view_t *self, uint8_t opened, uint8_
 static void time_picker_set_focus_inner(egui_view_t *self, uint8_t segment)
 {
     EGUI_LOCAL_INIT(egui_view_time_picker_t);
+    uint8_t had_pressed = time_picker_clear_pressed_state(self, local);
 
     segment = time_picker_normalize_focus(local, segment);
     if (local->focused_segment == segment)
@@ -237,7 +268,10 @@ static void time_picker_set_focus_inner(egui_view_t *self, uint8_t segment)
     }
 
     local->focused_segment = segment;
-    egui_view_invalidate(self);
+    if (!had_pressed)
+    {
+        egui_view_invalidate(self);
+    }
 }
 
 #if EGUI_CONFIG_FUNCTION_SUPPORT_KEY
@@ -323,6 +357,9 @@ void egui_view_time_picker_set_minute_step(egui_view_t *self, uint8_t minute_ste
 {
     EGUI_LOCAL_INIT(egui_view_time_picker_t);
     uint8_t normalized = time_picker_normalize_step(minute_step);
+    uint8_t had_pressed = time_picker_clear_pressed_state(self, local);
+    uint8_t prev_hour24 = local->hour24;
+    uint8_t prev_minute = local->minute;
 
     if (local->minute_step == normalized)
     {
@@ -331,6 +368,10 @@ void egui_view_time_picker_set_minute_step(egui_view_t *self, uint8_t minute_ste
 
     local->minute_step = normalized;
     time_picker_commit_time(self, local->hour24, local->minute, 0);
+    if (!had_pressed && prev_hour24 == local->hour24 && prev_minute == local->minute)
+    {
+        egui_view_invalidate(self);
+    }
 }
 
 uint8_t egui_view_time_picker_get_minute_step(egui_view_t *self)
@@ -342,6 +383,7 @@ uint8_t egui_view_time_picker_get_minute_step(egui_view_t *self)
 void egui_view_time_picker_set_use_24h(egui_view_t *self, uint8_t use_24h)
 {
     EGUI_LOCAL_INIT(egui_view_time_picker_t);
+    uint8_t had_pressed = time_picker_clear_pressed_state(self, local);
 
     use_24h = use_24h ? 1 : 0;
     if (local->use_24h == use_24h)
@@ -351,7 +393,10 @@ void egui_view_time_picker_set_use_24h(egui_view_t *self, uint8_t use_24h)
 
     local->use_24h = use_24h;
     local->focused_segment = time_picker_normalize_focus(local, local->focused_segment);
-    egui_view_invalidate(self);
+    if (!had_pressed)
+    {
+        egui_view_invalidate(self);
+    }
 }
 
 uint8_t egui_view_time_picker_get_use_24h(egui_view_t *self)
@@ -429,6 +474,7 @@ void egui_view_time_picker_set_on_open_changed_listener(egui_view_t *self, egui_
 void egui_view_time_picker_set_compact_mode(egui_view_t *self, uint8_t compact_mode)
 {
     EGUI_LOCAL_INIT(egui_view_time_picker_t);
+    uint8_t had_pressed = time_picker_clear_pressed_state(self, local);
 
     compact_mode = compact_mode ? 1 : 0;
     if (local->compact_mode == compact_mode)
@@ -437,16 +483,21 @@ void egui_view_time_picker_set_compact_mode(egui_view_t *self, uint8_t compact_m
     }
 
     local->compact_mode = compact_mode;
-    if (compact_mode)
+    if (compact_mode && local->open_mode)
     {
-        local->open_mode = 0;
+        time_picker_set_open_inner(self, 0, 0);
+        return;
     }
-    egui_view_invalidate(self);
+    if (!had_pressed)
+    {
+        egui_view_invalidate(self);
+    }
 }
 
 void egui_view_time_picker_set_read_only_mode(egui_view_t *self, uint8_t read_only_mode)
 {
     EGUI_LOCAL_INIT(egui_view_time_picker_t);
+    uint8_t had_pressed = time_picker_clear_pressed_state(self, local);
 
     read_only_mode = read_only_mode ? 1 : 0;
     if (local->read_only_mode == read_only_mode)
@@ -455,24 +506,32 @@ void egui_view_time_picker_set_read_only_mode(egui_view_t *self, uint8_t read_on
     }
 
     local->read_only_mode = read_only_mode;
-    if (read_only_mode)
+    if (read_only_mode && local->open_mode)
     {
-        local->open_mode = 0;
+        time_picker_set_open_inner(self, 0, 0);
+        return;
     }
-    egui_view_invalidate(self);
+    if (!had_pressed)
+    {
+        egui_view_invalidate(self);
+    }
 }
 
 void egui_view_time_picker_set_palette(egui_view_t *self, egui_color_t surface_color, egui_color_t border_color, egui_color_t text_color,
                                        egui_color_t muted_text_color, egui_color_t accent_color)
 {
     EGUI_LOCAL_INIT(egui_view_time_picker_t);
+    uint8_t had_pressed = time_picker_clear_pressed_state(self, local);
 
     local->surface_color = surface_color;
     local->border_color = border_color;
     local->text_color = text_color;
     local->muted_text_color = muted_text_color;
     local->accent_color = accent_color;
-    egui_view_invalidate(self);
+    if (!had_pressed)
+    {
+        egui_view_invalidate(self);
+    }
 }
 
 static void time_picker_draw_text(const egui_font_t *font, egui_view_t *self, const char *text, const egui_region_t *region, uint8_t align, egui_color_t color)
@@ -890,8 +949,9 @@ static int egui_view_time_picker_on_touch_event(egui_view_t *self, egui_motion_e
     EGUI_LOCAL_INIT(egui_view_time_picker_t);
     uint8_t hit_part;
 
-    if (!egui_view_get_enable(self) || local->read_only_mode)
+    if (!egui_view_get_enable(self) || local->read_only_mode || local->compact_mode)
     {
+        time_picker_clear_pressed_state(self, local);
         return 0;
     }
 
@@ -943,15 +1003,10 @@ static int egui_view_time_picker_on_touch_event(egui_view_t *self, egui_motion_e
                 }
             }
         }
-        local->pressed_part = EGUI_VIEW_TIME_PICKER_PART_NONE;
-        egui_view_set_pressed(self, false);
-        egui_view_invalidate(self);
+        time_picker_clear_pressed_state(self, local);
         return hit_part != EGUI_VIEW_TIME_PICKER_PART_NONE ? 1 : 0;
     case EGUI_MOTION_EVENT_ACTION_CANCEL:
-        local->pressed_part = EGUI_VIEW_TIME_PICKER_PART_NONE;
-        egui_view_set_pressed(self, false);
-        egui_view_invalidate(self);
-        return 1;
+        return time_picker_clear_pressed_state(self, local);
     default:
         return 0;
     }
@@ -963,11 +1018,13 @@ static int egui_view_time_picker_on_key_event(egui_view_t *self, egui_key_event_
 {
     EGUI_LOCAL_INIT(egui_view_time_picker_t);
 
-    if (!egui_view_get_enable(self) || local->read_only_mode)
+    if (!egui_view_get_enable(self) || local->read_only_mode || local->compact_mode)
     {
+        time_picker_clear_pressed_state(self, local);
         return 0;
     }
 
+    time_picker_clear_pressed_state(self, local);
     if (event->type != EGUI_KEY_EVENT_ACTION_UP)
     {
         switch (event->key_code)
@@ -1025,7 +1082,38 @@ static int egui_view_time_picker_on_key_event(egui_view_t *self, egui_key_event_
         return egui_view_on_key_event(self, event);
     }
 }
+
+static int egui_view_time_picker_on_static_key_event(egui_view_t *self, egui_key_event_t *event)
+{
+    EGUI_LOCAL_INIT(egui_view_time_picker_t);
+
+    EGUI_UNUSED(event);
+    time_picker_clear_pressed_state(self, local);
+    return 1;
+}
 #endif
+
+#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
+static int egui_view_time_picker_on_static_touch_event(egui_view_t *self, egui_motion_event_t *event)
+{
+    EGUI_LOCAL_INIT(egui_view_time_picker_t);
+
+    EGUI_UNUSED(event);
+    time_picker_clear_pressed_state(self, local);
+    return 1;
+}
+#endif
+
+void egui_view_time_picker_override_static_preview_api(egui_view_t *self, egui_view_api_t *api)
+{
+    egui_view_copy_api(self, api);
+#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
+    api->on_touch_event = egui_view_time_picker_on_static_touch_event;
+#endif
+#if EGUI_CONFIG_FUNCTION_SUPPORT_KEY
+    api->on_key_event = egui_view_time_picker_on_static_key_event;
+#endif
+}
 
 const egui_view_api_t EGUI_VIEW_API_TABLE_NAME(egui_view_time_picker_t) = {
         .dispatch_touch_event = egui_view_dispatch_touch_event,

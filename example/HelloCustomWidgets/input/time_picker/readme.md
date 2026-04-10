@@ -49,7 +49,7 @@
   - 保持浅色 page panel、白色 surface 和低噪音边框
   - 字段内部保留 `hour / minute / period` 的标准层级
   - 展开面板保留三列调节区域，不再增加页面级说明壳
-  - `compact` 与 `read only` 固定为静态对照，不再承担点击切换逻辑
+  - `compact` 与 `read only` 固定为静态对照，只负责失焦收口，并通过统一 static preview API 吞掉 touch / key 输入，不再承担点击切换逻辑
 
 ## 5. 控件清单
 
@@ -102,6 +102,8 @@ python scripts/checks/check_docs_encoding.py
 - 主 `TimePicker` 展开态和收起态都必须完整可见
 - `hour / minute / period` 的层级、焦点和中心值必须清晰可辨
 - `compact` 与 `read only` 对照必须低噪音且明显区分
+- `set_time / minute step / 12h-24h / focused segment / palette / compact / read only / opened` 切换后不能残留 `pressed_part / is_pressed` 污染
+- 底部 `compact / read only` 预览必须统一吞掉 touch / key 输入，并在收到输入后立即清理残留 `pressed` 渲染
 - 页面中不再出现 guide、状态行、分隔线和 preview label
 
 ## 9. 已知限制与后续方向
@@ -146,4 +148,4 @@ python scripts/checks/check_docs_encoding.py
 - 直接复用 `time_picker` 基础实现，避免在示例页重复造状态桥
 - 用统一浅色 palette 收口到 `Fluent 2 / WPF UI` reference 方向
 - 通过示例页高度同步保留主控件展开 / 收起时的合理留白
-- 页面空白区和底部双预览只负责 dismiss，不再承担演示逻辑
+- 页面空白区和底部双预览只负责 dismiss，并通过统一 static preview API 吞掉 touch / key 输入，不再承担演示逻辑
