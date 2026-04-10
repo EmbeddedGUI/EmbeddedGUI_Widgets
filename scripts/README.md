@@ -35,7 +35,7 @@ This repository keeps only the scripts needed for standalone custom-widget work.
 - `python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --refresh-existing`
   Refresh `web/demos/demos.json` and bundled README files from existing web demo artifacts without rebuilding WASM.
 - `python scripts/web/web_smoke_check.py`
-  Run headless browser smoke checks for `web/demos/`, capture one screenshot per demo, and generate `summary.json`, `summary.md`, and a contact sheet for manual visual review.
+  Run headless browser smoke checks for `web/demos/`, capture one screenshot per demo, and generate `summary.json`, `summary.md`, and a contact sheet for manual visual review. The script auto-adds Linux CI-friendly browser flags on GitHub Actions and also accepts repeatable `--browser-arg`.
 
 ## Principle
 

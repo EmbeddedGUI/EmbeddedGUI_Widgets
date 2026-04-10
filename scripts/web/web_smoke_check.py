@@ -76,6 +76,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--manifest", default=str(DEFAULT_MANIFEST), help="Path to demos.json.")
     parser.add_argument("--web-root", default=str(DEFAULT_WEB_ROOT), help="Static web root directory.")
     parser.add_argument("--browser", default="", help="Browser executable path. Defaults to Edge/Chrome auto-detection.")
+    parser.add_argument("--browser-arg", action="append", default=[], help="Extra browser launch arg. Repeatable.")
     parser.add_argument("--demo", action="append", default=[], help="Only check selected demo name(s). Repeatable.")
     parser.add_argument("--name-filter", default="", help="Only check demos whose names contain this substring.")
     parser.add_argument("--category", default="", help="Only check demos in one manifest category.")
@@ -141,6 +142,36 @@ def parse_window_size(window_size: str) -> tuple[int, int]:
     if width <= 0 or height <= 0:
         raise ValueError(f"invalid --window-size: {window_size}")
     return width, height
+
+
+def default_browser_args() -> list[str]:
+    args = [
+        "--headless",
+        "--disable-gpu",
+        "--no-first-run",
+        "--no-default-browser-check",
+    ]
+
+    if os.name != "nt":
+        args.append("--disable-dev-shm-usage")
+
+    if os.environ.get("GITHUB_ACTIONS", "").lower() == "true":
+        args.extend(["--no-sandbox", "--disable-setuid-sandbox"])
+
+    return args
+
+
+def merge_browser_args(extra_args: list[str]) -> list[str]:
+    merged: list[str] = []
+    seen: set[str] = set()
+
+    for arg in default_browser_args() + list(extra_args):
+        if arg in seen:
+            continue
+        merged.append(arg)
+        seen.add(arg)
+
+    return merged
 
 
 def wait_server(port: int, timeout: float = 15.0) -> None:
@@ -240,6 +271,7 @@ def render_summary_markdown(summary: dict, summary_path: Path, summary_md_path: 
         "",
         f"- Generated: `{summary['generatedAt']}`",
         f"- Browser: `{summary['browser']}`",
+        f"- Browser args: `{' '.join(summary['browserArgs'])}`",
         f"- Manifest: `{summary['manifest']}`",
         f"- Web root: `{summary['webRoot']}`",
         f"- Output: `{project_relative(summary_path.parent)}`",
@@ -310,7 +342,7 @@ def create_contact_sheet(output_dir: Path, results: list[dict], window_size: tup
     return output_path
 
 
-def run_demo(browser: str, port: int, entry: dict, output_dir: Path, profile_dir: Path, window_size: str, virtual_time_budget: int) -> dict:
+def run_demo(browser: str, browser_args: list[str], port: int, entry: dict, output_dir: Path, profile_dir: Path, window_size: str, virtual_time_budget: int) -> dict:
     name = entry["name"]
     app = entry["app"]
     demo_dir = output_dir / name
@@ -324,10 +356,7 @@ def run_demo(browser: str, port: int, entry: dict, output_dir: Path, profile_dir
 
     command = [
         browser,
-        "--headless",
-        "--disable-gpu",
-        "--no-first-run",
-        "--no-default-browser-check",
+        *browser_args,
         f"--virtual-time-budget={virtual_time_budget}",
         f"--window-size={window_size}",
         f"--user-data-dir={profile_dir}",
@@ -398,6 +427,7 @@ def main() -> int:
 
     window_dims = parse_window_size(args.window_size)
     browser = find_browser(args.browser)
+    browser_args = merge_browser_args(args.browser_arg)
     manifest = filter_manifest(load_manifest(manifest_path), args)
     if not manifest:
         print("No demos selected.")
@@ -410,10 +440,12 @@ def main() -> int:
         failures = []
 
         print(f"Checking {len(manifest)} demo(s) with browser: {browser}", flush=True)
+        print("Browser args: " + " ".join(browser_args), flush=True)
         for index, entry in enumerate(manifest, start=1):
             print(f"[{index}/{len(manifest)}] {entry['name']}", flush=True)
             result = run_demo(
                 browser=browser,
+                browser_args=browser_args,
                 port=server.server_address[1],
                 entry=entry,
                 output_dir=output_dir,
@@ -450,6 +482,7 @@ def main() -> int:
         summary = {
             "generatedAt": datetime.now().isoformat(timespec="seconds"),
             "browser": browser,
+            "browserArgs": browser_args,
             "manifest": str(manifest_path),
             "webRoot": str(web_root),
             "port": server.server_address[1],
