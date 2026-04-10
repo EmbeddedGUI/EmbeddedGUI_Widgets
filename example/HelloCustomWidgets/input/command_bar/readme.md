@@ -95,6 +95,11 @@ python scripts/checks/check_docs_encoding.py
 - 主控件键盘切换必须清晰可辨，不再依赖外部 `guide` 或状态文本
 - 页面中不再出现旧版 `guide`、状态回显、分隔线和外部 `preview` 标签
 - `compact` 与 `disabled` 必须保持 Fluent / WPF UI 风格的低噪音浅色 reference
+- `snapshots / current snapshot / current index / compact / disabled` 切换链路需要共用同一套 `pressed` 清理语义
+- setter 更新、模式切换和 `touch cancel` 后，不能残留命令项的 `pressed` 高亮
+- `compact / disabled_mode / !enable` 收到新的 touch 或 key 输入时，必须先清理残留 pressed，再拒绝后续交互
+- 触摸释放语义必须继续满足“按下与抬起命中同一命令项才提交”
+- unit test 中已有的 snapshot / selection 切换、`compact / disabled` 输入抑制和 `touch cancel` 语义不能回归
 
 ## 9. 已知限制与后续方向
 - 当前是固定尺寸 reference 实现，未覆盖真实响应式隐藏与测量
@@ -135,3 +140,4 @@ python scripts/checks/check_docs_encoding.py
 - 主控件保留 `eyebrow + title + scope + command rail + footer` 五段结构
 - `compact` 预览通过 touch/key override 固定为静态对照
 - `disabled` 预览通过 `disabled_mode + compact_mode` 固定为静态不可交互对照
+- 交互收口阶段统一要求 setter、模式切换、禁用 guard、`touch cancel` 和 key guard 都能清理残留 `pressed`，确保交互后的渲染稳定

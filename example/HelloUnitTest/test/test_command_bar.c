@@ -114,6 +114,47 @@ static void get_metrics(egui_view_command_bar_metrics_t *metrics)
     egui_view_command_bar_get_metrics(&test_bar, EGUI_VIEW_OF(&test_bar), snapshot, item_count, metrics);
 }
 
+static void test_command_bar_setters_clear_pressed_state_and_clamp(void)
+{
+    setup_bar();
+
+    test_bar.pressed_index = 2;
+    egui_view_set_pressed(EGUI_VIEW_OF(&test_bar), true);
+    egui_view_command_bar_set_snapshots(EGUI_VIEW_OF(&test_bar), g_snapshots, 3);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_COMMAND_BAR_INDEX_NONE, test_bar.pressed_index);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_bar)->is_pressed);
+
+    test_bar.pressed_index = 0;
+    egui_view_set_pressed(EGUI_VIEW_OF(&test_bar), true);
+    egui_view_command_bar_set_current_snapshot(EGUI_VIEW_OF(&test_bar), 0);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_COMMAND_BAR_INDEX_NONE, test_bar.pressed_index);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_bar)->is_pressed);
+
+    test_bar.pressed_index = 3;
+    egui_view_set_pressed(EGUI_VIEW_OF(&test_bar), true);
+    egui_view_command_bar_set_current_index(EGUI_VIEW_OF(&test_bar), 0);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_COMMAND_BAR_INDEX_NONE, test_bar.pressed_index);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_bar)->is_pressed);
+
+    test_bar.pressed_index = 1;
+    egui_view_set_pressed(EGUI_VIEW_OF(&test_bar), true);
+    egui_view_command_bar_set_current_index(EGUI_VIEW_OF(&test_bar), 9);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_COMMAND_BAR_INDEX_NONE, test_bar.pressed_index);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_bar)->is_pressed);
+
+    test_bar.pressed_index = 2;
+    egui_view_set_pressed(EGUI_VIEW_OF(&test_bar), true);
+    egui_view_command_bar_set_compact_mode(EGUI_VIEW_OF(&test_bar), 0);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_COMMAND_BAR_INDEX_NONE, test_bar.pressed_index);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_bar)->is_pressed);
+
+    test_bar.pressed_index = 1;
+    egui_view_set_pressed(EGUI_VIEW_OF(&test_bar), true);
+    egui_view_command_bar_set_disabled_mode(EGUI_VIEW_OF(&test_bar), 0);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_COMMAND_BAR_INDEX_NONE, test_bar.pressed_index);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_bar)->is_pressed);
+}
+
 static void test_command_bar_set_snapshots_clamp_and_resolve_default_index(void)
 {
     setup_bar();
@@ -187,14 +228,18 @@ static void test_command_bar_font_modes_listener_and_palette(void)
     EGUI_TEST_ASSERT_TRUE(test_bar.meta_font == (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT);
 
     test_bar.pressed_index = 2;
+    egui_view_set_pressed(EGUI_VIEW_OF(&test_bar), true);
     egui_view_command_bar_set_compact_mode(EGUI_VIEW_OF(&test_bar), 2);
     EGUI_TEST_ASSERT_EQUAL_INT(1, test_bar.compact_mode);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_COMMAND_BAR_INDEX_NONE, test_bar.pressed_index);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_bar)->is_pressed);
 
     test_bar.pressed_index = 1;
+    egui_view_set_pressed(EGUI_VIEW_OF(&test_bar), true);
     egui_view_command_bar_set_disabled_mode(EGUI_VIEW_OF(&test_bar), 3);
     EGUI_TEST_ASSERT_EQUAL_INT(1, test_bar.disabled_mode);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_COMMAND_BAR_INDEX_NONE, test_bar.pressed_index);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_bar)->is_pressed);
 
     egui_view_command_bar_set_disabled_mode(EGUI_VIEW_OF(&test_bar), 0);
     EGUI_TEST_ASSERT_EQUAL_INT(0, test_bar.disabled_mode);
@@ -278,7 +323,7 @@ static void test_command_bar_touch_updates_selection_and_hit_testing(void)
     EGUI_TEST_ASSERT_EQUAL_INT(3, last_index);
 }
 
-static void test_command_bar_touch_cancel_and_disabled_or_view_disabled_ignore_input(void)
+static void test_command_bar_touch_cancel_and_disabled_or_view_disabled_clear_pressed_state(void)
 {
     egui_view_command_bar_metrics_t metrics;
     egui_dim_t x0;
@@ -301,15 +346,81 @@ static void test_command_bar_touch_cancel_and_disabled_or_view_disabled_ignore_i
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_COMMAND_BAR_INDEX_NONE, test_bar.pressed_index);
     EGUI_TEST_ASSERT_EQUAL_INT(2, egui_view_command_bar_get_current_index(EGUI_VIEW_OF(&test_bar)));
     EGUI_TEST_ASSERT_EQUAL_INT(0, changed_count);
+    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_CANCEL, x0, y0));
 
     egui_view_command_bar_set_disabled_mode(EGUI_VIEW_OF(&test_bar), 1);
+    test_bar.pressed_index = 0;
+    egui_view_set_pressed(EGUI_VIEW_OF(&test_bar), true);
     EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x0, y0));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_COMMAND_BAR_INDEX_NONE, test_bar.pressed_index);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_bar)->is_pressed);
     EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, x0, y0));
+    test_bar.pressed_index = 0;
+    egui_view_set_pressed(EGUI_VIEW_OF(&test_bar), true);
+    EGUI_TEST_ASSERT_FALSE(send_key(EGUI_KEY_CODE_LEFT));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_COMMAND_BAR_INDEX_NONE, test_bar.pressed_index);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_bar)->is_pressed);
 
     egui_view_command_bar_set_disabled_mode(EGUI_VIEW_OF(&test_bar), 0);
     egui_view_set_enable(EGUI_VIEW_OF(&test_bar), 0);
+    test_bar.pressed_index = 0;
+    egui_view_set_pressed(EGUI_VIEW_OF(&test_bar), true);
+    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x0, y0));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_COMMAND_BAR_INDEX_NONE, test_bar.pressed_index);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_bar)->is_pressed);
+    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, x0, y0));
+    test_bar.pressed_index = 0;
+    egui_view_set_pressed(EGUI_VIEW_OF(&test_bar), true);
+    EGUI_TEST_ASSERT_FALSE(send_key(EGUI_KEY_CODE_LEFT));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_COMMAND_BAR_INDEX_NONE, test_bar.pressed_index);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_bar)->is_pressed);
+
+    egui_view_set_enable(EGUI_VIEW_OF(&test_bar), 1);
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x0, y0));
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, x0, y0));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_command_bar_get_current_index(EGUI_VIEW_OF(&test_bar)));
+    EGUI_TEST_ASSERT_EQUAL_INT(1, changed_count);
+}
+
+static void test_command_bar_compact_mode_clears_pressed_and_ignores_input(void)
+{
+    egui_view_command_bar_metrics_t metrics;
+    egui_dim_t x0;
+    egui_dim_t y0;
+
+    setup_bar();
+    egui_view_command_bar_set_current_index(EGUI_VIEW_OF(&test_bar), 2);
+    reset_changed_state();
+    layout_bar();
+    get_metrics(&metrics);
+
+    x0 = metrics.item_regions[0].location.x + metrics.item_regions[0].size.width / 2;
+    y0 = metrics.item_regions[0].location.y + metrics.item_regions[0].size.height / 2;
+
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x0, y0));
+    EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&test_bar)->is_pressed);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, test_bar.pressed_index);
+
+    egui_view_command_bar_set_compact_mode(EGUI_VIEW_OF(&test_bar), 1);
+    EGUI_TEST_ASSERT_EQUAL_INT(1, test_bar.compact_mode);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_COMMAND_BAR_INDEX_NONE, test_bar.pressed_index);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_bar)->is_pressed);
+
+    test_bar.pressed_index = 0;
+    egui_view_set_pressed(EGUI_VIEW_OF(&test_bar), true);
+    EGUI_TEST_ASSERT_FALSE(send_key(EGUI_KEY_CODE_RIGHT));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_COMMAND_BAR_INDEX_NONE, test_bar.pressed_index);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_bar)->is_pressed);
+
     EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x0, y0));
     EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, x0, y0));
+    EGUI_TEST_ASSERT_EQUAL_INT(2, egui_view_command_bar_get_current_index(EGUI_VIEW_OF(&test_bar)));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, changed_count);
+
+    egui_view_command_bar_set_compact_mode(EGUI_VIEW_OF(&test_bar), 0);
+    EGUI_TEST_ASSERT_TRUE(send_key(EGUI_KEY_CODE_LEFT));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_command_bar_get_current_index(EGUI_VIEW_OF(&test_bar)));
+    EGUI_TEST_ASSERT_EQUAL_INT(1, changed_count);
 }
 
 static void test_command_bar_keyboard_navigation_and_guards(void)
@@ -321,8 +432,12 @@ static void test_command_bar_keyboard_navigation_and_guards(void)
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_command_bar_get_current_index(EGUI_VIEW_OF(&test_bar)));
     EGUI_TEST_ASSERT_EQUAL_INT(0, changed_count);
 
+    test_bar.pressed_index = 0;
+    egui_view_set_pressed(EGUI_VIEW_OF(&test_bar), true);
     EGUI_TEST_ASSERT_TRUE(send_key(EGUI_KEY_CODE_RIGHT));
     EGUI_TEST_ASSERT_EQUAL_INT(2, egui_view_command_bar_get_current_index(EGUI_VIEW_OF(&test_bar)));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_COMMAND_BAR_INDEX_NONE, test_bar.pressed_index);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_bar)->is_pressed);
     EGUI_TEST_ASSERT_EQUAL_INT(1, changed_count);
     EGUI_TEST_ASSERT_EQUAL_INT(2, last_index);
 
@@ -450,11 +565,13 @@ static void test_command_bar_internal_helpers_cover_metrics_measurements_and_sta
 void test_command_bar_run(void)
 {
     EGUI_TEST_SUITE_BEGIN(command_bar);
+    EGUI_TEST_RUN(test_command_bar_setters_clear_pressed_state_and_clamp);
     EGUI_TEST_RUN(test_command_bar_set_snapshots_clamp_and_resolve_default_index);
     EGUI_TEST_RUN(test_command_bar_snapshot_and_index_guards_notify);
     EGUI_TEST_RUN(test_command_bar_font_modes_listener_and_palette);
     EGUI_TEST_RUN(test_command_bar_touch_updates_selection_and_hit_testing);
-    EGUI_TEST_RUN(test_command_bar_touch_cancel_and_disabled_or_view_disabled_ignore_input);
+    EGUI_TEST_RUN(test_command_bar_touch_cancel_and_disabled_or_view_disabled_clear_pressed_state);
+    EGUI_TEST_RUN(test_command_bar_compact_mode_clears_pressed_and_ignores_input);
     EGUI_TEST_RUN(test_command_bar_keyboard_navigation_and_guards);
     EGUI_TEST_RUN(test_command_bar_internal_helpers_cover_metrics_measurements_and_states);
     EGUI_TEST_SUITE_END();

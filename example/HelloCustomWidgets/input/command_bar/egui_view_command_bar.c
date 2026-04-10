@@ -121,6 +121,15 @@ static const egui_view_command_bar_snapshot_t *egui_view_command_bar_get_snapsho
     return &local->snapshots[local->current_snapshot];
 }
 
+static uint8_t egui_view_command_bar_clear_pressed_state(egui_view_t *self, egui_view_command_bar_t *local)
+{
+    uint8_t had_pressed = self->is_pressed || local->pressed_index != EGUI_VIEW_COMMAND_BAR_INDEX_NONE;
+
+    local->pressed_index = EGUI_VIEW_COMMAND_BAR_INDEX_NONE;
+    egui_view_set_pressed(self, false);
+    return had_pressed;
+}
+
 static uint8_t egui_view_command_bar_item_is_enabled(egui_view_command_bar_t *local, egui_view_t *self, const egui_view_command_bar_item_t *item)
 {
     if (item == NULL || item->enabled == 0 || local->disabled_mode || !egui_view_get_enable(self))
@@ -589,6 +598,7 @@ void egui_view_command_bar_set_snapshots(egui_view_t *self, const egui_view_comm
     const egui_view_command_bar_snapshot_t *snapshot;
     uint8_t item_count;
 
+    egui_view_command_bar_clear_pressed_state(self, local);
     local->snapshots = snapshots;
     local->snapshot_count = egui_view_command_bar_clamp_snapshot_count(snapshot_count);
     if (local->current_snapshot >= local->snapshot_count)
@@ -599,7 +609,6 @@ void egui_view_command_bar_set_snapshots(egui_view_t *self, const egui_view_comm
     snapshot = egui_view_command_bar_get_snapshot(local);
     item_count = snapshot == NULL ? 0 : egui_view_command_bar_clamp_item_count(snapshot->item_count);
     local->current_index = egui_view_command_bar_resolve_default_index(local, self, snapshot, item_count);
-    local->pressed_index = EGUI_VIEW_COMMAND_BAR_INDEX_NONE;
     egui_view_invalidate(self);
 }
 
@@ -608,13 +617,22 @@ void egui_view_command_bar_set_current_snapshot(egui_view_t *self, uint8_t snaps
     EGUI_LOCAL_INIT(egui_view_command_bar_t);
     const egui_view_command_bar_snapshot_t *snapshot;
     uint8_t item_count;
+    uint8_t had_pressed = egui_view_command_bar_clear_pressed_state(self, local);
 
     if (local->snapshot_count == 0 || snapshot_index >= local->snapshot_count)
     {
+        if (had_pressed)
+        {
+            egui_view_invalidate(self);
+        }
         return;
     }
     if (local->current_snapshot == snapshot_index)
     {
+        if (had_pressed)
+        {
+            egui_view_invalidate(self);
+        }
         return;
     }
 
@@ -622,7 +640,6 @@ void egui_view_command_bar_set_current_snapshot(egui_view_t *self, uint8_t snaps
     snapshot = egui_view_command_bar_get_snapshot(local);
     item_count = snapshot == NULL ? 0 : egui_view_command_bar_clamp_item_count(snapshot->item_count);
     local->current_index = egui_view_command_bar_resolve_default_index(local, self, snapshot, item_count);
-    local->pressed_index = EGUI_VIEW_COMMAND_BAR_INDEX_NONE;
     egui_view_invalidate(self);
 }
 
@@ -637,19 +654,40 @@ void egui_view_command_bar_set_current_index(egui_view_t *self, uint8_t index)
     EGUI_LOCAL_INIT(egui_view_command_bar_t);
     const egui_view_command_bar_snapshot_t *snapshot = egui_view_command_bar_get_snapshot(local);
     uint8_t item_count;
+    uint8_t had_pressed = egui_view_command_bar_clear_pressed_state(self, local);
 
     if (snapshot == NULL)
     {
+        if (had_pressed)
+        {
+            egui_view_invalidate(self);
+        }
         return;
     }
 
     item_count = egui_view_command_bar_clamp_item_count(snapshot->item_count);
     if (item_count == 0 || index >= item_count)
     {
+        if (had_pressed)
+        {
+            egui_view_invalidate(self);
+        }
         return;
     }
     if (!egui_view_command_bar_item_is_enabled(local, self, &snapshot->items[index]))
     {
+        if (had_pressed)
+        {
+            egui_view_invalidate(self);
+        }
+        return;
+    }
+    if (local->current_index == index)
+    {
+        if (had_pressed)
+        {
+            egui_view_invalidate(self);
+        }
         return;
     }
 
@@ -685,17 +723,39 @@ void egui_view_command_bar_set_meta_font(egui_view_t *self, const egui_font_t *f
 void egui_view_command_bar_set_compact_mode(egui_view_t *self, uint8_t compact_mode)
 {
     EGUI_LOCAL_INIT(egui_view_command_bar_t);
-    local->compact_mode = compact_mode ? 1 : 0;
-    local->pressed_index = EGUI_VIEW_COMMAND_BAR_INDEX_NONE;
-    egui_view_invalidate(self);
+    uint8_t changed = 0;
+    uint8_t had_pressed;
+
+    compact_mode = compact_mode ? 1 : 0;
+    had_pressed = egui_view_command_bar_clear_pressed_state(self, local);
+    if (local->compact_mode != compact_mode)
+    {
+        local->compact_mode = compact_mode;
+        changed = 1;
+    }
+    if (changed || had_pressed)
+    {
+        egui_view_invalidate(self);
+    }
 }
 
 void egui_view_command_bar_set_disabled_mode(egui_view_t *self, uint8_t disabled_mode)
 {
     EGUI_LOCAL_INIT(egui_view_command_bar_t);
-    local->disabled_mode = disabled_mode ? 1 : 0;
-    local->pressed_index = EGUI_VIEW_COMMAND_BAR_INDEX_NONE;
-    egui_view_invalidate(self);
+    uint8_t changed = 0;
+    uint8_t had_pressed;
+
+    disabled_mode = disabled_mode ? 1 : 0;
+    had_pressed = egui_view_command_bar_clear_pressed_state(self, local);
+    if (local->disabled_mode != disabled_mode)
+    {
+        local->disabled_mode = disabled_mode;
+        changed = 1;
+    }
+    if (changed || had_pressed)
+    {
+        egui_view_invalidate(self);
+    }
 }
 
 void egui_view_command_bar_set_palette(egui_view_t *self, egui_color_t surface_color, egui_color_t section_color, egui_color_t border_color,
@@ -1005,8 +1065,12 @@ static int egui_view_command_bar_on_touch_event(egui_view_t *self, egui_motion_e
     const egui_view_command_bar_snapshot_t *snapshot = egui_view_command_bar_get_snapshot(local);
     uint8_t hit_index;
 
-    if (!egui_view_get_enable(self) || local->disabled_mode || snapshot == NULL)
+    if (!egui_view_get_enable(self) || local->disabled_mode || local->compact_mode || snapshot == NULL)
     {
+        if (egui_view_command_bar_clear_pressed_state(self, local))
+        {
+            egui_view_invalidate(self);
+        }
         return 0;
     }
 
@@ -1016,6 +1080,10 @@ static int egui_view_command_bar_on_touch_event(egui_view_t *self, egui_motion_e
         hit_index = egui_view_command_bar_hit_item(local, self, event->location.x, event->location.y);
         if (hit_index == EGUI_VIEW_COMMAND_BAR_INDEX_NONE || !egui_view_command_bar_item_is_enabled(local, self, &snapshot->items[hit_index]))
         {
+            if (egui_view_command_bar_clear_pressed_state(self, local))
+            {
+                egui_view_invalidate(self);
+            }
             return 0;
         }
         local->pressed_index = hit_index;
@@ -1023,21 +1091,29 @@ static int egui_view_command_bar_on_touch_event(egui_view_t *self, egui_motion_e
         egui_view_invalidate(self);
         return 1;
     case EGUI_MOTION_EVENT_ACTION_UP:
+    {
+        uint8_t handled;
+
         hit_index = egui_view_command_bar_hit_item(local, self, event->location.x, event->location.y);
         if (local->pressed_index != EGUI_VIEW_COMMAND_BAR_INDEX_NONE && local->pressed_index == hit_index &&
             egui_view_command_bar_item_is_enabled(local, self, &snapshot->items[hit_index]))
         {
             egui_view_command_bar_set_current_index_inner(self, hit_index, 1);
         }
-        local->pressed_index = EGUI_VIEW_COMMAND_BAR_INDEX_NONE;
-        egui_view_set_pressed(self, false);
-        egui_view_invalidate(self);
-        return hit_index != EGUI_VIEW_COMMAND_BAR_INDEX_NONE;
+        handled = egui_view_command_bar_clear_pressed_state(self, local);
+        if (handled)
+        {
+            egui_view_invalidate(self);
+        }
+        return handled || hit_index != EGUI_VIEW_COMMAND_BAR_INDEX_NONE;
+    }
     case EGUI_MOTION_EVENT_ACTION_CANCEL:
-        local->pressed_index = EGUI_VIEW_COMMAND_BAR_INDEX_NONE;
-        egui_view_set_pressed(self, false);
-        egui_view_invalidate(self);
-        return 1;
+        if (egui_view_command_bar_clear_pressed_state(self, local))
+        {
+            egui_view_invalidate(self);
+            return 1;
+        }
+        return 0;
     default:
         return 0;
     }
@@ -1050,7 +1126,11 @@ static int egui_view_command_bar_on_key_event(egui_view_t *self, egui_key_event_
     EGUI_LOCAL_INIT(egui_view_command_bar_t);
     uint8_t index;
 
-    if (!egui_view_get_enable(self) || local->disabled_mode || event->type != EGUI_KEY_EVENT_ACTION_UP)
+    if (egui_view_command_bar_clear_pressed_state(self, local))
+    {
+        egui_view_invalidate(self);
+    }
+    if (!egui_view_get_enable(self) || local->disabled_mode || local->compact_mode || event->type != EGUI_KEY_EVENT_ACTION_UP)
     {
         return 0;
     }
