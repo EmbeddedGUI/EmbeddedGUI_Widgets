@@ -92,6 +92,8 @@ python scripts/checks/check_docs_encoding.py
 - 主控件触摸点击和 `Enter` 键切换都必须生效
 - `snapshot / compact / read only / disabled` 切换后不能残留 `pressed` 高亮或下压位移渲染
 - `read only / disabled` 不仅要忽略后续 touch / key 输入，还要在收到新输入时清理残留 `pressed` 渲染
+- 主控件的 `touch cancel`、无关按键和 `Enter` 的 `ACTION_DOWN -> ACTION_UP` 闭环都必须稳定，不能留下残留 `pressed`
+- 底部 `compact / read only` 预览必须统一吞掉 touch / key 输入，并在收到输入后立即清理残留 `pressed` 渲染
 - 页面中不再出现旧版 `guide`、状态回显、分隔线和外部 `preview` 标签
 - `compact` 与 `read only` 必须保持 Fluent / WPF UI 风格的低噪音浅色 reference
 
@@ -131,5 +133,6 @@ python scripts/checks/check_docs_encoding.py
 ## 14. EGUI 适配时的简化点与约束
 - 用固定 snapshot 驱动 reference，优先保证 `480 x 480` 下的稳定审阅
 - 主控件保留 `title + row + helper` 三段式信息层级
-- `compact` 预览通过 touch/key override 固定为静态对照
+- `compact` 预览通过统一的 static preview override 固定为静态对照
 - `read only` 预览通过 `read_only_mode + compact_mode` 固定为静态锁定态
+- 本轮补齐了 `Enter` 的 pressed 闭环、`touch cancel / key guard` 清残留与静态 preview 吞输入，确保交互后的渲染稳定

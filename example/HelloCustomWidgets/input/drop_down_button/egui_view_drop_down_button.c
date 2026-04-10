@@ -105,9 +105,15 @@ static egui_color_t egui_view_drop_down_button_mix_disabled(egui_color_t color)
     return egui_rgb_mix(color, EGUI_COLOR_DARK_GREY, 68);
 }
 
-static void egui_view_drop_down_button_clear_pressed_state(egui_view_t *self)
+static uint8_t egui_view_drop_down_button_clear_pressed_state(egui_view_t *self)
 {
-    egui_view_set_pressed(self, false);
+    uint8_t had_pressed = egui_view_get_pressed(self) ? 1 : 0;
+
+    if (had_pressed)
+    {
+        egui_view_set_pressed(self, false);
+    }
+    return had_pressed;
 }
 
 static void egui_view_drop_down_button_draw_text(const egui_font_t *font, egui_view_t *self, const char *text, const egui_region_t *region, uint8_t align,
@@ -317,6 +323,7 @@ void egui_view_drop_down_button_set_palette(egui_view_t *self, egui_color_t surf
 {
     EGUI_LOCAL_INIT(egui_view_drop_down_button_t);
 
+    egui_view_drop_down_button_clear_pressed_state(self);
     local->surface_color = surface_color;
     local->border_color = border_color;
     local->text_color = text_color;
@@ -575,19 +582,57 @@ static void egui_view_drop_down_button_on_draw(egui_view_t *self)
 static int egui_view_drop_down_button_on_touch_event(egui_view_t *self, egui_motion_event_t *event)
 {
     EGUI_LOCAL_INIT(egui_view_drop_down_button_t);
+    int is_inside = egui_region_pt_in_rect(&self->region_screen, event->location.x, event->location.y);
+    uint8_t had_pressed;
 
     if (local->read_only_mode || !egui_view_get_enable(self))
     {
-        if (self->is_pressed)
-        {
-            egui_view_drop_down_button_clear_pressed_state(self);
-            egui_view_invalidate(self);
-        }
         EGUI_UNUSED(event);
+        egui_view_drop_down_button_clear_pressed_state(self);
         return 0;
     }
 
-    return egui_view_on_touch_event(self, event);
+    switch (event->type)
+    {
+    case EGUI_MOTION_EVENT_ACTION_DOWN:
+        if (!is_inside)
+        {
+            egui_view_drop_down_button_clear_pressed_state(self);
+            return 0;
+        }
+        egui_view_set_pressed(self, true);
+#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
+        if (self->is_focusable)
+        {
+            egui_view_request_focus(self);
+        }
+        else if (!self->is_no_focus_clear)
+        {
+            egui_focus_manager_clear_focus();
+        }
+#endif
+        return 1;
+    case EGUI_MOTION_EVENT_ACTION_MOVE:
+        if (!egui_view_get_pressed(self) && !is_inside)
+        {
+            return 0;
+        }
+        egui_view_set_pressed(self, is_inside);
+        return 1;
+    case EGUI_MOTION_EVENT_ACTION_UP:
+        had_pressed = egui_view_get_pressed(self) ? 1 : 0;
+        egui_view_drop_down_button_clear_pressed_state(self);
+        if (had_pressed && is_inside)
+        {
+            egui_view_perform_click(self);
+            return 1;
+        }
+        return had_pressed || is_inside;
+    case EGUI_MOTION_EVENT_ACTION_CANCEL:
+        return egui_view_drop_down_button_clear_pressed_state(self);
+    default:
+        return 0;
+    }
 }
 #endif
 
@@ -595,19 +640,49 @@ static int egui_view_drop_down_button_on_touch_event(egui_view_t *self, egui_mot
 static int egui_view_drop_down_button_on_key_event(egui_view_t *self, egui_key_event_t *event)
 {
     EGUI_LOCAL_INIT(egui_view_drop_down_button_t);
+    uint8_t had_pressed = egui_view_drop_down_button_clear_pressed_state(self);
 
     if (local->read_only_mode || !egui_view_get_enable(self))
     {
-        if (self->is_pressed)
-        {
-            egui_view_drop_down_button_clear_pressed_state(self);
-            egui_view_invalidate(self);
-        }
-        EGUI_UNUSED(event);
         return 0;
     }
 
-    return egui_view_on_key_event(self, event);
+    switch (event->key_code)
+    {
+    case EGUI_KEY_CODE_ENTER:
+        if (event->type == EGUI_KEY_EVENT_ACTION_DOWN)
+        {
+            egui_view_set_pressed(self, true);
+            return 1;
+        }
+        if (event->type == EGUI_KEY_EVENT_ACTION_UP)
+        {
+            if (had_pressed)
+            {
+                egui_view_perform_click(self);
+            }
+            return 1;
+        }
+        return 0;
+    default:
+        return egui_view_on_key_event(self, event);
+    }
+}
+
+static int egui_view_drop_down_button_on_static_key_event(egui_view_t *self, egui_key_event_t *event)
+{
+    EGUI_UNUSED(event);
+    egui_view_drop_down_button_clear_pressed_state(self);
+    return 1;
+}
+#endif
+
+#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
+static int egui_view_drop_down_button_on_static_touch_event(egui_view_t *self, egui_motion_event_t *event)
+{
+    EGUI_UNUSED(event);
+    egui_view_drop_down_button_clear_pressed_state(self);
+    return 1;
 }
 #endif
 
@@ -662,4 +737,15 @@ void egui_view_drop_down_button_init(egui_view_t *self)
     local->read_only_mode = 0;
 
     egui_view_set_view_name(self, "egui_view_drop_down_button");
+}
+
+void egui_view_drop_down_button_override_static_preview_api(egui_view_t *self, egui_view_api_t *api)
+{
+    egui_view_copy_api(self, api);
+#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
+    api->on_touch_event = egui_view_drop_down_button_on_static_touch_event;
+#endif
+#if EGUI_CONFIG_FUNCTION_SUPPORT_KEY
+    api->on_key_event = egui_view_drop_down_button_on_static_key_event;
+#endif
 }

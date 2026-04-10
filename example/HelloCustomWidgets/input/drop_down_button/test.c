@@ -24,6 +24,8 @@ static egui_view_drop_down_button_t button_primary;
 static egui_view_linearlayout_t bottom_row;
 static egui_view_drop_down_button_t button_compact;
 static egui_view_drop_down_button_t button_read_only;
+static egui_view_api_t button_compact_api;
+static egui_view_api_t button_read_only_api;
 
 EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
 EGUI_BACKGROUND_PARAM_INIT(bg_page_panel_params, &bg_page_panel_param, NULL, NULL);
@@ -44,27 +46,6 @@ static const egui_view_drop_down_button_snapshot_t compact_snapshots[] = {
 
 static const egui_view_drop_down_button_snapshot_t read_only_snapshot = {
         "", "", "Locked", "", "", EGUI_VIEW_DROP_DOWN_BUTTON_TONE_NEUTRAL, 0};
-
-static int consume_preview_touch(egui_view_t *self, egui_motion_event_t *event)
-{
-    EGUI_UNUSED(self);
-
-    if (event->type == EGUI_MOTION_EVENT_ACTION_UP || event->type == EGUI_MOTION_EVENT_ACTION_CANCEL)
-    {
-        egui_view_set_pressed(self, 0);
-    }
-
-    return 1;
-}
-
-#if EGUI_CONFIG_FUNCTION_SUPPORT_KEY
-static int consume_preview_key(egui_view_t *self, egui_key_event_t *event)
-{
-    EGUI_UNUSED(self);
-    EGUI_UNUSED(event);
-    return 1;
-}
-#endif
 
 static void apply_primary_snapshot(uint8_t index)
 {
@@ -150,11 +131,7 @@ void test_init_ui(void)
     egui_view_drop_down_button_set_meta_font(EGUI_VIEW_OF(&button_compact), (const egui_font_t *)&egui_res_font_montserrat_8_4);
     egui_view_drop_down_button_set_snapshots(EGUI_VIEW_OF(&button_compact), compact_snapshots, EGUI_ARRAY_SIZE(compact_snapshots));
     egui_view_drop_down_button_set_compact_mode(EGUI_VIEW_OF(&button_compact), 1);
-    static egui_view_api_t button_compact_api;
-    egui_view_override_api_on_touch(EGUI_VIEW_OF(&button_compact), &button_compact_api, consume_preview_touch);
-#if EGUI_CONFIG_FUNCTION_SUPPORT_KEY
-    egui_view_override_api_on_key(EGUI_VIEW_OF(&button_compact), &button_compact_api, consume_preview_key);
-#endif
+    egui_view_drop_down_button_override_static_preview_api(EGUI_VIEW_OF(&button_compact), &button_compact_api);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&button_compact), 0);
 #endif
@@ -171,11 +148,7 @@ void test_init_ui(void)
     egui_view_drop_down_button_set_palette(EGUI_VIEW_OF(&button_read_only), EGUI_COLOR_HEX(0xF9FBFD), EGUI_COLOR_HEX(0xD6DFE7), EGUI_COLOR_HEX(0x5B6875),
                                            EGUI_COLOR_HEX(0x8F9CA8), EGUI_COLOR_HEX(0x93A4B2), EGUI_COLOR_HEX(0x93A1A5), EGUI_COLOR_HEX(0xA79B88),
                                            EGUI_COLOR_HEX(0x9E949B), EGUI_COLOR_HEX(0x98A8B4));
-    static egui_view_api_t button_read_only_api;
-    egui_view_override_api_on_touch(EGUI_VIEW_OF(&button_read_only), &button_read_only_api, consume_preview_touch);
-#if EGUI_CONFIG_FUNCTION_SUPPORT_KEY
-    egui_view_override_api_on_key(EGUI_VIEW_OF(&button_read_only), &button_read_only_api, consume_preview_key);
-#endif
+    egui_view_drop_down_button_override_static_preview_api(EGUI_VIEW_OF(&button_read_only), &button_read_only_api);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&button_read_only), 0);
 #endif
