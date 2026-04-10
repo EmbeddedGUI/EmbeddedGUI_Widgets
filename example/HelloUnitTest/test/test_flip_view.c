@@ -69,6 +69,49 @@ static void test_flip_view_clamps_items_and_current_index(void)
     EGUI_TEST_ASSERT_TRUE(egui_view_flip_view_get_current_item(EGUI_VIEW_OF(&test_flip_view)) != NULL);
 }
 
+static void test_flip_view_setters_clear_pressed_state(void)
+{
+    setup_flip_view(3, 2);
+
+    test_flip_view.pressed_part = EGUI_VIEW_FLIP_VIEW_PART_NEXT;
+    egui_view_set_pressed(EGUI_VIEW_OF(&test_flip_view), 1);
+    egui_view_flip_view_set_current_index(EGUI_VIEW_OF(&test_flip_view), 9);
+    EGUI_TEST_ASSERT_EQUAL_INT(2, egui_view_flip_view_get_current_index(EGUI_VIEW_OF(&test_flip_view)));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_FLIP_VIEW_PART_NONE, test_flip_view.pressed_part);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_flip_view)->is_pressed);
+
+    test_flip_view.pressed_part = EGUI_VIEW_FLIP_VIEW_PART_SURFACE;
+    egui_view_set_pressed(EGUI_VIEW_OF(&test_flip_view), 1);
+    egui_view_flip_view_set_current_index(EGUI_VIEW_OF(&test_flip_view), 2);
+    EGUI_TEST_ASSERT_EQUAL_INT(2, egui_view_flip_view_get_current_index(EGUI_VIEW_OF(&test_flip_view)));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_FLIP_VIEW_PART_NONE, test_flip_view.pressed_part);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_flip_view)->is_pressed);
+
+    test_flip_view.pressed_part = EGUI_VIEW_FLIP_VIEW_PART_PREVIOUS;
+    egui_view_set_pressed(EGUI_VIEW_OF(&test_flip_view), 1);
+    egui_view_flip_view_set_current_part(EGUI_VIEW_OF(&test_flip_view), EGUI_VIEW_FLIP_VIEW_PART_NEXT);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_FLIP_VIEW_PART_SURFACE, egui_view_flip_view_get_current_part(EGUI_VIEW_OF(&test_flip_view)));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_FLIP_VIEW_PART_NONE, test_flip_view.pressed_part);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_flip_view)->is_pressed);
+
+    egui_view_flip_view_set_current_index(EGUI_VIEW_OF(&test_flip_view), 1);
+    test_flip_view.pressed_part = EGUI_VIEW_FLIP_VIEW_PART_NEXT;
+    egui_view_set_pressed(EGUI_VIEW_OF(&test_flip_view), 1);
+    egui_view_flip_view_set_current_part(EGUI_VIEW_OF(&test_flip_view), EGUI_VIEW_FLIP_VIEW_PART_NEXT);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_FLIP_VIEW_PART_NEXT, egui_view_flip_view_get_current_part(EGUI_VIEW_OF(&test_flip_view)));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_FLIP_VIEW_PART_NONE, test_flip_view.pressed_part);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_flip_view)->is_pressed);
+
+    test_flip_view.pressed_part = EGUI_VIEW_FLIP_VIEW_PART_SURFACE;
+    egui_view_set_pressed(EGUI_VIEW_OF(&test_flip_view), 1);
+    egui_view_flip_view_set_items(EGUI_VIEW_OF(&test_flip_view), NULL, 0, 0);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_flip_view_get_item_count(EGUI_VIEW_OF(&test_flip_view)));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_flip_view_get_current_index(EGUI_VIEW_OF(&test_flip_view)));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_FLIP_VIEW_PART_NONE, egui_view_flip_view_get_current_part(EGUI_VIEW_OF(&test_flip_view)));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_FLIP_VIEW_PART_NONE, test_flip_view.pressed_part);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_flip_view)->is_pressed);
+}
+
 static void test_flip_view_tab_cycles_parts(void)
 {
     setup_flip_view(4, 1);
@@ -119,6 +162,23 @@ static void test_flip_view_touch_previous_next(void)
     EGUI_TEST_ASSERT_EQUAL_INT(2, egui_view_flip_view_get_current_index(EGUI_VIEW_OF(&test_flip_view)));
 }
 
+static void test_flip_view_touch_cancel_clears_pressed_state(void)
+{
+    egui_region_t region;
+
+    setup_flip_view(4, 2);
+    layout_flip_view();
+    EGUI_TEST_ASSERT_TRUE(egui_view_flip_view_get_part_region(EGUI_VIEW_OF(&test_flip_view), EGUI_VIEW_FLIP_VIEW_PART_NEXT, &region));
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, region.location.x + region.size.width / 2, region.location.y + region.size.height / 2));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_FLIP_VIEW_PART_NEXT, test_flip_view.pressed_part);
+    EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&test_flip_view)->is_pressed);
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_CANCEL, region.location.x + region.size.width / 2, region.location.y + region.size.height / 2));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_FLIP_VIEW_PART_NONE, test_flip_view.pressed_part);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_flip_view)->is_pressed);
+    EGUI_TEST_ASSERT_EQUAL_INT(2, egui_view_flip_view_get_current_index(EGUI_VIEW_OF(&test_flip_view)));
+    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_CANCEL, region.location.x + region.size.width / 2, region.location.y + region.size.height / 2));
+}
+
 static void test_flip_view_surface_region_exists(void)
 {
     egui_region_t region;
@@ -130,36 +190,112 @@ static void test_flip_view_surface_region_exists(void)
     EGUI_TEST_ASSERT_TRUE(region.size.height > 0);
 }
 
-static void test_flip_view_compact_and_read_only_ignore_input(void)
+static void test_flip_view_compact_mode_clears_pressed_and_ignores_input(void)
 {
     egui_region_t region;
 
     setup_flip_view(4, 1);
-    egui_view_flip_view_set_read_only_mode(EGUI_VIEW_OF(&test_flip_view), 1);
     layout_flip_view();
-    EGUI_TEST_ASSERT_FALSE(send_key(EGUI_KEY_CODE_RIGHT));
     EGUI_TEST_ASSERT_TRUE(egui_view_flip_view_get_part_region(EGUI_VIEW_OF(&test_flip_view), EGUI_VIEW_FLIP_VIEW_PART_NEXT, &region));
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, region.location.x + region.size.width / 2, region.location.y + region.size.height / 2));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_FLIP_VIEW_PART_NEXT, test_flip_view.pressed_part);
+    EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&test_flip_view)->is_pressed);
+
+    egui_view_flip_view_set_compact_mode(EGUI_VIEW_OF(&test_flip_view), 1);
+    EGUI_TEST_ASSERT_EQUAL_INT(1, test_flip_view.compact_mode);
+    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_flip_view_get_current_index(EGUI_VIEW_OF(&test_flip_view)));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_FLIP_VIEW_PART_NONE, test_flip_view.pressed_part);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_flip_view)->is_pressed);
+
+    test_flip_view.pressed_part = EGUI_VIEW_FLIP_VIEW_PART_SURFACE;
+    egui_view_set_pressed(EGUI_VIEW_OF(&test_flip_view), 1);
+    EGUI_TEST_ASSERT_FALSE(send_key(EGUI_KEY_CODE_RIGHT));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_FLIP_VIEW_PART_NONE, test_flip_view.pressed_part);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_flip_view)->is_pressed);
     EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, region.location.x + region.size.width / 2, region.location.y + region.size.height / 2));
+    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, region.location.x + region.size.width / 2, region.location.y + region.size.height / 2));
     EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_flip_view_get_current_index(EGUI_VIEW_OF(&test_flip_view)));
 
+    egui_view_flip_view_set_compact_mode(EGUI_VIEW_OF(&test_flip_view), 0);
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, region.location.x + region.size.width / 2, region.location.y + region.size.height / 2));
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, region.location.x + region.size.width / 2, region.location.y + region.size.height / 2));
+    EGUI_TEST_ASSERT_EQUAL_INT(2, egui_view_flip_view_get_current_index(EGUI_VIEW_OF(&test_flip_view)));
+}
+
+static void test_flip_view_read_only_mode_clears_pressed_and_ignores_input(void)
+{
+    egui_region_t region;
+
     setup_flip_view(4, 1);
-    egui_view_flip_view_set_compact_mode(EGUI_VIEW_OF(&test_flip_view), 1);
     layout_flip_view();
-    EGUI_TEST_ASSERT_FALSE(send_key(EGUI_KEY_CODE_RIGHT));
     EGUI_TEST_ASSERT_TRUE(egui_view_flip_view_get_part_region(EGUI_VIEW_OF(&test_flip_view), EGUI_VIEW_FLIP_VIEW_PART_NEXT, &region));
-    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, region.location.x + region.size.width / 2, region.location.y + region.size.height / 2));
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, region.location.x + region.size.width / 2, region.location.y + region.size.height / 2));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_FLIP_VIEW_PART_NEXT, test_flip_view.pressed_part);
+    EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&test_flip_view)->is_pressed);
+
+    egui_view_flip_view_set_read_only_mode(EGUI_VIEW_OF(&test_flip_view), 1);
+    EGUI_TEST_ASSERT_EQUAL_INT(1, test_flip_view.read_only_mode);
     EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_flip_view_get_current_index(EGUI_VIEW_OF(&test_flip_view)));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_FLIP_VIEW_PART_NONE, test_flip_view.pressed_part);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_flip_view)->is_pressed);
+
+    test_flip_view.pressed_part = EGUI_VIEW_FLIP_VIEW_PART_SURFACE;
+    egui_view_set_pressed(EGUI_VIEW_OF(&test_flip_view), 1);
+    EGUI_TEST_ASSERT_FALSE(send_key(EGUI_KEY_CODE_RIGHT));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_FLIP_VIEW_PART_NONE, test_flip_view.pressed_part);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_flip_view)->is_pressed);
+    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, region.location.x + region.size.width / 2, region.location.y + region.size.height / 2));
+    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, region.location.x + region.size.width / 2, region.location.y + region.size.height / 2));
+    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_flip_view_get_current_index(EGUI_VIEW_OF(&test_flip_view)));
+
+    egui_view_flip_view_set_read_only_mode(EGUI_VIEW_OF(&test_flip_view), 0);
+    EGUI_TEST_ASSERT_TRUE(send_key(EGUI_KEY_CODE_RIGHT));
+    EGUI_TEST_ASSERT_EQUAL_INT(2, egui_view_flip_view_get_current_index(EGUI_VIEW_OF(&test_flip_view)));
+}
+
+static void test_flip_view_disabled_ignores_input_and_clears_pressed_state(void)
+{
+    egui_region_t region;
+
+    setup_flip_view(4, 1);
+    layout_flip_view();
+    EGUI_TEST_ASSERT_TRUE(egui_view_flip_view_get_part_region(EGUI_VIEW_OF(&test_flip_view), EGUI_VIEW_FLIP_VIEW_PART_NEXT, &region));
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, region.location.x + region.size.width / 2, region.location.y + region.size.height / 2));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_FLIP_VIEW_PART_NEXT, test_flip_view.pressed_part);
+    EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&test_flip_view)->is_pressed);
+
+    egui_view_set_enable(EGUI_VIEW_OF(&test_flip_view), 0);
+    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, region.location.x + region.size.width / 2, region.location.y + region.size.height / 2));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_FLIP_VIEW_PART_NONE, test_flip_view.pressed_part);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_flip_view)->is_pressed);
+
+    test_flip_view.pressed_part = EGUI_VIEW_FLIP_VIEW_PART_SURFACE;
+    egui_view_set_pressed(EGUI_VIEW_OF(&test_flip_view), 1);
+    EGUI_TEST_ASSERT_FALSE(send_key(EGUI_KEY_CODE_RIGHT));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_FLIP_VIEW_PART_NONE, test_flip_view.pressed_part);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_flip_view)->is_pressed);
+    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, region.location.x + region.size.width / 2, region.location.y + region.size.height / 2));
+    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_flip_view_get_current_index(EGUI_VIEW_OF(&test_flip_view)));
+
+    egui_view_set_enable(EGUI_VIEW_OF(&test_flip_view), 1);
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, region.location.x + region.size.width / 2, region.location.y + region.size.height / 2));
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, region.location.x + region.size.width / 2, region.location.y + region.size.height / 2));
+    EGUI_TEST_ASSERT_EQUAL_INT(2, egui_view_flip_view_get_current_index(EGUI_VIEW_OF(&test_flip_view)));
 }
 
 void test_flip_view_run(void)
 {
     EGUI_TEST_SUITE_BEGIN(flip_view);
     EGUI_TEST_RUN(test_flip_view_clamps_items_and_current_index);
+    EGUI_TEST_RUN(test_flip_view_setters_clear_pressed_state);
     EGUI_TEST_RUN(test_flip_view_tab_cycles_parts);
     EGUI_TEST_RUN(test_flip_view_keyboard_navigation);
     EGUI_TEST_RUN(test_flip_view_plus_minus_steps_items);
     EGUI_TEST_RUN(test_flip_view_touch_previous_next);
+    EGUI_TEST_RUN(test_flip_view_touch_cancel_clears_pressed_state);
     EGUI_TEST_RUN(test_flip_view_surface_region_exists);
-    EGUI_TEST_RUN(test_flip_view_compact_and_read_only_ignore_input);
+    EGUI_TEST_RUN(test_flip_view_compact_mode_clears_pressed_and_ignores_input);
+    EGUI_TEST_RUN(test_flip_view_read_only_mode_clears_pressed_and_ignores_input);
+    EGUI_TEST_RUN(test_flip_view_disabled_ignores_input_and_clears_pressed_state);
     EGUI_TEST_SUITE_END();
 }

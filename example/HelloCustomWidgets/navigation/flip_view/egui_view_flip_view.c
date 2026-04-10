@@ -40,6 +40,15 @@ static uint8_t flip_view_has_text(const char *text)
     return (text != NULL && text[0] != '\0') ? 1 : 0;
 }
 
+static uint8_t flip_view_clear_pressed_state(egui_view_t *self, egui_view_flip_view_t *local)
+{
+    uint8_t had_pressed = self->is_pressed || local->pressed_part != EGUI_VIEW_FLIP_VIEW_PART_NONE;
+
+    local->pressed_part = EGUI_VIEW_FLIP_VIEW_PART_NONE;
+    egui_view_set_pressed(self, false);
+    return had_pressed;
+}
+
 static void flip_view_draw_round_fill_safe(egui_dim_t x, egui_dim_t y, egui_dim_t w, egui_dim_t h, egui_dim_t radius, egui_color_t color, egui_alpha_t alpha)
 {
     if (w <= 0 || h <= 0)
@@ -162,7 +171,22 @@ static uint8_t flip_view_part_enabled(egui_view_flip_view_t *local, egui_view_t 
 static void flip_view_set_current_part_inner(egui_view_t *self, uint8_t part, uint8_t notify)
 {
     EGUI_LOCAL_INIT(egui_view_flip_view_t);
+    uint8_t had_pressed = flip_view_clear_pressed_state(self, local);
+    uint8_t changed = 0;
 
+    if (local->item_count == 0 || local->items == NULL)
+    {
+        if (local->current_part != EGUI_VIEW_FLIP_VIEW_PART_NONE)
+        {
+            local->current_part = EGUI_VIEW_FLIP_VIEW_PART_NONE;
+            changed = 1;
+        }
+        if (changed || had_pressed)
+        {
+            egui_view_invalidate(self);
+        }
+        return;
+    }
     flip_view_normalize_state(local);
     if (part != EGUI_VIEW_FLIP_VIEW_PART_SURFACE && !flip_view_part_enabled(local, self, part))
     {
@@ -171,6 +195,10 @@ static void flip_view_set_current_part_inner(egui_view_t *self, uint8_t part, ui
     if (local->current_part != part)
     {
         local->current_part = part;
+        changed = 1;
+    }
+    if (changed || had_pressed)
+    {
         egui_view_invalidate(self);
     }
     if (notify)
@@ -182,11 +210,20 @@ static void flip_view_set_current_part_inner(egui_view_t *self, uint8_t part, ui
 static void flip_view_set_current_index_inner(egui_view_t *self, uint8_t current_index, uint8_t notify)
 {
     EGUI_LOCAL_INIT(egui_view_flip_view_t);
+    uint8_t had_pressed = flip_view_clear_pressed_state(self, local);
+    uint8_t changed = 0;
 
     if (local->item_count == 0 || local->items == NULL)
     {
+        local->current_index = 0;
+        local->current_part = EGUI_VIEW_FLIP_VIEW_PART_NONE;
+        if (had_pressed)
+        {
+            egui_view_invalidate(self);
+        }
         return;
     }
+    flip_view_normalize_state(local);
     if (current_index >= local->item_count)
     {
         current_index = (uint8_t)(local->item_count - 1);
@@ -194,6 +231,10 @@ static void flip_view_set_current_index_inner(egui_view_t *self, uint8_t current
     if (local->current_index != current_index)
     {
         local->current_index = current_index;
+        changed = 1;
+    }
+    if (changed || had_pressed)
+    {
         egui_view_invalidate(self);
     }
     if (notify)
@@ -328,6 +369,7 @@ void egui_view_flip_view_set_palette(egui_view_t *self, egui_color_t surface_col
 void egui_view_flip_view_set_items(egui_view_t *self, const egui_view_flip_view_item_t *items, uint8_t item_count, uint8_t current_index)
 {
     EGUI_LOCAL_INIT(egui_view_flip_view_t);
+    flip_view_clear_pressed_state(self, local);
     local->items = items;
     local->item_count = item_count;
     local->current_index = current_index;
@@ -372,6 +414,7 @@ uint8_t egui_view_flip_view_get_current_part(egui_view_t *self)
 void egui_view_flip_view_set_compact_mode(egui_view_t *self, uint8_t compact_mode)
 {
     EGUI_LOCAL_INIT(egui_view_flip_view_t);
+    flip_view_clear_pressed_state(self, local);
     local->compact_mode = compact_mode ? 1 : 0;
     flip_view_normalize_state(local);
     egui_view_invalidate(self);
@@ -380,6 +423,7 @@ void egui_view_flip_view_set_compact_mode(egui_view_t *self, uint8_t compact_mod
 void egui_view_flip_view_set_read_only_mode(egui_view_t *self, uint8_t read_only_mode)
 {
     EGUI_LOCAL_INIT(egui_view_flip_view_t);
+    flip_view_clear_pressed_state(self, local);
     local->read_only_mode = read_only_mode ? 1 : 0;
     flip_view_normalize_state(local);
     egui_view_invalidate(self);
@@ -791,11 +835,15 @@ static int egui_view_flip_view_on_touch_event(egui_view_t *self, egui_motion_eve
     EGUI_LOCAL_INIT(egui_view_flip_view_t);
     uint8_t hit_part;
 
-    flip_view_normalize_state(local);
     if (local->compact_mode || local->read_only_mode || local->item_count == 0 || local->items == NULL || !egui_view_get_enable(self))
     {
+        if (flip_view_clear_pressed_state(self, local))
+        {
+            egui_view_invalidate(self);
+        }
         return 0;
     }
+    flip_view_normalize_state(local);
 
     switch (event->type)
     {
@@ -803,6 +851,10 @@ static int egui_view_flip_view_on_touch_event(egui_view_t *self, egui_motion_eve
         hit_part = flip_view_hit_part(local, self, event->location.x, event->location.y);
         if (hit_part == EGUI_VIEW_FLIP_VIEW_PART_NONE)
         {
+            if (flip_view_clear_pressed_state(self, local))
+            {
+                egui_view_invalidate(self);
+            }
             return 0;
         }
         local->pressed_part = hit_part;
@@ -811,7 +863,11 @@ static int egui_view_flip_view_on_touch_event(egui_view_t *self, egui_motion_eve
         egui_view_invalidate(self);
         return 1;
     case EGUI_MOTION_EVENT_ACTION_UP:
+    {
+        uint8_t handled;
+
         hit_part = flip_view_hit_part(local, self, event->location.x, event->location.y);
+        handled = (local->pressed_part != EGUI_VIEW_FLIP_VIEW_PART_NONE) || hit_part != EGUI_VIEW_FLIP_VIEW_PART_NONE;
         if (hit_part == local->pressed_part)
         {
             if (hit_part == EGUI_VIEW_FLIP_VIEW_PART_PREVIOUS)
@@ -829,15 +885,19 @@ static int egui_view_flip_view_on_touch_event(egui_view_t *self, egui_motion_eve
                 flip_view_notify(self);
             }
         }
-        local->pressed_part = EGUI_VIEW_FLIP_VIEW_PART_NONE;
-        egui_view_set_pressed(self, false);
-        egui_view_invalidate(self);
-        return hit_part != EGUI_VIEW_FLIP_VIEW_PART_NONE;
+        if (flip_view_clear_pressed_state(self, local))
+        {
+            egui_view_invalidate(self);
+        }
+        return handled;
+    }
     case EGUI_MOTION_EVENT_ACTION_CANCEL:
-        local->pressed_part = EGUI_VIEW_FLIP_VIEW_PART_NONE;
-        egui_view_set_pressed(self, false);
-        egui_view_invalidate(self);
-        return 1;
+        if (flip_view_clear_pressed_state(self, local))
+        {
+            egui_view_invalidate(self);
+            return 1;
+        }
+        return 0;
     default:
         return 0;
     }
@@ -846,6 +906,16 @@ static int egui_view_flip_view_on_touch_event(egui_view_t *self, egui_motion_eve
 #if EGUI_CONFIG_FUNCTION_SUPPORT_KEY
 static int egui_view_flip_view_on_key_event(egui_view_t *self, egui_key_event_t *event)
 {
+    EGUI_LOCAL_INIT(egui_view_flip_view_t);
+
+    if (!egui_view_get_enable(self) || local->read_only_mode || local->compact_mode || local->item_count == 0 || local->items == NULL)
+    {
+        if (flip_view_clear_pressed_state(self, local))
+        {
+            egui_view_invalidate(self);
+        }
+        return 0;
+    }
     if (event->type != EGUI_KEY_EVENT_ACTION_UP)
     {
         return 0;

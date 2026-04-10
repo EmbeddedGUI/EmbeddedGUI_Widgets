@@ -7,7 +7,7 @@
 - 对应组件名：`FlipView`
 - 本次保留状态：`standard`、`previous / surface / next`、`compact`、`read only`
 - 删除效果：页面级 `guide`、状态文案、section divider、preview label、故事化 hero 文案、过重阴影和高强调按钮
-- EGUI 适配说明：继续复用仓库内 `flip_view` 基础实现，本轮只收口 `reference` 页结构、示例文案和绘制强度，不改 `sdk/EmbeddedGUI`
+- EGUI 适配说明：继续复用仓库内 `flip_view` 基础实现，本轮只收口 `reference` 页结构、示例文案和绘制强度，不改 `sdk/EmbeddedGUI`；`items / current index / current part / compact / read only / view disabled` 切换共享同一套 `pressed` 清理语义
 
 ## 1. 为什么需要这个控件
 `flip_view` 用来表达“当前只保留一张主卡，但允许按顺序浏览前后内容”的标准单卡轮播语义。它适合精选摘要、运营看板、记录回看、步骤卡片这类一次只希望用户聚焦当前页的场景。
@@ -81,6 +81,8 @@ python scripts/checks/check_docs_encoding.py
 - 主卡、overlay 按钮、`compact / read only` 对照都必须完整可见
 - eyebrow、counter、chevron、短标题和 footer 的左右留白必须稳定
 - 翻页、尾页禁用、轨道切换后，截图中必须能明确看出内容和边界状态变化
+- `items / current index / current part / compact / read only / view disabled` 切换后不能残留 previous / surface / next 的 `pressed` 高亮或下压位移渲染
+- `compact / read_only_mode / !enable` 不仅要忽略后续 touch / key 输入，还要在收到新输入时先清理残留 `pressed` 状态
 
 ## 9. 已知限制与后续方向
 - 当前用纯绘制卡片模拟 `FlipView`，不加载真实图片资源。

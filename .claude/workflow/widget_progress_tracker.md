@@ -98,6 +98,11 @@
 ## 最近完成的收口动作
 
 - `2026-04-10`
+  - 完成 `navigation/flip_view` 二次收口：在既有 `reference` 页面结构不再调整的前提下，把工作重点收回到交互行为，补齐 `items / current index / current part / compact / read only / view disabled` 切换链路里的 pressed 清理、输入抑制与渲染回归，确保翻页、模式切换与尾页边界切换后的渲染稳定。
+  - `egui_view_flip_view.c` 新增统一的 `flip_view_clear_pressed_state()`，让 `set_items()`、`set_current_index()`、`set_current_part()`、`set_compact_mode()` 和 `set_read_only_mode()` 共用同一套 `pressed_part / is_pressed` 清理逻辑；同时把 `compact / read_only / !enable / empty items` 的 touch 与 key guard 收口到事件入口，收到新输入时会先清理残留 pressed 再拒绝提交。
+  - `example/HelloUnitTest/test/test_flip_view.c` 补齐 “setters 清 pressed”“touch cancel 清 pressed”“compact / read_only / !enable 清理残留 pressed 并忽略后续 touch / key 输入” 的交互回归；README 同步明确模式切换后不能残留 previous / surface / next 的 `pressed` 高亮或下压位移渲染。
+  - 已通过 `make clean APP=HelloCustomWidgets APP_SUB=navigation/flip_view PORT=pc`、`make all APP=HelloCustomWidgets APP_SUB=navigation/flip_view PORT=pc`、`make clean APP=HelloUnitTest PORT=pc_test`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category navigation`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub navigation/flip_view --track reference --timeout 10 --keep-screenshots`、`python scripts/checks/check_docs_encoding.py`，并复核 `runtime_check_output/HelloCustomWidgets_navigation_flip_view/default/frame_0000.png`、`frame_0004.png`、`frame_0010.png` 的输出尺寸与截图完整性，确认主卡、compact/read only 预览都没有黑白屏、空白裁切或明显的残留 pressed 污染。
+- `2026-04-10`
   - 完成 `navigation/pips_pager` 二次收口：在既有 `reference` 页面结构不再调整的前提下，把工作重点收回到交互行为，补齐 `page metrics / current index / current part / compact / read only / view disabled` 切换链路里的 pressed 清理、输入抑制与渲染回归，确保分页切换与模式切换后的渲染稳定。
   - `egui_view_pips_pager.c` 新增统一的 `pips_pager_clear_pressed_state()`，让 `set_page_metrics()`、`set_current_index()`、`set_current_part()`、`set_compact_mode()` 和 `set_read_only_mode()` 共用同一套 `pressed_part / pressed_index / is_pressed` 清理逻辑；同时把 `compact / read_only / !enable / empty metrics` 的 touch 与 key guard 收口到事件入口，收到新输入时会先清理残留 pressed 再拒绝提交。
   - `example/HelloUnitTest/test/test_pips_pager.c` 补齐 “setters 清 pressed”“touch cancel 清 pressed”“compact / read_only / !enable 清理残留 pressed 并忽略后续 touch / key 输入” 的交互回归；README 同步明确模式切换后不能残留 previous / next / pip 的 `pressed` 高亮或下压位移渲染。
