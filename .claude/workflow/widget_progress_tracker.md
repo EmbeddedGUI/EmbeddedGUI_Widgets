@@ -34,7 +34,7 @@
 
 | 状态 | 控件名 | 分类 | 开始日期 | 当前阶段 | 目标 |
 | --- | --- | --- | --- | --- | --- |
-| 暂无 | - | - | - | - | - |
+| 进行中 | `tree_view` | `navigation` | `2026-04-10` | 交互收口与验证 | 复核 `selection / same-target release / compact / read only / disabled / preview touch-key` 链路里的状态清理、静态 preview 与交互后渲染回归 |
 
 ## 当前保留的 Reference 主线控件
 
@@ -257,11 +257,6 @@
   - `egui_view_tab_strip.c` 新增统一的 `egui_view_tab_strip_clear_pressed_state()`，让 `set_tabs()`、`set_current_index()`、`set_compact_mode()` 和 `set_read_only_mode()` 共用同一套 `pressed_index / is_pressed` 清理逻辑；同时把 `read_only / !enable / empty tabs` 的 touch 与 key guard 收口到事件入口，收到新输入时会先清理残留 pressed 再拒绝提交。
   - `example/HelloUnitTest/test/test_tab_strip.c` 补齐 “set_tabs clamp 后清 pressed”“same current 清 pressed”“compact 切换后清理 pressed 且保留 selection”“read_only / !enable 清理残留 pressed 并忽略后续 touch / key 输入” 的交互回归；README 同步明确模式切换后不能残留 tab 的 `pressed` 高亮或下压位移渲染。
   - 已通过 `make all APP=HelloCustomWidgets APP_SUB=navigation/tab_strip PORT=pc`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category navigation`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub navigation/tab_strip --track reference --timeout 10 --keep-screenshots`、`python scripts/checks/check_docs_encoding.py`，并复核 `runtime_check_output/HelloCustomWidgets_navigation_tab_strip/default/frame_0000.png`、`frame_0004.png`、`frame_0008.png` 的输出尺寸与截图完整性，确认主卡、compact/read only 预览都没有黑白屏或残留 pressed 污染。
-- `2026-04-10`
-  - 完成 `navigation/tree_view` 二次收口：在既有 `reference` 页面结构不再调整的前提下，把工作重点收回到交互行为，补齐 `snapshot / current selection / compact / read only / view disabled` 切换链路里的 pressed 清理、输入抑制与渲染回归，确保树选择切换与模式切换后的渲染稳定。
-  - `egui_view_tree_view.c` 新增统一的 `egui_view_tree_view_clear_pressed_state()`，让 `set_snapshots()`、`set_current_snapshot()`、`set_current_index()`、`set_compact_mode()` 和 `set_read_only_mode()` 共用同一套 `pressed_index / is_pressed` 清理逻辑；同时把 `snapshot == NULL / read_only / !enable` 的 touch 与 key guard 收口到事件入口，收到新输入时会先清理残留 pressed 再拒绝提交。
-  - `example/HelloUnitTest/test/test_tree_view.c` 补齐 “set_snapshots clamp 后清 pressed”“same snapshot / same selection 清 pressed”“compact 切换后清理 pressed 且保留 selection”“!enable 清理残留 pressed 并忽略后续 touch / key 输入” 的交互回归；README 同步明确模式切换后不能残留 tree row 的 `pressed` 高亮或下压位移渲染。
-  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=navigation/tree_view PORT=pc`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category navigation`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub navigation/tree_view --track reference --timeout 10 --keep-screenshots`、`python scripts/checks/check_docs_encoding.py`，并复核 `runtime_check_output/HelloCustomWidgets_navigation_tree_view/default/frame_0000.png`、`frame_0004.png`、`frame_0010.png` 的输出尺寸与截图完整性，确认主卡、compact/read only 预览都没有黑白屏或残留 pressed 污染。
 - `2026-04-10`
   - 完成 `navigation/tab_view` 二次收口：在既有 `reference` 页面结构不再调整的前提下，把工作重点收回到交互行为，补齐 `snapshot / current tab / current part / compact / read only / view disabled` 切换链路里的 pressed 清理、输入抑制与渲染回归，确保页签切换、关闭与恢复后的渲染稳定。
   - `egui_view_tab_view.c` 新增统一的 `egui_view_tab_view_clear_pressed_state()`，让 `set_snapshots()`、`set_current_snapshot()`、`set_current_tab()`、`set_current_part()`、`close_current_tab()`、`restore_tabs()`、`set_compact_mode()` 和 `set_read_only_mode()` 共用同一套 `pressed_tab / pressed_part / is_pressed` 清理逻辑；同时把 `snapshot == NULL / read_only / !enable` 的 touch 与 key guard 收口到事件入口，收到新输入时会先清理残留 pressed 再拒绝提交。
