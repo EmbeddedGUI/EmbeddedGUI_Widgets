@@ -33,11 +33,25 @@ jobs:
       - name: Install Python dependencies
         run: pip install -r requirements.txt
 
+      - name: Setup Chrome
+        id: setup-chrome
+        uses: browser-actions/setup-chrome@v2
+        with:
+          chrome-version: stable
+          install-dependencies: true
+
+      - name: Print browser version
+        run: |
+          "${{ steps.setup-chrome.outputs.chrome-path }}" --version
+
       - name: Build all WASM demos
         run: python scripts/web/wasm_build_demos.py
 
       - name: Headless web smoke check
-        run: python scripts/web/web_smoke_check.py --output-dir output/ci_web_smoke
+        run: |
+          python scripts/web/web_smoke_check.py \
+            --browser "${{ steps.setup-chrome.outputs.chrome-path }}" \
+            --output-dir output/ci_web_smoke
 
       - name: Upload web smoke artifact
         if: always()
