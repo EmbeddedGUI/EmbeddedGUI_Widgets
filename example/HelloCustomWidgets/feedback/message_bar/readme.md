@@ -24,7 +24,10 @@
 - 底部左侧展示 `compact` 静态对照，验证小尺寸下的标题、正文和动作层级。
 - 底部右侧展示 `read only` 静态对照，验证只读后的弱化状态。
 - 页面结构统一收口为：标题 -> 主 `message_bar` -> `compact / read only`。
-- 旧的 preview 列容器、外部标签和页面桥接逻辑全部移除。
+- 两个 preview 统一通过 `egui_view_message_bar_override_static_preview_api()` 收口：
+  - preview 自身吞掉 `touch / key`，不改 `current_snapshot`，也不触发 click。
+  - preview 点击时只负责清主控件 focus，用于 runtime 复核交互后的收尾渲染。
+- 旧的 preview 列容器、外部标签和页面桥接切换逻辑全部移除。
 
 目标目录：`example/HelloCustomWidgets/feedback/message_bar/`
 
@@ -40,7 +43,8 @@
   - 保留 severity accent、leading glyph、标题 / 正文 / action 层级，但整体回到更柔和的 Fluent / WPF UI 语法。
   - `compact` 与 `read only` 直接通过控件模式表达，不再依赖外部标签。
   - `read only` 需要同步清空 pressed，并抑制 touch / key 输入。
-  - 底部两个 preview 都禁用 touch 和 focus，只做静态 reference 对照。
+  - 底部两个 preview 不承接真实交互，只保留静态对照职责；`touch / key` 统一被 static preview API 吞掉，点击仅用于清主控件 focus。
+  - 主控件继续遵守 same-target release：`DOWN(A) -> MOVE(B) -> UP(B)` 不提交，回到 `A` 后 `UP(A)` 才提交。
 
 ## 5. 控件清单
 
@@ -65,7 +69,7 @@
 | 主控件 | `Connection lost` | `Error` |
 | `compact` | `Quota alert` | 默认 `compact` 对照 |
 | `compact` | `Sync failed` | 第二组 `compact` 对照 |
-| `read only` | `Policy note` | 固定只读对照，禁用 touch / focus |
+| `read only` | `Policy note` | 固定只读对照，static preview 吞掉 `touch / key`，点击只清主控件 focus |
 
 ## 7. `egui_port_get_recording_action()` 录制动作设计
 1. 重置主控件、`compact` 和 `read only` 到默认状态。
@@ -76,16 +80,21 @@
 6. 请求第三张截图。
 7. 程序化切换主控件到 `Error`。
 8. 请求第四张截图。
-9. 程序化切换 `compact` 到第二组 snapshot。
-10. 请求最终截图并保留收尾等待。
+9. 程序化切换 `compact` 到第二组 snapshot，并让主控件进入 focus 态。
+10. 请求 `compact` 切换后的截图。
+11. 点击 `compact` preview，只清主控件 focus。
+12. 请求 preview 点击后的收尾截图。
+13. 再请求一张最终稳定帧，确认交互后没有残留 `pressed`、黑白屏、裁切或整屏污染。
 
 ## 8. 编译、touch、runtime、单测与文档检查
 ```bash
+make clean APP=HelloCustomWidgets APP_SUB=feedback/message_bar PORT=pc
 make all APP=HelloCustomWidgets APP_SUB=feedback/message_bar PORT=pc
-python scripts/checks/check_touch_release_semantics.py --scope custom --category feedback
-python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub feedback/message_bar --track reference --timeout 10 --keep-screenshots
+make clean APP=HelloUnitTest PORT=pc_test
 make all APP=HelloUnitTest PORT=pc_test
 output\main.exe
+python scripts/checks/check_touch_release_semantics.py --scope custom --category feedback
+python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub feedback/message_bar --track reference --timeout 10 --keep-screenshots
 python scripts/checks/check_docs_encoding.py
 ```
 
@@ -93,8 +102,10 @@ python scripts/checks/check_docs_encoding.py
 - 主控件和底部 `compact / read only` 预览都必须完整可见。
 - `Info / Success / Warning / Error` 四态需要一眼可辨，但不能回到高饱和 showcase 风格。
 - `compact` 在小尺寸下仍要保留 message bar 的信息层级。
-- `read only` 只做静态展示，不能响应 touch、key、focus 或页面桥接。
-- 单测已有的 snapshot、palette、touch 和 key click 语义不能回归。
+- `read only` 只做静态展示，不能响应 click，也不能在交互后残留 `pressed` 渲染。
+- 主控件必须通过 same-target release / cancel 回归：移出命中区后不能误触发，回到原目标后释放才可提交。
+- preview 点击后的收尾帧和最终稳定帧都必须回稳，不能残留 focus ring、pressed、黑白屏或裁切污染。
+- 单测必须覆盖 snapshot、palette、same-target release、cancel、read only / disabled guard，以及 static preview 吞 `touch / key` 且不改 snapshot。
 
 ## 9. 已知限制与后续方向
 - 当前版本仍使用固定 snapshot 数据，不接真实业务状态流。
@@ -124,7 +135,7 @@ python scripts/checks/check_docs_encoding.py
 
 ## 13. 相比参考原型删除的效果或装饰
 - 删除页面级 `guide`、状态说明、preview 标签和旧双列预览壳层。
-- 删除 preview 参与点击切换、页面桥接和焦点承接的职责。
+- 删除 preview 参与 snapshot 切换和页面桥接的职责，只保留静态对照与主控件 focus 收口。
 - 删除过重的 severity strip、glyph circle、action button 和只读 pin chrome。
 - 删除与 `reference` 无关的说明性外壳和场景化叙事。
 
