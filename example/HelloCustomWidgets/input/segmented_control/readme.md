@@ -99,6 +99,9 @@ python scripts/checks/check_docs_encoding.py
 - 主控件触摸与键盘切换必须都能工作，且不再依赖外部 guide / label 点击
 - 页面中不再出现 guide、状态回显、section divider 和外部 preview 标签
 - `compact` 与 `read only` 必须保持 Fluent / WPF UI 的低噪音浅色 reference
+- 主控件的 `set_segments / current index / style helper / touch cancel / !enable / key guard` 链路都不能残留 `pressed` 覆盖层
+- `Left / Right / Up / Down / Home / End / Tab` 只允许驱动主控件切换；无关按键不能留下残留 `pressed`
+- 底部 `compact / read only` 预览必须吞掉 touch / key 输入，并在收到输入后立即清理残留 `pressed`，保证静态对照渲染稳定
 
 ## 9. 已知限制与后续方向
 
@@ -143,4 +146,5 @@ python scripts/checks/check_docs_encoding.py
 - 直接复用核心层已有 `segmented_control`，避免与 `src/widget` 同名实现冲突
 - 用固定 snapshot 驱动，优先保证 `480 x 480` 页面里的稳定 reference
 - 底部 `compact` 与 `read only` 固定为静态对照，不再承担额外交互
+- 本轮在示例层额外补了一层 touch / key 包装与 setter 包装，用来统一清理 `pressed`、收口 `touch cancel / !enable / key guard`，并确保静态 preview 不会误切换
 - 先完成示例级审阅稳定性，再决定是否抽象到框架公共层

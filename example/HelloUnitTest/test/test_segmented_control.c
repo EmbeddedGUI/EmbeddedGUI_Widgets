@@ -8,6 +8,9 @@
 #include "../../HelloCustomWidgets/input/segmented_control/egui_view_segmented_control.c"
 
 static egui_view_segmented_control_t test_control;
+static egui_view_segmented_control_t preview_control;
+static egui_view_api_t test_control_api;
+static egui_view_api_t preview_control_api;
 static uint8_t g_changed_count;
 static uint8_t g_last_index;
 
@@ -34,7 +37,8 @@ static void setup_control(void)
 {
     egui_view_segmented_control_init(EGUI_VIEW_OF(&test_control));
     egui_view_set_size(EGUI_VIEW_OF(&test_control), 180, 36);
-    egui_view_segmented_control_set_segments(EGUI_VIEW_OF(&test_control), g_segments_primary, 4);
+    hcw_segmented_control_override_interaction_api(EGUI_VIEW_OF(&test_control), &test_control_api);
+    hcw_segmented_control_set_segments(EGUI_VIEW_OF(&test_control), g_segments_primary, 4);
     egui_view_segmented_control_set_on_segment_changed_listener(EGUI_VIEW_OF(&test_control), on_segment_changed);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&test_control), 1);
@@ -52,6 +56,28 @@ static void layout_control(egui_dim_t width, egui_dim_t height)
     region.size.height = height;
     egui_view_layout(EGUI_VIEW_OF(&test_control), &region);
     egui_region_copy(&EGUI_VIEW_OF(&test_control)->region_screen, &region);
+}
+
+static void setup_preview_control(void)
+{
+    egui_view_segmented_control_init(EGUI_VIEW_OF(&preview_control));
+    egui_view_set_size(EGUI_VIEW_OF(&preview_control), 180, 36);
+    hcw_segmented_control_override_static_preview_api(EGUI_VIEW_OF(&preview_control), &preview_control_api);
+    hcw_segmented_control_set_segments(EGUI_VIEW_OF(&preview_control), g_segments_primary, 4);
+    hcw_segmented_control_set_current_index(EGUI_VIEW_OF(&preview_control), 1);
+    reset_listener_state();
+}
+
+static void layout_preview_control(egui_dim_t width, egui_dim_t height)
+{
+    egui_region_t region;
+
+    region.location.x = 24;
+    region.location.y = 40;
+    region.size.width = width;
+    region.size.height = height;
+    egui_view_layout(EGUI_VIEW_OF(&preview_control), &region);
+    egui_region_copy(&EGUI_VIEW_OF(&preview_control)->region_screen, &region);
 }
 
 static int send_touch(uint8_t type, egui_dim_t x, egui_dim_t y)
@@ -76,6 +102,31 @@ static int send_key(uint8_t key_code)
     handled |= EGUI_VIEW_OF(&test_control)->api->on_key_event(EGUI_VIEW_OF(&test_control), &event);
     event.type = EGUI_KEY_EVENT_ACTION_UP;
     handled |= EGUI_VIEW_OF(&test_control)->api->on_key_event(EGUI_VIEW_OF(&test_control), &event);
+    return handled;
+}
+
+static int send_preview_touch(uint8_t type, egui_dim_t x, egui_dim_t y)
+{
+    egui_motion_event_t event;
+
+    memset(&event, 0, sizeof(event));
+    event.type = type;
+    event.location.x = x;
+    event.location.y = y;
+    return EGUI_VIEW_OF(&preview_control)->api->on_touch_event(EGUI_VIEW_OF(&preview_control), &event);
+}
+
+static int send_preview_key(uint8_t key_code)
+{
+    egui_key_event_t event;
+    int handled = 0;
+
+    memset(&event, 0, sizeof(event));
+    event.type = EGUI_KEY_EVENT_ACTION_DOWN;
+    event.key_code = key_code;
+    handled |= EGUI_VIEW_OF(&preview_control)->api->on_key_event(EGUI_VIEW_OF(&preview_control), &event);
+    event.type = EGUI_KEY_EVENT_ACTION_UP;
+    handled |= EGUI_VIEW_OF(&preview_control)->api->on_key_event(EGUI_VIEW_OF(&preview_control), &event);
     return handled;
 }
 
@@ -194,6 +245,25 @@ static void test_segmented_control_current_index_listener_and_guards(void)
     EGUI_TEST_ASSERT_EQUAL_INT(1, g_changed_count);
 }
 
+static void test_segmented_control_wrapper_setters_clear_pressed_state(void)
+{
+    setup_control();
+
+    test_control.pressed_index = 2;
+    EGUI_VIEW_OF(&test_control)->is_pressed = 1;
+    hcw_segmented_control_set_segments(EGUI_VIEW_OF(&test_control), g_segments_primary, 4);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_SEGMENTED_CONTROL_PRESSED_NONE, test_control.pressed_index);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_control)->is_pressed);
+
+    test_control.pressed_index = 1;
+    EGUI_VIEW_OF(&test_control)->is_pressed = 1;
+    hcw_segmented_control_set_current_index(EGUI_VIEW_OF(&test_control), 0);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_SEGMENTED_CONTROL_PRESSED_NONE, test_control.pressed_index);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_control)->is_pressed);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_segmented_control_get_current_index(EGUI_VIEW_OF(&test_control)));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, g_changed_count);
+}
+
 static void test_segmented_control_style_helpers_and_params(void)
 {
     egui_view_segmented_control_t params_control;
@@ -212,22 +282,34 @@ static void test_segmented_control_style_helpers_and_params(void)
 
     setup_control();
 
+    test_control.pressed_index = 2;
+    EGUI_VIEW_OF(&test_control)->is_pressed = 1;
     hcw_segmented_control_apply_standard_style(EGUI_VIEW_OF(&test_control));
     EGUI_TEST_ASSERT_EQUAL_INT(10, test_control.corner_radius);
     EGUI_TEST_ASSERT_EQUAL_INT(2, test_control.segment_gap);
     EGUI_TEST_ASSERT_EQUAL_INT(2, test_control.horizontal_padding);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x2563EB).full, test_control.selected_bg_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_SEGMENTED_CONTROL_PRESSED_NONE, test_control.pressed_index);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_control)->is_pressed);
 
+    test_control.pressed_index = 1;
+    EGUI_VIEW_OF(&test_control)->is_pressed = 1;
     hcw_segmented_control_apply_compact_style(EGUI_VIEW_OF(&test_control));
     EGUI_TEST_ASSERT_EQUAL_INT(8, test_control.corner_radius);
     EGUI_TEST_ASSERT_EQUAL_INT(1, test_control.segment_gap);
     EGUI_TEST_ASSERT_EQUAL_INT(1, test_control.horizontal_padding);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x0C7C73).full, test_control.selected_bg_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_SEGMENTED_CONTROL_PRESSED_NONE, test_control.pressed_index);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_control)->is_pressed);
 
+    test_control.pressed_index = 0;
+    EGUI_VIEW_OF(&test_control)->is_pressed = 1;
     hcw_segmented_control_apply_read_only_style(EGUI_VIEW_OF(&test_control));
     EGUI_TEST_ASSERT_EQUAL_INT(8, test_control.corner_radius);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x97A4B4).full, test_control.selected_bg_color.full);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xDBE2E8).full, test_control.border_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_SEGMENTED_CONTROL_PRESSED_NONE, test_control.pressed_index);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_control)->is_pressed);
 
     egui_view_segmented_control_set_bg_color(EGUI_VIEW_OF(&test_control), EGUI_COLOR_HEX(0x101112));
     egui_view_segmented_control_set_selected_bg_color(EGUI_VIEW_OF(&test_control), EGUI_COLOR_HEX(0x202122));
@@ -333,9 +415,14 @@ static void test_segmented_control_touch_interaction_and_hit_layout(void)
     EGUI_TEST_ASSERT_EQUAL_INT(1, g_changed_count);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_SEGMENTED_CONTROL_PRESSED_NONE, test_control.pressed_index);
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_control)->is_pressed);
+    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_CANCEL, x2, y2));
 
+    test_control.pressed_index = 1;
+    EGUI_VIEW_OF(&test_control)->is_pressed = 1;
     egui_view_set_enable(EGUI_VIEW_OF(&test_control), 0);
     EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x0, y0));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_SEGMENTED_CONTROL_PRESSED_NONE, test_control.pressed_index);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_control)->is_pressed);
     EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, x0, y0));
 }
 
@@ -383,8 +470,108 @@ static void test_segmented_control_keyboard_navigation_and_guards(void)
     EGUI_TEST_ASSERT_FALSE(send_key(EGUI_KEY_CODE_ESCAPE));
     EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_segmented_control_get_current_index(EGUI_VIEW_OF(&test_control)));
 
+    test_control.pressed_index = 2;
+    EGUI_VIEW_OF(&test_control)->is_pressed = 1;
+    EGUI_TEST_ASSERT_FALSE(send_key(EGUI_KEY_CODE_ESCAPE));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_SEGMENTED_CONTROL_PRESSED_NONE, test_control.pressed_index);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_control)->is_pressed);
+
+    test_control.pressed_index = 1;
+    EGUI_VIEW_OF(&test_control)->is_pressed = 1;
     egui_view_set_enable(EGUI_VIEW_OF(&test_control), 0);
     EGUI_TEST_ASSERT_FALSE(send_key(EGUI_KEY_CODE_RIGHT));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_SEGMENTED_CONTROL_PRESSED_NONE, test_control.pressed_index);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_control)->is_pressed);
+}
+
+static void get_preview_segment_center(uint8_t item_index, egui_dim_t *x, egui_dim_t *y)
+{
+    egui_region_t work_region;
+    egui_dim_t padding;
+    egui_dim_t gap;
+    egui_dim_t content_width;
+    egui_dim_t content_height;
+    egui_dim_t available_width;
+    egui_dim_t base_width;
+    egui_dim_t remainder;
+    egui_dim_t cursor_x;
+    uint8_t count;
+    uint8_t i;
+
+    egui_view_get_work_region(EGUI_VIEW_OF(&preview_control), &work_region);
+    count = preview_control.segment_count;
+    if (count > EGUI_VIEW_SEGMENTED_CONTROL_MAX_SEGMENTS)
+    {
+        count = EGUI_VIEW_SEGMENTED_CONTROL_MAX_SEGMENTS;
+    }
+
+    EGUI_TEST_ASSERT_TRUE(count > 0);
+    EGUI_TEST_ASSERT_TRUE(item_index < count);
+
+    padding = preview_control.horizontal_padding;
+    if (padding * 2 >= work_region.size.width || padding * 2 >= work_region.size.height)
+    {
+        padding = 0;
+    }
+
+    content_width = work_region.size.width - padding * 2;
+    content_height = work_region.size.height - padding * 2;
+    gap = (count <= 1) ? 0 : preview_control.segment_gap;
+    while (gap > 0 && (content_width - gap * (count - 1)) < count)
+    {
+        gap--;
+    }
+
+    available_width = content_width - gap * (count - 1);
+    base_width = available_width / count;
+    remainder = available_width % count;
+    cursor_x = work_region.location.x + padding;
+
+    for (i = 0; i < count; i++)
+    {
+        egui_dim_t segment_width = base_width;
+
+        if (remainder > 0)
+        {
+            segment_width++;
+            remainder--;
+        }
+        if (i == item_index)
+        {
+            *x = EGUI_VIEW_OF(&preview_control)->region_screen.location.x + cursor_x + segment_width / 2;
+            *y = EGUI_VIEW_OF(&preview_control)->region_screen.location.y + work_region.location.y + padding + content_height / 2;
+            return;
+        }
+        cursor_x += segment_width + gap;
+    }
+
+    *x = EGUI_VIEW_OF(&preview_control)->region_screen.location.x + EGUI_VIEW_OF(&preview_control)->region_screen.size.width / 2;
+    *y = EGUI_VIEW_OF(&preview_control)->region_screen.location.y + EGUI_VIEW_OF(&preview_control)->region_screen.size.height / 2;
+}
+
+static void test_segmented_control_static_preview_consumes_input(void)
+{
+    egui_dim_t x2 = 0;
+    egui_dim_t y2 = 0;
+
+    setup_preview_control();
+    layout_preview_control(180, 36);
+    get_preview_segment_center(2, &x2, &y2);
+
+    preview_control.pressed_index = 1;
+    EGUI_VIEW_OF(&preview_control)->is_pressed = 1;
+    EGUI_TEST_ASSERT_TRUE(send_preview_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x2, y2));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_SEGMENTED_CONTROL_PRESSED_NONE, preview_control.pressed_index);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&preview_control)->is_pressed);
+    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_segmented_control_get_current_index(EGUI_VIEW_OF(&preview_control)));
+
+    preview_control.pressed_index = 2;
+    EGUI_VIEW_OF(&preview_control)->is_pressed = 1;
+    EGUI_TEST_ASSERT_TRUE(send_preview_key(EGUI_KEY_CODE_RIGHT));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_SEGMENTED_CONTROL_PRESSED_NONE, preview_control.pressed_index);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&preview_control)->is_pressed);
+    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_segmented_control_get_current_index(EGUI_VIEW_OF(&preview_control)));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, g_changed_count);
 }
 
 void test_segmented_control_run(void)
@@ -392,8 +579,10 @@ void test_segmented_control_run(void)
     EGUI_TEST_SUITE_BEGIN(segmented_control);
     EGUI_TEST_RUN(test_segmented_control_set_segments_clamps_and_resets_state);
     EGUI_TEST_RUN(test_segmented_control_current_index_listener_and_guards);
+    EGUI_TEST_RUN(test_segmented_control_wrapper_setters_clear_pressed_state);
     EGUI_TEST_RUN(test_segmented_control_style_helpers_and_params);
     EGUI_TEST_RUN(test_segmented_control_touch_interaction_and_hit_layout);
     EGUI_TEST_RUN(test_segmented_control_keyboard_navigation_and_guards);
+    EGUI_TEST_RUN(test_segmented_control_static_preview_consumes_input);
     EGUI_TEST_SUITE_END();
 }

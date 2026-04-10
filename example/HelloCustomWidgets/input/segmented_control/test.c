@@ -32,6 +32,9 @@ static egui_view_segmented_control_t control_primary;
 static egui_view_linearlayout_t bottom_row;
 static egui_view_segmented_control_t control_compact;
 static egui_view_segmented_control_t control_read_only;
+static egui_view_api_t control_primary_api;
+static egui_view_api_t control_compact_api;
+static egui_view_api_t control_read_only_api;
 
 EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
 EGUI_BACKGROUND_PARAM_INIT(bg_page_panel_params, &bg_page_panel_param, NULL, NULL);
@@ -59,40 +62,20 @@ static const segmented_demo_snapshot_t compact_snapshots[] = {
 
 static const char *read_only_segments[] = {"Off", "Auto", "Lock"};
 
-static int consume_preview_touch(egui_view_t *self, egui_motion_event_t *event)
-{
-    EGUI_UNUSED(self);
-
-    if (event->type == EGUI_MOTION_EVENT_ACTION_UP || event->type == EGUI_MOTION_EVENT_ACTION_CANCEL)
-    {
-        egui_view_set_pressed(self, 0);
-    }
-    return 1;
-}
-
-#if EGUI_CONFIG_FUNCTION_SUPPORT_KEY
-static int consume_preview_key(egui_view_t *self, egui_key_event_t *event)
-{
-    EGUI_UNUSED(self);
-    EGUI_UNUSED(event);
-    return 1;
-}
-#endif
-
 static void apply_primary_snapshot(uint8_t index)
 {
     const segmented_demo_snapshot_t *snapshot = &primary_snapshots[index % EGUI_ARRAY_SIZE(primary_snapshots)];
 
-    egui_view_segmented_control_set_segments(EGUI_VIEW_OF(&control_primary), snapshot->segments, snapshot->segment_count);
-    egui_view_segmented_control_set_current_index(EGUI_VIEW_OF(&control_primary), snapshot->selected_index);
+    hcw_segmented_control_set_segments(EGUI_VIEW_OF(&control_primary), snapshot->segments, snapshot->segment_count);
+    hcw_segmented_control_set_current_index(EGUI_VIEW_OF(&control_primary), snapshot->selected_index);
 }
 
 static void apply_compact_snapshot(uint8_t index)
 {
     const segmented_demo_snapshot_t *snapshot = &compact_snapshots[index % EGUI_ARRAY_SIZE(compact_snapshots)];
 
-    egui_view_segmented_control_set_segments(EGUI_VIEW_OF(&control_compact), snapshot->segments, snapshot->segment_count);
-    egui_view_segmented_control_set_current_index(EGUI_VIEW_OF(&control_compact), snapshot->selected_index);
+    hcw_segmented_control_set_segments(EGUI_VIEW_OF(&control_compact), snapshot->segments, snapshot->segment_count);
+    hcw_segmented_control_set_current_index(EGUI_VIEW_OF(&control_compact), snapshot->selected_index);
 }
 
 #if EGUI_CONFIG_RECORDING_TEST
@@ -218,6 +201,7 @@ void test_init_ui(void)
     egui_view_set_size(EGUI_VIEW_OF(&control_primary), SEGMENTED_CONTROL_PRIMARY_WIDTH, SEGMENTED_CONTROL_PRIMARY_HEIGHT);
     egui_view_segmented_control_set_font(EGUI_VIEW_OF(&control_primary), (const egui_font_t *)&egui_res_font_montserrat_10_4);
     hcw_segmented_control_apply_standard_style(EGUI_VIEW_OF(&control_primary));
+    hcw_segmented_control_override_interaction_api(EGUI_VIEW_OF(&control_primary), &control_primary_api);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&control_primary), 1);
 #endif
@@ -234,11 +218,7 @@ void test_init_ui(void)
     egui_view_set_size(EGUI_VIEW_OF(&control_compact), SEGMENTED_CONTROL_PREVIEW_WIDTH, SEGMENTED_CONTROL_PREVIEW_HEIGHT);
     egui_view_segmented_control_set_font(EGUI_VIEW_OF(&control_compact), (const egui_font_t *)&egui_res_font_montserrat_10_4);
     hcw_segmented_control_apply_compact_style(EGUI_VIEW_OF(&control_compact));
-    static egui_view_api_t control_compact_api;
-    egui_view_override_api_on_touch(EGUI_VIEW_OF(&control_compact), &control_compact_api, consume_preview_touch);
-#if EGUI_CONFIG_FUNCTION_SUPPORT_KEY
-    egui_view_override_api_on_key(EGUI_VIEW_OF(&control_compact), &control_compact_api, consume_preview_key);
-#endif
+    hcw_segmented_control_override_static_preview_api(EGUI_VIEW_OF(&control_compact), &control_compact_api);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&control_compact), 0);
 #endif
@@ -249,14 +229,10 @@ void test_init_ui(void)
     egui_view_set_margin(EGUI_VIEW_OF(&control_read_only), 8, 0, 0, 0);
     egui_view_segmented_control_set_font(EGUI_VIEW_OF(&control_read_only), (const egui_font_t *)&egui_res_font_montserrat_10_4);
     hcw_segmented_control_apply_read_only_style(EGUI_VIEW_OF(&control_read_only));
-    egui_view_segmented_control_set_segments(EGUI_VIEW_OF(&control_read_only), read_only_segments, EGUI_ARRAY_SIZE(read_only_segments));
-    egui_view_segmented_control_set_current_index(EGUI_VIEW_OF(&control_read_only), 1);
+    hcw_segmented_control_set_segments(EGUI_VIEW_OF(&control_read_only), read_only_segments, EGUI_ARRAY_SIZE(read_only_segments));
+    hcw_segmented_control_set_current_index(EGUI_VIEW_OF(&control_read_only), 1);
     egui_view_set_enable(EGUI_VIEW_OF(&control_read_only), 0);
-    static egui_view_api_t control_read_only_api;
-    egui_view_override_api_on_touch(EGUI_VIEW_OF(&control_read_only), &control_read_only_api, consume_preview_touch);
-#if EGUI_CONFIG_FUNCTION_SUPPORT_KEY
-    egui_view_override_api_on_key(EGUI_VIEW_OF(&control_read_only), &control_read_only_api, consume_preview_key);
-#endif
+    hcw_segmented_control_override_static_preview_api(EGUI_VIEW_OF(&control_read_only), &control_read_only_api);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&control_read_only), 0);
 #endif
