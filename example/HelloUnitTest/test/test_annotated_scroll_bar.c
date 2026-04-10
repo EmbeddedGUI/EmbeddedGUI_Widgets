@@ -81,6 +81,76 @@ static void test_annotated_scroll_bar_clamps_metrics_and_regions(void)
     EGUI_TEST_ASSERT_FALSE(egui_view_annotated_scroll_bar_get_marker_region(EGUI_VIEW_OF(&test_bar), 4, &region));
 }
 
+static void test_annotated_scroll_bar_setters_clear_pressed_state_and_clamp(void)
+{
+    setup_bar(1000, 200, 780, 20, 120);
+
+    test_bar.pressed_part = EGUI_VIEW_ANNOTATED_SCROLL_BAR_PART_MARKER;
+    test_bar.pressed_marker = 3;
+    egui_view_set_pressed(EGUI_VIEW_OF(&test_bar), 1);
+    egui_view_annotated_scroll_bar_set_markers(EGUI_VIEW_OF(&test_bar), test_markers, 2);
+    EGUI_TEST_ASSERT_EQUAL_INT(2, egui_view_annotated_scroll_bar_get_marker_count(EGUI_VIEW_OF(&test_bar)));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_ANNOTATED_SCROLL_BAR_PART_NONE, test_bar.pressed_part);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, test_bar.pressed_marker);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, test_bar.rail_dragging);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_bar)->is_pressed);
+
+    test_bar.pressed_part = EGUI_VIEW_ANNOTATED_SCROLL_BAR_PART_RAIL;
+    test_bar.pressed_marker = 1;
+    test_bar.rail_dragging = 1;
+    egui_view_set_pressed(EGUI_VIEW_OF(&test_bar), 1);
+    egui_view_annotated_scroll_bar_set_content_metrics(EGUI_VIEW_OF(&test_bar), 300, 120);
+    EGUI_TEST_ASSERT_EQUAL_INT(300, egui_view_annotated_scroll_bar_get_content_length(EGUI_VIEW_OF(&test_bar)));
+    EGUI_TEST_ASSERT_EQUAL_INT(120, egui_view_annotated_scroll_bar_get_viewport_length(EGUI_VIEW_OF(&test_bar)));
+    EGUI_TEST_ASSERT_EQUAL_INT(180, egui_view_annotated_scroll_bar_get_max_offset(EGUI_VIEW_OF(&test_bar)));
+    EGUI_TEST_ASSERT_EQUAL_INT(180, egui_view_annotated_scroll_bar_get_offset(EGUI_VIEW_OF(&test_bar)));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_ANNOTATED_SCROLL_BAR_PART_NONE, test_bar.pressed_part);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, test_bar.pressed_marker);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, test_bar.rail_dragging);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_bar)->is_pressed);
+
+    test_bar.pressed_part = EGUI_VIEW_ANNOTATED_SCROLL_BAR_PART_INCREASE;
+    test_bar.pressed_marker = 1;
+    test_bar.rail_dragging = 1;
+    egui_view_set_pressed(EGUI_VIEW_OF(&test_bar), 1);
+    egui_view_annotated_scroll_bar_set_step_size(EGUI_VIEW_OF(&test_bar), 0, 0);
+    EGUI_TEST_ASSERT_EQUAL_INT(1, test_bar.small_change);
+    EGUI_TEST_ASSERT_EQUAL_INT(120, test_bar.large_change);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_ANNOTATED_SCROLL_BAR_PART_NONE, test_bar.pressed_part);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, test_bar.pressed_marker);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, test_bar.rail_dragging);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_bar)->is_pressed);
+
+    test_bar.pressed_part = EGUI_VIEW_ANNOTATED_SCROLL_BAR_PART_RAIL;
+    test_bar.pressed_marker = 1;
+    test_bar.rail_dragging = 1;
+    egui_view_set_pressed(EGUI_VIEW_OF(&test_bar), 1);
+    egui_view_annotated_scroll_bar_set_offset(EGUI_VIEW_OF(&test_bar), 180);
+    EGUI_TEST_ASSERT_EQUAL_INT(180, egui_view_annotated_scroll_bar_get_offset(EGUI_VIEW_OF(&test_bar)));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_ANNOTATED_SCROLL_BAR_PART_NONE, test_bar.pressed_part);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, test_bar.pressed_marker);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, test_bar.rail_dragging);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_bar)->is_pressed);
+
+    test_bar.pressed_part = EGUI_VIEW_ANNOTATED_SCROLL_BAR_PART_DECREASE;
+    test_bar.pressed_marker = 1;
+    egui_view_set_pressed(EGUI_VIEW_OF(&test_bar), 1);
+    egui_view_annotated_scroll_bar_set_current_part(EGUI_VIEW_OF(&test_bar), EGUI_VIEW_ANNOTATED_SCROLL_BAR_PART_INCREASE);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_ANNOTATED_SCROLL_BAR_PART_INCREASE, egui_view_annotated_scroll_bar_get_current_part(EGUI_VIEW_OF(&test_bar)));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_ANNOTATED_SCROLL_BAR_PART_NONE, test_bar.pressed_part);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, test_bar.pressed_marker);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_bar)->is_pressed);
+
+    test_bar.pressed_part = EGUI_VIEW_ANNOTATED_SCROLL_BAR_PART_INCREASE;
+    test_bar.pressed_marker = 1;
+    egui_view_set_pressed(EGUI_VIEW_OF(&test_bar), 1);
+    egui_view_annotated_scroll_bar_set_current_part(EGUI_VIEW_OF(&test_bar), EGUI_VIEW_ANNOTATED_SCROLL_BAR_PART_INCREASE);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_ANNOTATED_SCROLL_BAR_PART_INCREASE, egui_view_annotated_scroll_bar_get_current_part(EGUI_VIEW_OF(&test_bar)));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_ANNOTATED_SCROLL_BAR_PART_NONE, test_bar.pressed_part);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, test_bar.pressed_marker);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_bar)->is_pressed);
+}
+
 static void test_annotated_scroll_bar_tab_cycles_parts(void)
 {
     setup_bar(1000, 200, 180, 20, 120);
@@ -174,37 +244,181 @@ static void test_annotated_scroll_bar_marker_drag_switches_to_rail(void)
     EGUI_TEST_ASSERT_EQUAL_INT(3, egui_view_annotated_scroll_bar_get_active_marker(EGUI_VIEW_OF(&test_bar)));
 }
 
-static void test_annotated_scroll_bar_read_only_and_compact_ignore_input(void)
+static void test_annotated_scroll_bar_touch_cancel_clears_pressed_state(void)
+{
+    egui_region_t rail_region;
+    egui_dim_t x;
+    egui_dim_t y;
+
+    setup_bar(1000, 200, 180, 20, 120);
+    layout_bar();
+    EGUI_TEST_ASSERT_TRUE(egui_view_annotated_scroll_bar_get_part_region(EGUI_VIEW_OF(&test_bar), EGUI_VIEW_ANNOTATED_SCROLL_BAR_PART_RAIL, &rail_region));
+    x = rail_region.location.x + rail_region.size.width / 2;
+    y = rail_region.location.y + rail_region.size.height - 1;
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_ANNOTATED_SCROLL_BAR_PART_RAIL, test_bar.pressed_part);
+    EGUI_TEST_ASSERT_EQUAL_INT(1, test_bar.rail_dragging);
+    EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&test_bar)->is_pressed);
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_CANCEL, x, y));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_ANNOTATED_SCROLL_BAR_PART_NONE, test_bar.pressed_part);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, test_bar.pressed_marker);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, test_bar.rail_dragging);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_bar)->is_pressed);
+    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_CANCEL, x, y));
+}
+
+static void test_annotated_scroll_bar_compact_mode_clears_pressed_and_ignores_input(void)
 {
     egui_region_t region;
 
     setup_bar(1000, 200, 180, 20, 120);
-    egui_view_annotated_scroll_bar_set_read_only_mode(EGUI_VIEW_OF(&test_bar), 1);
     layout_bar();
-    EGUI_TEST_ASSERT_FALSE(send_key(EGUI_KEY_CODE_DOWN));
     EGUI_TEST_ASSERT_TRUE(egui_view_annotated_scroll_bar_get_part_region(EGUI_VIEW_OF(&test_bar), EGUI_VIEW_ANNOTATED_SCROLL_BAR_PART_INCREASE, &region));
-    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, region.location.x + region.size.width / 2, region.location.y + region.size.height / 2));
-    EGUI_TEST_ASSERT_EQUAL_INT(180, egui_view_annotated_scroll_bar_get_offset(EGUI_VIEW_OF(&test_bar)));
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, region.location.x + region.size.width / 2, region.location.y + region.size.height / 2));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_ANNOTATED_SCROLL_BAR_PART_INCREASE, test_bar.pressed_part);
+    EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&test_bar)->is_pressed);
 
-    setup_bar(1000, 200, 180, 20, 120);
     egui_view_annotated_scroll_bar_set_compact_mode(EGUI_VIEW_OF(&test_bar), 1);
-    layout_bar();
+    EGUI_TEST_ASSERT_EQUAL_INT(1, test_bar.compact_mode);
+    EGUI_TEST_ASSERT_EQUAL_INT(180, egui_view_annotated_scroll_bar_get_offset(EGUI_VIEW_OF(&test_bar)));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_ANNOTATED_SCROLL_BAR_PART_NONE, test_bar.pressed_part);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, test_bar.pressed_marker);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, test_bar.rail_dragging);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_bar)->is_pressed);
+
+    test_bar.pressed_part = EGUI_VIEW_ANNOTATED_SCROLL_BAR_PART_RAIL;
+    test_bar.pressed_marker = 2;
+    test_bar.rail_dragging = 1;
+    egui_view_set_pressed(EGUI_VIEW_OF(&test_bar), 1);
+    egui_view_annotated_scroll_bar_set_compact_mode(EGUI_VIEW_OF(&test_bar), 1);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_ANNOTATED_SCROLL_BAR_PART_NONE, test_bar.pressed_part);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, test_bar.pressed_marker);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, test_bar.rail_dragging);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_bar)->is_pressed);
+
+    test_bar.pressed_part = EGUI_VIEW_ANNOTATED_SCROLL_BAR_PART_RAIL;
+    test_bar.pressed_marker = 1;
+    test_bar.rail_dragging = 1;
+    egui_view_set_pressed(EGUI_VIEW_OF(&test_bar), 1);
     EGUI_TEST_ASSERT_FALSE(send_key(EGUI_KEY_CODE_DOWN));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_ANNOTATED_SCROLL_BAR_PART_NONE, test_bar.pressed_part);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, test_bar.pressed_marker);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, test_bar.rail_dragging);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_bar)->is_pressed);
+
+    layout_bar();
     EGUI_TEST_ASSERT_TRUE(egui_view_annotated_scroll_bar_get_part_region(EGUI_VIEW_OF(&test_bar), EGUI_VIEW_ANNOTATED_SCROLL_BAR_PART_RAIL, &region));
     EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, region.location.x + region.size.width / 2, region.location.y + region.size.height / 2));
+    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, region.location.x + region.size.width / 2, region.location.y + region.size.height / 2));
     EGUI_TEST_ASSERT_EQUAL_INT(180, egui_view_annotated_scroll_bar_get_offset(EGUI_VIEW_OF(&test_bar)));
+
+    egui_view_annotated_scroll_bar_set_compact_mode(EGUI_VIEW_OF(&test_bar), 0);
+    layout_bar();
+    EGUI_TEST_ASSERT_TRUE(egui_view_annotated_scroll_bar_get_part_region(EGUI_VIEW_OF(&test_bar), EGUI_VIEW_ANNOTATED_SCROLL_BAR_PART_INCREASE, &region));
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, region.location.x + region.size.width / 2, region.location.y + region.size.height / 2));
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, region.location.x + region.size.width / 2, region.location.y + region.size.height / 2));
+    EGUI_TEST_ASSERT_EQUAL_INT(200, egui_view_annotated_scroll_bar_get_offset(EGUI_VIEW_OF(&test_bar)));
+}
+
+static void test_annotated_scroll_bar_read_only_mode_clears_pressed_and_ignores_input(void)
+{
+    egui_region_t region;
+
+    setup_bar(1000, 200, 180, 20, 120);
+    layout_bar();
+    EGUI_TEST_ASSERT_TRUE(egui_view_annotated_scroll_bar_get_part_region(EGUI_VIEW_OF(&test_bar), EGUI_VIEW_ANNOTATED_SCROLL_BAR_PART_INCREASE, &region));
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, region.location.x + region.size.width / 2, region.location.y + region.size.height / 2));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_ANNOTATED_SCROLL_BAR_PART_INCREASE, test_bar.pressed_part);
+    EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&test_bar)->is_pressed);
+
+    egui_view_annotated_scroll_bar_set_read_only_mode(EGUI_VIEW_OF(&test_bar), 1);
+    EGUI_TEST_ASSERT_EQUAL_INT(1, test_bar.read_only_mode);
+    EGUI_TEST_ASSERT_EQUAL_INT(180, egui_view_annotated_scroll_bar_get_offset(EGUI_VIEW_OF(&test_bar)));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_ANNOTATED_SCROLL_BAR_PART_NONE, test_bar.pressed_part);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, test_bar.pressed_marker);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, test_bar.rail_dragging);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_bar)->is_pressed);
+
+    test_bar.pressed_part = EGUI_VIEW_ANNOTATED_SCROLL_BAR_PART_RAIL;
+    test_bar.pressed_marker = 2;
+    test_bar.rail_dragging = 1;
+    egui_view_set_pressed(EGUI_VIEW_OF(&test_bar), 1);
+    egui_view_annotated_scroll_bar_set_read_only_mode(EGUI_VIEW_OF(&test_bar), 1);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_ANNOTATED_SCROLL_BAR_PART_NONE, test_bar.pressed_part);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, test_bar.pressed_marker);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, test_bar.rail_dragging);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_bar)->is_pressed);
+
+    test_bar.pressed_part = EGUI_VIEW_ANNOTATED_SCROLL_BAR_PART_MARKER;
+    test_bar.pressed_marker = 1;
+    egui_view_set_pressed(EGUI_VIEW_OF(&test_bar), 1);
+    EGUI_TEST_ASSERT_FALSE(send_key(EGUI_KEY_CODE_DOWN));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_ANNOTATED_SCROLL_BAR_PART_NONE, test_bar.pressed_part);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, test_bar.pressed_marker);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, test_bar.rail_dragging);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_bar)->is_pressed);
+
+    layout_bar();
+    EGUI_TEST_ASSERT_TRUE(egui_view_annotated_scroll_bar_get_part_region(EGUI_VIEW_OF(&test_bar), EGUI_VIEW_ANNOTATED_SCROLL_BAR_PART_INCREASE, &region));
+    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, region.location.x + region.size.width / 2, region.location.y + region.size.height / 2));
+    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, region.location.x + region.size.width / 2, region.location.y + region.size.height / 2));
+    EGUI_TEST_ASSERT_EQUAL_INT(180, egui_view_annotated_scroll_bar_get_offset(EGUI_VIEW_OF(&test_bar)));
+
+    egui_view_annotated_scroll_bar_set_read_only_mode(EGUI_VIEW_OF(&test_bar), 0);
+    EGUI_TEST_ASSERT_TRUE(send_key(EGUI_KEY_CODE_DOWN));
+    EGUI_TEST_ASSERT_EQUAL_INT(200, egui_view_annotated_scroll_bar_get_offset(EGUI_VIEW_OF(&test_bar)));
+}
+
+static void test_annotated_scroll_bar_disabled_ignores_input_and_clears_pressed_state(void)
+{
+    egui_region_t region;
+
+    setup_bar(1000, 200, 180, 20, 120);
+    layout_bar();
+    EGUI_TEST_ASSERT_TRUE(egui_view_annotated_scroll_bar_get_part_region(EGUI_VIEW_OF(&test_bar), EGUI_VIEW_ANNOTATED_SCROLL_BAR_PART_INCREASE, &region));
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, region.location.x + region.size.width / 2, region.location.y + region.size.height / 2));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_ANNOTATED_SCROLL_BAR_PART_INCREASE, test_bar.pressed_part);
+    EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&test_bar)->is_pressed);
+
+    egui_view_set_enable(EGUI_VIEW_OF(&test_bar), 0);
+    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, region.location.x + region.size.width / 2, region.location.y + region.size.height / 2));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_ANNOTATED_SCROLL_BAR_PART_NONE, test_bar.pressed_part);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, test_bar.pressed_marker);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, test_bar.rail_dragging);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_bar)->is_pressed);
+
+    test_bar.pressed_part = EGUI_VIEW_ANNOTATED_SCROLL_BAR_PART_RAIL;
+    test_bar.pressed_marker = 1;
+    test_bar.rail_dragging = 1;
+    egui_view_set_pressed(EGUI_VIEW_OF(&test_bar), 1);
+    EGUI_TEST_ASSERT_FALSE(send_key(EGUI_KEY_CODE_DOWN));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_ANNOTATED_SCROLL_BAR_PART_NONE, test_bar.pressed_part);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, test_bar.pressed_marker);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, test_bar.rail_dragging);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_bar)->is_pressed);
+    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, region.location.x + region.size.width / 2, region.location.y + region.size.height / 2));
+    EGUI_TEST_ASSERT_EQUAL_INT(180, egui_view_annotated_scroll_bar_get_offset(EGUI_VIEW_OF(&test_bar)));
+
+    egui_view_set_enable(EGUI_VIEW_OF(&test_bar), 1);
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, region.location.x + region.size.width / 2, region.location.y + region.size.height / 2));
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, region.location.x + region.size.width / 2, region.location.y + region.size.height / 2));
+    EGUI_TEST_ASSERT_EQUAL_INT(200, egui_view_annotated_scroll_bar_get_offset(EGUI_VIEW_OF(&test_bar)));
 }
 
 void test_annotated_scroll_bar_run(void)
 {
     EGUI_TEST_SUITE_BEGIN(annotated_scroll_bar);
     EGUI_TEST_RUN(test_annotated_scroll_bar_clamps_metrics_and_regions);
+    EGUI_TEST_RUN(test_annotated_scroll_bar_setters_clear_pressed_state_and_clamp);
     EGUI_TEST_RUN(test_annotated_scroll_bar_tab_cycles_parts);
     EGUI_TEST_RUN(test_annotated_scroll_bar_keyboard_navigation);
     EGUI_TEST_RUN(test_annotated_scroll_bar_touch_increase_button);
     EGUI_TEST_RUN(test_annotated_scroll_bar_touch_marker_selects_offset);
     EGUI_TEST_RUN(test_annotated_scroll_bar_touch_drag_rail_reaches_end);
     EGUI_TEST_RUN(test_annotated_scroll_bar_marker_drag_switches_to_rail);
-    EGUI_TEST_RUN(test_annotated_scroll_bar_read_only_and_compact_ignore_input);
+    EGUI_TEST_RUN(test_annotated_scroll_bar_touch_cancel_clears_pressed_state);
+    EGUI_TEST_RUN(test_annotated_scroll_bar_compact_mode_clears_pressed_and_ignores_input);
+    EGUI_TEST_RUN(test_annotated_scroll_bar_read_only_mode_clears_pressed_and_ignores_input);
+    EGUI_TEST_RUN(test_annotated_scroll_bar_disabled_ignores_input_and_clears_pressed_state);
     EGUI_TEST_SUITE_END();
 }

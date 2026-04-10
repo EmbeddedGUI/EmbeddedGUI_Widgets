@@ -100,8 +100,11 @@ python scripts/checks/check_docs_encoding.py
 - 主控件的 summary、bubble、marker label、indicator 和按钮都必须完整可见。
 - 底部 `compact / read only` 需要在同一底色体系下保持清晰层级，但不能重新长出外部壳。
 - `read only` 预览只能做静态展示，不能响应 touch、focus 或键盘。
+- `markers / content metrics / step size / offset / current part / compact / read only / view disabled` 切换链路需要共用同一套 `pressed` 清理语义。
+- 模式切换或 setter 更新后，不能残留 button / marker / rail 的 `pressed` 高亮、下压位移或拖拽态渲染。
+- `compact / read_only_mode / !enable` 收到新的 touch 或 key 输入时，必须先清理残留 pressed，再拒绝后续交互。
 - 触摸释放语义必须继续满足“按下与抬起命中同一目标才提交”。
-- unit test 中已有的键盘导航、marker 跳转、rail drag 与只读/紧凑忽略输入语义不能回归。
+- unit test 中已有的键盘导航、marker 跳转、rail drag 与 `touch cancel`、`compact / read only / !enable` 输入抑制语义不能回归。
 
 ## 9. 已知限制与后续方向
 
