@@ -91,6 +91,18 @@ static void layout_preview_flyout(void)
     layout_view(EGUI_VIEW_OF(&preview_flyout), 12, 18, 104, 74);
 }
 
+static void get_view_center(egui_view_t *view, egui_dim_t *x, egui_dim_t *y)
+{
+    *x = view->region_screen.location.x + view->region_screen.size.width / 2;
+    *y = view->region_screen.location.y + view->region_screen.size.height / 2;
+}
+
+static void get_view_outside_point(egui_view_t *view, egui_dim_t *x, egui_dim_t *y)
+{
+    *x = view->region_screen.location.x - 4;
+    *y = view->region_screen.location.y - 4;
+}
+
 static int send_touch_to_view(egui_view_t *view, uint8_t type, egui_dim_t x, egui_dim_t y)
 {
     egui_motion_event_t event;
@@ -102,7 +114,7 @@ static int send_touch_to_view(egui_view_t *view, uint8_t type, egui_dim_t x, egu
     return view->api->on_touch_event(view, &event);
 }
 
-static int send_key_to_view(egui_view_t *view, uint8_t type, uint8_t key_code)
+static int send_key_action_to_view(egui_view_t *view, uint8_t type, uint8_t key_code)
 {
     egui_key_event_t event;
 
@@ -110,6 +122,35 @@ static int send_key_to_view(egui_view_t *view, uint8_t type, uint8_t key_code)
     event.type = type;
     event.key_code = key_code;
     return view->api->on_key_event(view, &event);
+}
+
+static int send_key_to_view(egui_view_t *view, uint8_t key_code)
+{
+    int handled = 0;
+
+    handled |= send_key_action_to_view(view, EGUI_KEY_EVENT_ACTION_DOWN, key_code);
+    handled |= send_key_action_to_view(view, EGUI_KEY_EVENT_ACTION_UP, key_code);
+    return handled;
+}
+
+static int send_touch(uint8_t type, egui_dim_t x, egui_dim_t y)
+{
+    return send_touch_to_view(EGUI_VIEW_OF(&test_flyout), type, x, y);
+}
+
+static int send_preview_touch(uint8_t type, egui_dim_t x, egui_dim_t y)
+{
+    return send_touch_to_view(EGUI_VIEW_OF(&preview_flyout), type, x, y);
+}
+
+static int send_key(uint8_t key_code)
+{
+    return send_key_to_view(EGUI_VIEW_OF(&test_flyout), key_code);
+}
+
+static int send_preview_key(uint8_t key_code)
+{
+    return send_key_to_view(EGUI_VIEW_OF(&preview_flyout), key_code);
 }
 
 static void seed_pressed_state(egui_view_t *view)
@@ -136,7 +177,7 @@ static void test_menu_flyout_set_snapshots_clamps_count_and_resets_current_snaps
     assert_pressed_cleared(EGUI_VIEW_OF(&test_flyout));
 }
 
-static void test_menu_flyout_set_current_snapshot_ignores_out_of_range(void)
+static void test_menu_flyout_set_current_snapshot_guards_and_clears_pressed_state(void)
 {
     setup_flyout();
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_menu_flyout_get_current_snapshot(EGUI_VIEW_OF(&test_flyout)));
@@ -148,8 +189,16 @@ static void test_menu_flyout_set_current_snapshot_ignores_out_of_range(void)
     egui_view_menu_flyout_set_current_snapshot(EGUI_VIEW_OF(&test_flyout), 2);
     assert_pressed_cleared(EGUI_VIEW_OF(&test_flyout));
 
+    seed_pressed_state(EGUI_VIEW_OF(&test_flyout));
     egui_view_menu_flyout_set_current_snapshot(EGUI_VIEW_OF(&test_flyout), 9);
     EGUI_TEST_ASSERT_EQUAL_INT(2, egui_view_menu_flyout_get_current_snapshot(EGUI_VIEW_OF(&test_flyout)));
+    assert_pressed_cleared(EGUI_VIEW_OF(&test_flyout));
+
+    egui_view_menu_flyout_set_snapshots(EGUI_VIEW_OF(&test_flyout), NULL, 0);
+    seed_pressed_state(EGUI_VIEW_OF(&test_flyout));
+    egui_view_menu_flyout_set_current_snapshot(EGUI_VIEW_OF(&test_flyout), 0);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_menu_flyout_get_current_snapshot(EGUI_VIEW_OF(&test_flyout)));
+    assert_pressed_cleared(EGUI_VIEW_OF(&test_flyout));
 }
 
 static void test_menu_flyout_setters_clear_pressed_state(void)
@@ -201,49 +250,79 @@ static void test_menu_flyout_setters_clear_pressed_state(void)
 
 static void test_menu_flyout_touch_and_enter_trigger_click_listener(void)
 {
+    egui_dim_t x;
+    egui_dim_t y;
+
     setup_flyout();
     egui_view_set_on_click_listener(EGUI_VIEW_OF(&test_flyout), on_flyout_click);
     layout_flyout();
+    get_view_center(EGUI_VIEW_OF(&test_flyout), &x, &y);
 
-    EGUI_TEST_ASSERT_TRUE(send_touch_to_view(EGUI_VIEW_OF(&test_flyout), EGUI_MOTION_EVENT_ACTION_DOWN, 48, 46));
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
     EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&test_flyout)->is_pressed);
-    EGUI_TEST_ASSERT_TRUE(send_touch_to_view(EGUI_VIEW_OF(&test_flyout), EGUI_MOTION_EVENT_ACTION_UP, 48, 46));
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, x, y));
     assert_pressed_cleared(EGUI_VIEW_OF(&test_flyout));
     EGUI_TEST_ASSERT_EQUAL_INT(1, click_count);
 
-    EGUI_TEST_ASSERT_TRUE(send_key_to_view(EGUI_VIEW_OF(&test_flyout), EGUI_KEY_EVENT_ACTION_DOWN, EGUI_KEY_CODE_ENTER));
-    EGUI_TEST_ASSERT_TRUE(send_key_to_view(EGUI_VIEW_OF(&test_flyout), EGUI_KEY_EVENT_ACTION_UP, EGUI_KEY_CODE_ENTER));
+    EGUI_TEST_ASSERT_TRUE(send_key(EGUI_KEY_CODE_ENTER));
     EGUI_TEST_ASSERT_EQUAL_INT(2, click_count);
 }
 
-static void test_menu_flyout_touch_cancel_clears_pressed_state_without_side_effect(void)
+static void test_menu_flyout_touch_same_target_release_and_cancel_behavior(void)
 {
+    egui_dim_t inside_x;
+    egui_dim_t inside_y;
+    egui_dim_t outside_x;
+    egui_dim_t outside_y;
+
     setup_flyout();
     egui_view_set_on_click_listener(EGUI_VIEW_OF(&test_flyout), on_flyout_click);
     layout_flyout();
+    get_view_center(EGUI_VIEW_OF(&test_flyout), &inside_x, &inside_y);
+    get_view_outside_point(EGUI_VIEW_OF(&test_flyout), &outside_x, &outside_y);
 
-    EGUI_TEST_ASSERT_TRUE(send_touch_to_view(EGUI_VIEW_OF(&test_flyout), EGUI_MOTION_EVENT_ACTION_DOWN, 48, 46));
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, inside_x, inside_y));
     EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&test_flyout)->is_pressed);
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_MOVE, outside_x, outside_y));
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_flyout)->is_pressed);
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, outside_x, outside_y));
+    assert_pressed_cleared(EGUI_VIEW_OF(&test_flyout));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, click_count);
 
-    EGUI_TEST_ASSERT_TRUE(send_touch_to_view(EGUI_VIEW_OF(&test_flyout), EGUI_MOTION_EVENT_ACTION_CANCEL, 48, 46));
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, inside_x, inside_y));
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_MOVE, outside_x, outside_y));
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_flyout)->is_pressed);
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_MOVE, inside_x, inside_y));
+    EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&test_flyout)->is_pressed);
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, inside_x, inside_y));
+    assert_pressed_cleared(EGUI_VIEW_OF(&test_flyout));
+    EGUI_TEST_ASSERT_EQUAL_INT(1, click_count);
+
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, inside_x, inside_y));
+    EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&test_flyout)->is_pressed);
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_CANCEL, inside_x, inside_y));
     assert_pressed_cleared(EGUI_VIEW_OF(&test_flyout));
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_menu_flyout_get_current_snapshot(EGUI_VIEW_OF(&test_flyout)));
-    EGUI_TEST_ASSERT_EQUAL_INT(0, click_count);
+    EGUI_TEST_ASSERT_EQUAL_INT(1, click_count);
 }
 
 static void test_menu_flyout_disabled_and_view_disabled_guards_clear_pressed_state(void)
 {
+    egui_dim_t x;
+    egui_dim_t y;
+
     setup_flyout();
     egui_view_set_on_click_listener(EGUI_VIEW_OF(&test_flyout), on_flyout_click);
     layout_flyout();
+    get_view_center(EGUI_VIEW_OF(&test_flyout), &x, &y);
 
     test_flyout.disabled_mode = 1;
     seed_pressed_state(EGUI_VIEW_OF(&test_flyout));
-    EGUI_TEST_ASSERT_FALSE(send_touch_to_view(EGUI_VIEW_OF(&test_flyout), EGUI_MOTION_EVENT_ACTION_DOWN, 48, 46));
+    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
     assert_pressed_cleared(EGUI_VIEW_OF(&test_flyout));
 
     seed_pressed_state(EGUI_VIEW_OF(&test_flyout));
-    EGUI_TEST_ASSERT_FALSE(send_key_to_view(EGUI_VIEW_OF(&test_flyout), EGUI_KEY_EVENT_ACTION_DOWN, EGUI_KEY_CODE_ENTER));
+    EGUI_TEST_ASSERT_FALSE(send_key(EGUI_KEY_CODE_ENTER));
     assert_pressed_cleared(EGUI_VIEW_OF(&test_flyout));
     EGUI_TEST_ASSERT_EQUAL_INT(0, click_count);
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_menu_flyout_get_current_snapshot(EGUI_VIEW_OF(&test_flyout)));
@@ -251,11 +330,11 @@ static void test_menu_flyout_disabled_and_view_disabled_guards_clear_pressed_sta
     test_flyout.disabled_mode = 0;
     egui_view_set_enable(EGUI_VIEW_OF(&test_flyout), 0);
     seed_pressed_state(EGUI_VIEW_OF(&test_flyout));
-    EGUI_TEST_ASSERT_FALSE(send_touch_to_view(EGUI_VIEW_OF(&test_flyout), EGUI_MOTION_EVENT_ACTION_DOWN, 48, 46));
+    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
     assert_pressed_cleared(EGUI_VIEW_OF(&test_flyout));
 
     seed_pressed_state(EGUI_VIEW_OF(&test_flyout));
-    EGUI_TEST_ASSERT_FALSE(send_key_to_view(EGUI_VIEW_OF(&test_flyout), EGUI_KEY_EVENT_ACTION_DOWN, EGUI_KEY_CODE_ENTER));
+    EGUI_TEST_ASSERT_FALSE(send_key(EGUI_KEY_CODE_ENTER));
     assert_pressed_cleared(EGUI_VIEW_OF(&test_flyout));
     EGUI_TEST_ASSERT_EQUAL_INT(0, click_count);
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_menu_flyout_get_current_snapshot(EGUI_VIEW_OF(&test_flyout)));
@@ -263,18 +342,21 @@ static void test_menu_flyout_disabled_and_view_disabled_guards_clear_pressed_sta
 
 static void test_menu_flyout_static_preview_consumes_input_and_clears_pressed_state(void)
 {
+    egui_dim_t x;
+    egui_dim_t y;
+
     setup_preview_flyout(1);
     layout_preview_flyout();
+    get_view_center(EGUI_VIEW_OF(&preview_flyout), &x, &y);
 
     seed_pressed_state(EGUI_VIEW_OF(&preview_flyout));
-    EGUI_TEST_ASSERT_TRUE(send_touch_to_view(EGUI_VIEW_OF(&preview_flyout), EGUI_MOTION_EVENT_ACTION_DOWN, 48, 46));
+    EGUI_TEST_ASSERT_TRUE(send_preview_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
     assert_pressed_cleared(EGUI_VIEW_OF(&preview_flyout));
     EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_menu_flyout_get_current_snapshot(EGUI_VIEW_OF(&preview_flyout)));
     EGUI_TEST_ASSERT_EQUAL_INT(0, click_count);
 
     seed_pressed_state(EGUI_VIEW_OF(&preview_flyout));
-    EGUI_TEST_ASSERT_TRUE(send_key_to_view(EGUI_VIEW_OF(&preview_flyout), EGUI_KEY_EVENT_ACTION_DOWN, EGUI_KEY_CODE_ENTER));
-    EGUI_TEST_ASSERT_TRUE(send_key_to_view(EGUI_VIEW_OF(&preview_flyout), EGUI_KEY_EVENT_ACTION_UP, EGUI_KEY_CODE_ENTER));
+    EGUI_TEST_ASSERT_TRUE(send_preview_key(EGUI_KEY_CODE_ENTER));
     assert_pressed_cleared(EGUI_VIEW_OF(&preview_flyout));
     EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_menu_flyout_get_current_snapshot(EGUI_VIEW_OF(&preview_flyout)));
     EGUI_TEST_ASSERT_EQUAL_INT(0, click_count);
@@ -288,6 +370,7 @@ static void test_menu_flyout_internal_helpers_clamp_focus_and_meta(void)
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_MENU_FLYOUT_MAX_ITEMS, egui_view_menu_flyout_clamp_item_count(9));
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_menu_flyout_text_len(NULL));
     EGUI_TEST_ASSERT_EQUAL_INT(4, egui_view_menu_flyout_text_len("Ctrl"));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_menu_flyout_focus_index(NULL, 3));
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_menu_flyout_focus_index(&snapshot, 3));
     EGUI_TEST_ASSERT_EQUAL_INT(20, egui_view_menu_flyout_meta_width("Ctrl+Shift+P", 0, 20));
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_menu_flyout_meta_width(NULL, 1, 20));
@@ -297,10 +380,10 @@ void test_menu_flyout_run(void)
 {
     EGUI_TEST_SUITE_BEGIN(menu_flyout);
     EGUI_TEST_RUN(test_menu_flyout_set_snapshots_clamps_count_and_resets_current_snapshot);
-    EGUI_TEST_RUN(test_menu_flyout_set_current_snapshot_ignores_out_of_range);
+    EGUI_TEST_RUN(test_menu_flyout_set_current_snapshot_guards_and_clears_pressed_state);
     EGUI_TEST_RUN(test_menu_flyout_setters_clear_pressed_state);
     EGUI_TEST_RUN(test_menu_flyout_touch_and_enter_trigger_click_listener);
-    EGUI_TEST_RUN(test_menu_flyout_touch_cancel_clears_pressed_state_without_side_effect);
+    EGUI_TEST_RUN(test_menu_flyout_touch_same_target_release_and_cancel_behavior);
     EGUI_TEST_RUN(test_menu_flyout_disabled_and_view_disabled_guards_clear_pressed_state);
     EGUI_TEST_RUN(test_menu_flyout_static_preview_consumes_input_and_clears_pressed_state);
     EGUI_TEST_RUN(test_menu_flyout_internal_helpers_clamp_focus_and_meta);

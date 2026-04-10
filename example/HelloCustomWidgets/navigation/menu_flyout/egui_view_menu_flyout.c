@@ -213,6 +213,7 @@ void egui_view_menu_flyout_set_current_snapshot(egui_view_t *self, uint8_t snaps
 
     if (local->snapshot_count == 0 || snapshot_index >= local->snapshot_count)
     {
+        egui_view_menu_flyout_clear_pressed_state(self);
         return;
     }
 
