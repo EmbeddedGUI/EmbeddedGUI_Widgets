@@ -73,6 +73,28 @@ static egui_color_t color_picker_mix_disabled(egui_color_t color)
     return egui_rgb_mix(color, EGUI_COLOR_DARK_GREY, 72);
 }
 
+static uint8_t color_picker_clear_pressed_state(egui_view_t *self, egui_view_color_picker_t *local)
+{
+    uint8_t was_pressed = self->is_pressed ? 1 : 0;
+    uint8_t had_pressed = was_pressed || local->pressed_part != EGUI_VIEW_COLOR_PICKER_PART_NONE;
+
+    if (!had_pressed)
+    {
+        return 0;
+    }
+
+    local->pressed_part = EGUI_VIEW_COLOR_PICKER_PART_NONE;
+    if (was_pressed)
+    {
+        egui_view_set_pressed(self, false);
+    }
+    else
+    {
+        egui_view_invalidate(self);
+    }
+    return 1;
+}
+
 static void color_picker_hsv_to_rgb(uint16_t hue_deg, uint8_t saturation, uint8_t value, uint8_t *r, uint8_t *g, uint8_t *b)
 {
     uint8_t region;
@@ -226,7 +248,7 @@ static void color_picker_normalize_state(egui_view_color_picker_t *local)
     {
         local->pressed_part = EGUI_VIEW_COLOR_PICKER_PART_NONE;
     }
-    if (local->read_only_mode)
+    if (local->read_only_mode || local->compact_mode)
     {
         local->current_part = EGUI_VIEW_COLOR_PICKER_PART_PALETTE;
         local->pressed_part = EGUI_VIEW_COLOR_PICKER_PART_NONE;
@@ -270,17 +292,24 @@ void egui_view_color_picker_set_palette(egui_view_t *self, egui_color_t surface_
                                         egui_color_t muted_text_color, egui_color_t accent_color)
 {
     EGUI_LOCAL_INIT(egui_view_color_picker_t);
+    uint8_t had_pressed = color_picker_clear_pressed_state(self, local);
 
     local->surface_color = surface_color;
     local->border_color = border_color;
     local->text_color = text_color;
     local->muted_text_color = muted_text_color;
     local->accent_color = accent_color;
-    egui_view_invalidate(self);
+    if (!had_pressed)
+    {
+        egui_view_invalidate(self);
+    }
 }
 
 void egui_view_color_picker_set_selection(egui_view_t *self, uint8_t hue_index, uint8_t saturation_index, uint8_t value_index)
 {
+    EGUI_LOCAL_INIT(egui_view_color_picker_t);
+
+    color_picker_clear_pressed_state(self, local);
     color_picker_set_selection_inner(self, hue_index, saturation_index, value_index, 0, EGUI_VIEW_COLOR_PICKER_PART_PALETTE);
 }
 
@@ -321,6 +350,9 @@ const char *egui_view_color_picker_get_hex_text(egui_view_t *self)
 
 void egui_view_color_picker_set_current_part(egui_view_t *self, uint8_t part)
 {
+    EGUI_LOCAL_INIT(egui_view_color_picker_t);
+
+    color_picker_clear_pressed_state(self, local);
     color_picker_set_current_part_inner(self, part, 1);
 }
 
@@ -335,6 +367,7 @@ void egui_view_color_picker_set_compact_mode(egui_view_t *self, uint8_t compact_
 {
     EGUI_LOCAL_INIT(egui_view_color_picker_t);
     uint8_t normalized = compact_mode ? 1 : 0;
+    uint8_t had_pressed = color_picker_clear_pressed_state(self, local);
 
     if (local->compact_mode == normalized)
     {
@@ -342,13 +375,18 @@ void egui_view_color_picker_set_compact_mode(egui_view_t *self, uint8_t compact_
     }
 
     local->compact_mode = normalized;
-    egui_view_invalidate(self);
+    local->current_part = EGUI_VIEW_COLOR_PICKER_PART_PALETTE;
+    if (!had_pressed)
+    {
+        egui_view_invalidate(self);
+    }
 }
 
 void egui_view_color_picker_set_read_only_mode(egui_view_t *self, uint8_t read_only_mode)
 {
     EGUI_LOCAL_INIT(egui_view_color_picker_t);
     uint8_t normalized = read_only_mode ? 1 : 0;
+    uint8_t had_pressed = color_picker_clear_pressed_state(self, local);
 
     if (local->read_only_mode == normalized)
     {
@@ -356,9 +394,11 @@ void egui_view_color_picker_set_read_only_mode(egui_view_t *self, uint8_t read_o
     }
 
     local->read_only_mode = normalized;
-    local->pressed_part = EGUI_VIEW_COLOR_PICKER_PART_NONE;
     local->current_part = EGUI_VIEW_COLOR_PICKER_PART_PALETTE;
-    egui_view_invalidate(self);
+    if (!had_pressed)
+    {
+        egui_view_invalidate(self);
+    }
 }
 
 void egui_view_color_picker_set_on_changed_listener(egui_view_t *self, egui_view_on_color_picker_changed_listener_t listener)
@@ -661,7 +701,7 @@ static void egui_view_color_picker_on_draw(egui_view_t *self)
     color_picker_draw_palette_cells(self, local, &metrics, accent_color, border_color, surface_color, disabled_mix);
     color_picker_draw_hue_rail(self, local, &metrics, accent_color, border_color, surface_color, disabled_mix);
 
-    if (self->is_focused && !local->read_only_mode)
+    if (self->is_focused && !local->read_only_mode && !local->compact_mode)
     {
         const egui_region_t *focus_region = local->current_part == EGUI_VIEW_COLOR_PICKER_PART_HUE ? &metrics.hue_region : &metrics.palette_region;
         egui_canvas_draw_round_rectangle(focus_region->location.x - 2, focus_region->location.y - 2, focus_region->size.width + 4,
@@ -774,8 +814,9 @@ static int egui_view_color_picker_on_touch_event(egui_view_t *self, egui_motion_
     EGUI_LOCAL_INIT(egui_view_color_picker_t);
     uint8_t hit_part;
 
-    if (!egui_view_get_enable(self) || local->read_only_mode)
+    if (!egui_view_get_enable(self) || local->read_only_mode || local->compact_mode)
     {
+        color_picker_clear_pressed_state(self, local);
         return 0;
     }
 
@@ -818,15 +859,9 @@ static int egui_view_color_picker_on_touch_event(egui_view_t *self, egui_motion_
             color_picker_set_current_part_inner(self, hit_part, 0);
             color_picker_update_from_point(self, hit_part, event->location.x, event->location.y, 1);
         }
-        local->pressed_part = EGUI_VIEW_COLOR_PICKER_PART_NONE;
-        egui_view_set_pressed(self, false);
-        egui_view_invalidate(self);
-        return hit_part != EGUI_VIEW_COLOR_PICKER_PART_NONE ? 1 : 0;
+        return color_picker_clear_pressed_state(self, local);
     case EGUI_MOTION_EVENT_ACTION_CANCEL:
-        local->pressed_part = EGUI_VIEW_COLOR_PICKER_PART_NONE;
-        egui_view_set_pressed(self, false);
-        egui_view_invalidate(self);
-        return 1;
+        return color_picker_clear_pressed_state(self, local);
     default:
         return 0;
     }
@@ -881,8 +916,9 @@ static uint8_t color_picker_handle_navigation_key_inner(egui_view_t *self, uint8
 #if EGUI_CONFIG_FUNCTION_SUPPORT_KEY
     EGUI_LOCAL_INIT(egui_view_color_picker_t);
 
-    if (!egui_view_get_enable(self) || local->read_only_mode)
+    if (!egui_view_get_enable(self) || local->read_only_mode || local->compact_mode)
     {
+        color_picker_clear_pressed_state(self, local);
         return 0;
     }
 
@@ -975,6 +1011,15 @@ uint8_t egui_view_color_picker_handle_navigation_key(egui_view_t *self, uint8_t 
 #if EGUI_CONFIG_FUNCTION_SUPPORT_KEY
 static int egui_view_color_picker_on_key_event(egui_view_t *self, egui_key_event_t *event)
 {
+    EGUI_LOCAL_INIT(egui_view_color_picker_t);
+
+    if (!egui_view_get_enable(self) || local->read_only_mode || local->compact_mode)
+    {
+        color_picker_clear_pressed_state(self, local);
+        return 0;
+    }
+
+    color_picker_clear_pressed_state(self, local);
     if (event->type != EGUI_KEY_EVENT_ACTION_UP)
     {
         switch (event->key_code)
@@ -999,7 +1044,38 @@ static int egui_view_color_picker_on_key_event(egui_view_t *self, egui_key_event
     }
     return egui_view_on_key_event(self, event);
 }
+
+static int egui_view_color_picker_on_static_key_event(egui_view_t *self, egui_key_event_t *event)
+{
+    EGUI_LOCAL_INIT(egui_view_color_picker_t);
+
+    EGUI_UNUSED(event);
+    color_picker_clear_pressed_state(self, local);
+    return 1;
+}
 #endif
+
+#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
+static int egui_view_color_picker_on_static_touch_event(egui_view_t *self, egui_motion_event_t *event)
+{
+    EGUI_LOCAL_INIT(egui_view_color_picker_t);
+
+    EGUI_UNUSED(event);
+    color_picker_clear_pressed_state(self, local);
+    return 1;
+}
+#endif
+
+void egui_view_color_picker_override_static_preview_api(egui_view_t *self, egui_view_api_t *api)
+{
+    egui_view_copy_api(self, api);
+#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
+    api->on_touch_event = egui_view_color_picker_on_static_touch_event;
+#endif
+#if EGUI_CONFIG_FUNCTION_SUPPORT_KEY
+    api->on_key_event = egui_view_color_picker_on_static_key_event;
+#endif
+}
 
 const egui_view_api_t EGUI_VIEW_API_TABLE_NAME(egui_view_color_picker_t) = {
         .dispatch_touch_event = egui_view_dispatch_touch_event,

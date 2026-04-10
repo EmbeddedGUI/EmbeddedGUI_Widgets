@@ -61,6 +61,7 @@ uint8_t egui_view_color_picker_get_current_part(egui_view_t *self);
 void egui_view_color_picker_set_compact_mode(egui_view_t *self, uint8_t compact_mode);
 void egui_view_color_picker_set_read_only_mode(egui_view_t *self, uint8_t read_only_mode);
 void egui_view_color_picker_set_on_changed_listener(egui_view_t *self, egui_view_on_color_picker_changed_listener_t listener);
+void egui_view_color_picker_override_static_preview_api(egui_view_t *self, egui_view_api_t *api);
 uint8_t egui_view_color_picker_get_part_region(egui_view_t *self, uint8_t part, egui_region_t *region);
 uint8_t egui_view_color_picker_handle_navigation_key(egui_view_t *self, uint8_t key_code);
 

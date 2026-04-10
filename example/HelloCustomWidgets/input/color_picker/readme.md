@@ -47,7 +47,7 @@
 - 视觉规则：
   - 使用浅灰白 page panel + 白底轻边框 palette
   - 主卡保留标准颜色选择器语义，不再叠页面级说明与状态桥接
-  - `compact` 与 `read only` 作为静态对照，不承担交互职责
+  - `compact` 与 `read only` 作为静态对照，只通过统一 static preview API 吞掉 touch / key 输入，不承担交互职责
   - accent、边框和文本色统一向 Fluent / WPF UI 低噪音浅色体系收口
 
 ## 5. 控件清单
@@ -101,6 +101,8 @@ python scripts/checks/check_docs_encoding.py
 - 色块之间要能清楚区分，不能因边框或留白不足混在一起
 - 主卡必须仍然像标准颜色选择器，而不是场景化装饰卡片
 - `compact` 与 `read only` 必须是静态对照，不再承担标签切换职责
+- `set_selection / current part / palette / compact / read only` 切换后不能残留 `pressed_part / is_pressed` 污染
+- 底部 `compact / read only` 预览必须统一吞掉 touch / key 输入，并在收到输入后立即清理残留 `pressed` 渲染
 - 页面中不再出现 guide、状态文案、standard label、section divider 和外部 preview label
 
 ## 9. 已知限制与后续方向
@@ -144,5 +146,5 @@ python scripts/checks/check_docs_encoding.py
 
 - 使用固定 preset 与离散键盘步进，优先保证 `480 x 480` 页面里的可审阅性
 - 只保留单层 tone palette + hue rail，不引入浮层面板
-- `compact` 与 `read only` 固定放底部双列，便于和主卡直接对照
+- `compact` 与 `read only` 固定放底部双列，便于和主卡直接对照，并通过统一 static preview API 吞掉 touch / key 输入
 - 先完成示例级颜色选择器，再决定是否上升到框架公共控件

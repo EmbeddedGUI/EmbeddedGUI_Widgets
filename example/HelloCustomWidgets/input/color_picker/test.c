@@ -38,6 +38,8 @@ static egui_view_linearlayout_t compact_column;
 static egui_view_color_picker_t picker_compact;
 static egui_view_linearlayout_t read_only_column;
 static egui_view_color_picker_t picker_read_only;
+static egui_view_api_t picker_compact_api;
+static egui_view_api_t picker_read_only_api;
 
 EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
 EGUI_BACKGROUND_PARAM_INIT(bg_page_panel_params, &bg_page_panel_param, NULL, NULL);
@@ -57,13 +59,6 @@ static const color_picker_snapshot_t compact_snapshots[] = {
 };
 
 static const color_picker_snapshot_t read_only_snapshot = {NULL, NULL, 8, 2, 2};
-
-static int consume_preview_touch(egui_view_t *self, egui_motion_event_t *event)
-{
-    EGUI_UNUSED(self);
-    EGUI_UNUSED(event);
-    return 1;
-}
 
 static void apply_snapshot(egui_view_t *view, const color_picker_snapshot_t *snapshot)
 {
@@ -133,8 +128,7 @@ void test_init_ui(void)
     egui_view_color_picker_set_compact_mode(EGUI_VIEW_OF(&picker_compact), 1);
     egui_view_color_picker_set_palette(EGUI_VIEW_OF(&picker_compact), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD5DCE4), EGUI_COLOR_HEX(0x1A2734),
                                        EGUI_COLOR_HEX(0x6B7A89), EGUI_COLOR_HEX(0x0F6CBD));
-    static egui_view_api_t picker_compact_touch_api;
-    egui_view_override_api_on_touch(EGUI_VIEW_OF(&picker_compact), &picker_compact_touch_api, consume_preview_touch);
+    egui_view_color_picker_override_static_preview_api(EGUI_VIEW_OF(&picker_compact), &picker_compact_api);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&picker_compact), false);
 #endif
@@ -155,8 +149,7 @@ void test_init_ui(void)
     egui_view_color_picker_set_read_only_mode(EGUI_VIEW_OF(&picker_read_only), 1);
     egui_view_color_picker_set_palette(EGUI_VIEW_OF(&picker_read_only), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD5DCE4), EGUI_COLOR_HEX(0x1A2734),
                                        EGUI_COLOR_HEX(0x6B7A89), EGUI_COLOR_HEX(0x7A8796));
-    static egui_view_api_t picker_read_only_touch_api;
-    egui_view_override_api_on_touch(EGUI_VIEW_OF(&picker_read_only), &picker_read_only_touch_api, consume_preview_touch);
+    egui_view_color_picker_override_static_preview_api(EGUI_VIEW_OF(&picker_read_only), &picker_read_only_api);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&picker_read_only), false);
 #endif
