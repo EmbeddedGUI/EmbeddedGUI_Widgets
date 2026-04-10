@@ -85,6 +85,7 @@ void egui_view_swipe_control_set_read_only_mode(egui_view_t *self, uint8_t read_
 void egui_view_swipe_control_set_on_changed_listener(egui_view_t *self, egui_view_on_swipe_control_changed_listener_t listener);
 uint8_t egui_view_swipe_control_get_part_region(egui_view_t *self, uint8_t part, egui_region_t *region);
 uint8_t egui_view_swipe_control_handle_navigation_key(egui_view_t *self, uint8_t key_code);
+void egui_view_swipe_control_override_static_preview_api(egui_view_t *self, egui_view_api_t *api);
 
 #ifdef __cplusplus
 }

@@ -80,6 +80,31 @@ static uint8_t swipe_control_part_enabled(egui_view_swipe_control_t *local, egui
     return 0;
 }
 
+static uint8_t swipe_control_clear_pressed_state(egui_view_t *self, egui_view_swipe_control_t *local)
+{
+    uint8_t was_pressed = self->is_pressed ? 1 : 0;
+    uint8_t had_pressed = was_pressed || local->pressed_part != EGUI_VIEW_SWIPE_CONTROL_PART_NONE || local->dragging;
+
+    if (!had_pressed)
+    {
+        return 0;
+    }
+
+    local->pressed_part = EGUI_VIEW_SWIPE_CONTROL_PART_NONE;
+    local->dragging = 0;
+    local->gesture_start_x = 0;
+    local->gesture_start_y = 0;
+    if (was_pressed)
+    {
+        egui_view_set_pressed(self, false);
+    }
+    else
+    {
+        egui_view_invalidate(self);
+    }
+    return 1;
+}
+
 static void swipe_control_normalize_state(egui_view_swipe_control_t *local)
 {
     if (local->item == NULL)
@@ -550,35 +575,55 @@ void egui_view_swipe_control_set_meta_font(egui_view_t *self, const egui_font_t 
 void egui_view_swipe_control_set_title(egui_view_t *self, const char *title)
 {
     EGUI_LOCAL_INIT(egui_view_swipe_control_t);
+    uint8_t had_pressed = swipe_control_clear_pressed_state(self, local);
+
     local->title = title;
-    egui_view_invalidate(self);
+    if (!had_pressed)
+    {
+        egui_view_invalidate(self);
+    }
 }
 
 void egui_view_swipe_control_set_helper(egui_view_t *self, const char *helper)
 {
     EGUI_LOCAL_INIT(egui_view_swipe_control_t);
+    uint8_t had_pressed = swipe_control_clear_pressed_state(self, local);
+
     local->helper = helper;
-    egui_view_invalidate(self);
+    if (!had_pressed)
+    {
+        egui_view_invalidate(self);
+    }
 }
 
 void egui_view_swipe_control_set_palette(egui_view_t *self, egui_color_t surface_color, egui_color_t border_color, egui_color_t text_color,
                                          egui_color_t muted_text_color, egui_color_t inactive_color)
 {
     EGUI_LOCAL_INIT(egui_view_swipe_control_t);
+    uint8_t had_pressed = swipe_control_clear_pressed_state(self, local);
+
     local->surface_color = surface_color;
     local->border_color = border_color;
     local->text_color = text_color;
     local->muted_text_color = muted_text_color;
     local->inactive_color = inactive_color;
-    egui_view_invalidate(self);
+    if (!had_pressed)
+    {
+        egui_view_invalidate(self);
+    }
 }
 
 void egui_view_swipe_control_set_item(egui_view_t *self, const egui_view_swipe_control_item_t *item)
 {
     EGUI_LOCAL_INIT(egui_view_swipe_control_t);
+    uint8_t had_pressed = swipe_control_clear_pressed_state(self, local);
+
     local->item = item;
     swipe_control_normalize_state(local);
-    egui_view_invalidate(self);
+    if (!had_pressed)
+    {
+        egui_view_invalidate(self);
+    }
 }
 
 const egui_view_swipe_control_item_t *egui_view_swipe_control_get_item(egui_view_t *self)
@@ -591,14 +636,22 @@ void egui_view_swipe_control_set_actions(egui_view_t *self, const egui_view_swip
                                          const egui_view_swipe_control_action_t *end_action)
 {
     EGUI_LOCAL_INIT(egui_view_swipe_control_t);
+    uint8_t had_pressed = swipe_control_clear_pressed_state(self, local);
+
     local->start_action = start_action;
     local->end_action = end_action;
     swipe_control_normalize_state(local);
-    egui_view_invalidate(self);
+    if (!had_pressed)
+    {
+        egui_view_invalidate(self);
+    }
 }
 
 void egui_view_swipe_control_set_current_part(egui_view_t *self, uint8_t part)
 {
+    EGUI_LOCAL_INIT(egui_view_swipe_control_t);
+
+    swipe_control_clear_pressed_state(self, local);
     if (part == EGUI_VIEW_SWIPE_CONTROL_PART_START_ACTION)
     {
         swipe_control_set_state_inner(self, EGUI_VIEW_SWIPE_CONTROL_REVEAL_START, 0);
@@ -622,6 +675,9 @@ uint8_t egui_view_swipe_control_get_current_part(egui_view_t *self)
 
 void egui_view_swipe_control_set_reveal_state(egui_view_t *self, uint8_t reveal_state)
 {
+    EGUI_LOCAL_INIT(egui_view_swipe_control_t);
+
+    swipe_control_clear_pressed_state(self, local);
     swipe_control_set_state_inner(self, reveal_state, 0);
 }
 
@@ -635,17 +691,39 @@ uint8_t egui_view_swipe_control_get_reveal_state(egui_view_t *self)
 void egui_view_swipe_control_set_compact_mode(egui_view_t *self, uint8_t compact_mode)
 {
     EGUI_LOCAL_INIT(egui_view_swipe_control_t);
-    local->compact_mode = compact_mode ? 1 : 0;
+    uint8_t normalized = compact_mode ? 1 : 0;
+    uint8_t had_pressed = swipe_control_clear_pressed_state(self, local);
+
+    if (local->compact_mode == normalized)
+    {
+        return;
+    }
+
+    local->compact_mode = normalized;
     swipe_control_normalize_state(local);
-    egui_view_invalidate(self);
+    if (!had_pressed)
+    {
+        egui_view_invalidate(self);
+    }
 }
 
 void egui_view_swipe_control_set_read_only_mode(egui_view_t *self, uint8_t read_only_mode)
 {
     EGUI_LOCAL_INIT(egui_view_swipe_control_t);
-    local->read_only_mode = read_only_mode ? 1 : 0;
+    uint8_t normalized = read_only_mode ? 1 : 0;
+    uint8_t had_pressed = swipe_control_clear_pressed_state(self, local);
+
+    if (local->read_only_mode == normalized)
+    {
+        return;
+    }
+
+    local->read_only_mode = normalized;
     swipe_control_normalize_state(local);
-    egui_view_invalidate(self);
+    if (!had_pressed)
+    {
+        egui_view_invalidate(self);
+    }
 }
 
 void egui_view_swipe_control_set_on_changed_listener(egui_view_t *self, egui_view_on_swipe_control_changed_listener_t listener)
@@ -687,6 +765,7 @@ uint8_t egui_view_swipe_control_handle_navigation_key(egui_view_t *self, uint8_t
 {
     EGUI_LOCAL_INIT(egui_view_swipe_control_t);
 
+    swipe_control_clear_pressed_state(self, local);
     swipe_control_normalize_state(local);
     if (local->compact_mode || local->read_only_mode || local->item == NULL || !egui_view_get_enable(self))
     {
@@ -764,7 +843,7 @@ static void egui_view_swipe_control_on_draw(egui_view_t *self)
     swipe_control_draw_surface(self, local, local->item, &metrics);
     swipe_control_draw_text(local->meta_font, self, local->helper, &metrics.helper_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, muted_text_color);
 
-    if (!local->read_only_mode)
+    if (self->is_focused && !local->read_only_mode)
     {
         if (local->current_part == EGUI_VIEW_SWIPE_CONTROL_PART_SURFACE)
         {
@@ -812,6 +891,7 @@ static int egui_view_swipe_control_on_touch_event(egui_view_t *self, egui_motion
     swipe_control_normalize_state(local);
     if (local->compact_mode || local->read_only_mode || local->item == NULL || !egui_view_get_enable(self))
     {
+        swipe_control_clear_pressed_state(self, local);
         return 0;
     }
 
@@ -827,6 +907,12 @@ static int egui_view_swipe_control_on_touch_event(egui_view_t *self, egui_motion
         local->dragging = 0;
         local->gesture_start_x = event->location.x;
         local->gesture_start_y = event->location.y;
+#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
+        if (self->is_focusable)
+        {
+            egui_view_request_focus(self);
+        }
+#endif
         egui_view_set_pressed(self, true);
         egui_view_invalidate(self);
         return 1;
@@ -853,7 +939,7 @@ static int egui_view_swipe_control_on_touch_event(egui_view_t *self, egui_motion
             }
             else
             {
-                return 0;
+                return 1;
             }
             delta_x = (int)event->location.x - (int)local->gesture_start_x;
         }
@@ -874,28 +960,30 @@ static int egui_view_swipe_control_on_touch_event(egui_view_t *self, egui_motion
     case EGUI_MOTION_EVENT_ACTION_UP:
         if (local->pressed_part == EGUI_VIEW_SWIPE_CONTROL_PART_NONE)
         {
-            return 0;
+            hit_part = swipe_control_hit_part(local, self, event->location.x, event->location.y);
+            swipe_control_clear_pressed_state(self, local);
+            return hit_part != EGUI_VIEW_SWIPE_CONTROL_PART_NONE ? 1 : 0;
         }
         hit_part = swipe_control_hit_part(local, self, event->location.x, event->location.y);
         if (local->dragging)
         {
-            local->dragging = 0;
-            local->pressed_part = EGUI_VIEW_SWIPE_CONTROL_PART_NONE;
-            egui_view_set_pressed(self, false);
-            egui_view_invalidate(self);
+            swipe_control_clear_pressed_state(self, local);
             swipe_control_notify(self);
             return 1;
         }
 
         if (local->pressed_part == EGUI_VIEW_SWIPE_CONTROL_PART_SURFACE)
         {
-            if (local->reveal_state != EGUI_VIEW_SWIPE_CONTROL_REVEAL_NONE && hit_part == EGUI_VIEW_SWIPE_CONTROL_PART_SURFACE)
+            if (hit_part == EGUI_VIEW_SWIPE_CONTROL_PART_SURFACE)
             {
-                swipe_control_set_state_inner(self, EGUI_VIEW_SWIPE_CONTROL_REVEAL_NONE, 1);
-            }
-            else
-            {
-                swipe_control_notify(self);
+                if (local->reveal_state != EGUI_VIEW_SWIPE_CONTROL_REVEAL_NONE)
+                {
+                    swipe_control_set_state_inner(self, EGUI_VIEW_SWIPE_CONTROL_REVEAL_NONE, 1);
+                }
+                else
+                {
+                    swipe_control_notify(self);
+                }
             }
         }
         else if (local->pressed_part == hit_part)
@@ -903,16 +991,10 @@ static int egui_view_swipe_control_on_touch_event(egui_view_t *self, egui_motion
             swipe_control_notify(self);
         }
 
-        local->pressed_part = EGUI_VIEW_SWIPE_CONTROL_PART_NONE;
-        egui_view_set_pressed(self, false);
-        egui_view_invalidate(self);
+        swipe_control_clear_pressed_state(self, local);
         return hit_part != EGUI_VIEW_SWIPE_CONTROL_PART_NONE;
     case EGUI_MOTION_EVENT_ACTION_CANCEL:
-        local->pressed_part = EGUI_VIEW_SWIPE_CONTROL_PART_NONE;
-        local->dragging = 0;
-        egui_view_set_pressed(self, false);
-        egui_view_invalidate(self);
-        return 1;
+        return swipe_control_clear_pressed_state(self, local);
     default:
         return 0;
     }
@@ -924,6 +1006,11 @@ static int egui_view_swipe_control_on_key_event(egui_view_t *self, egui_key_even
 {
     if (event->type != EGUI_KEY_EVENT_ACTION_UP)
     {
+        if (event->type == EGUI_KEY_EVENT_ACTION_DOWN)
+        {
+            EGUI_LOCAL_INIT(egui_view_swipe_control_t);
+            swipe_control_clear_pressed_state(self, local);
+        }
         return 0;
     }
 
@@ -935,6 +1022,39 @@ static int egui_view_swipe_control_on_key_event(egui_view_t *self, egui_key_even
     return egui_view_on_key_event(self, event);
 }
 #endif
+
+#if EGUI_CONFIG_FUNCTION_SUPPORT_KEY
+static int egui_view_swipe_control_on_static_key_event(egui_view_t *self, egui_key_event_t *event)
+{
+    EGUI_LOCAL_INIT(egui_view_swipe_control_t);
+
+    EGUI_UNUSED(event);
+    swipe_control_clear_pressed_state(self, local);
+    return 1;
+}
+#endif
+
+#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
+static int egui_view_swipe_control_on_static_touch_event(egui_view_t *self, egui_motion_event_t *event)
+{
+    EGUI_LOCAL_INIT(egui_view_swipe_control_t);
+
+    EGUI_UNUSED(event);
+    swipe_control_clear_pressed_state(self, local);
+    return 1;
+}
+#endif
+
+void egui_view_swipe_control_override_static_preview_api(egui_view_t *self, egui_view_api_t *api)
+{
+    egui_view_copy_api(self, api);
+#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
+    api->on_touch_event = egui_view_swipe_control_on_static_touch_event;
+#endif
+#if EGUI_CONFIG_FUNCTION_SUPPORT_KEY
+    api->on_key_event = egui_view_swipe_control_on_static_key_event;
+#endif
+}
 
 const egui_view_api_t EGUI_VIEW_API_TABLE_NAME(egui_view_swipe_control_t) = {
         .dispatch_touch_event = egui_view_dispatch_touch_event,
