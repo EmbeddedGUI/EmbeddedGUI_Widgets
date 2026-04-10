@@ -26,6 +26,8 @@ static egui_view_dialog_sheet_t sheet_primary;
 static egui_view_linearlayout_t bottom_row;
 static egui_view_dialog_sheet_t sheet_compact;
 static egui_view_dialog_sheet_t sheet_read_only;
+static egui_view_api_t sheet_compact_api;
+static egui_view_api_t sheet_read_only_api;
 
 EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
 EGUI_BACKGROUND_PARAM_INIT(bg_page_panel_params, &bg_page_panel_param, NULL, NULL);
@@ -56,10 +58,21 @@ static const egui_view_dialog_sheet_snapshot_t read_only_snapshots[] = {
          EGUI_VIEW_DIALOG_SHEET_ACTION_PRIMARY},
 };
 
-static int consume_preview_touch(egui_view_t *self, egui_motion_event_t *event)
+static void dismiss_primary_dialog_sheet_focus(void)
+{
+#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
+    egui_view_clear_focus(EGUI_VIEW_OF(&sheet_primary));
+#endif
+}
+
+static int dismiss_primary_focus_on_preview_touch(egui_view_t *self, egui_motion_event_t *event)
 {
     EGUI_UNUSED(self);
-    EGUI_UNUSED(event);
+
+    if (event->type == EGUI_MOTION_EVENT_ACTION_DOWN)
+    {
+        dismiss_primary_dialog_sheet_focus();
+    }
     return 1;
 }
 
@@ -75,11 +88,24 @@ static void apply_compact_snapshot(uint8_t index)
     egui_view_dialog_sheet_set_current_snapshot(EGUI_VIEW_OF(&sheet_compact), compact_snapshot_index);
 }
 
-static void apply_read_only_state(uint8_t enabled)
+static void apply_read_only_state(void)
 {
     egui_view_dialog_sheet_set_current_snapshot(EGUI_VIEW_OF(&sheet_read_only), 0);
-    egui_view_dialog_sheet_set_read_only_mode(EGUI_VIEW_OF(&sheet_read_only), enabled);
+    egui_view_dialog_sheet_set_read_only_mode(EGUI_VIEW_OF(&sheet_read_only), 1);
 }
+
+#if EGUI_CONFIG_RECORDING_TEST
+static void set_click_view_center(egui_sim_action_t *p_action, egui_view_t *view, int interval_ms)
+{
+    p_action->type = EGUI_SIM_ACTION_CLICK;
+    p_action->x1 = view->region_screen.location.x + view->region_screen.size.width / 2;
+    p_action->y1 = view->region_screen.location.y + view->region_screen.size.height / 2;
+    p_action->x2 = 0;
+    p_action->y2 = 0;
+    p_action->steps = 0;
+    p_action->interval_ms = interval_ms;
+}
+#endif
 
 void test_init_ui(void)
 {
@@ -124,8 +150,10 @@ void test_init_ui(void)
     egui_view_dialog_sheet_set_palette(EGUI_VIEW_OF(&sheet_compact), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD7DFE6), EGUI_COLOR_HEX(0xD7E0E7),
                                        EGUI_COLOR_HEX(0x1C2835), EGUI_COLOR_HEX(0x6E7B88), EGUI_COLOR_HEX(0x1E69A8), EGUI_COLOR_HEX(0x1D6F4A),
                                        EGUI_COLOR_HEX(0x946019), EGUI_COLOR_HEX(0xB84B45), EGUI_COLOR_HEX(0x7D8996));
-    static egui_view_api_t sheet_compact_touch_api;
-    egui_view_override_api_on_touch(EGUI_VIEW_OF(&sheet_compact), &sheet_compact_touch_api, consume_preview_touch);
+    egui_view_dialog_sheet_override_static_preview_api(EGUI_VIEW_OF(&sheet_compact), &sheet_compact_api);
+#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
+    sheet_compact_api.on_touch = dismiss_primary_focus_on_preview_touch;
+#endif
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&sheet_compact), false);
 #endif
@@ -142,8 +170,10 @@ void test_init_ui(void)
     egui_view_dialog_sheet_set_palette(EGUI_VIEW_OF(&sheet_read_only), EGUI_COLOR_HEX(0xFCFDFE), EGUI_COLOR_HEX(0xDCE3E9), EGUI_COLOR_HEX(0xD0D8DF),
                                        EGUI_COLOR_HEX(0x8A97A4), EGUI_COLOR_HEX(0x97A3AE), EGUI_COLOR_HEX(0xA5B1BC), EGUI_COLOR_HEX(0xB1BEB8),
                                        EGUI_COLOR_HEX(0xBFB39F), EGUI_COLOR_HEX(0xC2B2AE), EGUI_COLOR_HEX(0xB1BBC5));
-    static egui_view_api_t sheet_read_only_touch_api;
-    egui_view_override_api_on_touch(EGUI_VIEW_OF(&sheet_read_only), &sheet_read_only_touch_api, consume_preview_touch);
+    egui_view_dialog_sheet_override_static_preview_api(EGUI_VIEW_OF(&sheet_read_only), &sheet_read_only_api);
+#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
+    sheet_read_only_api.on_touch = dismiss_primary_focus_on_preview_touch;
+#endif
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&sheet_read_only), false);
 #endif
@@ -151,7 +181,7 @@ void test_init_ui(void)
 
     apply_primary_snapshot(0);
     apply_compact_snapshot(0);
-    apply_read_only_state(1);
+    apply_read_only_state();
 
     {
         hello_custom_widgets_demo_apply_title_only_scaffold(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label), NULL, 0);
@@ -179,7 +209,7 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
         {
             apply_primary_snapshot(0);
             apply_compact_snapshot(0);
-            apply_read_only_state(1);
+            apply_read_only_state();
         }
         EGUI_SIM_SET_WAIT(p_action, DIALOG_SHEET_RECORD_WAIT);
         return true;
@@ -236,10 +266,33 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
         if (first_call)
         {
             apply_compact_snapshot(1);
+#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
+            egui_view_request_focus(EGUI_VIEW_OF(&sheet_primary));
+#endif
         }
         EGUI_SIM_SET_WAIT(p_action, DIALOG_SHEET_RECORD_WAIT);
         return true;
     case 9:
+        if (first_call)
+        {
+            recording_request_snapshot();
+        }
+        EGUI_SIM_SET_WAIT(p_action, DIALOG_SHEET_RECORD_FRAME_WAIT);
+        return true;
+    case 10:
+        if (first_call)
+        {
+            set_click_view_center(p_action, EGUI_VIEW_OF(&sheet_compact), DIALOG_SHEET_RECORD_WAIT);
+        }
+        return true;
+    case 11:
+        if (first_call)
+        {
+            recording_request_snapshot();
+        }
+        EGUI_SIM_SET_WAIT(p_action, DIALOG_SHEET_RECORD_FRAME_WAIT);
+        return true;
+    case 12:
         if (first_call)
         {
             recording_request_snapshot();

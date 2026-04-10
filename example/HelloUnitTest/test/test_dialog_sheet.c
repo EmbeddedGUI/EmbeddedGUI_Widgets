@@ -8,6 +8,8 @@
 #include "../../HelloCustomWidgets/feedback/dialog_sheet/egui_view_dialog_sheet.c"
 
 static egui_view_dialog_sheet_t test_sheet;
+static egui_view_dialog_sheet_t preview_sheet;
+static egui_view_api_t preview_api;
 static uint8_t changed_count;
 static uint8_t last_action;
 
@@ -87,19 +89,41 @@ static void setup_sheet(void)
     reset_changed_state();
 }
 
-static void layout_sheet(void)
+static void setup_preview_sheet(void)
+{
+    egui_view_dialog_sheet_init(EGUI_VIEW_OF(&preview_sheet));
+    egui_view_set_size(EGUI_VIEW_OF(&preview_sheet), 104, 86);
+    egui_view_dialog_sheet_set_snapshots(EGUI_VIEW_OF(&preview_sheet), g_snapshots, 4);
+    egui_view_dialog_sheet_set_current_snapshot(EGUI_VIEW_OF(&preview_sheet), 2);
+    egui_view_dialog_sheet_set_compact_mode(EGUI_VIEW_OF(&preview_sheet), 1);
+    egui_view_dialog_sheet_set_on_action_changed_listener(EGUI_VIEW_OF(&preview_sheet), on_action_changed);
+    egui_view_dialog_sheet_override_static_preview_api(EGUI_VIEW_OF(&preview_sheet), &preview_api);
+    reset_changed_state();
+}
+
+static void layout_view(egui_view_t *view, egui_dim_t x, egui_dim_t y, egui_dim_t width, egui_dim_t height)
 {
     egui_region_t region;
 
-    region.location.x = 10;
-    region.location.y = 20;
-    region.size.width = 196;
-    region.size.height = 132;
-    egui_view_layout(EGUI_VIEW_OF(&test_sheet), &region);
-    egui_region_copy(&EGUI_VIEW_OF(&test_sheet)->region_screen, &region);
+    region.location.x = x;
+    region.location.y = y;
+    region.size.width = width;
+    region.size.height = height;
+    egui_view_layout(view, &region);
+    egui_region_copy(&view->region_screen, &region);
 }
 
-static int send_touch(uint8_t type, egui_dim_t x, egui_dim_t y)
+static void layout_sheet(void)
+{
+    layout_view(EGUI_VIEW_OF(&test_sheet), 10, 20, 196, 132);
+}
+
+static void layout_preview_sheet(void)
+{
+    layout_view(EGUI_VIEW_OF(&preview_sheet), 12, 18, 104, 86);
+}
+
+static int send_touch_to_view(egui_view_t *view, uint8_t type, egui_dim_t x, egui_dim_t y)
 {
     egui_motion_event_t event;
 
@@ -107,10 +131,10 @@ static int send_touch(uint8_t type, egui_dim_t x, egui_dim_t y)
     event.type = type;
     event.location.x = x;
     event.location.y = y;
-    return EGUI_VIEW_OF(&test_sheet)->api->on_touch_event(EGUI_VIEW_OF(&test_sheet), &event);
+    return view->api->on_touch_event(view, &event);
 }
 
-static int send_key(uint8_t key_code)
+static int send_key_to_view(egui_view_t *view, uint8_t key_code)
 {
     egui_key_event_t event;
     int handled = 0;
@@ -118,10 +142,30 @@ static int send_key(uint8_t key_code)
     memset(&event, 0, sizeof(event));
     event.type = EGUI_KEY_EVENT_ACTION_DOWN;
     event.key_code = key_code;
-    handled |= EGUI_VIEW_OF(&test_sheet)->api->on_key_event(EGUI_VIEW_OF(&test_sheet), &event);
+    handled |= view->api->on_key_event(view, &event);
     event.type = EGUI_KEY_EVENT_ACTION_UP;
-    handled |= EGUI_VIEW_OF(&test_sheet)->api->on_key_event(EGUI_VIEW_OF(&test_sheet), &event);
+    handled |= view->api->on_key_event(view, &event);
     return handled;
+}
+
+static int send_touch(uint8_t type, egui_dim_t x, egui_dim_t y)
+{
+    return send_touch_to_view(EGUI_VIEW_OF(&test_sheet), type, x, y);
+}
+
+static int send_preview_touch(uint8_t type, egui_dim_t x, egui_dim_t y)
+{
+    return send_touch_to_view(EGUI_VIEW_OF(&preview_sheet), type, x, y);
+}
+
+static int send_key(uint8_t key_code)
+{
+    return send_key_to_view(EGUI_VIEW_OF(&test_sheet), key_code);
+}
+
+static int send_preview_key(uint8_t key_code)
+{
+    return send_key_to_view(EGUI_VIEW_OF(&preview_sheet), key_code);
 }
 
 static void get_metrics(egui_view_dialog_sheet_metrics_t *metrics)
@@ -134,6 +178,18 @@ static void get_metrics(egui_view_dialog_sheet_metrics_t *metrics)
     show_secondary = egui_view_dialog_sheet_has_secondary(snapshot);
     show_close = snapshot->show_close && !test_sheet.compact_mode && !test_sheet.read_only_mode;
     egui_view_dialog_sheet_get_metrics(&test_sheet, EGUI_VIEW_OF(&test_sheet), show_secondary, show_close, metrics);
+}
+
+static void seed_pressed_state(egui_view_dialog_sheet_t *sheet, uint8_t action_index)
+{
+    sheet->pressed_action = action_index;
+    egui_view_set_pressed(EGUI_VIEW_OF(sheet), true);
+}
+
+static void assert_pressed_cleared(egui_view_dialog_sheet_t *sheet)
+{
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(sheet)->is_pressed);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_DIALOG_SHEET_ACTION_NONE, sheet->pressed_action);
 }
 
 static void test_dialog_sheet_set_snapshots_clamp_and_reset_state(void)
@@ -189,8 +245,10 @@ static void test_dialog_sheet_snapshot_and_action_guards_notify(void)
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_sheet)->is_pressed);
     EGUI_TEST_ASSERT_EQUAL_INT(0, changed_count);
 
+    seed_pressed_state(&test_sheet, EGUI_VIEW_DIALOG_SHEET_ACTION_PRIMARY);
     egui_view_dialog_sheet_set_current_snapshot(EGUI_VIEW_OF(&test_sheet), 9);
     EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_dialog_sheet_get_current_snapshot(EGUI_VIEW_OF(&test_sheet)));
+    assert_pressed_cleared(&test_sheet);
 
     egui_view_dialog_sheet_set_snapshots(EGUI_VIEW_OF(&test_sheet), &g_secondary_only_snapshot, 1);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_DIALOG_SHEET_ACTION_SECONDARY, egui_view_dialog_sheet_get_current_action(EGUI_VIEW_OF(&test_sheet)));
@@ -209,31 +267,34 @@ static void test_dialog_sheet_font_modes_listener_and_palette(void)
 {
     setup_sheet();
 
+    seed_pressed_state(&test_sheet, EGUI_VIEW_DIALOG_SHEET_ACTION_PRIMARY);
     egui_view_dialog_sheet_set_font(EGUI_VIEW_OF(&test_sheet), NULL);
+    assert_pressed_cleared(&test_sheet);
+
+    seed_pressed_state(&test_sheet, EGUI_VIEW_DIALOG_SHEET_ACTION_PRIMARY);
     egui_view_dialog_sheet_set_meta_font(EGUI_VIEW_OF(&test_sheet), NULL);
+    assert_pressed_cleared(&test_sheet);
     EGUI_TEST_ASSERT_TRUE(test_sheet.font == (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT);
     EGUI_TEST_ASSERT_TRUE(test_sheet.meta_font == (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT);
 
-    test_sheet.pressed_action = EGUI_VIEW_DIALOG_SHEET_ACTION_PRIMARY;
-    EGUI_VIEW_OF(&test_sheet)->is_pressed = true;
+    seed_pressed_state(&test_sheet, EGUI_VIEW_DIALOG_SHEET_ACTION_PRIMARY);
     egui_view_dialog_sheet_set_compact_mode(EGUI_VIEW_OF(&test_sheet), 2);
     EGUI_TEST_ASSERT_EQUAL_INT(1, test_sheet.compact_mode);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_DIALOG_SHEET_ACTION_NONE, test_sheet.pressed_action);
-    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_sheet)->is_pressed);
+    assert_pressed_cleared(&test_sheet);
 
-    test_sheet.pressed_action = EGUI_VIEW_DIALOG_SHEET_ACTION_SECONDARY;
-    EGUI_VIEW_OF(&test_sheet)->is_pressed = true;
+    seed_pressed_state(&test_sheet, EGUI_VIEW_DIALOG_SHEET_ACTION_SECONDARY);
     egui_view_dialog_sheet_set_read_only_mode(EGUI_VIEW_OF(&test_sheet), 3);
     EGUI_TEST_ASSERT_EQUAL_INT(1, test_sheet.read_only_mode);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_DIALOG_SHEET_ACTION_NONE, test_sheet.pressed_action);
-    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_sheet)->is_pressed);
+    assert_pressed_cleared(&test_sheet);
 
     egui_view_dialog_sheet_set_read_only_mode(EGUI_VIEW_OF(&test_sheet), 0);
     EGUI_TEST_ASSERT_EQUAL_INT(0, test_sheet.read_only_mode);
 
+    seed_pressed_state(&test_sheet, EGUI_VIEW_DIALOG_SHEET_ACTION_PRIMARY);
     egui_view_dialog_sheet_set_palette(EGUI_VIEW_OF(&test_sheet), EGUI_COLOR_HEX(0x101112), EGUI_COLOR_HEX(0x202122), EGUI_COLOR_HEX(0x303132),
                                        EGUI_COLOR_HEX(0x404142), EGUI_COLOR_HEX(0x505152), EGUI_COLOR_HEX(0x606162), EGUI_COLOR_HEX(0x707172),
                                        EGUI_COLOR_HEX(0x808182), EGUI_COLOR_HEX(0x909192), EGUI_COLOR_HEX(0xA0A1A2));
+    assert_pressed_cleared(&test_sheet);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x101112).full, test_sheet.surface_color.full);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x202122).full, test_sheet.overlay_color.full);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x303132).full, test_sheet.border_color.full);
@@ -294,6 +355,51 @@ static void test_dialog_sheet_touch_updates_action_and_hit_testing(void)
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_DIALOG_SHEET_ACTION_PRIMARY, egui_view_dialog_sheet_get_current_action(EGUI_VIEW_OF(&test_sheet)));
     EGUI_TEST_ASSERT_EQUAL_INT(2, changed_count);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_DIALOG_SHEET_ACTION_PRIMARY, last_action);
+}
+
+static void test_dialog_sheet_touch_same_target_release_and_cancel_behavior(void)
+{
+    egui_view_dialog_sheet_metrics_t metrics;
+    egui_dim_t primary_x;
+    egui_dim_t primary_y;
+    egui_dim_t outside_x;
+    egui_dim_t outside_y;
+
+    setup_sheet();
+    egui_view_dialog_sheet_set_current_action(EGUI_VIEW_OF(&test_sheet), EGUI_VIEW_DIALOG_SHEET_ACTION_SECONDARY);
+    reset_changed_state();
+    layout_sheet();
+    get_metrics(&metrics);
+
+    primary_x = metrics.primary_action_region.location.x + metrics.primary_action_region.size.width / 2;
+    primary_y = metrics.primary_action_region.location.y + metrics.primary_action_region.size.height / 2;
+    outside_x = metrics.sheet_region.location.x;
+    outside_y = metrics.sheet_region.location.y;
+
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, primary_x, primary_y));
+    EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&test_sheet)->is_pressed);
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_MOVE, outside_x, outside_y));
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_sheet)->is_pressed);
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, outside_x, outside_y));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_DIALOG_SHEET_ACTION_SECONDARY, egui_view_dialog_sheet_get_current_action(EGUI_VIEW_OF(&test_sheet)));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, changed_count);
+    assert_pressed_cleared(&test_sheet);
+
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, primary_x, primary_y));
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_MOVE, outside_x, outside_y));
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_sheet)->is_pressed);
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_MOVE, primary_x, primary_y));
+    EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&test_sheet)->is_pressed);
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, primary_x, primary_y));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_DIALOG_SHEET_ACTION_PRIMARY, egui_view_dialog_sheet_get_current_action(EGUI_VIEW_OF(&test_sheet)));
+    EGUI_TEST_ASSERT_EQUAL_INT(1, changed_count);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_DIALOG_SHEET_ACTION_PRIMARY, last_action);
+    assert_pressed_cleared(&test_sheet);
+
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, primary_x, primary_y));
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_CANCEL, primary_x, primary_y));
+    EGUI_TEST_ASSERT_EQUAL_INT(1, changed_count);
+    assert_pressed_cleared(&test_sheet);
 }
 
 static void test_dialog_sheet_touch_cancel_clears_pressed_without_selection(void)
@@ -379,11 +485,15 @@ static void test_dialog_sheet_read_only_mode_clears_pressed_and_ignores_input(vo
 
     egui_view_dialog_sheet_set_read_only_mode(EGUI_VIEW_OF(&test_sheet), 1);
     EGUI_TEST_ASSERT_EQUAL_INT(1, test_sheet.read_only_mode);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_DIALOG_SHEET_ACTION_NONE, test_sheet.pressed_action);
-    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_sheet)->is_pressed);
+    assert_pressed_cleared(&test_sheet);
+
+    seed_pressed_state(&test_sheet, EGUI_VIEW_DIALOG_SHEET_ACTION_PRIMARY);
     EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, primary_x, primary_y));
-    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, primary_x, primary_y));
+    assert_pressed_cleared(&test_sheet);
+
+    seed_pressed_state(&test_sheet, EGUI_VIEW_DIALOG_SHEET_ACTION_PRIMARY);
     EGUI_TEST_ASSERT_FALSE(send_key(EGUI_KEY_CODE_LEFT));
+    assert_pressed_cleared(&test_sheet);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_DIALOG_SHEET_ACTION_PRIMARY, egui_view_dialog_sheet_get_current_action(EGUI_VIEW_OF(&test_sheet)));
     EGUI_TEST_ASSERT_EQUAL_INT(0, changed_count);
 
@@ -408,10 +518,42 @@ static void test_dialog_sheet_disabled_ignores_input(void)
     primary_x = metrics.primary_action_region.location.x + metrics.primary_action_region.size.width / 2;
     primary_y = metrics.primary_action_region.location.y + metrics.primary_action_region.size.height / 2;
 
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, primary_x, primary_y));
+    EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&test_sheet)->is_pressed);
+
     egui_view_set_enable(EGUI_VIEW_OF(&test_sheet), 0);
     EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, primary_x, primary_y));
-    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, primary_x, primary_y));
+    assert_pressed_cleared(&test_sheet);
+
+    seed_pressed_state(&test_sheet, EGUI_VIEW_DIALOG_SHEET_ACTION_PRIMARY);
     EGUI_TEST_ASSERT_FALSE(send_key(EGUI_KEY_CODE_LEFT));
+    assert_pressed_cleared(&test_sheet);
+    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, primary_x, primary_y));
+}
+
+static void test_dialog_sheet_static_preview_consumes_input_and_clears_pressed_state(void)
+{
+    egui_dim_t x;
+    egui_dim_t y;
+
+    setup_preview_sheet();
+    layout_preview_sheet();
+    x = EGUI_VIEW_OF(&preview_sheet)->region_screen.location.x + EGUI_VIEW_OF(&preview_sheet)->region_screen.size.width / 2;
+    y = EGUI_VIEW_OF(&preview_sheet)->region_screen.location.y + EGUI_VIEW_OF(&preview_sheet)->region_screen.size.height / 2;
+
+    seed_pressed_state(&preview_sheet, EGUI_VIEW_DIALOG_SHEET_ACTION_PRIMARY);
+    EGUI_TEST_ASSERT_TRUE(send_preview_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
+    assert_pressed_cleared(&preview_sheet);
+    EGUI_TEST_ASSERT_EQUAL_INT(2, egui_view_dialog_sheet_get_current_snapshot(EGUI_VIEW_OF(&preview_sheet)));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_DIALOG_SHEET_ACTION_PRIMARY, egui_view_dialog_sheet_get_current_action(EGUI_VIEW_OF(&preview_sheet)));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, changed_count);
+
+    seed_pressed_state(&preview_sheet, EGUI_VIEW_DIALOG_SHEET_ACTION_PRIMARY);
+    EGUI_TEST_ASSERT_TRUE(send_preview_key(EGUI_KEY_CODE_LEFT));
+    assert_pressed_cleared(&preview_sheet);
+    EGUI_TEST_ASSERT_EQUAL_INT(2, egui_view_dialog_sheet_get_current_snapshot(EGUI_VIEW_OF(&preview_sheet)));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_DIALOG_SHEET_ACTION_PRIMARY, egui_view_dialog_sheet_get_current_action(EGUI_VIEW_OF(&preview_sheet)));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, changed_count);
 }
 
 static void test_dialog_sheet_internal_helpers_cover_tone_glyph_metrics_and_regions(void)
@@ -498,10 +640,12 @@ void test_dialog_sheet_run(void)
     EGUI_TEST_RUN(test_dialog_sheet_snapshot_and_action_guards_notify);
     EGUI_TEST_RUN(test_dialog_sheet_font_modes_listener_and_palette);
     EGUI_TEST_RUN(test_dialog_sheet_touch_updates_action_and_hit_testing);
+    EGUI_TEST_RUN(test_dialog_sheet_touch_same_target_release_and_cancel_behavior);
     EGUI_TEST_RUN(test_dialog_sheet_touch_cancel_clears_pressed_without_selection);
     EGUI_TEST_RUN(test_dialog_sheet_keyboard_navigation_and_guards);
     EGUI_TEST_RUN(test_dialog_sheet_read_only_mode_clears_pressed_and_ignores_input);
     EGUI_TEST_RUN(test_dialog_sheet_disabled_ignores_input);
+    EGUI_TEST_RUN(test_dialog_sheet_static_preview_consumes_input_and_clears_pressed_state);
     EGUI_TEST_RUN(test_dialog_sheet_internal_helpers_cover_tone_glyph_metrics_and_regions);
     EGUI_TEST_SUITE_END();
 }

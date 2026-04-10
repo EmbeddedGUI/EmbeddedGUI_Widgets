@@ -472,10 +472,15 @@ static uint8_t egui_view_dialog_sheet_hit_action(egui_view_dialog_sheet_t *local
     return EGUI_VIEW_DIALOG_SHEET_ACTION_NONE;
 }
 
-static void egui_view_dialog_sheet_clear_pressed_state(egui_view_t *self, egui_view_dialog_sheet_t *local)
+static uint8_t egui_view_dialog_sheet_clear_pressed_state(egui_view_t *self, egui_view_dialog_sheet_t *local)
 {
+    if (!self->is_pressed && local->pressed_action == EGUI_VIEW_DIALOG_SHEET_ACTION_NONE)
+    {
+        return 0;
+    }
     local->pressed_action = EGUI_VIEW_DIALOG_SHEET_ACTION_NONE;
     egui_view_set_pressed(self, false);
+    return 1;
 }
 
 static void egui_view_dialog_sheet_set_current_action_inner(egui_view_t *self, uint8_t action_index, uint8_t notify)
@@ -507,9 +512,10 @@ void egui_view_dialog_sheet_set_snapshots(egui_view_t *self, const egui_view_dia
 {
     EGUI_LOCAL_INIT(egui_view_dialog_sheet_t);
     const egui_view_dialog_sheet_snapshot_t *snapshot;
+    uint8_t had_pressed = egui_view_dialog_sheet_clear_pressed_state(self, local);
 
     local->snapshots = snapshots;
-    local->snapshot_count = egui_view_dialog_sheet_clamp_snapshot_count(snapshot_count);
+    local->snapshot_count = snapshots == NULL ? 0 : egui_view_dialog_sheet_clamp_snapshot_count(snapshot_count);
     if (local->current_snapshot >= local->snapshot_count)
     {
         local->current_snapshot = 0;
@@ -517,7 +523,7 @@ void egui_view_dialog_sheet_set_snapshots(egui_view_t *self, const egui_view_dia
 
     snapshot = egui_view_dialog_sheet_get_snapshot(local);
     local->current_action = egui_view_dialog_sheet_normalize_action(snapshot, snapshot == NULL ? EGUI_VIEW_DIALOG_SHEET_ACTION_NONE : snapshot->focus_action);
-    egui_view_dialog_sheet_clear_pressed_state(self, local);
+    EGUI_UNUSED(had_pressed);
     egui_view_invalidate(self);
 }
 
@@ -528,6 +534,10 @@ void egui_view_dialog_sheet_set_current_snapshot(egui_view_t *self, uint8_t snap
 
     if (local->snapshot_count == 0 || snapshot_index >= local->snapshot_count)
     {
+        if (egui_view_dialog_sheet_clear_pressed_state(self, local))
+        {
+            egui_view_invalidate(self);
+        }
         return;
     }
     if (local->current_snapshot == snapshot_index)
@@ -567,14 +577,20 @@ uint8_t egui_view_dialog_sheet_get_current_action(egui_view_t *self)
 void egui_view_dialog_sheet_set_font(egui_view_t *self, const egui_font_t *font)
 {
     EGUI_LOCAL_INIT(egui_view_dialog_sheet_t);
+    uint8_t had_pressed = egui_view_dialog_sheet_clear_pressed_state(self, local);
+
     local->font = font ? font : (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT;
+    EGUI_UNUSED(had_pressed);
     egui_view_invalidate(self);
 }
 
 void egui_view_dialog_sheet_set_meta_font(egui_view_t *self, const egui_font_t *font)
 {
     EGUI_LOCAL_INIT(egui_view_dialog_sheet_t);
+    uint8_t had_pressed = egui_view_dialog_sheet_clear_pressed_state(self, local);
+
     local->meta_font = font ? font : (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT;
+    EGUI_UNUSED(had_pressed);
     egui_view_invalidate(self);
 }
 
@@ -587,16 +603,20 @@ void egui_view_dialog_sheet_set_on_action_changed_listener(egui_view_t *self, eg
 void egui_view_dialog_sheet_set_compact_mode(egui_view_t *self, uint8_t compact_mode)
 {
     EGUI_LOCAL_INIT(egui_view_dialog_sheet_t);
+    uint8_t had_pressed = egui_view_dialog_sheet_clear_pressed_state(self, local);
+
     local->compact_mode = compact_mode ? 1 : 0;
-    egui_view_dialog_sheet_clear_pressed_state(self, local);
+    EGUI_UNUSED(had_pressed);
     egui_view_invalidate(self);
 }
 
 void egui_view_dialog_sheet_set_read_only_mode(egui_view_t *self, uint8_t read_only_mode)
 {
     EGUI_LOCAL_INIT(egui_view_dialog_sheet_t);
+    uint8_t had_pressed = egui_view_dialog_sheet_clear_pressed_state(self, local);
+
     local->read_only_mode = read_only_mode ? 1 : 0;
-    egui_view_dialog_sheet_clear_pressed_state(self, local);
+    EGUI_UNUSED(had_pressed);
     egui_view_invalidate(self);
 }
 
@@ -605,6 +625,8 @@ void egui_view_dialog_sheet_set_palette(egui_view_t *self, egui_color_t surface_
                                         egui_color_t warning_color, egui_color_t error_color, egui_color_t neutral_color)
 {
     EGUI_LOCAL_INIT(egui_view_dialog_sheet_t);
+    uint8_t had_pressed = egui_view_dialog_sheet_clear_pressed_state(self, local);
+
     local->surface_color = surface_color;
     local->overlay_color = overlay_color;
     local->border_color = border_color;
@@ -615,6 +637,7 @@ void egui_view_dialog_sheet_set_palette(egui_view_t *self, egui_color_t surface_
     local->warning_color = warning_color;
     local->error_color = error_color;
     local->neutral_color = neutral_color;
+    EGUI_UNUSED(had_pressed);
     egui_view_invalidate(self);
 }
 
@@ -857,9 +880,8 @@ static int egui_view_dialog_sheet_on_touch_event(egui_view_t *self, egui_motion_
 
     if (local->read_only_mode)
     {
-        if (self->is_pressed || local->pressed_action != EGUI_VIEW_DIALOG_SHEET_ACTION_NONE)
+        if (egui_view_dialog_sheet_clear_pressed_state(self, local))
         {
-            egui_view_dialog_sheet_clear_pressed_state(self, local);
             egui_view_invalidate(self);
         }
         return 0;
@@ -867,6 +889,10 @@ static int egui_view_dialog_sheet_on_touch_event(egui_view_t *self, egui_motion_
 
     if (!egui_view_get_enable(self))
     {
+        if (egui_view_dialog_sheet_clear_pressed_state(self, local))
+        {
+            egui_view_invalidate(self);
+        }
         return 0;
     }
 
@@ -882,18 +908,36 @@ static int egui_view_dialog_sheet_on_touch_event(egui_view_t *self, egui_motion_
         egui_view_set_pressed(self, true);
         egui_view_invalidate(self);
         return 1;
+    case EGUI_MOTION_EVENT_ACTION_MOVE:
+        if (local->pressed_action == EGUI_VIEW_DIALOG_SHEET_ACTION_NONE)
+        {
+            return 0;
+        }
+        hit_action = egui_view_dialog_sheet_hit_action(local, self, event->location.x, event->location.y);
+        if (hit_action == local->pressed_action)
+        {
+            if (!self->is_pressed)
+            {
+                egui_view_set_pressed(self, true);
+                egui_view_invalidate(self);
+            }
+        }
+        else if (self->is_pressed)
+        {
+            egui_view_set_pressed(self, false);
+            egui_view_invalidate(self);
+        }
+        return 1;
     case EGUI_MOTION_EVENT_ACTION_UP:
     {
-        uint8_t was_pressed = self->is_pressed;
-
         hit_action = egui_view_dialog_sheet_hit_action(local, self, event->location.x, event->location.y);
-        if (local->pressed_action != EGUI_VIEW_DIALOG_SHEET_ACTION_NONE && local->pressed_action == hit_action)
+        if (local->pressed_action != EGUI_VIEW_DIALOG_SHEET_ACTION_NONE && local->pressed_action == hit_action && self->is_pressed)
         {
             egui_view_dialog_sheet_set_current_action_inner(self, hit_action, 1);
         }
         egui_view_dialog_sheet_clear_pressed_state(self, local);
         egui_view_invalidate(self);
-        return was_pressed && hit_action != EGUI_VIEW_DIALOG_SHEET_ACTION_NONE;
+        return 1;
     }
     case EGUI_MOTION_EVENT_ACTION_CANCEL:
         egui_view_dialog_sheet_clear_pressed_state(self, local);
@@ -914,15 +958,25 @@ static int egui_view_dialog_sheet_on_key_event(egui_view_t *self, egui_key_event
 
     if (local->read_only_mode)
     {
-        if (self->is_pressed || local->pressed_action != EGUI_VIEW_DIALOG_SHEET_ACTION_NONE)
+        if (egui_view_dialog_sheet_clear_pressed_state(self, local))
         {
-            egui_view_dialog_sheet_clear_pressed_state(self, local);
             egui_view_invalidate(self);
         }
+        EGUI_UNUSED(event);
         return 0;
     }
 
-    if (!egui_view_get_enable(self) || event->type != EGUI_KEY_EVENT_ACTION_UP)
+    if (!egui_view_get_enable(self))
+    {
+        if (egui_view_dialog_sheet_clear_pressed_state(self, local))
+        {
+            egui_view_invalidate(self);
+        }
+        EGUI_UNUSED(event);
+        return 0;
+    }
+
+    if (event->type != EGUI_KEY_EVENT_ACTION_UP)
     {
         return 0;
     }
@@ -965,6 +1019,37 @@ static int egui_view_dialog_sheet_on_key_event(egui_view_t *self, egui_key_event
     }
 }
 #endif
+
+#if EGUI_CONFIG_FUNCTION_SUPPORT_KEY
+static int egui_view_dialog_sheet_on_static_key_event(egui_view_t *self, egui_key_event_t *event)
+{
+    EGUI_LOCAL_INIT(egui_view_dialog_sheet_t);
+    EGUI_UNUSED(event);
+    egui_view_dialog_sheet_clear_pressed_state(self, local);
+    return 1;
+}
+#endif
+
+#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
+static int egui_view_dialog_sheet_on_static_touch_event(egui_view_t *self, egui_motion_event_t *event)
+{
+    EGUI_LOCAL_INIT(egui_view_dialog_sheet_t);
+    EGUI_UNUSED(event);
+    egui_view_dialog_sheet_clear_pressed_state(self, local);
+    return 1;
+}
+#endif
+
+void egui_view_dialog_sheet_override_static_preview_api(egui_view_t *self, egui_view_api_t *api)
+{
+    egui_view_copy_api(self, api);
+#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
+    api->on_touch_event = egui_view_dialog_sheet_on_static_touch_event;
+#endif
+#if EGUI_CONFIG_FUNCTION_SUPPORT_KEY
+    api->on_key_event = egui_view_dialog_sheet_on_static_key_event;
+#endif
+}
 
 const egui_view_api_t EGUI_VIEW_API_TABLE_NAME(egui_view_dialog_sheet_t) = {
         .dispatch_touch_event = egui_view_dispatch_touch_event,
