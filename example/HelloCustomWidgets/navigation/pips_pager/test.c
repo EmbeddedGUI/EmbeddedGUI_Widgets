@@ -36,6 +36,8 @@ static egui_view_pips_pager_t pager_primary;
 static egui_view_linearlayout_t bottom_row;
 static egui_view_pips_pager_t pager_compact;
 static egui_view_pips_pager_t pager_read_only;
+static egui_view_api_t pager_compact_api;
+static egui_view_api_t pager_read_only_api;
 
 EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
 EGUI_BACKGROUND_PARAM_INIT(bg_page_panel_params, &bg_page_panel_param, NULL, NULL);
@@ -87,10 +89,21 @@ static void apply_read_only_snapshot(void)
     apply_snapshot(EGUI_VIEW_OF(&pager_read_only), &read_only_snapshot);
 }
 
-static int consume_preview_touch(egui_view_t *self, egui_motion_event_t *event)
+static void dismiss_primary_pips_pager_focus(void)
+{
+#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
+    egui_view_clear_focus(EGUI_VIEW_OF(&pager_primary));
+#endif
+}
+
+static int dismiss_primary_focus_on_preview_touch(egui_view_t *self, egui_motion_event_t *event)
 {
     EGUI_UNUSED(self);
-    EGUI_UNUSED(event);
+
+    if (event->type == EGUI_MOTION_EVENT_ACTION_DOWN)
+    {
+        dismiss_primary_pips_pager_focus();
+    }
     return 1;
 }
 
@@ -133,8 +146,10 @@ void test_init_ui(void)
     egui_view_pips_pager_set_compact_mode(EGUI_VIEW_OF(&pager_compact), 1);
     egui_view_pips_pager_set_palette(EGUI_VIEW_OF(&pager_compact), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD2DBE3), EGUI_COLOR_HEX(0x1A2734),
                                      EGUI_COLOR_HEX(0x6B7A89), EGUI_COLOR_HEX(0x0F6CBD), EGUI_COLOR_HEX(0xAEB9C4), EGUI_COLOR_HEX(0xB9CCE0));
-    static egui_view_api_t pager_compact_touch_api;
-    egui_view_override_api_on_touch(EGUI_VIEW_OF(&pager_compact), &pager_compact_touch_api, consume_preview_touch);
+    egui_view_pips_pager_override_static_preview_api(EGUI_VIEW_OF(&pager_compact), &pager_compact_api);
+#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
+    pager_compact_api.on_touch = dismiss_primary_focus_on_preview_touch;
+#endif
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&pager_compact), false);
 #endif
@@ -149,8 +164,10 @@ void test_init_ui(void)
     egui_view_pips_pager_set_read_only_mode(EGUI_VIEW_OF(&pager_read_only), 1);
     egui_view_pips_pager_set_palette(EGUI_VIEW_OF(&pager_read_only), EGUI_COLOR_HEX(0xFBFCFD), EGUI_COLOR_HEX(0xD8DFE6), EGUI_COLOR_HEX(0x536474),
                                      EGUI_COLOR_HEX(0x8896A4), EGUI_COLOR_HEX(0xA7B4C1), EGUI_COLOR_HEX(0xB8C3CD), EGUI_COLOR_HEX(0xC5D2DE));
-    static egui_view_api_t pager_read_only_touch_api;
-    egui_view_override_api_on_touch(EGUI_VIEW_OF(&pager_read_only), &pager_read_only_touch_api, consume_preview_touch);
+    egui_view_pips_pager_override_static_preview_api(EGUI_VIEW_OF(&pager_read_only), &pager_read_only_api);
+#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
+    pager_read_only_api.on_touch = dismiss_primary_focus_on_preview_touch;
+#endif
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&pager_read_only), false);
 #endif
@@ -172,6 +189,17 @@ void test_init_ui(void)
 }
 
 #if EGUI_CONFIG_RECORDING_TEST
+static void set_click_view_center(egui_sim_action_t *p_action, egui_view_t *view, int interval_ms)
+{
+    p_action->type = EGUI_SIM_ACTION_CLICK;
+    p_action->x1 = view->region_screen.location.x + view->region_screen.size.width / 2;
+    p_action->y1 = view->region_screen.location.y + view->region_screen.size.height / 2;
+    p_action->x2 = 0;
+    p_action->y2 = 0;
+    p_action->steps = 0;
+    p_action->interval_ms = interval_ms;
+}
+
 static void apply_primary_key(uint8_t key_code)
 {
     egui_key_event_t event;
@@ -255,10 +283,33 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
         if (first_call)
         {
             apply_compact_snapshot((uint8_t)(compact_snapshot_index + 1));
+#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
+            egui_view_request_focus(EGUI_VIEW_OF(&pager_primary));
+#endif
         }
         EGUI_SIM_SET_WAIT(p_action, PIPS_PAGER_RECORD_WAIT);
         return true;
     case 9:
+        if (first_call)
+        {
+            recording_request_snapshot();
+        }
+        EGUI_SIM_SET_WAIT(p_action, PIPS_PAGER_RECORD_FRAME_WAIT);
+        return true;
+    case 10:
+        if (first_call)
+        {
+            set_click_view_center(p_action, EGUI_VIEW_OF(&pager_compact), PIPS_PAGER_RECORD_WAIT);
+        }
+        return true;
+    case 11:
+        if (first_call)
+        {
+            recording_request_snapshot();
+        }
+        EGUI_SIM_SET_WAIT(p_action, PIPS_PAGER_RECORD_FRAME_WAIT);
+        return true;
+    case 12:
         if (first_call)
         {
             recording_request_snapshot();
