@@ -8,6 +8,8 @@
 #include "../../HelloCustomWidgets/layout/split_view/egui_view_split_view.c"
 
 static egui_view_split_view_t test_split_view;
+static egui_view_split_view_t preview_split_view;
+static egui_view_api_t preview_api;
 static uint8_t g_selection_count;
 static uint8_t g_last_selection_index;
 static uint8_t g_pane_state_count;
@@ -68,19 +70,43 @@ static void setup_split_view(void)
     reset_listener_state();
 }
 
-static void layout_split_view(egui_dim_t width, egui_dim_t height)
+static void setup_preview_split_view(void)
+{
+    egui_view_split_view_init(EGUI_VIEW_OF(&preview_split_view));
+    egui_view_set_size(EGUI_VIEW_OF(&preview_split_view), 104, 74);
+    egui_view_split_view_set_items(EGUI_VIEW_OF(&preview_split_view), g_items, 4);
+    egui_view_split_view_set_current_index(EGUI_VIEW_OF(&preview_split_view), 1);
+    egui_view_split_view_set_pane_expanded(EGUI_VIEW_OF(&preview_split_view), 0);
+    egui_view_split_view_set_compact_mode(EGUI_VIEW_OF(&preview_split_view), 1);
+    egui_view_split_view_set_on_selection_changed_listener(EGUI_VIEW_OF(&preview_split_view), on_selection_changed);
+    egui_view_split_view_set_on_pane_state_changed_listener(EGUI_VIEW_OF(&preview_split_view), on_pane_state_changed);
+    egui_view_split_view_override_static_preview_api(EGUI_VIEW_OF(&preview_split_view), &preview_api);
+    reset_listener_state();
+}
+
+static void layout_view(egui_view_t *view, egui_dim_t x, egui_dim_t y, egui_dim_t width, egui_dim_t height)
 {
     egui_region_t region;
 
-    region.location.x = 10;
-    region.location.y = 20;
+    region.location.x = x;
+    region.location.y = y;
     region.size.width = width;
     region.size.height = height;
-    egui_view_layout(EGUI_VIEW_OF(&test_split_view), &region);
-    egui_region_copy(&EGUI_VIEW_OF(&test_split_view)->region_screen, &region);
+    egui_view_layout(view, &region);
+    egui_region_copy(&view->region_screen, &region);
 }
 
-static int send_touch(uint8_t type, egui_dim_t x, egui_dim_t y)
+static void layout_split_view(egui_dim_t width, egui_dim_t height)
+{
+    layout_view(EGUI_VIEW_OF(&test_split_view), 10, 20, width, height);
+}
+
+static void layout_preview_split_view(void)
+{
+    layout_view(EGUI_VIEW_OF(&preview_split_view), 12, 18, 104, 74);
+}
+
+static int send_touch_to_view(egui_view_t *view, uint8_t type, egui_dim_t x, egui_dim_t y)
 {
     egui_motion_event_t event;
 
@@ -88,10 +114,10 @@ static int send_touch(uint8_t type, egui_dim_t x, egui_dim_t y)
     event.type = type;
     event.location.x = x;
     event.location.y = y;
-    return EGUI_VIEW_OF(&test_split_view)->api->on_touch_event(EGUI_VIEW_OF(&test_split_view), &event);
+    return view->api->on_touch_event(view, &event);
 }
 
-static int send_key(uint8_t key_code)
+static int send_key_to_view(egui_view_t *view, uint8_t key_code)
 {
     egui_key_event_t event;
     int handled = 0;
@@ -99,10 +125,56 @@ static int send_key(uint8_t key_code)
     memset(&event, 0, sizeof(event));
     event.type = EGUI_KEY_EVENT_ACTION_DOWN;
     event.key_code = key_code;
-    handled |= EGUI_VIEW_OF(&test_split_view)->api->on_key_event(EGUI_VIEW_OF(&test_split_view), &event);
+    handled |= view->api->on_key_event(view, &event);
     event.type = EGUI_KEY_EVENT_ACTION_UP;
-    handled |= EGUI_VIEW_OF(&test_split_view)->api->on_key_event(EGUI_VIEW_OF(&test_split_view), &event);
+    handled |= view->api->on_key_event(view, &event);
     return handled;
+}
+
+static int send_touch(uint8_t type, egui_dim_t x, egui_dim_t y)
+{
+    return send_touch_to_view(EGUI_VIEW_OF(&test_split_view), type, x, y);
+}
+
+static int send_preview_touch(uint8_t type, egui_dim_t x, egui_dim_t y)
+{
+    return send_touch_to_view(EGUI_VIEW_OF(&preview_split_view), type, x, y);
+}
+
+static int send_key(uint8_t key_code)
+{
+    return send_key_to_view(EGUI_VIEW_OF(&test_split_view), key_code);
+}
+
+static int send_preview_key(uint8_t key_code)
+{
+    return send_key_to_view(EGUI_VIEW_OF(&preview_split_view), key_code);
+}
+
+static void seed_pressed_state(egui_view_split_view_t *widget, egui_view_t *view, uint8_t pressed_index, uint8_t pressed_toggle, uint8_t visual_pressed)
+{
+    widget->pressed_index = pressed_index;
+    widget->pressed_toggle = pressed_toggle;
+    egui_view_set_pressed(view, visual_pressed ? true : false);
+}
+
+static void assert_pressed_cleared(egui_view_split_view_t *widget, egui_view_t *view)
+{
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_SPLIT_VIEW_INDEX_NONE, widget->pressed_index);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, widget->pressed_toggle);
+    EGUI_TEST_ASSERT_FALSE(view->is_pressed);
+}
+
+static void get_view_center(egui_view_t *view, egui_dim_t *x, egui_dim_t *y)
+{
+    *x = view->region_screen.location.x + view->region_screen.size.width / 2;
+    *y = view->region_screen.location.y + view->region_screen.size.height / 2;
+}
+
+static void get_view_outside_point(egui_view_t *view, egui_dim_t *x, egui_dim_t *y)
+{
+    *x = view->region_screen.location.x - 4;
+    *y = view->region_screen.location.y - 4;
 }
 
 static void get_metrics(egui_view_split_view_metrics_t *metrics)
@@ -179,53 +251,43 @@ static void test_split_view_font_palette_helpers_and_pane_listener(void)
 
     setup_split_view();
 
+    seed_pressed_state(&test_split_view, EGUI_VIEW_OF(&test_split_view), 1, 1, 1);
     egui_view_split_view_set_font(EGUI_VIEW_OF(&test_split_view), NULL);
+    assert_pressed_cleared(&test_split_view, EGUI_VIEW_OF(&test_split_view));
+
+    seed_pressed_state(&test_split_view, EGUI_VIEW_OF(&test_split_view), 1, 0, 1);
     egui_view_split_view_set_meta_font(EGUI_VIEW_OF(&test_split_view), NULL);
     EGUI_TEST_ASSERT_TRUE(test_split_view.font == (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT);
     EGUI_TEST_ASSERT_TRUE(test_split_view.meta_font == (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT);
+    assert_pressed_cleared(&test_split_view, EGUI_VIEW_OF(&test_split_view));
 
-    egui_view_set_pressed(EGUI_VIEW_OF(&test_split_view), true);
-    test_split_view.pressed_index = 1;
-    test_split_view.pressed_toggle = 1;
+    seed_pressed_state(&test_split_view, EGUI_VIEW_OF(&test_split_view), 1, 1, 1);
     egui_view_split_view_set_compact_mode(EGUI_VIEW_OF(&test_split_view), 2);
     EGUI_TEST_ASSERT_EQUAL_INT(1, test_split_view.compact_mode);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_SPLIT_VIEW_INDEX_NONE, test_split_view.pressed_index);
-    EGUI_TEST_ASSERT_EQUAL_INT(0, test_split_view.pressed_toggle);
-    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_split_view)->is_pressed);
+    assert_pressed_cleared(&test_split_view, EGUI_VIEW_OF(&test_split_view));
     egui_view_split_view_set_compact_mode(EGUI_VIEW_OF(&test_split_view), 0);
     EGUI_TEST_ASSERT_EQUAL_INT(0, test_split_view.compact_mode);
 
-    egui_view_set_pressed(EGUI_VIEW_OF(&test_split_view), true);
-    test_split_view.pressed_index = 1;
-    test_split_view.pressed_toggle = 1;
+    seed_pressed_state(&test_split_view, EGUI_VIEW_OF(&test_split_view), 1, 1, 1);
     egui_view_split_view_set_pane_expanded(EGUI_VIEW_OF(&test_split_view), 1);
     EGUI_TEST_ASSERT_EQUAL_INT(0, g_pane_state_count);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_SPLIT_VIEW_INDEX_NONE, test_split_view.pressed_index);
-    EGUI_TEST_ASSERT_EQUAL_INT(0, test_split_view.pressed_toggle);
-    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_split_view)->is_pressed);
+    assert_pressed_cleared(&test_split_view, EGUI_VIEW_OF(&test_split_view));
 
-    egui_view_set_pressed(EGUI_VIEW_OF(&test_split_view), true);
-    test_split_view.pressed_index = 2;
-    test_split_view.pressed_toggle = 1;
+    seed_pressed_state(&test_split_view, EGUI_VIEW_OF(&test_split_view), 2, 1, 1);
     egui_view_split_view_set_pane_expanded(EGUI_VIEW_OF(&test_split_view), 0);
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_split_view_get_pane_expanded(EGUI_VIEW_OF(&test_split_view)));
     EGUI_TEST_ASSERT_EQUAL_INT(1, g_pane_state_count);
     EGUI_TEST_ASSERT_EQUAL_INT(0, g_last_pane_expanded);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_SPLIT_VIEW_INDEX_NONE, test_split_view.pressed_index);
-    EGUI_TEST_ASSERT_EQUAL_INT(0, test_split_view.pressed_toggle);
-    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_split_view)->is_pressed);
+    assert_pressed_cleared(&test_split_view, EGUI_VIEW_OF(&test_split_view));
 
-    egui_view_set_pressed(EGUI_VIEW_OF(&test_split_view), true);
-    test_split_view.pressed_index = 2;
-    test_split_view.pressed_toggle = 1;
+    seed_pressed_state(&test_split_view, EGUI_VIEW_OF(&test_split_view), 2, 1, 1);
     egui_view_split_view_set_read_only_mode(EGUI_VIEW_OF(&test_split_view), 3);
     EGUI_TEST_ASSERT_EQUAL_INT(1, test_split_view.read_only_mode);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_SPLIT_VIEW_INDEX_NONE, test_split_view.pressed_index);
-    EGUI_TEST_ASSERT_EQUAL_INT(0, test_split_view.pressed_toggle);
-    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_split_view)->is_pressed);
+    assert_pressed_cleared(&test_split_view, EGUI_VIEW_OF(&test_split_view));
     egui_view_split_view_set_read_only_mode(EGUI_VIEW_OF(&test_split_view), 0);
     EGUI_TEST_ASSERT_EQUAL_INT(0, test_split_view.read_only_mode);
 
+    seed_pressed_state(&test_split_view, EGUI_VIEW_OF(&test_split_view), 3, 1, 1);
     egui_view_split_view_set_palette(EGUI_VIEW_OF(&test_split_view), EGUI_COLOR_HEX(0x101112), EGUI_COLOR_HEX(0x202122), EGUI_COLOR_HEX(0x303132),
                                      EGUI_COLOR_HEX(0x404142), EGUI_COLOR_HEX(0x505152), EGUI_COLOR_HEX(0x606162), EGUI_COLOR_HEX(0x707172),
                                      EGUI_COLOR_HEX(0x808182), EGUI_COLOR_HEX(0x909192));
@@ -238,6 +300,7 @@ static void test_split_view_font_palette_helpers_and_pane_listener(void)
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x707172).full, test_split_view.success_color.full);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x808182).full, test_split_view.warning_color.full);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x909192).full, test_split_view.neutral_color.full);
+    assert_pressed_cleared(&test_split_view, EGUI_VIEW_OF(&test_split_view));
 
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_SPLIT_VIEW_MAX_ITEMS, sv_clamp_count(9));
     EGUI_TEST_ASSERT_EQUAL_INT(0, sv_text_len(NULL));
@@ -314,10 +377,12 @@ static void test_split_view_metrics_and_hit_testing(void)
     EGUI_TEST_ASSERT_TRUE(metrics.detail.location.x > metrics.pane.location.x);
 }
 
-static void test_split_view_touch_toggle_select_and_cancel(void)
+static void test_split_view_touch_same_target_release_and_cancel_behavior(void)
 {
     egui_dim_t toggle_x;
     egui_dim_t toggle_y;
+    egui_dim_t outside_x;
+    egui_dim_t outside_y;
     egui_dim_t row1_x;
     egui_dim_t row1_y;
     egui_dim_t row2_x;
@@ -326,8 +391,7 @@ static void test_split_view_touch_toggle_select_and_cancel(void)
     setup_split_view();
     layout_split_view(194, 104);
     get_toggle_center(&toggle_x, &toggle_y);
-    get_row_center(1, &row1_x, &row1_y);
-    get_row_center(2, &row2_x, &row2_y);
+    get_view_outside_point(EGUI_VIEW_OF(&test_split_view), &outside_x, &outside_y);
 
     EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, 0, 0));
 
@@ -335,31 +399,56 @@ static void test_split_view_touch_toggle_select_and_cancel(void)
     EGUI_TEST_ASSERT_EQUAL_INT(1, test_split_view.pressed_toggle);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_SPLIT_VIEW_INDEX_NONE, test_split_view.pressed_index);
     EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&test_split_view)->is_pressed);
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_MOVE, outside_x, outside_y));
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_split_view)->is_pressed);
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, outside_x, outside_y));
+    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_split_view_get_pane_expanded(EGUI_VIEW_OF(&test_split_view)));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, g_pane_state_count);
+    assert_pressed_cleared(&test_split_view, EGUI_VIEW_OF(&test_split_view));
+
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, toggle_x, toggle_y));
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_MOVE, outside_x, outside_y));
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_split_view)->is_pressed);
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_MOVE, toggle_x, toggle_y));
+    EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&test_split_view)->is_pressed);
     EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, toggle_x, toggle_y));
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_split_view_get_pane_expanded(EGUI_VIEW_OF(&test_split_view)));
     EGUI_TEST_ASSERT_EQUAL_INT(1, g_pane_state_count);
     EGUI_TEST_ASSERT_EQUAL_INT(0, g_last_pane_expanded);
-    EGUI_TEST_ASSERT_EQUAL_INT(0, test_split_view.pressed_toggle);
-    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_split_view)->is_pressed);
+    assert_pressed_cleared(&test_split_view, EGUI_VIEW_OF(&test_split_view));
 
-    get_row_center(1, &row1_x, &row1_y);
+    setup_split_view();
+    layout_split_view(194, 104);
     get_row_center(2, &row2_x, &row2_y);
+    get_row_center(1, &row1_x, &row1_y);
+    get_view_outside_point(EGUI_VIEW_OF(&test_split_view), &outside_x, &outside_y);
+
     EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, row2_x, row2_y));
     EGUI_TEST_ASSERT_EQUAL_INT(2, test_split_view.pressed_index);
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_MOVE, outside_x, outside_y));
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_split_view)->is_pressed);
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, outside_x, outside_y));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_split_view_get_current_index(EGUI_VIEW_OF(&test_split_view)));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, g_selection_count);
+    assert_pressed_cleared(&test_split_view, EGUI_VIEW_OF(&test_split_view));
+
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, row2_x, row2_y));
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_MOVE, outside_x, outside_y));
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_split_view)->is_pressed);
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_MOVE, row2_x, row2_y));
+    EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&test_split_view)->is_pressed);
     EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, row2_x, row2_y));
     EGUI_TEST_ASSERT_EQUAL_INT(2, egui_view_split_view_get_current_index(EGUI_VIEW_OF(&test_split_view)));
     EGUI_TEST_ASSERT_EQUAL_INT(1, g_selection_count);
     EGUI_TEST_ASSERT_EQUAL_INT(2, g_last_selection_index);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_SPLIT_VIEW_INDEX_NONE, test_split_view.pressed_index);
-    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_split_view)->is_pressed);
+    assert_pressed_cleared(&test_split_view, EGUI_VIEW_OF(&test_split_view));
 
     EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, row1_x, row1_y));
     EGUI_TEST_ASSERT_EQUAL_INT(1, test_split_view.pressed_index);
     EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_CANCEL, row1_x, row1_y));
     EGUI_TEST_ASSERT_EQUAL_INT(2, egui_view_split_view_get_current_index(EGUI_VIEW_OF(&test_split_view)));
     EGUI_TEST_ASSERT_EQUAL_INT(1, g_selection_count);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_SPLIT_VIEW_INDEX_NONE, test_split_view.pressed_index);
-    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_split_view)->is_pressed);
+    assert_pressed_cleared(&test_split_view, EGUI_VIEW_OF(&test_split_view));
 }
 
 static void test_split_view_compact_mode_clears_pressed_and_keeps_selection_behavior(void)
@@ -536,6 +625,32 @@ static void test_split_view_view_disabled_ignores_input_and_clears_pressed_state
     EGUI_TEST_ASSERT_EQUAL_INT(1, g_pane_state_count);
 }
 
+static void test_split_view_static_preview_consumes_input_and_clears_pressed_state(void)
+{
+    egui_dim_t x;
+    egui_dim_t y;
+
+    setup_preview_split_view();
+    layout_preview_split_view();
+    get_view_center(EGUI_VIEW_OF(&preview_split_view), &x, &y);
+
+    seed_pressed_state(&preview_split_view, EGUI_VIEW_OF(&preview_split_view), 2, 1, 1);
+    EGUI_TEST_ASSERT_TRUE(send_preview_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
+    assert_pressed_cleared(&preview_split_view, EGUI_VIEW_OF(&preview_split_view));
+    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_split_view_get_current_index(EGUI_VIEW_OF(&preview_split_view)));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_split_view_get_pane_expanded(EGUI_VIEW_OF(&preview_split_view)));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, g_selection_count);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, g_pane_state_count);
+
+    seed_pressed_state(&preview_split_view, EGUI_VIEW_OF(&preview_split_view), 1, 1, 1);
+    EGUI_TEST_ASSERT_TRUE(send_preview_key(EGUI_KEY_CODE_ENTER));
+    assert_pressed_cleared(&preview_split_view, EGUI_VIEW_OF(&preview_split_view));
+    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_split_view_get_current_index(EGUI_VIEW_OF(&preview_split_view)));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_split_view_get_pane_expanded(EGUI_VIEW_OF(&preview_split_view)));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, g_selection_count);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, g_pane_state_count);
+}
+
 static void test_split_view_read_only_disabled_and_empty_guards(void)
 {
     egui_dim_t toggle_x;
@@ -571,11 +686,12 @@ void test_split_view_run(void)
     EGUI_TEST_RUN(test_split_view_set_items_clamp_and_listener_guards);
     EGUI_TEST_RUN(test_split_view_font_palette_helpers_and_pane_listener);
     EGUI_TEST_RUN(test_split_view_metrics_and_hit_testing);
-    EGUI_TEST_RUN(test_split_view_touch_toggle_select_and_cancel);
+    EGUI_TEST_RUN(test_split_view_touch_same_target_release_and_cancel_behavior);
     EGUI_TEST_RUN(test_split_view_compact_mode_clears_pressed_and_keeps_selection_behavior);
     EGUI_TEST_RUN(test_split_view_keyboard_navigation_and_guards);
     EGUI_TEST_RUN(test_split_view_read_only_mode_ignores_input_and_clears_pressed_state);
     EGUI_TEST_RUN(test_split_view_view_disabled_ignores_input_and_clears_pressed_state);
+    EGUI_TEST_RUN(test_split_view_static_preview_consumes_input_and_clears_pressed_state);
     EGUI_TEST_RUN(test_split_view_read_only_disabled_and_empty_guards);
     EGUI_TEST_SUITE_END();
 }
