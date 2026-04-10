@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import os
 from pathlib import Path
 import subprocess
@@ -55,6 +56,13 @@ def format_duration(seconds: float) -> str:
 
 def format_command(cmd: list[str]) -> str:
     return " ".join(f'"{part}"' if " " in part else part for part in cmd)
+
+
+def project_relative(path: Path) -> str:
+    try:
+        return str(path.resolve().relative_to(PROJECT_ROOT)).replace("\\", "/")
+    except ValueError:
+        return str(path.resolve())
 
 
 def find_emsdk_path() -> str | None:
@@ -163,6 +171,38 @@ def run_step_commands(step_name: str, commands: list[list[str]], env: dict[str, 
     return 0
 
 
+def print_web_smoke_details() -> None:
+    summary_path = DEFAULT_WEB_SMOKE_OUTPUT_DIR / "summary.json"
+    if not summary_path.exists():
+        print(f"  Web smoke summary not found: {project_relative(summary_path)}", flush=True)
+        return
+
+    try:
+        summary = json.loads(summary_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        print(f"  Failed to read web smoke summary: {exc}", flush=True)
+        return
+
+    print(
+        "  Web smoke result: "
+        f"{summary.get('passed', 0)}/{summary.get('total', 0)} passed",
+        flush=True,
+    )
+    print(f"  Web smoke summary: {project_relative(summary_path)}", flush=True)
+
+    summary_md = summary.get("summaryMarkdown")
+    if summary_md:
+        print(f"  Web smoke markdown: {summary_md}", flush=True)
+
+    contact_sheet = summary.get("contactSheet")
+    if contact_sheet:
+        print(f"  Web smoke contact sheet: {contact_sheet}", flush=True)
+
+    failed_names = summary.get("failedNames") or []
+    if failed_names:
+        print("  Web smoke failed demos: " + ", ".join(failed_names), flush=True)
+
+
 def print_summary(results: list[tuple[str, str, str, float]], total_elapsed: float) -> bool:
     print("\n" + "=" * BANNER_WIDTH, flush=True)
     print("  RELEASE CHECK SUMMARY", flush=True)
@@ -264,6 +304,9 @@ def main() -> int:
             print(f"  Error: {exc}", flush=True)
             retcode = 1
         elapsed = time.time() - step_start
+
+        if name == "web_smoke":
+            print_web_smoke_details()
 
         if retcode == 0:
             results.append((name, desc, STATUS_PASS, elapsed))
