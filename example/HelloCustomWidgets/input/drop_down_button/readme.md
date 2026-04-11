@@ -6,7 +6,7 @@
 - 对应组件名：`DropDownButton`
 - 本次保留状态：`standard`、`compact`、`read only`
 - 删除效果：页面级 `guide`、状态回显、`section divider`、外部 `preview` 标签、标签点击切换、场景化 demo 壳、复杂 hover / pressed 动画、真实 flyout 定位与多级菜单
-- EGUI 适配说明：保留“整个按钮都是下拉入口”的核心语义，在 `480 x 480` 画布中优先保证标题层级、主按钮信息密度、底部 `compact / read only` 双预览和键盘闭环稳定；`snapshot / compact / read only / disabled` 切换共享同一套 `pressed` 清理语义
+- EGUI 适配说明：保留“整个按钮都是下拉入口”的核心语义，在 `480 x 480` 画布中优先保证标题层级、主按钮信息密度、底部 `compact / read only` 双预览和键盘闭环稳定；`snapshot / compact / read only / disabled` 切换共享同一套 `pressed` 清理语义，主控件补齐 `same-target release`，底部 preview 统一走 `egui_view_drop_down_button_override_static_preview_api()`
 
 ## 1. 为什么需要这个控件？
 `drop_down_button` 用来表达“单一入口打开一组选项”的标准命令按钮语义。它适合排序、布局切换、主题切换、过滤切换这类场景：用户点击整个按钮即可进入下拉动作，而不是像 `split_button` 那样区分主动作段和菜单段。
@@ -24,6 +24,7 @@
 - 左下 `compact` 预览展示紧凑尺寸下的静态对照
 - 右下 `read only` 预览展示可见但不可交互的锁定对照
 - 主控件保留真实触摸点击和 `Enter` 键触发闭环
+- `compact / read only` preview 统一通过 `egui_view_drop_down_button_override_static_preview_api()` 覆盖成静态 API，点击 preview 时只收主控件 focus，不切换 snapshot
 - 页面只保留标题、主 `drop_down_button` 和底部 `compact / read only` 双预览，不再保留旧版 `guide`、状态文本、分隔线和 label-click 场景切换
 
 目录：
@@ -90,10 +91,11 @@ python scripts/checks/check_docs_encoding.py
 - 主控件和底部双预览必须完整可见，不能被裁切
 - 主按钮必须被识别为单一点击面，而不是误读成 `split button`
 - 主控件触摸点击和 `Enter` 键切换都必须生效
+- 必须满足 `DOWN(inside) -> MOVE(outside) -> UP(outside)` 不提交，只有回到原命中区后 `UP(inside)` 才提交
 - `snapshot / compact / read only / disabled` 切换后不能残留 `pressed` 高亮或下压位移渲染
 - `read only / disabled` 不仅要忽略后续 touch / key 输入，还要在收到新输入时清理残留 `pressed` 渲染
 - 主控件的 `touch cancel`、无关按键和 `Enter` 的 `ACTION_DOWN -> ACTION_UP` 闭环都必须稳定，不能留下残留 `pressed`
-- 底部 `compact / read only` 预览必须统一吞掉 touch / key 输入，并在收到输入后立即清理残留 `pressed` 渲染
+- 底部 `compact / read only` 预览必须通过 `egui_view_drop_down_button_override_static_preview_api()` 统一吞掉 touch / key 输入，并在收到输入后立即清理残留 `pressed` 渲染，且不能改 `current_snapshot`
 - 页面中不再出现旧版 `guide`、状态回显、分隔线和外部 `preview` 标签
 - `compact` 与 `read only` 必须保持 Fluent / WPF UI 风格的低噪音浅色 reference
 
@@ -133,6 +135,6 @@ python scripts/checks/check_docs_encoding.py
 ## 14. EGUI 适配时的简化点与约束
 - 用固定 snapshot 驱动 reference，优先保证 `480 x 480` 下的稳定审阅
 - 主控件保留 `title + row + helper` 三段式信息层级
-- `compact` 预览通过统一的 static preview override 固定为静态对照
+- `compact` 预览通过 `egui_view_drop_down_button_override_static_preview_api()` 固定为静态对照
 - `read only` 预览通过 `read_only_mode + compact_mode` 固定为静态锁定态
-- 本轮补齐了 `Enter` 的 pressed 闭环、`touch cancel / key guard` 清残留与静态 preview 吞输入，确保交互后的渲染稳定
+- 本轮补齐了 `same-target release`、setter `pressed` 清理、`touch cancel / key guard` 清残留与静态 preview 吞输入，确保交互后的渲染稳定

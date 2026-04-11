@@ -47,6 +47,21 @@ static const egui_view_drop_down_button_snapshot_t compact_snapshots[] = {
 static const egui_view_drop_down_button_snapshot_t read_only_snapshot = {
         "", "", "Locked", "", "", EGUI_VIEW_DROP_DOWN_BUTTON_TONE_NEUTRAL, 0};
 
+static int dismiss_primary_focus_on_preview_touch(egui_view_t *self, egui_motion_event_t *event)
+{
+    EGUI_UNUSED(self);
+
+#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
+    if (event->type == EGUI_MOTION_EVENT_ACTION_DOWN)
+    {
+        egui_view_clear_focus(EGUI_VIEW_OF(&button_primary));
+    }
+#else
+    EGUI_UNUSED(event);
+#endif
+    return 1;
+}
+
 static void apply_primary_snapshot(uint8_t index)
 {
     egui_view_drop_down_button_set_current_snapshot(EGUI_VIEW_OF(&button_primary), index % EGUI_ARRAY_SIZE(primary_snapshots));
@@ -132,6 +147,7 @@ void test_init_ui(void)
     egui_view_drop_down_button_set_snapshots(EGUI_VIEW_OF(&button_compact), compact_snapshots, EGUI_ARRAY_SIZE(compact_snapshots));
     egui_view_drop_down_button_set_compact_mode(EGUI_VIEW_OF(&button_compact), 1);
     egui_view_drop_down_button_override_static_preview_api(EGUI_VIEW_OF(&button_compact), &button_compact_api);
+    button_compact_api.on_touch = dismiss_primary_focus_on_preview_touch;
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&button_compact), 0);
 #endif
@@ -149,6 +165,7 @@ void test_init_ui(void)
                                            EGUI_COLOR_HEX(0x8F9CA8), EGUI_COLOR_HEX(0x93A4B2), EGUI_COLOR_HEX(0x93A1A5), EGUI_COLOR_HEX(0xA79B88),
                                            EGUI_COLOR_HEX(0x9E949B), EGUI_COLOR_HEX(0x98A8B4));
     egui_view_drop_down_button_override_static_preview_api(EGUI_VIEW_OF(&button_read_only), &button_read_only_api);
+    button_read_only_api.on_touch = dismiss_primary_focus_on_preview_touch;
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&button_read_only), 0);
 #endif

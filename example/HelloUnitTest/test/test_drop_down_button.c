@@ -66,15 +66,20 @@ static void layout_preview_button(void)
     egui_region_copy(&EGUI_VIEW_OF(&preview_button)->region_screen, &region);
 }
 
-static int send_touch(uint8_t type)
+static int send_touch_at(uint8_t type, egui_dim_t x, egui_dim_t y)
 {
     egui_motion_event_t event;
 
     memset(&event, 0, sizeof(event));
     event.type = type;
-    event.location.x = 40;
-    event.location.y = 40;
+    event.location.x = x;
+    event.location.y = y;
     return EGUI_VIEW_OF(&test_button)->api->on_touch_event(EGUI_VIEW_OF(&test_button), &event);
+}
+
+static int send_touch(uint8_t type)
+{
+    return send_touch_at(type, 40, 40);
 }
 
 static int send_key(uint8_t key_code)
@@ -137,13 +142,34 @@ static void test_drop_down_button_snapshot_switching_clears_pressed_state(void)
     egui_view_drop_down_button_set_current_snapshot(EGUI_VIEW_OF(&test_button), 1);
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_button)->is_pressed);
 
+    EGUI_VIEW_OF(&test_button)->is_pressed = true;
     egui_view_drop_down_button_set_current_snapshot(EGUI_VIEW_OF(&test_button), 9);
     EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_drop_down_button_get_current_snapshot(EGUI_VIEW_OF(&test_button)));
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_button)->is_pressed);
 
     EGUI_VIEW_OF(&test_button)->is_pressed = true;
     test_button.current_snapshot = 2;
     egui_view_drop_down_button_set_snapshots(EGUI_VIEW_OF(&test_button), test_snapshots, 1);
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_drop_down_button_get_current_snapshot(EGUI_VIEW_OF(&test_button)));
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_button)->is_pressed);
+}
+
+static void test_drop_down_button_setters_clear_pressed_state(void)
+{
+    setup_button();
+
+    EGUI_VIEW_OF(&test_button)->is_pressed = true;
+    egui_view_drop_down_button_set_font(EGUI_VIEW_OF(&test_button), NULL);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_button)->is_pressed);
+
+    EGUI_VIEW_OF(&test_button)->is_pressed = true;
+    egui_view_drop_down_button_set_meta_font(EGUI_VIEW_OF(&test_button), NULL);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_button)->is_pressed);
+
+    EGUI_VIEW_OF(&test_button)->is_pressed = true;
+    egui_view_drop_down_button_set_palette(EGUI_VIEW_OF(&test_button), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD6DEE7), EGUI_COLOR_HEX(0x1D2630),
+                                           EGUI_COLOR_HEX(0x6F7B89), EGUI_COLOR_HEX(0x2563EB), EGUI_COLOR_HEX(0x178454), EGUI_COLOR_HEX(0xB87A16),
+                                           EGUI_COLOR_HEX(0xB13A35), EGUI_COLOR_HEX(0x7A8795));
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_button)->is_pressed);
 }
 
@@ -164,6 +190,34 @@ static void test_drop_down_button_keyboard_enter_click_listener(void)
     EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&test_button)->is_pressed);
     EGUI_TEST_ASSERT_EQUAL_INT(0, click_count);
     EGUI_TEST_ASSERT_TRUE(send_key_event(EGUI_KEY_EVENT_ACTION_UP, EGUI_KEY_CODE_ENTER));
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_button)->is_pressed);
+    EGUI_TEST_ASSERT_EQUAL_INT(1, click_count);
+}
+
+static void test_drop_down_button_same_target_release_requires_return_to_origin(void)
+{
+    egui_dim_t inside_x = 40;
+    egui_dim_t inside_y = 40;
+    egui_dim_t outside_x = 4;
+    egui_dim_t outside_y = 4;
+
+    setup_button();
+    layout_button();
+
+    EGUI_TEST_ASSERT_TRUE(send_touch_at(EGUI_MOTION_EVENT_ACTION_DOWN, inside_x, inside_y));
+    EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&test_button)->is_pressed);
+    EGUI_TEST_ASSERT_TRUE(send_touch_at(EGUI_MOTION_EVENT_ACTION_MOVE, outside_x, outside_y));
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_button)->is_pressed);
+    EGUI_TEST_ASSERT_FALSE(send_touch_at(EGUI_MOTION_EVENT_ACTION_UP, outside_x, outside_y));
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_button)->is_pressed);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, click_count);
+
+    EGUI_TEST_ASSERT_TRUE(send_touch_at(EGUI_MOTION_EVENT_ACTION_DOWN, inside_x, inside_y));
+    EGUI_TEST_ASSERT_TRUE(send_touch_at(EGUI_MOTION_EVENT_ACTION_MOVE, outside_x, outside_y));
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_button)->is_pressed);
+    EGUI_TEST_ASSERT_TRUE(send_touch_at(EGUI_MOTION_EVENT_ACTION_MOVE, inside_x, inside_y));
+    EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&test_button)->is_pressed);
+    EGUI_TEST_ASSERT_TRUE(send_touch_at(EGUI_MOTION_EVENT_ACTION_UP, inside_x, inside_y));
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_button)->is_pressed);
     EGUI_TEST_ASSERT_EQUAL_INT(1, click_count);
 }
@@ -276,8 +330,10 @@ void test_drop_down_button_run(void)
 {
     EGUI_TEST_SUITE_BEGIN(drop_down_button);
     EGUI_TEST_RUN(test_drop_down_button_snapshot_switching_clears_pressed_state);
+    EGUI_TEST_RUN(test_drop_down_button_setters_clear_pressed_state);
     EGUI_TEST_RUN(test_drop_down_button_touch_click_listener);
     EGUI_TEST_RUN(test_drop_down_button_keyboard_enter_click_listener);
+    EGUI_TEST_RUN(test_drop_down_button_same_target_release_requires_return_to_origin);
     EGUI_TEST_RUN(test_drop_down_button_touch_cancel_and_key_guard_clear_pressed_state);
     EGUI_TEST_RUN(test_drop_down_button_compact_mode_clears_pressed_and_keeps_click_behavior);
     EGUI_TEST_RUN(test_drop_down_button_read_only_clears_pressed_and_ignores_input);

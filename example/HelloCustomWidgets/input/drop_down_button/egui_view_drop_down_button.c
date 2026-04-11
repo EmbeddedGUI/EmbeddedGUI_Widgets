@@ -256,24 +256,27 @@ void egui_view_drop_down_button_set_snapshots(egui_view_t *self, const egui_view
 void egui_view_drop_down_button_set_current_snapshot(egui_view_t *self, uint8_t snapshot_index)
 {
     EGUI_LOCAL_INIT(egui_view_drop_down_button_t);
+    uint8_t had_pressed = egui_view_drop_down_button_clear_pressed_state(self);
 
     if (local->snapshot_count == 0 || snapshot_index >= local->snapshot_count)
     {
+        if (had_pressed)
+        {
+            egui_view_invalidate(self);
+        }
         return;
     }
 
     if (local->current_snapshot == snapshot_index)
     {
-        if (self->is_pressed)
+        if (had_pressed)
         {
-            egui_view_drop_down_button_clear_pressed_state(self);
             egui_view_invalidate(self);
         }
         return;
     }
 
     local->current_snapshot = snapshot_index;
-    egui_view_drop_down_button_clear_pressed_state(self);
     egui_view_invalidate(self);
 }
 
@@ -286,35 +289,63 @@ uint8_t egui_view_drop_down_button_get_current_snapshot(egui_view_t *self)
 void egui_view_drop_down_button_set_font(egui_view_t *self, const egui_font_t *font)
 {
     EGUI_LOCAL_INIT(egui_view_drop_down_button_t);
+    uint8_t had_pressed = egui_view_drop_down_button_clear_pressed_state(self);
 
     local->font = font ? font : (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT;
-    egui_view_invalidate(self);
+    if (!had_pressed)
+    {
+        egui_view_invalidate(self);
+    }
 }
 
 void egui_view_drop_down_button_set_meta_font(egui_view_t *self, const egui_font_t *font)
 {
     EGUI_LOCAL_INIT(egui_view_drop_down_button_t);
+    uint8_t had_pressed = egui_view_drop_down_button_clear_pressed_state(self);
 
     local->meta_font = font ? font : (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT;
-    egui_view_invalidate(self);
+    if (!had_pressed)
+    {
+        egui_view_invalidate(self);
+    }
 }
 
 void egui_view_drop_down_button_set_compact_mode(egui_view_t *self, uint8_t compact_mode)
 {
     EGUI_LOCAL_INIT(egui_view_drop_down_button_t);
+    uint8_t changed = 0;
+    uint8_t had_pressed;
 
-    local->compact_mode = compact_mode ? 1 : 0;
-    egui_view_drop_down_button_clear_pressed_state(self);
-    egui_view_invalidate(self);
+    compact_mode = compact_mode ? 1 : 0;
+    had_pressed = egui_view_drop_down_button_clear_pressed_state(self);
+    if (local->compact_mode != compact_mode)
+    {
+        local->compact_mode = compact_mode;
+        changed = 1;
+    }
+    if (changed || had_pressed)
+    {
+        egui_view_invalidate(self);
+    }
 }
 
 void egui_view_drop_down_button_set_read_only_mode(egui_view_t *self, uint8_t read_only_mode)
 {
     EGUI_LOCAL_INIT(egui_view_drop_down_button_t);
+    uint8_t changed = 0;
+    uint8_t had_pressed;
 
-    local->read_only_mode = read_only_mode ? 1 : 0;
-    egui_view_drop_down_button_clear_pressed_state(self);
-    egui_view_invalidate(self);
+    read_only_mode = read_only_mode ? 1 : 0;
+    had_pressed = egui_view_drop_down_button_clear_pressed_state(self);
+    if (local->read_only_mode != read_only_mode)
+    {
+        local->read_only_mode = read_only_mode;
+        changed = 1;
+    }
+    if (changed || had_pressed)
+    {
+        egui_view_invalidate(self);
+    }
 }
 
 void egui_view_drop_down_button_set_palette(egui_view_t *self, egui_color_t surface_color, egui_color_t border_color, egui_color_t text_color,
@@ -322,8 +353,8 @@ void egui_view_drop_down_button_set_palette(egui_view_t *self, egui_color_t surf
                                             egui_color_t danger_color, egui_color_t neutral_color)
 {
     EGUI_LOCAL_INIT(egui_view_drop_down_button_t);
+    uint8_t had_pressed = egui_view_drop_down_button_clear_pressed_state(self);
 
-    egui_view_drop_down_button_clear_pressed_state(self);
     local->surface_color = surface_color;
     local->border_color = border_color;
     local->text_color = text_color;
@@ -333,7 +364,10 @@ void egui_view_drop_down_button_set_palette(egui_view_t *self, egui_color_t surf
     local->warning_color = warning_color;
     local->danger_color = danger_color;
     local->neutral_color = neutral_color;
-    egui_view_invalidate(self);
+    if (!had_pressed)
+    {
+        egui_view_invalidate(self);
+    }
 }
 
 static void egui_view_drop_down_button_on_draw(egui_view_t *self)
