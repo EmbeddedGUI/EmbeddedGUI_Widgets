@@ -1,5 +1,8 @@
 #include "demo_scaffold.h"
 
+#define HELLO_CUSTOM_WIDGETS_BASE_WIDTH  240
+#define HELLO_CUSTOM_WIDGETS_BASE_HEIGHT 320
+
 #define HELLO_CUSTOM_WIDGETS_TITLE_ONLY_MAIN_GAP     14
 #define HELLO_CUSTOM_WIDGETS_TITLE_ONLY_PREVIEW_GAP  20
 #define HELLO_CUSTOM_WIDGETS_TITLE_ONLY_SIDE_INSET   6
@@ -10,7 +13,7 @@ static egui_dim_t scale_width(egui_dim_t value)
     {
         return value;
     }
-    return (egui_dim_t)(value * 2);
+    return (egui_dim_t)(((int32_t)value * HELLO_CUSTOM_WIDGETS_CANVAS_WIDTH + HELLO_CUSTOM_WIDGETS_BASE_WIDTH / 2) / HELLO_CUSTOM_WIDGETS_BASE_WIDTH);
 }
 
 static egui_dim_t scale_height(egui_dim_t value)
@@ -19,7 +22,7 @@ static egui_dim_t scale_height(egui_dim_t value)
     {
         return value;
     }
-    return (egui_dim_t)((value * 3 + 1) / 2);
+    return (egui_dim_t)(((int32_t)value * HELLO_CUSTOM_WIDGETS_CANVAS_HEIGHT + HELLO_CUSTOM_WIDGETS_BASE_HEIGHT / 2) / HELLO_CUSTOM_WIDGETS_BASE_HEIGHT);
 }
 
 static void scale_margin(egui_view_margin_t *margin)
