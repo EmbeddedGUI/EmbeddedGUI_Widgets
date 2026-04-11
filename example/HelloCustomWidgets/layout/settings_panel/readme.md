@@ -8,7 +8,7 @@
 - 对应组件名：`SettingCard` / `SettingsGroup`
 - 本次保留状态：`standard`、`compact`、`read only`、`accent`、`success`、`warning`、`neutral`
 - 本次删除效果：页面级 `guide`、状态回显、外部 preview 标签、旧双列包裹壳、过重的 section row 对比、过重的 value badge 和 footer meta chrome
-- EGUI 适配说明：保留设置卡分组、focus row 驱动 tone、尾部 `value / switch / chevron` 语义和 read-only 对照，仅在 `HelloCustomWidgets` 内维护 `reference widget` 版本；`snapshot / compact / read only / disabled` 切换共享同一套 `pressed` 清理语义
+- EGUI 适配说明：保留设置卡分组、focus row 驱动 tone、尾部 `value / switch / chevron` 语义和 read-only 对照，仅在 `HelloCustomWidgets` 内维护 `reference widget` 版本；`snapshot / compact / read only / disabled` 切换共享同一套 `pressed` 清理语义，底部 preview 统一通过 `egui_view_settings_panel_override_static_preview_api()` 固定为静态 reference
 
 ## 1. 为什么需要这个控件？
 `settings_panel` 用来表达一组风格统一的设置卡行，适合设置页、偏好面板和系统信息页。它强调分组卡片、focus row、尾部值和开关语义，而不是普通列表或摘要卡片。
@@ -24,7 +24,7 @@
 - 底部左侧展示 `compact` 静态对照，验证小尺寸下 rows、value badge 和 switch 的密度。
 - 底部右侧展示 `read only` 静态对照，验证视觉弱化和输入抑制后的被动态。
 - 页面结构统一收口为：标题 -> 主 `settings_panel` -> `compact / read only`。
-- 两个 preview 都禁用 `touch` 和 `focus`，只承担 reference 对照，不再承接页面桥接逻辑。
+- 两个 preview 都通过 `egui_view_settings_panel_override_static_preview_api()` 吞掉 `touch / key`，点击 preview 时只清主控件 `panel_primary` 的 focus，不再承接页面桥接逻辑。
 
 目标目录：`example/HelloCustomWidgets/layout/settings_panel/`
 
@@ -63,7 +63,7 @@
 | 只读弱化 | 不适用 | 不适用 | tone 降低，同时抑制 touch / key 输入 |
 
 ## 7. `egui_port_get_recording_action()` 录制动作设计
-1. 重置主控件、`compact` 和 `read only` 对照。
+1. 重置主控件、`compact` 和 `read only` 对照，并给主控件请求 focus。
 2. 请求第一帧截图。
 3. 程序化切到 `success` 主 snapshot。
 4. 请求第二帧截图。
@@ -72,7 +72,10 @@
 7. 程序化切到 `neutral` 主 snapshot。
 8. 请求第四帧截图。
 9. 程序化切到第二组 `compact` snapshot。
-10. 请求最终截图并保留收尾等待。
+10. 请求第五帧截图。
+11. 再次给主控件请求 focus。
+12. 点击 `compact` preview，只验证 focus 收尾。
+13. 请求最终截图并保留收尾等待。
 
 ## 8. 编译、交互、runtime、截图验收标准
 ```bash
@@ -90,6 +93,8 @@ python scripts/checks/check_docs_encoding.py
 - `read only` 需要同时满足视觉弱化和输入抑制，单测必须覆盖 pressed 清理与 touch / key 忽略。
 - `snapshot / compact / read only / disabled` 切换后不能残留 `pressed` 高亮或下压位移渲染。
 - `read only / disabled` 不仅要忽略后续 touch / key 输入，还要在收到新输入时清理残留 `pressed` 渲染。
+- 底部 preview 必须统一通过 `egui_view_settings_panel_override_static_preview_api()` 吞掉 `touch / key`，且不能改变 `snapshot`。
+- 点击底部 preview 时只允许清主控件 `panel_primary` 的 focus，最终收尾帧不能出现焦点残留、黑白屏或异常重排。
 - runtime 关键帧里，snapshot 切换后的 footer meta、focus row 和 section block 层级必须稳定。
 - 页面中不再出现旧列容器壳、guide、状态回显或额外 preview 标签。
 
@@ -130,6 +135,6 @@ python scripts/checks/check_docs_encoding.py
 
 ## 14. EGUI 适配时的简化点与约束
 - 使用固定 `snapshot + item` 数据，优先保证 `480 x 480` 下的审阅稳定性。
-- `compact` 与 `read only` 直接复用同一控件模式，减少页面级桥接逻辑。
+- `compact` 与 `read only` 直接复用同一控件模式，并通过 `egui_view_settings_panel_override_static_preview_api()` 固定为静态对照，减少页面级桥接逻辑。
 - `read only` 不仅弱化视觉，也抑制输入，避免语义和交互脱节。
 - 当前先作为 `HelloCustomWidgets` 的 `reference widget` 维护，后续再评估是否下沉框架层。

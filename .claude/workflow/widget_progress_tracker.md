@@ -98,6 +98,13 @@
 ## 最近完成的收口动作
 
 - `2026-04-12`
+  - 完成 `layout/settings_panel` 交互与文档收口：在既有 `reference` 页面结构不再调整的前提下，把工作重点收回到 static preview API、preview 点击焦点收尾与最终验收闭环，继续保留符合 Fluent / WPF UI 语义的 `settings_panel` 主控件和底部 `compact / read only` 双 preview。
+  - `example/HelloCustomWidgets/layout/settings_panel/egui_view_settings_panel.c/.h` 新增 `egui_view_settings_panel_override_static_preview_api()`，让静态 preview 统一吞掉 `touch / key` 并清理残留 `pressed`；同时把 `set_font()`、`set_meta_font()` 和 `set_palette()` 也收口到同一套 pressed 清理语义，避免 setter 更新后残留旧的下压态。
+  - `example/HelloCustomWidgets/layout/settings_panel/test.c` 把底部 `compact / read only` preview 从手写 `consume_preview_touch()` 收口到控件自带 static preview API，并补上 `dismiss_primary_focus_on_preview_touch()`，保证点击 preview 时只清主控件 `panel_primary` focus；runtime 录制新增“主控件重新 request focus -> 点击 compact preview -> 截最终收尾帧”的动作链，用于复核 preview 点击后的焦点收口。
+  - `example/HelloUnitTest/test/test_settings_panel.c` 新增 preview panel / API 夹具与 “static preview consumes input and clears pressed state” 单测，并补齐 `set_font / set_meta_font / set_palette` 的 pressed 清理断言；`example/HelloCustomWidgets/layout/settings_panel/readme.md` 同步明确 `egui_view_settings_panel_override_static_preview_api()`、preview 点击只清主控件 focus 与 runtime 收尾约束。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=layout/settings_panel PORT=pc`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category layout`、`python scripts/checks/check_docs_encoding.py`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub layout/settings_panel --track reference --timeout 10 --keep-screenshots`，并复核 `runtime_check_output/HelloCustomWidgets_layout_settings_panel/default/frame_0000.png`、`frame_0009.png`、`frame_0011.png`，确认主控件和底部 `compact / read only` preview 全程完整可见，最终收尾帧没有黑白屏、裁切或异常重排。
+
+- `2026-04-12`
   - 完成 `layout/parallax_view` 交互与文档收口：在既有 `reference` 页面结构不再调整的前提下，把工作重点收回到 static preview API、preview 点击焦点收尾与最终验收闭环，继续保留符合 Fluent / WPF UI 语义的 `parallax_view` 主控件和底部 `compact / read only` 双 preview。
   - `example/HelloCustomWidgets/layout/parallax_view/egui_view_parallax_view.c/.h` 新增 `egui_view_parallax_view_override_static_preview_api()`，让静态 preview 统一吞掉 `touch / key` 并清理残留 `pressed`；同时把 `set_font()` 和 `set_meta_font()` 也收口到同一套 pressed 清理语义，避免 setter 更新后残留旧的下压态。
   - `example/HelloCustomWidgets/layout/parallax_view/test.c` 把底部 `compact / read only` preview 从手写 `consume_preview_touch()` 收口到控件自带 static preview API，并补上 `dismiss_primary_focus_on_preview_touch()`，保证点击 preview 时只清主控件 `parallax_primary` focus；runtime 录制新增“主控件重新 request focus -> 点击 compact preview -> 截最终收尾帧”的动作链，用于复核 preview 点击后的焦点收口。
