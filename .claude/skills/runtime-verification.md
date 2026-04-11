@@ -70,7 +70,9 @@ python scripts/code_runtime_check.py --app HelloCustomWidgets --category {CATEGO
 - 必须检查所有页面对应截图，不允许只看首页。
 - 如果录制动作里通过 `uicode_switch_page()` 切页，需要逐帧确认每页都有正确渲染。
 
-## 可选：手动多分辨率验证（布局改动/新控件建议执行）
+## 手动多分辨率验证
+
+本仓库默认不做多分辨率验证。只有用户明确要求时，才执行下面这套手动流程。
 
 `code_runtime_check.py` 当前没有 `--multi-resolution` 参数。需要手动改分辨率编译并录制：
 

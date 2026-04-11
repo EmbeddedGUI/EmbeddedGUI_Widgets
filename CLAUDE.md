@@ -66,6 +66,8 @@ python web/start_server.py --port 8080
 - Use simplified Chinese for discussion.
 - Keep code in UTF-8 and avoid Chinese in source code.
 - `iteration_log/` remains local-only evidence and must not be committed.
+- Runtime acceptance for this repository defaults to the configured app resolution only.
+- Do not run manual multi-resolution verification unless the user explicitly asks for it.
 - For widget implementation or iteration tasks, read:
   - `.claude/workflow/widget_acceptance_workflow.md`
   - `.claude/workflow/widget_progress_tracker.md`
