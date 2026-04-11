@@ -24,6 +24,8 @@ static egui_view_split_button_t button_primary;
 static egui_view_linearlayout_t bottom_row;
 static egui_view_split_button_t button_compact;
 static egui_view_split_button_t button_disabled;
+static egui_view_api_t button_compact_api;
+static egui_view_api_t button_disabled_api;
 
 EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
 EGUI_BACKGROUND_PARAM_INIT(bg_page_panel_params, &bg_page_panel_param, NULL, NULL);
@@ -47,25 +49,20 @@ static const egui_view_split_button_snapshot_t disabled_snapshots[] = {
         {"Locked", "PB", "Publish", "Visible but inactive", EGUI_VIEW_SPLIT_BUTTON_TONE_NEUTRAL, 0, 1, 1, EGUI_VIEW_SPLIT_BUTTON_PART_PRIMARY},
 };
 
-static int consume_preview_touch(egui_view_t *self, egui_motion_event_t *event)
+static int dismiss_primary_focus_on_preview_touch(egui_view_t *self, egui_motion_event_t *event)
 {
     EGUI_UNUSED(self);
 
-    if (event->type == EGUI_MOTION_EVENT_ACTION_UP || event->type == EGUI_MOTION_EVENT_ACTION_CANCEL)
+#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
+    if (event->type == EGUI_MOTION_EVENT_ACTION_DOWN)
     {
-        egui_view_set_pressed(self, 0);
+        egui_view_clear_focus(EGUI_VIEW_OF(&button_primary));
     }
-    return 1;
-}
-
-#if EGUI_CONFIG_FUNCTION_SUPPORT_KEY
-static int consume_preview_key(egui_view_t *self, egui_key_event_t *event)
-{
-    EGUI_UNUSED(self);
+#else
     EGUI_UNUSED(event);
+#endif
     return 1;
 }
-#endif
 
 static void apply_primary_snapshot(uint8_t index)
 {
@@ -130,10 +127,9 @@ void test_init_ui(void)
     egui_view_split_button_set_meta_font(EGUI_VIEW_OF(&button_compact), (const egui_font_t *)&egui_res_font_montserrat_8_4);
     egui_view_split_button_set_snapshots(EGUI_VIEW_OF(&button_compact), compact_snapshots, EGUI_ARRAY_SIZE(compact_snapshots));
     egui_view_split_button_set_compact_mode(EGUI_VIEW_OF(&button_compact), 1);
-    static egui_view_api_t button_compact_api;
-    egui_view_override_api_on_touch(EGUI_VIEW_OF(&button_compact), &button_compact_api, consume_preview_touch);
-#if EGUI_CONFIG_FUNCTION_SUPPORT_KEY
-    egui_view_override_api_on_key(EGUI_VIEW_OF(&button_compact), &button_compact_api, consume_preview_key);
+    egui_view_split_button_override_static_preview_api(EGUI_VIEW_OF(&button_compact), &button_compact_api);
+#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
+    button_compact_api.on_touch = dismiss_primary_focus_on_preview_touch;
 #endif
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&button_compact), 0);
@@ -151,6 +147,10 @@ void test_init_ui(void)
     egui_view_split_button_set_palette(EGUI_VIEW_OF(&button_disabled), EGUI_COLOR_HEX(0xFBFCFD), EGUI_COLOR_HEX(0xD7DEE5), EGUI_COLOR_HEX(0x53606C),
                                        EGUI_COLOR_HEX(0x8E98A3), EGUI_COLOR_HEX(0x97A4B2), EGUI_COLOR_HEX(0x93A594), EGUI_COLOR_HEX(0xB29A67),
                                        EGUI_COLOR_HEX(0xA58A86), EGUI_COLOR_HEX(0x98A3AE));
+    egui_view_split_button_override_static_preview_api(EGUI_VIEW_OF(&button_disabled), &button_disabled_api);
+#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
+    button_disabled_api.on_touch = dismiss_primary_focus_on_preview_touch;
+#endif
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&button_disabled), 0);
 #endif

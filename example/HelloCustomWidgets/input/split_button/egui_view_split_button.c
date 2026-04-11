@@ -103,11 +103,24 @@ static egui_color_t egui_view_split_button_mix_disabled(egui_color_t color)
 
 static uint8_t egui_view_split_button_clear_pressed_state(egui_view_t *self, egui_view_split_button_t *local)
 {
-    uint8_t had_pressed = self->is_pressed || local->pressed_part != EGUI_VIEW_SPLIT_BUTTON_PART_NONE;
+    uint8_t was_pressed = self->is_pressed ? 1 : 0;
+    uint8_t had_pressed = was_pressed || local->pressed_part != EGUI_VIEW_SPLIT_BUTTON_PART_NONE;
+
+    if (!had_pressed)
+    {
+        return 0;
+    }
 
     local->pressed_part = EGUI_VIEW_SPLIT_BUTTON_PART_NONE;
-    egui_view_set_pressed(self, false);
-    return had_pressed;
+    if (was_pressed)
+    {
+        egui_view_set_pressed(self, false);
+    }
+    else
+    {
+        egui_view_invalidate(self);
+    }
+    return 1;
 }
 
 static uint8_t egui_view_split_button_part_is_enabled(egui_view_split_button_t *local, egui_view_t *self, const egui_view_split_button_snapshot_t *snapshot,
@@ -370,15 +383,23 @@ void egui_view_split_button_set_on_part_changed_listener(egui_view_t *self, egui
 void egui_view_split_button_set_font(egui_view_t *self, const egui_font_t *font)
 {
     EGUI_LOCAL_INIT(egui_view_split_button_t);
+    uint8_t had_pressed = egui_view_split_button_clear_pressed_state(self, local);
     local->font = font ? font : (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT;
-    egui_view_invalidate(self);
+    if (!had_pressed)
+    {
+        egui_view_invalidate(self);
+    }
 }
 
 void egui_view_split_button_set_meta_font(egui_view_t *self, const egui_font_t *font)
 {
     EGUI_LOCAL_INIT(egui_view_split_button_t);
+    uint8_t had_pressed = egui_view_split_button_clear_pressed_state(self, local);
     local->meta_font = font ? font : (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT;
-    egui_view_invalidate(self);
+    if (!had_pressed)
+    {
+        egui_view_invalidate(self);
+    }
 }
 
 void egui_view_split_button_set_compact_mode(egui_view_t *self, uint8_t compact_mode)
@@ -424,6 +445,7 @@ void egui_view_split_button_set_palette(egui_view_t *self, egui_color_t surface_
                                         egui_color_t danger_color, egui_color_t neutral_color)
 {
     EGUI_LOCAL_INIT(egui_view_split_button_t);
+    uint8_t had_pressed = egui_view_split_button_clear_pressed_state(self, local);
     local->surface_color = surface_color;
     local->border_color = border_color;
     local->text_color = text_color;
@@ -433,7 +455,10 @@ void egui_view_split_button_set_palette(egui_view_t *self, egui_color_t surface_
     local->warning_color = warning_color;
     local->danger_color = danger_color;
     local->neutral_color = neutral_color;
-    egui_view_invalidate(self);
+    if (!had_pressed)
+    {
+        egui_view_invalidate(self);
+    }
 }
 
 static void egui_view_split_button_on_draw(egui_view_t *self)
@@ -666,6 +691,15 @@ static int egui_view_split_button_on_touch_event(egui_view_t *self, egui_motion_
         egui_view_set_pressed(self, true);
         egui_view_invalidate(self);
         return 1;
+    case EGUI_MOTION_EVENT_ACTION_MOVE:
+        if (local->pressed_part == EGUI_VIEW_SPLIT_BUTTON_PART_NONE)
+        {
+            return 0;
+        }
+        hit_part = egui_view_split_button_hit_part(local, self, event->location.x, event->location.y);
+        egui_view_set_pressed(self, hit_part == local->pressed_part &&
+                                            egui_view_split_button_part_is_enabled(local, self, snapshot, local->pressed_part));
+        return 1;
     case EGUI_MOTION_EVENT_ACTION_UP:
     {
         uint8_t handled;
@@ -745,6 +779,39 @@ static int egui_view_split_button_on_key_event(egui_view_t *self, egui_key_event
     }
 }
 #endif
+
+#if EGUI_CONFIG_FUNCTION_SUPPORT_KEY
+static int egui_view_split_button_on_static_key_event(egui_view_t *self, egui_key_event_t *event)
+{
+    EGUI_LOCAL_INIT(egui_view_split_button_t);
+
+    EGUI_UNUSED(event);
+    egui_view_split_button_clear_pressed_state(self, local);
+    return 1;
+}
+#endif
+
+#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
+static int egui_view_split_button_on_static_touch_event(egui_view_t *self, egui_motion_event_t *event)
+{
+    EGUI_LOCAL_INIT(egui_view_split_button_t);
+
+    EGUI_UNUSED(event);
+    egui_view_split_button_clear_pressed_state(self, local);
+    return 1;
+}
+#endif
+
+void egui_view_split_button_override_static_preview_api(egui_view_t *self, egui_view_api_t *api)
+{
+    egui_view_copy_api(self, api);
+#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
+    api->on_touch_event = egui_view_split_button_on_static_touch_event;
+#endif
+#if EGUI_CONFIG_FUNCTION_SUPPORT_KEY
+    api->on_key_event = egui_view_split_button_on_static_key_event;
+#endif
+}
 
 const egui_view_api_t EGUI_VIEW_API_TABLE_NAME(egui_view_split_button_t) = {
         .dispatch_touch_event = egui_view_dispatch_touch_event,
