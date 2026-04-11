@@ -17,14 +17,17 @@ static void hcw_toggle_button_apply_style(egui_view_t *self, egui_dim_t radius, 
                                           egui_dim_t gap)
 {
     egui_view_toggle_button_t *local = hcw_toggle_button_local(self);
+    uint8_t had_pressed = hcw_toggle_button_clear_pressed_state(self);
 
-    hcw_toggle_button_clear_pressed_state(self);
     local->corner_radius = radius;
     local->on_color = on_color;
     local->off_color = off_color;
     local->text_color = text_color;
     local->icon_text_gap = gap;
-    egui_view_invalidate(self);
+    if (!had_pressed)
+    {
+        egui_view_invalidate(self);
+    }
 }
 
 void hcw_toggle_button_apply_standard_style(egui_view_t *self)
@@ -64,8 +67,22 @@ static int hcw_toggle_button_on_touch_event(egui_view_t *self, egui_motion_event
             return 0;
         }
         egui_view_set_pressed(self, 1);
+#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
+        if (self->is_focusable)
+        {
+            egui_view_request_focus(self);
+        }
+        else if (!self->is_no_focus_clear)
+        {
+            egui_focus_manager_clear_focus();
+        }
+#endif
         return 1;
     case EGUI_MOTION_EVENT_ACTION_MOVE:
+        if (!egui_view_get_pressed(self) && !is_inside)
+        {
+            return 0;
+        }
         egui_view_set_pressed(self, is_inside);
         return 1;
     case EGUI_MOTION_EVENT_ACTION_UP:

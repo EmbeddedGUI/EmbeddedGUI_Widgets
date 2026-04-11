@@ -59,6 +59,21 @@ static const toggle_button_snapshot_t read_only_snapshot = {
 static uint8_t current_primary_snapshot = 0;
 static uint8_t current_compact_snapshot = 0;
 
+static int dismiss_primary_focus_on_preview_touch(egui_view_t *self, egui_motion_event_t *event)
+{
+    EGUI_UNUSED(self);
+
+#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
+    if (event->type == EGUI_MOTION_EVENT_ACTION_DOWN)
+    {
+        egui_view_clear_focus(EGUI_VIEW_OF(&button_primary));
+    }
+#else
+    EGUI_UNUSED(event);
+#endif
+    return 1;
+}
+
 static void apply_snapshot_to_button(egui_view_toggle_button_t *button, const toggle_button_snapshot_t *snapshot)
 {
     button->on_color = snapshot->on_color;
@@ -130,6 +145,7 @@ void test_init_ui(void)
     egui_view_set_padding(EGUI_VIEW_OF(&button_compact), 1, 1, 0, 0);
     static egui_view_api_t button_compact_preview_api;
     hcw_toggle_button_override_static_preview_api(EGUI_VIEW_OF(&button_compact), &button_compact_preview_api);
+    button_compact_preview_api.on_touch = dismiss_primary_focus_on_preview_touch;
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&button_compact), false);
 #endif
@@ -144,6 +160,7 @@ void test_init_ui(void)
     egui_view_set_padding(EGUI_VIEW_OF(&button_read_only), 1, 1, 0, 0);
     static egui_view_api_t button_read_only_preview_api;
     hcw_toggle_button_override_static_preview_api(EGUI_VIEW_OF(&button_read_only), &button_read_only_preview_api);
+    button_read_only_preview_api.on_touch = dismiss_primary_focus_on_preview_touch;
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&button_read_only), false);
 #endif

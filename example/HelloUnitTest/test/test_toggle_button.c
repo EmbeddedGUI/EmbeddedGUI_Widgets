@@ -50,15 +50,20 @@ static void layout_button(void)
     egui_region_copy(&EGUI_VIEW_OF(&test_button)->region_screen, &region);
 }
 
-static int send_touch(uint8_t type)
+static int send_touch_at(uint8_t type, egui_dim_t x, egui_dim_t y)
 {
     egui_motion_event_t event;
 
     memset(&event, 0, sizeof(event));
     event.type = type;
-    event.location.x = 40;
-    event.location.y = 36;
+    event.location.x = x;
+    event.location.y = y;
     return EGUI_VIEW_OF(&test_button)->api->on_touch_event(EGUI_VIEW_OF(&test_button), &event);
+}
+
+static int send_touch(uint8_t type)
+{
+    return send_touch_at(type, 40, 36);
 }
 
 static int send_key(uint8_t key_code)
@@ -167,6 +172,35 @@ static void test_toggle_button_touch_cancel_and_disabled_clear_pressed_state(voi
     EGUI_TEST_ASSERT_EQUAL_INT(0, toggled_count);
 }
 
+static void test_toggle_button_same_target_release_requires_return_to_origin(void)
+{
+    egui_dim_t inside_x = 40;
+    egui_dim_t inside_y = 36;
+    egui_dim_t outside_x = 4;
+    egui_dim_t outside_y = 4;
+
+    setup_button(0);
+    layout_button();
+
+    EGUI_TEST_ASSERT_TRUE(send_touch_at(EGUI_MOTION_EVENT_ACTION_DOWN, inside_x, inside_y));
+    EGUI_TEST_ASSERT_TRUE(egui_view_get_pressed(EGUI_VIEW_OF(&test_button)));
+    EGUI_TEST_ASSERT_TRUE(send_touch_at(EGUI_MOTION_EVENT_ACTION_MOVE, outside_x, outside_y));
+    EGUI_TEST_ASSERT_FALSE(egui_view_get_pressed(EGUI_VIEW_OF(&test_button)));
+    EGUI_TEST_ASSERT_FALSE(send_touch_at(EGUI_MOTION_EVENT_ACTION_UP, outside_x, outside_y));
+    EGUI_TEST_ASSERT_FALSE(egui_view_toggle_button_is_toggled(EGUI_VIEW_OF(&test_button)));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, toggled_count);
+
+    EGUI_TEST_ASSERT_TRUE(send_touch_at(EGUI_MOTION_EVENT_ACTION_DOWN, inside_x, inside_y));
+    EGUI_TEST_ASSERT_TRUE(send_touch_at(EGUI_MOTION_EVENT_ACTION_MOVE, outside_x, outside_y));
+    EGUI_TEST_ASSERT_FALSE(egui_view_get_pressed(EGUI_VIEW_OF(&test_button)));
+    EGUI_TEST_ASSERT_TRUE(send_touch_at(EGUI_MOTION_EVENT_ACTION_MOVE, inside_x, inside_y));
+    EGUI_TEST_ASSERT_TRUE(egui_view_get_pressed(EGUI_VIEW_OF(&test_button)));
+    EGUI_TEST_ASSERT_TRUE(send_touch_at(EGUI_MOTION_EVENT_ACTION_UP, inside_x, inside_y));
+    EGUI_TEST_ASSERT_TRUE(egui_view_toggle_button_is_toggled(EGUI_VIEW_OF(&test_button)));
+    EGUI_TEST_ASSERT_EQUAL_INT(1, toggled_count);
+    EGUI_TEST_ASSERT_EQUAL_INT(1, last_toggled);
+}
+
 static void test_toggle_button_unhandled_key_does_not_toggle(void)
 {
     setup_button(0);
@@ -220,6 +254,7 @@ void test_toggle_button_run(void)
     EGUI_TEST_RUN(test_toggle_button_setters_and_style_helpers_clear_pressed_state);
     EGUI_TEST_RUN(test_toggle_button_style_helpers_update_palette);
     EGUI_TEST_RUN(test_toggle_button_touch_cancel_and_disabled_clear_pressed_state);
+    EGUI_TEST_RUN(test_toggle_button_same_target_release_requires_return_to_origin);
     EGUI_TEST_RUN(test_toggle_button_unhandled_key_does_not_toggle);
     EGUI_TEST_RUN(test_toggle_button_disabled_key_event_clears_pressed_state);
     EGUI_TEST_RUN(test_toggle_button_static_preview_consumes_input_and_clears_pressed_state);

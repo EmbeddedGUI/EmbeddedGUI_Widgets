@@ -8,7 +8,7 @@
 - 对应组件名：`ToggleButton`
 - 本次保留状态：`standard`、`compact`、`read only`、`on`、`off`
 - 删除效果：页面级 guide、状态回显、`Standard` / `Compact` / `Read only` 外部标签、section divider、场景化轮播入口、复杂 hover / shadow / Acrylic 表达
-- EGUI 适配说明：保留单按钮 checked 语义、图标 + 文本组合和键盘 `Enter / Space` 闭环，在 `480 x 480` 页面里优先保证主按钮识别度与底部双预览对照稳定
+- EGUI 适配说明：保留单按钮 checked 语义、图标 + 文本组合和键盘 `Enter / Space` 闭环，在 `480 x 480` 页面里优先保证主按钮识别度与底部双预览对照稳定；主按钮补齐 `same-target release`，底部 `compact / read only` 统一通过 `hcw_toggle_button_override_static_preview_api()` 固定为静态 preview
 
 ## 1. 为什么需要这个控件
 
@@ -28,6 +28,7 @@
 - 主区域展示标准 `toggle_button`，保留图标 + 文本 + on/off 切换
 - 左下 `compact` 预览展示紧凑尺寸下的轻量 reference
 - 右下 `read only` 预览展示静态只读对照
+- 底部 `compact / read only` 预览统一通过 `hcw_toggle_button_override_static_preview_api()` 吞掉 touch / key；点击 preview 时只清主按钮 focus，不改 checked 状态
 - 示例页只保留标题、主按钮和底部 `compact / read only` 双预览，不再保留 guide、状态回显和标签点击入口
 
 目录：
@@ -102,13 +103,14 @@ python scripts/checks/check_docs_encoding.py
 - 页面中不再出现 guide、状态回显、section divider 和外部 preview 标签
 - `compact` 与 `read only` 必须保持 Fluent / WPF UI 的低噪音浅色 reference
 - 主按钮的 setter 更新、样式切换、`touch cancel`、`!enable` guard 和 key guard 之后都不能残留 `pressed` 覆盖层
+- 必须满足 `DOWN(inside) -> MOVE(outside) -> UP(outside)` 不切换，只有回到原命中区后 `UP(inside)` 才切换
 - `Enter / Space` 只允许在完整 `ACTION_DOWN -> ACTION_UP` 闭环后切换状态；无关按键不能留下残留 `pressed`
-- 底部 `compact / read only` 预览必须吞掉 touch / key 输入，并在收到输入后立即清理残留 `pressed`，保证静态对照渲染稳定
+- 底部 `compact / read only` 预览必须通过 `hcw_toggle_button_override_static_preview_api()` 吞掉 touch / key 输入，并在收到输入后立即清理残留 `pressed`，保证静态对照渲染稳定
 
 ## 9. 已知限制与后续方向
 
 - 当前版本只保留最小 checked command，不覆盖 toolbar group、menu button 组合关系
-- 当前 `read only` 通过吞掉输入事件实现静态对照，不额外引入独立 API
+- 当前 `read only` 通过 `hcw_toggle_button_override_static_preview_api()` 与 preview 样式包装实现静态对照，不引入额外业务状态
 - 当前不做 hover、focus ring、Acrylic 和系统级主题动画
 - 若后续要沉入框架层，再单独评估与命令栏、导航栏和表单系统的联动
 
@@ -146,6 +148,6 @@ python scripts/checks/check_docs_encoding.py
 
 - 基于现有 `egui_view_toggle_button` 核心控件做示例级 reference 收口，不下沉到框架层
 - 颜色与圆角由当前目录的样式包装统一收敛
-- 主按钮保留最小键盘闭环，底部 `compact` 与 `read only` 固定为静态对照
-- 本轮示例层额外补了一层 touch / key 包装，用来统一清理 `pressed`、拦截禁用态输入，并保证静态 preview 不会误切换
+- 主按钮保留最小键盘闭环，底部 `compact` 与 `read only` 通过 `hcw_toggle_button_override_static_preview_api()` 固定为静态对照
+- 本轮示例层额外补了一层 touch / key 包装，用来统一清理 `pressed`、保证 `same-target release`、拦截禁用态输入，并确保静态 preview 不会误切换
 - 先完成示例级审阅稳定性，再评估是否抽象出更完整的 read-only / focus API
