@@ -1,7 +1,7 @@
 #ifndef _HELLO_CUSTOM_WIDGETS_SEGMENTED_CONTROL_STYLE_H_
 #define _HELLO_CUSTOM_WIDGETS_SEGMENTED_CONTROL_STYLE_H_
 
-#include "../../../../sdk/EmbeddedGUI/src/widget/egui_view_segmented_control.h"
+#include "egui.h"
 
 #ifdef __cplusplus
 extern "C" {

@@ -426,6 +426,39 @@ static void test_segmented_control_touch_interaction_and_hit_layout(void)
     EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, x0, y0));
 }
 
+static void test_segmented_control_same_target_release_requires_return_to_origin(void)
+{
+    egui_dim_t x1;
+    egui_dim_t y1;
+    egui_dim_t x2;
+    egui_dim_t y2;
+
+    setup_control();
+    layout_control(180, 36);
+    get_segment_center(1, &x1, &y1);
+    get_segment_center(2, &x2, &y2);
+
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x2, y2));
+    EGUI_TEST_ASSERT_EQUAL_INT(2, test_control.pressed_index);
+    EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&test_control)->is_pressed);
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_MOVE, x1, y1));
+    EGUI_TEST_ASSERT_EQUAL_INT(2, test_control.pressed_index);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_control)->is_pressed);
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, x1, y1));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_segmented_control_get_current_index(EGUI_VIEW_OF(&test_control)));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, g_changed_count);
+
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x2, y2));
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_MOVE, x1, y1));
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_control)->is_pressed);
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_MOVE, x2, y2));
+    EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&test_control)->is_pressed);
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, x2, y2));
+    EGUI_TEST_ASSERT_EQUAL_INT(2, egui_view_segmented_control_get_current_index(EGUI_VIEW_OF(&test_control)));
+    EGUI_TEST_ASSERT_EQUAL_INT(1, g_changed_count);
+    EGUI_TEST_ASSERT_EQUAL_INT(2, g_last_index);
+}
+
 static void test_segmented_control_keyboard_navigation_and_guards(void)
 {
     setup_control();
@@ -582,6 +615,7 @@ void test_segmented_control_run(void)
     EGUI_TEST_RUN(test_segmented_control_wrapper_setters_clear_pressed_state);
     EGUI_TEST_RUN(test_segmented_control_style_helpers_and_params);
     EGUI_TEST_RUN(test_segmented_control_touch_interaction_and_hit_layout);
+    EGUI_TEST_RUN(test_segmented_control_same_target_release_requires_return_to_origin);
     EGUI_TEST_RUN(test_segmented_control_keyboard_navigation_and_guards);
     EGUI_TEST_RUN(test_segmented_control_static_preview_consumes_input);
     EGUI_TEST_SUITE_END();
