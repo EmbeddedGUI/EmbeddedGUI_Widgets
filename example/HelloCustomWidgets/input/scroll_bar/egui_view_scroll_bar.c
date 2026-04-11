@@ -918,6 +918,18 @@ static int egui_view_scroll_bar_on_touch_event(egui_view_t *self, egui_motion_ev
         return 0;
     }
 }
+
+static int egui_view_scroll_bar_on_static_touch_event(egui_view_t *self, egui_motion_event_t *event)
+{
+    EGUI_LOCAL_INIT(egui_view_scroll_bar_t);
+    EGUI_UNUSED(event);
+
+    if (scroll_bar_clear_pressed_state(self, local))
+    {
+        egui_view_invalidate(self);
+    }
+    return 1;
+}
 #endif
 
 uint8_t egui_view_scroll_bar_handle_navigation_key(egui_view_t *self, uint8_t key_code)
@@ -1041,6 +1053,18 @@ static int egui_view_scroll_bar_on_key_event(egui_view_t *self, egui_key_event_t
     }
 
     return egui_view_on_key_event(self, event);
+}
+
+static int egui_view_scroll_bar_on_static_key_event(egui_view_t *self, egui_key_event_t *event)
+{
+    EGUI_LOCAL_INIT(egui_view_scroll_bar_t);
+    EGUI_UNUSED(event);
+
+    if (scroll_bar_clear_pressed_state(self, local))
+    {
+        egui_view_invalidate(self);
+    }
+    return 1;
 }
 #endif
 
@@ -1248,6 +1272,17 @@ void egui_view_scroll_bar_set_on_changed_listener(egui_view_t *self, egui_view_o
 {
     EGUI_LOCAL_INIT(egui_view_scroll_bar_t);
     local->on_changed = listener;
+}
+
+void egui_view_scroll_bar_override_static_preview_api(egui_view_t *self, egui_view_api_t *api)
+{
+    egui_view_copy_api(self, api);
+#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
+    api->on_touch_event = egui_view_scroll_bar_on_static_touch_event;
+#endif
+#if EGUI_CONFIG_FUNCTION_SUPPORT_KEY
+    api->on_key_event = egui_view_scroll_bar_on_static_key_event;
+#endif
 }
 
 uint8_t egui_view_scroll_bar_get_part_region(egui_view_t *self, uint8_t part, egui_region_t *region)

@@ -24,6 +24,7 @@
 - 主区域展示标准 `scroll_bar`，覆盖 `Document rail`、`Timeline rail`、`Audit rail` 三组 snapshot
 - 左下 `compact` 预览展示紧凑比例摘要
 - 右下 `read only` 预览展示可见但不可交互的锁定对照
+- 底部两个 preview 统一通过 `egui_view_scroll_bar_override_static_preview_api()` 固定为静态 reference，对预览的点击只负责清掉主控件 focus，不再触发 offset 变化
 - 主控件保留真实键盘 `Tab / Up / Down / Home / End / +/- / Enter / Space / Esc` 闭环
 - 主控件底层仍支持真实 touch：减按钮、轨道分页、thumb 拖拽
 - 页面只保留标题、主 `scroll_bar` 和底部 `compact / read only` 双预览，不再保留旧版 `guide`、状态文本、分隔线和 label-click 场景切换
@@ -79,8 +80,9 @@
 8. 抓取第四帧收尾位置
 9. 程序化把主控件切到 `Timeline rail`
 10. 抓取第五帧第二组主状态
-11. 程序化把 `compact` 预览切到第二组比例摘要
-12. 抓取最终收尾截图并保留静态 `read only` 对照
+11. 程序化把 `compact` 预览切到第二组比例摘要，并把焦点重新请求到主控件
+12. 点击 `compact` preview，验证静态 preview 吞掉 touch 且只清主控件 focus
+13. 抓取最终收尾截图并保留静态 `read only` 对照
 
 ## 8. 编译、runtime、截图验收标准
 ```bash
@@ -98,6 +100,8 @@ python scripts/checks/check_docs_encoding.py
 - 键盘 `Down / + / End` 结果必须清晰可辨
 - 页面中不再出现旧版 `guide`、状态回显、分隔线和外部 `preview` 标签
 - `compact` 与 `read only` 必须保持 Fluent / WPF UI 风格的低噪音浅色 reference
+- `compact / read only` preview 必须统一走 `egui_view_scroll_bar_override_static_preview_api()`，吞掉 touch / key 且不改变 `offset / current_part`
+- 点击 preview 后只能清掉 `scroll_bar_primary` 的 focus，不能让 preview 抢占焦点，也不能残留主控件 focus ring
 - `content metrics / step size / offset / current part / compact / read only / view disabled` 切换链路需要共用同一套 `pressed` 清理语义
 - setter 更新、模式切换或焦点丢失后，不能残留 `decrease / track / thumb / increase` 的 `pressed` 高亮、下压位移或拖拽态渲染
 - `compact / read_only_mode / !enable` 收到新的 touch 或 key 输入时，必须先清理残留 pressed，再拒绝后续交互
@@ -141,6 +145,6 @@ python scripts/checks/check_docs_encoding.py
 ## 14. EGUI 适配时的简化点与约束
 - 使用固定 snapshot 驱动 reference，优先保证 `480 x 480` 下的稳定审阅
 - 主控件保留 `label + helper + viewport preview + rail` 四段结构
-- `compact` 预览通过 `compact_mode + touch/key override` 固定为静态对照
-- `read only` 预览通过 `read_only_mode + compact_mode` 固定为静态锁定态
+- `compact` 预览通过 `compact_mode + egui_view_scroll_bar_override_static_preview_api()` 固定为静态对照
+- `read only` 预览通过 `read_only_mode + compact_mode + egui_view_scroll_bar_override_static_preview_api()` 固定为静态锁定态
 - 交互收口阶段统一要求 setter、模式切换、禁用 guard、`touch cancel` 和 focus lost 都能清理残留 `pressed`，确保交互后的渲染稳定

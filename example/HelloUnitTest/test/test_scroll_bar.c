@@ -8,6 +8,8 @@
 #include "../../HelloCustomWidgets/input/scroll_bar/egui_view_scroll_bar.c"
 
 static egui_view_scroll_bar_t test_scroll_bar;
+static egui_view_scroll_bar_t preview_scroll_bar;
+static egui_view_api_t preview_api;
 
 static void setup_scroll_bar(egui_dim_t content_length, egui_dim_t viewport_length, egui_dim_t offset, egui_dim_t line_step, egui_dim_t page_step)
 {
@@ -54,6 +56,51 @@ static int send_key(uint8_t key_code)
     event.type = EGUI_KEY_EVENT_ACTION_UP;
     handled |= EGUI_VIEW_OF(&test_scroll_bar)->api->on_key_event(EGUI_VIEW_OF(&test_scroll_bar), &event);
     return handled;
+}
+
+static void setup_preview_scroll_bar(void)
+{
+    egui_view_scroll_bar_init(EGUI_VIEW_OF(&preview_scroll_bar));
+    egui_view_set_size(EGUI_VIEW_OF(&preview_scroll_bar), 104, 52);
+    egui_view_scroll_bar_set_content_metrics(EGUI_VIEW_OF(&preview_scroll_bar), 540, 160);
+    egui_view_scroll_bar_set_step_size(EGUI_VIEW_OF(&preview_scroll_bar), 16, 96);
+    egui_view_scroll_bar_set_offset(EGUI_VIEW_OF(&preview_scroll_bar), 96);
+    egui_view_scroll_bar_set_current_part(EGUI_VIEW_OF(&preview_scroll_bar), EGUI_VIEW_SCROLL_BAR_PART_THUMB);
+    egui_view_scroll_bar_set_compact_mode(EGUI_VIEW_OF(&preview_scroll_bar), 1);
+    egui_view_scroll_bar_override_static_preview_api(EGUI_VIEW_OF(&preview_scroll_bar), &preview_api);
+}
+
+static void layout_preview_scroll_bar(void)
+{
+    egui_region_t region;
+
+    region.location.x = 10;
+    region.location.y = 20;
+    region.size.width = 104;
+    region.size.height = 52;
+    egui_view_layout(EGUI_VIEW_OF(&preview_scroll_bar), &region);
+    egui_region_copy(&EGUI_VIEW_OF(&preview_scroll_bar)->region_screen, &region);
+}
+
+static int send_preview_touch(uint8_t type, egui_dim_t x, egui_dim_t y)
+{
+    egui_motion_event_t event;
+
+    memset(&event, 0, sizeof(event));
+    event.type = type;
+    event.location.x = x;
+    event.location.y = y;
+    return EGUI_VIEW_OF(&preview_scroll_bar)->api->on_touch_event(EGUI_VIEW_OF(&preview_scroll_bar), &event);
+}
+
+static int send_preview_key_action(uint8_t type, uint8_t key_code)
+{
+    egui_key_event_t event;
+
+    memset(&event, 0, sizeof(event));
+    event.type = type;
+    event.key_code = key_code;
+    return EGUI_VIEW_OF(&preview_scroll_bar)->api->on_key_event(EGUI_VIEW_OF(&preview_scroll_bar), &event);
 }
 
 static void test_scroll_bar_setters_clear_pressed_state_and_clamp(void)
@@ -394,6 +441,40 @@ static void test_scroll_bar_clamps_metrics_and_offset(void)
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_scroll_bar_get_offset(EGUI_VIEW_OF(&test_scroll_bar)));
 }
 
+static void test_scroll_bar_static_preview_consumes_input_and_clears_pressed_state(void)
+{
+    egui_dim_t x;
+    egui_dim_t y;
+
+    setup_preview_scroll_bar();
+    layout_preview_scroll_bar();
+    x = EGUI_VIEW_OF(&preview_scroll_bar)->region_screen.location.x + EGUI_VIEW_OF(&preview_scroll_bar)->region_screen.size.width / 2;
+    y = EGUI_VIEW_OF(&preview_scroll_bar)->region_screen.location.y + EGUI_VIEW_OF(&preview_scroll_bar)->region_screen.size.height / 2;
+
+    EGUI_VIEW_OF(&preview_scroll_bar)->is_pressed = true;
+    preview_scroll_bar.pressed_part = EGUI_VIEW_SCROLL_BAR_PART_THUMB;
+    preview_scroll_bar.pressed_track_direction = 2;
+    preview_scroll_bar.thumb_dragging = 1;
+    EGUI_TEST_ASSERT_TRUE(send_preview_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&preview_scroll_bar)->is_pressed);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_SCROLL_BAR_PART_NONE, preview_scroll_bar.pressed_part);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, preview_scroll_bar.pressed_track_direction);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, preview_scroll_bar.thumb_dragging);
+    EGUI_TEST_ASSERT_EQUAL_INT(96, egui_view_scroll_bar_get_offset(EGUI_VIEW_OF(&preview_scroll_bar)));
+
+    EGUI_VIEW_OF(&preview_scroll_bar)->is_pressed = true;
+    preview_scroll_bar.pressed_part = EGUI_VIEW_SCROLL_BAR_PART_DECREASE;
+    preview_scroll_bar.pressed_track_direction = 1;
+    preview_scroll_bar.thumb_dragging = 1;
+    EGUI_TEST_ASSERT_TRUE(send_preview_key_action(EGUI_KEY_EVENT_ACTION_DOWN, EGUI_KEY_CODE_ENTER));
+    EGUI_TEST_ASSERT_TRUE(send_preview_key_action(EGUI_KEY_EVENT_ACTION_UP, EGUI_KEY_CODE_ENTER));
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&preview_scroll_bar)->is_pressed);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_SCROLL_BAR_PART_NONE, preview_scroll_bar.pressed_part);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, preview_scroll_bar.pressed_track_direction);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, preview_scroll_bar.thumb_dragging);
+    EGUI_TEST_ASSERT_EQUAL_INT(96, egui_view_scroll_bar_get_offset(EGUI_VIEW_OF(&preview_scroll_bar)));
+}
+
 void test_scroll_bar_run(void)
 {
     EGUI_TEST_SUITE_BEGIN(scroll_bar);
@@ -410,5 +491,6 @@ void test_scroll_bar_run(void)
     EGUI_TEST_RUN(test_scroll_bar_read_only_mode_clears_pressed_and_ignores_input);
     EGUI_TEST_RUN(test_scroll_bar_disabled_ignores_input_and_clears_pressed_state);
     EGUI_TEST_RUN(test_scroll_bar_clamps_metrics_and_offset);
+    EGUI_TEST_RUN(test_scroll_bar_static_preview_consumes_input_and_clears_pressed_state);
     EGUI_TEST_SUITE_END();
 }
