@@ -8,6 +8,8 @@
 #include "../../HelloCustomWidgets/input/command_bar/egui_view_command_bar.c"
 
 static egui_view_command_bar_t test_bar;
+static egui_view_command_bar_t preview_bar;
+static egui_view_api_t preview_api;
 static uint8_t changed_count;
 static uint8_t last_index;
 
@@ -81,6 +83,28 @@ static void layout_bar(void)
     egui_region_copy(&EGUI_VIEW_OF(&test_bar)->region_screen, &region);
 }
 
+static void setup_preview_bar(void)
+{
+    egui_view_command_bar_init(EGUI_VIEW_OF(&preview_bar));
+    egui_view_set_size(EGUI_VIEW_OF(&preview_bar), 104, 64);
+    egui_view_command_bar_set_snapshots(EGUI_VIEW_OF(&preview_bar), g_snapshots, 3);
+    egui_view_command_bar_set_compact_mode(EGUI_VIEW_OF(&preview_bar), 1);
+    egui_view_command_bar_set_current_snapshot(EGUI_VIEW_OF(&preview_bar), 1);
+    egui_view_command_bar_override_static_preview_api(EGUI_VIEW_OF(&preview_bar), &preview_api);
+}
+
+static void layout_preview_bar(void)
+{
+    egui_region_t region;
+
+    region.location.x = 10;
+    region.location.y = 20;
+    region.size.width = 104;
+    region.size.height = 64;
+    egui_view_layout(EGUI_VIEW_OF(&preview_bar), &region);
+    egui_region_copy(&EGUI_VIEW_OF(&preview_bar)->region_screen, &region);
+}
+
 static int send_touch(uint8_t type, egui_dim_t x, egui_dim_t y)
 {
     egui_motion_event_t event;
@@ -90,6 +114,17 @@ static int send_touch(uint8_t type, egui_dim_t x, egui_dim_t y)
     event.location.x = x;
     event.location.y = y;
     return EGUI_VIEW_OF(&test_bar)->api->on_touch_event(EGUI_VIEW_OF(&test_bar), &event);
+}
+
+static int send_preview_touch(uint8_t type, egui_dim_t x, egui_dim_t y)
+{
+    egui_motion_event_t event;
+
+    memset(&event, 0, sizeof(event));
+    event.type = type;
+    event.location.x = x;
+    event.location.y = y;
+    return EGUI_VIEW_OF(&preview_bar)->api->on_touch_event(EGUI_VIEW_OF(&preview_bar), &event);
 }
 
 static int send_key(uint8_t key_code)
@@ -104,6 +139,16 @@ static int send_key(uint8_t key_code)
     event.type = EGUI_KEY_EVENT_ACTION_UP;
     handled |= EGUI_VIEW_OF(&test_bar)->api->on_key_event(EGUI_VIEW_OF(&test_bar), &event);
     return handled;
+}
+
+static int send_preview_key_action(uint8_t type, uint8_t key_code)
+{
+    egui_key_event_t event;
+
+    memset(&event, 0, sizeof(event));
+    event.type = type;
+    event.key_code = key_code;
+    return EGUI_VIEW_OF(&preview_bar)->api->on_key_event(EGUI_VIEW_OF(&preview_bar), &event);
 }
 
 static void get_metrics(egui_view_command_bar_metrics_t *metrics)
@@ -562,6 +607,34 @@ static void test_command_bar_internal_helpers_cover_metrics_measurements_and_sta
     EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(sample, EGUI_COLOR_DARK_GREY, 68).full, mixed.full);
 }
 
+static void test_command_bar_static_preview_consumes_input_and_clears_pressed_state(void)
+{
+    egui_dim_t x;
+    egui_dim_t y;
+
+    setup_preview_bar();
+    layout_preview_bar();
+    x = EGUI_VIEW_OF(&preview_bar)->region_screen.location.x + EGUI_VIEW_OF(&preview_bar)->region_screen.size.width / 2;
+    y = EGUI_VIEW_OF(&preview_bar)->region_screen.location.y + EGUI_VIEW_OF(&preview_bar)->region_screen.size.height / 2;
+
+    EGUI_VIEW_OF(&preview_bar)->is_pressed = true;
+    preview_bar.pressed_index = 2;
+    EGUI_TEST_ASSERT_TRUE(send_preview_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&preview_bar)->is_pressed);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_COMMAND_BAR_INDEX_NONE, preview_bar.pressed_index);
+    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_command_bar_get_current_snapshot(EGUI_VIEW_OF(&preview_bar)));
+    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_command_bar_get_current_index(EGUI_VIEW_OF(&preview_bar)));
+
+    EGUI_VIEW_OF(&preview_bar)->is_pressed = true;
+    preview_bar.pressed_index = 0;
+    EGUI_TEST_ASSERT_TRUE(send_preview_key_action(EGUI_KEY_EVENT_ACTION_DOWN, EGUI_KEY_CODE_ENTER));
+    EGUI_TEST_ASSERT_TRUE(send_preview_key_action(EGUI_KEY_EVENT_ACTION_UP, EGUI_KEY_CODE_ENTER));
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&preview_bar)->is_pressed);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_COMMAND_BAR_INDEX_NONE, preview_bar.pressed_index);
+    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_command_bar_get_current_snapshot(EGUI_VIEW_OF(&preview_bar)));
+    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_command_bar_get_current_index(EGUI_VIEW_OF(&preview_bar)));
+}
+
 void test_command_bar_run(void)
 {
     EGUI_TEST_SUITE_BEGIN(command_bar);
@@ -574,5 +647,6 @@ void test_command_bar_run(void)
     EGUI_TEST_RUN(test_command_bar_compact_mode_clears_pressed_and_ignores_input);
     EGUI_TEST_RUN(test_command_bar_keyboard_navigation_and_guards);
     EGUI_TEST_RUN(test_command_bar_internal_helpers_cover_metrics_measurements_and_states);
+    EGUI_TEST_RUN(test_command_bar_static_preview_consumes_input_and_clears_pressed_state);
     EGUI_TEST_SUITE_END();
 }

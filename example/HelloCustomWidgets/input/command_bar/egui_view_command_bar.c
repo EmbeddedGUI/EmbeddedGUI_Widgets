@@ -55,6 +55,13 @@ struct egui_view_command_bar_metrics
     uint8_t visible_item_count;
 };
 
+#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
+static int egui_view_command_bar_on_static_touch_event(egui_view_t *self, egui_motion_event_t *event);
+#endif
+#if EGUI_CONFIG_FUNCTION_SUPPORT_KEY
+static int egui_view_command_bar_on_static_key_event(egui_view_t *self, egui_key_event_t *event);
+#endif
+
 static uint8_t egui_view_command_bar_clamp_snapshot_count(uint8_t count)
 {
     if (count > EGUI_VIEW_COMMAND_BAR_MAX_SNAPSHOTS)
@@ -776,6 +783,17 @@ void egui_view_command_bar_set_palette(egui_view_t *self, egui_color_t surface_c
     egui_view_invalidate(self);
 }
 
+void egui_view_command_bar_override_static_preview_api(egui_view_t *self, egui_view_api_t *api)
+{
+    egui_view_copy_api(self, api);
+#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
+    api->on_touch_event = egui_view_command_bar_on_static_touch_event;
+#endif
+#if EGUI_CONFIG_FUNCTION_SUPPORT_KEY
+    api->on_key_event = egui_view_command_bar_on_static_key_event;
+#endif
+}
+
 static void egui_view_command_bar_draw_item(egui_view_t *self, egui_view_command_bar_t *local, const egui_view_command_bar_item_t *item,
                                             const egui_region_t *item_region, uint8_t index)
 {
@@ -1118,6 +1136,18 @@ static int egui_view_command_bar_on_touch_event(egui_view_t *self, egui_motion_e
         return 0;
     }
 }
+
+static int egui_view_command_bar_on_static_touch_event(egui_view_t *self, egui_motion_event_t *event)
+{
+    EGUI_LOCAL_INIT(egui_view_command_bar_t);
+    EGUI_UNUSED(event);
+
+    if (egui_view_command_bar_clear_pressed_state(self, local))
+    {
+        egui_view_invalidate(self);
+    }
+    return 1;
+}
 #endif
 
 #if EGUI_CONFIG_FUNCTION_SUPPORT_KEY
@@ -1163,6 +1193,18 @@ static int egui_view_command_bar_on_key_event(egui_view_t *self, egui_key_event_
     default:
         return egui_view_on_key_event(self, event);
     }
+}
+
+static int egui_view_command_bar_on_static_key_event(egui_view_t *self, egui_key_event_t *event)
+{
+    EGUI_LOCAL_INIT(egui_view_command_bar_t);
+    EGUI_UNUSED(event);
+
+    if (egui_view_command_bar_clear_pressed_state(self, local))
+    {
+        egui_view_invalidate(self);
+    }
+    return 1;
 }
 #endif
 

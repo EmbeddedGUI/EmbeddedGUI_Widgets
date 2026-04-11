@@ -24,6 +24,8 @@ static egui_view_command_bar_t bar_primary;
 static egui_view_linearlayout_t bottom_row;
 static egui_view_command_bar_t bar_compact;
 static egui_view_command_bar_t bar_disabled;
+static egui_view_api_t bar_compact_api;
+static egui_view_api_t bar_disabled_api;
 
 EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
 EGUI_BACKGROUND_PARAM_INIT(bg_page_panel_params, &bg_page_panel_param, NULL, NULL);
@@ -95,26 +97,20 @@ static const egui_view_command_bar_snapshot_t compact_snapshots[] = {
 static const egui_view_command_bar_snapshot_t disabled_snapshot = {
         "Locked", "Disabled rail", "Read only", "Visible but inactive", disabled_items, EGUI_ARRAY_SIZE(disabled_items), 0};
 
-static int consume_preview_touch(egui_view_t *self, egui_motion_event_t *event)
+static int dismiss_primary_focus_on_preview_touch(egui_view_t *self, egui_motion_event_t *event)
 {
     EGUI_UNUSED(self);
 
-    if (event->type == EGUI_MOTION_EVENT_ACTION_UP || event->type == EGUI_MOTION_EVENT_ACTION_CANCEL)
+#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
+    if (event->type == EGUI_MOTION_EVENT_ACTION_DOWN)
     {
-        egui_view_set_pressed(self, 0);
+        egui_view_clear_focus(EGUI_VIEW_OF(&bar_primary));
     }
-
-    return 1;
-}
-
-#if EGUI_CONFIG_FUNCTION_SUPPORT_KEY
-static int consume_preview_key(egui_view_t *self, egui_key_event_t *event)
-{
-    EGUI_UNUSED(self);
+#else
     EGUI_UNUSED(event);
+#endif
     return 1;
 }
-#endif
 
 static void apply_primary_snapshot(uint8_t index)
 {
@@ -127,6 +123,17 @@ static void apply_compact_snapshot(uint8_t index)
 }
 
 #if EGUI_CONFIG_RECORDING_TEST
+static void set_click_view_center(egui_sim_action_t *p_action, egui_view_t *view, int interval_ms)
+{
+    p_action->type = EGUI_SIM_ACTION_CLICK;
+    p_action->x1 = view->region_screen.location.x + view->region_screen.size.width / 2;
+    p_action->y1 = view->region_screen.location.y + view->region_screen.size.height / 2;
+    p_action->x2 = 0;
+    p_action->y2 = 0;
+    p_action->steps = 0;
+    p_action->interval_ms = interval_ms;
+}
+
 static void apply_primary_key(uint8_t key_code)
 {
     egui_key_event_t event = {0};
@@ -179,10 +186,9 @@ void test_init_ui(void)
     egui_view_command_bar_set_meta_font(EGUI_VIEW_OF(&bar_compact), (const egui_font_t *)&egui_res_font_montserrat_8_4);
     egui_view_command_bar_set_snapshots(EGUI_VIEW_OF(&bar_compact), compact_snapshots, EGUI_ARRAY_SIZE(compact_snapshots));
     egui_view_command_bar_set_compact_mode(EGUI_VIEW_OF(&bar_compact), 1);
-    static egui_view_api_t bar_compact_api;
-    egui_view_override_api_on_touch(EGUI_VIEW_OF(&bar_compact), &bar_compact_api, consume_preview_touch);
-#if EGUI_CONFIG_FUNCTION_SUPPORT_KEY
-    egui_view_override_api_on_key(EGUI_VIEW_OF(&bar_compact), &bar_compact_api, consume_preview_key);
+    egui_view_command_bar_override_static_preview_api(EGUI_VIEW_OF(&bar_compact), &bar_compact_api);
+#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
+    bar_compact_api.on_touch = dismiss_primary_focus_on_preview_touch;
 #endif
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&bar_compact), 0);
@@ -200,10 +206,9 @@ void test_init_ui(void)
     egui_view_command_bar_set_palette(EGUI_VIEW_OF(&bar_disabled), EGUI_COLOR_HEX(0xFBFCFD), EGUI_COLOR_HEX(0xF7F9FB), EGUI_COLOR_HEX(0xD8E0E7),
                                       EGUI_COLOR_HEX(0x50606F), EGUI_COLOR_HEX(0x8C98A5), EGUI_COLOR_HEX(0x90A0AE), EGUI_COLOR_HEX(0x93A594),
                                       EGUI_COLOR_HEX(0xB29A67), EGUI_COLOR_HEX(0xA48B88), EGUI_COLOR_HEX(0x95A2AF));
-    static egui_view_api_t bar_disabled_api;
-    egui_view_override_api_on_touch(EGUI_VIEW_OF(&bar_disabled), &bar_disabled_api, consume_preview_touch);
-#if EGUI_CONFIG_FUNCTION_SUPPORT_KEY
-    egui_view_override_api_on_key(EGUI_VIEW_OF(&bar_disabled), &bar_disabled_api, consume_preview_key);
+    egui_view_command_bar_override_static_preview_api(EGUI_VIEW_OF(&bar_disabled), &bar_disabled_api);
+#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
+    bar_disabled_api.on_touch = dismiss_primary_focus_on_preview_touch;
 #endif
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&bar_disabled), 0);
@@ -220,6 +225,9 @@ void test_init_ui(void)
 
     egui_core_add_user_root_view(EGUI_VIEW_OF(&root_layout));
     egui_core_layout_childs_user_root_view(EGUI_LAYOUT_VERTICAL, EGUI_ALIGN_HCENTER | EGUI_ALIGN_VCENTER);
+#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
+    egui_view_request_focus(EGUI_VIEW_OF(&bar_primary));
+#endif
 }
 
 #if EGUI_CONFIG_RECORDING_TEST
@@ -237,6 +245,9 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
         {
             apply_primary_snapshot(0);
             apply_compact_snapshot(0);
+#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
+            egui_view_request_focus(EGUI_VIEW_OF(&bar_primary));
+#endif
         }
         EGUI_SIM_SET_WAIT(p_action, COMMAND_BAR_RECORD_WAIT);
         return true;
@@ -300,6 +311,28 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
         EGUI_SIM_SET_WAIT(p_action, COMMAND_BAR_RECORD_WAIT);
         return true;
     case 9:
+        if (first_call)
+        {
+            recording_request_snapshot();
+        }
+        EGUI_SIM_SET_WAIT(p_action, COMMAND_BAR_RECORD_FRAME_WAIT);
+        return true;
+    case 10:
+        if (first_call)
+        {
+#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
+            egui_view_request_focus(EGUI_VIEW_OF(&bar_primary));
+#endif
+        }
+        EGUI_SIM_SET_WAIT(p_action, COMMAND_BAR_RECORD_WAIT);
+        return true;
+    case 11:
+        if (first_call)
+        {
+            set_click_view_center(p_action, EGUI_VIEW_OF(&bar_compact), 220);
+        }
+        return true;
+    case 12:
         if (first_call)
         {
             recording_request_snapshot();
