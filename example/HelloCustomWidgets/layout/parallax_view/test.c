@@ -24,6 +24,8 @@ static egui_view_parallax_view_t parallax_primary;
 static egui_view_linearlayout_t bottom_row;
 static egui_view_parallax_view_t parallax_compact;
 static egui_view_parallax_view_t parallax_read_only;
+static egui_view_api_t parallax_compact_api;
+static egui_view_api_t parallax_read_only_api;
 
 EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
 EGUI_BACKGROUND_PARAM_INIT(bg_page_panel_params, &bg_page_panel_param, NULL, NULL);
@@ -88,12 +90,33 @@ static void apply_read_only_state(void)
     egui_view_parallax_view_set_offset(EGUI_VIEW_OF(&parallax_read_only), read_only_rows[1].anchor_offset);
 }
 
-static int consume_preview_touch(egui_view_t *self, egui_motion_event_t *event)
+static int dismiss_primary_focus_on_preview_touch(egui_view_t *self, egui_motion_event_t *event)
 {
     EGUI_UNUSED(self);
+
+#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
+    if (event->type == EGUI_MOTION_EVENT_ACTION_DOWN)
+    {
+        egui_view_clear_focus(EGUI_VIEW_OF(&parallax_primary));
+    }
+#else
     EGUI_UNUSED(event);
+#endif
     return 1;
 }
+
+#if EGUI_CONFIG_RECORDING_TEST
+static void set_click_view_center(egui_sim_action_t *p_action, egui_view_t *view, int interval_ms)
+{
+    p_action->type = EGUI_SIM_ACTION_CLICK;
+    p_action->x1 = view->region_screen.location.x + view->region_screen.size.width / 2;
+    p_action->y1 = view->region_screen.location.y + view->region_screen.size.height / 2;
+    p_action->x2 = 0;
+    p_action->y2 = 0;
+    p_action->steps = 0;
+    p_action->interval_ms = interval_ms;
+}
+#endif
 
 void test_init_ui(void)
 {
@@ -140,8 +163,10 @@ void test_init_ui(void)
     egui_view_parallax_view_set_vertical_shift(EGUI_VIEW_OF(&parallax_compact), 8);
     egui_view_parallax_view_set_step_size(EGUI_VIEW_OF(&parallax_compact), 60, 180);
     egui_view_parallax_view_set_compact_mode(EGUI_VIEW_OF(&parallax_compact), 1);
-    static egui_view_api_t parallax_compact_touch_api;
-    egui_view_override_api_on_touch(EGUI_VIEW_OF(&parallax_compact), &parallax_compact_touch_api, consume_preview_touch);
+    egui_view_parallax_view_override_static_preview_api(EGUI_VIEW_OF(&parallax_compact), &parallax_compact_api);
+#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
+    parallax_compact_api.on_touch = dismiss_primary_focus_on_preview_touch;
+#endif
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&parallax_compact), false);
 #endif
@@ -159,8 +184,10 @@ void test_init_ui(void)
     egui_view_parallax_view_set_step_size(EGUI_VIEW_OF(&parallax_read_only), 60, 180);
     egui_view_parallax_view_set_compact_mode(EGUI_VIEW_OF(&parallax_read_only), 1);
     egui_view_parallax_view_set_read_only_mode(EGUI_VIEW_OF(&parallax_read_only), 1);
-    static egui_view_api_t parallax_read_only_touch_api;
-    egui_view_override_api_on_touch(EGUI_VIEW_OF(&parallax_read_only), &parallax_read_only_touch_api, consume_preview_touch);
+    egui_view_parallax_view_override_static_preview_api(EGUI_VIEW_OF(&parallax_read_only), &parallax_read_only_api);
+#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
+    parallax_read_only_api.on_touch = dismiss_primary_focus_on_preview_touch;
+#endif
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&parallax_read_only), false);
 #endif
@@ -201,6 +228,9 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
             apply_primary_state(0);
             apply_compact_state(1);
             apply_read_only_state();
+#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
+            egui_view_request_focus(EGUI_VIEW_OF(&parallax_primary));
+#endif
         }
         EGUI_SIM_SET_WAIT(p_action, PARALLAX_RECORD_WAIT);
         return true;
@@ -261,6 +291,28 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
         EGUI_SIM_SET_WAIT(p_action, PARALLAX_RECORD_WAIT);
         return true;
     case 9:
+        if (first_call)
+        {
+            recording_request_snapshot();
+        }
+        EGUI_SIM_SET_WAIT(p_action, PARALLAX_RECORD_FRAME_WAIT);
+        return true;
+    case 10:
+        if (first_call)
+        {
+#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
+            egui_view_request_focus(EGUI_VIEW_OF(&parallax_primary));
+#endif
+        }
+        EGUI_SIM_SET_WAIT(p_action, PARALLAX_RECORD_WAIT);
+        return true;
+    case 11:
+        if (first_call)
+        {
+            set_click_view_center(p_action, EGUI_VIEW_OF(&parallax_compact), 220);
+        }
+        return true;
+    case 12:
         if (first_call)
         {
             recording_request_snapshot();

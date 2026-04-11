@@ -99,12 +99,14 @@ static egui_color_t parallax_view_mix_disabled(egui_color_t color)
     return egui_rgb_mix(color, EGUI_COLOR_HEX(0xA8B4BF), 54);
 }
 
-static void parallax_view_clear_pressed_state(egui_view_t *self)
+static uint8_t parallax_view_clear_pressed_state(egui_view_t *self)
 {
     EGUI_LOCAL_INIT(egui_view_parallax_view_t);
+    uint8_t had_pressed = self->is_pressed || local->pressed_row != EGUI_VIEW_PARALLAX_VIEW_INDEX_NONE;
 
     local->pressed_row = EGUI_VIEW_PARALLAX_VIEW_INDEX_NONE;
     egui_view_set_pressed(self, false);
+    return had_pressed;
 }
 
 static egui_color_t parallax_view_tone_color(egui_view_parallax_view_t *local, uint8_t tone)
@@ -508,6 +510,7 @@ void egui_view_parallax_view_set_font(egui_view_t *self, const egui_font_t *font
 {
     EGUI_LOCAL_INIT(egui_view_parallax_view_t);
     local->font = font == NULL ? (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT : font;
+    parallax_view_clear_pressed_state(self);
     egui_view_invalidate(self);
 }
 
@@ -515,6 +518,7 @@ void egui_view_parallax_view_set_meta_font(egui_view_t *self, const egui_font_t 
 {
     EGUI_LOCAL_INIT(egui_view_parallax_view_t);
     local->meta_font = font == NULL ? (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT : font;
+    parallax_view_clear_pressed_state(self);
     egui_view_invalidate(self);
 }
 
@@ -771,9 +775,8 @@ static int egui_view_parallax_view_on_touch_event(egui_view_t *self, egui_motion
 
     if (!egui_view_get_enable(self) || local->compact_mode || local->read_only_mode)
     {
-        if (self->is_pressed || local->pressed_row != EGUI_VIEW_PARALLAX_VIEW_INDEX_NONE)
+        if (parallax_view_clear_pressed_state(self))
         {
-            parallax_view_clear_pressed_state(self);
             egui_view_invalidate(self);
         }
         EGUI_UNUSED(event);
@@ -816,7 +819,15 @@ static int egui_view_parallax_view_on_key_event(egui_view_t *self, egui_key_even
 {
     EGUI_LOCAL_INIT(egui_view_parallax_view_t);
 
-    if (!egui_view_get_enable(self) || event->type != EGUI_KEY_EVENT_ACTION_UP || local->compact_mode || local->read_only_mode)
+    if (!egui_view_get_enable(self) || local->compact_mode || local->read_only_mode)
+    {
+        if (parallax_view_clear_pressed_state(self))
+        {
+            egui_view_invalidate(self);
+        }
+        return 0;
+    }
+    if (event->type != EGUI_KEY_EVENT_ACTION_UP)
     {
         return 0;
     }
@@ -846,6 +857,41 @@ static int egui_view_parallax_view_on_key_event(egui_view_t *self, egui_key_even
     }
 }
 #endif
+
+#if EGUI_CONFIG_FUNCTION_SUPPORT_KEY
+static int egui_view_parallax_view_on_static_key_event(egui_view_t *self, egui_key_event_t *event)
+{
+    EGUI_UNUSED(event);
+    if (parallax_view_clear_pressed_state(self))
+    {
+        egui_view_invalidate(self);
+    }
+    return 1;
+}
+#endif
+
+#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
+static int egui_view_parallax_view_on_static_touch_event(egui_view_t *self, egui_motion_event_t *event)
+{
+    EGUI_UNUSED(event);
+    if (parallax_view_clear_pressed_state(self))
+    {
+        egui_view_invalidate(self);
+    }
+    return 1;
+}
+#endif
+
+void egui_view_parallax_view_override_static_preview_api(egui_view_t *self, egui_view_api_t *api)
+{
+    egui_view_copy_api(self, api);
+#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
+    api->on_touch_event = egui_view_parallax_view_on_static_touch_event;
+#endif
+#if EGUI_CONFIG_FUNCTION_SUPPORT_KEY
+    api->on_key_event = egui_view_parallax_view_on_static_key_event;
+#endif
+}
 
 const egui_view_api_t EGUI_VIEW_API_TABLE_NAME(egui_view_parallax_view_t) = {
         .dispatch_touch_event = egui_view_dispatch_touch_event,

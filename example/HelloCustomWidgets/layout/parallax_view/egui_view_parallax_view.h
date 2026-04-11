@@ -78,6 +78,7 @@ void egui_view_parallax_view_set_compact_mode(egui_view_t *self, uint8_t compact
 void egui_view_parallax_view_set_read_only_mode(egui_view_t *self, uint8_t read_only_mode);
 uint8_t egui_view_parallax_view_get_active_row(egui_view_t *self);
 uint8_t egui_view_parallax_view_get_row_region(egui_view_t *self, uint8_t row_index, egui_region_t *region);
+void egui_view_parallax_view_override_static_preview_api(egui_view_t *self, egui_view_api_t *api);
 
 #ifdef __cplusplus
 }

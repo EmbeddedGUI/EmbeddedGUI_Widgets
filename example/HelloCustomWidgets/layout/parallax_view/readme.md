@@ -7,7 +7,7 @@
 - 对应组件名：`ParallaxView`
 - 本次保留状态：`standard`、`compact`、`read only`、`offset stepped`、`hero shift`、`active row`
 - 本次删除效果：页面级 `guide`、状态回显、外部 preview 标签、旧双列包裹壳、真实图片背景、复杂滚动动画和过重的 hero / row / footer chrome
-- EGUI 适配说明：保留 offset 驱动 hero 慢速位移、active row 和 footer 摘要语义，仅在 `HelloCustomWidgets` 内维护 `reference widget` 版本
+- EGUI 适配说明：保留 offset 驱动 hero 慢速位移、active row 和 footer 摘要语义，仅在 `HelloCustomWidgets` 内维护 `reference widget` 版本；底部 preview 统一通过 `egui_view_parallax_view_override_static_preview_api()` 固定为静态 reference
 
 ## 1. 为什么需要这个控件？
 `parallax_view` 用来表达“前景内容滚动时，背景 hero 区域以更慢速度位移”的标准景深语义。它适合 onboarding、内容导览、长页面摘要和 dashboard hero 等场景，重点不是列表本身，而是 offset 与背景层位移的关联。
@@ -23,7 +23,7 @@
 - 底部左侧展示 `compact` 静态对照，验证低密度 hero 与 rows 的压缩表达。
 - 底部右侧展示 `read only` 静态对照，验证景深弱化和输入抑制后的被动态。
 - 页面结构统一收口为：标题 -> 主 `parallax_view` -> `compact / read only`。
-- 两个 preview 都禁用 `touch` 和 `focus`，只承担 reference 对照，不再承接页面桥接逻辑。
+- 两个 preview 都通过 `egui_view_parallax_view_override_static_preview_api()` 吞掉 `touch / key`，点击 preview 时只清主控件 `parallax_primary` 的 focus，不再承接页面桥接逻辑。
 
 目标目录：`example/HelloCustomWidgets/layout/parallax_view/`
 
@@ -63,7 +63,7 @@
 | 只读弱化 | 不适用 | 不适用 | hero、rows、footer tone 降低，同时抑制输入 |
 
 ## 7. `egui_port_get_recording_action()` 录制动作设计
-1. 重置主控件、`compact` 和 `read only` 对照。
+1. 重置主控件、`compact` 和 `read only` 对照，并给主控件请求 focus。
 2. 请求第一帧截图。
 3. 程序化切到 `Pinned Deck`。
 4. 请求第二帧截图。
@@ -72,7 +72,10 @@
 7. 程序化切到 `Quiet Stack` 的 `compact` 对照。
 8. 请求第四帧截图。
 9. 程序化切到主控件尾态 `System Cards`。
-10. 请求最终截图并保留收尾等待。
+10. 请求第五帧截图。
+11. 再次给主控件请求 focus。
+12. 点击 `compact` preview，只验证 focus 收尾。
+13. 请求最终截图并保留收尾等待。
 
 ## 8. 编译、交互、runtime、截图验收标准
 ```bash
@@ -89,6 +92,8 @@ python scripts/checks/check_docs_encoding.py
 - hero layers 的位移变化必须能从关键帧中稳定辨认出来，且不能压住 rows 文本。
 - active row、progress pill 和 footer summary 在主态与切换态下都要保持可辨识。
 - `read only` 需要同时满足视觉弱化和输入抑制，单测必须覆盖 pressed 清理与 touch / key 忽略。
+- 底部 preview 必须统一通过 `egui_view_parallax_view_override_static_preview_api()` 吞掉 `touch / key`，且不能改变 `offset / active row`。
+- 点击底部 preview 时只允许清主控件 `parallax_primary` 的 focus，最终收尾帧不能出现焦点残留、黑白屏或异常重排。
 - 页面中不再出现旧列容器壳、guide、状态回显或额外 preview 标签。
 
 ## 9. 已知限制与后续方向
@@ -127,5 +132,5 @@ python scripts/checks/check_docs_encoding.py
 ## 14. EGUI 适配时的简化点与约束
 - 使用固定 `row + anchor_offset` 数据，优先保证 `480 x 480` 下的审阅稳定性。
 - 通过 hero strips 位移模拟 depth，不引入额外资源依赖。
-- `compact` 与 `read only` 直接复用同一控件模式，减少页面级桥接逻辑。
+- `compact` 与 `read only` 直接复用同一控件模式，并通过 `egui_view_parallax_view_override_static_preview_api()` 固定为静态对照，减少页面级桥接逻辑。
 - `read only` 不仅弱化视觉，也抑制输入，避免语义和交互脱节。
