@@ -19,6 +19,7 @@ ALLOWLIST = {
         "input/rating_control/egui_view_rating_control.c": "rating control supports drag/hover preview semantics",
         "input/color_picker/egui_view_color_picker.c": "color picker updates continuously while dragging",
         "input/scroll_bar/egui_view_scroll_bar.c": "scroll bar thumb is a drag interaction",
+        "input/slider/egui_view_slider.c": "slider updates continuously while dragging",
         "input/swipe_control/egui_view_swipe_control.c": "swipe control is a continuous gesture widget",
         "navigation/annotated_scroll_bar/egui_view_annotated_scroll_bar.c": "annotated scroll bar uses drag semantics",
     },

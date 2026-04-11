@@ -9,9 +9,9 @@
 
 ## 当前快照
 
-- 截至 `2026-04-12`，`example/HelloCustomWidgets/` 当前保留 `43` 个控件目录。
+- 截至 `2026-04-12`，`example/HelloCustomWidgets/` 当前保留 `44` 个控件目录。
 - 所有保留控件均来自 `reference` 主线：
-  - `input = 19`
+  - `input = 20`
   - `layout = 6`
   - `navigation = 10`
   - `display = 3`
@@ -38,7 +38,7 @@
 
 ## 当前保留的 Reference 主线控件
 
-### Input（19）
+### Input（20）
 
 - `auto_suggest_box` -> `AutoSuggestBox`
 - `calendar_view` -> `CalendarView`
@@ -53,6 +53,7 @@
 - `scroll_bar` -> `ScrollBar`
 - `segmented_control` -> `SegmentedControl`
 - `shortcut_recorder` -> `KeyboardAcceleratorRecorder`
+- `slider` -> `Slider`
 - `split_button` -> `SplitButton`
 - `swipe_control` -> `SwipeControl`
 - `time_picker` -> `TimePicker`
@@ -97,6 +98,12 @@
 - `toast_stack` -> `Toast`
 
 ## 最近完成的收口动作
+
+- `2026-04-12`
+  - 新增 `input/slider` reference 控件：基于 SDK `slider` 补齐 Fluent / WPF UI 风格的 `Slider` reference 页面，补上 `standard / compact / read only` 三套样式 helper、键盘步进、静态 preview 输入吞掉语义和 custom draw。
+  - `example/HelloCustomWidgets/input/slider/egui_view_slider.c/.h` 新增 `hcw_slider_apply_standard_style()`、`hcw_slider_apply_compact_style()`、`hcw_slider_apply_read_only_style()`、`hcw_slider_set_value()`、`hcw_slider_handle_navigation_key()`、`hcw_slider_override_interaction_api()` 与 `hcw_slider_override_static_preview_api()`，把 draw、拖动态清理、键盘步进和静态 preview 全部收口在 custom 层，不改 SDK。
+  - `example/HelloCustomWidgets/input/slider/test.c` 新增标题 + 主 `slider` + 底部 `compact / read only` 双 preview 的 reference 页面，并补上 `Right / Plus / End` 键盘录制链路；`example/HelloUnitTest/test/test_slider.c` 新增 `7` 条单测，覆盖样式 helper、wrapper setter 清理、键盘步进、拖动、禁用态和静态 preview 清理。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=input/slider PORT=pc`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category input`、`python scripts/checks/check_docs_encoding.py`、`python scripts/checks/check_widget_catalog.py`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/slider --track reference --timeout 10 --keep-screenshots`、`python scripts/code_compile_check.py --custom-widgets --category input --bits64`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --category input --track reference --bits64`、`python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub input/slider` 与对应 web smoke，确认 `slider` 已接入 reference 主线与 web 发布链路。
 
 - `2026-04-12`
   - 新增 `input/combo_box` reference 控件：基于 SDK `combobox` 包装出 Fluent / WPF UI 风格的 `ComboBox` reference 页面，补齐 `standard / compact / read only` 三套样式 helper、setter 状态清理和静态 preview 输入吞掉语义。

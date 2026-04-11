@@ -210,6 +210,16 @@
     "doc_state": "ok"
   },
   {
+    "id": "input/slider",
+    "track": "reference",
+    "visibility": "public",
+    "reference_system": "Fluent 2",
+    "reference_library": "WPF UI",
+    "reference_component": "Slider",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
     "id": "input/split_button",
     "track": "reference",
     "visibility": "public",
