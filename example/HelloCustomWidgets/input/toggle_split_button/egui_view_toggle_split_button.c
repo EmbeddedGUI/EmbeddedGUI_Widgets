@@ -764,6 +764,45 @@ static int egui_view_toggle_split_button_on_key_event(egui_view_t *self, egui_ke
 }
 #endif
 
+#if EGUI_CONFIG_FUNCTION_SUPPORT_KEY
+static int egui_view_toggle_split_button_on_static_key_event(egui_view_t *self, egui_key_event_t *event)
+{
+    EGUI_LOCAL_INIT(egui_view_toggle_split_button_t);
+
+    EGUI_UNUSED(event);
+    if (toggle_split_button_clear_pressed_state(self, local))
+    {
+        egui_view_invalidate(self);
+    }
+    return 1;
+}
+#endif
+
+#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
+static int egui_view_toggle_split_button_on_static_touch_event(egui_view_t *self, egui_motion_event_t *event)
+{
+    EGUI_LOCAL_INIT(egui_view_toggle_split_button_t);
+
+    EGUI_UNUSED(event);
+    if (toggle_split_button_clear_pressed_state(self, local))
+    {
+        egui_view_invalidate(self);
+    }
+    return 1;
+}
+#endif
+
+void egui_view_toggle_split_button_override_static_preview_api(egui_view_t *self, egui_view_api_t *api)
+{
+    egui_view_copy_api(self, api);
+#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
+    api->on_touch_event = egui_view_toggle_split_button_on_static_touch_event;
+#endif
+#if EGUI_CONFIG_FUNCTION_SUPPORT_KEY
+    api->on_key_event = egui_view_toggle_split_button_on_static_key_event;
+#endif
+}
+
 const egui_view_api_t EGUI_VIEW_API_TABLE_NAME(egui_view_toggle_split_button_t) = {
         .dispatch_touch_event = egui_view_dispatch_touch_event,
 #if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH

@@ -79,6 +79,7 @@ void egui_view_toggle_split_button_set_palette(egui_view_t *self, egui_color_t s
                                                egui_color_t danger_color, egui_color_t neutral_color);
 uint8_t egui_view_toggle_split_button_get_part_region(egui_view_t *self, uint8_t part, egui_region_t *region);
 uint8_t egui_view_toggle_split_button_handle_navigation_key(egui_view_t *self, uint8_t key_code);
+void egui_view_toggle_split_button_override_static_preview_api(egui_view_t *self, egui_view_api_t *api);
 
 #ifdef __cplusplus
 }
