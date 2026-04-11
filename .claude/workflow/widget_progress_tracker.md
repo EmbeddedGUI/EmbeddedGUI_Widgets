@@ -9,9 +9,9 @@
 
 ## 当前快照
 
-- 截至 `2026-04-09`，`example/HelloCustomWidgets/` 当前保留 `42` 个控件目录。
+- 截至 `2026-04-12`，`example/HelloCustomWidgets/` 当前保留 `43` 个控件目录。
 - 所有保留控件均来自 `reference` 主线：
-  - `input = 18`
+  - `input = 19`
   - `layout = 6`
   - `navigation = 10`
   - `display = 3`
@@ -38,10 +38,11 @@
 
 ## 当前保留的 Reference 主线控件
 
-### Input（18）
+### Input（19）
 
 - `auto_suggest_box` -> `AutoSuggestBox`
 - `calendar_view` -> `CalendarView`
+- `combo_box` -> `ComboBox`
 - `color_picker` -> `ColorPicker`
 - `command_bar` -> `CommandBar`
 - `date_picker` -> `DatePicker`
@@ -96,6 +97,12 @@
 - `toast_stack` -> `Toast`
 
 ## 最近完成的收口动作
+
+- `2026-04-12`
+  - 新增 `input/combo_box` reference 控件：基于 SDK `combobox` 包装出 Fluent / WPF UI 风格的 `ComboBox` reference 页面，补齐 `standard / compact / read only` 三套样式 helper、setter 状态清理和静态 preview 输入吞掉语义。
+  - `example/HelloCustomWidgets/input/combo_box/egui_view_combo_box.c/.h` 新增 `hcw_combo_box_apply_standard_style()`、`hcw_combo_box_apply_compact_style()`、`hcw_combo_box_apply_read_only_style()`、`hcw_combo_box_set_items()`、`hcw_combo_box_set_current_index()` 与 `hcw_combo_box_override_static_preview_api()`，把样式切换、items 切换和 preview 输入统一收口到同一套 pressed / expanded 清理链路。
+  - `example/HelloCustomWidgets/input/combo_box/test.c` 新增标题 + 主 `combo_box` + 底部 `compact / read only` 双 preview 的 reference 页面，并补上键盘展开、项切换、提交和静态 preview 对照的 runtime 录制链路；`example/HelloUnitTest/test/test_combo_box.c` 新增 `7` 条单测，覆盖样式 helper、wrapper setter 清理、same-target release、键盘提交和静态 preview 清理。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=input/combo_box PORT=pc`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category input`、`python scripts/checks/check_docs_encoding.py`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/combo_box --track reference --timeout 10 --keep-screenshots`、`python scripts/checks/check_widget_catalog.py`、`python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub input/combo_box --refresh-existing` 与对应 web smoke，确认 `combo_box` 已接入 reference 主线与 web 发布链路。
 
 - `2026-04-12`
   - 完成 `layout/settings_panel` 交互与文档收口：在既有 `reference` 页面结构不再调整的前提下，把工作重点收回到 static preview API、preview 点击焦点收尾与最终验收闭环，继续保留符合 Fluent / WPF UI 语义的 `settings_panel` 主控件和底部 `compact / read only` 双 preview。
