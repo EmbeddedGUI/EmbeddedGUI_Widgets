@@ -8,7 +8,7 @@
 - 对应组件名：`MasterDetail`
 - 本次保留状态：`standard`、`compact`、`read only`、`accent`、`success`、`warning`、`neutral`
 - 删除效果：页面级 guide / 状态文案 / standard label / section divider / preview label、Acrylic、复杂 hover、系统级转场动画
-- EGUI 适配说明：保留 master 列表驱动 detail 面板的核心语义，在 `480 x 480` 页面里优先保证双栏结构与 `compact / read only` 对照稳定；`selection / compact / read only / view disabled` 切换共享同一套 `pressed` 清理语义
+- EGUI 适配说明：保留 master 列表驱动 detail 面板的核心语义，在 `480 x 480` 页面里优先保证双栏结构与 `compact / read only` 对照稳定；`selection / compact / read only / view disabled` 切换共享同一套 `pressed` 清理语义，底部 preview 统一通过 `egui_view_master_detail_override_static_preview_api()` 固定为静态 reference
 
 ## 1. 为什么需要这个控件
 
@@ -29,6 +29,7 @@
 - 左下 `compact` 预览展示小尺寸 master-detail 的缩窄布局
 - 右下 `read only` 预览展示不可交互的静态对照态
 - 示例页只保留标题、主 `master_detail` 和底部 `compact / read only` 双预览，不再保留外部 guide、状态回显和标签点击
+- 底部两个 preview 统一通过 `egui_view_master_detail_override_static_preview_api()` 吞掉 `touch / key`，点击 preview 时只清主控件 `panel_primary` 的 focus
 
 目录：
 
@@ -72,7 +73,7 @@
 
 ## 7. `egui_port_get_recording_action()` 录制动作设计
 
-1. 应用默认主状态与 `compact` 状态
+1. 应用默认主状态与 `compact` 状态，并给主控件请求 focus
 2. 请求第一页截图
 3. 程序化切换主卡到 `review`
 4. 请求第二页截图
@@ -81,7 +82,10 @@
 7. 程序化切换主卡到 `archive`
 8. 请求第四页截图
 9. 程序化切换 `compact` 到 `review`
-10. 请求最终截图并保留收尾等待
+10. 请求第五张截图
+11. 再次给主控件请求 focus
+12. 点击 `compact` preview，只验证 focus 收尾
+13. 请求最终截图并保留收尾等待
 
 ## 8. 编译、runtime、截图验收标准
 
@@ -102,7 +106,8 @@ python scripts/checks/check_docs_encoding.py
 - 页面中不再出现 guide、状态回显、standard label、section divider、`Compact` / `Read only` 外部标签
 - `selection / compact / read only / view disabled` 切换后不能残留 master row 的 `pressed` 高亮或下压位移渲染
 - `read_only_mode / !enable` 不仅要忽略后续 touch / key 输入，还要在收到新输入时清理残留 `pressed` 渲染
-- 底部预览不再承担交互职责，只作为对照展示
+- 底部预览必须统一通过 `egui_view_master_detail_override_static_preview_api()` 吞掉 `touch / key`，且不能改当前选中项
+- 点击底部 preview 时只允许清主控件 `panel_primary` 的 focus，最终收尾帧不能出现焦点残留、黑白屏或异常重排
 
 ## 9. 已知限制与下一轮迭代计划
 
@@ -148,4 +153,5 @@ python scripts/checks/check_docs_encoding.py
 - 使用固定 item 数组驱动，先保证 reference 展示稳定
 - `compact` 与 `read only` 固定放底部双列，便于和主卡直接对照
 - 主卡保留 selection 切换，录制时改为程序化触发
+- 底部 `compact / read only` 统一通过 `egui_view_master_detail_override_static_preview_api()` 固定为静态对照
 - 先完成示例级 `master_detail`，后续再决定是否沉入通用框架控件

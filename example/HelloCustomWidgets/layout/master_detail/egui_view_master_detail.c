@@ -276,6 +276,7 @@ void egui_view_master_detail_set_font(egui_view_t *self, const egui_font_t *font
 {
     EGUI_LOCAL_INIT(egui_view_master_detail_t);
     local->font = font ? font : (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT;
+    egui_view_master_detail_clear_pressed_state(self);
     egui_view_invalidate(self);
 }
 
@@ -283,6 +284,7 @@ void egui_view_master_detail_set_meta_font(egui_view_t *self, const egui_font_t 
 {
     EGUI_LOCAL_INIT(egui_view_master_detail_t);
     local->meta_font = font ? font : (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT;
+    egui_view_master_detail_clear_pressed_state(self);
     egui_view_invalidate(self);
 }
 
@@ -317,6 +319,7 @@ void egui_view_master_detail_set_palette(egui_view_t *self, egui_color_t surface
     local->success_color = success_color;
     local->warning_color = warning_color;
     local->neutral_color = neutral_color;
+    egui_view_master_detail_clear_pressed_state(self);
     egui_view_invalidate(self);
 }
 
@@ -665,6 +668,41 @@ static int egui_view_master_detail_on_key_event(egui_view_t *self, egui_key_even
     }
 }
 #endif
+
+#if EGUI_CONFIG_FUNCTION_SUPPORT_KEY
+static int egui_view_master_detail_on_static_key_event(egui_view_t *self, egui_key_event_t *event)
+{
+    EGUI_UNUSED(event);
+    if (egui_view_master_detail_clear_pressed_state(self))
+    {
+        egui_view_invalidate(self);
+    }
+    return 1;
+}
+#endif
+
+#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
+static int egui_view_master_detail_on_static_touch_event(egui_view_t *self, egui_motion_event_t *event)
+{
+    EGUI_UNUSED(event);
+    if (egui_view_master_detail_clear_pressed_state(self))
+    {
+        egui_view_invalidate(self);
+    }
+    return 1;
+}
+#endif
+
+void egui_view_master_detail_override_static_preview_api(egui_view_t *self, egui_view_api_t *api)
+{
+    egui_view_copy_api(self, api);
+#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
+    api->on_touch_event = egui_view_master_detail_on_static_touch_event;
+#endif
+#if EGUI_CONFIG_FUNCTION_SUPPORT_KEY
+    api->on_key_event = egui_view_master_detail_on_static_key_event;
+#endif
+}
 
 const egui_view_api_t EGUI_VIEW_API_TABLE_NAME(egui_view_master_detail_t) = {
         .dispatch_touch_event = egui_view_dispatch_touch_event,
