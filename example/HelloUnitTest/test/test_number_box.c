@@ -8,6 +8,8 @@
 #include "../../HelloCustomWidgets/input/number_box/egui_view_number_box.c"
 
 static egui_view_number_box_t test_box;
+static egui_view_number_box_t preview_box;
+static egui_view_api_t preview_api;
 static uint8_t changed_count;
 static int16_t changed_value;
 
@@ -31,6 +33,18 @@ static void setup_number_box(void)
     egui_view_number_box_set_on_value_changed_listener(EGUI_VIEW_OF(&test_box), on_value_changed);
     changed_count = 0;
     changed_value = -1;
+}
+
+static void setup_preview_number_box(void)
+{
+    egui_view_number_box_init(EGUI_VIEW_OF(&preview_box));
+    egui_view_set_size(EGUI_VIEW_OF(&preview_box), 104, 44);
+    egui_view_number_box_set_suffix(EGUI_VIEW_OF(&preview_box), "ms");
+    egui_view_number_box_set_range(EGUI_VIEW_OF(&preview_box), 0, 24);
+    egui_view_number_box_set_step(EGUI_VIEW_OF(&preview_box), 2);
+    egui_view_number_box_set_compact_mode(EGUI_VIEW_OF(&preview_box), 1);
+    egui_view_number_box_set_value(EGUI_VIEW_OF(&preview_box), 12);
+    egui_view_number_box_override_static_preview_api(EGUI_VIEW_OF(&preview_box), &preview_api);
 }
 
 static void layout_number_box(egui_dim_t x, egui_dim_t y, egui_dim_t width, egui_dim_t height)
@@ -68,6 +82,39 @@ static int send_key(uint8_t key_code)
     event.type = EGUI_KEY_EVENT_ACTION_UP;
     handled |= EGUI_VIEW_OF(&test_box)->api->on_key_event(EGUI_VIEW_OF(&test_box), &event);
     return handled;
+}
+
+static void layout_preview_number_box(void)
+{
+    egui_region_t region;
+
+    region.location.x = 10;
+    region.location.y = 20;
+    region.size.width = 104;
+    region.size.height = 44;
+    egui_view_layout(EGUI_VIEW_OF(&preview_box), &region);
+    egui_region_copy(&EGUI_VIEW_OF(&preview_box)->region_screen, &region);
+}
+
+static int send_preview_touch(uint8_t type, egui_dim_t x, egui_dim_t y)
+{
+    egui_motion_event_t event;
+
+    memset(&event, 0, sizeof(event));
+    event.type = type;
+    event.location.x = x;
+    event.location.y = y;
+    return EGUI_VIEW_OF(&preview_box)->api->on_touch_event(EGUI_VIEW_OF(&preview_box), &event);
+}
+
+static int send_preview_key_action(uint8_t type, uint8_t key_code)
+{
+    egui_key_event_t event;
+
+    memset(&event, 0, sizeof(event));
+    event.type = type;
+    event.key_code = key_code;
+    return EGUI_VIEW_OF(&preview_box)->api->on_key_event(EGUI_VIEW_OF(&preview_box), &event);
 }
 
 static void test_number_box_range_and_value_clamp(void)
@@ -146,8 +193,18 @@ static void test_number_box_font_modes_and_palette(void)
 
     setup_number_box();
 
+    test_box.pressed_part = EGUI_VIEW_NUMBER_BOX_PART_DEC;
+    EGUI_VIEW_OF(&test_box)->is_pressed = true;
     egui_view_number_box_set_font(EGUI_VIEW_OF(&test_box), NULL);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_NUMBER_BOX_PART_NONE, test_box.pressed_part);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_box)->is_pressed);
+
+    test_box.pressed_part = EGUI_VIEW_NUMBER_BOX_PART_INC;
+    EGUI_VIEW_OF(&test_box)->is_pressed = true;
     egui_view_number_box_set_meta_font(EGUI_VIEW_OF(&test_box), NULL);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_NUMBER_BOX_PART_NONE, test_box.pressed_part);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_box)->is_pressed);
+
     EGUI_TEST_ASSERT_TRUE(test_box.font == (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT);
     EGUI_TEST_ASSERT_TRUE(test_box.meta_font == (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT);
 
@@ -174,8 +231,12 @@ static void test_number_box_font_modes_and_palette(void)
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_NUMBER_BOX_PART_NONE, test_box.pressed_part);
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_box)->is_pressed);
 
+    test_box.pressed_part = EGUI_VIEW_NUMBER_BOX_PART_DEC;
+    EGUI_VIEW_OF(&test_box)->is_pressed = true;
     egui_view_number_box_set_palette(EGUI_VIEW_OF(&test_box), EGUI_COLOR_HEX(0x101112), EGUI_COLOR_HEX(0x202122), EGUI_COLOR_HEX(0x303132),
                                      EGUI_COLOR_HEX(0x404142), EGUI_COLOR_HEX(0x505152));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_NUMBER_BOX_PART_NONE, test_box.pressed_part);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_box)->is_pressed);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x101112).full, test_box.surface_color.full);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x202122).full, test_box.border_color.full);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x303132).full, test_box.text_color.full);
@@ -242,6 +303,47 @@ static void test_number_box_release_on_different_target_does_not_commit(void)
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_NUMBER_BOX_PART_NONE, test_box.pressed_part);
     EGUI_TEST_ASSERT_EQUAL_INT(24, egui_view_number_box_get_value(EGUI_VIEW_OF(&test_box)));
     EGUI_TEST_ASSERT_EQUAL_INT(0, changed_count);
+}
+
+static void test_number_box_same_target_release_requires_return_to_origin(void)
+{
+    egui_view_number_box_metrics_t metrics;
+    egui_dim_t inc_x;
+    egui_dim_t inc_y;
+    egui_dim_t dec_x;
+    egui_dim_t dec_y;
+
+    setup_number_box();
+    layout_number_box(10, 20, 196, 70);
+    egui_view_number_box_get_metrics(&test_box, EGUI_VIEW_OF(&test_box), &metrics);
+    inc_x = metrics.inc_region.location.x + metrics.inc_region.size.width / 2;
+    inc_y = metrics.inc_region.location.y + metrics.inc_region.size.height / 2;
+    dec_x = metrics.dec_region.location.x + metrics.dec_region.size.width / 2;
+    dec_y = metrics.dec_region.location.y + metrics.dec_region.size.height / 2;
+
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, inc_x, inc_y));
+    EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&test_box)->is_pressed);
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_MOVE, dec_x, dec_y));
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_box)->is_pressed);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_NUMBER_BOX_PART_INC, test_box.pressed_part);
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, dec_x, dec_y));
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_box)->is_pressed);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_NUMBER_BOX_PART_NONE, test_box.pressed_part);
+    EGUI_TEST_ASSERT_EQUAL_INT(24, egui_view_number_box_get_value(EGUI_VIEW_OF(&test_box)));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, changed_count);
+
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, inc_x, inc_y));
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_MOVE, dec_x, dec_y));
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_box)->is_pressed);
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_MOVE, inc_x, inc_y));
+    EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&test_box)->is_pressed);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_NUMBER_BOX_PART_INC, test_box.pressed_part);
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, inc_x, inc_y));
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_box)->is_pressed);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_NUMBER_BOX_PART_NONE, test_box.pressed_part);
+    EGUI_TEST_ASSERT_EQUAL_INT(28, egui_view_number_box_get_value(EGUI_VIEW_OF(&test_box)));
+    EGUI_TEST_ASSERT_EQUAL_INT(1, changed_count);
+    EGUI_TEST_ASSERT_EQUAL_INT(28, changed_value);
 }
 
 static void test_number_box_compact_mode_clears_pressed_and_ignores_input(void)
@@ -390,6 +492,34 @@ static void test_number_box_touch_cancel_clears_pressed_state(void)
     EGUI_TEST_ASSERT_EQUAL_INT(0, changed_count);
 }
 
+static void test_number_box_static_preview_consumes_input_and_clears_pressed_state(void)
+{
+    egui_view_number_box_metrics_t metrics;
+    egui_dim_t x;
+    egui_dim_t y;
+
+    setup_preview_number_box();
+    layout_preview_number_box();
+    egui_view_number_box_get_metrics(&preview_box, EGUI_VIEW_OF(&preview_box), &metrics);
+    x = metrics.field_region.location.x + metrics.field_region.size.width / 2;
+    y = metrics.field_region.location.y + metrics.field_region.size.height / 2;
+
+    EGUI_VIEW_OF(&preview_box)->is_pressed = true;
+    preview_box.pressed_part = EGUI_VIEW_NUMBER_BOX_PART_INC;
+    EGUI_TEST_ASSERT_TRUE(send_preview_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&preview_box)->is_pressed);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_NUMBER_BOX_PART_NONE, preview_box.pressed_part);
+    EGUI_TEST_ASSERT_EQUAL_INT(12, egui_view_number_box_get_value(EGUI_VIEW_OF(&preview_box)));
+
+    EGUI_VIEW_OF(&preview_box)->is_pressed = true;
+    preview_box.pressed_part = EGUI_VIEW_NUMBER_BOX_PART_DEC;
+    EGUI_TEST_ASSERT_TRUE(send_preview_key_action(EGUI_KEY_EVENT_ACTION_DOWN, EGUI_KEY_CODE_ENTER));
+    EGUI_TEST_ASSERT_TRUE(send_preview_key_action(EGUI_KEY_EVENT_ACTION_UP, EGUI_KEY_CODE_ENTER));
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&preview_box)->is_pressed);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_NUMBER_BOX_PART_NONE, preview_box.pressed_part);
+    EGUI_TEST_ASSERT_EQUAL_INT(12, egui_view_number_box_get_value(EGUI_VIEW_OF(&preview_box)));
+}
+
 void test_number_box_run(void)
 {
     EGUI_TEST_SUITE_BEGIN(number_box);
@@ -399,9 +529,11 @@ void test_number_box_run(void)
     EGUI_TEST_RUN(test_number_box_font_modes_and_palette);
     EGUI_TEST_RUN(test_number_box_touch_increment_and_decrement);
     EGUI_TEST_RUN(test_number_box_release_on_different_target_does_not_commit);
+    EGUI_TEST_RUN(test_number_box_same_target_release_requires_return_to_origin);
     EGUI_TEST_RUN(test_number_box_compact_mode_clears_pressed_and_ignores_input);
     EGUI_TEST_RUN(test_number_box_read_only_mode_clears_pressed_and_ignores_input);
     EGUI_TEST_RUN(test_number_box_disabled_ignores_input_and_clears_pressed_state);
     EGUI_TEST_RUN(test_number_box_touch_cancel_clears_pressed_state);
+    EGUI_TEST_RUN(test_number_box_static_preview_consumes_input_and_clears_pressed_state);
     EGUI_TEST_SUITE_END();
 }

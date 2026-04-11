@@ -8,7 +8,7 @@
 - 对应组件名：`NumberBox`
 - 本次保留状态：`standard`、`compact`、`read only`、`step up`、`step down`
 - 删除效果：页面级 guide / 状态文案 / standard label / section divider / preview label、键盘输入校验、错误提示气泡、图标前后缀、Acrylic 与复杂焦点动画
-- EGUI 适配说明：使用固定范围、轻量步进按钮和静态单位后缀，在 `480 x 480` 页面里优先保证数字输入框的可读性与对照关系稳定
+- EGUI 适配说明：使用固定范围、轻量步进按钮和静态单位后缀，在 `480 x 480` 页面里优先保证数字输入框的可读性与对照关系稳定；主控件补齐 `same-target release`，底部 `compact / read only` 统一走 `egui_view_number_box_override_static_preview_api()`
 
 ## 1. 为什么需要这个控件
 
@@ -29,6 +29,7 @@
 - 左下 `compact` 预览展示窄宽度下的轻量数字输入
 - 右下 `read only` 预览展示只读弱化版数字框
 - 示例页只保留标题、主 `number_box` 和底部 `compact / read only` 双预览，不再保留外部 guide、状态回显和标签点击
+- 底部两个 preview 统一通过控件自己的 static preview API 吞掉 `touch / key`；页面层只在 preview `ACTION_DOWN` 时负责清理主控件 focus
 
 目录：
 
@@ -47,6 +48,7 @@
   - 使用浅灰白 page panel + 白底轻边框容器
   - 主数字框保留 label、helper、value field 与 `- / +` 按钮语义
   - `compact` 预览压缩为更轻量的 field + stepper 结构
+  - `compact / read only` 作为静态对照，不承接真实交互
 - 只读态移除步进按钮，只保留弱化数值展示，并抑制后续输入
 
 ## 5. 控件清单
@@ -69,6 +71,7 @@
 | 轮换 3 | `28 px` | 保持 | 保持 |
 | 紧凑轮换 | 保持 | `14 ms` | 保持 |
 | 只读弱化 | 不适用 | 不适用 | 移除步进按钮，仅保留弱化数值展示，并在切入时清空 pressed |
+| static preview | 不适用 | 点击只清主控件 focus | 点击只清主控件 focus，`touch / key` 被控件自己的 static preview API 吞掉 |
 
 ## 7. `egui_port_get_recording_action()` 录制动作设计
 
@@ -103,9 +106,11 @@ python scripts/checks/check_docs_encoding.py
 - `read only` 只做静态展示，不能响应 touch、key 或页面桥接，并且切入时要立即清空 pressed
 - 页面中不再出现 guide、状态回显、standard label、section divider、`Compact` / `Read only` 外部标签
 - `value / range / step / compact / read only / view disabled` 切换链路需要共用同一套 `pressed` 清理语义
+- `font / meta font / palette / value / range / step / compact / read only / view disabled` 切换链路需要共用同一套 `pressed` 清理语义
 - setter 更新、模式切换后和 `touch cancel` 后，不能残留 `- / +` 的 `pressed` 高亮
 - `compact / read_only_mode / !enable` 收到新的 touch 或 key 输入时，必须先清理残留 pressed，再拒绝后续交互
-- 触摸释放语义必须继续满足“按下与抬起命中同一目标才提交”
+- 触摸释放语义必须继续满足 same-target release：`DOWN(A) -> MOVE(B) -> UP(B)` 不提交，`DOWN(A) -> MOVE(B) -> MOVE(A) -> UP(A)` 才提交
+- `compact / read only` preview 必须通过 `egui_view_number_box_override_static_preview_api()` 吞掉 `touch / key`，且不能改 value
 - unit test 中已有的步进点击、异目标释放、`compact / read only / !enable` 输入抑制和 `touch cancel` 语义不能回归
 
 ## 9. 已知限制与后续方向
@@ -150,5 +155,6 @@ python scripts/checks/check_docs_encoding.py
 - 使用固定整数范围和步进，优先保证 `480 x 480` 页面里的可审阅性
 - 通过轻量 `- / +` 按钮承载交互，不引入复杂文本输入状态机
 - `compact` 与 `read only` 固定放底部双列，便于和主卡直接对照
-- 交互收口阶段统一要求 setter、模式切换、禁用 guard 和 `touch cancel` 都能清理残留 `pressed`，确保交互后的渲染稳定
+- 交互收口阶段统一要求 setter、模式切换、禁用 guard、`ACTION_MOVE` 下的 same-target release 和 `touch cancel` 都能清理残留 `pressed`，确保交互后的渲染稳定
+- preview 交互职责收口到控件自己的 `static preview API`，页面层不再直接兜底 preview 的输入吞掉逻辑
 - 先完成示例级数字框，再决定是否上升到框架公共控件

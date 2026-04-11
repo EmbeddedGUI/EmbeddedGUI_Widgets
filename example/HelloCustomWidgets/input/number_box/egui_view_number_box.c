@@ -62,11 +62,24 @@ static egui_color_t egui_view_number_box_mix_disabled(egui_color_t color)
 static uint8_t egui_view_number_box_clear_pressed_state(egui_view_t *self)
 {
     EGUI_LOCAL_INIT(egui_view_number_box_t);
-    uint8_t had_pressed = self->is_pressed || local->pressed_part != EGUI_VIEW_NUMBER_BOX_PART_NONE;
+    uint8_t was_pressed = self->is_pressed ? 1 : 0;
+    uint8_t had_pressed = was_pressed || local->pressed_part != EGUI_VIEW_NUMBER_BOX_PART_NONE;
+
+    if (!had_pressed)
+    {
+        return 0;
+    }
 
     local->pressed_part = EGUI_VIEW_NUMBER_BOX_PART_NONE;
-    egui_view_set_pressed(self, false);
-    return had_pressed;
+    if (was_pressed)
+    {
+        egui_view_set_pressed(self, false);
+    }
+    else
+    {
+        egui_view_invalidate(self);
+    }
+    return 1;
 }
 
 static int16_t egui_view_number_box_clamp_value(egui_view_number_box_t *local, int16_t value)
@@ -247,15 +260,23 @@ void egui_view_number_box_set_helper(egui_view_t *self, const char *helper)
 void egui_view_number_box_set_font(egui_view_t *self, const egui_font_t *font)
 {
     EGUI_LOCAL_INIT(egui_view_number_box_t);
+    uint8_t had_pressed = egui_view_number_box_clear_pressed_state(self);
     local->font = font ? font : (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT;
-    egui_view_invalidate(self);
+    if (!had_pressed)
+    {
+        egui_view_invalidate(self);
+    }
 }
 
 void egui_view_number_box_set_meta_font(egui_view_t *self, const egui_font_t *font)
 {
     EGUI_LOCAL_INIT(egui_view_number_box_t);
+    uint8_t had_pressed = egui_view_number_box_clear_pressed_state(self);
     local->meta_font = font ? font : (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT;
-    egui_view_invalidate(self);
+    if (!had_pressed)
+    {
+        egui_view_invalidate(self);
+    }
 }
 
 void egui_view_number_box_set_on_value_changed_listener(egui_view_t *self, egui_view_on_number_box_changed_listener_t listener)
@@ -306,12 +327,16 @@ void egui_view_number_box_set_palette(egui_view_t *self, egui_color_t surface_co
                                       egui_color_t muted_text_color, egui_color_t accent_color)
 {
     EGUI_LOCAL_INIT(egui_view_number_box_t);
+    uint8_t had_pressed = egui_view_number_box_clear_pressed_state(self);
     local->surface_color = surface_color;
     local->border_color = border_color;
     local->text_color = text_color;
     local->muted_text_color = muted_text_color;
     local->accent_color = accent_color;
-    egui_view_invalidate(self);
+    if (!had_pressed)
+    {
+        egui_view_invalidate(self);
+    }
 }
 
 static void egui_view_number_box_draw_text(const egui_font_t *font, egui_view_t *self, const char *text, const egui_region_t *region, uint8_t align,
@@ -514,7 +539,14 @@ static int egui_view_number_box_on_touch_event(egui_view_t *self, egui_motion_ev
         }
         local->pressed_part = hit_part;
         egui_view_set_pressed(self, true);
-        egui_view_invalidate(self);
+        return 1;
+    case EGUI_MOTION_EVENT_ACTION_MOVE:
+        if (local->pressed_part == EGUI_VIEW_NUMBER_BOX_PART_NONE)
+        {
+            return 0;
+        }
+        hit_part = egui_view_number_box_hit_part(local, self, event->location.x, event->location.y);
+        egui_view_set_pressed(self, hit_part == local->pressed_part);
         return 1;
     case EGUI_MOTION_EVENT_ACTION_UP:
     {
@@ -564,6 +596,35 @@ static int egui_view_number_box_on_key_event(egui_view_t *self, egui_key_event_t
     return egui_view_on_key_event(self, event);
 }
 #endif
+
+#if EGUI_CONFIG_FUNCTION_SUPPORT_KEY
+static int egui_view_number_box_on_static_key_event(egui_view_t *self, egui_key_event_t *event)
+{
+    EGUI_UNUSED(event);
+    egui_view_number_box_clear_pressed_state(self);
+    return 1;
+}
+#endif
+
+#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
+static int egui_view_number_box_on_static_touch_event(egui_view_t *self, egui_motion_event_t *event)
+{
+    EGUI_UNUSED(event);
+    egui_view_number_box_clear_pressed_state(self);
+    return 1;
+}
+#endif
+
+void egui_view_number_box_override_static_preview_api(egui_view_t *self, egui_view_api_t *api)
+{
+    egui_view_copy_api(self, api);
+#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
+    api->on_touch_event = egui_view_number_box_on_static_touch_event;
+#endif
+#if EGUI_CONFIG_FUNCTION_SUPPORT_KEY
+    api->on_key_event = egui_view_number_box_on_static_key_event;
+#endif
+}
 
 const egui_view_api_t EGUI_VIEW_API_TABLE_NAME(egui_view_number_box_t) = {
         .dispatch_touch_event = egui_view_dispatch_touch_event,

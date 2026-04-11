@@ -68,6 +68,8 @@ static void test_demo_scaffold_title_only_enforces_spacing_and_expands_layout(vo
     egui_view_t *chrome_views[] = {
             EGUI_VIEW_OF(&chrome_view),
     };
+    egui_dim_t expected_preview_row_width;
+    egui_dim_t expected_root_width;
     egui_dim_t preview_gap;
     egui_dim_t main_gap;
 
@@ -77,8 +79,10 @@ static void test_demo_scaffold_title_only_enforces_spacing_and_expands_layout(vo
     EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&chrome_view)->is_gone);
     EGUI_TEST_ASSERT_EQUAL_INT(14, EGUI_VIEW_OF(&main_view)->margin.bottom);
     EGUI_TEST_ASSERT_EQUAL_INT(20, EGUI_VIEW_OF(&preview_right)->margin.left);
-    EGUI_TEST_ASSERT_EQUAL_INT(188, EGUI_VIEW_OF(&preview_row)->region.size.width);
-    EGUI_TEST_ASSERT_EQUAL_INT(200, EGUI_VIEW_OF(&root_layout)->region.size.width);
+    expected_preview_row_width = measure_linear_extent(EGUI_VIEW_OF(&preview_row), 1);
+    expected_root_width = EGUI_MIN((egui_dim_t)HELLO_CUSTOM_WIDGETS_CANVAS_WIDTH, expected_preview_row_width + HELLO_CUSTOM_WIDGETS_TITLE_ONLY_SIDE_INSET * 2);
+    EGUI_TEST_ASSERT_EQUAL_INT(expected_preview_row_width, EGUI_VIEW_OF(&preview_row)->region.size.width);
+    EGUI_TEST_ASSERT_EQUAL_INT(expected_root_width, EGUI_VIEW_OF(&root_layout)->region.size.width);
     EGUI_TEST_ASSERT_EQUAL_INT(measure_linear_extent(EGUI_VIEW_OF(&root_layout), 0), EGUI_VIEW_OF(&root_layout)->region.size.height);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_OF(&root_layout)->region.size.width, EGUI_VIEW_OF(&title_label)->region.size.width);
     EGUI_TEST_ASSERT_EQUAL_INT(0, EGUI_VIEW_OF(&title_label)->margin.left);
