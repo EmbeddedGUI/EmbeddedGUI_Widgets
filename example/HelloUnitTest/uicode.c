@@ -26,6 +26,7 @@
 #include "test/test_number_box.h"
 #include "test/test_parallax_view.h"
 #include "test/test_password_box.h"
+#include "test/test_radio_button.h"
 #include "test/test_persona_group.h"
 #include "test/test_pips_pager.h"
 #include "test/test_rating_control.h"
@@ -81,6 +82,7 @@ void uicode_create_ui(void)
     test_number_box_run();
     test_parallax_view_run();
     test_password_box_run();
+    test_radio_button_run();
     test_persona_group_run();
     test_pips_pager_run();
     test_rating_control_run();
