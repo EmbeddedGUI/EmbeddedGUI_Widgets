@@ -34,6 +34,7 @@
 
 | 状态 | 控件名 | 分类 | 开始日期 | 当前阶段 | 目标 |
 | --- | --- | --- | --- | --- | --- |
+| 进行中 | `flyout` | `feedback` | `2026-04-13` | 设计 / 选型 | 新增符合 Fluent / WPF UI `Flyout` 语义的 reference 控件，在 custom 层收口 anchor / surface / placement / dismiss、same-target release、静态 preview 与 web 验证路径 |
 
 ## 当前保留的 Reference 主线控件
 
