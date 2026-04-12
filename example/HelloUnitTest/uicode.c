@@ -7,6 +7,7 @@
 #include "test/test_breadcrumb_bar.h"
 #include "test/test_calendar_view.h"
 #include "test/test_card_panel.h"
+#include "test/test_check_box.h"
 #include "test/test_color_picker.h"
 #include "test/test_combo_box.h"
 #include "test/test_command_bar.h"
@@ -61,6 +62,7 @@ void uicode_create_ui(void)
     test_breadcrumb_bar_run();
     test_calendar_view_run();
     test_card_panel_run();
+    test_check_box_run();
     test_color_picker_run();
     test_combo_box_run();
     test_command_bar_run();
