@@ -1,5 +1,15 @@
 [
   {
+    "id": "display/arc",
+    "track": "reference",
+    "visibility": "public",
+    "reference_system": "Fluent 2",
+    "reference_library": "WPF UI",
+    "reference_component": "Arc",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
     "id": "display/badge_group",
     "track": "reference",
     "visibility": "public",

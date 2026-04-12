@@ -34,7 +34,7 @@
 
 | 状态 | 控件名 | 分类 | 开始日期 | 当前阶段 | 目标 |
 | --- | --- | --- | --- | --- | --- |
-| 进行中 | `arc` | `display` | `2026-04-12` | 设计 / 实现 | 新增符合 Fluent 2 / WPF UI `Arc` 语义的 reference 控件，基于 custom 层完成样式、静态 preview、文档、单测、runtime 与 web 发布链路闭环 |
+| 暂无 | - | - | - | - | - |
 
 ## 当前保留的 Reference 主线控件
 
@@ -109,6 +109,12 @@
 - `toast_stack` -> `Toast`
 
 ## 最近完成的收口动作
+
+- `2026-04-12`
+  - 新增 `display/arc` reference 控件：新增符合 Fluent / WPF UI `Arc` 语义的只读 `egui_view_arc`，基于 custom 层直接绘制 round-cap arc，补齐 `standard / subtle / attention` 三套样式 helper、`value / palette / angle / stroke` setter 与静态 preview API，不修改 SDK。
+  - `example/HelloCustomWidgets/display/arc/egui_view_arc.c/.h` 新增 `egui_view_arc_init()`、`egui_view_arc_apply_standard_style()`、`egui_view_arc_apply_subtle_style()`、`egui_view_arc_apply_attention_style()`、`egui_view_arc_set_value()`、`egui_view_arc_set_palette()`、`egui_view_arc_set_angles()`、`egui_view_arc_set_stroke_width()` 与 `egui_view_arc_override_static_preview_api()`，把 Arc 的只读展示语义、palette / geometry 收口与 preview 输入抑制统一收口在 custom 层；`example/HelloCustomWidgets/display/arc/test.c` 新增标题 + 主 `arc` + 底部 `subtle / attention` 双 preview 的 reference 页面，并补上 `32% -> 58% -> 86% -> 32%` 的 runtime 录制轨道。
+  - `example/HelloUnitTest/test/test_arc.c` 新增单测覆盖样式 helper、setter clamp、角度归一化、stroke 最小值与静态 preview 输入抑制；`example/HelloCustomWidgets/display/arc/readme.md`、`example/HelloCustomWidgets/widget_catalog.json`、`example/HelloUnitTest/uicode.c` 与 `web/catalog-policy.json` 同步接入 `display/arc`。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=display/arc PORT=pc`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`python scripts/sync_widget_catalog.py`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category display`、`python scripts/checks/check_docs_encoding.py`、`python scripts/checks/check_widget_catalog.py`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub display/arc --track reference --timeout 10 --keep-screenshots`、`python scripts/code_compile_check.py --custom-widgets --category display --bits64`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --category display --track reference --bits64`、`python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub display/arc` 与对应 web smoke，确认 `arc` 已接入 reference 主线和 web 发布链路。
 
 - `2026-04-12`
   - 新增 `input/hyperlink_button` reference 控件：基于 SDK `button` 封装符合 Fluent / WPF UI `HyperlinkButton` 语义的 reference 页面，补齐 `standard / inline / disabled` 三套样式 helper、自定义 underline draw、`Space / Enter` 键盘 click 闭环与静态 preview API，不修改 SDK。
