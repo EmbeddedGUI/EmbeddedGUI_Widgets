@@ -9,12 +9,12 @@
 
 ## 当前快照
 
-- 截至 `2026-04-12`，`example/HelloCustomWidgets/` 当前保留 `56` 个控件目录。
+- 截至 `2026-04-12`，`example/HelloCustomWidgets/` 当前保留 `57` 个控件目录。
 - 所有保留控件均来自 `reference` 主线：
   - `input = 27`
   - `layout = 6`
   - `navigation = 10`
-  - `display = 6`
+  - `display = 7`
   - `feedback = 7`
 - `widget_catalog.json`、`web/catalog-policy.json` 与默认 web 入口已同步到 `reference-only` 状态。
 - 已清退轨道：
@@ -34,7 +34,7 @@
 
 | 状态 | 控件名 | 分类 | 开始日期 | 当前阶段 | 目标 |
 | --- | --- | --- | --- | --- | --- |
-| 进行中 | `symbol_icon` | `display` | `2026-04-12` | 方案设计中 | 新增符合 Fluent / WPF UI `SymbolIcon` 语义的 reference 控件，并完成 compile/runtime/web 闭环 |
+| 暂无 | - | - | - | - | - |
 
 ## 当前保留的 Reference 主线控件
 
@@ -90,7 +90,7 @@
 - `tab_view` -> `TabView`
 - `tree_view` -> `TreeView`
 
-### Display（6）
+### Display（7）
 
 - `badge_group` -> `BadgeGroup`
 - `arc` -> `Arc`
@@ -98,6 +98,7 @@
 - `divider` -> `Separator`
 - `info_badge` -> `InfoBadge`
 - `persona_group` -> `AvatarGroup`
+- `symbol_icon` -> `SymbolIcon`
 
 ### Feedback（7）
 
@@ -110,6 +111,12 @@
 - `toast_stack` -> `Toast`
 
 ## 最近完成的收口动作
+
+- `2026-04-12`
+  - 新增 `display/symbol_icon` reference 控件：新增符合 Fluent / WPF UI `SymbolIcon` 语义的只读 `egui_view_symbol_icon`，复用内置 `Material Symbols` 字体子集表达符号图标语义，保留 `standard / subtle / accent` 三套颜色样式 helper、符号与字体 setter 以及静态 preview 输入抑制，不修改 SDK。
+  - `example/HelloCustomWidgets/display/symbol_icon/egui_view_symbol_icon.c/.h` 新增 `egui_view_symbol_icon_init()`、`egui_view_symbol_icon_apply_standard_style()`、`egui_view_symbol_icon_apply_subtle_style()`、`egui_view_symbol_icon_apply_accent_style()`、`egui_view_symbol_icon_set_symbol()`、`egui_view_symbol_icon_set_icon_font()`、`egui_view_symbol_icon_set_palette()` 与 `egui_view_symbol_icon_override_static_preview_api()`，把只读图标绘制、自动图标字体回退与 preview 输入吞掉统一收口在 custom 层；`example/HelloCustomWidgets/display/symbol_icon/test.c` 新增标题 + 主 `symbol_icon` + 底部 `subtle / accent` 双 preview 的 reference 页面，并补上 `Home -> Notifications -> Settings -> Home` 的 runtime 录制轨道。
+  - `example/HelloUnitTest/test/test_symbol_icon.c` 新增单测覆盖样式 helper、setter、默认符号回退与静态 preview 输入抑制；`example/HelloCustomWidgets/display/symbol_icon/readme.md`、`example/HelloCustomWidgets/widget_catalog.json`、`example/HelloUnitTest/uicode.c` 与 `web/catalog-policy.json` 同步接入 `display/symbol_icon`。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=display/symbol_icon PORT=pc`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`python scripts/sync_widget_catalog.py`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category display`、`python scripts/checks/check_docs_encoding.py`、`python scripts/checks/check_widget_catalog.py`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub display/symbol_icon --track reference --timeout 10 --keep-screenshots`、`python scripts/code_compile_check.py --custom-widgets --category display --bits64`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --category display --track reference --bits64`、`python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub display/symbol_icon` 与对应 web smoke，确认 `symbol_icon` 已接入 reference 主线和 web 发布链路。
 
 - `2026-04-12`
   - 新增 `input/thumb_rate` reference 控件：新增符合 Fluent / WPF UI `ThumbRate` 语义的三态 `egui_view_thumb_rate`，保留 `none / liked / disliked`、再次点击当前项回到 `none`、键盘导航与静态 preview 输入抑制，基于 custom 层自绘 thumb up/down 图形，不修改 SDK。
