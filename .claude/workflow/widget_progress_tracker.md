@@ -34,7 +34,7 @@
 
 | 状态 | 控件名 | 分类 | 开始日期 | 当前阶段 | 目标 |
 | --- | --- | --- | --- | --- | --- |
-| 暂无 | - | - | - | - | - |
+| 进行中 | `symbol_icon` | `display` | `2026-04-12` | 方案设计中 | 新增符合 Fluent / WPF UI `SymbolIcon` 语义的 reference 控件，并完成 compile/runtime/web 闭环 |
 
 ## 当前保留的 Reference 主线控件
 
