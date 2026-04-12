@@ -9,9 +9,9 @@
 
 ## 当前快照
 
-- 截至 `2026-04-12`，`example/HelloCustomWidgets/` 当前保留 `53` 个控件目录。
+- 截至 `2026-04-12`，`example/HelloCustomWidgets/` 当前保留 `54` 个控件目录。
 - 所有保留控件均来自 `reference` 主线：
-  - `input = 25`
+  - `input = 26`
   - `layout = 6`
   - `navigation = 10`
   - `display = 5`
@@ -34,11 +34,11 @@
 
 | 状态 | 控件名 | 分类 | 开始日期 | 当前阶段 | 目标 |
 | --- | --- | --- | --- | --- | --- |
-| 进行中 | `hyperlink_button` | `input` | `2026-04-12` | 设计 / 实现 | 基于 SDK `button` 补齐 Fluent / WPF UI `HyperlinkButton` reference 页面、单测与 catalog 闭环 |
+| 暂无 | - | - | - | - | - |
 
 ## 当前保留的 Reference 主线控件
 
-### Input（25）
+### Input（26）
 
 - `auto_suggest_box` -> `AutoSuggestBox`
 - `button` -> `Button`
@@ -49,6 +49,7 @@
 - `command_bar` -> `CommandBar`
 - `date_picker` -> `DatePicker`
 - `drop_down_button` -> `DropDownButton`
+- `hyperlink_button` -> `HyperlinkButton`
 - `number_box` -> `NumberBox`
 - `password_box` -> `PasswordBox`
 - `radio_button` -> `RadioButton`
@@ -107,6 +108,12 @@
 - `toast_stack` -> `Toast`
 
 ## 最近完成的收口动作
+
+- `2026-04-12`
+  - 新增 `input/hyperlink_button` reference 控件：基于 SDK `button` 封装符合 Fluent / WPF UI `HyperlinkButton` 语义的 reference 页面，补齐 `standard / inline / disabled` 三套样式 helper、自定义 underline draw、`Space / Enter` 键盘 click 闭环与静态 preview API，不修改 SDK。
+  - `example/HelloCustomWidgets/input/hyperlink_button/egui_view_hyperlink_button.c/.h` 新增 `hcw_hyperlink_button_apply_standard_style()`、`hcw_hyperlink_button_apply_inline_style()`、`hcw_hyperlink_button_apply_disabled_style()`、`hcw_hyperlink_button_set_text()`、`hcw_hyperlink_button_set_font()`、`hcw_hyperlink_button_override_interaction_api()` 与 `hcw_hyperlink_button_override_static_preview_api()`，把轻量链接视觉、underline draw、键盘闭环、`pressed` 清理与 preview 输入抑制统一收口在 custom 层。
+  - `example/HelloCustomWidgets/input/hyperlink_button/test.c` 新增标题 + 主链接面板 + 底部 `inline / disabled` 双 preview 的 reference 页面，并补上 `Open release notes -> Review change summary -> Browse final checklist -> Open release notes` 的 runtime 录制轨道；`example/HelloUnitTest/test/test_hyperlink_button.c` 新增单测覆盖样式 helper、setter、same-target release、键盘点击、禁用 guard 与静态 preview 输入抑制；`example/HelloCustomWidgets/widget_catalog.json`、`example/HelloUnitTest/uicode.c` 与 `web/catalog-policy.json` 同步接入 `input/hyperlink_button`。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=input/hyperlink_button PORT=pc`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`python scripts/sync_widget_catalog.py`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category input`、`python scripts/checks/check_docs_encoding.py`、`python scripts/checks/check_widget_catalog.py`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/hyperlink_button --track reference --timeout 10 --keep-screenshots`、`python scripts/code_compile_check.py --custom-widgets --category input --bits64`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --category input --track reference --bits64`、`python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub input/hyperlink_button` 与对应 web smoke，确认 `hyperlink_button` 已接入 reference 主线和 web 发布链路。
 
 - `2026-04-12`
   - 新增 `display/info_badge` reference 控件：基于 SDK `notification_badge` 封装符合 Fluent / WPF UI `InfoBadge` 语义的 reference 页面，补齐 `count / icon / attention dot` 三种核心状态、palette setter、attention dot draw 语义与静态 preview API，不修改 SDK。
