@@ -9,12 +9,12 @@
 
 ## 当前快照
 
-- 截至 `2026-04-13`，`example/HelloCustomWidgets/` 当前保留 `66` 个控件目录。
+- 截至 `2026-04-13`，`example/HelloCustomWidgets/` 当前保留 `67` 个控件目录。
 - 所有保留控件均来自 `reference` 主线：
   - `input = 28`
   - `layout = 6`
   - `navigation = 11`
-  - `display = 14`
+  - `display = 15`
   - `feedback = 7`
 - `widget_catalog.json`、`web/catalog-policy.json` 与默认 web 入口已同步到 `reference-only` 状态。
 - 已清退轨道：
@@ -34,7 +34,7 @@
 
 | 状态 | 控件名 | 分类 | 开始日期 | 当前阶段 | 目标 |
 | --- | --- | --- | --- | --- | --- |
-| 进行中 | `text_block` | `display` | `2026-04-13` | 设计 / 选型 | 新增符合 Fluent / WPF UI `TextBlock` 语义的 reference 控件，在 custom 层收口单段多行文本、样式 helper 与静态 preview / web 验证路径 |
+| 暂无 | - | - | - | - | - |
 
 ## 当前保留的 Reference 主线控件
 
@@ -108,6 +108,7 @@
 - `persona_group` -> `AvatarGroup`
 - `rich_text_block` -> `RichTextBlock`
 - `symbol_icon` -> `SymbolIcon`
+- `text_block` -> `TextBlock`
 
 ### Feedback（7）
 
@@ -121,6 +122,11 @@
 
 ## 最近完成的收口动作
 
+- `2026-04-13`
+  - 新增 `display/text_block` reference 控件：新增符合 Fluent / WPF UI `TextBlock` 语义的轻量 `egui_view_text_block`，在 custom 层包一层 SDK `textblock`，收口单段多行文本、`standard / subtle / accent` 三套样式 helper、`compact_mode / read_only_mode`、palette 与静态 preview 输入抑制，不修改 SDK。
+  - `example/HelloCustomWidgets/display/text_block/egui_view_text_block.c/.h` 新增 `egui_view_text_block_init()`、`egui_view_text_block_apply_standard_style()`、`egui_view_text_block_apply_subtle_style()`、`egui_view_text_block_apply_accent_style()`、`egui_view_text_block_set_text()`、`egui_view_text_block_set_font()`、`egui_view_text_block_set_palette()`、`egui_view_text_block_set_compact_mode()`、`egui_view_text_block_set_read_only_mode()` 与 `egui_view_text_block_override_static_preview_api()`，并统一在 custom 层关闭滚动 / 编辑 / 边框、收口 `line_space` 与 read-only disabled mix；`example/HelloCustomWidgets/display/text_block/test.c` 新增标题 + 主 `text_block` + 底部 `compact / read_only` 双 preview 的 reference 页面与 `Standard -> Subtle -> Accent -> Standard` 录制轨道。
+  - `example/HelloUnitTest/test/test_text_block.c` 新增单测覆盖默认值、style helper、palette / mode setter、display-only 默认项与静态 preview 输入抑制；`example/HelloCustomWidgets/display/text_block/readme.md`、`example/HelloCustomWidgets/widget_catalog.json`、`example/HelloUnitTest/uicode.c` 与 `web/catalog-policy.json` 同步接入 `display/text_block`，并已把关键截图归档到本地 `iteration_log/` 供验收复核。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=display/text_block PORT=pc`、`make clean APP=HelloUnitTest PORT=pc_test`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`python scripts/sync_widget_catalog.py`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category display`、`python scripts/checks/check_docs_encoding.py`、`python scripts/checks/check_widget_catalog.py`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub display/text_block --track reference --timeout 10 --keep-screenshots`、`python scripts/code_compile_check.py --custom-widgets --category display --bits64`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --category display --track reference --bits64`、`python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub display/text_block` 与对应 `web_smoke_check.py`，确认 `text_block` 已接入 reference 主线和 web 发布链路。
 - `2026-04-13`
   - 新增 `display/rich_text_block` reference 控件：新增符合 Fluent / WinUI `RichTextBlock` 语义的轻量 `egui_view_rich_text_block`，在 custom 层收口“段落数组 + `BODY / EMPHASIS / ACCENT / CAPTION` 样式枚举”、`compact_mode / read_only_mode`、palette 与静态 preview 输入抑制，不修改 SDK。
   - `example/HelloCustomWidgets/display/rich_text_block/egui_view_rich_text_block.c/.h` 新增 `egui_view_rich_text_block_init()`、`egui_view_rich_text_block_set_paragraphs()`、`egui_view_rich_text_block_set_font()`、`egui_view_rich_text_block_set_emphasis_font()`、`egui_view_rich_text_block_set_caption_font()`、`egui_view_rich_text_block_set_compact_mode()`、`egui_view_rich_text_block_set_read_only_mode()`、`egui_view_rich_text_block_set_palette()` 与 `egui_view_rich_text_block_override_static_preview_api()`，并在 custom 层补齐字符测量 / 逐行换行绘制逻辑、`ACCENT` 轻量 callout 与 `read_only` 弱化处理；`example/HelloCustomWidgets/display/rich_text_block/test.c` 新增标题 + 主 `rich_text_block` + 底部 `compact / read_only` 双 preview 的 reference 页面与三组段落快照录制轨道。

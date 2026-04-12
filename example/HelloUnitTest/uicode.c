@@ -61,6 +61,7 @@
 #include "test/test_tab_view.h"
 #include "test/test_teaching_tip.h"
 #include "test/test_text_box.h"
+#include "test/test_text_block.h"
 #include "test/test_thumb_rate.h"
 #include "test/test_time_picker.h"
 #include "test/test_toast_stack.h"
@@ -137,6 +138,7 @@ void uicode_create_ui(void)
     test_tab_view_run();
     test_teaching_tip_run();
     test_text_box_run();
+    test_text_block_run();
     test_thumb_rate_run();
     test_time_picker_run();
     test_toast_stack_run();
