@@ -9,12 +9,12 @@
 
 ## 当前快照
 
-- 截至 `2026-04-13`，`example/HelloCustomWidgets/` 当前保留 `63` 个控件目录。
+- 截至 `2026-04-13`，`example/HelloCustomWidgets/` 当前保留 `64` 个控件目录。
 - 所有保留控件均来自 `reference` 主线：
   - `input = 27`
   - `layout = 6`
   - `navigation = 11`
-  - `display = 12`
+  - `display = 13`
   - `feedback = 7`
 - `widget_catalog.json`、`web/catalog-policy.json` 与默认 web 入口已同步到 `reference-only` 状态。
 - 已清退轨道：
@@ -91,7 +91,7 @@
 - `tab_view` -> `TabView`
 - `tree_view` -> `TreeView`
 
-### Display（12）
+### Display（13）
 
 - `badge_group` -> `BadgeGroup`
 - `arc` -> `Arc`
@@ -103,6 +103,7 @@
 - `image_icon` -> `ImageIcon`
 - `info_badge` -> `InfoBadge`
 - `path_icon` -> `PathIcon`
+- `person_picture` -> `PersonPicture`
 - `persona_group` -> `AvatarGroup`
 - `symbol_icon` -> `SymbolIcon`
 
@@ -117,6 +118,12 @@
 - `toast_stack` -> `Toast`
 
 ## 最近完成的收口动作
+
+- `2026-04-13`
+  - 新增 `display/person_picture` reference 控件：新增符合 Fluent / WinUI `PersonPicture` 语义的轻量 `egui_view_person_picture`，在 custom 层收口 `display_name / initials / fallback_glyph / image / presence / tone / compact_mode / read_only_mode`，并保持控件本身为显示型头像，不承接点击或导航职责，不修改 SDK。
+  - `example/HelloCustomWidgets/display/person_picture/egui_view_person_picture.c/.h` 新增 `egui_view_person_picture_init()`、`egui_view_person_picture_set_display_name()`、`egui_view_person_picture_set_initials()`、`egui_view_person_picture_set_fallback_glyph()`、`egui_view_person_picture_set_image()`、`egui_view_person_picture_set_tone()`、`egui_view_person_picture_set_presence()`、`egui_view_person_picture_set_compact_mode()`、`egui_view_person_picture_set_read_only_mode()`、`egui_view_person_picture_set_palette()` 与 `egui_view_person_picture_override_static_preview_api()`，并补 `resolve_initials / avatar_region / presence_region` helper、圆形头像 mask 绘制与静态 preview 输入抑制；`example/HelloCustomWidgets/display/person_picture/test.c` 新增标题 + 主 `person_picture` + 底部 `compact / read only` 双 preview 的 reference 页面。
+  - `example/HelloUnitTest/test/test_person_picture.c` 新增单测覆盖默认初始化、setter 与 initials 解析、tone / presence / region helper、静态 preview 输入抑制；`example/HelloCustomWidgets/display/person_picture/readme.md`、`example/HelloCustomWidgets/widget_catalog.json`、`example/HelloUnitTest/uicode.c` 与 `web/catalog-policy.json` 同步接入 `display/person_picture`，并在 `example/HelloCustomWidgets/app_egui_config.h` 启用 `EGUI_CONFIG_FUNCTION_SUPPORT_MASK` 以支持头像圆形裁切。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=display/person_picture PORT=pc`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`python scripts/sync_widget_catalog.py`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category display`、`python scripts/checks/check_docs_encoding.py`、`python scripts/checks/check_widget_catalog.py`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub display/person_picture --track reference --timeout 10 --keep-screenshots`、`python scripts/code_compile_check.py --custom-widgets --category display --bits64`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --category display --track reference --bits64`、`python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub display/person_picture` 与对应 `web_smoke_check.py`，确认 `person_picture` 已接入 reference 主线和 web 发布链路。
 
 - `2026-04-13`
   - 新增 `display/animated_icon` reference 控件：新增符合 Fluent 2 / WinUI `AnimatedIcon` 语义的轻量 `egui_view_animated_icon`，在 custom 层收口 `AnimatedBackVisualSource`、`AnimatedChevronDownSmallVisualSource`、`Normal / PointerOver / Pressed` 状态字符串、常见过渡字符串、fallback glyph 与静态 preview 输入抑制，不修改 SDK。
