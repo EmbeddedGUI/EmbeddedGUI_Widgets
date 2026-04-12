@@ -30,6 +30,7 @@
 #include "test/test_radio_button.h"
 #include "test/test_persona_group.h"
 #include "test/test_pips_pager.h"
+#include "test/test_progress_bar.h"
 #include "test/test_rating_control.h"
 #include "test/test_scroll_bar.h"
 #include "test/test_segmented_control.h"
@@ -89,6 +90,7 @@ void uicode_create_ui(void)
     test_radio_button_run();
     test_persona_group_run();
     test_pips_pager_run();
+    test_progress_bar_run();
     test_rating_control_run();
     test_scroll_bar_run();
     test_segmented_control_run();
