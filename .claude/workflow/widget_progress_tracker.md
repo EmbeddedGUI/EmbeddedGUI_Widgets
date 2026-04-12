@@ -9,11 +9,11 @@
 
 ## 当前快照
 
-- 截至 `2026-04-12`，`example/HelloCustomWidgets/` 当前保留 `61` 个控件目录。
+- 截至 `2026-04-12`，`example/HelloCustomWidgets/` 当前保留 `62` 个控件目录。
 - 所有保留控件均来自 `reference` 主线：
   - `input = 27`
   - `layout = 6`
-  - `navigation = 10`
+  - `navigation = 11`
   - `display = 11`
   - `feedback = 7`
 - `widget_catalog.json`、`web/catalog-policy.json` 与默认 web 入口已同步到 `reference-only` 状态。
@@ -77,7 +77,7 @@
 - `settings_panel` -> `SettingCardGroup`
 - `split_view` -> `SplitView`
 
-### Navigation（10）
+### Navigation（11）
 
 - `annotated_scroll_bar` -> `AnnotatedScrollBar`
 - `breadcrumb_bar` -> `BreadcrumbBar`
@@ -86,6 +86,7 @@
 - `menu_flyout` -> `MenuFlyout`
 - `nav_panel` -> `NavigationView`
 - `pips_pager` -> `PipsPager`
+- `selector_bar` -> `SelectorBar`
 - `tab_strip` -> `TabStrip`
 - `tab_view` -> `TabView`
 - `tree_view` -> `TreeView`
@@ -115,6 +116,12 @@
 - `toast_stack` -> `Toast`
 
 ## 最近完成的收口动作
+
+- `2026-04-12`
+  - 新增 `navigation/selector_bar` reference 控件：新增符合 Fluent 2 / WinUI `SelectorBar` 语义的轻量 `egui_view_selector_bar`，在 custom 层补齐 `icon+text` item、`icon only` item、`INDEX_NONE` 焦点回落、same-target release、键盘切换与静态 preview 输入抑制，不修改 SDK。
+  - `example/HelloCustomWidgets/navigation/selector_bar/egui_view_selector_bar.c/.h` 新增 `egui_view_selector_bar_init()`、`egui_view_selector_bar_set_items()`、`egui_view_selector_bar_set_current_index()`、`egui_view_selector_bar_get_current_index()`、`egui_view_selector_bar_set_on_selection_changed_listener()`、`egui_view_selector_bar_set_font()`、`egui_view_selector_bar_set_icon_font()`、`egui_view_selector_bar_set_compact_mode()`、`egui_view_selector_bar_set_palette()` 与 `egui_view_selector_bar_override_static_preview_api()`，把 item 宽度估算、icon+text 纵向绘制、pressed 清理、焦点回落和静态 preview 吞掉 `touch / key` 统一收口在 custom 层；`example/HelloCustomWidgets/navigation/selector_bar/test.c` 新增标题 + 主 `selector_bar` + 底部 `Compact / Icon only` 双 preview 的 reference 页面，并补上 `Recent -> Search -> Saved -> compact -> icon only` 的 runtime 录制轨道。
+  - `example/HelloUnitTest/test/test_selector_bar.c` 新增单测覆盖 item clamp、setter pressed 清理、焦点进入自动选中、same-target release、键盘切换与静态 preview 输入抑制；`example/HelloCustomWidgets/navigation/selector_bar/readme.md`、`example/HelloCustomWidgets/widget_catalog.json`、`example/HelloUnitTest/uicode.c` 与 `web/catalog-policy.json` 同步接入 `navigation/selector_bar`。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=navigation/selector_bar PORT=pc`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`python scripts/sync_widget_catalog.py`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category navigation`、`python scripts/checks/check_docs_encoding.py`、`python scripts/checks/check_widget_catalog.py`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub navigation/selector_bar --track reference --timeout 10 --keep-screenshots`、`python scripts/code_compile_check.py --custom-widgets --category navigation --bits64`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --category navigation --track reference --bits64`、`python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub navigation/selector_bar` 与对应 web smoke，确认 `selector_bar` 已接入 reference 主线和 web 发布链路。
 
 - `2026-04-12`
   - 新增 `display/path_icon` reference 控件：新增符合 Fluent / WPF UI `PathIcon` 语义的只读 `egui_view_path_icon`，在 custom 层实现轻量 path 命令数据结构，支持 `MOVE_TO / LINE_TO / QUAD_TO / CUBIC_TO / CLOSE` 预解析命令、默认路径回退、`standard / subtle / accent` 三套前景色样式 helper、内置路径切换与静态 preview 输入抑制，不修改 SDK。

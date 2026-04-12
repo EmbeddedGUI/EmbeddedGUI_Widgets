@@ -580,6 +580,16 @@
     "doc_state": "ok"
   },
   {
+    "id": "navigation/selector_bar",
+    "track": "reference",
+    "visibility": "public",
+    "reference_system": "Fluent 2",
+    "reference_library": "WPF UI",
+    "reference_component": "SelectorBar",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
     "id": "navigation/tab_strip",
     "track": "reference",
     "visibility": "public",
