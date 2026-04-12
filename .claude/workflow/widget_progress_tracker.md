@@ -9,13 +9,13 @@
 
 ## 当前快照
 
-- 截至 `2026-04-13`，`example/HelloCustomWidgets/` 当前保留 `68` 个控件目录。
+- 截至 `2026-04-13`，`example/HelloCustomWidgets/` 当前保留 `69` 个控件目录。
 - 所有保留控件均来自 `reference` 主线：
   - `input = 29`
   - `layout = 6`
   - `navigation = 11`
   - `display = 15`
-  - `feedback = 7`
+  - `feedback = 8`
 - `widget_catalog.json`、`web/catalog-policy.json` 与默认 web 入口已同步到 `reference-only` 状态。
 - 已清退轨道：
   - 全部 `deprecated`
@@ -34,7 +34,7 @@
 
 | 状态 | 控件名 | 分类 | 开始日期 | 当前阶段 | 目标 |
 | --- | --- | --- | --- | --- | --- |
-| 进行中 | `tool_tip` | `feedback` | `2026-04-13` | 设计 / 选型 | 新增符合 Fluent / WPF UI `ToolTip` 语义的 reference 控件，在 custom 层收口 anchored hint、延时显示、placement 与静态 preview / web 验证路径 |
+| 暂无 | - | - | - | - | - |
 
 ## 当前保留的 Reference 主线控件
 
@@ -111,7 +111,7 @@
 - `symbol_icon` -> `SymbolIcon`
 - `text_block` -> `TextBlock`
 
-### Feedback（7）
+### Feedback（8）
 
 - `activity_ring` -> `ProgressRing`
 - `dialog_sheet` -> `ContentDialog`
@@ -119,10 +119,16 @@
 - `progress_bar` -> `ProgressBar`
 - `skeleton` -> `Skeleton`
 - `teaching_tip` -> `TeachingTip`
+- `tool_tip` -> `ToolTip`
 - `toast_stack` -> `Toast`
 
 ## 最近完成的收口动作
 
+- `2026-04-13`
+  - 新增 `feedback/tool_tip` reference 控件：新增符合 Fluent / WPF UI `ToolTip` 语义的轻量 `egui_view_tool_tip`，在 custom 层收口页内 target + bubble 一体绘制、点击后延时显示、`top / bottom placement`、二次点击关闭、`Enter / Space` 延时打开、`Esc` 关闭、`compact / read only` 与静态 preview 输入抑制，不修改 SDK。
+  - `example/HelloCustomWidgets/feedback/tool_tip/egui_view_tool_tip.c/.h` 新增 `egui_view_tool_tip_init()`、`egui_view_tool_tip_set_snapshots()`、`egui_view_tool_tip_set_current_snapshot()`、`egui_view_tool_tip_set_open()`、`egui_view_tool_tip_set_font()`、`egui_view_tool_tip_set_meta_font()`、`egui_view_tool_tip_set_compact_mode()`、`egui_view_tool_tip_set_read_only_mode()`、`egui_view_tool_tip_set_show_delay()`、`egui_view_tool_tip_begin_show_delay()`、`egui_view_tool_tip_cancel_show_delay()`、`egui_view_tool_tip_set_palette()`、`egui_view_tool_tip_get_part_region()` 与 `egui_view_tool_tip_override_static_preview_api()`；补齐 `pending_show / timer_started / open / touch_active / key_active / toggle_on_release` 生命周期，修复 `ACTION_MOVE` 移出后 stale `current_part` 与录制模式下 `memset` 编译回归。`example/HelloCustomWidgets/feedback/tool_tip/test.c` 新增标题 + 主 `tool_tip` + 底部 `compact / read only` 双 preview 的 reference 页面与 `delay open / top placement / warning / Esc close / preview 收尾` 录制轨道；`example/HelloUnitTest/test/test_tool_tip.c/.h` 新增单测覆盖默认值、setter 清理、same-target release、移出取消延时、键盘打开 / 关闭、静态 preview 与 attach / detach timer 生命周期。
+  - `example/HelloCustomWidgets/feedback/tool_tip/readme.md`、`example/HelloCustomWidgets/widget_catalog.json`、`example/HelloUnitTest/uicode.c` 与 `web/catalog-policy.json` 已同步接入 `feedback/tool_tip`，并已把关键截图归档到本地 `iteration_log/` 供验收复核。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=feedback/tool_tip PORT=pc`、`make clean APP=HelloUnitTest PORT=pc_test`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`python scripts/sync_widget_catalog.py`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category feedback`、`python scripts/checks/check_docs_encoding.py`、`python scripts/checks/check_widget_catalog.py`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub feedback/tool_tip --track reference --timeout 10 --keep-screenshots`、`python scripts/code_compile_check.py --custom-widgets --category feedback --bits64`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --category feedback --track reference --bits64`、`python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub feedback/tool_tip` 与对应 `web_smoke_check.py`，确认 `tool_tip` 已接入 reference 主线和 web 发布链路。
 - `2026-04-13`
   - 新增 `input/repeat_button` reference 控件：新增符合 Fluent / WPF UI `RepeatButton` 语义的轻量 `egui_view_repeat_button`，在 custom 层收口按下即触发、按住连发、`standard / compact / disabled` 三套样式 helper、静态 preview 输入抑制与 attach / detach timer 生命周期，不修改 SDK。
   - `example/HelloCustomWidgets/input/repeat_button/egui_view_repeat_button.c/.h` 新增 `egui_view_repeat_button_init()`、`egui_view_repeat_button_apply_standard_style()`、`egui_view_repeat_button_apply_compact_style()`、`egui_view_repeat_button_apply_disabled_style()`、`egui_view_repeat_button_set_text()`、`egui_view_repeat_button_set_icon()`、`egui_view_repeat_button_set_font()`、`egui_view_repeat_button_set_icon_font()`、`egui_view_repeat_button_set_icon_text_gap()`、`egui_view_repeat_button_set_repeat_timing()` 与 `egui_view_repeat_button_override_static_preview_api()`；`example/HelloCustomWidgets/input/repeat_button/test.c` 新增标题 + 主 `repeat_button` + 底部 `compact / disabled` 双 preview 的 reference 页面，并补上触摸长按与键盘 `Space` 长按的录制轨道。
