@@ -9,12 +9,12 @@
 
 ## 当前快照
 
-- 截至 `2026-04-12`，`example/HelloCustomWidgets/` 当前保留 `58` 个控件目录。
+- 截至 `2026-04-12`，`example/HelloCustomWidgets/` 当前保留 `59` 个控件目录。
 - 所有保留控件均来自 `reference` 主线：
   - `input = 27`
   - `layout = 6`
   - `navigation = 10`
-  - `display = 8`
+  - `display = 9`
   - `feedback = 7`
 - `widget_catalog.json`、`web/catalog-policy.json` 与默认 web 入口已同步到 `reference-only` 状态。
 - 已清退轨道：
@@ -90,12 +90,13 @@
 - `tab_view` -> `TabView`
 - `tree_view` -> `TreeView`
 
-### Display（8）
+### Display（9）
 
 - `badge_group` -> `BadgeGroup`
 - `arc` -> `Arc`
 - `card_panel` -> `Card`
 - `divider` -> `Separator`
+- `font_icon` -> `FontIcon`
 - `image_icon` -> `ImageIcon`
 - `info_badge` -> `InfoBadge`
 - `persona_group` -> `AvatarGroup`
@@ -112,6 +113,12 @@
 - `toast_stack` -> `Toast`
 
 ## 最近完成的收口动作
+
+- `2026-04-12`
+  - 新增 `display/font_icon` reference 控件：新增符合 Fluent / WPF UI `FontIcon` 语义的只读 `egui_view_font_icon`，在 custom 层基于 SDK `egui_view_label` 收口默认字形回退、显式图标字体句柄切换、颜色样式 helper 与静态 preview 输入抑制；demo 为保证确定性继续复用内置 `Material Symbols` 字体子集，但控件接口允许外部传入任意 `egui_font_t *`，不修改 SDK。
+  - `example/HelloCustomWidgets/display/font_icon/egui_view_font_icon.c/.h` 新增 `egui_view_font_icon_init()`、`egui_view_font_icon_apply_standard_style()`、`egui_view_font_icon_apply_subtle_style()`、`egui_view_font_icon_apply_accent_style()`、`egui_view_font_icon_set_glyph()`、`egui_view_font_icon_get_glyph()`、`egui_view_font_icon_set_icon_font()`、`egui_view_font_icon_set_palette()` 与 `egui_view_font_icon_override_static_preview_api()`，把字形回退、pressed 清理与 preview 吞掉 `touch / key` 统一收口在 custom 层；`example/HelloCustomWidgets/display/font_icon/test.c` 新增标题 + 主 `font_icon` + 底部 `MS16 / MS20` 双 preview 的 reference 页面，并补上 `Search / MS24 -> Favorite / MS20 -> Settings / MS16 -> Search / MS24` 的 runtime 录制轨道。
+  - `example/HelloUnitTest/test/test_font_icon.c` 新增单测覆盖默认初始化、样式 helper、glyph / font / palette setter 回退与静态 preview 输入抑制；`example/HelloCustomWidgets/display/font_icon/readme.md`、`example/HelloCustomWidgets/widget_catalog.json`、`example/HelloUnitTest/uicode.c` 与 `web/catalog-policy.json` 同步接入 `display/font_icon`。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=display/font_icon PORT=pc`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`python scripts/sync_widget_catalog.py`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category display`、`python scripts/checks/check_docs_encoding.py`、`python scripts/checks/check_widget_catalog.py`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub display/font_icon --track reference --timeout 10 --keep-screenshots`、`python scripts/code_compile_check.py --custom-widgets --category display --bits64`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --category display --track reference --bits64`、`python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub display/font_icon` 与对应 web smoke，确认 `font_icon` 已接入 reference 主线和 web 发布链路。
 
 - `2026-04-12`
   - 新增 `display/image_icon` reference 控件：新增符合 Fluent / WPF UI `ImageIcon` 语义的只读 `egui_view_image_icon`，基于 SDK `egui_view_image` 收口默认图、图片源切换与静态 preview 输入抑制；内置 `default / warm / fresh` 三张纯 `RGB565` 图片资源，避免 PC runtime / web 下的 alpha resize 异常，不修改 SDK。

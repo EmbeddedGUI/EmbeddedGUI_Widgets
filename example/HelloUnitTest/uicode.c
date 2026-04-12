@@ -22,6 +22,7 @@
 #include "test/test_drop_down_button.h"
 #include "test/test_expander.h"
 #include "test/test_flip_view.h"
+#include "test/test_font_icon.h"
 #include "test/test_hyperlink_button.h"
 #include "test/test_image_icon.h"
 #include "test/test_info_badge.h"
@@ -90,6 +91,7 @@ void uicode_create_ui(void)
     test_drop_down_button_run();
     test_expander_run();
     test_flip_view_run();
+    test_font_icon_run();
     test_hyperlink_button_run();
     test_image_icon_run();
     test_info_badge_run();
