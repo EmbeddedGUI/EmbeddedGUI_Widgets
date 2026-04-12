@@ -34,8 +34,7 @@
 
 | 状态 | 控件名 | 分类 | 开始日期 | 当前阶段 | 目标 |
 | --- | --- | --- | --- | --- | --- |
-
-当前无进行中的控件。
+| 进行中 | `tool_tip` | `feedback` | `2026-04-13` | 设计 / 选型 | 新增符合 Fluent / WPF UI `ToolTip` 语义的 reference 控件，在 custom 层收口 anchored hint、延时显示、placement 与静态 preview / web 验证路径 |
 
 ## 当前保留的 Reference 主线控件
 
