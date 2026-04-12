@@ -1,5 +1,15 @@
 [
   {
+    "id": "display/animated_icon",
+    "track": "reference",
+    "visibility": "public",
+    "reference_system": "Fluent 2",
+    "reference_library": "WPF UI",
+    "reference_component": "AnimatedIcon",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
     "id": "display/arc",
     "track": "reference",
     "visibility": "public",

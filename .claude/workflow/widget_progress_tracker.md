@@ -9,12 +9,12 @@
 
 ## 当前快照
 
-- 截至 `2026-04-12`，`example/HelloCustomWidgets/` 当前保留 `62` 个控件目录。
+- 截至 `2026-04-13`，`example/HelloCustomWidgets/` 当前保留 `63` 个控件目录。
 - 所有保留控件均来自 `reference` 主线：
   - `input = 27`
   - `layout = 6`
   - `navigation = 11`
-  - `display = 11`
+  - `display = 12`
   - `feedback = 7`
 - `widget_catalog.json`、`web/catalog-policy.json` 与默认 web 入口已同步到 `reference-only` 状态。
 - 已清退轨道：
@@ -91,10 +91,11 @@
 - `tab_view` -> `TabView`
 - `tree_view` -> `TreeView`
 
-### Display（11）
+### Display（12）
 
 - `badge_group` -> `BadgeGroup`
 - `arc` -> `Arc`
+- `animated_icon` -> `AnimatedIcon`
 - `bitmap_icon` -> `BitmapIcon`
 - `card_panel` -> `Card`
 - `divider` -> `Separator`
@@ -116,6 +117,12 @@
 - `toast_stack` -> `Toast`
 
 ## 最近完成的收口动作
+
+- `2026-04-13`
+  - 新增 `display/animated_icon` reference 控件：新增符合 Fluent 2 / WinUI `AnimatedIcon` 语义的轻量 `egui_view_animated_icon`，在 custom 层收口 `AnimatedBackVisualSource`、`AnimatedChevronDownSmallVisualSource`、`Normal / PointerOver / Pressed` 状态字符串、常见过渡字符串、fallback glyph 与静态 preview 输入抑制，不修改 SDK。
+  - `example/HelloCustomWidgets/display/animated_icon/egui_view_animated_icon.c/.h` 新增 `egui_view_animated_icon_init()`、`egui_view_animated_icon_set_source()`、`egui_view_animated_icon_set_state()`、`egui_view_animated_icon_set_fallback_glyph()`、`egui_view_animated_icon_set_icon_font()`、`egui_view_animated_icon_set_animation_enabled()`、`egui_view_animated_icon_set_palette()` 与 `egui_view_animated_icon_override_static_preview_api()`，并补 internal default icon font resolve，修复仓库关闭 `EGUI_CONFIG_WIDGET_AUTO_ICON_FONT_FALLBACK` 时 `source = NULL` fallback glyph 不绘制的问题；`example/HelloCustomWidgets/display/animated_icon/test.c` 新增标题 + 主 `Back` 动画 panel + 底部 `Chevron / Fallback` 双 preview 的 reference 页面与 `Normal -> PointerOver -> Pressed -> Normal` 录制轨道。
+  - `example/HelloUnitTest/test/test_animated_icon.c` 新增单测覆盖初始化、状态解析、setter pressed 清理、attach 后动画推进、静态 preview 输入抑制与 fallback icon font 回退；`example/HelloCustomWidgets/display/animated_icon/readme.md`、`example/HelloCustomWidgets/widget_catalog.json`、`example/HelloUnitTest/uicode.c` 与 `web/catalog-policy.json` 同步接入 `display/animated_icon`。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=display/animated_icon PORT=pc`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category display`、`python scripts/checks/check_docs_encoding.py`、`python scripts/checks/check_widget_catalog.py`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub display/animated_icon --track reference --timeout 10 --keep-screenshots`、`python scripts/code_compile_check.py --custom-widgets --category display --bits64`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --category display --track reference --bits64`、`python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub display/animated_icon` 与对应 `web_smoke_check.py`，确认 fallback `Settings` keyframe 已恢复可见，`animated_icon` 已接入 reference 主线和 web 发布链路。
 
 - `2026-04-12`
   - 新增 `navigation/selector_bar` reference 控件：新增符合 Fluent 2 / WinUI `SelectorBar` 语义的轻量 `egui_view_selector_bar`，在 custom 层补齐 `icon+text` item、`icon only` item、`INDEX_NONE` 焦点回落、same-target release、键盘切换与静态 preview 输入抑制，不修改 SDK。
