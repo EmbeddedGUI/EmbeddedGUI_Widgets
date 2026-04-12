@@ -9,9 +9,9 @@
 
 ## 当前快照
 
-- 截至 `2026-04-13`，`example/HelloCustomWidgets/` 当前保留 `64` 个控件目录。
+- 截至 `2026-04-13`，`example/HelloCustomWidgets/` 当前保留 `65` 个控件目录。
 - 所有保留控件均来自 `reference` 主线：
-  - `input = 27`
+  - `input = 28`
   - `layout = 6`
   - `navigation = 11`
   - `display = 13`
@@ -38,7 +38,7 @@
 
 ## 当前保留的 Reference 主线控件
 
-### Input（27）
+### Input（28）
 
 - `auto_suggest_box` -> `AutoSuggestBox`
 - `button` -> `Button`
@@ -53,6 +53,7 @@
 - `number_box` -> `NumberBox`
 - `password_box` -> `PasswordBox`
 - `radio_button` -> `RadioButton`
+- `radio_buttons` -> `RadioButtons`
 - `rating_control` -> `RatingControl`
 - `scroll_bar` -> `ScrollBar`
 - `segmented_control` -> `SegmentedControl`
@@ -118,6 +119,12 @@
 - `toast_stack` -> `Toast`
 
 ## 最近完成的收口动作
+
+- `2026-04-13`
+  - 新增 `input/radio_buttons` reference 控件：新增符合 Fluent / WinUI `RadioButtons` 语义的轻量 `egui_view_radio_buttons`，在 custom 层收口 `items / current_index / compact_mode / read_only_mode`、same-target release、键盘组内切换与静态 preview 输入抑制，不修改 SDK。
+  - `example/HelloCustomWidgets/input/radio_buttons/egui_view_radio_buttons.c/.h` 新增 `egui_view_radio_buttons_init()`、`egui_view_radio_buttons_set_items()`、`egui_view_radio_buttons_set_current_index()`、`egui_view_radio_buttons_set_on_selection_changed_listener()`、`egui_view_radio_buttons_set_font()`、`egui_view_radio_buttons_set_compact_mode()`、`egui_view_radio_buttons_set_read_only_mode()`、`egui_view_radio_buttons_set_palette()` 与 `egui_view_radio_buttons_override_static_preview_api()`，并补纵向 item layout / hit resolve helper、选中圆点绘制、focus ring 与 read-only 弱化处理；`example/HelloCustomWidgets/input/radio_buttons/test.c` 新增标题 + 主 `radio_buttons` + 底部 `compact / read only` 双 preview 的 reference 页面与 `Down / End` 键盘录制轨道。
+  - `example/HelloUnitTest/test/test_radio_buttons.c` 新增单测覆盖 item clamp、setter pressed 清理、focus 默认选中、键盘切换、same-target release、read-only guard 与静态 preview 输入抑制；`example/HelloCustomWidgets/input/radio_buttons/readme.md`、`example/HelloCustomWidgets/widget_catalog.json`、`example/HelloUnitTest/uicode.c` 与 `web/catalog-policy.json` 同步接入 `input/radio_buttons`。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=input/radio_buttons PORT=pc`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`python scripts/sync_widget_catalog.py`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category input`、`python scripts/checks/check_docs_encoding.py`、`python scripts/checks/check_widget_catalog.py`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/radio_buttons --track reference --timeout 10 --keep-screenshots`、`python scripts/code_compile_check.py --custom-widgets --category input --bits64`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --category input --track reference --bits64`、`python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub input/radio_buttons` 与对应 `web_smoke_check.py`，确认 `radio_buttons` 已接入 reference 主线和 web 发布链路。
 
 - `2026-04-13`
   - 新增 `display/person_picture` reference 控件：新增符合 Fluent / WinUI `PersonPicture` 语义的轻量 `egui_view_person_picture`，在 custom 层收口 `display_name / initials / fallback_glyph / image / presence / tone / compact_mode / read_only_mode`，并保持控件本身为显示型头像，不承接点击或导航职责，不修改 SDK。

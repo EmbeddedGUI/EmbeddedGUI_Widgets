@@ -330,6 +330,16 @@
     "doc_state": "ok"
   },
   {
+    "id": "input/radio_buttons",
+    "track": "reference",
+    "visibility": "public",
+    "reference_system": "Fluent 2",
+    "reference_library": "WPF UI",
+    "reference_component": "RadioButtons",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
     "id": "input/rating_control",
     "track": "reference",
     "visibility": "public",

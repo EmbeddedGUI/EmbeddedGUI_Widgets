@@ -38,6 +38,7 @@
 #include "test/test_path_icon.h"
 #include "test/test_password_box.h"
 #include "test/test_radio_button.h"
+#include "test/test_radio_buttons.h"
 #include "test/test_persona_group.h"
 #include "test/test_person_picture.h"
 #include "test/test_pips_pager.h"
@@ -112,6 +113,7 @@ void uicode_create_ui(void)
     test_path_icon_run();
     test_password_box_run();
     test_radio_button_run();
+    test_radio_buttons_run();
     test_persona_group_run();
     test_person_picture_run();
     test_pips_pager_run();
