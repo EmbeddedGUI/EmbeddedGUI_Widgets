@@ -16,6 +16,7 @@
 #include "test/test_color_picker.h"
 #include "test/test_combo_box.h"
 #include "test/test_command_bar.h"
+#include "test/test_command_bar_flyout.h"
 #include "test/test_data_list_panel.h"
 #include "test/test_demo_scaffold.h"
 #include "test/test_divider.h"
@@ -96,6 +97,7 @@ void uicode_create_ui(void)
     test_color_picker_run();
     test_combo_box_run();
     test_command_bar_run();
+    test_command_bar_flyout_run();
     test_data_list_panel_run();
     test_demo_scaffold_run();
     test_divider_run();

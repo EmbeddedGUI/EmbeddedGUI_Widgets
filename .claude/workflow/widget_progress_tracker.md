@@ -9,9 +9,9 @@
 
 ## 当前快照
 
-- 截至 `2026-04-13`，`example/HelloCustomWidgets/` 当前保留 `70` 个控件目录。
+- 截至 `2026-04-13`，`example/HelloCustomWidgets/` 当前保留 `71` 个控件目录。
 - 所有保留控件均来自 `reference` 主线：
-  - `input = 29`
+  - `input = 30`
   - `layout = 6`
   - `navigation = 12`
   - `display = 15`
@@ -34,11 +34,10 @@
 
 | 状态 | 控件名 | 分类 | 开始日期 | 当前阶段 | 目标 |
 | --- | --- | --- | --- | --- | --- |
-| 进行中 | `command_bar_flyout` | `input` | `2026-04-13` | 设计 / 选型 | 新增符合 Fluent / WPF UI `CommandBarFlyout` 语义的 reference 控件，在 custom 层收口主命令 / 次级命令 / overflow flyout、same-target release、静态 preview 与 web 验证路径 |
 
 ## 当前保留的 Reference 主线控件
 
-### Input（29）
+### Input（30）
 
 - `auto_suggest_box` -> `AutoSuggestBox`
 - `button` -> `Button`
@@ -47,6 +46,7 @@
 - `combo_box` -> `ComboBox`
 - `color_picker` -> `ColorPicker`
 - `command_bar` -> `CommandBar`
+- `command_bar_flyout` -> `CommandBarFlyout`
 - `date_picker` -> `DatePicker`
 - `drop_down_button` -> `DropDownButton`
 - `hyperlink_button` -> `HyperlinkButton`
@@ -125,6 +125,11 @@
 
 ## 最近完成的收口动作
 
+- `2026-04-13`
+  - 新增 `input/command_bar_flyout` reference 控件：新增符合 Fluent / WPF UI `CommandBarFlyout` 语义的轻量 `egui_view_command_bar_flyout`，在 custom 层收口 trigger、primary command rail、secondary rows、overflow 语义、same-target release、键盘 `Left / Right / Tab / Home / End / Up / Down / Escape` 导航、`Enter / Space` 激活、`compact / disabled` 模式与静态 preview 输入抑制，不修改 SDK。
+  - `example/HelloCustomWidgets/input/command_bar_flyout/egui_view_command_bar_flyout.c/.h` 新增 `egui_view_command_bar_flyout_init()`、`egui_view_command_bar_flyout_set_snapshots()`、`egui_view_command_bar_flyout_set_current_snapshot()`、`egui_view_command_bar_flyout_get_current_snapshot()`、`egui_view_command_bar_flyout_set_open()`、`egui_view_command_bar_flyout_get_open()`、`egui_view_command_bar_flyout_set_current_part()`、`egui_view_command_bar_flyout_get_current_part()`、`egui_view_command_bar_flyout_activate_current_part()`、`egui_view_command_bar_flyout_set_font()`、`egui_view_command_bar_flyout_set_meta_font()`、`egui_view_command_bar_flyout_set_on_action_listener()`、`egui_view_command_bar_flyout_set_compact_mode()`、`egui_view_command_bar_flyout_set_disabled_mode()`、`egui_view_command_bar_flyout_set_palette()`、`egui_view_command_bar_flyout_get_part_region()` 与 `egui_view_command_bar_flyout_override_static_preview_api()`；补齐 `snapshot + current_part + pressed_part + open_state` 生命周期、open 后默认焦点落到第一个可用命令、命中测试与 disabled tone 混色。`example/HelloCustomWidgets/input/command_bar_flyout/test.c` 新增标题 + 主 `command_bar_flyout` + 底部 `compact / disabled` 双 preview 的 reference 页面与 `Review -> Quick -> compact / disabled compare` 录制轨道；`example/HelloUnitTest/test/test_command_bar_flyout.c/.h` 新增单测覆盖 clamp、setter 清 pressed、metrics / hit-testing、same-target release、键盘导航 / 激活、disabled / compact / view-disabled guard 与静态 preview 输入抑制。
+  - `example/HelloCustomWidgets/input/command_bar_flyout/readme.md`、`example/HelloCustomWidgets/widget_catalog.json`、`example/HelloUnitTest/uicode.c` 与 `web/catalog-policy.json` 已同步接入 `input/command_bar_flyout`，并已把关键截图归档到本地 `iteration_log/` 供验收复核。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=input/command_bar_flyout PORT=pc`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`python scripts/sync_widget_catalog.py`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category input`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/command_bar_flyout --track reference --timeout 10 --keep-screenshots`、`python scripts/code_compile_check.py --custom-widgets --category input --bits64`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --category input --track reference --bits64`、`python scripts/checks/check_docs_encoding.py`、`python scripts/checks/check_widget_catalog.py`、`python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub input/command_bar_flyout` 与对应 `web_smoke_check.py`，确认 `command_bar_flyout` 已接入 reference 主线和 web 发布链路。
 - `2026-04-13`
   - 新增 `navigation/title_bar` reference 控件：新增符合 Fluent / WPF UI `TitleBar` 语义的轻量 `egui_view_title_bar`，在 custom 层收口 `leading icon / leading header / title / subtitle / trailing header / primary action / secondary action`，并统一保留 `back / pane toggle / primary / secondary` 四类交互 part、same-target release、键盘 `Left / Right / Home / End / Tab` 导航、`Enter / Space` 激活、`compact / read only` 模式与静态 preview 输入抑制，不修改 SDK。
   - `example/HelloCustomWidgets/navigation/title_bar/egui_view_title_bar.c/.h` 新增 `egui_view_title_bar_init()`、`egui_view_title_bar_set_snapshots()`、`egui_view_title_bar_set_current_snapshot()`、`egui_view_title_bar_get_current_snapshot()`、`egui_view_title_bar_set_current_part()`、`egui_view_title_bar_get_current_part()`、`egui_view_title_bar_activate_current_part()`、`egui_view_title_bar_set_font()`、`egui_view_title_bar_set_meta_font()`、`egui_view_title_bar_set_icon_font()`、`egui_view_title_bar_set_on_action_listener()`、`egui_view_title_bar_set_compact_mode()`、`egui_view_title_bar_set_read_only_mode()`、`egui_view_title_bar_set_palette()`、`egui_view_title_bar_get_part_region()` 与 `egui_view_title_bar_override_static_preview_api()`；`example/HelloCustomWidgets/navigation/title_bar/test.c` 新增标题 + 主 `title_bar` + 底部 `compact / read only` 双 preview 的 reference 页面与 `back -> pane toggle -> primary action -> compact focus` 录制轨道；`example/HelloUnitTest/test/test_title_bar.c/.h` 新增单测覆盖 snapshot clamp、setter 清 pressed、metrics / hit-testing、same-target release、键盘导航 / 激活、focus 回落、read-only / disabled guard 与静态 preview 输入抑制。
