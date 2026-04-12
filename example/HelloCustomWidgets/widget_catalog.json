@@ -90,6 +90,16 @@
     "doc_state": "ok"
   },
   {
+    "id": "input/button",
+    "track": "reference",
+    "visibility": "public",
+    "reference_system": "Fluent 2",
+    "reference_library": "WPF UI",
+    "reference_component": "Button",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
     "id": "input/calendar_view",
     "track": "reference",
     "visibility": "public",

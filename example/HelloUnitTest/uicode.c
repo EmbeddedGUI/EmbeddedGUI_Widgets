@@ -5,6 +5,7 @@
 #include "test/test_auto_suggest_box.h"
 #include "test/test_badge_group.h"
 #include "test/test_breadcrumb_bar.h"
+#include "test/test_button.h"
 #include "test/test_calendar_view.h"
 #include "test/test_card_panel.h"
 #include "test/test_check_box.h"
@@ -62,6 +63,7 @@ void uicode_create_ui(void)
     test_auto_suggest_box_run();
     test_badge_group_run();
     test_breadcrumb_bar_run();
+    test_button_run();
     test_calendar_view_run();
     test_card_panel_run();
     test_check_box_run();
