@@ -34,6 +34,7 @@
 #include "test/test_nav_panel.h"
 #include "test/test_number_box.h"
 #include "test/test_parallax_view.h"
+#include "test/test_path_icon.h"
 #include "test/test_password_box.h"
 #include "test/test_radio_button.h"
 #include "test/test_persona_group.h"
@@ -104,6 +105,7 @@ void uicode_create_ui(void)
     test_nav_panel_run();
     test_number_box_run();
     test_parallax_view_run();
+    test_path_icon_run();
     test_password_box_run();
     test_radio_button_run();
     test_persona_group_run();
