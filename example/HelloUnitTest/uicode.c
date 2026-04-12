@@ -66,6 +66,7 @@
 #include "test/test_text_block.h"
 #include "test/test_thumb_rate.h"
 #include "test/test_time_picker.h"
+#include "test/test_title_bar.h"
 #include "test/test_toast_stack.h"
 #include "test/test_toggle_button.h"
 #include "test/test_toggle_split_button.h"
@@ -145,6 +146,7 @@ void uicode_create_ui(void)
     test_text_block_run();
     test_thumb_rate_run();
     test_time_picker_run();
+    test_title_bar_run();
     test_toast_stack_run();
     test_toggle_button_run();
     test_toggle_split_button_run();

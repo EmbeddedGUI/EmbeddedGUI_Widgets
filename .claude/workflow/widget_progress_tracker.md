@@ -9,11 +9,11 @@
 
 ## 当前快照
 
-- 截至 `2026-04-13`，`example/HelloCustomWidgets/` 当前保留 `69` 个控件目录。
+- 截至 `2026-04-13`，`example/HelloCustomWidgets/` 当前保留 `70` 个控件目录。
 - 所有保留控件均来自 `reference` 主线：
   - `input = 29`
   - `layout = 6`
-  - `navigation = 11`
+  - `navigation = 12`
   - `display = 15`
   - `feedback = 8`
 - `widget_catalog.json`、`web/catalog-policy.json` 与默认 web 入口已同步到 `reference-only` 状态。
@@ -34,7 +34,6 @@
 
 | 状态 | 控件名 | 分类 | 开始日期 | 当前阶段 | 目标 |
 | --- | --- | --- | --- | --- | --- |
-| 进行中 | `title_bar` | `navigation` | `2026-04-13` | 设计 / 选型 | 新增符合 Fluent / WPF UI `TitleBar` 语义的 reference 控件，在 custom 层收口 icon / title / subtitle、back / pane toggle affordance、左右 header 与静态 preview / web 验证路径 |
 
 ## 当前保留的 Reference 主线控件
 
@@ -79,7 +78,7 @@
 - `settings_panel` -> `SettingCardGroup`
 - `split_view` -> `SplitView`
 
-### Navigation（11）
+### Navigation（12）
 
 - `annotated_scroll_bar` -> `AnnotatedScrollBar`
 - `breadcrumb_bar` -> `BreadcrumbBar`
@@ -91,6 +90,7 @@
 - `selector_bar` -> `SelectorBar`
 - `tab_strip` -> `TabStrip`
 - `tab_view` -> `TabView`
+- `title_bar` -> `TitleBar`
 - `tree_view` -> `TreeView`
 
 ### Display（15）
@@ -124,6 +124,11 @@
 
 ## 最近完成的收口动作
 
+- `2026-04-13`
+  - 新增 `navigation/title_bar` reference 控件：新增符合 Fluent / WPF UI `TitleBar` 语义的轻量 `egui_view_title_bar`，在 custom 层收口 `leading icon / leading header / title / subtitle / trailing header / primary action / secondary action`，并统一保留 `back / pane toggle / primary / secondary` 四类交互 part、same-target release、键盘 `Left / Right / Home / End / Tab` 导航、`Enter / Space` 激活、`compact / read only` 模式与静态 preview 输入抑制，不修改 SDK。
+  - `example/HelloCustomWidgets/navigation/title_bar/egui_view_title_bar.c/.h` 新增 `egui_view_title_bar_init()`、`egui_view_title_bar_set_snapshots()`、`egui_view_title_bar_set_current_snapshot()`、`egui_view_title_bar_get_current_snapshot()`、`egui_view_title_bar_set_current_part()`、`egui_view_title_bar_get_current_part()`、`egui_view_title_bar_activate_current_part()`、`egui_view_title_bar_set_font()`、`egui_view_title_bar_set_meta_font()`、`egui_view_title_bar_set_icon_font()`、`egui_view_title_bar_set_on_action_listener()`、`egui_view_title_bar_set_compact_mode()`、`egui_view_title_bar_set_read_only_mode()`、`egui_view_title_bar_set_palette()`、`egui_view_title_bar_get_part_region()` 与 `egui_view_title_bar_override_static_preview_api()`；`example/HelloCustomWidgets/navigation/title_bar/test.c` 新增标题 + 主 `title_bar` + 底部 `compact / read only` 双 preview 的 reference 页面与 `back -> pane toggle -> primary action -> compact focus` 录制轨道；`example/HelloUnitTest/test/test_title_bar.c/.h` 新增单测覆盖 snapshot clamp、setter 清 pressed、metrics / hit-testing、same-target release、键盘导航 / 激活、focus 回落、read-only / disabled guard 与静态 preview 输入抑制。
+  - `example/HelloCustomWidgets/navigation/title_bar/readme.md`、`example/HelloCustomWidgets/widget_catalog.json`、`example/HelloUnitTest/uicode.c` 与 `web/catalog-policy.json` 已同步接入 `navigation/title_bar`，并已把关键截图与 smoke contact sheet 归档到本地 `iteration_log/` 供验收复核。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=navigation/title_bar PORT=pc`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category navigation`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub navigation/title_bar --track reference --timeout 10 --keep-screenshots`、`python scripts/code_compile_check.py --custom-widgets --category navigation --bits64`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --category navigation --track reference --bits64`、`python scripts/sync_widget_catalog.py`、`python scripts/checks/check_docs_encoding.py`、`python scripts/checks/check_widget_catalog.py`、`python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub navigation/title_bar` 与对应 `web_smoke_check.py`，确认 `title_bar` 已接入 reference 主线和 web 发布链路。
 - `2026-04-13`
   - 新增 `feedback/tool_tip` reference 控件：新增符合 Fluent / WPF UI `ToolTip` 语义的轻量 `egui_view_tool_tip`，在 custom 层收口页内 target + bubble 一体绘制、点击后延时显示、`top / bottom placement`、二次点击关闭、`Enter / Space` 延时打开、`Esc` 关闭、`compact / read only` 与静态 preview 输入抑制，不修改 SDK。
   - `example/HelloCustomWidgets/feedback/tool_tip/egui_view_tool_tip.c/.h` 新增 `egui_view_tool_tip_init()`、`egui_view_tool_tip_set_snapshots()`、`egui_view_tool_tip_set_current_snapshot()`、`egui_view_tool_tip_set_open()`、`egui_view_tool_tip_set_font()`、`egui_view_tool_tip_set_meta_font()`、`egui_view_tool_tip_set_compact_mode()`、`egui_view_tool_tip_set_read_only_mode()`、`egui_view_tool_tip_set_show_delay()`、`egui_view_tool_tip_begin_show_delay()`、`egui_view_tool_tip_cancel_show_delay()`、`egui_view_tool_tip_set_palette()`、`egui_view_tool_tip_get_part_region()` 与 `egui_view_tool_tip_override_static_preview_api()`；补齐 `pending_show / timer_started / open / touch_active / key_active / toggle_on_release` 生命周期，修复 `ACTION_MOVE` 移出后 stale `current_part` 与录制模式下 `memset` 编译回归。`example/HelloCustomWidgets/feedback/tool_tip/test.c` 新增标题 + 主 `tool_tip` + 底部 `compact / read only` 双 preview 的 reference 页面与 `delay open / top placement / warning / Esc close / preview 收尾` 录制轨道；`example/HelloUnitTest/test/test_tool_tip.c/.h` 新增单测覆盖默认值、setter 清理、same-target release、移出取消延时、键盘打开 / 关闭、静态 preview 与 attach / detach timer 生命周期。
