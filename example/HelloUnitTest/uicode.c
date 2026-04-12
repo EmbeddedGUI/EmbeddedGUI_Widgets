@@ -2,6 +2,7 @@
 #include "uicode.h"
 
 #include "test/test_annotated_scroll_bar.h"
+#include "test/test_activity_ring.h"
 #include "test/test_auto_suggest_box.h"
 #include "test/test_badge_group.h"
 #include "test/test_breadcrumb_bar.h"
@@ -62,6 +63,7 @@ void uicode_create_ui(void)
     uicode_init_ui();
 
     test_annotated_scroll_bar_run();
+    test_activity_ring_run();
     test_auto_suggest_box_run();
     test_badge_group_run();
     test_breadcrumb_bar_run();

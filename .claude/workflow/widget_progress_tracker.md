@@ -9,13 +9,13 @@
 
 ## 当前快照
 
-- 截至 `2026-04-12`，`example/HelloCustomWidgets/` 当前保留 `50` 个控件目录。
+- 截至 `2026-04-12`，`example/HelloCustomWidgets/` 当前保留 `51` 个控件目录。
 - 所有保留控件均来自 `reference` 主线：
   - `input = 25`
   - `layout = 6`
   - `navigation = 10`
   - `display = 3`
-  - `feedback = 6`
+  - `feedback = 7`
 - `widget_catalog.json`、`web/catalog-policy.json` 与默认 web 入口已同步到 `reference-only` 状态。
 - 已清退轨道：
   - 全部 `deprecated`
@@ -94,8 +94,9 @@
 - `card_panel` -> `Card`
 - `persona_group` -> `AvatarGroup`
 
-### Feedback（6）
+### Feedback（7）
 
+- `activity_ring` -> `ProgressRing`
 - `dialog_sheet` -> `ContentDialog`
 - `message_bar` -> `MessageBar`
 - `progress_bar` -> `ProgressBar`
@@ -105,6 +106,11 @@
 
 ## 最近完成的收口动作
 
+- `2026-04-12`
+  - 新增 `feedback/activity_ring` reference 控件：基于 SDK `activity_ring` 封装符合 Fluent / WPF UI 语义的单环 `ProgressRing` reference 页面，补齐 `standard / compact / paused` 三套样式 helper、主进度值文案和静态 preview API，不改 SDK。
+  - `example/HelloCustomWidgets/feedback/activity_ring/egui_view_activity_ring.c/.h` 新增 `hcw_activity_ring_apply_standard_style()`、`hcw_activity_ring_apply_compact_style()`、`hcw_activity_ring_apply_paused_style()`、`hcw_activity_ring_set_value()`、`hcw_activity_ring_set_palette()` 与 `hcw_activity_ring_override_static_preview_api()`，把单环 ProgressRing 语义、palette setter 和 preview 吞掉 `touch / key` 收口在 custom 层；`example/HelloCustomWidgets/feedback/activity_ring/test.c` 新增标题 + 主 `activity_ring` + 当前值文案 + 底部 `compact / paused` 双 preview 的 reference 页面，并补上 `24% -> 62% -> 86%` 的 runtime 录制链路。
+  - `example/HelloUnitTest/test/test_activity_ring.c` 新增单测覆盖样式 helper、value clamp、palette setter 与静态 preview 输入抑制；`example/HelloCustomWidgets/widget_catalog.json`、`example/HelloUnitTest/uicode.c` 与 `web/catalog-policy.json` 已同步接入 `feedback/activity_ring`。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=feedback/activity_ring PORT=pc`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`python scripts/sync_widget_catalog.py`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category feedback`、`python scripts/checks/check_docs_encoding.py`、`python scripts/checks/check_widget_catalog.py`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub feedback/activity_ring --track reference --timeout 10 --keep-screenshots`、`python scripts/code_compile_check.py --custom-widgets --category feedback --bits64`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --category feedback --track reference --bits64`、`python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub feedback/activity_ring` 与对应 web smoke，确认 `activity_ring` 已接入 reference 主线与 web 发布链路。
 - `2026-04-12`
   - 新增 `feedback/progress_bar` reference 控件：基于 SDK `progress_bar` 封装符合 Fluent / WPF UI 语义的 `ProgressBar` reference 页面，补齐 `standard / paused / error` 三套 palette helper、主进度值文案和静态 preview API，不改 SDK。
   - `example/HelloCustomWidgets/feedback/progress_bar/egui_view_progress_bar.c/.h` 新增 `hcw_progress_bar_apply_standard_style()`、`hcw_progress_bar_apply_paused_style()`、`hcw_progress_bar_apply_error_style()`、`hcw_progress_bar_set_value()`、`hcw_progress_bar_set_palette()` 与 `hcw_progress_bar_override_static_preview_api()`，把 Fluent 配色、数值 setter 和 preview 吞掉 `touch / key` 收口在 custom 层；`example/HelloCustomWidgets/feedback/progress_bar/test.c` 新增标题 + 主 `progress_bar` + 当前值文案 + 底部 `paused / error` 双 preview 的 reference 页面，并补上 `28% -> 58% -> 92%` 的 runtime 录制链路。
