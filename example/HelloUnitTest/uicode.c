@@ -39,6 +39,7 @@
 #include "test/test_split_button.h"
 #include "test/test_split_view.h"
 #include "test/test_swipe_control.h"
+#include "test/test_switch.h"
 #include "test/test_tab_strip.h"
 #include "test/test_tab_view.h"
 #include "test/test_teaching_tip.h"
@@ -95,6 +96,7 @@ void uicode_create_ui(void)
     test_split_button_run();
     test_split_view_run();
     test_swipe_control_run();
+    test_switch_run();
     test_tab_strip_run();
     test_tab_view_run();
     test_teaching_tip_run();

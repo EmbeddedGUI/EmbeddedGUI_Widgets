@@ -9,9 +9,9 @@
 
 ## 当前快照
 
-- 截至 `2026-04-12`，`example/HelloCustomWidgets/` 当前保留 `46` 个控件目录。
+- 截至 `2026-04-12`，`example/HelloCustomWidgets/` 当前保留 `47` 个控件目录。
 - 所有保留控件均来自 `reference` 主线：
-  - `input = 22`
+  - `input = 23`
   - `layout = 6`
   - `navigation = 10`
   - `display = 3`
@@ -38,7 +38,7 @@
 
 ## 当前保留的 Reference 主线控件
 
-### Input（22）
+### Input（23）
 
 - `auto_suggest_box` -> `AutoSuggestBox`
 - `calendar_view` -> `CalendarView`
@@ -58,6 +58,7 @@
 - `slider` -> `Slider`
 - `split_button` -> `SplitButton`
 - `swipe_control` -> `SwipeControl`
+- `switch` -> `ToggleSwitch`
 - `time_picker` -> `TimePicker`
 - `toggle_button` -> `ToggleButton`
 - `toggle_split_button` -> `ToggleSplitButton`
@@ -100,6 +101,12 @@
 - `toast_stack` -> `Toast`
 
 ## 最近完成的收口动作
+
+- `2026-04-12`
+  - 新增 `input/switch` reference 控件：基于 SDK `switch` 补齐符合 Fluent / WPF UI 语义的 `ToggleSwitch` reference 页面，补上 `standard / compact / read only` 三套样式 helper、`Space / Enter` 键盘闭环、setter `pressed` 清理、轻量 focus ring 与静态 preview 输入吞掉语义。
+  - `example/HelloCustomWidgets/input/switch/egui_view_switch.c/.h` 新增 `hcw_switch_apply_standard_style()`、`hcw_switch_apply_compact_style()`、`hcw_switch_apply_read_only_style()`、`hcw_switch_set_checked()`、`hcw_switch_set_state_icons()`、`hcw_switch_set_icon_font()`、`hcw_switch_override_interaction_api()` 与 `hcw_switch_override_static_preview_api()`，把样式、键盘、focus ring 与 preview 收口在 custom 层，不改 SDK；`example/HelloCustomWidgets/input/switch/test.c` 新增标题 + 主 `switch` + 底部 `compact / read only` 双 preview 的 reference 页面，并补上 `Space / Enter` 的 runtime 录制链路。
+  - `example/HelloUnitTest/test/test_switch.c` 新增 `7` 条单测，覆盖样式 helper、setter 清理、same-target release、键盘切换、禁用态与静态 preview 清理；`example/HelloCustomWidgets/widget_catalog.json` 与 `web/catalog-policy.json` 已同步把 `input/switch` 接入 `ToggleSwitch` reference catalog。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=input/switch PORT=pc`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category input`、`python scripts/checks/check_docs_encoding.py`、`python scripts/checks/check_widget_catalog.py`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/switch --track reference --timeout 10 --keep-screenshots`、`python scripts/code_compile_check.py --custom-widgets --category input --bits64`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --category input --track reference --bits64`、`python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub input/switch` 与对应 web smoke，确认 `switch` 已接入 reference 主线与 web 发布链路。
 
 - `2026-04-12`
   - 新增 `input/radio_button` reference 控件：基于 SDK `radio_button` 补齐 Fluent / WPF UI 风格的 `RadioButton` reference 页面，补上 `standard / compact / read only` 三套样式 helper、`Space / Enter` 键盘闭环、setter pressed 清理、轻量 focus ring 与静态 preview 输入吞掉语义。
