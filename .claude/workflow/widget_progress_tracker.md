@@ -9,12 +9,12 @@
 
 ## 当前快照
 
-- 截至 `2026-04-12`，`example/HelloCustomWidgets/` 当前保留 `57` 个控件目录。
+- 截至 `2026-04-12`，`example/HelloCustomWidgets/` 当前保留 `58` 个控件目录。
 - 所有保留控件均来自 `reference` 主线：
   - `input = 27`
   - `layout = 6`
   - `navigation = 10`
-  - `display = 7`
+  - `display = 8`
   - `feedback = 7`
 - `widget_catalog.json`、`web/catalog-policy.json` 与默认 web 入口已同步到 `reference-only` 状态。
 - 已清退轨道：
@@ -34,7 +34,7 @@
 
 | 状态 | 控件名 | 分类 | 开始日期 | 当前阶段 | 目标 |
 | --- | --- | --- | --- | --- | --- |
-| 进行中 | `image_icon` | `display` | `2026-04-12` | 方案设计中 | 新增符合 Fluent / WPF UI `ImageIcon` 语义的 reference 控件，并完成 compile/runtime/web 闭环 |
+| 暂无 | - | - | - | - | - |
 
 ## 当前保留的 Reference 主线控件
 
@@ -90,12 +90,13 @@
 - `tab_view` -> `TabView`
 - `tree_view` -> `TreeView`
 
-### Display（7）
+### Display（8）
 
 - `badge_group` -> `BadgeGroup`
 - `arc` -> `Arc`
 - `card_panel` -> `Card`
 - `divider` -> `Separator`
+- `image_icon` -> `ImageIcon`
 - `info_badge` -> `InfoBadge`
 - `persona_group` -> `AvatarGroup`
 - `symbol_icon` -> `SymbolIcon`
@@ -111,6 +112,12 @@
 - `toast_stack` -> `Toast`
 
 ## 最近完成的收口动作
+
+- `2026-04-12`
+  - 新增 `display/image_icon` reference 控件：新增符合 Fluent / WPF UI `ImageIcon` 语义的只读 `egui_view_image_icon`，基于 SDK `egui_view_image` 收口默认图、图片源切换与静态 preview 输入抑制；内置 `default / warm / fresh` 三张纯 `RGB565` 图片资源，避免 PC runtime / web 下的 alpha resize 异常，不修改 SDK。
+  - `example/HelloCustomWidgets/display/image_icon/egui_view_image_icon.c/.h` 新增 `egui_view_image_icon_init()`、`egui_view_image_icon_set_image()`、`egui_view_image_icon_get_image()`、三张内置图片 getter 与 `egui_view_image_icon_override_static_preview_api()`，把默认图回退、pressed 清理与 preview 吞掉 `touch / key` 统一收口在 custom 层；`example/HelloCustomWidgets/display/image_icon/test.c` 新增标题 + 主 `image_icon` + 底部 `warm / fresh` 双 preview 的 reference 页面，并补上 `thumbnail -> warm -> fresh -> thumbnail` 的 runtime 录制轨道。
+  - `example/HelloUnitTest/test/test_image_icon.c` 新增单测覆盖默认初始化、图片切换 / 回退与静态 preview 输入抑制；`example/HelloCustomWidgets/display/image_icon/readme.md`、`example/HelloCustomWidgets/widget_catalog.json`、`example/HelloUnitTest/uicode.c` 与 `web/catalog-policy.json` 同步接入 `display/image_icon`。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=display/image_icon PORT=pc`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`python scripts/sync_widget_catalog.py`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category display`、`python scripts/checks/check_widget_catalog.py`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub display/image_icon --track reference --timeout 10 --keep-screenshots`、`python scripts/code_compile_check.py --custom-widgets --category display --bits64`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --category display --track reference --bits64`、`python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub display/image_icon` 与对应 web smoke，确认 `image_icon` 已接入 reference 主线和 web 发布链路。
 
 - `2026-04-12`
   - 新增 `display/symbol_icon` reference 控件：新增符合 Fluent / WPF UI `SymbolIcon` 语义的只读 `egui_view_symbol_icon`，复用内置 `Material Symbols` 字体子集表达符号图标语义，保留 `standard / subtle / accent` 三套颜色样式 helper、符号与字体 setter 以及静态 preview 输入抑制，不修改 SDK。
