@@ -44,6 +44,7 @@
 #include "test/test_tab_strip.h"
 #include "test/test_tab_view.h"
 #include "test/test_teaching_tip.h"
+#include "test/test_text_box.h"
 #include "test/test_time_picker.h"
 #include "test/test_toast_stack.h"
 #include "test/test_toggle_button.h"
@@ -102,6 +103,7 @@ void uicode_create_ui(void)
     test_tab_strip_run();
     test_tab_view_run();
     test_teaching_tip_run();
+    test_text_box_run();
     test_time_picker_run();
     test_toast_stack_run();
     test_toggle_button_run();

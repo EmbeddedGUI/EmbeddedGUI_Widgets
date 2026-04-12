@@ -9,9 +9,9 @@
 
 ## 当前快照
 
-- 截至 `2026-04-12`，`example/HelloCustomWidgets/` 当前保留 `48` 个控件目录。
+- 截至 `2026-04-12`，`example/HelloCustomWidgets/` 当前保留 `49` 个控件目录。
 - 所有保留控件均来自 `reference` 主线：
-  - `input = 24`
+  - `input = 25`
   - `layout = 6`
   - `navigation = 10`
   - `display = 3`
@@ -38,7 +38,7 @@
 
 ## 当前保留的 Reference 主线控件
 
-### Input（24）
+### Input（25）
 
 - `auto_suggest_box` -> `AutoSuggestBox`
 - `button` -> `Button`
@@ -60,6 +60,7 @@
 - `split_button` -> `SplitButton`
 - `swipe_control` -> `SwipeControl`
 - `switch` -> `ToggleSwitch`
+- `text_box` -> `TextBox`
 - `time_picker` -> `TimePicker`
 - `toggle_button` -> `ToggleButton`
 - `toggle_split_button` -> `ToggleSplitButton`
@@ -103,6 +104,11 @@
 
 ## 最近完成的收口动作
 
+- `2026-04-12`
+  - 新增 `input/text_box` reference 控件：基于 SDK `textinput` 封装符合 Fluent / WPF UI 语义的 `TextBox` reference 页面，补齐 `standard / compact / read only` 三套样式 helper、自定义输入框 surface draw、主输入与静态 preview 的焦点/输入收口，并保持不改 SDK。
+  - `example/HelloCustomWidgets/input/text_box/egui_view_text_box.c/.h` 新增 `hcw_text_box_apply_standard_style()`、`hcw_text_box_apply_compact_style()`、`hcw_text_box_apply_read_only_style()`、`hcw_text_box_set_text()`、`hcw_text_box_set_placeholder()`、`hcw_text_box_set_font()`、`hcw_text_box_set_palette()`、`hcw_text_box_override_interaction_api()` 与 `hcw_text_box_override_static_preview_api()`，把 Fluent 风格外观、静态 preview 吞掉 `touch / key`、只读示例态与 setter 收口在 custom 层；`example/HelloCustomWidgets/input/text_box/test.c` 新增标题 + 主 `text_box` + 底部 `compact / read only` 双 preview 的 reference 页面，并补上 `Backspace -> 2 -> Enter` 的 runtime 录制链路。
+  - `example/HelloUnitTest/test/test_text_box.c` 新增单测覆盖样式 helper、setter、静态 preview 输入抑制与只读示例态；`example/HelloCustomWidgets/widget_catalog.json`、`example/HelloUnitTest/uicode.c` 与 `web/catalog-policy.json` 已同步接入 `input/text_box`。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=input/text_box PORT=pc`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`python scripts/sync_widget_catalog.py`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category input`、`python scripts/checks/check_docs_encoding.py`、`python scripts/checks/check_widget_catalog.py`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/text_box --track reference --timeout 10 --keep-screenshots`、`python scripts/code_compile_check.py --custom-widgets --category input --bits64`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --category input --track reference --bits64`、`python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub input/text_box` 与对应 web smoke，确认 `text_box` 已接入 reference 主线与 web 发布链路。
 - `2026-04-12`
   - 新增 `input/button` reference 控件：基于 SDK `button` 封装符合 Fluent / WPF UI 语义的 `Button` reference 页面，补齐 `standard / compact / disabled` 三套样式、`Space / Enter` 键盘 click 闭环、setter `pressed` 清理与静态 preview 吞输入语义，保持 SDK 默认 same-target release 触控提交约束不变。
   - `example/HelloCustomWidgets/input/button/egui_view_button.c/.h` 新增 `hcw_button_apply_standard_style()`、`hcw_button_apply_compact_style()`、`hcw_button_apply_disabled_style()`、`hcw_button_set_text()`、`hcw_button_set_font()`、`hcw_button_set_icon_font()`、`hcw_button_set_text_color()`、`hcw_button_set_pressed()`、`hcw_button_override_interaction_api()` 与 `hcw_button_override_static_preview_api()`，把样式、键盘、pressed 清理与静态 preview 收口在 custom 层，不改 SDK。
