@@ -9,12 +9,12 @@
 
 ## 当前快照
 
-- 截至 `2026-04-12`，`example/HelloCustomWidgets/` 当前保留 `54` 个控件目录。
+- 截至 `2026-04-12`，`example/HelloCustomWidgets/` 当前保留 `55` 个控件目录。
 - 所有保留控件均来自 `reference` 主线：
   - `input = 26`
   - `layout = 6`
   - `navigation = 10`
-  - `display = 5`
+  - `display = 6`
   - `feedback = 7`
 - `widget_catalog.json`、`web/catalog-policy.json` 与默认 web 入口已同步到 `reference-only` 状态。
 - 已清退轨道：
@@ -34,7 +34,7 @@
 
 | 状态 | 控件名 | 分类 | 开始日期 | 当前阶段 | 目标 |
 | --- | --- | --- | --- | --- | --- |
-| 暂无 | - | - | - | - | - |
+| 进行中 | `arc` | `display` | `2026-04-12` | 设计 / 实现 | 新增符合 Fluent 2 / WPF UI `Arc` 语义的 reference 控件，基于 custom 层完成样式、静态 preview、文档、单测、runtime 与 web 发布链路闭环 |
 
 ## 当前保留的 Reference 主线控件
 
@@ -89,9 +89,10 @@
 - `tab_view` -> `TabView`
 - `tree_view` -> `TreeView`
 
-### Display（5）
+### Display（6）
 
 - `badge_group` -> `BadgeGroup`
+- `arc` -> `Arc`
 - `card_panel` -> `Card`
 - `divider` -> `Separator`
 - `info_badge` -> `InfoBadge`
