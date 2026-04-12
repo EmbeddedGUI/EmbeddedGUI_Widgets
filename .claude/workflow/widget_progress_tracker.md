@@ -9,9 +9,9 @@
 
 ## 当前快照
 
-- 截至 `2026-04-13`，`example/HelloCustomWidgets/` 当前保留 `67` 个控件目录。
+- 截至 `2026-04-13`，`example/HelloCustomWidgets/` 当前保留 `68` 个控件目录。
 - 所有保留控件均来自 `reference` 主线：
-  - `input = 28`
+  - `input = 29`
   - `layout = 6`
   - `navigation = 11`
   - `display = 15`
@@ -34,11 +34,12 @@
 
 | 状态 | 控件名 | 分类 | 开始日期 | 当前阶段 | 目标 |
 | --- | --- | --- | --- | --- | --- |
-| 进行中 | `repeat_button` | `input` | `2026-04-13` | 设计 / 选型 | 新增符合 Fluent / WPF UI `RepeatButton` 语义的 reference 控件，在 custom 层收口 press-and-hold repeat、disabled 语义与静态 preview / web 验证路径 |
+
+当前无进行中的控件。
 
 ## 当前保留的 Reference 主线控件
 
-### Input（28）
+### Input（29）
 
 - `auto_suggest_box` -> `AutoSuggestBox`
 - `button` -> `Button`
@@ -55,6 +56,7 @@
 - `radio_button` -> `RadioButton`
 - `radio_buttons` -> `RadioButtons`
 - `rating_control` -> `RatingControl`
+- `repeat_button` -> `RepeatButton`
 - `scroll_bar` -> `ScrollBar`
 - `segmented_control` -> `SegmentedControl`
 - `shortcut_recorder` -> `KeyboardAcceleratorRecorder`
@@ -92,7 +94,7 @@
 - `tab_view` -> `TabView`
 - `tree_view` -> `TreeView`
 
-### Display（14）
+### Display（15）
 
 - `badge_group` -> `BadgeGroup`
 - `arc` -> `Arc`
@@ -122,6 +124,11 @@
 
 ## 最近完成的收口动作
 
+- `2026-04-13`
+  - 新增 `input/repeat_button` reference 控件：新增符合 Fluent / WPF UI `RepeatButton` 语义的轻量 `egui_view_repeat_button`，在 custom 层收口按下即触发、按住连发、`standard / compact / disabled` 三套样式 helper、静态 preview 输入抑制与 attach / detach timer 生命周期，不修改 SDK。
+  - `example/HelloCustomWidgets/input/repeat_button/egui_view_repeat_button.c/.h` 新增 `egui_view_repeat_button_init()`、`egui_view_repeat_button_apply_standard_style()`、`egui_view_repeat_button_apply_compact_style()`、`egui_view_repeat_button_apply_disabled_style()`、`egui_view_repeat_button_set_text()`、`egui_view_repeat_button_set_icon()`、`egui_view_repeat_button_set_font()`、`egui_view_repeat_button_set_icon_font()`、`egui_view_repeat_button_set_icon_text_gap()`、`egui_view_repeat_button_set_repeat_timing()` 与 `egui_view_repeat_button_override_static_preview_api()`；`example/HelloCustomWidgets/input/repeat_button/test.c` 新增标题 + 主 `repeat_button` + 底部 `compact / disabled` 双 preview 的 reference 页面，并补上触摸长按与键盘 `Space` 长按的录制轨道。
+  - `example/HelloUnitTest/test/test_repeat_button.c` 新增单测覆盖默认 timing / style、setter 清理、触摸按下立即 click + repeat、移出 / 移回命中区、键盘 repeat、未处理 key 清理、disabled guard、静态 preview 与 attach / detach 生命周期；`example/HelloCustomWidgets/input/repeat_button/readme.md`、`example/HelloCustomWidgets/widget_catalog.json`、`example/HelloUnitTest/uicode.c` 与 `web/catalog-policy.json` 已同步接入 `input/repeat_button`，并已把关键截图归档到本地 `iteration_log/` 供验收复核。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=input/repeat_button PORT=pc`、`make clean APP=HelloUnitTest PORT=pc_test`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`python scripts/sync_widget_catalog.py`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category input`、`python scripts/checks/check_docs_encoding.py`、`python scripts/checks/check_widget_catalog.py`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/repeat_button --track reference --timeout 10 --keep-screenshots`、`python scripts/code_compile_check.py --custom-widgets --category input --bits64`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --category input --track reference --bits64`、`python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub input/repeat_button` 与对应 `web_smoke_check.py`，确认 `repeat_button` 已接入 reference 主线和 web 发布链路。
 - `2026-04-13`
   - 新增 `display/text_block` reference 控件：新增符合 Fluent / WPF UI `TextBlock` 语义的轻量 `egui_view_text_block`，在 custom 层包一层 SDK `textblock`，收口单段多行文本、`standard / subtle / accent` 三套样式 helper、`compact_mode / read_only_mode`、palette 与静态 preview 输入抑制，不修改 SDK。
   - `example/HelloCustomWidgets/display/text_block/egui_view_text_block.c/.h` 新增 `egui_view_text_block_init()`、`egui_view_text_block_apply_standard_style()`、`egui_view_text_block_apply_subtle_style()`、`egui_view_text_block_apply_accent_style()`、`egui_view_text_block_set_text()`、`egui_view_text_block_set_font()`、`egui_view_text_block_set_palette()`、`egui_view_text_block_set_compact_mode()`、`egui_view_text_block_set_read_only_mode()` 与 `egui_view_text_block_override_static_preview_api()`，并统一在 custom 层关闭滚动 / 编辑 / 边框、收口 `line_space` 与 read-only disabled mix；`example/HelloCustomWidgets/display/text_block/test.c` 新增标题 + 主 `text_block` + 底部 `compact / read_only` 双 preview 的 reference 页面与 `Standard -> Subtle -> Accent -> Standard` 录制轨道。

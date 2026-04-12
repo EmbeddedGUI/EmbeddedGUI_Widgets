@@ -44,6 +44,7 @@
 #include "test/test_pips_pager.h"
 #include "test/test_progress_bar.h"
 #include "test/test_rating_control.h"
+#include "test/test_repeat_button.h"
 #include "test/test_rich_text_block.h"
 #include "test/test_scroll_bar.h"
 #include "test/test_selector_bar.h"
@@ -121,6 +122,7 @@ void uicode_create_ui(void)
     test_pips_pager_run();
     test_progress_bar_run();
     test_rating_control_run();
+    test_repeat_button_run();
     test_rich_text_block_run();
     test_scroll_bar_run();
     test_selector_bar_run();
