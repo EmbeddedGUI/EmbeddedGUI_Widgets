@@ -9,12 +9,12 @@
 
 ## 当前快照
 
-- 截至 `2026-04-12`，`example/HelloCustomWidgets/` 当前保留 `51` 个控件目录。
+- 截至 `2026-04-12`，`example/HelloCustomWidgets/` 当前保留 `52` 个控件目录。
 - 所有保留控件均来自 `reference` 主线：
   - `input = 25`
   - `layout = 6`
   - `navigation = 10`
-  - `display = 3`
+  - `display = 4`
   - `feedback = 7`
 - `widget_catalog.json`、`web/catalog-policy.json` 与默认 web 入口已同步到 `reference-only` 状态。
 - 已清退轨道：
@@ -34,7 +34,7 @@
 
 | 状态 | 控件名 | 分类 | 开始日期 | 当前阶段 | 目标 |
 | --- | --- | --- | --- | --- | --- |
-| 进行中 | `divider` | `display` | `2026-04-12` | 设计 / 实现 | 基于 SDK `divider` 补齐 Fluent / WPF UI `Separator` reference 页面、单测与 catalog 闭环 |
+| 暂无 | - | - | - | - | - |
 
 ## 当前保留的 Reference 主线控件
 
@@ -88,10 +88,11 @@
 - `tab_view` -> `TabView`
 - `tree_view` -> `TreeView`
 
-### Display（3）
+### Display（4）
 
 - `badge_group` -> `BadgeGroup`
 - `card_panel` -> `Card`
+- `divider` -> `Separator`
 - `persona_group` -> `AvatarGroup`
 
 ### Feedback（7）
@@ -106,6 +107,11 @@
 
 ## 最近完成的收口动作
 
+- `2026-04-12`
+  - 新增 `display/divider` reference 控件：基于 SDK `divider` 封装符合 Fluent / WPF UI 语义的 `Separator` reference 页面，补齐 `standard / subtle / accent` 三套样式 helper、palette setter 和静态 preview API，不改 SDK。
+  - `example/HelloCustomWidgets/display/divider/egui_view_divider.c/.h` 新增 `hcw_divider_apply_standard_style()`、`hcw_divider_apply_subtle_style()`、`hcw_divider_apply_accent_style()`、`hcw_divider_set_palette()` 与 `hcw_divider_override_static_preview_api()`，把分隔线配色、alpha 和 preview 吞掉 `touch / key` 收口在 custom 层；`example/HelloCustomWidgets/display/divider/test.c` 新增标题 + 主 `divider` 场景 + 底部 `subtle / accent` 双 preview 的 reference 页面，并补上 `standard -> accent -> subtle -> standard` 的 runtime 录制链路。
+  - `example/HelloUnitTest/test/test_divider.c` 新增单测覆盖样式 helper、palette setter 与静态 preview 输入抑制；`example/HelloCustomWidgets/widget_catalog.json`、`example/HelloUnitTest/uicode.c` 与 `web/catalog-policy.json` 已同步接入 `display/divider`。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=display/divider PORT=pc`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`python scripts/sync_widget_catalog.py`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category display`、`python scripts/checks/check_docs_encoding.py`、`python scripts/checks/check_widget_catalog.py`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub display/divider --track reference --timeout 10 --keep-screenshots`、`python scripts/code_compile_check.py --custom-widgets --category display --bits64`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --category display --track reference --bits64`、`python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub display/divider` 与对应 web smoke，确认 `divider` 已接入 reference 主线与 web 发布链路。
 - `2026-04-12`
   - 新增 `feedback/activity_ring` reference 控件：基于 SDK `activity_ring` 封装符合 Fluent / WPF UI 语义的单环 `ProgressRing` reference 页面，补齐 `standard / compact / paused` 三套样式 helper、主进度值文案和静态 preview API，不改 SDK。
   - `example/HelloCustomWidgets/feedback/activity_ring/egui_view_activity_ring.c/.h` 新增 `hcw_activity_ring_apply_standard_style()`、`hcw_activity_ring_apply_compact_style()`、`hcw_activity_ring_apply_paused_style()`、`hcw_activity_ring_set_value()`、`hcw_activity_ring_set_palette()` 与 `hcw_activity_ring_override_static_preview_api()`，把单环 ProgressRing 语义、palette setter 和 preview 吞掉 `touch / key` 收口在 custom 层；`example/HelloCustomWidgets/feedback/activity_ring/test.c` 新增标题 + 主 `activity_ring` + 当前值文案 + 底部 `compact / paused` 双 preview 的 reference 页面，并补上 `24% -> 62% -> 86%` 的 runtime 录制链路。
