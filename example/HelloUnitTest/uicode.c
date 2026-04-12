@@ -21,6 +21,7 @@
 #include "test/test_drop_down_button.h"
 #include "test/test_expander.h"
 #include "test/test_flip_view.h"
+#include "test/test_info_badge.h"
 #include "test/test_master_detail.h"
 #include "test/test_menu_bar.h"
 #include "test/test_menu_flyout.h"
@@ -83,6 +84,7 @@ void uicode_create_ui(void)
     test_drop_down_button_run();
     test_expander_run();
     test_flip_view_run();
+    test_info_badge_run();
     test_master_detail_run();
     test_menu_bar_run();
     test_menu_flyout_run();

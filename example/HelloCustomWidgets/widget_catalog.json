@@ -30,6 +30,16 @@
     "doc_state": "ok"
   },
   {
+    "id": "display/info_badge",
+    "track": "reference",
+    "visibility": "public",
+    "reference_system": "Fluent 2",
+    "reference_library": "WPF UI",
+    "reference_component": "InfoBadge",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
     "id": "display/persona_group",
     "track": "reference",
     "visibility": "public",

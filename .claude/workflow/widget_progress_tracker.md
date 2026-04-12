@@ -9,12 +9,12 @@
 
 ## 当前快照
 
-- 截至 `2026-04-12`，`example/HelloCustomWidgets/` 当前保留 `52` 个控件目录。
+- 截至 `2026-04-12`，`example/HelloCustomWidgets/` 当前保留 `53` 个控件目录。
 - 所有保留控件均来自 `reference` 主线：
   - `input = 25`
   - `layout = 6`
   - `navigation = 10`
-  - `display = 4`
+  - `display = 5`
   - `feedback = 7`
 - `widget_catalog.json`、`web/catalog-policy.json` 与默认 web 入口已同步到 `reference-only` 状态。
 - 已清退轨道：
@@ -34,7 +34,7 @@
 
 | 状态 | 控件名 | 分类 | 开始日期 | 当前阶段 | 目标 |
 | --- | --- | --- | --- | --- | --- |
-| 进行中 | `info_badge` | `display` | `2026-04-12` | 设计 / 实现 | 基于 SDK `notification_badge` 补齐 Fluent / WPF UI `InfoBadge` reference 页面、单测与 catalog 闭环 |
+| 暂无 | - | - | - | - | - |
 
 ## 当前保留的 Reference 主线控件
 
@@ -88,11 +88,12 @@
 - `tab_view` -> `TabView`
 - `tree_view` -> `TreeView`
 
-### Display（4）
+### Display（5）
 
 - `badge_group` -> `BadgeGroup`
 - `card_panel` -> `Card`
 - `divider` -> `Separator`
+- `info_badge` -> `InfoBadge`
 - `persona_group` -> `AvatarGroup`
 
 ### Feedback（7）
@@ -106,6 +107,12 @@
 - `toast_stack` -> `Toast`
 
 ## 最近完成的收口动作
+
+- `2026-04-12`
+  - 新增 `display/info_badge` reference 控件：基于 SDK `notification_badge` 封装符合 Fluent / WPF UI `InfoBadge` 语义的 reference 页面，补齐 `count / icon / attention dot` 三种核心状态、palette setter、attention dot draw 语义与静态 preview API，不修改 SDK。
+  - `example/HelloCustomWidgets/display/info_badge/egui_view_info_badge.c/.h` 新增 `hcw_info_badge_apply_count_style()`、`hcw_info_badge_apply_icon_style()`、`hcw_info_badge_apply_attention_style()`、`hcw_info_badge_set_count()`、`hcw_info_badge_set_icon()`、`hcw_info_badge_set_palette()` 与 `hcw_info_badge_override_static_preview_api()`，把 `icon == NULL && style == ICON` 收口为 attention dot 绘制，并统一在 custom 层清理 `pressed`、吞掉 preview 的 `touch / key`。
+  - `example/HelloCustomWidgets/display/info_badge/test.c` 新增标题 + 主面板三行 `count / icon / attention dot` 场景 + 底部 `overflow / attention` 两个 preview 的 reference 页面，并补上 `Workspace alerts -> Release board -> Calm summary -> Workspace alerts` 的 runtime 录制轨道；`example/HelloUnitTest/test/test_info_badge.c` 新增单测覆盖样式 helper、setter 模式切换与静态 preview 输入抑制；`example/HelloCustomWidgets/widget_catalog.json`、`example/HelloUnitTest/uicode.c` 与 `web/catalog-policy.json` 同步接入 `display/info_badge`。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=display/info_badge PORT=pc`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`python scripts/sync_widget_catalog.py`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category display`、`python scripts/checks/check_docs_encoding.py`、`python scripts/checks/check_widget_catalog.py`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub display/info_badge --track reference --timeout 10 --keep-screenshots`、`python scripts/code_compile_check.py --custom-widgets --category display --bits64`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --category display --track reference --bits64`、`python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub display/info_badge` 与对应 web smoke，确认 `info_badge` 已接入 reference 主线和 web 发布链路。
 
 - `2026-04-12`
   - 新增 `display/divider` reference 控件：基于 SDK `divider` 封装符合 Fluent / WPF UI 语义的 `Separator` reference 页面，补齐 `standard / subtle / accent` 三套样式 helper、palette setter 和静态 preview API，不改 SDK。
