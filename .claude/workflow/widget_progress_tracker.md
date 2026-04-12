@@ -9,9 +9,9 @@
 
 ## 当前快照
 
-- 截至 `2026-04-12`，`example/HelloCustomWidgets/` 当前保留 `55` 个控件目录。
+- 截至 `2026-04-12`，`example/HelloCustomWidgets/` 当前保留 `56` 个控件目录。
 - 所有保留控件均来自 `reference` 主线：
-  - `input = 26`
+  - `input = 27`
   - `layout = 6`
   - `navigation = 10`
   - `display = 6`
@@ -34,11 +34,11 @@
 
 | 状态 | 控件名 | 分类 | 开始日期 | 当前阶段 | 目标 |
 | --- | --- | --- | --- | --- | --- |
-| 进行中 | `thumb_rate` | `input` | `2026-04-12` | 方案与实现中 | 新增符合 Fluent / WPF UI `ThumbRate` 语义的三态 reference 控件，并完成 compile/runtime/web 闭环 |
+| 暂无 | - | - | - | - | - |
 
 ## 当前保留的 Reference 主线控件
 
-### Input（26）
+### Input（27）
 
 - `auto_suggest_box` -> `AutoSuggestBox`
 - `button` -> `Button`
@@ -62,6 +62,7 @@
 - `swipe_control` -> `SwipeControl`
 - `switch` -> `ToggleSwitch`
 - `text_box` -> `TextBox`
+- `thumb_rate` -> `ThumbRate`
 - `time_picker` -> `TimePicker`
 - `toggle_button` -> `ToggleButton`
 - `toggle_split_button` -> `ToggleSplitButton`
@@ -109,6 +110,12 @@
 - `toast_stack` -> `Toast`
 
 ## 最近完成的收口动作
+
+- `2026-04-12`
+  - 新增 `input/thumb_rate` reference 控件：新增符合 Fluent / WPF UI `ThumbRate` 语义的三态 `egui_view_thumb_rate`，保留 `none / liked / disliked`、再次点击当前项回到 `none`、键盘导航与静态 preview 输入抑制，基于 custom 层自绘 thumb up/down 图形，不修改 SDK。
+  - `example/HelloCustomWidgets/input/thumb_rate/egui_view_thumb_rate.c/.h` 新增 `egui_view_thumb_rate_init()`、`egui_view_thumb_rate_apply_standard_style()`、`egui_view_thumb_rate_apply_compact_style()`、`egui_view_thumb_rate_apply_read_only_style()`、`egui_view_thumb_rate_set_state()`、`egui_view_thumb_rate_set_current_part()`、`egui_view_thumb_rate_set_labels()`、`egui_view_thumb_rate_set_palette()`、`egui_view_thumb_rate_handle_navigation_key()` 与 `egui_view_thumb_rate_override_static_preview_api()`，把三态状态机、same-target release、`Enter / Space / Escape` 键盘闭环与 preview 输入吞掉统一收口在 custom 层；`example/HelloCustomWidgets/input/thumb_rate/test.c` 新增标题 + 主 `thumb_rate` + 底部 `compact / read only` 双 preview 的 reference 页面，并补上 `none -> liked -> disliked -> none` 的 runtime 录制轨道。
+  - `example/HelloUnitTest/test/test_thumb_rate.c` 新增单测覆盖样式 helper、setter pressed 清理、same-target release、键盘导航、只读/禁用 guard 与静态 preview 输入抑制；`example/HelloCustomWidgets/input/thumb_rate/readme.md`、`example/HelloCustomWidgets/widget_catalog.json`、`example/HelloUnitTest/uicode.c` 与 `web/catalog-policy.json` 同步接入 `input/thumb_rate`。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=input/thumb_rate PORT=pc`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`python scripts/sync_widget_catalog.py`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category input`、`python scripts/checks/check_docs_encoding.py`、`python scripts/checks/check_widget_catalog.py`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/thumb_rate --track reference --timeout 10 --keep-screenshots`、`python scripts/code_compile_check.py --custom-widgets --category input --bits64`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --category input --track reference --bits64`、`python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub input/thumb_rate` 与对应 web smoke，确认 `thumb_rate` 已接入 reference 主线和 web 发布链路。
 
 - `2026-04-12`
   - 新增 `display/arc` reference 控件：新增符合 Fluent / WPF UI `Arc` 语义的只读 `egui_view_arc`，基于 custom 层直接绘制 round-cap arc，补齐 `standard / subtle / attention` 三套样式 helper、`value / palette / angle / stroke` setter 与静态 preview API，不修改 SDK。
