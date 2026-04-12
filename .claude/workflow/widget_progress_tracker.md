@@ -34,7 +34,7 @@
 
 | 状态 | 控件名 | 分类 | 开始日期 | 当前阶段 | 目标 |
 | --- | --- | --- | --- | --- | --- |
-| 暂无 | - | - | - | - | - |
+| 进行中 | `divider` | `display` | `2026-04-12` | 设计 / 实现 | 基于 SDK `divider` 补齐 Fluent / WPF UI `Separator` reference 页面、单测与 catalog 闭环 |
 
 ## 当前保留的 Reference 主线控件
 
