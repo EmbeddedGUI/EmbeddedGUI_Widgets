@@ -6,6 +6,7 @@
 #include "test/test_arc.h"
 #include "test/test_auto_suggest_box.h"
 #include "test/test_badge_group.h"
+#include "test/test_bitmap_icon.h"
 #include "test/test_breadcrumb_bar.h"
 #include "test/test_button.h"
 #include "test/test_calendar_view.h"
@@ -75,6 +76,7 @@ void uicode_create_ui(void)
     test_arc_run();
     test_auto_suggest_box_run();
     test_badge_group_run();
+    test_bitmap_icon_run();
     test_breadcrumb_bar_run();
     test_button_run();
     test_calendar_view_run();

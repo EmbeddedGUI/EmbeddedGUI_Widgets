@@ -20,6 +20,16 @@
     "doc_state": "ok"
   },
   {
+    "id": "display/bitmap_icon",
+    "track": "reference",
+    "visibility": "public",
+    "reference_system": "Fluent 2",
+    "reference_library": "WPF UI",
+    "reference_component": "BitmapIcon",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
     "id": "display/card_panel",
     "track": "reference",
     "visibility": "public",

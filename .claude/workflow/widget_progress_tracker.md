@@ -9,12 +9,12 @@
 
 ## 当前快照
 
-- 截至 `2026-04-12`，`example/HelloCustomWidgets/` 当前保留 `59` 个控件目录。
+- 截至 `2026-04-12`，`example/HelloCustomWidgets/` 当前保留 `60` 个控件目录。
 - 所有保留控件均来自 `reference` 主线：
   - `input = 27`
   - `layout = 6`
   - `navigation = 10`
-  - `display = 9`
+  - `display = 10`
   - `feedback = 7`
 - `widget_catalog.json`、`web/catalog-policy.json` 与默认 web 入口已同步到 `reference-only` 状态。
 - 已清退轨道：
@@ -34,7 +34,6 @@
 
 | 状态 | 控件名 | 分类 | 开始日期 | 当前阶段 | 目标 |
 | --- | --- | --- | --- | --- | --- |
-| 暂无 | - | - | - | - | - |
 
 ## 当前保留的 Reference 主线控件
 
@@ -90,10 +89,11 @@
 - `tab_view` -> `TabView`
 - `tree_view` -> `TreeView`
 
-### Display（9）
+### Display（10）
 
 - `badge_group` -> `BadgeGroup`
 - `arc` -> `Arc`
+- `bitmap_icon` -> `BitmapIcon`
 - `card_panel` -> `Card`
 - `divider` -> `Separator`
 - `font_icon` -> `FontIcon`
@@ -113,6 +113,12 @@
 - `toast_stack` -> `Toast`
 
 ## 最近完成的收口动作
+
+- `2026-04-12`
+  - 新增 `display/bitmap_icon` reference 控件：新增符合 Fluent / WPF UI `BitmapIcon` 语义的只读 `egui_view_bitmap_icon`，在 custom 层基于 SDK `egui_view_image` 收口默认资源回退、`standard / subtle / accent` 三套前景色样式 helper、内置资源切换与静态 preview 输入抑制；最终绘制路径采用 custom 层 `16x16` alpha-mask 直绘，避免调试期的 alpha resize / PFB 越界问题，不修改 SDK。
+  - `example/HelloCustomWidgets/display/bitmap_icon/egui_view_bitmap_icon.c/.h` 新增 `egui_view_bitmap_icon_init()`、`egui_view_bitmap_icon_apply_standard_style()`、`egui_view_bitmap_icon_apply_subtle_style()`、`egui_view_bitmap_icon_apply_accent_style()`、`egui_view_bitmap_icon_set_image()`、`egui_view_bitmap_icon_get_image()`、三张内置资源 getter、`egui_view_bitmap_icon_set_palette()` 与 `egui_view_bitmap_icon_override_static_preview_api()`，把默认资源回退、pressed 清理、静态 preview 吞掉 `touch / key` 以及基于 mask 的局部坐标安全点绘统一收口在 custom 层；`example/HelloCustomWidgets/display/bitmap_icon/test.c` 新增标题 + 主 `bitmap_icon` + 底部 `Subtle / Accent` 双 preview 的 reference 页面，并补上 `Document -> Mail -> Alert -> Document` 的 runtime 录制轨道。
+  - `example/HelloUnitTest/test/test_bitmap_icon.c` 新增单测覆盖默认初始化、样式 helper、资源切换 / 回退、palette setter 与静态 preview 输入抑制；`example/HelloCustomWidgets/display/bitmap_icon/readme.md`、`example/HelloCustomWidgets/widget_catalog.json`、`example/HelloUnitTest/uicode.c` 与 `web/catalog-policy.json` 同步接入 `display/bitmap_icon`。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=display/bitmap_icon PORT=pc`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`python scripts/sync_widget_catalog.py`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category display`、`python scripts/checks/check_docs_encoding.py`、`python scripts/checks/check_widget_catalog.py`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub display/bitmap_icon --track reference --timeout 10 --keep-screenshots`、`python scripts/code_compile_check.py --custom-widgets --category display --bits64`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --category display --track reference --bits64`、`python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub display/bitmap_icon` 与对应 web smoke，确认 `bitmap_icon` 已接入 reference 主线和 web 发布链路。
 
 - `2026-04-12`
   - 新增 `display/font_icon` reference 控件：新增符合 Fluent / WPF UI `FontIcon` 语义的只读 `egui_view_font_icon`，在 custom 层基于 SDK `egui_view_label` 收口默认字形回退、显式图标字体句柄切换、颜色样式 helper 与静态 preview 输入抑制；demo 为保证确定性继续复用内置 `Material Symbols` 字体子集，但控件接口允许外部传入任意 `egui_font_t *`，不修改 SDK。
