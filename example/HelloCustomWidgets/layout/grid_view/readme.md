@@ -7,7 +7,7 @@
 - 补充对照控件：`data_list_panel`、`items_repeater`、`scroll_presenter`
 - 对应组件名：`GridView`
 - 计划保留状态：`standard`、`compact`、`read only`、`selection focus`
-- EGUI 适配说明：在 custom 层实现轻量 `egui_view_grid_view`，优先收口平铺集合、焦点选择与静态 preview 语义，不修改 `sdk/EmbeddedGUI`
+- EGUI 适配说明：在 custom 层实现轻量 `hcw_grid_view` 语义封装，优先收口平铺集合、焦点选择与静态 preview 语义，不修改 `sdk/EmbeddedGUI`
 
 ## 1. 为什么需要这个控件？
 `grid_view` 用来表达“同一批内容按多列磁贴平铺浏览，并保留当前项选中与激活语义”的标准集合视图。它适合模板库、素材画廊、头像墙、设备分组和卡片式资源挑选这类需要快速扫视多项内容的场景。
@@ -43,9 +43,9 @@
 | --- | --- | ---: | --- | --- |
 | `root_layout` | `egui_view_linearlayout_t` | `224 x 288` | enabled | 页面根布局 |
 | `title_label` | `egui_view_label_t` | `224 x 18` | `Grid View` | 页面标题 |
-| `grid_view_primary` | `egui_view_grid_view_t` | `196 x 148` | `standard` | 主 reference 控件 |
-| `grid_view_compact` | `egui_view_grid_view_t` | `104 x 86` | compact | 紧凑静态 preview |
-| `grid_view_read_only` | `egui_view_grid_view_t` | `104 x 86` | compact + read only | 只读静态 preview |
+| `grid_view_primary` | `hcw_grid_view_t` | `196 x 148` | `standard` | 主 reference 控件 |
+| `grid_view_compact` | `hcw_grid_view_t` | `104 x 86` | compact | 紧凑静态 preview |
+| `grid_view_read_only` | `hcw_grid_view_t` | `104 x 86` | compact + read only | 只读静态 preview |
 
 ## 6. 状态矩阵
 | 区域 | 关键状态 | 说明 |
@@ -71,18 +71,18 @@
 
 ## 8. 计划 API
 
-- `egui_view_grid_view_init()`
-- `egui_view_grid_view_set_snapshots()/get_current_snapshot()`
-- `egui_view_grid_view_set_current_snapshot()`
-- `egui_view_grid_view_set_current_item()/get_current_item()`
-- `egui_view_grid_view_activate_current_item()`
-- `egui_view_grid_view_set_on_action_listener()`
-- `egui_view_grid_view_set_font()/set_meta_font()`
-- `egui_view_grid_view_set_compact_mode()/set_read_only_mode()`
-- `egui_view_grid_view_set_palette()`
-- `egui_view_grid_view_get_item_region()`
-- `egui_view_grid_view_handle_navigation_key()`
-- `egui_view_grid_view_override_static_preview_api()`
+- `hcw_grid_view_init()`
+- `hcw_grid_view_set_snapshots()/get_current_snapshot()`
+- `hcw_grid_view_set_current_snapshot()`
+- `hcw_grid_view_set_current_item()/get_current_item()`
+- `hcw_grid_view_activate_current_item()`
+- `hcw_grid_view_set_on_action_listener()`
+- `hcw_grid_view_set_font()/set_meta_font()`
+- `hcw_grid_view_set_compact_mode()/set_read_only_mode()`
+- `hcw_grid_view_set_palette()`
+- `hcw_grid_view_get_item_region()`
+- `hcw_grid_view_handle_navigation_key()`
+- `hcw_grid_view_override_static_preview_api()`
 
 ## 9. 验收目标
 

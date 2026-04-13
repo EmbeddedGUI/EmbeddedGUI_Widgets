@@ -32,6 +32,7 @@
 #include "test/test_flyout.h"
 #include "test/test_font_icon.h"
 #include "test/test_grid_splitter.h"
+#include "test/test_grid_view.h"
 #include "test/test_hyperlink_button.h"
 #include "test/test_image_icon.h"
 #include "test/test_info_badge.h"
@@ -97,6 +98,7 @@
 #include "test/test_wrap_panel.inc"
 #include "test/test_items_repeater.h"
 #include "test/test_items_repeater.inc"
+#include "test/test_grid_view.inc"
 #include "test/test_relative_panel.inc"
 #include "test/test_rich_edit_box.inc"
 #include "test/test_scroll_presenter.inc"
@@ -200,4 +202,5 @@ void uicode_create_ui(void)
     test_virtualizing_wrap_panel_run();
     test_wrap_panel_run();
     test_items_repeater_run();
+    test_grid_view_run();
 }
