@@ -11,6 +11,7 @@
 #include "test/test_breadcrumb_bar.h"
 #include "test/test_button.h"
 #include "test/test_calendar_view.h"
+#include "test/test_card_control.h"
 #include "test/test_card_panel.h"
 #include "test/test_check_box.h"
 #include "test/test_color_picker.h"
@@ -95,6 +96,7 @@ void uicode_create_ui(void)
     test_breadcrumb_bar_run();
     test_button_run();
     test_calendar_view_run();
+    test_card_control_run();
     test_card_panel_run();
     test_check_box_run();
     test_color_picker_run();

@@ -540,6 +540,16 @@
     "doc_state": "ok"
   },
   {
+    "id": "layout/card_control",
+    "track": "reference",
+    "visibility": "public",
+    "reference_system": "Fluent 2",
+    "reference_library": "WPF UI",
+    "reference_component": "CardControl",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
     "id": "layout/data_list_panel",
     "track": "reference",
     "visibility": "public",
