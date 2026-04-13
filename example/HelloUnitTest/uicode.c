@@ -55,6 +55,7 @@
 #include "test/test_rich_edit_box.h"
 #include "test/test_rich_text_block.h"
 #include "test/test_scroll_bar.h"
+#include "test/test_scroll_presenter.h"
 #include "test/test_scroll_viewer.h"
 #include "test/test_selector_bar.h"
 #include "test/test_segmented_control.h"
@@ -96,6 +97,7 @@
 #include "test/test_items_repeater.h"
 #include "test/test_items_repeater.inc"
 #include "test/test_rich_edit_box.inc"
+#include "test/test_scroll_presenter.inc"
 #include "test/test_scroll_viewer.inc"
 
 void uicode_init_ui(void)
@@ -160,6 +162,7 @@ void uicode_create_ui(void)
     test_rich_edit_box_run();
     test_rich_text_block_run();
     test_scroll_bar_run();
+    test_scroll_presenter_run();
     test_scroll_viewer_run();
     test_selector_bar_run();
     test_segmented_control_run();
