@@ -12,6 +12,7 @@
 #include "test/test_breadcrumb_bar.h"
 #include "test/test_button.h"
 #include "test/test_calendar_view.h"
+#include "test/test_canvas.h"
 #include "test/test_card_action.h"
 #include "test/test_card_expander.h"
 #include "test/test_card_control.h"
@@ -129,6 +130,7 @@ void uicode_create_ui(void)
     test_breadcrumb_bar_run();
     test_button_run();
     test_calendar_view_run();
+    test_canvas_run();
     test_card_action_run();
     test_card_expander_run();
     test_card_control_run();

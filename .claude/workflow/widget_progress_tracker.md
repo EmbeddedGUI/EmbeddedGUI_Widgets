@@ -9,10 +9,10 @@
 
 ## 当前快照
 
-- 截至 `2026-04-14`，`example/HelloCustomWidgets/` 当前保留 `96` 个控件目录。
+- 截至 `2026-04-14`，`example/HelloCustomWidgets/` 当前保留 `97` 个控件目录。
 - 所有保留控件均来自 `reference` 主线：
   - `input = 32`
-  - `layout = 25`
+  - `layout = 26`
   - `navigation = 12`
   - `display = 17`
   - `feedback = 10`
@@ -73,8 +73,9 @@
 - `toggle_split_button` -> `ToggleSplitButton`
 - `token_input` -> `TokenInput`
 
-### Layout（25）
+### Layout（26）
 
+- `canvas` -> `Canvas`
 - `card_action` -> `CardAction`
 - `card_control` -> `CardControl`
 - `card_expander` -> `CardExpander`
@@ -151,6 +152,10 @@
 
 ## 最近完成的收口动作
 
+- `2026-04-14`
+  - 新增 `layout/canvas` reference 控件：补齐符合 Fluent 2 / WPF UI `Canvas` 语义的轻量 custom wrapper，在 custom 层复用 SDK `group` 收口绝对定位、固定 overlay preview、紧凑静态 preview 与 `Pinned notes / Status overlay / Compact board` 三组 snapshot，不修改 SDK。
+  - `example/HelloCustomWidgets/layout/canvas/egui_view_canvas.c/.h` 新增 `apply_standard_style()`、`apply_compact_style()`、`set_child_origin()`、`layout_childs()` 与 `override_static_preview_api()`；`example/HelloCustomWidgets/layout/canvas/test.c`、`readme.md`、`example/HelloUnitTest/test/test_canvas.c/.h`、`example/HelloUnitTest/uicode.c`、`example/HelloCustomWidgets/widget_catalog.json` 与 `web/catalog-policy.json` 已同步接入，并已把关键截图归档到本地 `iteration_log/` 供验收复核。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=layout/canvas PORT=pc`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`（总计 `800 / 800`，`canvas` suite `4 / 4`）、`python scripts/sync_widget_catalog.py`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category layout`、`python scripts/checks/check_docs_encoding.py`、`python scripts/checks/check_widget_catalog.py`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub layout/canvas --track reference --timeout 10 --keep-screenshots`、`python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub layout/canvas` 与对应 `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_layout_canvas` 验收，确认 `canvas` 已接入 reference 主线、运行时链路与 web 发布链路。
 - `2026-04-14`
   - 新增 `layout/stack_panel` reference 控件：补齐符合 Fluent 2 / WPF UI `StackPanel` 语义的轻量 custom wrapper，在 custom 层复用 SDK `linearlayout` 收口纵向主态、横向排布静态 preview、紧凑静态 preview 与 `Review flow / Inline tools / Compact notes` 三组 snapshot，不修改 SDK。
   - `example/HelloCustomWidgets/layout/stack_panel/egui_view_stack_panel.c/.h` 新增 `apply_standard_style()`、`apply_horizontal_style()`、`apply_compact_style()`、`set_orientation()`、`set_align_type()`、`layout_childs()` 与 `override_static_preview_api()`；`example/HelloCustomWidgets/layout/stack_panel/test.c`、`readme.md`、`example/HelloUnitTest/test/test_stack_panel.c/.h`、`example/HelloUnitTest/uicode.c`、`example/HelloCustomWidgets/widget_catalog.json` 与 `web/catalog-policy.json` 已同步接入，并已把关键截图归档到本地 `iteration_log/` 供验收复核。
