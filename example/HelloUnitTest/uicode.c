@@ -74,6 +74,7 @@
 #include "test/test_symbol_icon.h"
 #include "test/test_split_button.h"
 #include "test/test_split_view.h"
+#include "test/test_stack_panel.h"
 #include "test/test_swipe_control.h"
 #include "test/test_switch.h"
 #include "test/test_tag.h"
@@ -189,6 +190,7 @@ void uicode_create_ui(void)
     test_symbol_icon_run();
     test_split_button_run();
     test_split_view_run();
+    test_stack_panel_run();
     test_swipe_control_run();
     test_switch_run();
     test_tag_run();
