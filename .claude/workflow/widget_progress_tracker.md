@@ -9,13 +9,13 @@
 
 ## 当前快照
 
-- 截至 `2026-04-14`，`example/HelloCustomWidgets/` 当前保留 `93` 个控件目录。
+- 截至 `2026-04-14`，`example/HelloCustomWidgets/` 当前保留 `94` 个控件目录。
 - 所有保留控件均来自 `reference` 主线：
   - `input = 32`
   - `layout = 23`
   - `navigation = 12`
   - `display = 17`
-  - `feedback = 9`
+  - `feedback = 10`
 - `widget_catalog.json`、`web/catalog-policy.json` 与默认 web 入口已同步到 `reference-only` 状态。
 - 已清退轨道：
   - 全部 `deprecated`
@@ -134,7 +134,7 @@
 - `tag` -> `Tag`
 - `text_block` -> `TextBlock`
 
-### Feedback（9）
+### Feedback（10）
 
 - `activity_ring` -> `ProgressRing`
 - `dialog_sheet` -> `ContentDialog`
@@ -142,12 +142,17 @@
 - `message_bar` -> `MessageBar`
 - `progress_bar` -> `ProgressBar`
 - `skeleton` -> `Skeleton`
+- `spinner` -> `Spinner`
 - `teaching_tip` -> `TeachingTip`
 - `tool_tip` -> `ToolTip`
 - `toast_stack` -> `Toast`
 
 ## 最近完成的收口动作
 
+- `2026-04-14`
+  - 新增 `feedback/spinner` reference 控件：补齐符合 Fluent 2 `Spinner` 语义的轻量 `egui_view_spinner`，在 custom 层复用 SDK spinner 收口单个 indeterminate loading 指示器、`standard / compact / muted` 外观与静态 preview 的 `touch / key` 输入抑制，不修改 SDK。
+  - `example/HelloCustomWidgets/feedback/spinner/egui_view_spinner.c/.h` 新增 `apply_standard_style()`、`apply_compact_style()`、`apply_muted_style()`、`set_palette()`、`set_stroke_width()`、`set_arc_length()`、`set_spinning()` 与 `override_static_preview_api()`；`example/HelloCustomWidgets/feedback/spinner/test.c`、`readme.md`、`iteration_log/iteration_log.md`、`example/HelloUnitTest/test/test_spinner.c/.h`、`example/HelloUnitTest/uicode.c`、`example/HelloCustomWidgets/widget_catalog.json` 与 `web/catalog-policy.json` 已同步接入。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=feedback/spinner PORT=pc`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`（总计 `788 / 788`，`spinner` suite `4 / 4`）、`python scripts/sync_widget_catalog.py`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category feedback`、`python scripts/checks/check_docs_encoding.py`、`python scripts/checks/check_widget_catalog.py`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub feedback/spinner --track reference --timeout 10 --keep-screenshots`、`python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub feedback/spinner` 与对应 `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_feedback_spinner` 验收，确认 `spinner` 已接入 reference 主线、运行时链路与 web 发布链路。
 - `2026-04-14`
   - 新增 `display/badge` reference 控件：补齐符合 Fluent 2 `Badge` 语义的轻量 `egui_view_badge`，在 custom 层收口单个文本 badge 的 `filled / outline / subtle` 外观、可选 leading icon，以及 `compact / read only` 静态 preview 的 `touch / key` 输入抑制，不修改 SDK。
   - `example/HelloCustomWidgets/display/badge/egui_view_badge.c/.h` 新增 `apply_filled_style()`、`apply_outline_style()`、`apply_subtle_style()`、`apply_read_only_style()`、`set_text()`、`set_icon()`、`set_font()`、`set_icon_font()`、`set_palette()`、`set_compact_mode()`、`set_read_only_mode()`、`get_icon_region()` 与 `override_static_preview_api()`；`example/HelloCustomWidgets/display/badge/test.c`、`readme.md`、`iteration_log/iteration_log.md`、`example/HelloUnitTest/test/test_badge.c/.h`、`example/HelloUnitTest/uicode.c`、`example/HelloCustomWidgets/widget_catalog.json` 与 `web/catalog-policy.json` 已同步接入。

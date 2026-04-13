@@ -69,6 +69,7 @@
 #include "test/test_shortcut_recorder.h"
 #include "test/test_skeleton.h"
 #include "test/test_slider.h"
+#include "test/test_spinner.h"
 #include "test/test_symbol_icon.h"
 #include "test/test_split_button.h"
 #include "test/test_split_view.h"
@@ -182,6 +183,7 @@ void uicode_create_ui(void)
     test_shortcut_recorder_run();
     test_skeleton_run();
     test_slider_run();
+    test_spinner_run();
     test_symbol_icon_run();
     test_split_button_run();
     test_split_view_run();
