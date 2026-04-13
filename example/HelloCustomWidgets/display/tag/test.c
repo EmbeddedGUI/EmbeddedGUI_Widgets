@@ -1,0 +1,356 @@
+#include "egui.h"
+#include "egui_view_tag.h"
+#include "uicode.h"
+#include "demo_scaffold.h"
+
+#if EGUI_CONFIG_RECORDING_TEST
+#include "core/egui_input_simulator.h"
+#endif
+
+#define TAG_ROOT_WIDTH           224
+#define TAG_ROOT_HEIGHT          190
+#define TAG_PRIMARY_PANEL_WIDTH  196
+#define TAG_PRIMARY_PANEL_HEIGHT 82
+#define TAG_PRIMARY_WIDTH        140
+#define TAG_PRIMARY_HEIGHT       28
+#define TAG_PREVIEW_PANEL_WIDTH  104
+#define TAG_PREVIEW_PANEL_HEIGHT 62
+#define TAG_PREVIEW_WIDTH        84
+#define TAG_PREVIEW_HEIGHT       24
+#define TAG_BOTTOM_ROW_WIDTH     216
+#define TAG_BOTTOM_ROW_HEIGHT    62
+#define TAG_RECORD_WAIT          90
+#define TAG_RECORD_FRAME_WAIT    170
+#define TAG_RECORD_FINAL_WAIT    520
+
+typedef struct
+{
+    const char *text;
+    const char *secondary;
+    const char *note;
+} tag_snapshot_t;
+
+static egui_view_linearlayout_t root_layout;
+static egui_view_label_t title_label;
+static egui_view_linearlayout_t primary_panel;
+static egui_view_label_t primary_heading_label;
+static egui_view_tag_t primary_tag;
+static egui_view_label_t primary_note_label;
+static egui_view_linearlayout_t bottom_row;
+static egui_view_linearlayout_t compact_panel;
+static egui_view_label_t compact_heading_label;
+static egui_view_tag_t compact_tag;
+static egui_view_label_t compact_note_label;
+static egui_view_linearlayout_t read_only_panel;
+static egui_view_label_t read_only_heading_label;
+static egui_view_tag_t read_only_tag;
+static egui_view_label_t read_only_note_label;
+static egui_view_api_t compact_api;
+static egui_view_api_t read_only_api;
+static uint8_t primary_snapshot_index;
+
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
+EGUI_BACKGROUND_PARAM_INIT(bg_page_panel_params, &bg_page_panel_param, NULL, NULL);
+EGUI_BACKGROUND_COLOR_STATIC_CONST_INIT(bg_page_panel, &bg_page_panel_params);
+
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_surface_panel_param, EGUI_COLOR_HEX(0xFFFFFF), EGUI_ALPHA_100, 12);
+EGUI_BACKGROUND_PARAM_INIT(bg_surface_panel_params, &bg_surface_panel_param, NULL, NULL);
+EGUI_BACKGROUND_COLOR_STATIC_CONST_INIT(bg_surface_panel, &bg_surface_panel_params);
+
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_muted_panel_param, EGUI_COLOR_HEX(0xFBFCFD), EGUI_ALPHA_100, 12);
+EGUI_BACKGROUND_PARAM_INIT(bg_muted_panel_params, &bg_muted_panel_param, NULL, NULL);
+EGUI_BACKGROUND_COLOR_STATIC_CONST_INIT(bg_muted_panel, &bg_muted_panel_params);
+
+static const char *title_text = "Tag";
+
+static const tag_snapshot_t primary_snapshots[] = {
+        {"Assigned", "Today", "Dismiss cycles the sample."},
+        {"Needs review", "2 files", "Secondary text stays compact."},
+        {"Pinned", "Release", "Keyboard dismiss works too."},
+};
+
+static void init_text_label(egui_view_label_t *label, egui_dim_t width, egui_dim_t height, const char *text, const egui_font_t *font, egui_color_t color,
+                            uint8_t align)
+{
+    egui_view_label_init(EGUI_VIEW_OF(label));
+    egui_view_set_size(EGUI_VIEW_OF(label), width, height);
+    egui_view_label_set_text(EGUI_VIEW_OF(label), text);
+    egui_view_label_set_align_type(EGUI_VIEW_OF(label), align);
+    egui_view_label_set_font(EGUI_VIEW_OF(label), font);
+    egui_view_label_set_font_color(EGUI_VIEW_OF(label), color, EGUI_ALPHA_100);
+}
+
+static void init_panel(egui_view_linearlayout_t *panel, egui_dim_t width, egui_dim_t height, egui_background_t *background, uint8_t align)
+{
+    egui_view_linearlayout_init(EGUI_VIEW_OF(panel));
+    egui_view_set_size(EGUI_VIEW_OF(panel), width, height);
+    egui_view_linearlayout_set_orientation(EGUI_VIEW_OF(panel), 0);
+    egui_view_linearlayout_set_align_type(EGUI_VIEW_OF(panel), align);
+    egui_view_set_background(EGUI_VIEW_OF(panel), background);
+    egui_view_set_padding(EGUI_VIEW_OF(panel), 10, 10, 10, 10);
+}
+
+static void apply_primary_snapshot(uint8_t index)
+{
+    const tag_snapshot_t *snapshot = &primary_snapshots[index % EGUI_ARRAY_SIZE(primary_snapshots)];
+
+    primary_snapshot_index = index % EGUI_ARRAY_SIZE(primary_snapshots);
+    egui_view_tag_set_text(EGUI_VIEW_OF(&primary_tag), snapshot->text);
+    egui_view_tag_set_secondary_text(EGUI_VIEW_OF(&primary_tag), snapshot->secondary);
+    egui_view_label_set_text(EGUI_VIEW_OF(&primary_note_label), snapshot->note);
+}
+
+static void apply_compact_state(void)
+{
+    egui_view_tag_set_text(EGUI_VIEW_OF(&compact_tag), "Compact");
+    egui_view_tag_set_secondary_text(EGUI_VIEW_OF(&compact_tag), "Preview");
+}
+
+static void apply_read_only_state(void)
+{
+    egui_view_tag_set_text(EGUI_VIEW_OF(&read_only_tag), "System");
+    egui_view_tag_set_secondary_text(EGUI_VIEW_OF(&read_only_tag), "Locked");
+}
+
+static void on_primary_tag_dismiss(egui_view_t *self)
+{
+    EGUI_UNUSED(self);
+    apply_primary_snapshot((uint8_t)(primary_snapshot_index + 1));
+}
+
+#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
+static void dismiss_primary_tag_focus(void)
+{
+    egui_view_clear_focus(EGUI_VIEW_OF(&primary_tag));
+}
+#endif
+
+#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
+static int on_preview_touch_consume(egui_view_t *self, egui_motion_event_t *event)
+{
+    EGUI_UNUSED(self);
+
+#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
+    if (event->type == EGUI_MOTION_EVENT_ACTION_DOWN)
+    {
+        dismiss_primary_tag_focus();
+    }
+#else
+    EGUI_UNUSED(event);
+#endif
+    return 1;
+}
+#endif
+
+void test_init_ui(void)
+{
+    egui_view_linearlayout_init(EGUI_VIEW_OF(&root_layout));
+    egui_view_set_size(EGUI_VIEW_OF(&root_layout), TAG_ROOT_WIDTH, TAG_ROOT_HEIGHT);
+    egui_view_linearlayout_set_orientation(EGUI_VIEW_OF(&root_layout), 0);
+    egui_view_linearlayout_set_align_type(EGUI_VIEW_OF(&root_layout), EGUI_ALIGN_HCENTER);
+    egui_view_set_background(EGUI_VIEW_OF(&root_layout), EGUI_BG_OF(&bg_page_panel));
+
+    init_text_label(&title_label, TAG_ROOT_WIDTH, 18, title_text, (const egui_font_t *)&egui_res_font_montserrat_12_4, EGUI_COLOR_HEX(0x21303F),
+                    EGUI_ALIGN_CENTER);
+    egui_view_set_margin(EGUI_VIEW_OF(&title_label), 0, 8, 0, 6);
+    egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label));
+
+    init_panel(&primary_panel, TAG_PRIMARY_PANEL_WIDTH, TAG_PRIMARY_PANEL_HEIGHT, EGUI_BG_OF(&bg_surface_panel), EGUI_ALIGN_HCENTER);
+    egui_view_set_margin(EGUI_VIEW_OF(&primary_panel), 0, 0, 0, 10);
+    egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&primary_panel));
+
+    init_text_label(&primary_heading_label, 176, 12, "Dismissible", (const egui_font_t *)&egui_res_font_montserrat_8_4, EGUI_COLOR_HEX(0x5E6D7C),
+                    EGUI_ALIGN_CENTER);
+    egui_view_set_margin(EGUI_VIEW_OF(&primary_heading_label), 0, 0, 0, 6);
+    egui_view_group_add_child(EGUI_VIEW_OF(&primary_panel), EGUI_VIEW_OF(&primary_heading_label));
+
+    egui_view_tag_init(EGUI_VIEW_OF(&primary_tag));
+    egui_view_set_size(EGUI_VIEW_OF(&primary_tag), TAG_PRIMARY_WIDTH, TAG_PRIMARY_HEIGHT);
+    egui_view_tag_apply_standard_style(EGUI_VIEW_OF(&primary_tag));
+    egui_view_tag_set_font(EGUI_VIEW_OF(&primary_tag), (const egui_font_t *)&egui_res_font_montserrat_10_4);
+    egui_view_tag_set_secondary_font(EGUI_VIEW_OF(&primary_tag), (const egui_font_t *)&egui_res_font_montserrat_8_4);
+    egui_view_tag_set_on_dismiss_listener(EGUI_VIEW_OF(&primary_tag), on_primary_tag_dismiss);
+    egui_view_set_margin(EGUI_VIEW_OF(&primary_tag), 0, 0, 0, 8);
+#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
+    egui_view_set_focusable(EGUI_VIEW_OF(&primary_tag), 1);
+#endif
+    egui_view_group_add_child(EGUI_VIEW_OF(&primary_panel), EGUI_VIEW_OF(&primary_tag));
+
+    init_text_label(&primary_note_label, 176, 10, "Dismiss cycles the sample.", (const egui_font_t *)&egui_res_font_montserrat_8_4,
+                    EGUI_COLOR_HEX(0x6B7A89), EGUI_ALIGN_CENTER);
+    egui_view_group_add_child(EGUI_VIEW_OF(&primary_panel), EGUI_VIEW_OF(&primary_note_label));
+
+    egui_view_linearlayout_init(EGUI_VIEW_OF(&bottom_row));
+    egui_view_set_size(EGUI_VIEW_OF(&bottom_row), TAG_BOTTOM_ROW_WIDTH, TAG_BOTTOM_ROW_HEIGHT);
+    egui_view_linearlayout_set_orientation(EGUI_VIEW_OF(&bottom_row), 1);
+    egui_view_linearlayout_set_align_type(EGUI_VIEW_OF(&bottom_row), EGUI_ALIGN_VCENTER);
+    egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&bottom_row));
+
+    init_panel(&compact_panel, TAG_PREVIEW_PANEL_WIDTH, TAG_PREVIEW_PANEL_HEIGHT, EGUI_BG_OF(&bg_muted_panel), EGUI_ALIGN_HCENTER);
+    egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&compact_panel));
+
+    init_text_label(&compact_heading_label, 84, 12, "Compact", (const egui_font_t *)&egui_res_font_montserrat_8_4, EGUI_COLOR_HEX(0x233241),
+                    EGUI_ALIGN_CENTER);
+    egui_view_set_margin(EGUI_VIEW_OF(&compact_heading_label), 0, 0, 0, 6);
+    egui_view_group_add_child(EGUI_VIEW_OF(&compact_panel), EGUI_VIEW_OF(&compact_heading_label));
+
+    egui_view_tag_init(EGUI_VIEW_OF(&compact_tag));
+    egui_view_set_size(EGUI_VIEW_OF(&compact_tag), TAG_PREVIEW_WIDTH, TAG_PREVIEW_HEIGHT);
+    egui_view_tag_apply_compact_style(EGUI_VIEW_OF(&compact_tag));
+    egui_view_tag_set_font(EGUI_VIEW_OF(&compact_tag), (const egui_font_t *)&egui_res_font_montserrat_8_4);
+    egui_view_tag_set_secondary_font(EGUI_VIEW_OF(&compact_tag), (const egui_font_t *)&egui_res_font_montserrat_8_4);
+    egui_view_tag_override_static_preview_api(EGUI_VIEW_OF(&compact_tag), &compact_api);
+#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
+    compact_api.on_touch_event = on_preview_touch_consume;
+#endif
+#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
+    egui_view_set_focusable(EGUI_VIEW_OF(&compact_tag), 0);
+#endif
+    egui_view_set_margin(EGUI_VIEW_OF(&compact_tag), 0, 0, 0, 6);
+    egui_view_group_add_child(EGUI_VIEW_OF(&compact_panel), EGUI_VIEW_OF(&compact_tag));
+
+    init_text_label(&compact_note_label, 84, 12, "Static preview.", (const egui_font_t *)&egui_res_font_montserrat_8_4, EGUI_COLOR_HEX(0x6B7A89),
+                    EGUI_ALIGN_CENTER);
+    egui_view_group_add_child(EGUI_VIEW_OF(&compact_panel), EGUI_VIEW_OF(&compact_note_label));
+
+    init_panel(&read_only_panel, TAG_PREVIEW_PANEL_WIDTH, TAG_PREVIEW_PANEL_HEIGHT, EGUI_BG_OF(&bg_surface_panel), EGUI_ALIGN_HCENTER);
+    egui_view_set_margin(EGUI_VIEW_OF(&read_only_panel), 8, 0, 0, 0);
+    egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&read_only_panel));
+
+    init_text_label(&read_only_heading_label, 84, 12, "Read only", (const egui_font_t *)&egui_res_font_montserrat_8_4, EGUI_COLOR_HEX(0x233241),
+                    EGUI_ALIGN_CENTER);
+    egui_view_set_margin(EGUI_VIEW_OF(&read_only_heading_label), 0, 0, 0, 6);
+    egui_view_group_add_child(EGUI_VIEW_OF(&read_only_panel), EGUI_VIEW_OF(&read_only_heading_label));
+
+    egui_view_tag_init(EGUI_VIEW_OF(&read_only_tag));
+    egui_view_set_size(EGUI_VIEW_OF(&read_only_tag), TAG_PREVIEW_WIDTH, TAG_PREVIEW_HEIGHT);
+    egui_view_tag_apply_read_only_style(EGUI_VIEW_OF(&read_only_tag));
+    egui_view_tag_set_font(EGUI_VIEW_OF(&read_only_tag), (const egui_font_t *)&egui_res_font_montserrat_8_4);
+    egui_view_tag_set_secondary_font(EGUI_VIEW_OF(&read_only_tag), (const egui_font_t *)&egui_res_font_montserrat_8_4);
+    egui_view_tag_override_static_preview_api(EGUI_VIEW_OF(&read_only_tag), &read_only_api);
+#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
+    read_only_api.on_touch_event = on_preview_touch_consume;
+#endif
+#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
+    egui_view_set_focusable(EGUI_VIEW_OF(&read_only_tag), 0);
+#endif
+    egui_view_set_margin(EGUI_VIEW_OF(&read_only_tag), 0, 0, 0, 6);
+    egui_view_group_add_child(EGUI_VIEW_OF(&read_only_panel), EGUI_VIEW_OF(&read_only_tag));
+
+    init_text_label(&read_only_note_label, 84, 12, "Dismiss hidden.", (const egui_font_t *)&egui_res_font_montserrat_8_4, EGUI_COLOR_HEX(0x6B7A89),
+                    EGUI_ALIGN_CENTER);
+    egui_view_group_add_child(EGUI_VIEW_OF(&read_only_panel), EGUI_VIEW_OF(&read_only_note_label));
+
+    apply_primary_snapshot(0);
+    apply_compact_state();
+    apply_read_only_state();
+
+    hello_custom_widgets_demo_apply_title_only_scaffold(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label), NULL, 0);
+
+    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&primary_panel));
+    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&compact_panel));
+    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&read_only_panel));
+    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&bottom_row));
+    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&root_layout));
+
+    egui_core_add_user_root_view(EGUI_VIEW_OF(&root_layout));
+    egui_core_layout_childs_user_root_view(EGUI_LAYOUT_VERTICAL, EGUI_ALIGN_HCENTER | EGUI_ALIGN_VCENTER);
+}
+
+#if EGUI_CONFIG_RECORDING_TEST
+static void apply_primary_key(uint8_t key_code)
+{
+    egui_key_event_t event;
+
+    memset(&event, 0, sizeof(event));
+    event.type = EGUI_KEY_EVENT_ACTION_DOWN;
+    event.key_code = key_code;
+    EGUI_VIEW_OF(&primary_tag)->api->on_key_event(EGUI_VIEW_OF(&primary_tag), &event);
+
+    event.type = EGUI_KEY_EVENT_ACTION_UP;
+    EGUI_VIEW_OF(&primary_tag)->api->on_key_event(EGUI_VIEW_OF(&primary_tag), &event);
+}
+
+static void set_click_dismiss_action(egui_sim_action_t *p_action, egui_view_t *view, int interval_ms)
+{
+    egui_region_t region;
+
+    if (!egui_view_tag_get_dismiss_region(view, &region))
+    {
+        EGUI_SIM_SET_WAIT(p_action, interval_ms);
+        return;
+    }
+
+    p_action->type = EGUI_SIM_ACTION_CLICK;
+    p_action->x1 = region.location.x + region.size.width / 2;
+    p_action->y1 = region.location.y + region.size.height / 2;
+    p_action->x2 = 0;
+    p_action->y2 = 0;
+    p_action->steps = 0;
+    p_action->interval_ms = interval_ms;
+}
+
+bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_action)
+{
+    static int last_action = -1;
+    int first_call = action_index != last_action;
+
+    last_action = action_index;
+
+    switch (action_index)
+    {
+    case 0:
+        if (first_call)
+        {
+            apply_primary_snapshot(0);
+            apply_compact_state();
+            apply_read_only_state();
+        }
+        EGUI_SIM_SET_WAIT(p_action, TAG_RECORD_WAIT);
+        return true;
+    case 1:
+        if (first_call)
+        {
+            recording_request_snapshot();
+        }
+        EGUI_SIM_SET_WAIT(p_action, TAG_RECORD_FRAME_WAIT);
+        return true;
+    case 2:
+        set_click_dismiss_action(p_action, EGUI_VIEW_OF(&primary_tag), TAG_RECORD_WAIT);
+        return true;
+    case 3:
+        if (first_call)
+        {
+            recording_request_snapshot();
+        }
+        EGUI_SIM_SET_WAIT(p_action, TAG_RECORD_FRAME_WAIT);
+        return true;
+    case 4:
+        if (first_call)
+        {
+#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
+            egui_view_request_focus(EGUI_VIEW_OF(&primary_tag));
+#endif
+            apply_primary_key(EGUI_KEY_CODE_DELETE);
+        }
+        EGUI_SIM_SET_WAIT(p_action, TAG_RECORD_WAIT);
+        return true;
+    case 5:
+        if (first_call)
+        {
+            recording_request_snapshot();
+        }
+        EGUI_SIM_SET_WAIT(p_action, TAG_RECORD_FRAME_WAIT);
+        return true;
+    case 6:
+        if (first_call)
+        {
+            recording_request_snapshot();
+        }
+        EGUI_SIM_SET_WAIT(p_action, TAG_RECORD_FINAL_WAIT);
+        return true;
+    default:
+        return false;
+    }
+}
+#endif

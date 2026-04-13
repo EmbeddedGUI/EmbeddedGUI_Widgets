@@ -9,12 +9,12 @@
 
 ## 当前快照
 
-- 截至 `2026-04-13`，`example/HelloCustomWidgets/` 当前保留 `90` 个控件目录。
+- 截至 `2026-04-14`，`example/HelloCustomWidgets/` 当前保留 `93` 个控件目录。
 - 所有保留控件均来自 `reference` 主线：
-  - `input = 31`
+  - `input = 32`
   - `layout = 23`
   - `navigation = 12`
-  - `display = 15`
+  - `display = 17`
   - `feedback = 9`
 - `widget_catalog.json`、`web/catalog-policy.json` 与默认 web 入口已同步到 `reference-only` 状态。
 - 已清退轨道：
@@ -34,11 +34,11 @@
 
 | 状态 | 控件名 | 分类 | 开始日期 | 当前阶段 | 目标 |
 | --- | --- | --- | --- | --- | --- |
-| 空 | - | - | - | - | 等待下一颗 widget 按 workflow 启动 |
+| 暂无 | - | - | - | - | - |
 
 ## 当前保留的 Reference 主线控件
 
-### Input（31）
+### Input（32）
 
 - `auto_suggest_box` -> `AutoSuggestBox`
 - `button` -> `Button`
@@ -59,6 +59,7 @@
 - `repeat_button` -> `RepeatButton`
 - `rich_edit_box` -> `RichEditBox`
 - `scroll_bar` -> `ScrollBar`
+- `search_box` -> `Searchbox`
 - `segmented_control` -> `SegmentedControl`
 - `shortcut_recorder` -> `KeyboardAcceleratorRecorder`
 - `slider` -> `Slider`
@@ -72,7 +73,7 @@
 - `toggle_split_button` -> `ToggleSplitButton`
 - `token_input` -> `TokenInput`
 
-### Layout（22）
+### Layout（23）
 
 - `card_action` -> `CardAction`
 - `card_control` -> `CardControl`
@@ -113,8 +114,9 @@
 - `title_bar` -> `TitleBar`
 - `tree_view` -> `TreeView`
 
-### Display（15）
+### Display（17）
 
+- `badge` -> `Badge`
 - `badge_group` -> `BadgeGroup`
 - `arc` -> `Arc`
 - `animated_icon` -> `AnimatedIcon`
@@ -129,6 +131,7 @@
 - `persona_group` -> `AvatarGroup`
 - `rich_text_block` -> `RichTextBlock`
 - `symbol_icon` -> `SymbolIcon`
+- `tag` -> `Tag`
 - `text_block` -> `TextBlock`
 
 ### Feedback（9）
@@ -144,6 +147,21 @@
 - `toast_stack` -> `Toast`
 
 ## 最近完成的收口动作
+
+- `2026-04-14`
+  - 新增 `display/badge` reference 控件：补齐符合 Fluent 2 `Badge` 语义的轻量 `egui_view_badge`，在 custom 层收口单个文本 badge 的 `filled / outline / subtle` 外观、可选 leading icon，以及 `compact / read only` 静态 preview 的 `touch / key` 输入抑制，不修改 SDK。
+  - `example/HelloCustomWidgets/display/badge/egui_view_badge.c/.h` 新增 `apply_filled_style()`、`apply_outline_style()`、`apply_subtle_style()`、`apply_read_only_style()`、`set_text()`、`set_icon()`、`set_font()`、`set_icon_font()`、`set_palette()`、`set_compact_mode()`、`set_read_only_mode()`、`get_icon_region()` 与 `override_static_preview_api()`；`example/HelloCustomWidgets/display/badge/test.c`、`readme.md`、`iteration_log/iteration_log.md`、`example/HelloUnitTest/test/test_badge.c/.h`、`example/HelloUnitTest/uicode.c`、`example/HelloCustomWidgets/widget_catalog.json` 与 `web/catalog-policy.json` 已同步接入。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=display/badge PORT=pc`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`（总计 `784 / 784`，`badge` suite `5 / 5`）、`python scripts/sync_widget_catalog.py`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category display`、`python scripts/checks/check_docs_encoding.py`、`python scripts/checks/check_widget_catalog.py`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub display/badge --track reference --timeout 10 --keep-screenshots`、`python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub display/badge` 与对应 `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_display_badge` 验收，确认 `badge` 已接入 reference 主线、运行时链路与 web 发布链路。
+
+- `2026-04-14`
+  - 新增 `display/tag` reference 控件：补齐符合 Fluent 2 `Tag` 语义的轻量 `egui_view_tag`，在 custom 层收口单个 tag 的 `text + secondary text + dismiss`、same-target release、`Delete / Backspace / Enter / Space` 键盘 dismiss，以及 `compact / read only` 静态 preview 的 `touch / key` 输入抑制，不修改 SDK。
+  - `example/HelloCustomWidgets/display/tag/egui_view_tag.c/.h` 新增 `apply_standard_style()`、`apply_compact_style()`、`apply_read_only_style()`、`set_text()`、`set_secondary_text()`、`set_font()`、`set_secondary_font()`、`set_icon_font()`、`set_palette()`、`set_dismissible()`、`set_compact_mode()`、`set_read_only_mode()`、`set_on_dismiss_listener()`、`get_dismiss_region()` 与 `override_static_preview_api()`；`example/HelloCustomWidgets/display/tag/test.c`、`readme.md`、`iteration_log/iteration_log.md`、`example/HelloUnitTest/test/test_tag.c/.h`、`example/HelloUnitTest/uicode.c`、`example/HelloCustomWidgets/widget_catalog.json` 与 `web/catalog-policy.json` 已同步接入。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=display/tag PORT=pc`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`（总计 `779 / 779`，`tag` suite `7 / 7`）、`python scripts/sync_widget_catalog.py`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category display`、`python scripts/checks/check_docs_encoding.py`、`python scripts/checks/check_widget_catalog.py`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub display/tag --track reference --timeout 10 --keep-screenshots`、`python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub display/tag` 与对应 `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_display_tag` 验收，确认 `tag` 已接入 reference 主线、运行时链路与 web 发布链路。
+
+- `2026-04-13`
+  - 新增 `input/search_box` reference 控件：补齐符合 Fluent 2 `Searchbox` 语义的轻量 `egui_view_search_box`，在 custom 层基于 `textinput` 收口常驻搜索图标、同目标 release 才提交的清空按钮、`compact / read only` 双 preview 与静态 preview 的 `touch / key` 输入抑制，不修改 SDK。
+  - `example/HelloCustomWidgets/input/search_box/egui_view_search_box.c/.h` 新增 `egui_view_search_box_init()`、`apply_standard_style()`、`apply_compact_style()`、`apply_read_only_style()`、`set_text()`、`set_placeholder()`、`set_font()`、`set_icon_font()`、`set_max_length()`、`get_clear_region()` 与 `override_static_preview_api()`；`example/HelloCustomWidgets/input/search_box/test.c`、`readme.md`、`example/HelloUnitTest/test/test_search_box.c/.h`、`example/HelloUnitTest/uicode.c`、`example/HelloCustomWidgets/widget_catalog.json` 与 `web/catalog-policy.json` 已同步接入。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=input/search_box PORT=pc`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`（总计 `772 / 772`，`search_box` suite 通过）、`python scripts/sync_widget_catalog.py`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category input`、`python scripts/checks/check_docs_encoding.py`、`python scripts/checks/check_widget_catalog.py`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/search_box --track reference --timeout 10 --keep-screenshots`、`python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub input/search_box` 与对应 `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_input_search_box` 验收，确认 `search_box` 已接入 reference 主线、单测链路与 web 发布链路。
 
 - `2026-04-13`
   - 修复 `layout/virtualizing_stack_panel` 的标准态窗口度量回归：收紧 `standard shell gap / shell pad y / footer gap`，恢复 `window_anchor` 与 `selected_item` 的 3 行窗口对齐语义，消除 `HelloUnitTest` 中 `virtualizing_stack_panel` 的 `3` 个历史失败。

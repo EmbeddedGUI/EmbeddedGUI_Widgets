@@ -20,6 +20,16 @@
     "doc_state": "ok"
   },
   {
+    "id": "display/badge",
+    "track": "reference",
+    "visibility": "public",
+    "reference_system": "Fluent 2",
+    "reference_library": "Fluent UI React",
+    "reference_component": "Badge",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
     "id": "display/badge_group",
     "track": "reference",
     "visibility": "public",
@@ -136,6 +146,16 @@
     "reference_system": "Fluent 2",
     "reference_library": "WPF UI",
     "reference_component": "SymbolIcon",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
+    "id": "display/tag",
+    "track": "reference",
+    "visibility": "public",
+    "reference_system": "Fluent 2",
+    "reference_library": "Fluent UI React",
+    "reference_component": "Tag",
     "replacement": null,
     "doc_state": "ok"
   },
@@ -426,6 +446,16 @@
     "reference_system": "Fluent 2",
     "reference_library": "WPF UI",
     "reference_component": "ScrollBar",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
+    "id": "input/search_box",
+    "track": "reference",
+    "visibility": "public",
+    "reference_system": "Fluent 2",
+    "reference_library": "Fluent UI React",
+    "reference_component": "Searchbox",
     "replacement": null,
     "doc_state": "ok"
   },

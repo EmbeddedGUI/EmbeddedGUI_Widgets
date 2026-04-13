@@ -6,6 +6,7 @@
 #include "test/test_arc.h"
 #include "test/test_animated_icon.h"
 #include "test/test_auto_suggest_box.h"
+#include "test/test_badge.h"
 #include "test/test_badge_group.h"
 #include "test/test_bitmap_icon.h"
 #include "test/test_breadcrumb_bar.h"
@@ -57,6 +58,7 @@
 #include "test/test_rich_edit_box.h"
 #include "test/test_rich_text_block.h"
 #include "test/test_scroll_bar.h"
+#include "test/test_search_box.h"
 #include "test/test_scroll_presenter.h"
 #include "test/test_scroll_viewer.h"
 #include "test/test_selector_bar.h"
@@ -72,6 +74,7 @@
 #include "test/test_split_view.h"
 #include "test/test_swipe_control.h"
 #include "test/test_switch.h"
+#include "test/test_tag.h"
 #include "test/test_tab_strip.h"
 #include "test/test_tab_view.h"
 #include "test/test_teaching_tip.h"
@@ -117,6 +120,7 @@ void uicode_create_ui(void)
     test_arc_run();
     test_animated_icon_run();
     test_auto_suggest_box_run();
+    test_badge_run();
     test_badge_group_run();
     test_bitmap_icon_run();
     test_breadcrumb_bar_run();
@@ -167,6 +171,7 @@ void uicode_create_ui(void)
     test_rich_edit_box_run();
     test_rich_text_block_run();
     test_scroll_bar_run();
+    test_search_box_run();
     test_scroll_presenter_run();
     test_scroll_viewer_run();
     test_selector_bar_run();
@@ -182,6 +187,7 @@ void uicode_create_ui(void)
     test_split_view_run();
     test_swipe_control_run();
     test_switch_run();
+    test_tag_run();
     test_tab_strip_run();
     test_tab_view_run();
     test_teaching_tip_run();
