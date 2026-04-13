@@ -10,7 +10,7 @@
         initialTarget: ""
     };
 
-    var categoryOrder = ["input", "layout", "navigation", "display", "feedback", "decoration", "chart", "media", "misc"];
+    var categoryOrder = ["input", "layout", "navigation", "display", "feedback", "misc"];
     var text = {
         pageTitle: { "zh-CN": "EmbeddedGUI HelloCustomWidgets", "en": "EmbeddedGUI HelloCustomWidgets" },
         sidebarTitle: { "zh-CN": "HelloCustomWidgets 控件目录", "en": "HelloCustomWidgets Catalog" },
@@ -72,9 +72,6 @@
             navigation: { "zh-CN": "导航", "en": "Navigation" },
             display: { "zh-CN": "显示", "en": "Display" },
             feedback: { "zh-CN": "反馈", "en": "Feedback" },
-            decoration: { "zh-CN": "装饰", "en": "Decoration" },
-            chart: { "zh-CN": "图表", "en": "Chart" },
-            media: { "zh-CN": "媒体", "en": "Media" },
             misc: { "zh-CN": "其他", "en": "Misc" }
         },
         tracks: {

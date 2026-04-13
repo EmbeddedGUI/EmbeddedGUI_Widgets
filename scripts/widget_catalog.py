@@ -27,7 +27,7 @@ CATALOG_FIELD_ORDER = [
     "replacement",
     "doc_state",
 ]
-CATEGORY_ORDER = ["input", "layout", "navigation", "display", "feedback", "decoration", "chart", "media", "misc"]
+CATEGORY_ORDER = ["input", "layout", "navigation", "display", "feedback", "misc"]
 
 
 def scan_custom_widgets() -> list[str]:
