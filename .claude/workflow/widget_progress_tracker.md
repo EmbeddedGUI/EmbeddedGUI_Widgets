@@ -9,10 +9,10 @@
 
 ## 当前快照
 
-- 截至 `2026-04-13`，`example/HelloCustomWidgets/` 当前保留 `72` 个控件目录。
+- 截至 `2026-04-13`，`example/HelloCustomWidgets/` 当前保留 `73` 个控件目录。
 - 所有保留控件均来自 `reference` 主线：
   - `input = 30`
-  - `layout = 6`
+  - `layout = 7`
   - `navigation = 12`
   - `display = 15`
   - `feedback = 9`
@@ -34,7 +34,7 @@
 
 | 状态 | 控件名 | 分类 | 开始日期 | 当前阶段 | 目标 |
 | --- | --- | --- | --- | --- | --- |
-| 进行中 | `settings_expander` | `layout` | `2026-04-13` | 设计 / 选型 | 新增符合 Fluent / WPF UI `SettingsExpander` 语义的 reference 控件，在 custom 层收口 setting header / description / expand-collapse / nested rows、same-target release、静态 preview 与 web 验证路径 |
+| 暂无 | - | - | - | - | - |
 
 ## 当前保留的 Reference 主线控件
 
@@ -71,12 +71,13 @@
 - `toggle_split_button` -> `ToggleSplitButton`
 - `token_input` -> `TokenInput`
 
-### Layout（6）
+### Layout（7）
 
 - `data_list_panel` -> `ListView`
 - `expander` -> `Expander`
 - `master_detail` -> `MasterDetail`
 - `parallax_view` -> `ParallaxView`
+- `settings_expander` -> `SettingsExpander`
 - `settings_panel` -> `SettingCardGroup`
 - `split_view` -> `SplitView`
 
@@ -127,6 +128,10 @@
 
 ## 最近完成的收口动作
 
+- `2026-04-13`
+  - 新增 `layout/settings_expander` reference 控件：补齐符合 Fluent 2 / WPF UI `SettingsExpander` 语义的轻量 `egui_view_settings_expander`，在 custom 层收口 `setting header / description / expand-collapse / nested rows` 单卡片结构，并统一 same-target release、键盘导航、`compact / read only` 模式与静态 preview 输入抑制，不修改 SDK。
+  - `example/HelloCustomWidgets/layout/settings_expander/egui_view_settings_expander.c/.h` 新增 `egui_view_settings_expander_init()`、`set_snapshots()/get_current_snapshot()`、`set_expanded()/get_expanded()`、`set_current_part()/get_current_part()`、`activate_current_part()`、`set_on_action_listener()`、`set_font()/set_meta_font()`、`set_compact_mode()/set_read_only_mode()`、`set_palette()`、`get_part_region()` 与 `override_static_preview_api()`；`example/HelloCustomWidgets/layout/settings_expander/test.c`、`example/HelloCustomWidgets/layout/settings_expander/readme.md`、`example/HelloUnitTest/test/test_settings_expander.c/.h`、`example/HelloUnitTest/uicode.c`、`example/HelloCustomWidgets/widget_catalog.json` 与 `web/catalog-policy.json` 已同步接入。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=layout/settings_expander PORT=pc`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`、`python scripts/sync_widget_catalog.py`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category layout`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub layout/settings_expander --track reference --timeout 10 --keep-screenshots`、`python scripts/code_compile_check.py --custom-widgets --category layout --bits64`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --category layout --track reference --bits64`、`python scripts/checks/check_docs_encoding.py`、`python scripts/checks/check_widget_catalog.py`、`python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub layout/settings_expander` 与对应 `web_smoke_check.py` 验收，确认已接入 reference 主线与 web 发布链路。
 - `2026-04-13`
   - 新增 `feedback/flyout` reference 控件：新增符合 Fluent / WPF UI `Flyout` 语义的轻量 `egui_view_flyout`，在 custom 层收口 `target + bubble + primary / secondary action`、`top / bottom placement`、target 二次点击 dismiss、action 激活后 dismiss、`Escape` 关闭、same-target release、`compact / disabled` 模式与静态 preview 输入抑制，不修改 SDK。
   - `example/HelloCustomWidgets/feedback/flyout/egui_view_flyout.c/.h` 新增 `egui_view_flyout_init()`、`egui_view_flyout_set_snapshots()`、`egui_view_flyout_set_current_snapshot()`、`egui_view_flyout_get_current_snapshot()`、`egui_view_flyout_set_open()`、`egui_view_flyout_get_open()`、`egui_view_flyout_set_current_part()`、`egui_view_flyout_get_current_part()`、`egui_view_flyout_activate_current_part()`、`egui_view_flyout_set_on_action_listener()`、`egui_view_flyout_set_font()`、`egui_view_flyout_set_meta_font()`、`egui_view_flyout_set_compact_mode()`、`egui_view_flyout_set_disabled_mode()`、`egui_view_flyout_set_palette()`、`egui_view_flyout_get_part_region()` 与 `egui_view_flyout_override_static_preview_api()`；`example/HelloCustomWidgets/feedback/flyout/test.c` 新增标题 + 主 `flyout` + 底部 `compact / disabled` 双 preview 的 reference 页面与 `bottom -> secondary -> top -> Escape -> warning -> dismiss -> compact compare` 录制轨道；`example/HelloUnitTest/test/test_flyout.c/.h` 新增单测覆盖 clamp、setter 清理 pressed、默认焦点与 part guard、metrics / hit-testing、same-target release、键盘导航 / 激活、disabled / view-disabled guard 与静态 preview 输入抑制。
