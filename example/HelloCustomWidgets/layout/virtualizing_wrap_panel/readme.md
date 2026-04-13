@@ -21,7 +21,7 @@
 - 主区域展示一个标准 `virtualizing_wrap_panel`：项目保持 wrap 排布，但只渲染当前可见窗口。
 - 底部左侧展示 `compact` 静态 preview，用于对照窄尺寸下的窗口密度。
 - 底部右侧展示 `read only` 静态 preview，用于对照禁交互后的弱化状态。
-- 录制动作优先覆盖 `Right / Down / PageDown / Home / End / Enter` 与一次真实触摸提交。
+- 录制动作优先覆盖 `Right / Down / Ctrl+Down(page jump) / Home / End / Enter` 与一次真实触摸提交。
 
 目录：
 - `example/HelloCustomWidgets/layout/virtualizing_wrap_panel/`
@@ -52,7 +52,7 @@
 | --- | --- | --- |
 | 主控件 | `Windowed wrap` | 仅绘制视口窗口内的项目 |
 | 主控件 | `Selection keep` | 当前项移动时自动更新可见窗口 |
-| 主控件 | `Page jump` | `PageUp / PageDown` 成批移动窗口 |
+| 主控件 | `Page jump` | `Ctrl+Up / Ctrl+Down` 代替 `PageUp / PageDown` 成批移动窗口 |
 | 主控件 | `Action commit` | `Enter / Space` 激活当前项 |
 | `compact` | `Compact window` | 窄尺寸下的窗口密度对照 |
 | `read only` | `Read only window` | 只读弱化对照 |
@@ -62,7 +62,7 @@
 - 主控件默认聚焦到当前项，保留键盘导航：
   - `Left / Right`：在顺序项之间移动。
   - `Up / Down`：按视觉行关系寻找上一/下一行的最近项。
-  - `PageUp / PageDown`：按一屏窗口大小向前/向后跳转。
+  - `Ctrl+Up / Ctrl+Down`：在当前 SDK 无独立 `PageUp / PageDown` key code 的前提下，按一屏窗口大小向前/向后跳转。
   - `Home / End`：跳到首/尾项并更新窗口。
   - `Tab`：在当前 snapshot 内前进，必要时切到下一组 snapshot。
   - `Enter / Space`：激活当前项并触发 listener。
