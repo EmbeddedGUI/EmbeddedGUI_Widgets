@@ -9,10 +9,10 @@
 
 ## 当前快照
 
-- 截至 `2026-04-14`，`example/HelloCustomWidgets/` 当前保留 `94` 个控件目录。
+- 截至 `2026-04-14`，`example/HelloCustomWidgets/` 当前保留 `95` 个控件目录。
 - 所有保留控件均来自 `reference` 主线：
   - `input = 32`
-  - `layout = 23`
+  - `layout = 24`
   - `navigation = 12`
   - `display = 17`
   - `feedback = 10`
@@ -73,7 +73,7 @@
 - `toggle_split_button` -> `ToggleSplitButton`
 - `token_input` -> `TokenInput`
 
-### Layout（23）
+### Layout（24）
 
 - `card_action` -> `CardAction`
 - `card_control` -> `CardControl`
@@ -81,6 +81,7 @@
 - `data_grid` -> `DataGrid`
 - `data_list_panel` -> `ListView`
 - `expander` -> `Expander`
+- `grid` -> `Grid`
 - `grid_splitter` -> `GridSplitter`
 - `grid_view` -> `GridView`
 - `items_repeater` -> `ItemsRepeater`
@@ -149,6 +150,10 @@
 
 ## 最近完成的收口动作
 
+- `2026-04-14`
+  - 新增 `layout/grid` reference 控件：补齐符合 Fluent 2 / WPF UI `Grid` 语义的轻量 custom wrapper，在 custom 层复用 SDK `gridlayout` 收口固定列数的等宽列布局、标准主态与 `stack / dense` 静态 preview，并对照 `Two equal columns / Dense board / Review stack` 三组 snapshot，不修改 SDK。
+  - `example/HelloCustomWidgets/layout/grid/egui_view_grid.c/.h` 新增 `apply_standard_style()`、`apply_dense_style()`、`apply_stack_style()`、`set_columns()`、`set_align_type()`、`layout_childs()` 与 `override_static_preview_api()`；`example/HelloCustomWidgets/layout/grid/test.c`、`readme.md`、`example/HelloUnitTest/test/test_grid.c/.h`、`example/HelloUnitTest/uicode.c`、`example/HelloCustomWidgets/widget_catalog.json`、`web/catalog-policy.json` 与 `web/demos/demos.json` 已同步接入。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=layout/grid PORT=pc`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`（总计 `792 / 792`，`grid` suite `4 / 4`）、`python scripts/sync_widget_catalog.py`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category layout`、`python scripts/checks/check_docs_encoding.py`、`python scripts/checks/check_widget_catalog.py`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub layout/grid --track reference --timeout 10 --keep-screenshots`、`python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub layout/grid` 与对应 `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_layout_grid` 验收，确认 `grid` 已接入 reference 主线、运行时链路与 web 发布链路。
 - `2026-04-14`
   - 新增 `feedback/spinner` reference 控件：补齐符合 Fluent 2 `Spinner` 语义的轻量 `egui_view_spinner`，在 custom 层复用 SDK spinner 收口单个 indeterminate loading 指示器、`standard / compact / muted` 外观与静态 preview 的 `touch / key` 输入抑制，不修改 SDK。
   - `example/HelloCustomWidgets/feedback/spinner/egui_view_spinner.c/.h` 新增 `apply_standard_style()`、`apply_compact_style()`、`apply_muted_style()`、`set_palette()`、`set_stroke_width()`、`set_arc_length()`、`set_spinning()` 与 `override_static_preview_api()`；`example/HelloCustomWidgets/feedback/spinner/test.c`、`readme.md`、`iteration_log/iteration_log.md`、`example/HelloUnitTest/test/test_spinner.c/.h`、`example/HelloUnitTest/uicode.c`、`example/HelloCustomWidgets/widget_catalog.json` 与 `web/catalog-policy.json` 已同步接入。

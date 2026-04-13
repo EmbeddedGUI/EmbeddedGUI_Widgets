@@ -650,6 +650,16 @@
     "doc_state": "ok"
   },
   {
+    "id": "layout/grid",
+    "track": "reference",
+    "visibility": "public",
+    "reference_system": "Fluent 2",
+    "reference_library": "WPF UI",
+    "reference_component": "Grid",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
     "id": "layout/grid_splitter",
     "track": "reference",
     "visibility": "public",
