@@ -680,6 +680,16 @@
     "doc_state": "ok"
   },
   {
+    "id": "layout/wrap_panel",
+    "track": "reference",
+    "visibility": "public",
+    "reference_system": "Fluent 2",
+    "reference_library": "WPF UI",
+    "reference_component": "WrapPanel",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
     "id": "navigation/annotated_scroll_bar",
     "track": "reference",
     "visibility": "public",
