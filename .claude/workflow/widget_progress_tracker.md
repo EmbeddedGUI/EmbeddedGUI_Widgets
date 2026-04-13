@@ -9,10 +9,10 @@
 
 ## 当前快照
 
-- 截至 `2026-04-13`，`example/HelloCustomWidgets/` 当前保留 `89` 个控件目录。
+- 截至 `2026-04-13`，`example/HelloCustomWidgets/` 当前保留 `90` 个控件目录。
 - 所有保留控件均来自 `reference` 主线：
   - `input = 31`
-  - `layout = 22`
+  - `layout = 23`
   - `navigation = 12`
   - `display = 15`
   - `feedback = 9`
@@ -34,7 +34,7 @@
 
 | 状态 | 控件名 | 分类 | 开始日期 | 当前阶段 | 目标 |
 | --- | --- | --- | --- | --- | --- |
-| 暂无 | - | - | - | - | - |
+| 进行中 | `grid_view` | `layout` | `2026-04-13` | 设计 / 选型 | 新增符合 Fluent / WinUI 3 `GridView` 语义的 reference 控件，在 custom 层收口 `tiled collection / selection focus / compact preview` 结构，并补齐文档、单测与 web 验证路径 |
 
 ## 当前保留的 Reference 主线控件
 
