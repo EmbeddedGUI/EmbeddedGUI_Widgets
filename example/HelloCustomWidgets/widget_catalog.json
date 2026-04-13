@@ -560,6 +560,16 @@
     "doc_state": "ok"
   },
   {
+    "id": "layout/card_expander",
+    "track": "reference",
+    "visibility": "public",
+    "reference_system": "Fluent 2",
+    "reference_library": "WPF UI",
+    "reference_component": "CardExpander",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
     "id": "layout/data_list_panel",
     "track": "reference",
     "visibility": "public",

@@ -12,6 +12,7 @@
 #include "test/test_button.h"
 #include "test/test_calendar_view.h"
 #include "test/test_card_action.h"
+#include "test/test_card_expander.h"
 #include "test/test_card_control.h"
 #include "test/test_card_panel.h"
 #include "test/test_check_box.h"
@@ -98,6 +99,7 @@ void uicode_create_ui(void)
     test_button_run();
     test_calendar_view_run();
     test_card_action_run();
+    test_card_expander_run();
     test_card_control_run();
     test_card_panel_run();
     test_check_box_run();
