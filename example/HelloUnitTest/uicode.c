@@ -54,6 +54,7 @@
 #include "test/test_persona_group.h"
 #include "test/test_person_picture.h"
 #include "test/test_pips_pager.h"
+#include "test/test_pivot.h"
 #include "test/test_progress_bar.h"
 #include "test/test_rating_control.h"
 #include "test/test_relative_panel.h"
@@ -172,6 +173,7 @@ void uicode_create_ui(void)
     test_persona_group_run();
     test_person_picture_run();
     test_pips_pager_run();
+    test_pivot_run();
     test_progress_bar_run();
     test_rating_control_run();
     test_relative_panel_run();

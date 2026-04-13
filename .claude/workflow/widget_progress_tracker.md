@@ -9,11 +9,11 @@
 
 ## 当前快照
 
-- 截至 `2026-04-14`，`example/HelloCustomWidgets/` 当前保留 `98` 个控件目录。
+- 截至 `2026-04-14`，`example/HelloCustomWidgets/` 当前保留 `99` 个控件目录。
 - 所有保留控件均来自 `reference` 主线：
   - `input = 32`
   - `layout = 27`
-  - `navigation = 12`
+  - `navigation = 13`
   - `display = 17`
   - `feedback = 10`
 - `widget_catalog.json`、`web/catalog-policy.json` 与默认 web 入口已同步到 `reference-only` 状态。
@@ -103,7 +103,7 @@
 - `virtualizing_wrap_panel` -> `VirtualizingWrapPanel`
 - `wrap_panel` -> `WrapPanel`
 
-### Navigation（12）
+### Navigation（13）
 
 - `annotated_scroll_bar` -> `AnnotatedScrollBar`
 - `breadcrumb_bar` -> `BreadcrumbBar`
@@ -112,6 +112,7 @@
 - `menu_flyout` -> `MenuFlyout`
 - `nav_panel` -> `NavigationView`
 - `pips_pager` -> `PipsPager`
+- `pivot` -> `Pivot`
 - `selector_bar` -> `SelectorBar`
 - `tab_strip` -> `TabStrip`
 - `tab_view` -> `TabView`
@@ -153,6 +154,10 @@
 
 ## 最近完成的收口动作
 
+- `2026-04-14`
+  - 新增 `navigation/pivot` reference 控件：补齐符合 Fluent 2 / WinUI `Pivot` 语义的轻量 custom wrapper，在 custom 层自绘 header 与 body，收口单页内容切换、`compact / read only` 静态 preview、same-target release 与键盘切换语义，不修改 SDK。
+  - `example/HelloCustomWidgets/navigation/pivot/egui_view_pivot.c/.h` 新增 `apply_standard_style()`、`apply_compact_style()`、`apply_read_only_style()`、`set_items()`、`set_current_index()`、`set_on_changed_listener()`、`set_font()`、`set_meta_font()`、`set_palette()`、`set_compact_mode()`、`set_read_only_mode()`、`get_header_region()` 与 `override_static_preview_api()`；`example/HelloCustomWidgets/navigation/pivot/test.c`、`readme.md`、`example/HelloUnitTest/test/test_pivot.c/.h`、`example/HelloUnitTest/uicode.c`、`example/HelloCustomWidgets/widget_catalog.json` 与 `web/catalog-policy.json` 已同步接入，并已把关键截图归档到本地 `iteration_log/` 供验收复核。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=navigation/pivot PORT=pc`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`（总计 `808 / 808`，`pivot` suite `4 / 4`）、`python scripts/sync_widget_catalog.py`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category navigation`、`python scripts/checks/check_docs_encoding.py`、`python scripts/checks/check_widget_catalog.py`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub navigation/pivot --track reference --timeout 10 --keep-screenshots`、`python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub navigation/pivot` 与对应 `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_navigation_pivot` 验收，确认 `pivot` 已接入 reference 主线、运行时链路与 web 发布链路。
 - `2026-04-14`
   - 新增 `layout/dock_panel` reference 控件：补齐符合 Fluent 2 / WPF UI `DockPanel` 语义的轻量 custom wrapper，在 custom 层复用 SDK `group` 收口顶部栏、左/右侧栏、底部栏、剩余区域填充与静态 preview 的基础停靠布局语义，不修改 SDK。
   - `example/HelloCustomWidgets/layout/dock_panel/egui_view_dock_panel.c/.h` 新增 `apply_standard_style()`、`apply_compact_style()`、`set_last_child_fill()`、`set_child_dock()`、`layout_childs()` 与 `override_static_preview_api()`；`example/HelloCustomWidgets/layout/dock_panel/test.c`、`readme.md`、`example/HelloUnitTest/test/test_dock_panel.c/.h`、`example/HelloUnitTest/uicode.c`、`example/HelloCustomWidgets/widget_catalog.json` 与 `web/catalog-policy.json` 已同步接入，并已把关键截图归档到本地 `iteration_log/` 供验收复核。
