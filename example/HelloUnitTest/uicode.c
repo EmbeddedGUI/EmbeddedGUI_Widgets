@@ -82,9 +82,11 @@
 #include "test/test_token_input.h"
 #include "test/test_tree_view.h"
 #include "test/test_uniform_grid.h"
+#include "test/test_virtualizing_stack_panel.h"
 #include "test/test_virtualizing_wrap_panel.h"
 #include "test/test_wrap_panel.h"
 #include "test/test_uniform_grid.inc"
+#include "test/test_virtualizing_stack_panel.inc"
 #include "test/test_virtualizing_wrap_panel.inc"
 #include "test/test_wrap_panel.inc"
 
@@ -177,6 +179,7 @@ void uicode_create_ui(void)
     test_token_input_run();
     test_tree_view_run();
     test_uniform_grid_run();
+    test_virtualizing_stack_panel_run();
     test_virtualizing_wrap_panel_run();
     test_wrap_panel_run();
 }

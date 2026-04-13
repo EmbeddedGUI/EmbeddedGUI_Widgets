@@ -29,12 +29,13 @@
 ## 4. 视觉与布局规格
 
 - 页面结构延续 layout 类 reference：标题 + 主控件 + 双 preview。
-- 主控件建议尺寸：`196 x 132` 左右，用于容纳可见行、窗口提示与尾部溢出提示。
+- 主控件建议尺寸：`196 x 108` 左右，用于容纳可见行、窗口提示与尾部溢出提示。
 - 主体保持浅色 Fluent 卡片容器，内部是单列 stack shell + 轻量 row item。
 - 需要额外保留一层低噪音窗口信息，例如：
   - 当前可见区间
   - 总条目数
   - 是否还有上/下文未渲染
+  - 右侧细轨道与 thumb 提示窗口范围
 
 ## 5. 控件清单
 
@@ -42,7 +43,7 @@
 | --- | --- | ---: | --- | --- |
 | `root_layout` | `egui_view_linearlayout_t` | `224 x 248` | enabled | 页面根布局 |
 | `title_label` | `egui_view_label_t` | `224 x 18` | `Virtualizing Stack Panel` | 页面标题 |
-| `virtualizing_stack_panel_primary` | `egui_view_virtualizing_stack_panel_t` | `196 x 132` | `standard` | 主 reference 控件 |
+| `virtualizing_stack_panel_primary` | `egui_view_virtualizing_stack_panel_t` | `196 x 108` | `standard` | 主 reference 控件 |
 | `virtualizing_stack_panel_compact` | `egui_view_virtualizing_stack_panel_t` | `104 x 82` | compact | 紧凑静态 preview |
 | `virtualizing_stack_panel_read_only` | `egui_view_virtualizing_stack_panel_t` | `104 x 82` | compact + read only | 只读静态 preview |
 
