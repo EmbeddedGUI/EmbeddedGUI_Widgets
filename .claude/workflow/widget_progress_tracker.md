@@ -9,10 +9,10 @@
 
 ## 当前快照
 
-- 截至 `2026-04-14`，`example/HelloCustomWidgets/` 当前保留 `97` 个控件目录。
+- 截至 `2026-04-14`，`example/HelloCustomWidgets/` 当前保留 `98` 个控件目录。
 - 所有保留控件均来自 `reference` 主线：
   - `input = 32`
-  - `layout = 26`
+  - `layout = 27`
   - `navigation = 12`
   - `display = 17`
   - `feedback = 10`
@@ -73,7 +73,7 @@
 - `toggle_split_button` -> `ToggleSplitButton`
 - `token_input` -> `TokenInput`
 
-### Layout（26）
+### Layout（27）
 
 - `canvas` -> `Canvas`
 - `card_action` -> `CardAction`
@@ -81,6 +81,7 @@
 - `card_expander` -> `CardExpander`
 - `data_grid` -> `DataGrid`
 - `data_list_panel` -> `ListView`
+- `dock_panel` -> `DockPanel`
 - `expander` -> `Expander`
 - `grid` -> `Grid`
 - `grid_splitter` -> `GridSplitter`
@@ -152,6 +153,10 @@
 
 ## 最近完成的收口动作
 
+- `2026-04-14`
+  - 新增 `layout/dock_panel` reference 控件：补齐符合 Fluent 2 / WPF UI `DockPanel` 语义的轻量 custom wrapper，在 custom 层复用 SDK `group` 收口顶部栏、左/右侧栏、底部栏、剩余区域填充与静态 preview 的基础停靠布局语义，不修改 SDK。
+  - `example/HelloCustomWidgets/layout/dock_panel/egui_view_dock_panel.c/.h` 新增 `apply_standard_style()`、`apply_compact_style()`、`set_last_child_fill()`、`set_child_dock()`、`layout_childs()` 与 `override_static_preview_api()`；`example/HelloCustomWidgets/layout/dock_panel/test.c`、`readme.md`、`example/HelloUnitTest/test/test_dock_panel.c/.h`、`example/HelloUnitTest/uicode.c`、`example/HelloCustomWidgets/widget_catalog.json` 与 `web/catalog-policy.json` 已同步接入，并已把关键截图归档到本地 `iteration_log/` 供验收复核。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=layout/dock_panel PORT=pc`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe`（总计 `804 / 804`，`dock_panel` suite `4 / 4`）、`python scripts/checks/check_touch_release_semantics.py --scope custom --category layout`、`python scripts/checks/check_docs_encoding.py`、`python scripts/checks/check_widget_catalog.py`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub layout/dock_panel --track reference --timeout 10 --keep-screenshots`、`python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub layout/dock_panel` 与对应 `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_layout_dock_panel` 验收，确认 `dock_panel` 已接入 reference 主线、运行时链路与 web 发布链路。
 - `2026-04-14`
   - 新增 `layout/canvas` reference 控件：补齐符合 Fluent 2 / WPF UI `Canvas` 语义的轻量 custom wrapper，在 custom 层复用 SDK `group` 收口绝对定位、固定 overlay preview、紧凑静态 preview 与 `Pinned notes / Status overlay / Compact board` 三组 snapshot，不修改 SDK。
   - `example/HelloCustomWidgets/layout/canvas/egui_view_canvas.c/.h` 新增 `apply_standard_style()`、`apply_compact_style()`、`set_child_origin()`、`layout_childs()` 与 `override_static_preview_api()`；`example/HelloCustomWidgets/layout/canvas/test.c`、`readme.md`、`example/HelloUnitTest/test/test_canvas.c/.h`、`example/HelloUnitTest/uicode.c`、`example/HelloCustomWidgets/widget_catalog.json` 与 `web/catalog-policy.json` 已同步接入，并已把关键截图归档到本地 `iteration_log/` 供验收复核。
