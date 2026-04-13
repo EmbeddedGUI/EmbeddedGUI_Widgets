@@ -670,6 +670,16 @@
     "doc_state": "ok"
   },
   {
+    "id": "layout/uniform_grid",
+    "track": "reference",
+    "visibility": "public",
+    "reference_system": "Fluent 2",
+    "reference_library": "WPF UI",
+    "reference_component": "UniformGrid",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
     "id": "navigation/annotated_scroll_bar",
     "track": "reference",
     "visibility": "public",

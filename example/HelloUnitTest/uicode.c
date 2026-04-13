@@ -81,6 +81,8 @@
 #include "test/test_toggle_split_button.h"
 #include "test/test_token_input.h"
 #include "test/test_tree_view.h"
+#include "test/test_uniform_grid.h"
+#include "test/test_uniform_grid.inc"
 
 void uicode_init_ui(void)
 {
@@ -170,4 +172,5 @@ void uicode_create_ui(void)
     test_toggle_split_button_run();
     test_token_input_run();
     test_tree_view_run();
+    test_uniform_grid_run();
 }
