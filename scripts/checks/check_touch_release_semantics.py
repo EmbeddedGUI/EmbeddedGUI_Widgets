@@ -21,6 +21,7 @@ ALLOWLIST = {
         "input/scroll_bar/egui_view_scroll_bar.c": "scroll bar thumb is a drag interaction",
         "input/slider/egui_view_slider.c": "slider updates continuously while dragging",
         "input/swipe_control/egui_view_swipe_control.c": "swipe control is a continuous gesture widget",
+        "layout/grid_splitter/egui_view_grid_splitter.c": "grid splitter updates pane ratio continuously while dragging",
         "navigation/annotated_scroll_bar/egui_view_annotated_scroll_bar.c": "annotated scroll bar uses drag semantics",
     },
     "core": {},

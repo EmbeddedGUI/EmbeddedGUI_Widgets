@@ -31,6 +31,7 @@
 #include "test/test_flip_view.h"
 #include "test/test_flyout.h"
 #include "test/test_font_icon.h"
+#include "test/test_grid_splitter.h"
 #include "test/test_hyperlink_button.h"
 #include "test/test_image_icon.h"
 #include "test/test_info_badge.h"
@@ -119,6 +120,7 @@ void uicode_create_ui(void)
     test_flip_view_run();
     test_flyout_run();
     test_font_icon_run();
+    test_grid_splitter_run();
     test_hyperlink_button_run();
     test_image_icon_run();
     test_info_badge_run();
