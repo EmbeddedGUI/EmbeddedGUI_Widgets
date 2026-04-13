@@ -89,6 +89,8 @@
 #include "test/test_virtualizing_stack_panel.inc"
 #include "test/test_virtualizing_wrap_panel.inc"
 #include "test/test_wrap_panel.inc"
+#include "test/test_items_repeater.h"
+#include "test/test_items_repeater.inc"
 
 void uicode_init_ui(void)
 {
@@ -182,4 +184,5 @@ void uicode_create_ui(void)
     test_virtualizing_stack_panel_run();
     test_virtualizing_wrap_panel_run();
     test_wrap_panel_run();
+    test_items_repeater_run();
 }

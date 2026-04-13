@@ -29,7 +29,7 @@
 ## 4. 视觉与布局规格
 
 - 页面结构延续 layout 类 reference：标题 + 主控件 + 双 preview。
-- 主控件建议尺寸：`196 x 120` 左右，用于容纳重复项、布局提示和当前项高亮。
+- 主控件建议尺寸：`196 x 124` 左右，用于容纳重复项、布局提示和当前项高亮。
 - 主体保持浅色 Fluent 卡片容器，内部是轻量 repeater surface + 可复用 item template。
 - 需要额外保留一层低噪音 repeater 信息，例如：
   - 当前 snapshot 名称
@@ -42,9 +42,9 @@
 | --- | --- | ---: | --- | --- |
 | `root_layout` | `egui_view_linearlayout_t` | `224 x 248` | enabled | 页面根布局 |
 | `title_label` | `egui_view_label_t` | `224 x 18` | `Items Repeater` | 页面标题 |
-| `items_repeater_primary` | `egui_view_items_repeater_t` | `196 x 120` | `standard` | 主 reference 控件 |
-| `items_repeater_compact` | `egui_view_items_repeater_t` | `104 x 82` | compact | 紧凑静态 preview |
-| `items_repeater_read_only` | `egui_view_items_repeater_t` | `104 x 82` | compact + read only | 只读静态 preview |
+| `items_repeater_primary` | `egui_view_items_repeater_t` | `196 x 124` | `standard` | 主 reference 控件 |
+| `items_repeater_compact` | `egui_view_items_repeater_t` | `104 x 78` | compact | 紧凑静态 preview |
+| `items_repeater_read_only` | `egui_view_items_repeater_t` | `104 x 78` | compact + read only | 只读静态 preview |
 
 ## 6. 状态矩阵
 

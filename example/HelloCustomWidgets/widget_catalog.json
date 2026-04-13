@@ -610,6 +610,16 @@
     "doc_state": "ok"
   },
   {
+    "id": "layout/items_repeater",
+    "track": "reference",
+    "visibility": "public",
+    "reference_system": "Fluent 2",
+    "reference_library": "WinUI 3",
+    "reference_component": "ItemsRepeater",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
     "id": "layout/master_detail",
     "track": "reference",
     "visibility": "public",

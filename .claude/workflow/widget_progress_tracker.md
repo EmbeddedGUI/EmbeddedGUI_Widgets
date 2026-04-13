@@ -9,10 +9,10 @@
 
 ## 当前快照
 
-- 截至 `2026-04-13`，`example/HelloCustomWidgets/` 当前保留 `83` 个控件目录。
+- 截至 `2026-04-13`，`example/HelloCustomWidgets/` 当前保留 `84` 个控件目录。
 - 所有保留控件均来自 `reference` 主线：
   - `input = 30`
-  - `layout = 17`
+  - `layout = 18`
   - `navigation = 12`
   - `display = 15`
   - `feedback = 9`
@@ -34,7 +34,7 @@
 
 | 状态 | 控件名 | 分类 | 开始日期 | 当前阶段 | 目标 |
 | --- | --- | --- | --- | --- | --- |
-| 进行中 | `items_repeater` | `layout` | `2026-04-13` | 设计 / 选型 | 新增符合 Fluent / WinUI `ItemsRepeater` 语义的 reference 控件，在 custom 层收口 `templated repeat / layout preset / compact preview` 结构，并补齐文档、单测与 web 验证路径 |
+| 暂无 | - | - | - | - | - |
 
 ## 当前保留的 Reference 主线控件
 
@@ -71,7 +71,7 @@
 - `toggle_split_button` -> `ToggleSplitButton`
 - `token_input` -> `TokenInput`
 
-### Layout（17）
+### Layout（18）
 
 - `card_action` -> `CardAction`
 - `card_control` -> `CardControl`
@@ -80,6 +80,7 @@
 - `data_list_panel` -> `ListView`
 - `expander` -> `Expander`
 - `grid_splitter` -> `GridSplitter`
+- `items_repeater` -> `ItemsRepeater`
 - `master_detail` -> `MasterDetail`
 - `parallax_view` -> `ParallaxView`
 - `settings_card` -> `SettingCard`
@@ -138,6 +139,10 @@
 
 ## 最近完成的收口动作
 
+- `2026-04-13`
+  - 新增 `layout/items_repeater` reference 控件：补齐符合 Fluent 2 / WinUI 3 `ItemsRepeater` 语义的轻量 `egui_view_items_repeater`，在 custom 层收口 `templated repeat / layout preset / compact preview` 结构，支持 `Wrap / Stack / Strip` 三组 layout preset，并统一 same-target release、键盘 `Left / Right / Up / Down / Home / End / Tab / Enter / Space` 导航，不修改 SDK。
+  - `example/HelloCustomWidgets/layout/items_repeater/egui_view_items_repeater.c/.h` 新增 `egui_view_items_repeater_init()`、`set_snapshots()/get_current_snapshot()`、`set_current_snapshot()`、`set_current_item()/get_current_item()`、`set_layout_mode()/get_layout_mode()`、`activate_current_item()`、`set_on_action_listener()`、`set_font()/set_meta_font()`、`set_compact_mode()/set_read_only_mode()`、`set_palette()`、`get_item_region()` 与 `override_static_preview_api()`；`example/HelloCustomWidgets/layout/items_repeater/test.c`、`readme.md`、`example/HelloUnitTest/test/test_items_repeater.inc/.h`、`example/HelloUnitTest/uicode.c`、`example/HelloCustomWidgets/widget_catalog.json` 与 `web/catalog-policy.json` 已同步接入。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=layout/items_repeater PORT=pc`、`python scripts/sync_widget_catalog.py`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category layout`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub layout/items_repeater --track reference --timeout 10 --keep-screenshots`、`python scripts/code_compile_check.py --custom-widgets --category layout --bits64`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --category layout --track reference --bits64`、`python scripts/checks/check_docs_encoding.py`、`python scripts/checks/check_widget_catalog.py`、`python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub layout/items_repeater` 与对应 `web_smoke_check.py` 验收，确认 `items_repeater` 已接入 reference 主线与 web 发布链路。
 - `2026-04-13`
   - 新增 `layout/virtualizing_stack_panel` reference 控件：补齐符合 Fluent 2 / WPF UI `VirtualizingStackPanel` 语义的轻量 `egui_view_virtualizing_stack_panel`，在 custom 层收口 `windowed stack / window anchor / compact preview` 结构，并统一 same-target release、键盘 `Up / Down / Left / Right / Home / End / Tab / Enter / Space` 导航，以及 `Ctrl+Up / Ctrl+Down` 分页跳转语义，不修改 SDK。
   - `example/HelloCustomWidgets/layout/virtualizing_stack_panel/egui_view_virtualizing_stack_panel.c/.h` 新增 `egui_view_virtualizing_stack_panel_init()`、`set_snapshots()/get_current_snapshot()`、`set_current_snapshot()`、`set_current_item()/get_current_item()`、`activate_current_item()`、`set_window_anchor()/get_window_anchor()`、`set_on_action_listener()`、`set_font()/set_meta_font()`、`set_compact_mode()/set_read_only_mode()`、`set_palette()`、`get_item_region()` 与 `override_static_preview_api()`；`example/HelloCustomWidgets/layout/virtualizing_stack_panel/test.c`、`readme.md`、`example/HelloUnitTest/test/test_virtualizing_stack_panel.inc/.h`、`example/HelloUnitTest/uicode.c`、`example/HelloCustomWidgets/widget_catalog.json` 与 `web/catalog-policy.json` 已同步接入。
