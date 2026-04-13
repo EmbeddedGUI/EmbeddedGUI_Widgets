@@ -9,10 +9,10 @@
 
 ## 当前快照
 
-- 截至 `2026-04-13`，`example/HelloCustomWidgets/` 当前保留 `88` 个控件目录。
+- 截至 `2026-04-13`，`example/HelloCustomWidgets/` 当前保留 `89` 个控件目录。
 - 所有保留控件均来自 `reference` 主线：
   - `input = 31`
-  - `layout = 21`
+  - `layout = 22`
   - `navigation = 12`
   - `display = 15`
   - `feedback = 9`
@@ -34,7 +34,7 @@
 
 | 状态 | 控件名 | 分类 | 开始日期 | 当前阶段 | 目标 |
 | --- | --- | --- | --- | --- | --- |
-| 进行中 | `relative_panel` | `layout` | `2026-04-13` | 设计 / 选型 | 新增符合 Fluent / WinUI 3 `RelativePanel` 语义的 reference 控件，在 custom 层收口 `anchored card layout / relationship rules / compact preview` 结构，并补齐文档、单测与 web 验证路径 |
+| 暂无 | - | - | - | - | - |
 
 ## 当前保留的 Reference 主线控件
 
@@ -72,7 +72,7 @@
 - `toggle_split_button` -> `ToggleSplitButton`
 - `token_input` -> `TokenInput`
 
-### Layout（21）
+### Layout（22）
 
 - `card_action` -> `CardAction`
 - `card_control` -> `CardControl`
@@ -84,6 +84,7 @@
 - `items_repeater` -> `ItemsRepeater`
 - `master_detail` -> `MasterDetail`
 - `parallax_view` -> `ParallaxView`
+- `relative_panel` -> `RelativePanel`
 - `scroll_presenter` -> `ScrollPresenter`
 - `scroll_viewer` -> `ScrollViewer`
 - `settings_card` -> `SettingCard`
@@ -142,6 +143,11 @@
 - `toast_stack` -> `Toast`
 
 ## 最近完成的收口动作
+
+- `2026-04-13`
+  - 新增 `layout/relative_panel` reference 控件：补齐符合 Fluent 2 / WinUI 3 `RelativePanel` 语义的轻量 `egui_view_relative_panel`，在 custom 层收口 `anchored card layout / relationship rules / compact preview` 结构，保留卡片 same-target release、rule pill / card 间的 `Tab` 焦点切换、基于几何方向的 `Left / Right / Up / Down / Home / End` 键盘导航，以及静态 preview 的 `touch / key` 输入抑制语义，不修改 SDK。
+  - `example/HelloCustomWidgets/layout/relative_panel/egui_view_relative_panel.c/.h` 新增 `egui_view_relative_panel_init()`、`set_snapshots()/get_current_snapshot()`、`set_current_snapshot()`、`set_current_item()/get_current_item()`、`activate_current_item()`、`set_on_action_listener()`、`set_font()/set_meta_font()`、`set_compact_mode()/set_read_only_mode()`、`set_palette()`、`get_item_region()`、`handle_navigation_key()` 与 `override_static_preview_api()`；`example/HelloCustomWidgets/layout/relative_panel/test.c`、`readme.md`、`example/HelloUnitTest/test/test_relative_panel.inc/.h`、`example/HelloUnitTest/uicode.c`、`example/HelloCustomWidgets/widget_catalog.json` 与 `web/catalog-policy.json` 已同步接入。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=layout/relative_panel PORT=pc`、`make all APP=HelloUnitTest PORT=pc_test`、`python scripts/code_compile_check.py --unit-tests-only --bits64`（`relative_panel` suite `7 / 7`，全量仍有与本次无关的 `virtualizing_stack_panel` `3` 个历史失败，不归因到 `relative_panel`）、`python scripts/sync_widget_catalog.py`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category layout`、`python scripts/checks/check_docs_encoding.py`、`python scripts/checks/check_widget_catalog.py`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub layout/relative_panel --track reference --timeout 10 --keep-screenshots`、`python scripts/code_compile_check.py --custom-widgets --category layout --bits64`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --category layout --track reference --bits64`、`python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub layout/relative_panel` 与对应 `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --name-filter relative_panel` 验收，确认 `relative_panel` 已接入 reference 主线、单测链路与 web 发布链路。
 
 - `2026-04-13`
   - 新增 `layout/scroll_presenter` reference 控件：补齐符合 Fluent 2 / WinUI 3 `ScrollPresenter` 语义的轻量 `egui_view_scroll_presenter`，在 custom 层收口 `pannable viewport / offset metrics / compact preview` 结构，保留 surface 直接拖拽、键盘 `Up / Down / Left / Right / Home / End / + / - / Enter / Space` 导航，以及静态 preview 的输入抑制语义，不修改 SDK。

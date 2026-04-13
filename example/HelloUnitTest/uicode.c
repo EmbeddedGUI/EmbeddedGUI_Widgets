@@ -51,6 +51,7 @@
 #include "test/test_pips_pager.h"
 #include "test/test_progress_bar.h"
 #include "test/test_rating_control.h"
+#include "test/test_relative_panel.h"
 #include "test/test_repeat_button.h"
 #include "test/test_rich_edit_box.h"
 #include "test/test_rich_text_block.h"
@@ -96,6 +97,7 @@
 #include "test/test_wrap_panel.inc"
 #include "test/test_items_repeater.h"
 #include "test/test_items_repeater.inc"
+#include "test/test_relative_panel.inc"
 #include "test/test_rich_edit_box.inc"
 #include "test/test_scroll_presenter.inc"
 #include "test/test_scroll_viewer.inc"
@@ -158,6 +160,7 @@ void uicode_create_ui(void)
     test_pips_pager_run();
     test_progress_bar_run();
     test_rating_control_run();
+    test_relative_panel_run();
     test_repeat_button_run();
     test_rich_edit_box_run();
     test_rich_text_block_run();
