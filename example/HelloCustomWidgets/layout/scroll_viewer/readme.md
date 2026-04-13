@@ -6,7 +6,7 @@
 - 平台语义参考：`ScrollViewer`
 - 补充对照控件：`scroll_bar`、`data_list_panel`、`card_control`
 - 对应组件名：`ScrollViewer`
-- 计划保留状态：`standard`、`compact`、`disabled`、`scrollbars visible`
+- 计划保留状态：`standard`、`compact`、`read only`、`scrollbars visible`
 - EGUI 适配说明：在 custom 层实现轻量 `egui_view_scroll_viewer`，优先收口单容器滚动 surface、viewport 指标与静态 preview，不修改 `sdk/EmbeddedGUI`
 
 ## 1. 为什么需要这个控件？
@@ -23,7 +23,7 @@
 
 - 主区域展示一个标准 `scroll_viewer`：固定 viewport 内承载多段说明卡片、状态标签和长文本。
 - 底部左侧展示 `compact` 静态 preview，用于对照窄尺寸下的滚动容器密度。
-- 底部右侧展示 `disabled` 静态 preview，用于对照禁用后滚动条与内容层级的弱化表现。
+- 底部右侧展示 `read only` 静态 preview，用于对照静态滚动容器的弱化表现。
 - 首轮录制动作优先覆盖 `focus -> vertical scroll -> page jump -> preview dismiss` 主链路。
 
 目录：
@@ -50,7 +50,7 @@
 | `title_label` | `egui_view_label_t` | `224 x 18` | `Scroll Viewer` | 页面标题 |
 | `scroll_viewer_primary` | `egui_view_scroll_viewer_t` | `196 x 160` | `standard` | 主 reference 控件 |
 | `scroll_viewer_compact` | `egui_view_scroll_viewer_t` | `104 x 88` | compact | 紧凑静态 preview |
-| `scroll_viewer_disabled` | `egui_view_scroll_viewer_t` | `104 x 88` | compact + disabled | 禁用静态 preview |
+| `scroll_viewer_read_only` | `egui_view_scroll_viewer_t` | `104 x 88` | compact + read only | 只读静态 preview |
 
 ## 6. 状态矩阵
 
@@ -61,36 +61,38 @@
 | 主控件 | `Bottom summary` | 跳到尾部总结区 |
 | 主控件 | `Scrollbar drag` | 滚动 thumb 拖拽中的连续交互态 |
 | `compact` | `Compact preview` | 窄尺寸滚动容器对照 |
-| `disabled` | `Disabled preview` | 禁用弱化后的静态对照 |
+| `read only` | `Read only preview` | 只读弱化后的静态对照 |
 
 ## 7. 交互与状态语义
 
 - 主控件默认聚焦到滚动 surface，保留真实 viewport 滚动链路。
 - 首版聚焦以下键盘语义：
   - `Up / Down`：按行滚动。
-  - `PageUp / PageDown`：按页滚动。
   - `Home / End`：跳到顶部 / 底部。
   - `Left / Right`：在存在水平 overflow 时调整水平 offset。
-  - `Tab`：在 surface 与滚动条可聚焦部件之间移动。
+  - `+ / -`：按页滚动。
+  - `Tab`：在 surface 与 thumb 之间移动。
+  - `Enter / Space`：在 thumb 聚焦时向下翻一页。
 - 触摸语义区分两类：
-  - 点击滚动条按钮或轨道时保持 same-target release。
-  - 拖拽 thumb 属于连续交互，需要按例外路径记录 release allowlist。
-- `set_snapshots()`、`set_current_snapshot()`、`set_vertical_offset()`、`set_horizontal_offset()`、`set_font()`、`set_meta_font()`、`set_palette()`、`set_compact_mode()` 都要清理旧的 pressed / drag 状态。
-- `disabled` 与 static preview 需要吞掉新的 `touch / key` 输入，并先清旧状态。
+  - 点击滚动轨道时保持 same-target release。
+  - 拖拽 thumb 时连续更新 vertical offset，但不改写按下目标。
+- `set_snapshots()`、`set_current_snapshot()`、`set_vertical_offset()`、`set_horizontal_offset()`、`set_font()`、`set_meta_font()`、`set_palette()`、`set_compact_mode()`、`set_read_only_mode()`、`set_scrollbar_visibility()` 都要清理旧的 pressed / drag 状态。
+- `read_only` 与 static preview 需要吞掉新的 `touch / key` 输入，并先清旧状态。
 
 ## 8. 计划 API
 
 - `egui_view_scroll_viewer_init()`
 - `egui_view_scroll_viewer_set_snapshots()/get_current_snapshot()`
 - `egui_view_scroll_viewer_set_current_snapshot()`
-- `egui_view_scroll_viewer_set_vertical_offset()/get_vertical_offset()`
-- `egui_view_scroll_viewer_set_horizontal_offset()/get_horizontal_offset()`
+- `egui_view_scroll_viewer_set_vertical_offset()/get_vertical_offset()/get_max_vertical_offset()`
+- `egui_view_scroll_viewer_set_horizontal_offset()/get_horizontal_offset()/get_max_horizontal_offset()`
 - `egui_view_scroll_viewer_scroll_line()/scroll_page()`
-- `egui_view_scroll_viewer_set_scrollbar_visibility()`
+- `egui_view_scroll_viewer_set_scrollbar_visibility()/get_scrollbar_visibility()`
 - `egui_view_scroll_viewer_set_on_view_changed_listener()`
 - `egui_view_scroll_viewer_set_font()/set_meta_font()`
-- `egui_view_scroll_viewer_set_compact_mode()`
+- `egui_view_scroll_viewer_set_compact_mode()/set_read_only_mode()`
 - `egui_view_scroll_viewer_set_palette()`
+- `egui_view_scroll_viewer_handle_navigation_key()`
 - `egui_view_scroll_viewer_get_part_region()`
 - `egui_view_scroll_viewer_override_static_preview_api()`
 
@@ -113,6 +115,6 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
 
 ## 10. 已知限制与后续方向
 
-- 首版只做单容器 `ScrollViewer` reference，不接入真实虚拟化、大文档分块或嵌套惯性滚动。
+- 首版只做单容器 `ScrollViewer` reference，不接入真实虚拟化、大文档分块、嵌套惯性滚动或系统级滚轮桥接。
 - 先用 snapshot 数组描述内容段落、viewport 和 offset，不下沉为 SDK 级通用滚动容器。
 - 若后续复用价值稳定，再评估是否与 `scroll_bar`、`data_list_panel` 抽共享的轨道、thumb 与 viewport helper。
