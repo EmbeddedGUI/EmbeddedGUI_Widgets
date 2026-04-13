@@ -9,9 +9,9 @@
 
 ## 当前快照
 
-- 截至 `2026-04-13`，`example/HelloCustomWidgets/` 当前保留 `85` 个控件目录。
+- 截至 `2026-04-13`，`example/HelloCustomWidgets/` 当前保留 `86` 个控件目录。
 - 所有保留控件均来自 `reference` 主线：
-  - `input = 30`
+  - `input = 31`
   - `layout = 19`
   - `navigation = 12`
   - `display = 15`
@@ -34,11 +34,11 @@
 
 | 状态 | 控件名 | 分类 | 开始日期 | 当前阶段 | 目标 |
 | --- | --- | --- | --- | --- | --- |
-| 进行中 | `rich_edit_box` | `input` | `2026-04-13` | 设计 / 选型 | 新增符合 Fluent / WinUI `RichEditBox` 语义的 reference 控件，在 custom 层收口 `rich text edit / formatting preset / compact preview` 结构，并补齐文档、单测与 web 验证路径 |
+| 暂无 | - | - | - | - | - |
 
 ## 当前保留的 Reference 主线控件
 
-### Input（30）
+### Input（31）
 
 - `auto_suggest_box` -> `AutoSuggestBox`
 - `button` -> `Button`
@@ -57,6 +57,7 @@
 - `radio_buttons` -> `RadioButtons`
 - `rating_control` -> `RatingControl`
 - `repeat_button` -> `RepeatButton`
+- `rich_edit_box` -> `RichEditBox`
 - `scroll_bar` -> `ScrollBar`
 - `segmented_control` -> `SegmentedControl`
 - `shortcut_recorder` -> `KeyboardAcceleratorRecorder`
@@ -139,6 +140,11 @@
 - `toast_stack` -> `Toast`
 
 ## 最近完成的收口动作
+
+- `2026-04-13`
+  - 新增 `input/rich_edit_box` reference 控件：补齐符合 Fluent 2 / WinUI 3 `RichEditBox` 语义的轻量 `egui_view_rich_edit_box`，在 custom 层收口 `rich text edit / formatting preset / compact preview` 结构，保留 preset pill same-target release、键盘 `Left / Right / Home / End / Tab` 导航，以及 `Enter / Space` 在 preset / editor 间的分流语义，不修改 SDK。
+  - `example/HelloCustomWidgets/input/rich_edit_box/egui_view_rich_edit_box.c/.h` 新增 `egui_view_rich_edit_box_init()`、`set_documents()/get_current_document()`、`set_current_document()`、`set_current_preset()/get_current_preset()`、`apply_current_preset()`、`set_on_action_listener()`、`set_font()/set_meta_font()`、`set_compact_mode()/set_read_only_mode()`、`set_palette()`、`get_part_region()` 与 `override_static_preview_api()`；`example/HelloCustomWidgets/input/rich_edit_box/test.c`、`readme.md`、`example/HelloUnitTest/test/test_rich_edit_box.inc/.h`、`example/HelloUnitTest/uicode.c`、`example/HelloCustomWidgets/widget_catalog.json` 与 `web/catalog-policy.json` 已同步接入。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=input/rich_edit_box PORT=pc`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe` 中 `rich_edit_box` 套件 `7 / 7`、`python scripts/sync_widget_catalog.py`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category input`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/rich_edit_box --track reference --timeout 10 --keep-screenshots`、`python scripts/code_compile_check.py --custom-widgets --category input --bits64`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --category input --track reference --bits64`、`python scripts/checks/check_docs_encoding.py`、`python scripts/checks/check_widget_catalog.py`、`python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub input/rich_edit_box` 与对应 `web_smoke_check.py` 验收，确认 `rich_edit_box` 已接入 reference 主线与 web 发布链路；当前 `HelloUnitTest` 全量仍存在与本次无关的 `virtualizing_stack_panel` 历史失败，不归因到 `rich_edit_box`。
 
 - `2026-04-13`
   - 新增 `layout/viewbox` reference 控件：补齐符合 Fluent 2 / WPF UI `Viewbox` 语义的轻量 `egui_view_viewbox`，在 custom 层收口 `single child scale / stretch preset / compact preview` 结构，保留 `uniform / fill / downscale only` 三组 stretch preset，并统一 same-target release、键盘 `Left / Right / Home / End / Tab / Enter / Space` 导航，不修改 SDK。
