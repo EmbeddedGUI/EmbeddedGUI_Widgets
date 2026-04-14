@@ -3,114 +3,128 @@
 ## 参考来源
 - 参考设计体系：`Fluent 2`
 - 参考开源库：`WinUI 3`
-- 平台语义参考：`ScrollPresenter`
-- 补充对照控件：`scroll_viewer`、`scroll_bar`、`data_list_panel`
 - 对应组件名：`ScrollPresenter`
-- 计划保留状态：`standard`、`compact`、`read only`、`both-axis pan`
-- EGUI 适配说明：在 custom 层实现轻量 `egui_view_scroll_presenter`，优先收口无外层 chrome 的可平移 viewport、offset 指标与静态 preview，不修改 `sdk/EmbeddedGUI`
+- 本次保留语义：`surface / viewport / offset`、`both-axis pan`、`compact`、`read only`
+- 本次删除内容：preview 点击清主控件焦点、第二条 `compact` preview 轨道、录制里的 `preview dismiss` 收尾
+- EGUI 适配说明：继续在 custom 层维护轻量 `egui_view_scroll_presenter`，本轮只收口 `reference` 页面结构、主控件录制轨道和静态 preview 语义，不修改 `sdk/EmbeddedGUI`
 
-## 1. 为什么需要这个控件？
-`scroll_presenter` 用来表达“内容 surface 自身支持平移浏览，但默认不露出完整滚动条 chrome”的标准语义。它适合大画布摘要、缩略时间线、自由排布面板、图像检查区和轻量地图这类需要保留 viewport / extent / offset 语义、但又不希望滚动条抢占视觉层级的场景。
+## 1. 为什么需要这个控件
+`scroll_presenter` 用来表达“内容 surface 自身可以平移浏览，但默认不暴露完整滚动条 chrome”的标准语义。它适合大画布摘要、缩略时间线、自由排布面板、图像检查区和轻量地图这类既要保留 `viewport / extent / offset`，又不想让滚动条抢占视觉层级的场景。
 
 ## 2. 为什么现有控件不够用
-
-- `scroll_viewer` 包含明显的滚动条轨道与 thumb，更适合带 chrome 的通用滚动容器，不适合表达纯内容 viewport。
-- `scroll_bar` 只覆盖单独的轴向滚动部件，不承载内容裁切、双轴 offset 与拖拽平移语义。
-- `data_list_panel` 偏向列表数据容器，不适合自由内容 surface 或双轴平移场景。
-- 当前仓库还没有一个符合 `ScrollPresenter` 语义的 reference 页面、单测与 web 验证路径。
+- `scroll_viewer` 会显式呈现 scrollbar / thumb，更适合带完整 chrome 的通用滚动容器。
+- `scroll_bar` 只覆盖滚动条本体，不负责内容裁切、双轴 offset 和 surface 拖拽。
+- `data_list_panel` 偏向列表数据容器，不适合自由内容 surface 的平移语义。
+- 当前仓库需要一个能完整走通 reference、单测、runtime 和 web 发布链路的 `ScrollPresenter` 页面。
 
 ## 3. 目标场景与示例概览
+- 主控件保留真实 `ScrollPresenter` 语义，展示 `Canvas overview`、`Timeline branch`、`Far corner` 三组 surface 状态。
+- 底部左侧是 `compact` 静态 preview，只用于对照窄尺寸 viewport 密度。
+- 底部右侧是 `read only` 静态 preview，只用于对照冻结 surface 的弱化表现。
+- 页面只保留标题、一个主 `scroll_presenter` 和底部两个静态 preview，不再承担 preview 清焦点或收尾交互。
+- 两个 preview 统一通过 `egui_view_scroll_presenter_override_static_preview_api()` 收口：
+  - 吞掉 `touch / key`
+  - 只清理残留 `pressed / drag`
+  - 不改写 `current_snapshot / vertical_offset / horizontal_offset`
+  - 不触发 `on_view_changed`
 
-- 主区域展示一个标准 `scroll_presenter`：固定 viewport 内承载一张大于视口的布局画布，保留节点、路径和说明卡片。
-- 底部左侧展示 `compact` 静态 preview，用于对照窄尺寸下的 viewport 密度。
-- 底部右侧展示 `read only` 静态 preview，用于对照静态 surface 的弱化表现。
-- 首轮录制动作优先覆盖 `focus -> vertical pan -> horizontal pan -> far corner -> preview dismiss` 主链路。
-
-目录：
-- `example/HelloCustomWidgets/layout/scroll_presenter/`
+目标目录：`example/HelloCustomWidgets/layout/scroll_presenter/`
 
 ## 4. 视觉与布局规格
-
-- 页面结构延续 layout 类 reference：标题 + 主控件 + 双 preview。
-- 主控件建议尺寸：`196 x 160` 左右，用于同时容纳 viewport、内容画布与低噪音 offset 信息。
-- 主体保持浅色 Fluent 卡片容器，但默认不绘制外露滚动条轨道；仅保留：
-  - 顶部 snapshot 标题 / 辅助信息
-  - 中部裁切 viewport 与内容 surface
-  - 角落的 offset / extent 小标签，提示当前浏览位置
-- 需要通过边缘渐隐、裁切和内容位移明确传达“可平移内容”的 affordance，而不是依赖显式 scrollbar。
+- 根布局：`224 x 284`
+- 主控件：`196 x 160`
+- 底部对照行：`216 x 88`
+- `compact` preview：`104 x 88`
+- `read only` preview：`104 x 88`
+- 页面结构：标题 -> 主 `scroll_presenter` -> `compact / read only`
+- 样式约束：
+  - 维持浅色 Fluent 容器、低噪音边框和清晰的 viewport 裁切。
+  - 主控件继续显示 snapshot 标题、helper、offset 与 extent 指标。
+  - 底部两个 preview 固定为静态 reference 对照，不再承担焦点桥接或额外轨道切换职责。
 
 ## 5. 控件清单
 
-| 变量名 | 类型 | 建议尺寸 | 初始状态 | 用途 |
+| 变量名 | 类型 | 尺寸 (W x H) | 初始状态 | 用途 |
 | --- | --- | ---: | --- | --- |
-| `root_layout` | `egui_view_linearlayout_t` | `224 x 284` | enabled | 页面根布局 |
-| `title_label` | `egui_view_label_t` | `224 x 18` | `Scroll Presenter` | 页面标题 |
-| `scroll_presenter_primary` | `egui_view_scroll_presenter_t` | `196 x 160` | `standard` | 主 reference 控件 |
-| `scroll_presenter_compact` | `egui_view_scroll_presenter_t` | `104 x 88` | compact | 紧凑静态 preview |
-| `scroll_presenter_read_only` | `egui_view_scroll_presenter_t` | `104 x 88` | compact + read only | 只读静态 preview |
+| `scroll_presenter_primary` | `egui_view_scroll_presenter_t` | `196 x 160` | `Canvas overview` | 主 `ScrollPresenter` |
+| `scroll_presenter_compact` | `egui_view_scroll_presenter_t` | `104 x 88` | `Compact pan` | 紧凑静态对照 |
+| `scroll_presenter_read_only` | `egui_view_scroll_presenter_t` | `104 x 88` | `Read only pan` | 只读静态对照 |
+| `primary_snapshots` | `egui_view_scroll_presenter_snapshot_t[3]` | - | `Canvas / Timeline / Corner` | 主控件录制轨道 |
 
-## 6. 状态矩阵
-
-| 区域 | 关键状态 | 说明 |
+## 6. 状态覆盖矩阵
+| 区域 / 轨道 | 状态 | 说明 |
 | --- | --- | --- |
-| 主控件 | `Origin view` | 初始停留在左上原点区域 |
-| 主控件 | `Mid canvas` | 平移到中部节点区 |
-| 主控件 | `Far corner` | 跳到右下末端区域 |
-| 主控件 | `Surface drag` | 直接拖拽 surface 的连续交互态 |
-| `compact` | `Compact preview` | 窄尺寸 viewport 对照 |
-| `read only` | `Read only preview` | 只读弱化后的静态对照 |
+| 主控件 | `Canvas overview` | 默认状态，显示原点附近画布与基础 offset |
+| 主控件 | `Timeline branch` | 展示第二组内容与双轴偏移 |
+| 主控件 | `Far corner` | 直接切到右下角内容簇 |
+| `compact` | `Compact pan` | 固定静态对照，验证窄尺寸 viewport |
+| `read only` | `Read only pan` | 固定静态对照，验证只读弱化与输入屏蔽 |
 
-## 7. 交互与状态语义
+## 7. 交互语义与 preview 收口
+- 主控件保留真实 `ScrollPresenter` 键盘与触摸语义：
+  - `Up / Down`：按行调整垂直 offset
+  - `Left / Right`：按列调整水平 offset
+  - `Home / End`：跳到左上原点 / 右下末端
+  - `+ / -`：按页滚动垂直 offset
+  - `Enter / Space`：切到下一组预设 snapshot
+- 触摸交互只保留 surface drag，不引入 preview 反向影响主控件焦点的桥接逻辑。
+- `set_snapshots()`、`set_current_snapshot()`、`set_vertical_offset()`、`set_horizontal_offset()`、`set_font()`、`set_meta_font()`、`set_palette()`、`set_compact_mode()`、`set_read_only_mode()` 都必须先清理残留 `pressed / drag` 状态。
+- 底部 `compact / read only` preview 固定为静态 reference，对输入只做吞吐和状态清理，不再参与主页面叙事。
 
-- 主控件默认聚焦到内容 surface，所有滚动 / 平移语义都由同一个 focus target 承担。
-- 首版聚焦以下键盘语义：
-  - `Up / Down`：按行平移垂直 offset。
-  - `Left / Right`：按列平移水平 offset。
-  - `Home / End`：跳到左上原点 / 右下末端。
-  - `+ / -`：按页平移垂直 offset。
-  - `Enter / Space`：切换到下一组预设 viewport。
-- 触摸语义收口为：
-  - 在 surface 内按下并拖拽时连续更新 offset，但不改写按下目标。
-  - `ACTION_UP` 仅在最初命中的 surface 上收尾，不引入额外 allowlist。
-- `set_snapshots()`、`set_current_snapshot()`、`set_vertical_offset()`、`set_horizontal_offset()`、`set_font()`、`set_meta_font()`、`set_palette()`、`set_compact_mode()`、`set_read_only_mode()` 都要清理旧的 pressed / drag 状态。
-- `read_only` 与 static preview 需要吞掉新的 `touch / key` 输入，并先清旧状态。
+## 8. 录制动作设计
+`egui_port_get_recording_action()` 的录制顺序如下：
+1. 重置主控件与底部 `compact / read only` preview，输出默认 `Canvas overview`。
+2. 切到 `Timeline branch`，输出第二组主状态。
+3. 切到 `Far corner`，输出第三组主状态。
+4. 恢复主控件默认状态，输出最终稳定帧。
 
-## 8. 计划 API
+录制只导出主控件的状态变化。底部两个 preview 在整条 reference 轨道中保持静态一致，不再承担 preview dismiss 或焦点清理职责。
 
-- `egui_view_scroll_presenter_init()`
-- `egui_view_scroll_presenter_set_snapshots()/get_current_snapshot()`
-- `egui_view_scroll_presenter_set_current_snapshot()`
-- `egui_view_scroll_presenter_set_vertical_offset()/get_vertical_offset()/get_max_vertical_offset()`
-- `egui_view_scroll_presenter_set_horizontal_offset()/get_horizontal_offset()/get_max_horizontal_offset()`
-- `egui_view_scroll_presenter_scroll_line()/scroll_page()`
-- `egui_view_scroll_presenter_activate_current_snapshot()`
-- `egui_view_scroll_presenter_set_on_view_changed_listener()`
-- `egui_view_scroll_presenter_set_font()/set_meta_font()`
-- `egui_view_scroll_presenter_set_compact_mode()/set_read_only_mode()`
-- `egui_view_scroll_presenter_set_palette()`
-- `egui_view_scroll_presenter_handle_navigation_key()`
-- `egui_view_scroll_presenter_get_surface_region()`
-- `egui_view_scroll_presenter_override_static_preview_api()`
-
-## 9. 验收目标
-
+## 9. 编译、运行时、单测与文档检查
 ```bash
 make all APP=HelloCustomWidgets APP_SUB=layout/scroll_presenter PORT=pc
+
+# 在 X:\ 短路径下执行，修改 .inc 后建议先 clean 再重建
+make clean APP=HelloUnitTest PORT=pc_test
 make all APP=HelloUnitTest PORT=pc_test
-output\main.exe
+X:\output\main.exe
+
 python scripts/sync_widget_catalog.py
 python scripts/checks/check_touch_release_semantics.py --scope custom --category layout
+python scripts/checks/check_docs_encoding.py
+python scripts/checks/check_widget_catalog.py
 python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub layout/scroll_presenter --track reference --timeout 10 --keep-screenshots
 python scripts/code_compile_check.py --custom-widgets --category layout --bits64
 python scripts/code_runtime_check.py --app HelloCustomWidgets --category layout --track reference --bits64
-python scripts/checks/check_docs_encoding.py
-python scripts/checks/check_widget_catalog.py
 python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub layout/scroll_presenter
-python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --name-filter scroll_presenter
+python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_layout_scroll_presenter
 ```
 
-## 10. 已知限制与后续方向
+验收重点：
+- 主控件三组 snapshot 必须能直接看出双轴 offset 与内容位置变化。
+- `surface drag / key navigation / read only / !enable / static preview` 全部通过单测。
+- 两个 preview 必须完整可见、无黑白屏，并且在全部 runtime 帧里保持静态一致。
 
-- 首版只做轻量 `ScrollPresenter` reference，不接入缩放因子、嵌套滚动链、滚轮惯性或系统级输入桥接。
-- 先用 snapshot 数组描述大画布内容、viewport 和 offset，不下沉为 SDK 级通用平移容器。
-- 若后续复用价值稳定，再评估是否与 `scroll_viewer`、`scroll_bar` 抽共享的 offset metrics 与 surface drag helper。
+## 10. 已知限制与后续方向
+- 当前只收口单容器 `ScrollPresenter` reference，不接入缩放、嵌套滚动链、惯性或系统级输入桥接。
+- 继续使用 snapshot 数组描述大画布内容、viewport 和 offset，不下沉到 SDK 通用容器层。
+- 若后续复用价值稳定，再评估是否与 `scroll_viewer`、`scroll_bar` 抽共享的 offset metrics 或 surface drag helper。
+
+## 11. 与现有控件的边界
+- 相比 `scroll_viewer`：这里强调内容 surface 自身的平移，而不是显式 scrollbar chrome。
+- 相比 `scroll_bar`：这里负责完整 viewport / surface / offset，而不只是滚动条本体。
+- 相比 `data_list_panel`：这里承载任意内容块，不绑定列表数据结构。
+
+## 12. 本次保留的核心状态与删减项
+- 保留的核心状态：
+  - `surface / viewport / offset`
+  - `both-axis pan`
+  - `compact`
+  - `read only`
+- 保留的交互：
+  - surface 直接拖拽
+  - 键盘 `Up / Down / Left / Right / Home / End / + / - / Enter / Space`
+- 删除的装饰或桥接：
+  - preview 点击清主控件焦点
+  - 第二条 `compact` preview 轨道
+  - 录制里的 preview dismiss 收尾动作

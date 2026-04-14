@@ -1,5 +1,3 @@
-#include <string.h>
-
 #include "egui.h"
 #include "egui_view_scroll_presenter.h"
 #include "uicode.h"
@@ -22,7 +20,6 @@
 #define SCROLL_PRESENTER_RECORD_FINAL_WAIT 280
 
 #define PRIMARY_SNAPSHOT_COUNT ((uint8_t)(sizeof(primary_snapshots) / sizeof(primary_snapshots[0])))
-#define COMPACT_SNAPSHOT_COUNT ((uint8_t)(sizeof(compact_snapshots) / sizeof(compact_snapshots[0])))
 
 static egui_view_linearlayout_t root_layout;
 static egui_view_label_t title_label;
@@ -68,10 +65,8 @@ static const egui_view_scroll_presenter_snapshot_t primary_snapshots[] = {
          248, 148, 144, 104, 118},
 };
 
-static const egui_view_scroll_presenter_snapshot_t compact_snapshots[] = {
-        {"UI", "Compact pan", "", "", "Compact", compact_items, 3, 176, 148, 108, 82, 18, 12},
-        {"OPS", "Compact edge", "", "", "Edge", timeline_items, 3, 188, 152, 108, 82, 24, 18},
-};
+static const egui_view_scroll_presenter_snapshot_t compact_snapshot = {
+        "UI", "Compact pan", "", "", "Compact", compact_items, 3, 176, 148, 108, 82, 18, 12};
 
 static const egui_view_scroll_presenter_snapshot_t read_only_snapshot = {
         "LOCK", "Read only pan", "", "", "Static preview", compact_items, 3, 176, 148, 108, 82, 26, 14};
@@ -81,27 +76,15 @@ static void apply_primary_snapshot(uint8_t index)
     egui_view_scroll_presenter_set_current_snapshot(EGUI_VIEW_OF(&scroll_presenter_primary), index % PRIMARY_SNAPSHOT_COUNT);
 }
 
-static void apply_compact_snapshot(uint8_t index)
+static void apply_primary_default_state(void)
 {
-    egui_view_scroll_presenter_set_current_snapshot(EGUI_VIEW_OF(&scroll_presenter_compact), index % COMPACT_SNAPSHOT_COUNT);
+    apply_primary_snapshot(0);
 }
 
-static void dismiss_primary_presenter_focus(void)
+static void apply_preview_states(void)
 {
-#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
-    egui_view_clear_focus(EGUI_VIEW_OF(&scroll_presenter_primary));
-#endif
-}
-
-static int dismiss_primary_focus_on_preview_touch(egui_view_t *self, egui_motion_event_t *event)
-{
-    EGUI_UNUSED(self);
-
-    if (event->type == EGUI_MOTION_EVENT_ACTION_DOWN)
-    {
-        dismiss_primary_presenter_focus();
-    }
-    return 1;
+    egui_view_scroll_presenter_set_current_snapshot(EGUI_VIEW_OF(&scroll_presenter_compact), 0);
+    egui_view_scroll_presenter_set_current_snapshot(EGUI_VIEW_OF(&scroll_presenter_read_only), 0);
 }
 
 #if EGUI_CONFIG_RECORDING_TEST
@@ -109,32 +92,6 @@ static void request_page_snapshot(void)
 {
     egui_view_invalidate(EGUI_VIEW_OF(&root_layout));
     recording_request_snapshot();
-}
-
-static void apply_primary_key(uint8_t key_code)
-{
-    egui_key_event_t event;
-
-#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
-    egui_view_request_focus(EGUI_VIEW_OF(&scroll_presenter_primary));
-#endif
-    memset(&event, 0, sizeof(event));
-    event.key_code = key_code;
-    event.type = EGUI_KEY_EVENT_ACTION_DOWN;
-    egui_view_dispatch_key_event(EGUI_VIEW_OF(&scroll_presenter_primary), &event);
-    event.type = EGUI_KEY_EVENT_ACTION_UP;
-    egui_view_dispatch_key_event(EGUI_VIEW_OF(&scroll_presenter_primary), &event);
-}
-
-static void set_click_view_center(egui_sim_action_t *p_action, egui_view_t *view, int interval_ms)
-{
-    p_action->type = EGUI_SIM_ACTION_CLICK;
-    p_action->x1 = view->region_screen.location.x + view->region_screen.size.width / 2;
-    p_action->y1 = view->region_screen.location.y + view->region_screen.size.height / 2;
-    p_action->x2 = 0;
-    p_action->y2 = 0;
-    p_action->steps = 0;
-    p_action->interval_ms = interval_ms;
 }
 #endif
 
@@ -174,7 +131,7 @@ void test_init_ui(void)
 
     egui_view_scroll_presenter_init(EGUI_VIEW_OF(&scroll_presenter_compact));
     egui_view_set_size(EGUI_VIEW_OF(&scroll_presenter_compact), SCROLL_PRESENTER_PREVIEW_WIDTH, SCROLL_PRESENTER_PREVIEW_HEIGHT);
-    egui_view_scroll_presenter_set_snapshots(EGUI_VIEW_OF(&scroll_presenter_compact), compact_snapshots, COMPACT_SNAPSHOT_COUNT);
+    egui_view_scroll_presenter_set_snapshots(EGUI_VIEW_OF(&scroll_presenter_compact), &compact_snapshot, 1);
     egui_view_scroll_presenter_set_font(EGUI_VIEW_OF(&scroll_presenter_compact), (const egui_font_t *)&egui_res_font_montserrat_8_4);
     egui_view_scroll_presenter_set_meta_font(EGUI_VIEW_OF(&scroll_presenter_compact), (const egui_font_t *)&egui_res_font_montserrat_8_4);
     egui_view_scroll_presenter_set_compact_mode(EGUI_VIEW_OF(&scroll_presenter_compact), 1);
@@ -182,9 +139,6 @@ void test_init_ui(void)
                                            EGUI_COLOR_HEX(0xF7FBFA), EGUI_COLOR_HEX(0x183332), EGUI_COLOR_HEX(0x5E7B76), EGUI_COLOR_HEX(0x0D9488),
                                            EGUI_COLOR_HEX(0x67D4C6));
     egui_view_scroll_presenter_override_static_preview_api(EGUI_VIEW_OF(&scroll_presenter_compact), &scroll_presenter_compact_api);
-#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
-    scroll_presenter_compact_api.on_touch = dismiss_primary_focus_on_preview_touch;
-#endif
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&scroll_presenter_compact), false);
 #endif
@@ -202,16 +156,13 @@ void test_init_ui(void)
                                            EGUI_COLOR_HEX(0xF7F9FB), EGUI_COLOR_HEX(0x556575), EGUI_COLOR_HEX(0x8997A4), EGUI_COLOR_HEX(0xA3B2BE),
                                            EGUI_COLOR_HEX(0xC3D1DE));
     egui_view_scroll_presenter_override_static_preview_api(EGUI_VIEW_OF(&scroll_presenter_read_only), &scroll_presenter_read_only_api);
-#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
-    scroll_presenter_read_only_api.on_touch = dismiss_primary_focus_on_preview_touch;
-#endif
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&scroll_presenter_read_only), false);
 #endif
     egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&scroll_presenter_read_only));
 
-    apply_primary_snapshot(0);
-    apply_compact_snapshot(0);
+    apply_primary_default_state();
+    apply_preview_states();
 
     hello_custom_widgets_demo_apply_title_only_scaffold(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label), NULL, 0);
 
@@ -238,70 +189,49 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     case 0:
         if (first_call)
         {
-            apply_primary_snapshot(0);
-            apply_compact_snapshot(0);
-#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
-            egui_view_request_focus(EGUI_VIEW_OF(&scroll_presenter_primary));
-#endif
+            apply_primary_default_state();
+            apply_preview_states();
+            request_page_snapshot();
         }
-        EGUI_SIM_SET_WAIT(p_action, SCROLL_PRESENTER_RECORD_WAIT);
+        EGUI_SIM_SET_WAIT(p_action, SCROLL_PRESENTER_RECORD_FRAME_WAIT);
         return true;
     case 1:
         if (first_call)
         {
-            request_page_snapshot();
+            apply_primary_snapshot(1);
         }
-        EGUI_SIM_SET_WAIT(p_action, SCROLL_PRESENTER_RECORD_FRAME_WAIT);
+        EGUI_SIM_SET_WAIT(p_action, SCROLL_PRESENTER_RECORD_WAIT);
         return true;
     case 2:
         if (first_call)
         {
-            apply_primary_key(EGUI_KEY_CODE_DOWN);
-            apply_primary_key(EGUI_KEY_CODE_RIGHT);
+            request_page_snapshot();
         }
-        EGUI_SIM_SET_WAIT(p_action, SCROLL_PRESENTER_RECORD_WAIT);
+        EGUI_SIM_SET_WAIT(p_action, SCROLL_PRESENTER_RECORD_FRAME_WAIT);
         return true;
     case 3:
         if (first_call)
         {
-            request_page_snapshot();
+            apply_primary_snapshot(2);
         }
-        EGUI_SIM_SET_WAIT(p_action, SCROLL_PRESENTER_RECORD_FRAME_WAIT);
+        EGUI_SIM_SET_WAIT(p_action, SCROLL_PRESENTER_RECORD_WAIT);
         return true;
     case 4:
         if (first_call)
         {
-            apply_primary_key(EGUI_KEY_CODE_PLUS);
-            apply_primary_key(EGUI_KEY_CODE_END);
+            request_page_snapshot();
         }
-        EGUI_SIM_SET_WAIT(p_action, SCROLL_PRESENTER_RECORD_WAIT);
+        EGUI_SIM_SET_WAIT(p_action, SCROLL_PRESENTER_RECORD_FRAME_WAIT);
         return true;
     case 5:
         if (first_call)
         {
-            request_page_snapshot();
-        }
-        EGUI_SIM_SET_WAIT(p_action, SCROLL_PRESENTER_RECORD_FRAME_WAIT);
-        return true;
-    case 6:
-        if (first_call)
-        {
-            apply_primary_key(EGUI_KEY_CODE_ENTER);
-            apply_compact_snapshot(1);
+            apply_primary_default_state();
+            apply_preview_states();
         }
         EGUI_SIM_SET_WAIT(p_action, SCROLL_PRESENTER_RECORD_WAIT);
         return true;
-    case 7:
-        if (first_call)
-        {
-            request_page_snapshot();
-        }
-        EGUI_SIM_SET_WAIT(p_action, SCROLL_PRESENTER_RECORD_FRAME_WAIT);
-        return true;
-    case 8:
-        set_click_view_center(p_action, EGUI_VIEW_OF(&scroll_presenter_compact), SCROLL_PRESENTER_RECORD_WAIT);
-        return true;
-    case 9:
+    case 6:
         if (first_call)
         {
             request_page_snapshot();

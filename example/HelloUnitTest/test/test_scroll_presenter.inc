@@ -128,7 +128,7 @@ static int scroll_presenter_send_key_to_view(egui_view_t *view, uint8_t type, ui
     memset(&event, 0, sizeof(event));
     event.type = type;
     event.key_code = key_code;
-    return view->api->on_key_event(view, &event);
+    return view->api->dispatch_key_event(view, &event);
 }
 
 static int scroll_presenter_send_touch(uint8_t type, egui_dim_t x, egui_dim_t y)
@@ -347,16 +347,23 @@ static void test_scroll_presenter_read_only_and_disabled_guards(void)
 {
     egui_dim_t surface_x;
     egui_dim_t surface_y;
+    egui_dim_t initial_vertical;
+    egui_dim_t initial_horizontal;
 
     scroll_presenter_setup_widget(scroll_presenter_snapshots, EGUI_ARRAY_SIZE(scroll_presenter_snapshots));
     scroll_presenter_layout_widget();
     EGUI_TEST_ASSERT_TRUE(scroll_presenter_get_surface_center(EGUI_VIEW_OF(&scroll_presenter_test_widget), &surface_x, &surface_y));
+    initial_vertical = egui_view_scroll_presenter_get_vertical_offset(EGUI_VIEW_OF(&scroll_presenter_test_widget));
+    initial_horizontal = egui_view_scroll_presenter_get_horizontal_offset(EGUI_VIEW_OF(&scroll_presenter_test_widget));
 
     scroll_presenter_seed_pressed_state(&scroll_presenter_test_widget, 1);
     egui_view_scroll_presenter_set_read_only_mode(EGUI_VIEW_OF(&scroll_presenter_test_widget), 1);
     EGUI_TEST_ASSERT_FALSE(scroll_presenter_send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, surface_x, surface_y));
     EGUI_TEST_ASSERT_FALSE(scroll_presenter_send_key(EGUI_KEY_CODE_ENTER));
     scroll_presenter_assert_pressed_cleared(&scroll_presenter_test_widget);
+    EGUI_TEST_ASSERT_EQUAL_INT(initial_vertical, egui_view_scroll_presenter_get_vertical_offset(EGUI_VIEW_OF(&scroll_presenter_test_widget)));
+    EGUI_TEST_ASSERT_EQUAL_INT(initial_horizontal, egui_view_scroll_presenter_get_horizontal_offset(EGUI_VIEW_OF(&scroll_presenter_test_widget)));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, scroll_presenter_change_count);
     egui_view_scroll_presenter_set_read_only_mode(EGUI_VIEW_OF(&scroll_presenter_test_widget), 0);
 
     scroll_presenter_seed_pressed_state(&scroll_presenter_test_widget, 1);
@@ -364,30 +371,50 @@ static void test_scroll_presenter_read_only_and_disabled_guards(void)
     EGUI_TEST_ASSERT_FALSE(scroll_presenter_send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, surface_x, surface_y));
     EGUI_TEST_ASSERT_FALSE(scroll_presenter_send_key(EGUI_KEY_CODE_ENTER));
     scroll_presenter_assert_pressed_cleared(&scroll_presenter_test_widget);
+    EGUI_TEST_ASSERT_EQUAL_INT(initial_vertical, egui_view_scroll_presenter_get_vertical_offset(EGUI_VIEW_OF(&scroll_presenter_test_widget)));
+    EGUI_TEST_ASSERT_EQUAL_INT(initial_horizontal, egui_view_scroll_presenter_get_horizontal_offset(EGUI_VIEW_OF(&scroll_presenter_test_widget)));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, scroll_presenter_change_count);
     egui_view_set_enable(EGUI_VIEW_OF(&scroll_presenter_test_widget), 1);
+
+    EGUI_TEST_ASSERT_TRUE(scroll_presenter_send_key(EGUI_KEY_CODE_END));
+    EGUI_TEST_ASSERT_EQUAL_INT(egui_view_scroll_presenter_get_max_vertical_offset(EGUI_VIEW_OF(&scroll_presenter_test_widget)),
+                               egui_view_scroll_presenter_get_vertical_offset(EGUI_VIEW_OF(&scroll_presenter_test_widget)));
+    EGUI_TEST_ASSERT_EQUAL_INT(egui_view_scroll_presenter_get_max_horizontal_offset(EGUI_VIEW_OF(&scroll_presenter_test_widget)),
+                               egui_view_scroll_presenter_get_horizontal_offset(EGUI_VIEW_OF(&scroll_presenter_test_widget)));
+    EGUI_TEST_ASSERT_TRUE(scroll_presenter_change_count > 0);
 }
 
-static void test_scroll_presenter_static_preview_consumes_input_and_clears_pressed_state(void)
+static void test_scroll_presenter_static_preview_consumes_input_and_keeps_state(void)
 {
     egui_dim_t surface_x;
     egui_dim_t surface_y;
 
     scroll_presenter_setup_preview_widget();
     scroll_presenter_layout_preview_widget();
+    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_scroll_presenter_get_current_snapshot(EGUI_VIEW_OF(&scroll_presenter_preview_widget)));
+    EGUI_TEST_ASSERT_EQUAL_INT(18, egui_view_scroll_presenter_get_vertical_offset(EGUI_VIEW_OF(&scroll_presenter_preview_widget)));
+    EGUI_TEST_ASSERT_EQUAL_INT(8, egui_view_scroll_presenter_get_horizontal_offset(EGUI_VIEW_OF(&scroll_presenter_preview_widget)));
+    EGUI_TEST_ASSERT_EQUAL_INT(1, scroll_presenter_preview_widget.compact_mode);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, scroll_presenter_preview_widget.read_only_mode);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_SCROLL_PRESENTER_PART_SURFACE, scroll_presenter_preview_widget.current_part);
     EGUI_TEST_ASSERT_TRUE(scroll_presenter_get_surface_center(EGUI_VIEW_OF(&scroll_presenter_preview_widget), &surface_x, &surface_y));
 
     scroll_presenter_seed_pressed_state(&scroll_presenter_preview_widget, 1);
     EGUI_TEST_ASSERT_TRUE(scroll_presenter_send_preview_touch(EGUI_MOTION_EVENT_ACTION_DOWN, surface_x, surface_y));
     scroll_presenter_assert_pressed_cleared(&scroll_presenter_preview_widget);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_scroll_presenter_get_current_snapshot(EGUI_VIEW_OF(&scroll_presenter_preview_widget)));
     EGUI_TEST_ASSERT_EQUAL_INT(18, egui_view_scroll_presenter_get_vertical_offset(EGUI_VIEW_OF(&scroll_presenter_preview_widget)));
     EGUI_TEST_ASSERT_EQUAL_INT(8, egui_view_scroll_presenter_get_horizontal_offset(EGUI_VIEW_OF(&scroll_presenter_preview_widget)));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_SCROLL_PRESENTER_PART_SURFACE, scroll_presenter_preview_widget.current_part);
     EGUI_TEST_ASSERT_EQUAL_INT(0, scroll_presenter_change_count);
 
     scroll_presenter_seed_pressed_state(&scroll_presenter_preview_widget, 1);
     EGUI_TEST_ASSERT_TRUE(scroll_presenter_send_preview_key(EGUI_KEY_CODE_ENTER));
     scroll_presenter_assert_pressed_cleared(&scroll_presenter_preview_widget);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_scroll_presenter_get_current_snapshot(EGUI_VIEW_OF(&scroll_presenter_preview_widget)));
     EGUI_TEST_ASSERT_EQUAL_INT(18, egui_view_scroll_presenter_get_vertical_offset(EGUI_VIEW_OF(&scroll_presenter_preview_widget)));
     EGUI_TEST_ASSERT_EQUAL_INT(8, egui_view_scroll_presenter_get_horizontal_offset(EGUI_VIEW_OF(&scroll_presenter_preview_widget)));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_SCROLL_PRESENTER_PART_SURFACE, scroll_presenter_preview_widget.current_part);
     EGUI_TEST_ASSERT_EQUAL_INT(0, scroll_presenter_change_count);
 }
 
@@ -400,6 +427,6 @@ void test_scroll_presenter_run(void)
     EGUI_TEST_RUN(test_scroll_presenter_touch_drag_behavior);
     EGUI_TEST_RUN(test_scroll_presenter_key_navigation_and_snapshot_cycle);
     EGUI_TEST_RUN(test_scroll_presenter_read_only_and_disabled_guards);
-    EGUI_TEST_RUN(test_scroll_presenter_static_preview_consumes_input_and_clears_pressed_state);
+    EGUI_TEST_RUN(test_scroll_presenter_static_preview_consumes_input_and_keeps_state);
     EGUI_TEST_SUITE_END();
 }
