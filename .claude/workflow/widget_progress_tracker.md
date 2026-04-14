@@ -9,10 +9,10 @@
 
 ## 当前快照
 
-- 截至 `2026-04-14`，`example/HelloCustomWidgets/` 当前保留 `103` 个控件目录。
+- 截至 `2026-04-14`，`example/HelloCustomWidgets/` 当前保留 `104` 个控件目录。
 - 所有保留控件均来自 `reference` 主线：
   - `input = 33`
-  - `layout = 27`
+  - `layout = 28`
   - `navigation = 13`
   - `display = 20`
   - `feedback = 10`
@@ -74,7 +74,7 @@
 - `toggle_split_button` -> `ToggleSplitButton`
 - `token_input` -> `TokenInput`
 
-### Layout（27）
+### Layout（28）
 
 - `canvas` -> `Canvas`
 - `card_action` -> `CardAction`
@@ -83,6 +83,7 @@
 - `data_grid` -> `DataGrid`
 - `data_list_panel` -> `ListView`
 - `dock_panel` -> `DockPanel`
+- `drawer` -> `Drawer`
 - `expander` -> `Expander`
 - `grid` -> `Grid`
 - `grid_splitter` -> `GridSplitter`
@@ -157,6 +158,11 @@
 - `toast_stack` -> `Toast`
 
 ## 最近完成的收口动作
+
+- `2026-04-14`
+  - 新增 `layout/drawer` reference 控件：补齐符合 Fluent 2 / Fluent UI React `Drawer` 语义的轻量 custom wrapper，在 custom 层实现 `inline / overlay` 抽屉壳层、`start / end` 锚点、`open / closed` 开合、edge `toggle` 与 header `close` 语义，并保留 `compact / read only` 静态 preview，不修改 SDK。
+  - `example/HelloCustomWidgets/layout/drawer/egui_view_drawer.c/.h` 新增 `set_eyebrow()`、`set_title()`、`set_body_primary()`、`set_body_secondary()`、`set_footer()`、`set_tag()`、`set_anchor()`、`get_anchor()`、`set_presentation_mode()`、`get_presentation_mode()`、`set_open()`、`get_open()`、`set_on_open_changed_listener()`、`set_font()`、`set_meta_font()`、`set_compact_mode()`、`get_compact_mode()`、`set_read_only_mode()`、`get_read_only_mode()`、`set_palette()`、`get_part_region()` 与 `override_static_preview_api()`；`example/HelloCustomWidgets/layout/drawer/test.c`、`readme.md`、`example/HelloUnitTest/test/test_drawer.c/.h`、`example/HelloUnitTest/uicode.c`、`example/HelloCustomWidgets/widget_catalog.json` 与 `web/catalog-policy.json` 已同步接入，并已把关键截图归档到本地 `iteration_log/` 供验收复核。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=layout/drawer PORT=pc`、`make all APP=HelloUnitTest PORT=pc_test`（在 `X:\` 短路径下）、`output\main.exe`（总计 `829 / 829`，`drawer` suite `4 / 4`）、`python scripts/sync_widget_catalog.py`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category layout`、`python scripts/checks/check_docs_encoding.py`、`python scripts/checks/check_widget_catalog.py`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub layout/drawer --track reference --timeout 10 --keep-screenshots`、`python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub layout/drawer` 与对应 `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_layout_drawer` 验收，确认 `drawer` 已接入 reference 主线、runtime 链路与 web 发布链路。
 
 - `2026-04-14`
   - 新增 `display/counter_badge` reference 控件：补齐符合 Fluent 2 / Fluent UI React `CounterBadge` 语义的轻量 custom wrapper，在 custom 层实现独立数字提醒，覆盖 `count / overflow / dot`、`compact / read only` 静态 preview，以及白色 outline 的低噪音角标语义，不修改 SDK。
