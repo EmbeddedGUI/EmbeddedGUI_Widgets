@@ -162,6 +162,12 @@
 ## 最近完成的收口动作
 
 - `2026-04-14`
+  - 收口 `feedback/skeleton` reference 控件：在不修改 SDK 的前提下，把底部 `compact / read only` preview 统一收口为真正静态的 reference 对照，移除 preview pulse、preview snapshot 切换和 preview 点击清主控件 focus 的桥接动作，同时保留主骨架 `wave` 动画与 `Article / Feed / Settings` 主状态切换。
+  - `example/HelloCustomWidgets/feedback/skeleton/test.c` 改为主控件继续只切换三组骨架，而底部 `compact` 只保留单一静态 snapshot，`compact / read only` 都通过 `set_animation_mode(..., NONE)` 保持静态；录制轨道只覆盖主控件三组骨架与最终稳定帧，不再点击 preview 或切换 preview snapshot。`example/HelloCustomWidgets/feedback/skeleton/readme.md` 同步更新为本轮 `Skeleton` 静态 preview 收口说明。
+  - `example/HelloUnitTest/test/test_skeleton.c` 补齐静态 preview 的当前 snapshot / emphasis 固定断言、attach 后不启动 timer、输入抑制后仍保持静态状态的覆盖，并继续维持主控件 same-target release、read only / disabled guard 等既有测试。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=feedback/skeleton PORT=pc`、`make all APP=HelloUnitTest PORT=pc_test`（在 `X:\` 短路径下串行重建）、`X:\output\main.exe`（总计 `840 / 840`）、`python scripts/sync_widget_catalog.py`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category feedback`、`python scripts/checks/check_docs_encoding.py`、`python scripts/checks/check_widget_catalog.py`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub feedback/skeleton --track reference --timeout 10 --keep-screenshots`、`python scripts/code_compile_check.py --custom-widgets --category feedback --bits64`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --category feedback --track reference --bits64`、`python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub feedback/skeleton` 与对应 `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_feedback_skeleton`，并复核 runtime 截图确认底部 preview 区域在 9 帧中保持静态一致，而主区域仍持续变化。
+
+- `2026-04-14`
   - 收口 `feedback/spinner` reference 控件：在不修改 SDK 的前提下，于 custom 层补齐符合 Fluent / WinUI `Spinner` 语义的静态 preview 控制能力，保留主控件真实 indeterminate 旋转，同时把页面从场景卡片收口为更直接的低噪音 reference 结构。
   - `example/HelloCustomWidgets/feedback/spinner/egui_view_spinner.c/.h` 新增 `hcw_spinner_set_rotation_angle()`，用于把 preview 弧段相位固定到可复现的角度；`example/HelloCustomWidgets/feedback/spinner/test.c` 改为标题 + 主 `spinner` + 状态文案 + 底部 `compact / muted` 双 preview 的页面结构，并让两个 preview 通过 `set_spinning(0)` + 固定角度保持真正静态；`example/HelloCustomWidgets/feedback/spinner/readme.md` 同步更新为本轮 `Spinner` 语义收口说明。
   - `example/HelloUnitTest/test/test_spinner.c` 补齐 `hcw_spinner_set_rotation_angle()` 的角度归一化、attach 后 `set_spinning()` 启停 timer、静态 preview 固定相位且不启动动画、以及 static preview 输入抑制覆盖。

@@ -6,27 +6,24 @@
 - 补充对照实现：`ModernWpf`
 - 对应组件名：`Skeleton`
 - 本次保留状态：`wave`、`compact`、`read only`
-- 本次删除效果：页面级 `guide`、外部 preview 标签、旧双列预览壳层、过强 placeholder 对比、过亮 wave / pulse 高光
-- EGUI 适配说明：沿用仓库内 `skeleton` 基础实现，本轮只收口 `reference` 页面结构、静态对照预览和视觉强度，不修改 `sdk/EmbeddedGUI`
+- 本次删除效果：preview 动画、preview snapshot 切换、preview 点击清 focus 的桥接动作，以及与骨架占位无关的额外录制交互
+- EGUI 适配说明：沿用仓库内 `skeleton` custom 实现，本轮只收口 `reference` 页面结构、静态 preview 语义和录制轨道，不修改 `sdk/EmbeddedGUI`
 
-## 1. 为什么需要这个控件？
-`skeleton` 用于在真实内容尚未到达时先表达页面结构、信息密度和重点区域，比单纯的 `spinner` 更能说明“内容将会如何排布”，适合文章页、列表页、设置页和轻量卡片占位。
+## 1. 为什么需要这个控件
+`Skeleton` 用于在真实内容尚未到达时先表达页面结构、信息密度和重点区域，比单纯的 `spinner` 更能说明“内容将会如何排布”，适合文章、列表、设置页和轻量卡片的加载占位。
 
-## 2. 为什么现有控件不够用？
-- `spinner` 只能表达“正在加载”，不能表达页面骨架结构。
-- `progress_bar` 更适合数值进度，不适合内容占位。
-- 旧版 `skeleton_loader` 更偏 showcase 风格，视觉更重，也不再符合当前 `reference` 主线。
-- 当前 `reference` 主线仍需要一版贴近 Fluent / WPF UI 的浅色 `Skeleton` 示例。
+## 2. 为什么现有控件不够用
+- `spinner` 只能表达“正在加载”，不能表达内容骨架。
+- `progress_bar` 更适合数值进度，不适合页面结构占位。
+- 旧的 showcase 风格 skeleton 视觉更重，不符合当前 `reference` 主线。
+- 当前仓库仍需要一版贴近 Fluent / WPF UI 的浅色 `Skeleton` 示例。
 
 ## 3. 目标场景与示例概览
-- 主控件展示标准 `wave` skeleton，通过录制动作覆盖 `Article / Feed / Settings` 三组页面骨架。
-- 底部左侧展示 `compact` 静态对照，验证小尺寸下的紧凑占位布局与轻量 `pulse` 强调。
-- 底部右侧展示 `read only` 静态对照，验证禁用动画和弱化 chrome 后的只读占位。
-- 页面结构统一收口为：标题 -> 主 `skeleton` -> `compact / read only`。
-- 两个 preview 统一通过 `egui_view_skeleton_override_static_preview_api()` 收口：
-  - preview 自身吞掉 `touch / key`，不改 `current_snapshot / emphasis_block`，也不触发 click。
-  - preview 点击时只负责清主控件 focus，用于 runtime 复核交互后的收尾渲染。
-- 旧的 preview 列容器、外部标签和页面桥接切换逻辑全部移除。
+- 主控件展示标准 `wave` skeleton，通过录制轨道覆盖 `Article / Feed / Settings` 三组骨架。
+- 底部左侧展示 `compact` 静态对照，保留紧凑尺寸和轻量块布局，但不再播放 pulse 动画。
+- 底部右侧展示 `read only` 静态对照，保留弱化 chrome 与只读语义。
+- 页面结构统一收口为：标题 -> 主 `skeleton` -> `compact / read only` 双 preview。
+- 两个 preview 统一通过 `egui_view_skeleton_override_static_preview_api()` 吞掉 `touch / key`，不再切换 snapshot，也不再承担清主控件 focus 的桥接职责。
 
 目标目录：`example/HelloCustomWidgets/feedback/skeleton/`
 
@@ -36,14 +33,12 @@
 - 底部对照行尺寸：`216 x 60`
 - `compact` 预览：`104 x 60`
 - `read only` 预览：`104 x 60`
-- 页面结构：标题 + 主控件 + 底部双预览
-- 样式约束：
-  - 使用浅灰 page panel、白底 skeleton card 和低噪音浅边框。
-  - 主控件保留轻量 `wave shimmer`，`compact` 保留更柔和的 `pulse` 强调，`read only` 关闭动画并弱化 chrome。
-  - emphasis block 只做轻量灰蓝提亮，不回到高饱和 showcase 风格。
-  - 底部两个 preview 不承接真实交互，只保留静态对照职责；`touch / key` 统一被 static preview API 吞掉，点击仅用于清主控件 focus。
-  - 主控件继续遵守 same-target release：`DOWN(A) -> MOVE(B) -> UP(B)` 不提交，回到 `A` 后 `UP(A)` 才提交。
-  - `read only` 切入后必须立即停掉 timer；退出 `read only` 时只有在 `animation_mode != none` 时才允许恢复 timer。
+
+视觉约束：
+- 页面保持浅灰 page panel、白底 skeleton card 和低噪音浅边框。
+- 主控件保留轻量 `wave shimmer`，用于表达真实加载中的骨架态。
+- `compact` 与 `read only` 都必须是静态 preview，只负责 reference 对照，不得继续转为 pulse 或交互桥接。
+- `read only` 继续通过更弱的边框和更淡的占位块表达只读语义。
 
 ## 5. 控件清单
 
@@ -51,90 +46,66 @@
 | --- | --- | ---: | --- | --- |
 | `root_layout` | `egui_view_linearlayout_t` | `224 x 224` | enabled | 页面根布局 |
 | `title_label` | `egui_view_label_t` | `224 x 18` | `Skeleton` | 页面标题 |
-| `skeleton_primary` | `egui_view_skeleton_t` | `196 x 124` | `Article` | 标准主控件 |
-| `skeleton_compact` | `egui_view_skeleton_t` | `104 x 60` | `Compact row` | `compact` 静态对照 |
-| `skeleton_read_only` | `egui_view_skeleton_t` | `104 x 60` | `Read only` | `read only` 静态对照 |
-| `primary_snapshots` | `egui_view_skeleton_snapshot_t[3]` | - | `Article / Feed / Settings` | 主控件录制轨道 |
-| `compact_snapshots` | `egui_view_skeleton_snapshot_t[2]` | - | `Compact row / Compact tile` | `compact` 程序化切换 |
-| `read_only_snapshots` | `egui_view_skeleton_snapshot_t[1]` | - | `Read only` | `read only` 固定对照数据 |
+| `skeleton_primary` | `egui_view_skeleton_t` | `196 x 124` | `Article / wave` | 主骨架 |
+| `skeleton_compact` | `egui_view_skeleton_t` | `104 x 60` | `Compact row / static` | 紧凑静态对照 |
+| `skeleton_read_only` | `egui_view_skeleton_t` | `104 x 60` | `Read only / static` | 只读静态对照 |
 
 ## 6. 状态覆盖矩阵
 
 | 区域 / 轨道 | 状态 | 说明 |
 | --- | --- | --- |
-| 主控件 | `Article` | 默认 `wave` |
-| 主控件 | `Feed` | 第二组主控件骨架 |
-| 主控件 | `Settings` | 第三组主控件骨架 |
-| `compact` | `Compact row` | 默认紧凑对照 |
-| `compact` | `Compact tile` | 第二组紧凑对照 |
-| `read only` | `Read only` | 固定只读对照，static preview 吞掉 `touch / key`，点击只清主控件 focus，并在切入时停掉 timer |
+| 主控件 | `Article` | 默认 `wave` 骨架 |
+| 主控件 | `Feed` | 第二组加载骨架 |
+| 主控件 | `Settings` | 第三组加载骨架 |
+| `compact` | `Compact row` | 紧凑静态 preview |
+| `read only` | `Read only` | 只读静态 preview |
 
-## 7. `egui_port_get_recording_action()` 录制动作设计
-1. 重置主控件、`compact` 和 `read only` 到默认状态。
-2. 请求默认截图。
-3. 程序化切换主控件到 `Feed`。
-4. 请求第二张截图。
-5. 程序化切换主控件到 `Settings`。
-6. 请求第三张截图。
-7. 程序化切换 `compact` 到第二组 snapshot，并让主控件进入 focus 态。
-8. 请求 `compact` 切换后的截图。
-9. 点击 `compact` preview，只清主控件 focus。
-10. 请求 preview 点击后的收尾截图。
-11. 再请求一张最终稳定帧，确认交互后没有残留 `pressed`、focus 污染、黑白屏或裁切。
+## 7. 交互与状态语义
+- 主 `skeleton` 仍然是 display-only 占位控件，但保留真实 `wave` 动画。
+- `compact / read only` preview 都通过 `set_animation_mode(..., NONE)` 停止动画，作为真正静态的 reference 对照。
+- `read only` preview 继续使用 `set_read_only_mode(..., 1)`，保持弱化语义并确保 timer 不启动。
+- 两个 preview 继续通过 `override_static_preview_api()` 吞掉 `touch / key`，但不再承担任何清焦点、切换 snapshot 或收尾桥接职责。
 
-## 8. 编译、touch、runtime、单测与文档检查
+## 8. 本轮收口内容
+- 继续维护 `example/HelloCustomWidgets/feedback/skeleton/test.c`
+- 调整底部 `compact` preview 为单一静态 snapshot，删除 preview pulse 动画
+- 删除 preview 点击清主控件 focus 的桥接逻辑和对应录制动作
+- 录制轨道只保留主控件 `Article / Feed / Settings` 的状态切换与最终稳定帧
+- 单测同步补齐“静态 preview 不启动 timer、输入抑制后仍保持固定 snapshot / emphasis”的覆盖
+
+## 9. `egui_port_get_recording_action()` 录制动作设计
+1. 还原主控件到 `Article`，并同步两个静态 preview 状态。
+2. 请求 `snapshot 0`。
+3. 切到 `Feed`。
+4. 请求 `snapshot 1`。
+5. 切到 `Settings`。
+6. 请求 `snapshot 2`。
+7. 恢复默认 `Article` 并再次请求最终稳定帧，确认页面收尾状态一致。
+
+## 10. 编译、测试与 runtime 验收
 ```bash
-make clean APP=HelloCustomWidgets APP_SUB=feedback/skeleton PORT=pc
 make all APP=HelloCustomWidgets APP_SUB=feedback/skeleton PORT=pc
-make clean APP=HelloUnitTest PORT=pc_test
 make all APP=HelloUnitTest PORT=pc_test
-output\main.exe
+X:\output\main.exe
+
+python scripts/sync_widget_catalog.py
 python scripts/checks/check_touch_release_semantics.py --scope custom --category feedback
-python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub feedback/skeleton --track reference --timeout 10 --keep-screenshots
 python scripts/checks/check_docs_encoding.py
+python scripts/checks/check_widget_catalog.py
+python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub feedback/skeleton --track reference --timeout 10 --keep-screenshots
+python scripts/code_compile_check.py --custom-widgets --category feedback --bits64
+python scripts/code_runtime_check.py --app HelloCustomWidgets --category feedback --track reference --bits64
+python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub feedback/skeleton
+python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_feedback_skeleton
 ```
 
 验收重点：
-- 主控件和底部 `compact / read only` 预览都必须完整可见。
-- `wave`、`compact`、`read only` 三种语义要能从截图直接分辨。
-- 主控件的 shimmer 必须保持轻量，不能回到高噪音 showcase 风格。
-- `read only` 只做静态展示，不能响应 click，并且切入时要立即停掉 timer。
-- 退出 `read only` 后，只有在动画模式允许时才恢复 timer。
-- 主控件必须通过 same-target release / cancel 回归：移出命中区后不能误触发，回到原目标后释放才可提交。
-- preview 点击后的收尾帧和最终稳定帧都必须回稳，不能残留 focus ring、pressed、黑白屏或裁切污染。
-- 单测必须覆盖 snapshot、palette、timer、same-target release、cancel、read only / disabled guard，以及 static preview 吞 `touch / key` 且不改 `current_snapshot / emphasis_block`。
+- 主控件三张关键截图必须能看出不同骨架布局与主区域波带变化。
+- `compact / read only` preview 必须在所有 runtime 帧中保持静态，不得继续播放 pulse 或因点击产生额外状态变化。
+- 页面不能出现黑白屏、裁切、波带断裂或底部 preview 脏态。
+- preview 不响应触摸或键盘输入。
 
-## 9. 已知限制与后续方向
+## 11. 已知限制
 - 当前版本仍使用固定 snapshot 数据，不接真实业务骨架配置。
-- 当前 `wave` 和 `pulse` 都是轻量近似动画，不做更复杂的渐变带。
-- 当前优先验证 `reference` 语义、布局稳定性和视觉收口，不扩展成长列表骨架系统。
-
-## 10. 与现有控件的边界
-- 相比 `spinner`：这里表达内容骨架，不只是等待状态。
-- 相比 `progress_bar`：这里表达结构占位，不承担数值进度反馈。
-- 相比旧版 `skeleton_loader`：这里更浅、更轻、更接近 Fluent / WPF UI `reference`。
-- 相比 `card_panel`：这里不承载真实内容卡片，只表达加载前占位。
-
-## 11. 参考设计系统与开源母本
-- 参考设计系统：`Fluent 2`
-- 参考开源库：`WPF UI`
-- 补充对照实现：`ModernWpf`
-
-## 12. 对应组件名与本次保留的核心状态
-- 对应组件名：`Skeleton`
-- 本次保留核心状态：
-  - `wave`
-  - `compact`
-  - `read only`
-
-## 13. 相比参考原型删除的效果或装饰
-- 删除页面级 `guide`、preview 标签和旧双列预览壳层。
-- 删除 preview 参与 snapshot 切换和页面桥接的职责，只保留静态对照与主控件 focus 收口。
-- 删除过强的 accent placeholder、过亮 wave band 和过重 read-only chrome。
-- 删除与 `reference` 无关的说明性外壳和场景化叙事。
-
-## 14. EGUI 适配时的简化点与约束
-- 使用固定 `snapshot` 数据保证录制稳定。
-- `compact / read only` 直接复用同一控件模式，减少额外页面壳层。
-- 通过程序化切换 snapshot 保证 runtime 稳定抓取状态变化。
-- 当前先作为 `HelloCustomWidgets` 的 `reference widget` 维护，后续是否下沉框架层再单独评估。
+- 当前 `wave` 是轻量近似动画，不追求更复杂的渐变带。
+- 当前优先保证 `reference` 页面、单测和发布链路闭环，不扩展成长列表骨架系统。

@@ -53,6 +53,7 @@ static void reset_click_count(void)
 
 static void setup_skeleton(void)
 {
+    egui_timer_init();
     egui_view_skeleton_init(EGUI_VIEW_OF(&test_skeleton));
     egui_view_set_size(EGUI_VIEW_OF(&test_skeleton), 196, 96);
     egui_view_skeleton_set_snapshots(EGUI_VIEW_OF(&test_skeleton), g_snapshots, 2);
@@ -62,17 +63,28 @@ static void setup_skeleton(void)
 
 static void setup_preview_skeleton(void)
 {
+    egui_timer_init();
     egui_view_skeleton_init(EGUI_VIEW_OF(&preview_skeleton));
     egui_view_set_size(EGUI_VIEW_OF(&preview_skeleton), 104, 60);
     egui_view_skeleton_set_snapshots(EGUI_VIEW_OF(&preview_skeleton), g_snapshots, 2);
-    egui_view_skeleton_set_current_snapshot(EGUI_VIEW_OF(&preview_skeleton), 1);
+    egui_view_skeleton_set_current_snapshot(EGUI_VIEW_OF(&preview_skeleton), 0);
     egui_view_skeleton_set_show_footer(EGUI_VIEW_OF(&preview_skeleton), 0);
     egui_view_skeleton_set_compact_mode(EGUI_VIEW_OF(&preview_skeleton), 1);
-    egui_view_skeleton_set_animation_mode(EGUI_VIEW_OF(&preview_skeleton), EGUI_VIEW_SKELETON_ANIM_PULSE);
-    egui_view_skeleton_set_emphasis_block(EGUI_VIEW_OF(&preview_skeleton), 1);
+    egui_view_skeleton_set_animation_mode(EGUI_VIEW_OF(&preview_skeleton), EGUI_VIEW_SKELETON_ANIM_NONE);
+    egui_view_skeleton_set_emphasis_block(EGUI_VIEW_OF(&preview_skeleton), 2);
     egui_view_set_on_click_listener(EGUI_VIEW_OF(&preview_skeleton), on_skeleton_click);
     egui_view_skeleton_override_static_preview_api(EGUI_VIEW_OF(&preview_skeleton), &preview_api);
     reset_click_count();
+}
+
+static void attach_view(egui_view_t *view)
+{
+    egui_view_dispatch_attach_to_window(view);
+}
+
+static void detach_view(egui_view_t *view)
+{
+    egui_view_dispatch_detach_from_window(view);
 }
 
 static void layout_view(egui_view_t *view, egui_dim_t x, egui_dim_t y, egui_dim_t width, egui_dim_t height)
@@ -427,30 +439,41 @@ static void test_skeleton_read_only_and_disabled_guards_clear_pressed_and_timer(
     stop_timer_if_started(&test_skeleton);
 }
 
-static void test_skeleton_static_preview_consumes_input_and_clears_pressed_state(void)
+static void test_skeleton_static_preview_consumes_input_and_keeps_static_state(void)
 {
     egui_dim_t x;
     egui_dim_t y;
 
     setup_preview_skeleton();
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_SKELETON_ANIM_NONE, preview_skeleton.animation_mode);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, preview_skeleton.timer_started);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_skeleton_get_current_snapshot(EGUI_VIEW_OF(&preview_skeleton)));
+    EGUI_TEST_ASSERT_EQUAL_INT(2, preview_skeleton.emphasis_block);
+
+    attach_view(EGUI_VIEW_OF(&preview_skeleton));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, preview_skeleton.timer_started);
+
     layout_preview_skeleton();
     get_view_center(EGUI_VIEW_OF(&preview_skeleton), &x, &y);
 
     seed_pressed_state(EGUI_VIEW_OF(&preview_skeleton), 1);
     EGUI_TEST_ASSERT_TRUE(send_preview_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
     assert_pressed_cleared(EGUI_VIEW_OF(&preview_skeleton));
-    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_skeleton_get_current_snapshot(EGUI_VIEW_OF(&preview_skeleton)));
-    EGUI_TEST_ASSERT_EQUAL_INT(1, preview_skeleton.emphasis_block);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_skeleton_get_current_snapshot(EGUI_VIEW_OF(&preview_skeleton)));
+    EGUI_TEST_ASSERT_EQUAL_INT(2, preview_skeleton.emphasis_block);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, preview_skeleton.timer_started);
     EGUI_TEST_ASSERT_EQUAL_INT(0, click_count);
 
     seed_pressed_state(EGUI_VIEW_OF(&preview_skeleton), 1);
     EGUI_TEST_ASSERT_TRUE(send_preview_key(EGUI_KEY_CODE_ENTER));
     assert_pressed_cleared(EGUI_VIEW_OF(&preview_skeleton));
-    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_skeleton_get_current_snapshot(EGUI_VIEW_OF(&preview_skeleton)));
-    EGUI_TEST_ASSERT_EQUAL_INT(1, preview_skeleton.emphasis_block);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_skeleton_get_current_snapshot(EGUI_VIEW_OF(&preview_skeleton)));
+    EGUI_TEST_ASSERT_EQUAL_INT(2, preview_skeleton.emphasis_block);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, preview_skeleton.timer_started);
     EGUI_TEST_ASSERT_EQUAL_INT(0, click_count);
 
-    stop_timer_if_started(&preview_skeleton);
+    detach_view(EGUI_VIEW_OF(&preview_skeleton));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, preview_skeleton.timer_started);
 }
 
 void test_skeleton_run(void)
@@ -463,6 +486,6 @@ void test_skeleton_run(void)
     EGUI_TEST_RUN(test_skeleton_keyboard_click_listener);
     EGUI_TEST_RUN(test_skeleton_compact_mode_clears_pressed_and_keeps_click_behavior);
     EGUI_TEST_RUN(test_skeleton_read_only_and_disabled_guards_clear_pressed_and_timer);
-    EGUI_TEST_RUN(test_skeleton_static_preview_consumes_input_and_clears_pressed_state);
+    EGUI_TEST_RUN(test_skeleton_static_preview_consumes_input_and_keeps_static_state);
     EGUI_TEST_SUITE_END();
 }
