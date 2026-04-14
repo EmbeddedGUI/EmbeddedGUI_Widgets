@@ -93,6 +93,20 @@ void hcw_spinner_set_arc_length(egui_view_t *self, int16_t arc_length)
     egui_view_invalidate(self);
 }
 
+void hcw_spinner_set_rotation_angle(egui_view_t *self, int16_t rotation_angle)
+{
+    EGUI_LOCAL_INIT(egui_view_spinner_t);
+
+    hcw_spinner_prepare_base(self);
+    rotation_angle %= 360;
+    if (rotation_angle < 0)
+    {
+        rotation_angle += 360;
+    }
+    local->rotation_angle = rotation_angle;
+    egui_view_invalidate(self);
+}
+
 void hcw_spinner_set_spinning(egui_view_t *self, uint8_t spinning)
 {
     hcw_spinner_prepare_base(self);

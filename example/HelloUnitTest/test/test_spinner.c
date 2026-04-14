@@ -20,6 +20,7 @@ static void on_preview_click(egui_view_t *self)
 
 static void setup_spinner(void)
 {
+    egui_timer_init();
     egui_view_spinner_init(EGUI_VIEW_OF(&test_spinner_widget));
     egui_view_set_size(EGUI_VIEW_OF(&test_spinner_widget), 44, 44);
     hcw_spinner_apply_standard_style(EGUI_VIEW_OF(&test_spinner_widget));
@@ -28,12 +29,25 @@ static void setup_spinner(void)
 
 static void setup_preview_spinner(void)
 {
+    egui_timer_init();
     egui_view_spinner_init(EGUI_VIEW_OF(&preview_spinner_widget));
-    egui_view_set_size(EGUI_VIEW_OF(&preview_spinner_widget), 28, 28);
+    egui_view_set_size(EGUI_VIEW_OF(&preview_spinner_widget), 24, 24);
     hcw_spinner_apply_compact_style(EGUI_VIEW_OF(&preview_spinner_widget));
+    hcw_spinner_set_spinning(EGUI_VIEW_OF(&preview_spinner_widget), 0);
+    hcw_spinner_set_rotation_angle(EGUI_VIEW_OF(&preview_spinner_widget), 300);
     egui_view_set_on_click_listener(EGUI_VIEW_OF(&preview_spinner_widget), on_preview_click);
     hcw_spinner_override_static_preview_api(EGUI_VIEW_OF(&preview_spinner_widget), &preview_api);
     g_click_count = 0;
+}
+
+static void attach_view(egui_view_t *view)
+{
+    egui_view_dispatch_attach_to_window(view);
+}
+
+static void detach_view(egui_view_t *view)
+{
+    egui_view_dispatch_detach_from_window(view);
 }
 
 static void layout_view(egui_view_t *view, egui_dim_t x, egui_dim_t y, egui_dim_t width, egui_dim_t height)
@@ -118,21 +132,38 @@ static void test_spinner_setters_clear_pressed_state_and_clamp(void)
     hcw_spinner_set_arc_length(EGUI_VIEW_OF(&test_spinner_widget), 400);
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_spinner_widget)->is_pressed);
     EGUI_TEST_ASSERT_EQUAL_INT(300, test_spinner_widget.arc_length);
+
+    egui_view_set_pressed(EGUI_VIEW_OF(&test_spinner_widget), 1);
+    hcw_spinner_set_rotation_angle(EGUI_VIEW_OF(&test_spinner_widget), -15);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_spinner_widget)->is_pressed);
+    EGUI_TEST_ASSERT_EQUAL_INT(345, test_spinner_widget.rotation_angle);
+
+    egui_view_set_pressed(EGUI_VIEW_OF(&test_spinner_widget), 1);
+    hcw_spinner_set_rotation_angle(EGUI_VIEW_OF(&test_spinner_widget), 390);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_spinner_widget)->is_pressed);
+    EGUI_TEST_ASSERT_EQUAL_INT(30, test_spinner_widget.rotation_angle);
 }
 
 static void test_spinner_set_spinning_starts_and_stops_animation(void)
 {
     setup_spinner();
+    attach_view(EGUI_VIEW_OF(&test_spinner_widget));
+    EGUI_TEST_ASSERT_TRUE(egui_timer_check_timer_start(&test_spinner_widget.spin_timer));
 
     egui_view_set_pressed(EGUI_VIEW_OF(&test_spinner_widget), 1);
     hcw_spinner_set_spinning(EGUI_VIEW_OF(&test_spinner_widget), 0);
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_spinner_widget)->is_pressed);
     EGUI_TEST_ASSERT_FALSE(test_spinner_widget.is_spinning);
+    EGUI_TEST_ASSERT_FALSE(egui_timer_check_timer_start(&test_spinner_widget.spin_timer));
 
     egui_view_set_pressed(EGUI_VIEW_OF(&test_spinner_widget), 1);
     hcw_spinner_set_spinning(EGUI_VIEW_OF(&test_spinner_widget), 1);
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_spinner_widget)->is_pressed);
     EGUI_TEST_ASSERT_TRUE(test_spinner_widget.is_spinning);
+    EGUI_TEST_ASSERT_TRUE(egui_timer_check_timer_start(&test_spinner_widget.spin_timer));
+
+    detach_view(EGUI_VIEW_OF(&test_spinner_widget));
+    EGUI_TEST_ASSERT_FALSE(egui_timer_check_timer_start(&test_spinner_widget.spin_timer));
 }
 
 static void test_spinner_static_preview_consumes_input(void)
@@ -141,7 +172,13 @@ static void test_spinner_static_preview_consumes_input(void)
     egui_dim_t center_y;
 
     setup_preview_spinner();
-    layout_view(EGUI_VIEW_OF(&preview_spinner_widget), 12, 18, 28, 28);
+    EGUI_TEST_ASSERT_FALSE(preview_spinner_widget.is_spinning);
+    EGUI_TEST_ASSERT_EQUAL_INT(300, preview_spinner_widget.rotation_angle);
+
+    attach_view(EGUI_VIEW_OF(&preview_spinner_widget));
+    EGUI_TEST_ASSERT_FALSE(egui_timer_check_timer_start(&preview_spinner_widget.spin_timer));
+
+    layout_view(EGUI_VIEW_OF(&preview_spinner_widget), 12, 18, 24, 24);
     get_view_center(EGUI_VIEW_OF(&preview_spinner_widget), &center_x, &center_y);
 
     egui_view_set_pressed(EGUI_VIEW_OF(&preview_spinner_widget), 1);
@@ -155,6 +192,9 @@ static void test_spinner_static_preview_consumes_input(void)
     EGUI_TEST_ASSERT_TRUE(send_key(EGUI_VIEW_OF(&preview_spinner_widget), EGUI_KEY_EVENT_ACTION_UP, EGUI_KEY_CODE_ENTER));
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&preview_spinner_widget)->is_pressed);
     EGUI_TEST_ASSERT_EQUAL_INT(0, g_click_count);
+
+    detach_view(EGUI_VIEW_OF(&preview_spinner_widget));
+    EGUI_TEST_ASSERT_FALSE(egui_timer_check_timer_start(&preview_spinner_widget.spin_timer));
 }
 
 void test_spinner_run(void)
