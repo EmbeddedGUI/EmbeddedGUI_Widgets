@@ -9,12 +9,12 @@
 
 ## 当前快照
 
-- 截至 `2026-04-14`，`example/HelloCustomWidgets/` 当前保留 `105` 个控件目录。
+- 截至 `2026-04-14`，`example/HelloCustomWidgets/` 当前保留 `106` 个控件目录。
 - 所有保留控件均来自 `reference` 主线：
   - `input = 33`
   - `layout = 29`
   - `navigation = 13`
-  - `display = 20`
+  - `display = 21`
   - `feedback = 10`
 - `widget_catalog.json`、`web/catalog-policy.json` 与默认 web 入口已同步到 `reference-only` 状态。
 - 已清退轨道：
@@ -138,6 +138,7 @@
 - `info_label` -> `InfoLabel`
 - `path_icon` -> `PathIcon`
 - `person_picture` -> `PersonPicture`
+- `persona` -> `Persona`
 - `persona_group` -> `AvatarGroup`
 - `presence_badge` -> `PresenceBadge`
 - `rich_text_block` -> `RichTextBlock`
@@ -159,6 +160,12 @@
 - `toast_stack` -> `Toast`
 
 ## 最近完成的收口动作
+
+- `2026-04-14`
+  - 新增 `display/persona` reference 控件：补齐符合 Fluent 2 / Fluent UI React `Persona` 语义的轻量 `egui_view_persona`，在 custom 层收口 `display_name / secondary_text / tertiary_text / quaternary_text / initials / status / tone / compact_mode / read_only_mode`，保持控件本身为显示型单人身份条目，不承接点击或导航职责，不修改 SDK。
+  - `example/HelloCustomWidgets/display/persona/egui_view_persona.c/.h` 新增 `egui_view_persona_init()`、`set_display_name()`、`set_secondary_text()`、`set_tertiary_text()`、`set_quaternary_text()`、`set_initials()`、`set_status()`、`set_tone()`、`set_font()`、`set_meta_font()`、`set_compact_mode()`、`set_read_only_mode()`、`set_palette()`、`get_avatar_region()`、`get_presence_region()` 与 `override_static_preview_api()`，并补 `initials` 推导、panel/avatar/presence region helper、`offline` ring 与 `do_not_disturb` glyph 绘制；`example/HelloCustomWidgets/display/persona/test.c` 新增标题 + 主 `persona` + 底部 `compact / read only` 双 preview 的 reference 页面。
+  - `example/HelloUnitTest/test/test_persona.c/.h` 新增单测覆盖默认初始化、setter 与 initials 解析、tone / status / region helper、静态 preview 输入抑制；`example/HelloCustomWidgets/display/persona/readme.md`、`example/HelloCustomWidgets/widget_catalog.json`、`example/HelloUnitTest/uicode.c` 与 `web/catalog-policy.json` 同步接入 `display/persona`。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=display/persona PORT=pc`、`make all APP=HelloUnitTest PORT=pc_test`（在 `X:\` 短路径下）、`X:\output\main.exe`、`python scripts/sync_widget_catalog.py`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category display`、`python scripts/checks/check_docs_encoding.py`、`python scripts/checks/check_widget_catalog.py`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub display/persona --track reference --timeout 10 --keep-screenshots`、`python scripts/code_compile_check.py --custom-widgets --category display --bits64`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --category display --track reference --bits64`、`python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub display/persona` 与对应 `web_smoke_check.py`，确认 `persona` 已接入 reference 主线、display 分类回归链路与 web 发布链路。
 
 - `2026-04-14`
   - 新增 `layout/list` reference 控件：补齐符合 Fluent 2 / Fluent UI React `List` 语义的轻量单列 custom wrapper，在 custom 层实现 `title / meta / badge / tone` 列表行、单选高亮、same-target release、`Up / Down / Home / End / Tab` 键盘导航，以及 `compact / read only` 静态 preview，不修改 SDK。

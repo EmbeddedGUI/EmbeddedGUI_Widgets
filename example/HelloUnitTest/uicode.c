@@ -57,6 +57,7 @@
 #include "test/test_radio_button.h"
 #include "test/test_radio_buttons.h"
 #include "test/test_persona_group.h"
+#include "test/test_persona.h"
 #include "test/test_person_picture.h"
 #include "test/test_presence_badge.h"
 #include "test/test_pips_pager.h"
@@ -182,6 +183,7 @@ void uicode_create_ui(void)
     test_radio_button_run();
     test_radio_buttons_run();
     test_persona_group_run();
+    test_persona_run();
     test_person_picture_run();
     test_presence_badge_run();
     test_pips_pager_run();
