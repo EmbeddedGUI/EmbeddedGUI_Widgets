@@ -692,7 +692,7 @@ static void test_teaching_tip_disabled_ignores_input_and_clears_pressed_state(vo
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_TEACHING_TIP_PART_TARGET, last_part);
 }
 
-static void test_teaching_tip_static_preview_consumes_input_and_clears_pressed_state(void)
+static void test_teaching_tip_static_preview_consumes_input_and_keeps_snapshot_and_part(void)
 {
     egui_region_t secondary_region;
     egui_dim_t secondary_x;
@@ -700,6 +700,8 @@ static void test_teaching_tip_static_preview_consumes_input_and_clears_pressed_s
 
     setup_preview_tip();
     layout_preview_tip();
+    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_teaching_tip_get_current_snapshot(EGUI_VIEW_OF(&preview_tip)));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_TEACHING_TIP_PART_SECONDARY, egui_view_teaching_tip_get_current_part(EGUI_VIEW_OF(&preview_tip)));
 
     EGUI_TEST_ASSERT_TRUE(egui_view_teaching_tip_get_part_region(EGUI_VIEW_OF(&preview_tip), EGUI_VIEW_TEACHING_TIP_PART_SECONDARY, &secondary_region));
     get_region_center(&secondary_region, &secondary_x, &secondary_y);
@@ -730,7 +732,7 @@ void test_teaching_tip_run(void)
     EGUI_TEST_RUN(test_teaching_tip_compact_mode_clears_pressed_and_keeps_input_behavior);
     EGUI_TEST_RUN(test_teaching_tip_read_only_mode_clears_pressed_and_ignores_input);
     EGUI_TEST_RUN(test_teaching_tip_disabled_ignores_input_and_clears_pressed_state);
-    EGUI_TEST_RUN(test_teaching_tip_static_preview_consumes_input_and_clears_pressed_state);
+    EGUI_TEST_RUN(test_teaching_tip_static_preview_consumes_input_and_keeps_snapshot_and_part);
     EGUI_TEST_RUN(test_teaching_tip_keyboard_navigation_and_guards);
     EGUI_TEST_SUITE_END();
 }
