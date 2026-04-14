@@ -57,9 +57,9 @@ static int send_key(egui_view_t *view, uint8_t key_code)
     memset(&event, 0, sizeof(event));
     event.type = EGUI_KEY_EVENT_ACTION_DOWN;
     event.key_code = key_code;
-    handled |= view->api->on_key_event(view, &event);
+    handled |= view->api->dispatch_key_event(view, &event);
     event.type = EGUI_KEY_EVENT_ACTION_UP;
-    handled |= view->api->on_key_event(view, &event);
+    handled |= view->api->dispatch_key_event(view, &event);
     return handled;
 }
 
@@ -253,6 +253,12 @@ static void test_drawer_static_preview_consumes_input(void)
 
     setup_preview_widget();
     layout_view(EGUI_VIEW_OF(&preview_widget), 12, 18, 104, 72);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_DRAWER_ANCHOR_START, egui_view_drawer_get_anchor(EGUI_VIEW_OF(&preview_widget)));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_DRAWER_MODE_OVERLAY, egui_view_drawer_get_presentation_mode(EGUI_VIEW_OF(&preview_widget)));
+    EGUI_TEST_ASSERT_TRUE(egui_view_drawer_get_open(EGUI_VIEW_OF(&preview_widget)));
+    EGUI_TEST_ASSERT_TRUE(egui_view_drawer_get_compact_mode(EGUI_VIEW_OF(&preview_widget)));
+    EGUI_TEST_ASSERT_FALSE(egui_view_drawer_get_read_only_mode(EGUI_VIEW_OF(&preview_widget)));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, g_open_count);
     get_part_center(EGUI_VIEW_OF(&preview_widget), EGUI_VIEW_DRAWER_PART_TOGGLE, &toggle_x, &toggle_y);
     get_part_center(EGUI_VIEW_OF(&preview_widget), EGUI_VIEW_DRAWER_PART_CLOSE, &close_x, &close_y);
 
@@ -275,6 +281,54 @@ static void test_drawer_static_preview_consumes_input(void)
     EGUI_TEST_ASSERT_TRUE(egui_view_drawer_get_open(EGUI_VIEW_OF(&preview_widget)));
     EGUI_TEST_ASSERT_EQUAL_INT(0, g_open_count);
     assert_pressed_cleared(&preview_widget);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_DRAWER_ANCHOR_START, egui_view_drawer_get_anchor(EGUI_VIEW_OF(&preview_widget)));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_DRAWER_MODE_OVERLAY, egui_view_drawer_get_presentation_mode(EGUI_VIEW_OF(&preview_widget)));
+    EGUI_TEST_ASSERT_TRUE(egui_view_drawer_get_open(EGUI_VIEW_OF(&preview_widget)));
+    EGUI_TEST_ASSERT_TRUE(egui_view_drawer_get_compact_mode(EGUI_VIEW_OF(&preview_widget)));
+    EGUI_TEST_ASSERT_FALSE(egui_view_drawer_get_read_only_mode(EGUI_VIEW_OF(&preview_widget)));
+}
+
+static void test_drawer_read_only_and_disabled_guards_clear_pressed_state(void)
+{
+    egui_dim_t toggle_x;
+    egui_dim_t toggle_y;
+
+    setup_widget();
+    layout_view(EGUI_VIEW_OF(&test_widget), 10, 16, 180, 112);
+    get_part_center(EGUI_VIEW_OF(&test_widget), EGUI_VIEW_DRAWER_PART_TOGGLE, &toggle_x, &toggle_y);
+
+    egui_view_drawer_set_read_only_mode(EGUI_VIEW_OF(&test_widget), 1);
+    seed_pressed_state(&test_widget, EGUI_VIEW_DRAWER_PART_TOGGLE);
+    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_VIEW_OF(&test_widget), EGUI_MOTION_EVENT_ACTION_DOWN, toggle_x, toggle_y));
+    assert_pressed_cleared(&test_widget);
+    EGUI_TEST_ASSERT_TRUE(egui_view_drawer_get_open(EGUI_VIEW_OF(&test_widget)));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, g_open_count);
+
+    seed_pressed_state(&test_widget, EGUI_VIEW_DRAWER_PART_TOGGLE);
+    EGUI_TEST_ASSERT_FALSE(send_key(EGUI_VIEW_OF(&test_widget), EGUI_KEY_CODE_ENTER));
+    assert_pressed_cleared(&test_widget);
+    EGUI_TEST_ASSERT_TRUE(egui_view_drawer_get_open(EGUI_VIEW_OF(&test_widget)));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, g_open_count);
+
+    egui_view_drawer_set_read_only_mode(EGUI_VIEW_OF(&test_widget), 0);
+    egui_view_set_enable(EGUI_VIEW_OF(&test_widget), 0);
+
+    seed_pressed_state(&test_widget, EGUI_VIEW_DRAWER_PART_TOGGLE);
+    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_VIEW_OF(&test_widget), EGUI_MOTION_EVENT_ACTION_DOWN, toggle_x, toggle_y));
+    assert_pressed_cleared(&test_widget);
+    EGUI_TEST_ASSERT_TRUE(egui_view_drawer_get_open(EGUI_VIEW_OF(&test_widget)));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, g_open_count);
+
+    seed_pressed_state(&test_widget, EGUI_VIEW_DRAWER_PART_TOGGLE);
+    EGUI_TEST_ASSERT_FALSE(send_key(EGUI_VIEW_OF(&test_widget), EGUI_KEY_CODE_ENTER));
+    assert_pressed_cleared(&test_widget);
+    EGUI_TEST_ASSERT_TRUE(egui_view_drawer_get_open(EGUI_VIEW_OF(&test_widget)));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, g_open_count);
+
+    egui_view_set_enable(EGUI_VIEW_OF(&test_widget), 1);
+    EGUI_TEST_ASSERT_TRUE(send_key(EGUI_VIEW_OF(&test_widget), EGUI_KEY_CODE_SPACE));
+    EGUI_TEST_ASSERT_FALSE(egui_view_drawer_get_open(EGUI_VIEW_OF(&test_widget)));
+    EGUI_TEST_ASSERT_EQUAL_INT(1, g_open_count);
 }
 
 void test_drawer_run(void)
@@ -284,5 +338,6 @@ void test_drawer_run(void)
     EGUI_TEST_RUN(test_drawer_touch_same_target_release_for_toggle_and_close);
     EGUI_TEST_RUN(test_drawer_keyboard_toggle_and_escape_close);
     EGUI_TEST_RUN(test_drawer_static_preview_consumes_input);
+    EGUI_TEST_RUN(test_drawer_read_only_and_disabled_guards_clear_pressed_state);
     EGUI_TEST_SUITE_END();
 }

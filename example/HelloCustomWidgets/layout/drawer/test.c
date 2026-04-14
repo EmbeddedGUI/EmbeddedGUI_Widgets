@@ -84,6 +84,11 @@ static void apply_primary_snapshot(uint8_t index)
     apply_snapshot(EGUI_VIEW_OF(&primary_drawer), &primary_snapshots[index % EGUI_ARRAY_SIZE(primary_snapshots)]);
 }
 
+static void apply_primary_default_state(void)
+{
+    apply_primary_snapshot(0);
+}
+
 static void apply_preview_states(void)
 {
     static const drawer_demo_snapshot_t compact_snapshot = {
@@ -148,7 +153,7 @@ void test_init_ui(void)
 #endif
     egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&read_only_drawer));
 
-    apply_primary_snapshot(0);
+    apply_primary_default_state();
     apply_preview_states();
 
     hello_custom_widgets_demo_apply_title_only_scaffold(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label), NULL, 0);
@@ -172,54 +177,49 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     case 0:
         if (first_call)
         {
-            apply_primary_snapshot(0);
+            apply_primary_default_state();
             apply_preview_states();
-        }
-        EGUI_SIM_SET_WAIT(p_action, DRAWER_RECORD_WAIT);
-        return true;
-    case 1:
-        if (first_call)
-        {
             recording_request_snapshot();
         }
         EGUI_SIM_SET_WAIT(p_action, DRAWER_RECORD_FRAME_WAIT);
         return true;
-    case 2:
+    case 1:
         if (first_call)
         {
             apply_primary_snapshot(1);
         }
         EGUI_SIM_SET_WAIT(p_action, DRAWER_RECORD_WAIT);
         return true;
-    case 3:
+    case 2:
         if (first_call)
         {
             recording_request_snapshot();
         }
         EGUI_SIM_SET_WAIT(p_action, DRAWER_RECORD_FRAME_WAIT);
         return true;
-    case 4:
+    case 3:
         if (first_call)
         {
             apply_primary_snapshot(2);
         }
         EGUI_SIM_SET_WAIT(p_action, DRAWER_RECORD_WAIT);
         return true;
-    case 5:
+    case 4:
         if (first_call)
         {
             recording_request_snapshot();
         }
         EGUI_SIM_SET_WAIT(p_action, DRAWER_RECORD_FRAME_WAIT);
         return true;
-    case 6:
+    case 5:
         if (first_call)
         {
-            apply_primary_snapshot(0);
+            apply_primary_default_state();
+            apply_preview_states();
         }
         EGUI_SIM_SET_WAIT(p_action, DRAWER_RECORD_WAIT);
         return true;
-    case 7:
+    case 6:
         if (first_call)
         {
             recording_request_snapshot();

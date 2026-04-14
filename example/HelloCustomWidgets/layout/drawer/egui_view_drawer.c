@@ -103,11 +103,24 @@ static egui_color_t drawer_mix_disabled(egui_color_t color)
 static uint8_t drawer_clear_pressed_state(egui_view_t *self)
 {
     EGUI_LOCAL_INIT(egui_view_drawer_t);
-    uint8_t had_pressed = (uint8_t)(egui_view_get_pressed(self) || local->pressed_part != EGUI_VIEW_DRAWER_PART_NONE);
+    uint8_t was_pressed = egui_view_get_pressed(self) ? 1 : 0;
+    uint8_t had_pressed = (uint8_t)(was_pressed || local->pressed_part != EGUI_VIEW_DRAWER_PART_NONE);
+
+    if (!had_pressed)
+    {
+        return 0;
+    }
 
     local->pressed_part = EGUI_VIEW_DRAWER_PART_NONE;
-    egui_view_set_pressed(self, 0);
-    return had_pressed;
+    if (was_pressed)
+    {
+        egui_view_set_pressed(self, 0);
+    }
+    else
+    {
+        egui_view_invalidate(self);
+    }
+    return 1;
 }
 
 static egui_dim_t drawer_radius(uint8_t compact_mode)
@@ -574,6 +587,8 @@ static void drawer_on_draw(egui_view_t *self)
     egui_color_t accent_color = local->accent_color;
     egui_color_t shadow_color = local->shadow_color;
     egui_region_t accent_strip;
+    uint8_t toggle_pressed;
+    uint8_t close_pressed;
 
     drawer_get_metrics(local, self, &metrics);
     if (metrics.region.size.width <= 0 || metrics.region.size.height <= 0)
@@ -619,9 +634,9 @@ static void drawer_on_draw(egui_view_t *self)
     {
         drawer_draw_focus_ring(self, &metrics.toggle_region, metrics.toggle_region.size.height / 2);
     }
+    toggle_pressed = (uint8_t)(local->pressed_part == EGUI_VIEW_DRAWER_PART_TOGGLE && egui_view_get_pressed(self) && !local->read_only_mode);
     drawer_draw_toggle(self, local, &metrics.toggle_region, egui_rgb_mix(surface_color, accent_color, local->open ? 8 : 4),
-                       egui_rgb_mix(border_color, accent_color, local->open ? 22 : 12), accent_color,
-                       local->pressed_part == EGUI_VIEW_DRAWER_PART_TOGGLE && !local->read_only_mode);
+                       egui_rgb_mix(border_color, accent_color, local->open ? 22 : 12), accent_color, toggle_pressed);
 
     if (!metrics.show_drawer)
     {
@@ -681,7 +696,8 @@ static void drawer_on_draw(egui_view_t *self)
     }
     if (metrics.show_close)
     {
-        drawer_draw_close(self, &metrics.close_region, text_color, local->pressed_part == EGUI_VIEW_DRAWER_PART_CLOSE && !local->read_only_mode);
+        close_pressed = (uint8_t)(local->pressed_part == EGUI_VIEW_DRAWER_PART_CLOSE && egui_view_get_pressed(self) && !local->read_only_mode);
+        drawer_draw_close(self, &metrics.close_region, text_color, close_pressed);
     }
 }
 
