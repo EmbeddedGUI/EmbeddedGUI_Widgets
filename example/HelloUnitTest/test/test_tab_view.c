@@ -98,7 +98,10 @@ static void setup_preview_widget(void)
     egui_view_tab_view_set_snapshots(EGUI_VIEW_OF(&preview_tab_view), unit_snapshots, 2);
     egui_view_tab_view_set_current_snapshot(EGUI_VIEW_OF(&preview_tab_view), 1);
     egui_view_tab_view_set_compact_mode(EGUI_VIEW_OF(&preview_tab_view), 1);
+    egui_view_tab_view_set_on_changed_listener(EGUI_VIEW_OF(&preview_tab_view), on_changed);
+    egui_view_tab_view_set_on_action_listener(EGUI_VIEW_OF(&preview_tab_view), on_action);
     egui_view_tab_view_override_static_preview_api(EGUI_VIEW_OF(&preview_tab_view), &preview_api);
+    reset_listener_state();
 }
 
 static void layout_view(egui_view_t *view, egui_dim_t x, egui_dim_t y, egui_dim_t width, egui_dim_t height)
@@ -569,11 +572,18 @@ static void test_tab_view_set_current_tab_ignores_closed_target(void)
     EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_tab_view_get_current_tab(EGUI_VIEW_OF(&test_tab_view)));
 }
 
-static void test_tab_view_static_preview_consumes_input_and_clears_pressed_state(void)
+static void test_tab_view_static_preview_consumes_input_and_keeps_state(void)
 {
     egui_region_t region;
 
     setup_preview_widget();
+    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_tab_view_get_current_snapshot(EGUI_VIEW_OF(&preview_tab_view)));
+    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_tab_view_get_current_tab(EGUI_VIEW_OF(&preview_tab_view)));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_TAB_VIEW_PART_TAB, egui_view_tab_view_get_current_part(EGUI_VIEW_OF(&preview_tab_view)));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, preview_tab_view.closed_mask);
+    EGUI_TEST_ASSERT_EQUAL_INT(1, preview_tab_view.compact_mode);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, changed_count);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, action_count);
     layout_preview_widget();
     EGUI_TEST_ASSERT_TRUE(egui_view_tab_view_get_tab_region(EGUI_VIEW_OF(&preview_tab_view), 1, &region));
 
@@ -584,6 +594,9 @@ static void test_tab_view_static_preview_consumes_input_and_clears_pressed_state
     EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_tab_view_get_current_tab(EGUI_VIEW_OF(&preview_tab_view)));
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_TAB_VIEW_PART_TAB, egui_view_tab_view_get_current_part(EGUI_VIEW_OF(&preview_tab_view)));
     EGUI_TEST_ASSERT_EQUAL_INT(0, preview_tab_view.closed_mask);
+    EGUI_TEST_ASSERT_EQUAL_INT(1, preview_tab_view.compact_mode);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, changed_count);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, action_count);
 
     seed_pressed_state(&preview_tab_view, 1, EGUI_VIEW_TAB_VIEW_PART_CLOSE);
     EGUI_TEST_ASSERT_TRUE(send_preview_key(EGUI_KEY_CODE_RIGHT));
@@ -592,6 +605,9 @@ static void test_tab_view_static_preview_consumes_input_and_clears_pressed_state
     EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_tab_view_get_current_tab(EGUI_VIEW_OF(&preview_tab_view)));
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_TAB_VIEW_PART_TAB, egui_view_tab_view_get_current_part(EGUI_VIEW_OF(&preview_tab_view)));
     EGUI_TEST_ASSERT_EQUAL_INT(0, preview_tab_view.closed_mask);
+    EGUI_TEST_ASSERT_EQUAL_INT(1, preview_tab_view.compact_mode);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, changed_count);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, action_count);
 }
 
 static void test_tab_view_view_disabled_ignores_input_and_clears_pressed_state(void)
@@ -650,7 +666,7 @@ void test_tab_view_run(void)
     EGUI_TEST_RUN(test_tab_view_read_only_and_view_disabled_guards_clear_pressed_state);
     EGUI_TEST_RUN(test_tab_view_compact_mode_hides_close_part_region);
     EGUI_TEST_RUN(test_tab_view_set_current_tab_ignores_closed_target);
-    EGUI_TEST_RUN(test_tab_view_static_preview_consumes_input_and_clears_pressed_state);
+    EGUI_TEST_RUN(test_tab_view_static_preview_consumes_input_and_keeps_state);
     EGUI_TEST_RUN(test_tab_view_view_disabled_ignores_input_and_clears_pressed_state);
     EGUI_TEST_SUITE_END();
 }
