@@ -18,7 +18,7 @@
 #define ACTIVITY_RING_BOTTOM_ROW_WIDTH  104
 #define ACTIVITY_RING_BOTTOM_ROW_HEIGHT 48
 #define ACTIVITY_RING_RECORD_WAIT       90
-#define ACTIVITY_RING_RECORD_FRAME_WAIT 170
+#define ACTIVITY_RING_RECORD_FRAME_WAIT 190
 
 static egui_view_linearlayout_t root_layout;
 static egui_view_label_t title_label;
@@ -38,7 +38,14 @@ EGUI_BACKGROUND_COLOR_STATIC_CONST_INIT(bg_page_panel, &bg_page_panel_params);
 
 static const char *title_text = "ProgressRing";
 
-static void update_primary_status(uint8_t value)
+static void update_primary_status_text(const char *text)
+{
+    snprintf(primary_status_text, sizeof(primary_status_text), "%s", text);
+    egui_view_label_set_text(EGUI_VIEW_OF(&activity_ring_status), primary_status_text);
+}
+
+#if EGUI_CONFIG_RECORDING_TEST
+static void update_primary_status_value(uint8_t value)
 {
     snprintf(primary_status_text, sizeof(primary_status_text), "%u%% active", value);
     egui_view_label_set_text(EGUI_VIEW_OF(&activity_ring_status), primary_status_text);
@@ -46,8 +53,16 @@ static void update_primary_status(uint8_t value)
 
 static void apply_primary_value(uint8_t value)
 {
+    hcw_activity_ring_apply_standard_style(EGUI_VIEW_OF(&activity_ring_primary));
     hcw_activity_ring_set_value(EGUI_VIEW_OF(&activity_ring_primary), value);
-    update_primary_status(value);
+    update_primary_status_value(value);
+}
+#endif
+
+static void apply_primary_indeterminate(void)
+{
+    hcw_activity_ring_apply_indeterminate_style(EGUI_VIEW_OF(&activity_ring_primary));
+    update_primary_status_text("Syncing...");
 }
 
 static void apply_preview_values(void)
@@ -73,9 +88,9 @@ void test_init_ui(void)
     egui_view_set_margin(EGUI_VIEW_OF(&title_label), 0, 8, 0, 8);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label));
 
-    egui_view_activity_ring_init(EGUI_VIEW_OF(&activity_ring_primary));
+    hcw_activity_ring_init(EGUI_VIEW_OF(&activity_ring_primary));
     egui_view_set_size(EGUI_VIEW_OF(&activity_ring_primary), ACTIVITY_RING_PRIMARY_SIZE, ACTIVITY_RING_PRIMARY_SIZE);
-    hcw_activity_ring_apply_standard_style(EGUI_VIEW_OF(&activity_ring_primary));
+    hcw_activity_ring_apply_indeterminate_style(EGUI_VIEW_OF(&activity_ring_primary));
     egui_view_set_margin(EGUI_VIEW_OF(&activity_ring_primary), 0, 0, 0, 6);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&activity_ring_primary));
 
@@ -93,7 +108,7 @@ void test_init_ui(void)
     egui_view_linearlayout_set_align_type(EGUI_VIEW_OF(&bottom_row), EGUI_ALIGN_VCENTER);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&bottom_row));
 
-    egui_view_activity_ring_init(EGUI_VIEW_OF(&activity_ring_compact));
+    hcw_activity_ring_init(EGUI_VIEW_OF(&activity_ring_compact));
     egui_view_set_size(EGUI_VIEW_OF(&activity_ring_compact), ACTIVITY_RING_PREVIEW_SIZE, ACTIVITY_RING_PREVIEW_SIZE);
     hcw_activity_ring_apply_compact_style(EGUI_VIEW_OF(&activity_ring_compact));
     hcw_activity_ring_override_static_preview_api(EGUI_VIEW_OF(&activity_ring_compact), &activity_ring_compact_api);
@@ -102,7 +117,7 @@ void test_init_ui(void)
 #endif
     egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&activity_ring_compact));
 
-    egui_view_activity_ring_init(EGUI_VIEW_OF(&activity_ring_paused));
+    hcw_activity_ring_init(EGUI_VIEW_OF(&activity_ring_paused));
     egui_view_set_size(EGUI_VIEW_OF(&activity_ring_paused), ACTIVITY_RING_PREVIEW_SIZE, ACTIVITY_RING_PREVIEW_SIZE);
     egui_view_set_margin(EGUI_VIEW_OF(&activity_ring_paused), 8, 0, 0, 0);
     hcw_activity_ring_apply_paused_style(EGUI_VIEW_OF(&activity_ring_paused));
@@ -112,7 +127,7 @@ void test_init_ui(void)
 #endif
     egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&activity_ring_paused));
 
-    apply_primary_value(24);
+    apply_primary_indeterminate();
     apply_preview_values();
 
     hello_custom_widgets_demo_apply_title_only_scaffold(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label), NULL, 0);
@@ -137,18 +152,14 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     case 0:
         if (first_call)
         {
-            apply_primary_value(24);
+            apply_primary_indeterminate();
             apply_preview_values();
             recording_request_snapshot();
         }
         EGUI_SIM_SET_WAIT(p_action, ACTIVITY_RING_RECORD_FRAME_WAIT);
         return true;
     case 1:
-        if (first_call)
-        {
-            apply_primary_value(62);
-        }
-        EGUI_SIM_SET_WAIT(p_action, ACTIVITY_RING_RECORD_WAIT);
+        EGUI_SIM_SET_WAIT(p_action, ACTIVITY_RING_RECORD_FRAME_WAIT + 40);
         return true;
     case 2:
         if (first_call)

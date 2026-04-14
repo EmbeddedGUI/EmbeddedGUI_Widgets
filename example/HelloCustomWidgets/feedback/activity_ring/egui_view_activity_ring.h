@@ -7,11 +7,15 @@
 extern "C" {
 #endif
 
+void hcw_activity_ring_init(egui_view_t *self);
 void hcw_activity_ring_apply_standard_style(egui_view_t *self);
 void hcw_activity_ring_apply_compact_style(egui_view_t *self);
 void hcw_activity_ring_apply_paused_style(egui_view_t *self);
+void hcw_activity_ring_apply_indeterminate_style(egui_view_t *self);
 void hcw_activity_ring_set_value(egui_view_t *self, uint8_t value);
 void hcw_activity_ring_set_palette(egui_view_t *self, egui_color_t ring_color, egui_color_t ring_bg_color);
+void hcw_activity_ring_set_indeterminate_mode(egui_view_t *self, uint8_t enable);
+uint8_t hcw_activity_ring_get_indeterminate_mode(egui_view_t *self);
 void hcw_activity_ring_override_static_preview_api(egui_view_t *self, egui_view_api_t *api);
 
 #ifdef __cplusplus

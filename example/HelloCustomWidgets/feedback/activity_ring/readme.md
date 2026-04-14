@@ -1,31 +1,28 @@
 # activity_ring 设计说明
 
 ## 参考来源
-- 参考设计系统：`Fluent 2`
+- 参考设计体系：`Fluent 2`
 - 参考开源库：`WPF UI`
 - 补充对照实现：`WinUI ProgressRing`
 - 对应组件名：`ProgressRing`
-- 本次保留状态：`standard`、`compact`、`paused`
-- 本次删除效果：多环 fitness 风格、页面级 guide、外部 preview 标签和与进度环无关的场景壳层
-- EGUI 适配说明：直接复用 SDK `activity_ring`，custom 层把多环能力收窄为单环 `ProgressRing` reference，不修改 `sdk/EmbeddedGUI`
+- 本次保留状态：`standard`、`compact`、`paused`、`indeterminate`
+- 本次删除效果：多环 fitness 风格、页面级 guide、与进度环无关的场景装饰
+- EGUI 适配说明：继续复用 SDK `activity_ring` 的单环绘制能力，在 custom 层补齐 `ProgressRing` 的单环 determinate / indeterminate 语义，不修改 `sdk/EmbeddedGUI`
 
-## 1. 为什么需要这个控件？
-`activity_ring` 适合表达圆形进度或持续任务状态，常见于同步、加载和后台处理反馈。当前 `HelloCustomWidgets` 的 `reference` 主线里还没有一版对齐 Fluent / WPF UI `ProgressRing` 的页面，因此需要补齐。
+## 1. 为什么需要这个控件
+`ProgressRing` 适合表达圆形进度或持续中的后台任务，常见于同步、加载和后台处理反馈。仓库里原先只有 determinate 的单环 reference 页面，还缺少 Fluent 主线里同样核心的 `indeterminate` 语义，因此需要继续收口。
 
-## 2. 为什么现有控件不够用？
-- `progress_bar` 适合线性进度，不适合需要圆形视觉重心的状态。
-- `skeleton` 表达内容占位，不表达单一任务进度。
-- SDK `activity_ring` 默认更偏多环能力展示，没有当前仓库统一的 Fluent `ProgressRing` reference 页面。
+## 2. 为什么现有控件不够用
+- `progress_bar` 面向线性进度，不适合圆形视觉重心。
+- `spinner` 更偏持续旋转反馈，不承担明确进度值语义。
+- SDK `activity_ring` 原始能力偏多环展示，这里需要的是收窄成单环 `ProgressRing` 的 reference 语义。
 
 ## 3. 目标场景与示例概览
-- 主控件展示单环 determinate `ProgressRing`，录制动作覆盖 `24% -> 62% -> 86%` 三个关键进度。
-- 主控件下方保留一行轻量状态文案，直接显示当前百分比，方便 runtime 截图确认数值变化。
-- 底部左侧展示 `compact` 静态对照，验证更小尺寸下的单环语义。
-- 底部右侧展示 `paused` 静态对照，验证暖色暂停态。
-- 页面结构统一收口为：标题 -> 主 `activity_ring` -> 当前值文案 -> `compact / paused` 双 preview。
-- preview 统一通过 `hcw_activity_ring_override_static_preview_api()` 吞掉 `touch / key`，不参与交互，只做 reference 对照。
-
-目标目录：`example/HelloCustomWidgets/feedback/activity_ring/`
+- 主控件默认展示 `indeterminate` 主环，用来表达“正在同步”。
+- 录制轨道里保留一段旋转中的 loading，再切到 `86% active` 的 determinate 完成态。
+- 底部保留两个静态 preview：
+  - `compact`
+  - `paused`
 
 ## 4. 视觉与布局规格
 - 根容器尺寸：`224 x 188`
@@ -34,12 +31,11 @@
 - 底部对照行尺寸：`104 x 48`
 - `compact` 预览：`48 x 48`
 - `paused` 预览：`48 x 48`
-- 页面结构：标题 + 主进度环 + 当前值文案 + 底部双预览
-- 样式约束：
-  - 页面背景保持浅灰 panel。
-  - 主环只保留单环 `ProgressRing` 语义，不展示多环健身记录风格。
-  - `standard` 和 `compact` 保持蓝色主线，`paused` 使用暖色强调暂停状态。
-  - 不引入额外图标、厚重卡片或高噪音渐变。
+
+视觉约束：
+- 页面继续保持浅灰背景与低噪音 Fluent 卡片感。
+- 主环只保留单环 `ProgressRing` 语义，不回退到多环 showcase 风格。
+- `paused` 使用暖色强调暂停态，`indeterminate` 继续沿用主蓝色体系。
 
 ## 5. 控件清单
 
@@ -47,35 +43,53 @@
 | --- | --- | ---: | --- | --- |
 | `root_layout` | `egui_view_linearlayout_t` | `224 x 188` | enabled | 页面根布局 |
 | `title_label` | `egui_view_label_t` | `224 x 18` | `ProgressRing` | 页面标题 |
-| `activity_ring_primary` | `egui_view_activity_ring_t` | `88 x 88` | `24%` | 主标准进度环 |
-| `activity_ring_status` | `egui_view_label_t` | `196 x 14` | `24% active` | 主进度值文案 |
-| `activity_ring_compact` | `egui_view_activity_ring_t` | `48 x 48` | `38%` | `compact` 静态对照 |
-| `activity_ring_paused` | `egui_view_activity_ring_t` | `48 x 48` | `56%` | `paused` 静态对照 |
+| `activity_ring_primary` | `egui_view_activity_ring_t` | `88 x 88` | `indeterminate` | 主环 |
+| `activity_ring_status` | `egui_view_label_t` | `196 x 14` | `Syncing...` | 当前状态文案 |
+| `activity_ring_compact` | `egui_view_activity_ring_t` | `48 x 48` | `38%` | `compact` 静态预览 |
+| `activity_ring_paused` | `egui_view_activity_ring_t` | `48 x 48` | `56%` | `paused` 静态预览 |
 
 ## 6. 状态覆盖矩阵
 
 | 区域 / 轨道 | 状态 | 说明 |
 | --- | --- | --- |
-| 主控件 | `24%` | 默认标准进度 |
-| 主控件 | `62%` | 中间进度态 |
-| 主控件 | `86%` | 接近完成态 |
-| `compact` | `38%` | 更小尺寸下的单环对照 |
-| `paused` | `56%` | 暂停态暖色对照 |
+| 主控件 | `indeterminate` | attach 后开始轻量旋转动画 |
+| 主控件 | `86% active` | 录制收尾时回落到 determinate 完成态 |
+| `compact` | `38%` | 小尺寸单环对照 |
+| `paused` | `56%` | 暖色暂停态对照 |
 
-## 7. `egui_port_get_recording_action()` 录制动作设计
-1. 重置主进度环、`compact` 和 `paused` 到默认状态。
-2. 请求默认截图。
-3. 程序化把主进度切到 `62%`。
-4. 请求第二张截图。
-5. 程序化把主进度切到 `86%`。
-6. 请求第三张截图。
-7. 再请求一张最终稳定帧，确认文案和底部 preview 没有黑白屏、裁切或脏态。
+## 7. 交互与状态语义
+- `ProgressRing` 仍然是 display-only 控件，不承接真实点击或导航职责。
+- `indeterminate` 通过 custom 层的轻量 timer 驱动：周期性更新 `start_angle` 和弧长，形成单环旋转效果。
+- `set_value()` 会退出 `indeterminate` 并恢复 determinate 语义。
+- `compact` / `paused` 预览继续通过 `hcw_activity_ring_override_static_preview_api()` 吞掉 `touch / key`，只做静态 reference 对照。
+- attach 到窗口后才启动动画 timer；detach 时必须停止 timer，避免残留状态。
 
-## 8. 编译、touch、runtime、单测与文档检查
+## 8. 本轮收口内容
+- 继续维护 `egui_view_activity_ring.h/.c`
+- 新增 / 补齐：
+  - `hcw_activity_ring_init()`
+  - `hcw_activity_ring_apply_indeterminate_style()`
+  - `hcw_activity_ring_set_indeterminate_mode()`
+  - `hcw_activity_ring_get_indeterminate_mode()`
+  - attach / detach 的 timer 生命周期管理
+- demo 页面改为主环默认 `indeterminate`，录制里再切回 determinate 完成态
+- 单测补齐动画状态、attach / detach 与 `set_value()` 从动画态回落的覆盖
+
+## 9. 录制动作设计
+1. 还原主环 `indeterminate` 初始相位
+2. 请求第一张截图
+3. 等待动画推进
+4. 请求第二张截图
+5. 切到 `86% active`
+6. 请求第三张截图
+7. 再请求一张最终稳定帧，确认状态文案和底部 preview 没有脏态
+
+## 10. 编译、测试与 runtime 验收
 ```bash
 make all APP=HelloCustomWidgets APP_SUB=feedback/activity_ring PORT=pc
 make all APP=HelloUnitTest PORT=pc_test
 output\main.exe
+
 python scripts/sync_widget_catalog.py
 python scripts/checks/check_touch_release_semantics.py --scope custom --category feedback
 python scripts/checks/check_docs_encoding.py
@@ -83,43 +97,16 @@ python scripts/checks/check_widget_catalog.py
 python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub feedback/activity_ring --track reference --timeout 10 --keep-screenshots
 python scripts/code_compile_check.py --custom-widgets --category feedback --bits64
 python scripts/code_runtime_check.py --app HelloCustomWidgets --category feedback --track reference --bits64
+python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub feedback/activity_ring
+python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_feedback_activity_ring
 ```
 
 验收重点：
-- 主进度环、当前值文案和底部 `compact / paused` preview 都必须完整可见。
-- 三张关键截图要能直接看出主环进度变化。
-- preview 不能响应触摸或键盘输入。
-- 页面不能回到多环 activity demo 的非主线风格。
+- 主环默认帧、动画推进帧和回落到 `86%` 的完成帧都必须完整可见。
+- 底部 `compact / paused` 预览始终保持静态 reference，不响应输入。
+- attach / detach 后不能留下残留 timer、黑白屏或裁切问题。
 
-## 9. 已知限制与后续方向
-- 当前只覆盖单环 determinate `ProgressRing`，不扩展旋转式 indeterminate 动画。
+## 11. 已知限制
+- 当前 `indeterminate` 仍是轻量 reference 动画，不追求完整 WinUI easing。
+- 当前仍然只维护单环 `ProgressRing`，不恢复多环 activity demo 风格。
 - 当前不叠加图标、剩余时间或业务步骤说明。
-- 当前优先保证 `reference` 页面、单测和 catalog 闭环，后续如需更强 loading 语义再单独评估 `spinner`。
-
-## 10. 与现有控件的边界
-- 相比 `progress_bar`：这里用圆形视觉重心表达进度，而不是线性条形。
-- 相比 `skeleton`：这里表达任务进度，不表达内容占位。
-- 相比 SDK 原始 `activity_ring` 示例：这里不保留多环运动记录风格，只收敛为单环 `ProgressRing`。
-
-## 11. 参考设计系统与开源母本
-- 参考设计系统：`Fluent 2`
-- 参考开源库：`WPF UI`
-- 补充对照实现：`WinUI ProgressRing`
-
-## 12. 对应组件名与本次保留的核心状态
-- 对应组件名：`ProgressRing`
-- 本次保留核心状态：
-  - `standard`
-  - `compact`
-  - `paused`
-
-## 13. 相比参考原型删除的效果或装饰
-- 删除多环 fitness 结构和强对比配色。
-- 删除页面级 guide、说明标签和外部 preview 标题。
-- 删除与业务流程强绑定的说明壳层。
-
-## 14. EGUI 适配时的简化点与约束
-- 直接复用 SDK `activity_ring` 的圆弧绘制，只在 custom 层固定为单环语义。
-- 页面中的进度变化全部程序化驱动，保证 runtime 录制稳定。
-- preview 统一走静态 API，不承担任何真实交互职责。
-- 当前只作为 `HelloCustomWidgets` 的 `reference widget` 维护，是否下沉框架层后续再评估。

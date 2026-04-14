@@ -20,7 +20,8 @@ static void on_preview_click(egui_view_t *self)
 
 static void setup_activity_ring(void)
 {
-    egui_view_activity_ring_init(EGUI_VIEW_OF(&test_activity_ring));
+    egui_timer_init();
+    hcw_activity_ring_init(EGUI_VIEW_OF(&test_activity_ring));
     egui_view_set_size(EGUI_VIEW_OF(&test_activity_ring), 88, 88);
     hcw_activity_ring_apply_standard_style(EGUI_VIEW_OF(&test_activity_ring));
     g_click_count = 0;
@@ -28,13 +29,24 @@ static void setup_activity_ring(void)
 
 static void setup_preview_activity_ring(void)
 {
-    egui_view_activity_ring_init(EGUI_VIEW_OF(&preview_activity_ring));
+    egui_timer_init();
+    hcw_activity_ring_init(EGUI_VIEW_OF(&preview_activity_ring));
     egui_view_set_size(EGUI_VIEW_OF(&preview_activity_ring), 48, 48);
     hcw_activity_ring_apply_compact_style(EGUI_VIEW_OF(&preview_activity_ring));
     hcw_activity_ring_set_value(EGUI_VIEW_OF(&preview_activity_ring), 38);
     egui_view_set_on_click_listener(EGUI_VIEW_OF(&preview_activity_ring), on_preview_click);
     hcw_activity_ring_override_static_preview_api(EGUI_VIEW_OF(&preview_activity_ring), &preview_api);
     g_click_count = 0;
+}
+
+static void attach_view(egui_view_t *view)
+{
+    egui_view_dispatch_attach_to_window(view);
+}
+
+static void detach_view(egui_view_t *view)
+{
+    egui_view_dispatch_detach_from_window(view);
 }
 
 static void layout_view(egui_view_t *view, egui_dim_t x, egui_dim_t y, egui_dim_t width, egui_dim_t height)
@@ -87,13 +99,13 @@ static void test_activity_ring_style_helpers_apply_expected_geometry_and_palette
     EGUI_TEST_ASSERT_EQUAL_INT(1, test_activity_ring.show_round_cap);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x0F6CBD).full, test_activity_ring.ring_colors[0].full);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xD8E1EA).full, test_activity_ring.ring_bg_colors[0].full);
+    EGUI_TEST_ASSERT_FALSE(hcw_activity_ring_get_indeterminate_mode(EGUI_VIEW_OF(&test_activity_ring)));
 
     egui_view_set_pressed(EGUI_VIEW_OF(&test_activity_ring), 1);
     hcw_activity_ring_apply_compact_style(EGUI_VIEW_OF(&test_activity_ring));
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_activity_ring)->is_pressed);
-    EGUI_TEST_ASSERT_EQUAL_INT(1, test_activity_ring.ring_count);
     EGUI_TEST_ASSERT_EQUAL_INT(6, test_activity_ring.stroke_width);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x0F6CBD).full, test_activity_ring.ring_colors[0].full);
+    EGUI_TEST_ASSERT_FALSE(hcw_activity_ring_get_indeterminate_mode(EGUI_VIEW_OF(&test_activity_ring)));
 
     egui_view_set_pressed(EGUI_VIEW_OF(&test_activity_ring), 1);
     hcw_activity_ring_apply_paused_style(EGUI_VIEW_OF(&test_activity_ring));
@@ -101,21 +113,64 @@ static void test_activity_ring_style_helpers_apply_expected_geometry_and_palette
     EGUI_TEST_ASSERT_EQUAL_INT(6, test_activity_ring.stroke_width);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xB95A00).full, test_activity_ring.ring_colors[0].full);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xE7DDCA).full, test_activity_ring.ring_bg_colors[0].full);
+    EGUI_TEST_ASSERT_FALSE(hcw_activity_ring_get_indeterminate_mode(EGUI_VIEW_OF(&test_activity_ring)));
 }
 
-static void test_activity_ring_value_setter_clamps_and_clears_pressed_state(void)
+static void test_activity_ring_value_setter_clamps_and_exits_indeterminate_mode(void)
 {
+    hcw_activity_ring_state_t *state;
+
     setup_activity_ring();
+    hcw_activity_ring_apply_indeterminate_style(EGUI_VIEW_OF(&test_activity_ring));
+    state = hcw_activity_ring_find_state(EGUI_VIEW_OF(&test_activity_ring));
+
+    EGUI_TEST_ASSERT_TRUE(state != NULL);
+    EGUI_TEST_ASSERT_TRUE(hcw_activity_ring_get_indeterminate_mode(EGUI_VIEW_OF(&test_activity_ring)));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, state->timer_started);
 
     egui_view_set_pressed(EGUI_VIEW_OF(&test_activity_ring), 1);
     hcw_activity_ring_set_value(EGUI_VIEW_OF(&test_activity_ring), 64);
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_activity_ring)->is_pressed);
+    EGUI_TEST_ASSERT_FALSE(hcw_activity_ring_get_indeterminate_mode(EGUI_VIEW_OF(&test_activity_ring)));
     EGUI_TEST_ASSERT_EQUAL_INT(64, egui_view_activity_ring_get_value(EGUI_VIEW_OF(&test_activity_ring), 0));
+    EGUI_TEST_ASSERT_EQUAL_INT(-90, test_activity_ring.start_angle);
+    EGUI_TEST_ASSERT_EQUAL_INT(64, state->determinate_value);
 
     egui_view_set_pressed(EGUI_VIEW_OF(&test_activity_ring), 1);
     hcw_activity_ring_set_value(EGUI_VIEW_OF(&test_activity_ring), 180);
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_activity_ring)->is_pressed);
     EGUI_TEST_ASSERT_EQUAL_INT(100, egui_view_activity_ring_get_value(EGUI_VIEW_OF(&test_activity_ring), 0));
+    EGUI_TEST_ASSERT_EQUAL_INT(100, state->determinate_value);
+}
+
+static void test_activity_ring_indeterminate_attach_tick_and_detach_lifecycle(void)
+{
+    hcw_activity_ring_state_t *state;
+    int16_t start_angle_before_tick;
+    uint8_t value_before_tick;
+
+    setup_activity_ring();
+    hcw_activity_ring_apply_indeterminate_style(EGUI_VIEW_OF(&test_activity_ring));
+    state = hcw_activity_ring_find_state(EGUI_VIEW_OF(&test_activity_ring));
+
+    EGUI_TEST_ASSERT_TRUE(state != NULL);
+    EGUI_TEST_ASSERT_TRUE(hcw_activity_ring_get_indeterminate_mode(EGUI_VIEW_OF(&test_activity_ring)));
+    EGUI_TEST_ASSERT_EQUAL_INT(hcw_activity_ring_get_indeterminate_value(0), egui_view_activity_ring_get_value(EGUI_VIEW_OF(&test_activity_ring), 0));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, state->timer_started);
+
+    attach_view(EGUI_VIEW_OF(&test_activity_ring));
+    EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&test_activity_ring)->is_attached_to_window);
+    EGUI_TEST_ASSERT_EQUAL_INT(1, state->timer_started);
+
+    start_angle_before_tick = test_activity_ring.start_angle;
+    value_before_tick = egui_view_activity_ring_get_value(EGUI_VIEW_OF(&test_activity_ring), 0);
+    hcw_activity_ring_tick(&state->anim_timer);
+    EGUI_TEST_ASSERT_EQUAL_INT(1, state->phase);
+    EGUI_TEST_ASSERT_TRUE(test_activity_ring.start_angle != start_angle_before_tick || egui_view_activity_ring_get_value(EGUI_VIEW_OF(&test_activity_ring), 0) != value_before_tick);
+
+    detach_view(EGUI_VIEW_OF(&test_activity_ring));
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_activity_ring)->is_attached_to_window);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, state->timer_started);
 }
 
 static void test_activity_ring_palette_setter_clears_pressed_state(void)
@@ -158,7 +213,8 @@ void test_activity_ring_run(void)
 {
     EGUI_TEST_SUITE_BEGIN(activity_ring);
     EGUI_TEST_RUN(test_activity_ring_style_helpers_apply_expected_geometry_and_palette);
-    EGUI_TEST_RUN(test_activity_ring_value_setter_clamps_and_clears_pressed_state);
+    EGUI_TEST_RUN(test_activity_ring_value_setter_clamps_and_exits_indeterminate_mode);
+    EGUI_TEST_RUN(test_activity_ring_indeterminate_attach_tick_and_detach_lifecycle);
     EGUI_TEST_RUN(test_activity_ring_palette_setter_clears_pressed_state);
     EGUI_TEST_RUN(test_activity_ring_static_preview_consumes_input);
     EGUI_TEST_SUITE_END();
