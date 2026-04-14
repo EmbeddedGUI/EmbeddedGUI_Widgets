@@ -54,7 +54,7 @@ static void setup_preview_bar(void)
     egui_view_message_bar_init(EGUI_VIEW_OF(&preview_bar));
     egui_view_set_size(EGUI_VIEW_OF(&preview_bar), 104, 82);
     egui_view_message_bar_set_snapshots(EGUI_VIEW_OF(&preview_bar), g_snapshots, 4);
-    egui_view_message_bar_set_current_snapshot(EGUI_VIEW_OF(&preview_bar), 1);
+    egui_view_message_bar_set_current_snapshot(EGUI_VIEW_OF(&preview_bar), 0);
     egui_view_message_bar_set_compact_mode(EGUI_VIEW_OF(&preview_bar), 1);
     egui_view_set_on_click_listener(EGUI_VIEW_OF(&preview_bar), on_bar_click);
     egui_view_message_bar_override_static_preview_api(EGUI_VIEW_OF(&preview_bar), &preview_api);
@@ -342,25 +342,27 @@ static void test_message_bar_read_only_and_disabled_guards_clear_pressed_state(v
     EGUI_TEST_ASSERT_EQUAL_INT(1, click_count);
 }
 
-static void test_message_bar_static_preview_consumes_input_and_clears_pressed_state(void)
+static void test_message_bar_static_preview_consumes_input_and_keeps_snapshot(void)
 {
     egui_dim_t x;
     egui_dim_t y;
 
     setup_preview_bar();
+    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_message_bar_get_current_snapshot(EGUI_VIEW_OF(&preview_bar)));
+    EGUI_TEST_ASSERT_EQUAL_INT(1, preview_bar.compact_mode);
     layout_preview_bar();
     get_view_center(EGUI_VIEW_OF(&preview_bar), &x, &y);
 
     seed_pressed_state(EGUI_VIEW_OF(&preview_bar), 1);
     EGUI_TEST_ASSERT_TRUE(send_preview_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
     assert_pressed_cleared(EGUI_VIEW_OF(&preview_bar));
-    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_message_bar_get_current_snapshot(EGUI_VIEW_OF(&preview_bar)));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_message_bar_get_current_snapshot(EGUI_VIEW_OF(&preview_bar)));
     EGUI_TEST_ASSERT_EQUAL_INT(0, click_count);
 
     seed_pressed_state(EGUI_VIEW_OF(&preview_bar), 1);
     EGUI_TEST_ASSERT_TRUE(send_preview_key(EGUI_KEY_CODE_ENTER));
     assert_pressed_cleared(EGUI_VIEW_OF(&preview_bar));
-    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_message_bar_get_current_snapshot(EGUI_VIEW_OF(&preview_bar)));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_message_bar_get_current_snapshot(EGUI_VIEW_OF(&preview_bar)));
     EGUI_TEST_ASSERT_EQUAL_INT(0, click_count);
 }
 
@@ -398,7 +400,7 @@ void test_message_bar_run(void)
     EGUI_TEST_RUN(test_message_bar_keyboard_click_listener);
     EGUI_TEST_RUN(test_message_bar_compact_mode_clears_pressed_and_keeps_click_behavior);
     EGUI_TEST_RUN(test_message_bar_read_only_and_disabled_guards_clear_pressed_state);
-    EGUI_TEST_RUN(test_message_bar_static_preview_consumes_input_and_clears_pressed_state);
+    EGUI_TEST_RUN(test_message_bar_static_preview_consumes_input_and_keeps_snapshot);
     EGUI_TEST_RUN(test_message_bar_internal_helpers_cover_severity_and_text);
     EGUI_TEST_SUITE_END();
 }
