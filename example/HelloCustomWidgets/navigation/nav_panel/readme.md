@@ -27,7 +27,7 @@
 - 底部左侧展示 `compact` 静态对照，验证窄宽度下的 rail 视图。
 - 底部右侧展示 `read only` 静态对照，验证冻结交互后的弱化 rail。
 - 页面结构统一收口为：标题 -> 主 `nav_panel` -> `compact / read only`。
-- 旧的 preview 列容器、外部标签和页面桥接逻辑已删除，底部两个 preview 直接挂在同一行容器下。
+- 底部两个 preview 只负责静态对照，不再承担切换或清焦收尾职责。
 
 目标目录：`example/HelloCustomWidgets/navigation/nav_panel/`
 
@@ -52,8 +52,8 @@
 | `panel_primary` | `egui_view_nav_panel_t` | `198 x 108` | `Overview` | 主 `NavigationView` |
 | `panel_compact` | `egui_view_nav_panel_t` | `58 x 74` | `Home` | 底部 compact 静态对照 |
 | `panel_read_only` | `egui_view_nav_panel_t` | `58 x 74` | `Teams` | 底部 read only 静态对照 |
-| `primary_items` | `egui_view_nav_panel_item_t[3]` | - | `Overview / Library / People` | 主控件录制轨道 |
-| `compact_items` | `egui_view_nav_panel_item_t[3]` | - | `Home / Files / Rules` | compact 预览程序化切换 |
+| `primary_items` | `egui_view_nav_panel_item_t[3]` | - | `Overview / Library / People` | 主控件状态轨道 |
+| `compact_items` | `egui_view_nav_panel_item_t[3]` | - | `Home / Files / Rules` | compact 固定对照数据 |
 | `read_only_items` | `egui_view_nav_panel_item_t[3]` | - | `Feed / Teams / Audit` | read only 固定对照数据 |
 
 ## 6. 状态覆盖矩阵
@@ -63,9 +63,7 @@
 | 主控件 | `Overview` | 默认主状态，验证标准导航面板 |
 | 主控件 | `Library` | 程序化切换第二项 |
 | 主控件 | `People` | 程序化切换第三项 |
-| 主控件 | `Library` | 回切中间状态，验证 selected row 稳定 |
-| `compact` | `Home` | 默认 compact 对照 |
-| `compact` | `Rules` | 第二组 compact 对照 |
+| `compact` | `Home` | 固定 compact 对照，不参与状态切换 |
 | `read only` | `Teams` | 固定只读轨道，禁 touch、禁 focus、禁键盘 |
 
 - 主控件继续保留真实 touch / key 导航闭环，并补齐 same-target release 语义：
@@ -76,36 +74,36 @@
 - 底部 `compact / read only` 预览统一通过 `egui_view_nav_panel_override_static_preview_api()` 收口：
   - preview 会吞掉 touch / key 输入。
   - preview 只清残留 `pressed`，不改 `current_index`，也不触发 selection changed。
-  - preview 点击只保留最小收尾逻辑：清主控件 focus，不承担任何额外切换职责。
 
 ## 7. `egui_port_get_recording_action()` 录制动作设计
 
 1. 重置主控件、`compact` 和 `read only` 到默认状态。
-2. 请求默认截图。
+2. 输出默认截图。
 3. 程序化切换主控件到 `Library`。
-4. 请求第二张截图。
+4. 输出第二张截图。
 5. 程序化切换主控件到 `People`。
-6. 请求第三张截图。
-7. 程序化回切主控件到 `Library`。
-8. 请求第四张截图。
-9. 程序化切换 `compact` 到 `Rules`。
-10. 请求 `compact` 切换后的截图。
-11. 点击 `compact` 预览，确认 static preview 只做清焦收尾。
-12. 输出 preview 点击后的收尾帧与最终稳定帧。
+6. 输出第三张截图。
+7. 恢复主控件默认状态，输出最终稳定帧。
+
+录制只导出主控件的状态变化。底部 `compact / read only` preview 在整条 reference 轨道中保持静态，不承担切换、桥接或收尾职责。
 
 ## 8. 编译、touch、runtime、单测与文档检查
 
 ```bash
-make clean APP=HelloUnitTest PORT=pc_test
+make all APP=HelloCustomWidgets APP_SUB=navigation/nav_panel PORT=pc
+
 make all APP=HelloUnitTest PORT=pc_test
 output\main.exe
 
-make clean APP=HelloCustomWidgets APP_SUB=navigation/nav_panel PORT=pc
-make all APP=HelloCustomWidgets APP_SUB=navigation/nav_panel PORT=pc
+python scripts/sync_widget_catalog.py
 python scripts/checks/check_touch_release_semantics.py --scope custom --category navigation
-python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub navigation/nav_panel --track reference --timeout 10 --keep-screenshots
-
 python scripts/checks/check_docs_encoding.py
+python scripts/checks/check_widget_catalog.py
+python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub navigation/nav_panel --track reference --timeout 10 --keep-screenshots
+python scripts/code_compile_check.py --custom-widgets --category navigation --bits64
+python scripts/code_runtime_check.py --app HelloCustomWidgets --category navigation --track reference --bits64
+python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub navigation/nav_panel
+python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_navigation_nav_panel
 ```
 
 验收重点：
@@ -117,12 +115,7 @@ python scripts/checks/check_docs_encoding.py
 - `items / header / footer / palette / current selection / compact / read only / view disabled` 切换后不能残留 row 的 `pressed` 高亮或下压位移渲染。
 - 主控件必须满足 same-target release：`DOWN(A) -> MOVE(B) -> UP(B)` 不提交，只有回到 A 后 `UP(A)` 才提交。
 - `read_only_mode / !enable` 和 static preview 不仅要忽略后续 touch / key 输入，还要在收到新输入时先清理残留 `pressed` 状态。
-- 需要抽查 runtime 输出中的以下关键帧：
-  - 默认帧
-  - 主控件 `Library / People / Library` 切换帧
-  - `compact` 切换帧
-  - preview 点击后的收尾帧
-  - 最终稳定帧
+- runtime 需要重点复核主区域 `Overview -> Library -> People -> Overview` 的变化，以及底部 `compact / read only` preview 的静态一致性。
 - `HelloUnitTest` 里已有的 selection clamp、metrics/hit testing、same-target release、键盘导航、static preview 和 `read only` / disabled guard 语义不能回归。
 
 ## 9. 已知限制与后续方向
@@ -156,7 +149,7 @@ python scripts/checks/check_docs_encoding.py
 ## 13. 相比参考原型删除的效果或装饰
 
 - 删除页面级 `guide`、状态文案、preview 标签和旧的双列 preview 包裹结构。
-- 删除 preview 参与交互和页面桥接的职责。
+- 删除 preview 参与交互、桥接和清焦收尾的职责。
 - 删除过重 selected row、过强 indicator 与过亮 footer/badge chrome。
 - 删除与 reference 无关的说明性外壳和场景叙事。
 
@@ -165,6 +158,6 @@ python scripts/checks/check_docs_encoding.py
 - 使用固定导航项数据保证录制稳定。
 - `compact / read only` 直接复用同一控件模式，减少额外页面壳层。
 - `read only` 直接使用 `read_only_mode`，避免页面语义和控件实现脱节。
-- 通过程序化切换 current index，再补一个 preview 点击收尾帧，保证 runtime 能稳定抓到导航状态和交互收尾。
+- 通过程序化切换主控件 `current_index` 导出稳定状态帧，不再给 preview 分配额外交互职责。
 - 通过统一的 `clear_pressed_state()` 与 static preview API，把 setter、guard、preview 的状态清理收口到同一套语义。
 - 当前先作为 `HelloCustomWidgets` 的 reference widget 维护，后续是否下沉框架层再单独评估。

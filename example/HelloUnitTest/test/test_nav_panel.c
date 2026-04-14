@@ -423,12 +423,14 @@ static void test_nav_panel_read_only_and_view_disabled_guards_clear_pressed_stat
     EGUI_TEST_ASSERT_EQUAL_INT(1, g_selection_index);
 }
 
-static void test_nav_panel_static_preview_consumes_input_and_clears_pressed_state(void)
+static void test_nav_panel_static_preview_consumes_input_and_keeps_state(void)
 {
     egui_dim_t x;
     egui_dim_t y;
 
     setup_preview_nav_panel(1);
+    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_nav_panel_get_current_index(EGUI_VIEW_OF(&preview_nav_panel)));
+    EGUI_TEST_ASSERT_EQUAL_INT(1, preview_nav_panel.compact_mode);
     layout_preview_nav_panel();
     EGUI_TEST_ASSERT_TRUE(get_preview_item_center(1, &x, &y));
 
@@ -456,6 +458,6 @@ void test_nav_panel_run(void)
     EGUI_TEST_RUN(test_nav_panel_keyboard_navigation);
     EGUI_TEST_RUN(test_nav_panel_compact_mode_clears_pressed_and_keeps_selection_behavior);
     EGUI_TEST_RUN(test_nav_panel_read_only_and_view_disabled_guards_clear_pressed_state);
-    EGUI_TEST_RUN(test_nav_panel_static_preview_consumes_input_and_clears_pressed_state);
+    EGUI_TEST_RUN(test_nav_panel_static_preview_consumes_input_and_keeps_state);
     EGUI_TEST_SUITE_END();
 }
