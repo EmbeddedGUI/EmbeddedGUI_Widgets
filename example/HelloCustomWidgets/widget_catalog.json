@@ -760,6 +760,16 @@
     "doc_state": "ok"
   },
   {
+    "id": "layout/list",
+    "track": "reference",
+    "visibility": "public",
+    "reference_system": "Fluent 2",
+    "reference_library": "Fluent UI React",
+    "reference_component": "List",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
     "id": "layout/master_detail",
     "track": "reference",
     "visibility": "public",

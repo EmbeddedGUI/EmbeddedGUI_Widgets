@@ -9,10 +9,10 @@
 
 ## 当前快照
 
-- 截至 `2026-04-14`，`example/HelloCustomWidgets/` 当前保留 `104` 个控件目录。
+- 截至 `2026-04-14`，`example/HelloCustomWidgets/` 当前保留 `105` 个控件目录。
 - 所有保留控件均来自 `reference` 主线：
   - `input = 33`
-  - `layout = 28`
+  - `layout = 29`
   - `navigation = 13`
   - `display = 20`
   - `feedback = 10`
@@ -89,6 +89,7 @@
 - `grid_splitter` -> `GridSplitter`
 - `grid_view` -> `GridView`
 - `items_repeater` -> `ItemsRepeater`
+- `list` -> `List`
 - `master_detail` -> `MasterDetail`
 - `parallax_view` -> `ParallaxView`
 - `relative_panel` -> `RelativePanel`
@@ -158,6 +159,11 @@
 - `toast_stack` -> `Toast`
 
 ## 最近完成的收口动作
+
+- `2026-04-14`
+  - 新增 `layout/list` reference 控件：补齐符合 Fluent 2 / Fluent UI React `List` 语义的轻量单列 custom wrapper，在 custom 层实现 `title / meta / badge / tone` 列表行、单选高亮、same-target release、`Up / Down / Home / End / Tab` 键盘导航，以及 `compact / read only` 静态 preview，不修改 SDK。
+  - `example/HelloCustomWidgets/layout/list/egui_view_list.c/.h` 新增 `egui_view_reference_list_init()`、`set_items()`、`get_item_count()`、`set_current_index()`、`get_current_index()`、`set_on_selection_changed_listener()`、`set_font()`、`set_meta_font()`、`set_compact_mode()`、`get_compact_mode()`、`set_read_only_mode()`、`get_read_only_mode()`、`set_palette()`、`get_item_region()` 与 `override_static_preview_api()`；`example/HelloCustomWidgets/layout/list/test.c`、`readme.md`、`example/HelloUnitTest/test/test_list.c/.h`、`example/HelloUnitTest/uicode.c`、`example/HelloCustomWidgets/widget_catalog.json` 与 `web/catalog-policy.json` 已同步接入，并已把关键截图归档到本地 `iteration_log/` 供验收复核。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=layout/list PORT=pc`、`make all APP=HelloUnitTest PORT=pc_test`（在 `X:\` 短路径下）、`X:\output\main.exe`（总计 `834 / 834`，`list` suite `5 / 5`）、`python scripts/sync_widget_catalog.py`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category layout`、`python scripts/checks/check_docs_encoding.py`、`python scripts/checks/check_widget_catalog.py`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub layout/list --track reference --timeout 10 --keep-screenshots`、`python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub layout/list` 与对应 `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_layout_list` 验收，确认 `list` 已接入 reference 主线、runtime 链路与 web 发布链路。
 
 - `2026-04-14`
   - 新增 `layout/drawer` reference 控件：补齐符合 Fluent 2 / Fluent UI React `Drawer` 语义的轻量 custom wrapper，在 custom 层实现 `inline / overlay` 抽屉壳层、`start / end` 锚点、`open / closed` 开合、edge `toggle` 与 header `close` 语义，并保留 `compact / read only` 静态 preview，不修改 SDK。

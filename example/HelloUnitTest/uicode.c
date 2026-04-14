@@ -15,6 +15,7 @@
 #include "test/test_canvas.h"
 #include "test/test_dock_panel.h"
 #include "test/test_drawer.h"
+#include "test/test_list.h"
 #include "test/test_card_action.h"
 #include "test/test_card_expander.h"
 #include "test/test_card_control.h"
@@ -140,6 +141,7 @@ void uicode_create_ui(void)
     test_canvas_run();
     test_dock_panel_run();
     test_drawer_run();
+    test_list_run();
     test_card_action_run();
     test_card_expander_run();
     test_card_control_run();
