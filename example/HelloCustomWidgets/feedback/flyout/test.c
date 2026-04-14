@@ -17,9 +17,9 @@
 #define FLYOUT_BOTTOM_ROW_HEIGHT 80
 #define FLYOUT_RECORD_WAIT       100
 #define FLYOUT_RECORD_FRAME_WAIT 180
+#define FLYOUT_RECORD_FINAL_WAIT 520
 
 #define PRIMARY_SNAPSHOT_COUNT ((uint8_t)(sizeof(primary_snapshots) / sizeof(primary_snapshots[0])))
-#define COMPACT_SNAPSHOT_COUNT ((uint8_t)(sizeof(compact_snapshots) / sizeof(compact_snapshots[0])))
 
 static egui_view_linearlayout_t root_layout;
 static egui_view_label_t title_label;
@@ -50,8 +50,6 @@ static const egui_view_flyout_snapshot_t primary_snapshots[] = {
 static const egui_view_flyout_snapshot_t compact_snapshots[] = {
         {"Filter", "", "Compact flyout", "", "Open", "Later", "", EGUI_VIEW_FLYOUT_TONE_ACCENT, EGUI_VIEW_FLYOUT_PLACEMENT_BOTTOM, 1, 1, 1,
          EGUI_VIEW_FLYOUT_PART_PRIMARY, -8},
-        {"Share", "", "Quick actions", "", "Send", "Mute", "", EGUI_VIEW_FLYOUT_TONE_SUCCESS, EGUI_VIEW_FLYOUT_PLACEMENT_TOP, 1, 1, 1,
-         EGUI_VIEW_FLYOUT_PART_SECONDARY, 8},
 };
 
 static const egui_view_flyout_snapshot_t disabled_snapshot = {
@@ -63,24 +61,11 @@ static void apply_primary_snapshot(uint8_t index)
     egui_view_flyout_set_current_snapshot(EGUI_VIEW_OF(&flyout_primary), index % PRIMARY_SNAPSHOT_COUNT);
 }
 
-static void apply_compact_snapshot(uint8_t index)
+static void apply_preview_states(void)
 {
-    egui_view_flyout_set_current_snapshot(EGUI_VIEW_OF(&flyout_compact), index % COMPACT_SNAPSHOT_COUNT);
-}
-
-static int dismiss_primary_focus_on_preview_touch(egui_view_t *self, egui_motion_event_t *event)
-{
-    EGUI_UNUSED(self);
-
-#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
-    if (event->type == EGUI_MOTION_EVENT_ACTION_DOWN)
-    {
-        egui_view_clear_focus(EGUI_VIEW_OF(&flyout_primary));
-    }
-#else
-    EGUI_UNUSED(event);
-#endif
-    return 1;
+    egui_view_flyout_set_current_snapshot(EGUI_VIEW_OF(&flyout_compact), 0);
+    egui_view_flyout_set_current_snapshot(EGUI_VIEW_OF(&flyout_disabled), 0);
+    egui_view_flyout_set_disabled_mode(EGUI_VIEW_OF(&flyout_disabled), 1);
 }
 
 #if EGUI_CONFIG_RECORDING_TEST
@@ -97,17 +82,6 @@ static void set_click_flyout_part(egui_sim_action_t *p_action, egui_view_t *view
     p_action->type = EGUI_SIM_ACTION_CLICK;
     p_action->x1 = region.location.x + region.size.width / 2;
     p_action->y1 = region.location.y + region.size.height / 2;
-    p_action->x2 = 0;
-    p_action->y2 = 0;
-    p_action->steps = 0;
-    p_action->interval_ms = interval_ms;
-}
-
-static void set_click_view_center(egui_sim_action_t *p_action, egui_view_t *view, int interval_ms)
-{
-    p_action->type = EGUI_SIM_ACTION_CLICK;
-    p_action->x1 = view->region_screen.location.x + view->region_screen.size.width / 2;
-    p_action->y1 = view->region_screen.location.y + view->region_screen.size.height / 2;
     p_action->x2 = 0;
     p_action->y2 = 0;
     p_action->steps = 0;
@@ -167,12 +141,9 @@ void test_init_ui(void)
     egui_view_set_size(EGUI_VIEW_OF(&flyout_compact), FLYOUT_PREVIEW_WIDTH, FLYOUT_PREVIEW_HEIGHT);
     egui_view_flyout_set_font(EGUI_VIEW_OF(&flyout_compact), (const egui_font_t *)&egui_res_font_montserrat_8_4);
     egui_view_flyout_set_meta_font(EGUI_VIEW_OF(&flyout_compact), (const egui_font_t *)&egui_res_font_montserrat_8_4);
-    egui_view_flyout_set_snapshots(EGUI_VIEW_OF(&flyout_compact), compact_snapshots, COMPACT_SNAPSHOT_COUNT);
+    egui_view_flyout_set_snapshots(EGUI_VIEW_OF(&flyout_compact), compact_snapshots, 1);
     egui_view_flyout_set_compact_mode(EGUI_VIEW_OF(&flyout_compact), 1);
     egui_view_flyout_override_static_preview_api(EGUI_VIEW_OF(&flyout_compact), &flyout_compact_api);
-#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
-    flyout_compact_api.on_touch = dismiss_primary_focus_on_preview_touch;
-#endif
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&flyout_compact), 0);
 #endif
@@ -190,16 +161,13 @@ void test_init_ui(void)
                                  EGUI_COLOR_HEX(0x8896A4), EGUI_COLOR_HEX(0xA7B4C1), EGUI_COLOR_HEX(0xB2C4BA), EGUI_COLOR_HEX(0xC4B8A4),
                                  EGUI_COLOR_HEX(0xB4BDC8), EGUI_COLOR_HEX(0xE8EDF2), EGUI_COLOR_HEX(0xF7F9FB), EGUI_COLOR_HEX(0xD9E1E8));
     egui_view_flyout_override_static_preview_api(EGUI_VIEW_OF(&flyout_disabled), &flyout_disabled_api);
-#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
-    flyout_disabled_api.on_touch = dismiss_primary_focus_on_preview_touch;
-#endif
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&flyout_disabled), 0);
 #endif
     egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&flyout_disabled));
 
     apply_primary_snapshot(0);
-    apply_compact_snapshot(0);
+    apply_preview_states();
 
     hello_custom_widgets_demo_apply_title_only_scaffold(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label), NULL, 0);
 
@@ -208,9 +176,6 @@ void test_init_ui(void)
 
     egui_core_add_user_root_view(EGUI_VIEW_OF(&root_layout));
     egui_core_layout_childs_user_root_view(EGUI_LAYOUT_VERTICAL, EGUI_ALIGN_HCENTER | EGUI_ALIGN_VCENTER);
-#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
-    egui_view_request_focus(EGUI_VIEW_OF(&flyout_primary));
-#endif
 }
 
 #if EGUI_CONFIG_RECORDING_TEST
@@ -227,10 +192,7 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
         if (first_call)
         {
             apply_primary_snapshot(0);
-            apply_compact_snapshot(0);
-#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
-            egui_view_request_focus(EGUI_VIEW_OF(&flyout_primary));
-#endif
+            apply_preview_states();
         }
         EGUI_SIM_SET_WAIT(p_action, FLYOUT_RECORD_WAIT);
         return true;
@@ -259,9 +221,6 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
         if (first_call)
         {
             apply_primary_snapshot(1);
-#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
-            egui_view_request_focus(EGUI_VIEW_OF(&flyout_primary));
-#endif
         }
         EGUI_SIM_SET_WAIT(p_action, FLYOUT_RECORD_WAIT);
         return true;
@@ -290,9 +249,6 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
         if (first_call)
         {
             apply_primary_snapshot(2);
-#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
-            egui_view_request_focus(EGUI_VIEW_OF(&flyout_primary));
-#endif
         }
         EGUI_SIM_SET_WAIT(p_action, FLYOUT_RECORD_WAIT);
         return true;
@@ -316,7 +272,8 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     case 12:
         if (first_call)
         {
-            apply_compact_snapshot(1);
+            apply_primary_snapshot(0);
+            apply_preview_states();
         }
         EGUI_SIM_SET_WAIT(p_action, FLYOUT_RECORD_WAIT);
         return true;
@@ -325,17 +282,7 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
         {
             request_page_snapshot();
         }
-        EGUI_SIM_SET_WAIT(p_action, FLYOUT_RECORD_FRAME_WAIT);
-        return true;
-    case 14:
-        set_click_view_center(p_action, EGUI_VIEW_OF(&flyout_compact), 220);
-        return true;
-    case 15:
-        if (first_call)
-        {
-            request_page_snapshot();
-        }
-        EGUI_SIM_SET_WAIT(p_action, 520);
+        EGUI_SIM_SET_WAIT(p_action, FLYOUT_RECORD_FINAL_WAIT);
         return true;
     default:
         break;
