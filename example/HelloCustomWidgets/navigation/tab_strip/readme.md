@@ -24,7 +24,7 @@
 - 底部左侧保留 `compact` static preview，对照窄宽度下的轻量双标签条。
 - 底部右侧保留 `read only` static preview，对照冻结交互后的弱化标签条。
 - 页面结构统一收口为：标题 -> 主 `tab_strip` -> `compact / read only`。
-- preview 只负责静态对照和最小收尾：点击 preview 只清主控件 focus，不再承担切换职责。
+- preview 只负责静态对照，不再承担切换或清焦收尾职责。
 
 目标目录：`example/HelloCustomWidgets/navigation/tab_strip/`
 
@@ -48,8 +48,8 @@
 | `bar_primary` | `egui_view_tab_strip_t` | `198 x 44` | `Overview` | 主 `TabStrip` |
 | `bar_compact` | `egui_view_tab_strip_t` | `104 x 36` | `Home` | 底部 compact static preview |
 | `bar_read_only` | `egui_view_tab_strip_t` | `104 x 36` | `Audit` | 底部 read only static preview |
-| `primary_tabs` | `const char *[3]` | - | `Overview / Usage / Access` | 主控件录制轨道 |
-| `compact_tabs` | `const char *[2]` | - | `Home / Logs` | compact 对照轨道 |
+| `primary_tabs` | `const char *[3]` | - | `Overview / Usage / Access` | 主控件状态轨道 |
+| `compact_tabs` | `const char *[2]` | - | `Home / Logs` | compact 固定对照 |
 | `read_only_tabs` | `const char *[2]` | - | `Usage / Audit` | 固定只读对照 |
 
 ## 6. 状态覆盖矩阵
@@ -59,8 +59,7 @@
 | 主控件 | `Overview` | 默认状态，验证标准 tab strip |
 | 主控件 | `Usage` | 程序化切换第二项 |
 | 主控件 | `Access` | 程序化切换第三项 |
-| `compact` | `Home` | 默认 compact 对照 |
-| `compact` | `Logs` | 第二组 compact 对照 |
+| `compact` | `Home` | 固定 compact 对照，不参与状态切换 |
 | `read only` | `Audit` | 固定只读轨道，禁 touch、禁 key、禁 focus 交互 |
 
 - 主控件继续保留真实 touch / key 切换闭环，并补齐 same-target release：
@@ -73,7 +72,6 @@
   - 吞掉 touch / key 输入。
   - 只清残留 pressed，不改 `current_index`。
   - 不触发 `on_tab_changed`。
-  - demo 侧只额外挂一个最小 preview 点击收尾：清主控件 focus。
 
 ## 7. `egui_port_get_recording_action()` 录制动作设计
 1. 重置主控件、`compact` 和 `read only` 到默认状态。
@@ -82,24 +80,26 @@
 4. 输出第二张截图。
 5. 程序化切换主控件到 `Access`。
 6. 输出第三张截图。
-7. 程序化切换 `compact` 到 `Logs`，并重新请求主控件 focus。
-8. 输出 `compact` 切换后的截图。
-9. 点击 `compact` preview，验证 static preview 只做焦点收尾。
-10. 输出 preview 点击后的收尾帧。
-11. 再输出最终稳定帧，确认没有残留 pressed 或整屏污染。
+7. 恢复主控件默认状态，输出最终稳定帧。
+
+录制只导出主控件的状态变化。底部 `compact / read only` preview 在整条 reference 轨道中保持静态，不承担切换、桥接或收尾职责。
 
 ## 8. 编译、单测、touch、runtime 与文档检查
 ```bash
-make clean APP=HelloUnitTest PORT=pc_test
+make all APP=HelloCustomWidgets APP_SUB=navigation/tab_strip PORT=pc
+
 make all APP=HelloUnitTest PORT=pc_test
 output\main.exe
 
-make clean APP=HelloCustomWidgets APP_SUB=navigation/tab_strip PORT=pc
-make all APP=HelloCustomWidgets APP_SUB=navigation/tab_strip PORT=pc
+python scripts/sync_widget_catalog.py
 python scripts/checks/check_touch_release_semantics.py --scope custom --category navigation
-python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub navigation/tab_strip --track reference --timeout 10 --keep-screenshots
-
 python scripts/checks/check_docs_encoding.py
+python scripts/checks/check_widget_catalog.py
+python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub navigation/tab_strip --track reference --timeout 10 --keep-screenshots
+python scripts/code_compile_check.py --custom-widgets --category navigation --bits64
+python scripts/code_runtime_check.py --app HelloCustomWidgets --category navigation --track reference --bits64
+python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub navigation/tab_strip
+python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_navigation_tab_strip
 ```
 
 验收重点：
@@ -109,13 +109,7 @@ python scripts/checks/check_docs_encoding.py
 - `DOWN(A) -> MOVE(B) -> UP(B)` 不能误提交，只有回到 `A` 才能提交。
 - `ACTION_CANCEL` 只能清理 pressed，不能误改 `current_index` 或误触发监听器。
 - `read_only_mode / !enable / static preview` 不仅要忽略后续输入，还要先清理残留 `pressed`。
-- runtime 需要重点复核这些帧：
-  - 默认帧
-  - 主控件切到 `Usage` 的帧
-  - 主控件切到 `Access` 的帧
-  - `compact` 切换到 `Logs` 的帧
-  - preview 点击后的收尾帧
-  - 最终稳定帧
+- runtime 需要重点复核主区域 `Overview -> Usage -> Access -> Overview` 的变化，以及底部 `compact / read only` preview 的静态一致性。
 
 ## 9. 已知限制与后续方向
 - 当前版本只覆盖纯文本页签，不做图标、关闭按钮和拖拽重排。
@@ -144,7 +138,7 @@ python scripts/checks/check_docs_encoding.py
 
 ## 13. 相比参考原型删除的效果或装饰
 - 删除页面级 `guide`、旧 preview 标签和双列 preview 包裹结构。
-- 删除让 preview 继续承担切换、桥接和额外说明的职责。
+- 删除让 preview 继续承担切换、桥接、清焦和额外说明的职责。
 - 删除过重 active fill、过亮文字染色和过强双层 underline。
 - 删除与 reference 无关的说明性外壳和场景叙事。
 
@@ -153,5 +147,5 @@ python scripts/checks/check_docs_encoding.py
 - `compact / read only` 直接复用同一控件模式，减少额外页面壳层。
 - 主控件的 compact mode 继续保留切换语义，底部 compact preview 则通过 static preview API 收口为静态对照。
 - 通过统一 `clear_pressed_state()` 与 static preview API，把 setter、guard、preview 的状态清理收口到同一套语义。
-- 通过程序化切换 current index 再补一个 preview 点击收尾帧，保证 runtime 能稳定抓到交互后的渲染结果。
+- 通过程序化切换主控件 `current_index` 导出稳定状态帧，不再给 preview 分配额外交互职责。
 - 当前先作为 `HelloCustomWidgets` 的 reference widget 维护，后续是否下沉框架层再单独评估。
