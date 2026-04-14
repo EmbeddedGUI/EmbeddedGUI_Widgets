@@ -140,6 +140,16 @@
     "doc_state": "ok"
   },
   {
+    "id": "display/presence_badge",
+    "track": "reference",
+    "visibility": "public",
+    "reference_system": "Fluent 2",
+    "reference_library": "Fluent UI React",
+    "reference_component": "PresenceBadge",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
     "id": "display/rich_text_block",
     "track": "reference",
     "visibility": "public",

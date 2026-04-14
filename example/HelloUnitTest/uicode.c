@@ -55,6 +55,7 @@
 #include "test/test_radio_buttons.h"
 #include "test/test_persona_group.h"
 #include "test/test_person_picture.h"
+#include "test/test_presence_badge.h"
 #include "test/test_pips_pager.h"
 #include "test/test_pivot.h"
 #include "test/test_progress_bar.h"
@@ -176,6 +177,7 @@ void uicode_create_ui(void)
     test_radio_buttons_run();
     test_persona_group_run();
     test_person_picture_run();
+    test_presence_badge_run();
     test_pips_pager_run();
     test_pivot_run();
     test_progress_bar_run();

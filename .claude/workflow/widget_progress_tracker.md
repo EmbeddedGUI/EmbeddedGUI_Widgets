@@ -9,12 +9,12 @@
 
 ## 当前快照
 
-- 截至 `2026-04-14`，`example/HelloCustomWidgets/` 当前保留 `101` 个控件目录。
+- 截至 `2026-04-14`，`example/HelloCustomWidgets/` 当前保留 `102` 个控件目录。
 - 所有保留控件均来自 `reference` 主线：
   - `input = 33`
   - `layout = 27`
   - `navigation = 13`
-  - `display = 18`
+  - `display = 19`
   - `feedback = 10`
 - `widget_catalog.json`、`web/catalog-policy.json` 与默认 web 入口已同步到 `reference-only` 状态。
 - 已清退轨道：
@@ -120,7 +120,7 @@
 - `title_bar` -> `TitleBar`
 - `tree_view` -> `TreeView`
 
-### Display（18）
+### Display（19）
 
 - `badge` -> `Badge`
 - `badge_group` -> `BadgeGroup`
@@ -136,6 +136,7 @@
 - `path_icon` -> `PathIcon`
 - `person_picture` -> `PersonPicture`
 - `persona_group` -> `AvatarGroup`
+- `presence_badge` -> `PresenceBadge`
 - `rich_text_block` -> `RichTextBlock`
 - `symbol_icon` -> `SymbolIcon`
 - `tag` -> `Tag`
@@ -155,6 +156,11 @@
 - `toast_stack` -> `Toast`
 
 ## 最近完成的收口动作
+
+- `2026-04-14`
+  - 新增 `display/presence_badge` reference 控件：补齐符合 Fluent 2 / Fluent UI React `PresenceBadge` 语义的轻量 custom wrapper，在 custom 层实现独立状态点，覆盖 `available / busy / away / do_not_disturb / offline`、`compact / read only` 静态 preview，以及 `offline` ring-only 与 `do_not_disturb` 减号语义，不修改 SDK。
+  - `example/HelloCustomWidgets/display/presence_badge/egui_view_presence_badge.c/.h` 新增 `egui_view_presence_badge_init()`、`set_status()`、`get_status()`、`set_palette()`、`set_compact_mode()`、`get_compact_mode()`、`set_read_only_mode()`、`get_read_only_mode()`、`get_indicator_region()` 与 `override_static_preview_api()`；`example/HelloCustomWidgets/display/presence_badge/test.c`、`readme.md`、`example/HelloUnitTest/test/test_presence_badge.c/.h`、`example/HelloUnitTest/uicode.c`、`example/HelloCustomWidgets/widget_catalog.json` 与 `web/catalog-policy.json` 已同步接入，并已把关键截图归档到本地 `iteration_log/` 供验收复核。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=display/presence_badge PORT=pc`、`make all APP=HelloUnitTest PORT=pc_test`（在 `X:\` 短路径下）、`output\main.exe`（总计 `821 / 821`，`presence_badge` suite `4 / 4`）、`python scripts/sync_widget_catalog.py`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category display`、`python scripts/checks/check_docs_encoding.py`、`python scripts/checks/check_widget_catalog.py`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub display/presence_badge --track reference --timeout 10 --keep-screenshots`、`python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub display/presence_badge` 与对应 `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_display_presence_badge` 验收，确认 `presence_badge` 已接入 reference 主线、runtime 链路与 web 发布链路。
 
 - `2026-04-14`
   - 新增 `input/field` reference 控件：补齐符合 Fluent 2 / Fluent UI React `Field` 语义的轻量 custom wrapper，在 custom 层实现 `label + required marker + helper text + validation message + field box + info button / bubble`，保留 `compact / read only` 静态 preview、same-target release 与 `Enter / Space / Esc` 键盘语义，不修改 SDK。
