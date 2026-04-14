@@ -456,12 +456,15 @@ static void test_pips_pager_read_only_and_view_disabled_guards_clear_pressed_sta
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_PIPS_PAGER_PART_NEXT, last_part);
 }
 
-static void test_pips_pager_static_preview_consumes_input_and_clears_pressed_state(void)
+static void test_pips_pager_static_preview_consumes_input_and_keeps_state(void)
 {
     egui_dim_t next_x;
     egui_dim_t next_y;
 
     setup_preview_widget();
+    EGUI_TEST_ASSERT_EQUAL_INT(4, egui_view_pips_pager_get_current_index(EGUI_VIEW_OF(&preview_pager)));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_PIPS_PAGER_PART_NEXT, egui_view_pips_pager_get_current_part(EGUI_VIEW_OF(&preview_pager)));
+    EGUI_TEST_ASSERT_EQUAL_INT(1, preview_pager.compact_mode);
     layout_preview_widget();
     EGUI_TEST_ASSERT_TRUE(get_part_center_for_pager(&preview_pager, EGUI_VIEW_PIPS_PAGER_PART_NEXT, 0, &next_x, &next_y));
 
@@ -491,6 +494,6 @@ void test_pips_pager_run(void)
     EGUI_TEST_RUN(test_pips_pager_touch_cancel_clears_pressed_state_without_notify);
     EGUI_TEST_RUN(test_pips_pager_compact_mode_guard_clears_pressed_state);
     EGUI_TEST_RUN(test_pips_pager_read_only_and_view_disabled_guards_clear_pressed_state);
-    EGUI_TEST_RUN(test_pips_pager_static_preview_consumes_input_and_clears_pressed_state);
+    EGUI_TEST_RUN(test_pips_pager_static_preview_consumes_input_and_keeps_state);
     EGUI_TEST_SUITE_END();
 }

@@ -19,6 +19,7 @@
 #define PIPS_PAGER_BOTTOM_ROW_HEIGHT 58
 #define PIPS_PAGER_RECORD_WAIT       110
 #define PIPS_PAGER_RECORD_FRAME_WAIT 150
+#define PIPS_PAGER_RECORD_FINAL_WAIT 420
 
 typedef struct pager_snapshot pager_snapshot_t;
 struct pager_snapshot
@@ -45,7 +46,6 @@ EGUI_BACKGROUND_COLOR_STATIC_CONST_INIT(bg_page_panel, &bg_page_panel_params);
 
 static const char *title_text = "Pips Pager";
 static uint8_t primary_snapshot_index = 0;
-static uint8_t compact_snapshot_index = 0;
 
 static const pager_snapshot_t primary_snapshots[] = {
         {"Onboarding", "Discrete pips and next-step paging", 7, 1, 5},
@@ -55,7 +55,6 @@ static const pager_snapshot_t primary_snapshots[] = {
 
 static const pager_snapshot_t compact_snapshots[] = {
         {"Compact", "", 6, 2, 4},
-        {"Compact", "", 8, 5, 4},
 };
 
 static const pager_snapshot_t read_only_snapshot = {"Read only", "", 7, 3, 4};
@@ -76,35 +75,10 @@ static void apply_primary_snapshot(uint8_t index)
     apply_snapshot(EGUI_VIEW_OF(&pager_primary), snapshot);
 }
 
-static void apply_compact_snapshot(uint8_t index)
+static void apply_preview_states(void)
 {
-    const pager_snapshot_t *snapshot = &compact_snapshots[index % (sizeof(compact_snapshots) / sizeof(compact_snapshots[0]))];
-
-    compact_snapshot_index = index % (sizeof(compact_snapshots) / sizeof(compact_snapshots[0]));
-    apply_snapshot(EGUI_VIEW_OF(&pager_compact), snapshot);
-}
-
-static void apply_read_only_snapshot(void)
-{
+    apply_snapshot(EGUI_VIEW_OF(&pager_compact), &compact_snapshots[0]);
     apply_snapshot(EGUI_VIEW_OF(&pager_read_only), &read_only_snapshot);
-}
-
-static void dismiss_primary_pips_pager_focus(void)
-{
-#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
-    egui_view_clear_focus(EGUI_VIEW_OF(&pager_primary));
-#endif
-}
-
-static int dismiss_primary_focus_on_preview_touch(egui_view_t *self, egui_motion_event_t *event)
-{
-    EGUI_UNUSED(self);
-
-    if (event->type == EGUI_MOTION_EVENT_ACTION_DOWN)
-    {
-        dismiss_primary_pips_pager_focus();
-    }
-    return 1;
 }
 
 void test_init_ui(void)
@@ -147,9 +121,6 @@ void test_init_ui(void)
     egui_view_pips_pager_set_palette(EGUI_VIEW_OF(&pager_compact), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD2DBE3), EGUI_COLOR_HEX(0x1A2734),
                                      EGUI_COLOR_HEX(0x6B7A89), EGUI_COLOR_HEX(0x0F6CBD), EGUI_COLOR_HEX(0xAEB9C4), EGUI_COLOR_HEX(0xB9CCE0));
     egui_view_pips_pager_override_static_preview_api(EGUI_VIEW_OF(&pager_compact), &pager_compact_api);
-#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
-    pager_compact_api.on_touch = dismiss_primary_focus_on_preview_touch;
-#endif
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&pager_compact), false);
 #endif
@@ -165,17 +136,13 @@ void test_init_ui(void)
     egui_view_pips_pager_set_palette(EGUI_VIEW_OF(&pager_read_only), EGUI_COLOR_HEX(0xFBFCFD), EGUI_COLOR_HEX(0xD8DFE6), EGUI_COLOR_HEX(0x536474),
                                      EGUI_COLOR_HEX(0x8896A4), EGUI_COLOR_HEX(0xA7B4C1), EGUI_COLOR_HEX(0xB8C3CD), EGUI_COLOR_HEX(0xC5D2DE));
     egui_view_pips_pager_override_static_preview_api(EGUI_VIEW_OF(&pager_read_only), &pager_read_only_api);
-#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
-    pager_read_only_api.on_touch = dismiss_primary_focus_on_preview_touch;
-#endif
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&pager_read_only), false);
 #endif
     egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&pager_read_only));
 
     apply_primary_snapshot(0);
-    apply_compact_snapshot(0);
-    apply_read_only_snapshot();
+    apply_preview_states();
 
     {
         hello_custom_widgets_demo_apply_title_only_scaffold(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label), NULL, 0);
@@ -189,17 +156,6 @@ void test_init_ui(void)
 }
 
 #if EGUI_CONFIG_RECORDING_TEST
-static void set_click_view_center(egui_sim_action_t *p_action, egui_view_t *view, int interval_ms)
-{
-    p_action->type = EGUI_SIM_ACTION_CLICK;
-    p_action->x1 = view->region_screen.location.x + view->region_screen.size.width / 2;
-    p_action->y1 = view->region_screen.location.y + view->region_screen.size.height / 2;
-    p_action->x2 = 0;
-    p_action->y2 = 0;
-    p_action->steps = 0;
-    p_action->interval_ms = interval_ms;
-}
-
 static void apply_primary_key(uint8_t key_code)
 {
     egui_key_event_t event;
@@ -225,96 +181,60 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
         if (first_call)
         {
             apply_primary_snapshot(0);
-            apply_compact_snapshot(0);
-            apply_read_only_snapshot();
-        }
-        EGUI_SIM_SET_WAIT(p_action, PIPS_PAGER_RECORD_WAIT);
-        return true;
-    case 1:
-        if (first_call)
-        {
+            apply_preview_states();
             recording_request_snapshot();
         }
         EGUI_SIM_SET_WAIT(p_action, PIPS_PAGER_RECORD_FRAME_WAIT);
         return true;
-    case 2:
+    case 1:
         if (first_call)
         {
             apply_primary_key(EGUI_KEY_CODE_RIGHT);
         }
         EGUI_SIM_SET_WAIT(p_action, PIPS_PAGER_RECORD_WAIT);
         return true;
-    case 3:
+    case 2:
         if (first_call)
         {
             recording_request_snapshot();
         }
         EGUI_SIM_SET_WAIT(p_action, PIPS_PAGER_RECORD_FRAME_WAIT);
         return true;
-    case 4:
+    case 3:
         if (first_call)
         {
             apply_primary_key(EGUI_KEY_CODE_END);
         }
         EGUI_SIM_SET_WAIT(p_action, PIPS_PAGER_RECORD_WAIT);
         return true;
-    case 5:
+    case 4:
         if (first_call)
         {
             recording_request_snapshot();
         }
         EGUI_SIM_SET_WAIT(p_action, PIPS_PAGER_RECORD_FRAME_WAIT);
         return true;
-    case 6:
+    case 5:
         if (first_call)
         {
             apply_primary_snapshot((uint8_t)(primary_snapshot_index + 1));
         }
         EGUI_SIM_SET_WAIT(p_action, PIPS_PAGER_RECORD_WAIT);
         return true;
+    case 6:
+        if (first_call)
+        {
+            recording_request_snapshot();
+        }
+        EGUI_SIM_SET_WAIT(p_action, PIPS_PAGER_RECORD_FRAME_WAIT);
+        return true;
     case 7:
         if (first_call)
         {
+            apply_primary_snapshot(0);
             recording_request_snapshot();
         }
-        EGUI_SIM_SET_WAIT(p_action, PIPS_PAGER_RECORD_FRAME_WAIT);
-        return true;
-    case 8:
-        if (first_call)
-        {
-            apply_compact_snapshot((uint8_t)(compact_snapshot_index + 1));
-#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
-            egui_view_request_focus(EGUI_VIEW_OF(&pager_primary));
-#endif
-        }
-        EGUI_SIM_SET_WAIT(p_action, PIPS_PAGER_RECORD_WAIT);
-        return true;
-    case 9:
-        if (first_call)
-        {
-            recording_request_snapshot();
-        }
-        EGUI_SIM_SET_WAIT(p_action, PIPS_PAGER_RECORD_FRAME_WAIT);
-        return true;
-    case 10:
-        if (first_call)
-        {
-            set_click_view_center(p_action, EGUI_VIEW_OF(&pager_compact), PIPS_PAGER_RECORD_WAIT);
-        }
-        return true;
-    case 11:
-        if (first_call)
-        {
-            recording_request_snapshot();
-        }
-        EGUI_SIM_SET_WAIT(p_action, PIPS_PAGER_RECORD_FRAME_WAIT);
-        return true;
-    case 12:
-        if (first_call)
-        {
-            recording_request_snapshot();
-        }
-        EGUI_SIM_SET_WAIT(p_action, PIPS_PAGER_RECORD_FRAME_WAIT);
+        EGUI_SIM_SET_WAIT(p_action, PIPS_PAGER_RECORD_FINAL_WAIT);
         return true;
     default:
         return false;
