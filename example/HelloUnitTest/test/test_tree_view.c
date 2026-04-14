@@ -433,12 +433,15 @@ static void test_tree_view_read_only_and_view_disabled_guards_clear_pressed_stat
     EGUI_TEST_ASSERT_EQUAL_INT(2, last_selection_index);
 }
 
-static void test_tree_view_static_preview_consumes_input_and_clears_pressed_state(void)
+static void test_tree_view_static_preview_consumes_input_and_keeps_state(void)
 {
     egui_dim_t x;
     egui_dim_t y;
 
     setup_preview_widget();
+    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_tree_view_get_current_snapshot(EGUI_VIEW_OF(&preview_tree_view)));
+    EGUI_TEST_ASSERT_EQUAL_INT(2, egui_view_tree_view_get_current_index(EGUI_VIEW_OF(&preview_tree_view)));
+    EGUI_TEST_ASSERT_EQUAL_INT(1, preview_tree_view.compact_mode);
     layout_preview_widget();
     EGUI_TEST_ASSERT_TRUE(get_item_center_for_tree(&preview_tree_view, 1, &x, &y));
 
@@ -465,6 +468,6 @@ void test_tree_view_run(void)
     EGUI_TEST_RUN(test_tree_view_keyboard_navigation);
     EGUI_TEST_RUN(test_tree_view_compact_mode_clears_pressed_and_keeps_selection_behavior);
     EGUI_TEST_RUN(test_tree_view_read_only_and_view_disabled_guards_clear_pressed_state);
-    EGUI_TEST_RUN(test_tree_view_static_preview_consumes_input_and_clears_pressed_state);
+    EGUI_TEST_RUN(test_tree_view_static_preview_consumes_input_and_keeps_state);
     EGUI_TEST_SUITE_END();
 }

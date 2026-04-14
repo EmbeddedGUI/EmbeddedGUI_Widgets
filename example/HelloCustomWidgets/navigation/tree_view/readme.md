@@ -25,7 +25,7 @@
 - `compact` 预览：保留相同树语义，但压缩为更小尺寸，用于验证小尺寸 reference 收口。
 - `read only` 预览：保留冻结态和固定选择，只作为静态对照，不再承担切换职责，并显式抑制 touch / key 输入。
 - 页面只保留标题、主 `tree_view` 和底部 `compact / read only` 双预览，不再保留旧的预览列容器和说明性页面 chrome。
-- preview 只负责静态对照和最小收尾：点击 preview 只清主控件 focus，不再改主控件选中项。
+- 底部两个 preview 只负责静态对照，不再承担切换或清焦收尾职责。
 
 ## 4. 视觉与布局规格
 - 根容器尺寸：`224 x 236`
@@ -47,8 +47,8 @@
 | `tree_primary` | `egui_view_tree_view_t` | `198 x 116` | `Controls open` | 主 `TreeView` |
 | `tree_compact` | `egui_view_tree_view_t` | `104 x 80` | compact | 底部紧凑静态对照 |
 | `tree_read_only` | `egui_view_tree_view_t` | `104 x 80` | read only | 底部只读静态对照 |
-| `primary_snapshots` | `egui_view_tree_view_snapshot_t[4]` | - | `Controls / Docs / Resources / Settings` | 主控件录制轨道 |
-| `compact_snapshots` | `egui_view_tree_view_snapshot_t[2]` | - | `Library / Review` | 紧凑预览程序化切换轨道 |
+| `primary_snapshots` | `egui_view_tree_view_snapshot_t[4]` | - | `Controls / Docs / Resources / Settings` | 主控件状态轨道 |
+| `compact_snapshots` | `egui_view_tree_view_snapshot_t[1]` | - | `Library` | 紧凑预览固定对照轨道 |
 | `read_only_snapshots` | `egui_view_tree_view_snapshot_t[1]` | - | `Static preview` | 只读预览固定数据 |
 
 ## 6. 状态覆盖矩阵
@@ -58,8 +58,7 @@
 | 主控件 | `Docs open` | 第二条展开轨道 | 验证选中项与 meta 变化 |
 | 主控件 | `Resources open` | 警示 tone | 验证弱高亮和分支层级仍可读 |
 | 主控件 | `Settings open` | 最终收尾态 | 验证列表、caption、footer 一致性 |
-| `compact` | `Library branch` | 紧凑对照 | 验证小尺寸层级与标题收口 |
-| `compact` | `Review branch` | 第二条预览轨道 | 只做程序化切换，不参与交互 |
+| `compact` | `Library branch` | 紧凑对照 | 固定 compact 对照，不参与状态切换 |
 | `read only` | `Static preview` | 冻结态摘要 | 固定只读，对外禁用触摸、键盘与焦点 |
 
 - 主控件继续保留真实 touch / key 选择闭环，并补齐 same-target release：
@@ -69,37 +68,38 @@
 - `read_only_mode`、`!enable` 收到新的 touch / key 输入时，会先清掉残留 pressed，再拒绝提交。
 - 底部 preview 统一通过 `egui_view_tree_view_override_static_preview_api()` 收口：
   - 吞掉 touch / key 输入。
-  - 只清残留 pressed，不改 `current_index`。
+  - 只清残留 pressed，不改 `current_snapshot / current_index`。
   - 不触发 `on_selection_changed`。
-  - demo 侧只额外挂一个最小 preview 点击收尾：清主控件 focus。
 
 ## 7. `egui_port_get_recording_action()` 录制动作设计
 1. 重置主控件、`compact` 和 `read only` 到默认 snapshot。
-2. 请求默认截图。
+2. 输出默认截图。
 3. 切到主控件 `Docs open`。
-4. 请求 `Docs` 截图。
+4. 输出 `Docs` 截图。
 5. 切到主控件 `Resources open`。
-6. 请求 `Resources` 截图。
-7. 程序化切到 `compact / Review branch`，并重新请求主控件 focus。
-8. 请求 `compact` 截图。
-9. 切到主控件 `Settings open`。
-10. 请求 `Settings` 截图。
-11. 点击 `compact` preview，验证 static preview 只做焦点收尾。
-12. 输出 preview 点击后的收尾帧。
-13. 再输出最终稳定帧，确认没有残留 pressed 或整屏污染。
+6. 输出 `Resources` 截图。
+7. 切到主控件 `Settings open`。
+8. 输出 `Settings` 截图。
+9. 恢复主控件默认状态，输出最终稳定帧。
+
+录制只导出主控件的状态变化。底部 `compact / read only` preview 在整条 reference 轨道中保持静态，不承担切换、桥接或收尾职责。
 
 ## 8. 编译、touch、runtime、单测与文档检查
 ```bash
-make clean APP=HelloUnitTest PORT=pc_test
+make all APP=HelloCustomWidgets APP_SUB=navigation/tree_view PORT=pc
+
 make all APP=HelloUnitTest PORT=pc_test
 output\main.exe
 
-make clean APP=HelloCustomWidgets APP_SUB=navigation/tree_view PORT=pc
-make all APP=HelloCustomWidgets APP_SUB=navigation/tree_view PORT=pc
+python scripts/sync_widget_catalog.py
 python scripts/checks/check_touch_release_semantics.py --scope custom --category navigation
-python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub navigation/tree_view --track reference --timeout 10 --keep-screenshots
-
 python scripts/checks/check_docs_encoding.py
+python scripts/checks/check_widget_catalog.py
+python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub navigation/tree_view --track reference --timeout 10 --keep-screenshots
+python scripts/code_compile_check.py --custom-widgets --category navigation --bits64
+python scripts/code_runtime_check.py --app HelloCustomWidgets --category navigation --track reference --bits64
+python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub navigation/tree_view
+python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_navigation_tree_view
 ```
 
 验收重点：
@@ -108,10 +108,10 @@ python scripts/checks/check_docs_encoding.py
 - 选中行必须清晰，但不能压过树本身的层级信息。
 - `DOWN(A) -> MOVE(B) -> UP(B)` 不能误提交，只有回到 `A` 才能提交。
 - `ACTION_CANCEL` 只能清理 pressed，不能误改 `current_index` 或误触发监听器。
-- `compact / read only` preview 统一走 static preview API，不再响应切换；点击 preview 只允许清主控件 focus。
+- `compact / read only` preview 统一走 static preview API，不再响应切换、focus 或键盘输入。
 - `snapshot / current selection / compact / read only / view disabled` 切换后不能残留树行的 `pressed` 高亮或下压位移渲染。
 - `read_only_mode / !enable` 不仅要忽略后续 touch / key 输入，还要在收到新输入时先清理残留 `pressed` 状态。
-- runtime 关键帧要额外复核 preview 点击后的收尾帧和最终稳定帧，确认没有黑白屏、裁切、整屏污染或残留 `pressed`。
+- runtime 需要重点复核主区域 `Controls -> Docs -> Resources -> Settings -> Controls` 的变化，以及底部 `compact / read only` preview 的静态一致性。
 
 ## 9. 已知限制与后续方向
 - 当前仍用固定 `snapshot + item` 数据，不做真实数据源绑定。
@@ -139,7 +139,7 @@ python scripts/checks/check_docs_encoding.py
 
 ## 13. 相比参考原型删掉的效果或装饰
 - 删掉页面级 guide、状态栏、section label 和旧的双列 preview 包裹结构。
-- 删掉可点击 preview 卡与 preview 轨道的外部交互职责。
+- 删掉可点击 preview 卡、preview 轨道切换与清焦收尾职责。
 - 删掉复选框树、拖拽排序、虚拟滚动和复杂展开动画。
 - 删掉重描边、厚高亮条和高噪音 caption / footer / meta 胶囊。
 
