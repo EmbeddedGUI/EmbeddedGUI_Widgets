@@ -453,12 +453,15 @@ static void test_flip_view_read_only_and_disabled_guards_clear_pressed_state(voi
     EGUI_TEST_ASSERT_EQUAL_INT(2, changed_count);
 }
 
-static void test_flip_view_static_preview_consumes_input_and_clears_pressed_state(void)
+static void test_flip_view_static_preview_consumes_input_and_keeps_state(void)
 {
     egui_dim_t x;
     egui_dim_t y;
 
     setup_preview_widget();
+    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_flip_view_get_current_index(EGUI_VIEW_OF(&preview_flip_view)));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_FLIP_VIEW_PART_SURFACE, egui_view_flip_view_get_current_part(EGUI_VIEW_OF(&preview_flip_view)));
+    EGUI_TEST_ASSERT_EQUAL_INT(1, preview_flip_view.compact_mode);
     layout_preview_widget();
     get_view_center(EGUI_VIEW_OF(&preview_flip_view), &x, &y);
 
@@ -467,6 +470,7 @@ static void test_flip_view_static_preview_consumes_input_and_clears_pressed_stat
     assert_pressed_cleared(&preview_flip_view, EGUI_VIEW_OF(&preview_flip_view));
     EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_flip_view_get_current_index(EGUI_VIEW_OF(&preview_flip_view)));
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_FLIP_VIEW_PART_SURFACE, egui_view_flip_view_get_current_part(EGUI_VIEW_OF(&preview_flip_view)));
+    EGUI_TEST_ASSERT_EQUAL_INT(1, preview_flip_view.compact_mode);
     EGUI_TEST_ASSERT_EQUAL_INT(0, changed_count);
 
     seed_pressed_state(&preview_flip_view, EGUI_VIEW_OF(&preview_flip_view), EGUI_VIEW_FLIP_VIEW_PART_SURFACE, 1);
@@ -474,6 +478,7 @@ static void test_flip_view_static_preview_consumes_input_and_clears_pressed_stat
     assert_pressed_cleared(&preview_flip_view, EGUI_VIEW_OF(&preview_flip_view));
     EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_flip_view_get_current_index(EGUI_VIEW_OF(&preview_flip_view)));
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_FLIP_VIEW_PART_SURFACE, egui_view_flip_view_get_current_part(EGUI_VIEW_OF(&preview_flip_view)));
+    EGUI_TEST_ASSERT_EQUAL_INT(1, preview_flip_view.compact_mode);
     EGUI_TEST_ASSERT_EQUAL_INT(0, changed_count);
 }
 
@@ -490,6 +495,6 @@ void test_flip_view_run(void)
     EGUI_TEST_RUN(test_flip_view_surface_region_exists);
     EGUI_TEST_RUN(test_flip_view_compact_mode_clears_pressed_and_ignores_input);
     EGUI_TEST_RUN(test_flip_view_read_only_and_disabled_guards_clear_pressed_state);
-    EGUI_TEST_RUN(test_flip_view_static_preview_consumes_input_and_clears_pressed_state);
+    EGUI_TEST_RUN(test_flip_view_static_preview_consumes_input_and_keeps_state);
     EGUI_TEST_SUITE_END();
 }

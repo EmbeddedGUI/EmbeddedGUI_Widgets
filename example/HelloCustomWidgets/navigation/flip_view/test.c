@@ -19,6 +19,7 @@
 #define FLIP_VIEW_BOTTOM_ROW_HEIGHT   64
 #define FLIP_VIEW_RECORD_WAIT         110
 #define FLIP_VIEW_RECORD_FRAME_WAIT   150
+#define FLIP_VIEW_RECORD_FINAL_WAIT   520
 
 typedef struct flip_view_track flip_view_track_t;
 struct flip_view_track
@@ -44,8 +45,6 @@ EGUI_BACKGROUND_PARAM_INIT(bg_page_panel_params, &bg_page_panel_param, NULL, NUL
 EGUI_BACKGROUND_COLOR_STATIC_CONST_INIT(bg_page_panel, &bg_page_panel_params);
 
 static const char *title_text = "Flip View";
-static uint8_t primary_track_index = 0;
-static uint8_t compact_track_index = 0;
 
 static const egui_view_flip_view_item_t highlights_items[] = {
         {"Overview", "Q1 summary", "One active card keeps the current update in focus", "Primary surface stays centered", EGUI_COLOR_HEX(0xF3F7FB),
@@ -80,11 +79,6 @@ static const egui_view_flip_view_item_t compact_overview_items[] = {
         {"Compact", "Review", "Footer still anchors context", "", EGUI_COLOR_HEX(0xF4F7F9), EGUI_COLOR_HEX(0x5E6A75)},
 };
 
-static const egui_view_flip_view_item_t compact_summary_items[] = {
-        {"Compact", "Memo", "Compact mode trims helper rows", "", EGUI_COLOR_HEX(0xF8F4EC), EGUI_COLOR_HEX(0x9D5D00)},
-        {"Compact", "Archive", "Track swap keeps compact neutral", "", EGUI_COLOR_HEX(0xF2F7F3), EGUI_COLOR_HEX(0x0F766E)},
-};
-
 static const egui_view_flip_view_item_t read_only_items[] = {
         {"Read", "Summary", "Navigation is intentionally disabled", "", EGUI_COLOR_HEX(0xF5F7F9), EGUI_COLOR_HEX(0x94A3B8)},
         {"Read", "Snapshot", "Overlay arrows stay dimmed", "", EGUI_COLOR_HEX(0xF5F7F9), EGUI_COLOR_HEX(0xA1AAB5)},
@@ -97,11 +91,7 @@ static const flip_view_track_t primary_tracks[] = {
         {"Records", "", records_items, 4, 2},
 };
 
-static const flip_view_track_t compact_tracks[] = {
-        {"Compact", "", compact_overview_items, 3, 0},
-        {"Compact", "", compact_summary_items, 2, 1},
-};
-
+static const flip_view_track_t compact_track = {"Compact", "", compact_overview_items, 3, 0};
 static const flip_view_track_t read_only_track = {"Read only", "", read_only_items, 3, 1};
 
 static void apply_track(egui_view_t *view, const flip_view_track_t *track)
@@ -116,48 +106,15 @@ static void apply_primary_track(uint8_t index)
 {
     const flip_view_track_t *track = &primary_tracks[index % (sizeof(primary_tracks) / sizeof(primary_tracks[0]))];
 
-    primary_track_index = index % (sizeof(primary_tracks) / sizeof(primary_tracks[0]));
     apply_track(EGUI_VIEW_OF(&flip_view_primary), track);
 }
 
-static void apply_compact_track(uint8_t index)
+static void apply_preview_states(void)
 {
-    const flip_view_track_t *track = &compact_tracks[index % (sizeof(compact_tracks) / sizeof(compact_tracks[0]))];
-
-    compact_track_index = index % (sizeof(compact_tracks) / sizeof(compact_tracks[0]));
-    apply_track(EGUI_VIEW_OF(&flip_view_compact), track);
+    apply_track(EGUI_VIEW_OF(&flip_view_compact), &compact_track);
+    apply_track(EGUI_VIEW_OF(&flip_view_read_only), &read_only_track);
+    egui_view_flip_view_set_read_only_mode(EGUI_VIEW_OF(&flip_view_read_only), 1);
 }
-
-static void dismiss_primary_flip_view_focus(void)
-{
-#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
-    egui_view_clear_focus(EGUI_VIEW_OF(&flip_view_primary));
-#endif
-}
-
-static int dismiss_primary_focus_on_preview_touch(egui_view_t *self, egui_motion_event_t *event)
-{
-    EGUI_UNUSED(self);
-
-    if (event->type == EGUI_MOTION_EVENT_ACTION_DOWN)
-    {
-        dismiss_primary_flip_view_focus();
-    }
-    return 1;
-}
-
-#if EGUI_CONFIG_RECORDING_TEST
-static void set_click_view_center(egui_sim_action_t *p_action, egui_view_t *view, int interval_ms)
-{
-    p_action->type = EGUI_SIM_ACTION_CLICK;
-    p_action->x1 = view->region_screen.location.x + view->region_screen.size.width / 2;
-    p_action->y1 = view->region_screen.location.y + view->region_screen.size.height / 2;
-    p_action->x2 = 0;
-    p_action->y2 = 0;
-    p_action->steps = 0;
-    p_action->interval_ms = interval_ms;
-}
-#endif
 
 void test_init_ui(void)
 {
@@ -199,9 +156,6 @@ void test_init_ui(void)
     egui_view_flip_view_set_palette(EGUI_VIEW_OF(&flip_view_compact), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD5DCE4), EGUI_COLOR_HEX(0x1A2734),
                                     EGUI_COLOR_HEX(0x6B7A89), EGUI_COLOR_HEX(0xA7B1BC));
     egui_view_flip_view_override_static_preview_api(EGUI_VIEW_OF(&flip_view_compact), &flip_view_compact_api);
-#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
-    flip_view_compact_api.on_touch = dismiss_primary_focus_on_preview_touch;
-#endif
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&flip_view_compact), false);
 #endif
@@ -217,17 +171,13 @@ void test_init_ui(void)
     egui_view_flip_view_set_palette(EGUI_VIEW_OF(&flip_view_read_only), EGUI_COLOR_HEX(0xFBFCFD), EGUI_COLOR_HEX(0xDBE2E8), EGUI_COLOR_HEX(0x536474),
                                     EGUI_COLOR_HEX(0x8896A4), EGUI_COLOR_HEX(0xB3BFCA));
     egui_view_flip_view_override_static_preview_api(EGUI_VIEW_OF(&flip_view_read_only), &flip_view_read_only_api);
-#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
-    flip_view_read_only_api.on_touch = dismiss_primary_focus_on_preview_touch;
-#endif
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&flip_view_read_only), false);
 #endif
     egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&flip_view_read_only));
 
     apply_primary_track(0);
-    apply_compact_track(0);
-    apply_track(EGUI_VIEW_OF(&flip_view_read_only), &read_only_track);
+    apply_preview_states();
 
     {
         hello_custom_widgets_demo_apply_title_only_scaffold(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label), NULL, 0);
@@ -264,96 +214,67 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
         if (first_call)
         {
             apply_primary_track(0);
-            apply_compact_track(0);
-            apply_track(EGUI_VIEW_OF(&flip_view_read_only), &read_only_track);
-        }
-        EGUI_SIM_SET_WAIT(p_action, FLIP_VIEW_RECORD_WAIT);
-        return true;
-    case 1:
-        if (first_call)
-        {
+            apply_preview_states();
             recording_request_snapshot();
         }
         EGUI_SIM_SET_WAIT(p_action, FLIP_VIEW_RECORD_FRAME_WAIT);
         return true;
-    case 2:
+    case 1:
         if (first_call)
         {
             apply_primary_key(EGUI_KEY_CODE_RIGHT);
         }
         EGUI_SIM_SET_WAIT(p_action, FLIP_VIEW_RECORD_WAIT);
         return true;
-    case 3:
+    case 2:
         if (first_call)
         {
             recording_request_snapshot();
         }
         EGUI_SIM_SET_WAIT(p_action, FLIP_VIEW_RECORD_FRAME_WAIT);
         return true;
-    case 4:
+    case 3:
         if (first_call)
         {
             apply_primary_key(EGUI_KEY_CODE_END);
         }
         EGUI_SIM_SET_WAIT(p_action, FLIP_VIEW_RECORD_WAIT);
         return true;
-    case 5:
+    case 4:
         if (first_call)
         {
             recording_request_snapshot();
         }
         EGUI_SIM_SET_WAIT(p_action, FLIP_VIEW_RECORD_FRAME_WAIT);
+        return true;
+    case 5:
+        if (first_call)
+        {
+            apply_primary_track(1);
+        }
+        EGUI_SIM_SET_WAIT(p_action, FLIP_VIEW_RECORD_WAIT);
         return true;
     case 6:
         if (first_call)
         {
-            apply_primary_track((uint8_t)(primary_track_index + 1));
+            recording_request_snapshot();
         }
-        EGUI_SIM_SET_WAIT(p_action, FLIP_VIEW_RECORD_WAIT);
+        EGUI_SIM_SET_WAIT(p_action, FLIP_VIEW_RECORD_FRAME_WAIT);
         return true;
     case 7:
         if (first_call)
         {
-            recording_request_snapshot();
+            apply_primary_track(0);
+            apply_preview_states();
         }
-        EGUI_SIM_SET_WAIT(p_action, FLIP_VIEW_RECORD_FRAME_WAIT);
+        EGUI_SIM_SET_WAIT(p_action, FLIP_VIEW_RECORD_WAIT);
         return true;
     case 8:
         if (first_call)
         {
-            apply_compact_track((uint8_t)(compact_track_index + 1));
-#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
-            egui_view_request_focus(EGUI_VIEW_OF(&flip_view_primary));
-#endif
-        }
-        EGUI_SIM_SET_WAIT(p_action, FLIP_VIEW_RECORD_WAIT);
-        return true;
-    case 9:
-        if (first_call)
-        {
             recording_request_snapshot();
         }
-        EGUI_SIM_SET_WAIT(p_action, FLIP_VIEW_RECORD_FRAME_WAIT);
-        return true;
-    case 10:
-        if (first_call)
-        {
-            set_click_view_center(p_action, EGUI_VIEW_OF(&flip_view_compact), FLIP_VIEW_RECORD_WAIT);
-        }
-        return true;
-    case 11:
-        if (first_call)
-        {
-            recording_request_snapshot();
-        }
-        EGUI_SIM_SET_WAIT(p_action, FLIP_VIEW_RECORD_FRAME_WAIT);
-        return true;
-    case 12:
-        if (first_call)
-        {
-            recording_request_snapshot();
-        }
-        EGUI_SIM_SET_WAIT(p_action, 520);
+        EGUI_SIM_SET_WAIT(p_action, FLIP_VIEW_RECORD_FINAL_WAIT);
         return true;
     default:
         return false;

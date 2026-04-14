@@ -34,7 +34,7 @@
 
 | 状态 | 控件名 | 分类 | 开始日期 | 当前阶段 | 目标 |
 | --- | --- | --- | --- | --- | --- |
-| 进行中 | `flip_view` | `navigation` | `2026-04-15` | 静态 preview 收口准备 | 对齐 `FlipView` reference 页面，保留主控件真实翻页状态切换并让底部 `compact / read only` preview 完全静态 |
+| 暂无 | - | - | - | - | - |
 
 ## 当前保留的 Reference 主线控件
 
@@ -160,6 +160,11 @@
 - `toast_stack` -> `Toast`
 
 ## 最近完成的收口动作
+
+- `2026-04-15`
+  - 收口 `navigation/flip_view` reference 控件：在不修改 SDK 的前提下，保留主 `flip_view` 的 `Shipping board / Release note / Archive handoff / Planning board` 四组状态语义、same-target release、键盘与触摸翻页以及 `FlipView` overlay 布局，把底部 `compact / read only` preview 统一收口为真正静态的 reference 对照，移除 preview 点击清主控件 focus 与 `compact` 第二轨道切换的桥接动作，对齐更低噪音的 `FlipView` 页面结构。
+  - `example/HelloCustomWidgets/navigation/flip_view/test.c` 将底部两个 preview 收口为固定静态状态，删除 preview 点击桥接辅助函数与对应录制动作，移除 `compact` 第二条 track，新增 `apply_preview_states()` 统一恢复 `compact / read only` preview，并把录制轨道改为只导出主控件默认 `Shipping board`、`Release note`、`Archive handoff`、`Planning board` 与最终稳定帧。`example/HelloUnitTest/test/test_flip_view.c` 同步补齐静态 preview 输入前后的 `current_index / current_part / compact_mode` 固定断言；`example/HelloCustomWidgets/navigation/flip_view/readme.md` 重写为与当前静态 preview 实现一致的说明。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=navigation/flip_view PORT=pc`、`make all APP=HelloUnitTest PORT=pc_test`（在 `X:\` 短路径下串行重建）、`X:\output\main.exe`（总计 `840 / 840`，`flip_view` suite `11 / 11`）、`python scripts/sync_widget_catalog.py`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category navigation`、`python scripts/checks/check_docs_encoding.py`、`python scripts/checks/check_widget_catalog.py`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub navigation/flip_view --track reference --timeout 10 --keep-screenshots`、`python scripts/code_compile_check.py --custom-widgets --category navigation --bits64`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --category navigation --track reference --bits64`、`python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub navigation/flip_view` 与对应 `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_navigation_flip_view`，并复核 runtime 截图确认主区域出现 4 组状态变化，而底部 preview 区域在 11 帧中保持静态一致。
 
 - `2026-04-15`
   - 收口 `navigation/menu_flyout` reference 控件：在不修改 SDK 的前提下，保留主 `menu_flyout` 的 `Open panel / Name ascending / Export report / Layout wide` 四组状态语义、same-target release 与 `MenuFlyout` 菜单行布局，把底部 `compact / disabled` preview 统一收口为真正静态的 reference 对照，移除 preview 点击清主控件 focus 与 `compact` 第二轨道切换的桥接动作，对齐更低噪音的 `MenuFlyout` 页面结构。
