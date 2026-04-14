@@ -328,12 +328,14 @@ static void test_breadcrumb_bar_read_only_and_disabled_guards_clear_pressed_stat
     EGUI_TEST_ASSERT_EQUAL_INT(1, click_count);
 }
 
-static void test_breadcrumb_bar_static_preview_consumes_input_and_clears_pressed_state(void)
+static void test_breadcrumb_bar_static_preview_consumes_input_and_keeps_snapshot(void)
 {
     egui_dim_t x;
     egui_dim_t y;
 
     setup_preview_bar();
+    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_breadcrumb_bar_get_current_snapshot(EGUI_VIEW_OF(&preview_bar)));
+    EGUI_TEST_ASSERT_EQUAL_INT(1, preview_bar.compact_mode);
     layout_preview_bar();
     get_view_center(EGUI_VIEW_OF(&preview_bar), &x, &y);
 
@@ -418,7 +420,7 @@ void test_breadcrumb_bar_run(void)
     EGUI_TEST_RUN(test_breadcrumb_bar_keyboard_click_listener);
     EGUI_TEST_RUN(test_breadcrumb_bar_compact_mode_clears_pressed_and_keeps_click_behavior);
     EGUI_TEST_RUN(test_breadcrumb_bar_read_only_and_disabled_guards_clear_pressed_state);
-    EGUI_TEST_RUN(test_breadcrumb_bar_static_preview_consumes_input_and_clears_pressed_state);
+    EGUI_TEST_RUN(test_breadcrumb_bar_static_preview_consumes_input_and_keeps_snapshot);
     EGUI_TEST_RUN(test_breadcrumb_bar_internal_helpers_cover_entries_and_labels);
     EGUI_TEST_SUITE_END();
 }
