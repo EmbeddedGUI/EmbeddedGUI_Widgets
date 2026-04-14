@@ -808,7 +808,7 @@ static void scroll_viewer_draw_track(egui_view_t *self, egui_view_scroll_viewer_
     thumb_border = egui_rgb_mix(thumb_fill, EGUI_COLOR_WHITE, 10);
     thumb_focused =
             (local->current_part == EGUI_VIEW_SCROLL_VIEWER_PART_THUMB && !local->read_only_mode && !local->compact_mode && egui_view_get_enable(self)) ? 1 : 0;
-    thumb_pressed = (local->pressed_part == EGUI_VIEW_SCROLL_VIEWER_PART_THUMB || local->thumb_dragging) ? 1 : 0;
+    thumb_pressed = ((local->pressed_part == EGUI_VIEW_SCROLL_VIEWER_PART_THUMB && egui_view_get_pressed(self)) || local->thumb_dragging) ? 1 : 0;
 
     egui_canvas_draw_round_rectangle_fill(metrics->track_region.location.x, metrics->track_region.location.y, metrics->track_region.size.width,
                                           metrics->track_region.size.height, 6, track_fill, egui_color_alpha_mix(self->alpha, 86));
@@ -816,7 +816,7 @@ static void scroll_viewer_draw_track(egui_view_t *self, egui_view_scroll_viewer_
                                      metrics->track_region.size.height, 6, 1, egui_rgb_mix(border_color, preview_color, 18),
                                      egui_color_alpha_mix(self->alpha, 50));
 
-    if (local->pressed_part == EGUI_VIEW_SCROLL_VIEWER_PART_TRACK && local->track_direction != 0)
+    if (local->pressed_part == EGUI_VIEW_SCROLL_VIEWER_PART_TRACK && local->track_direction != 0 && egui_view_get_pressed(self))
     {
         egui_region_t page_region = metrics->track_region;
 

@@ -34,7 +34,7 @@
 
 | 状态 | 控件名 | 分类 | 开始日期 | 当前阶段 | 目标 |
 | --- | --- | --- | --- | --- | --- |
-| 进行中 | `scroll_viewer` | `layout` | `2026-04-15` | 静态 preview 收口准备 | 对齐 `ScrollViewer` reference 页面，保留主控件 surface / viewport / scrollbar 语义，并让底部 `compact / read only` preview 完全静态 |
+| 暂无 | - | - | - | - | - |
 
 ## 当前保留的 Reference 主线控件
 
@@ -160,6 +160,11 @@
 - `toast_stack` -> `Toast`
 
 ## 最近完成的收口动作
+
+- `2026-04-15`
+  - 收口 `layout/scroll_viewer` reference 控件：在不修改 SDK 的前提下，保留主 `scroll_viewer` 的 `Release pane / Diagnostics lane / Backlog feed` 三组 `surface / viewport / scrollbar / offset` 状态语义、滚动轨道的 same-target release、thumb 连续拖拽与键盘 `Tab / Up / Down / Left / Right / Home / End / + / - / Enter / Space` 闭环，把底部 `compact / read only` preview 统一收口为真正静态的 reference 对照，移除 preview 点击清主控件焦点与录制里的 preview dismiss 轨道，对齐更低噪音的 `ScrollViewer` 页面结构。
+  - `example/HelloCustomWidgets/layout/scroll_viewer/test.c` 删除 preview 焦点桥接、`compact` 第二条 preview 轨道和录制里的 preview click 收尾，新增 `apply_primary_default_state()` 与 `apply_preview_states()` 统一恢复主控件和 `compact / read only` preview，并把录制轨道改为只导出主控件默认 `Release pane`、`Diagnostics lane`、`Backlog feed` 与最终稳定帧；`example/HelloCustomWidgets/layout/scroll_viewer/egui_view_scroll_viewer.c` 修正 track/thumb 的 pressed 绘制判定，避免脱靶移动后仅残留 `pressed_part` 时继续显示错误的按下态；`example/HelloUnitTest/test/test_scroll_viewer.inc` 同步把 key 注入改为 `dispatch_key_event()`，补齐 `read only / !enable` 恢复行为与静态 preview 固定状态断言；`example/HelloCustomWidgets/layout/scroll_viewer/readme.md` 重写为与当前静态 preview 实现一致的说明。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=layout/scroll_viewer PORT=pc`、`make all APP=HelloUnitTest PORT=pc_test`（在 `X:\` 短路径下强制重建后串行执行）、`X:\output\main.exe`（总计 `842 / 842`，`scroll_viewer` suite `7 / 7`）、`python scripts/sync_widget_catalog.py`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category layout`、`python scripts/checks/check_docs_encoding.py`、`python scripts/checks/check_widget_catalog.py`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub layout/scroll_viewer --track reference --timeout 10 --keep-screenshots`、`python scripts/code_compile_check.py --custom-widgets --category layout --bits64`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --category layout --track reference --bits64`、`python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub layout/scroll_viewer` 与对应 `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_layout_scroll_viewer`，并复核 runtime 截图确认主区域在 9 帧中出现 3 组唯一状态变化，而底部 preview 区域在 9 帧中保持单一哈希静态一致。
 
 - `2026-04-15`
   - 收口 `layout/drawer` reference 控件：在不修改 SDK 的前提下，保留主 `drawer` 的 `Filters / Review / Archive` 三组 `inline / overlay / anchor / open` 状态语义、toggle / close 的 same-target release 与键盘 `Enter / Space / Escape` 闭环，把底部 `compact / read only` preview 统一收口为真正静态的 reference 对照，移除 preview 点击桥接和额外轨道切换动作，对齐更低噪音的 `Drawer` 页面结构。
