@@ -34,7 +34,7 @@
 
 | 状态 | 控件名 | 分类 | 开始日期 | 当前阶段 | 目标 |
 | --- | --- | --- | --- | --- | --- |
-| 暂无 | - | - | - | - | - |
+| 进行中 | `grid_view` | `layout` | `2026-04-15` | static preview 收口准备 | 对齐 `items_repeater / uniform_grid / wrap_panel / virtualizing_wrap_panel / virtualizing_stack_panel / card_control / card_action / card_expander` 工作流，优先删除旧 preview 轨道、preview focus bridge 与旧单测 key 注入路径 |
 
 ## 当前保留的 Reference 主线控件
 
