@@ -2,108 +2,148 @@
 
 ## 参考来源
 - 参考设计体系：`Fluent 2`
-- 官方语义参考：`WPF Viewbox`
-- 对应组件名：`Viewbox`
-- 计划保留状态：`standard`、`compact`、`read only`、`stretch preset`
-- EGUI 适配说明：在 custom 层实现轻量 `egui_view_viewbox`，不修改 `sdk/EmbeddedGUI`
+- 官方语义参考：`WPF UI / WinUI Viewbox`
+- 对应组件语义：`Viewbox`
+- 本次保留语义：`Device preview`、`Cover preview`、`Inspector thumb`、`compact`、`read only`、`stretch preset`
+- 本次删除内容：旧 preview focus bridge、第二条 `compact` preview 轨道、录制中的 `preview click` 收尾
+- EGUI 适配说明：继续在 custom 层维护轻量 `egui_view_viewbox` reference 实现，本轮只收口参考页结构、录制轨道、静态 preview 语义和单测入口，不修改 `sdk/EmbeddedGUI`
 
-## 1. 为什么需要这个控件？
-`viewbox` 用来表达“单个内容块在受限容器内按统一缩放规则自适应放大或缩小”的语义。它适合预览卡片、设备缩略图、封面容器、图标组合块和嵌入式仪表摘要这类需要把一整块内容按比例塞进固定边界、但又不希望手工分别处理每个子元素尺寸的场景。
+## 1. 为什么需要这个控件
+`viewbox` 用来表达“同一块内容在受限视口内按统一缩放规则适配”的标准语义。它适合设备预览、封面容器、缩略卡片、审查面板这类需要保留内容整体比例、同时又要让用户看清缩放结果的场景。
 
 ## 2. 为什么现有控件不够用
+- `card_control`、`card_action` 更偏卡片入口语义，不负责展示缩放规则本身。
+- `uniform_grid`、`wrap_panel`、`items_repeater` 关注多项排布，不是单一内容块的缩放容器。
+- 现有 SDK 基础布局能控制尺寸，但没有当前仓库需要的 `Viewbox` reference 页面、stretch preset 和静态 preview 验收闭环。
 
-- `card_control`、`card_action`、`card_panel` 更偏卡片语义本身，不负责对子内容做统一缩放。
-- `uniform_grid`、`wrap_panel`、`items_repeater` 关注多项排布，不是单 child 的自适应缩放容器。
-- 现有 SDK 基础布局能控制位置和尺寸，但没有当前仓库需要的 `Viewbox` reference 页面、stretch preset、静态 preview 和验收闭环。
+## 3. 目标场景与页面结构
+- 页面只保留标题、一个主 `viewbox`，以及底部两个静态 preview。
+- 主控件展示三组主状态：
+  - `Device preview`
+  - `Cover preview`
+  - `Inspector thumb`
+- 左下角是 `compact` 静态 preview，只负责对照紧凑尺寸下的缩放结果。
+- 右下角是 `read only` 静态 preview，只负责对照只读弱化状态。
+- 两个 preview 统一通过 `egui_view_viewbox_override_static_preview_api()` 收口：
+  - 吞掉新的 `touch / key`
+  - 只清理残留 `pressed`
+  - 不改 `current_snapshot / current_preset / stretch_mode / compact_mode / read_only_mode`
+  - 不触发 action listener
 
-## 3. 目标场景与示例概览
-
-- 主区域展示一个标准 `viewbox`：同一组内容在固定边界内按不同 stretch preset 缩放。
-- 底部左侧展示 `compact` 静态 preview，用于对照窄尺寸下的缩放结果。
-- 底部右侧展示 `read only` 静态 preview，用于对照禁交互后的弱化状态。
-- 录制动作优先覆盖 `Right / Left / Home / End / Enter` 与一次真实触摸提交。
-
-目录：
-- `example/HelloCustomWidgets/layout/viewbox/`
+目标目录：`example/HelloCustomWidgets/layout/viewbox/`
 
 ## 4. 视觉与布局规格
-
-- 页面结构延续 layout 类 reference：标题 + 主控件 + 双 preview。
-- 主控件建议尺寸：`196 x 120` 左右，用于容纳内容框、缩放提示和当前 preset 高亮。
-- 主体保持浅色 Fluent 卡片容器，内部是单 child 的缩放 surface + 边界提示框。
-- 需要额外保留一层低噪音 viewbox 信息，例如：
-  - 当前 snapshot 名称
-  - 当前 stretch preset
-  - 内容原始尺寸 / 目标容器尺寸
+- 根布局：`224 x 240`
+- 主控件：`196 x 120`
+- 底部对照行：`216 x 78`
+- `compact` preview：`104 x 78`
+- `read only` preview：`104 x 78`
+- 页面结构：标题 -> 主 `viewbox` -> `compact / read only`
+- 样式约束：
+  - 保持浅色 Fluent 容器、低噪音边框和轻量强调色。
+  - 主区的 preset pills 是唯一交互焦点，不让底部 preview 承担额外交互职责。
+  - 录制里只导出主区状态变化，底部 preview 全程保持静态。
 
 ## 5. 控件清单
 
-| 变量名 | 类型 | 建议尺寸 | 初始状态 | 用途 |
+| 变量名 | 类型 | 尺寸 (W x H) | 初始状态 | 用途 |
 | --- | --- | ---: | --- | --- |
-| `root_layout` | `egui_view_linearlayout_t` | `224 x 244` | enabled | 页面根布局 |
-| `title_label` | `egui_view_label_t` | `224 x 18` | `Viewbox` | 页面标题 |
-| `viewbox_primary` | `egui_view_viewbox_t` | `196 x 120` | `standard` | 主 reference 控件 |
-| `viewbox_compact` | `egui_view_viewbox_t` | `104 x 78` | compact | 紧凑静态 preview |
-| `viewbox_read_only` | `egui_view_viewbox_t` | `104 x 78` | compact + read only | 只读静态 preview |
+| `viewbox_primary` | `egui_view_viewbox_t` | `196 x 120` | `Device preview` | 主 `Viewbox` |
+| `viewbox_compact` | `egui_view_viewbox_t` | `104 x 78` | `Compact fit` | 紧凑静态 preview |
+| `viewbox_read_only` | `egui_view_viewbox_t` | `104 x 78` | `Read only viewbox` | 只读静态 preview |
+| `primary_snapshots` | `egui_view_viewbox_snapshot_t[3]` | - | `Device / Cover / Inspector` | 主状态轨道 |
 
-## 6. 状态矩阵
+## 6. 状态覆盖矩阵
 
-| 区域 | 关键状态 | 说明 |
+| 区域 / 轨道 | 状态 | 说明 |
 | --- | --- | --- |
-| 主控件 | `Uniform fit` | 内容按比例完整落入容器 |
-| 主控件 | `Fill preset` | 内容按填满容器的方向扩展 |
-| 主控件 | `Downscale only` | 大内容缩小，小内容不再放大 |
-| 主控件 | `Action commit` | `Enter / Space` 提交当前 preset |
-| `compact` | `Compact preview` | 窄尺寸下的缩放结果对照 |
-| `read only` | `Read only viewbox` | 只读弱化对照 |
+| 主控件 | `Device preview` | 默认状态，展示标准等比缩放 |
+| 主控件 | `Cover preview` | `Fill` 模式占满视口 |
+| 主控件 | `Inspector thumb` | `Downscale only` 保持小内容不放大 |
+| 主控件 | `stretch preset` | `Uniform / Fill / Down only` pills 切换 |
+| `compact` | `Compact fit` | 固定静态对照，只验证紧凑布局 |
+| `read only` | `Read only viewbox` | 固定静态对照，只验证只读弱化和输入屏蔽 |
 
-## 7. 交互与状态语义
+## 7. 交互语义与单测要求
+- 主控件保留真实 preset 触摸闭环：
+  - `ACTION_DOWN(A) -> MOVE(B) -> UP(B)` 不提交
+  - `ACTION_DOWN(A) -> MOVE(B) -> MOVE(A) -> UP(A)` 才提交
+- 主控件键盘入口统一走 `dispatch_key_event()`：
+  - `Left / Right`：在 preset 之间切换
+  - `Home / End`：跳到首个 / 末个 preset
+  - `Tab`：优先切下一个 preset，走到末尾后切到下一组 snapshot 并恢复该组默认 preset
+  - `Enter / Space`：提交当前 preset 并触发 listener
+- `set_snapshots()`、`set_current_snapshot()`、`set_current_preset()`、`set_stretch_mode()`、`set_font()`、`set_meta_font()`、`set_palette()`、`set_compact_mode()`、`set_read_only_mode()` 都必须先清理残留 `pressed`
+- `read_only` 与 `!enable` 期间：
+  - `touch / dispatch_key_event` 都不能改动 `current_snapshot / current_preset / stretch_mode`
+  - 不触发 action listener
+  - 恢复后 `Right / Enter / Space` 要重新可用
+- static preview 期间：
+  - 只清理残留 `pressed`
+  - 保持 `current_snapshot / current_preset / stretch_mode / compact_mode / read_only_mode` 不变
+  - 不触发 action listener
 
-- 主控件默认聚焦到当前 preset，保留键盘导航：
-  - `Left / Right`：在 stretch preset 之间切换。
-  - `Home / End`：跳到首 / 尾 preset。
-  - `Tab`：在当前 snapshot 内前进，必要时切到下一组 snapshot。
-  - `Enter / Space`：提交当前 preset 并触发 listener。
-- 触摸语义保持 same-target release：
-  - `ACTION_DOWN` 命中某个 preset 后，仅在同一 preset `UP` 时提交。
-  - `MOVE` 离开原 preset 时取消 pressed，移回原 preset 再恢复。
-- `set_snapshots()`、`set_current_snapshot()`、`set_current_preset()`、`set_stretch_mode()`、`set_font()`、`set_meta_font()`、`set_palette()`、`set_compact_mode()`、`set_read_only_mode()` 都要清理 `pressed`。
-- `read_only_mode`、`!enable` 和 static preview 需要吞掉新的 `touch / key` 输入，并先清旧状态。
+## 8. 录制动作设计
+`egui_port_get_recording_action()` 的录制顺序如下：
+1. 重置主控件和底部 `compact / read only` preview，输出默认 `Device preview`
+2. 对主控件发送一次 `Right`，输出 preset 切换后的主区状态
+3. 切到 `Cover preview`，输出第二组 snapshot
+4. 切到 `Inspector thumb`，输出第三组 snapshot
+5. 恢复主控件默认状态并输出最终稳定帧
 
-## 8. 计划 API
+录制只导出主控件状态变化。底部两个 preview 在整条 reference 轨道里保持静态一致，不再包含第二条 `compact` 轨道，也不再包含 `preview click` 收尾。
 
-- `egui_view_viewbox_init()`
-- `egui_view_viewbox_set_snapshots()/get_current_snapshot()`
-- `egui_view_viewbox_set_current_snapshot()`
-- `egui_view_viewbox_set_current_preset()/get_current_preset()`
-- `egui_view_viewbox_set_stretch_mode()/get_stretch_mode()`
-- `egui_view_viewbox_activate_current_preset()`
-- `egui_view_viewbox_set_on_action_listener()`
-- `egui_view_viewbox_set_font()/set_meta_font()`
-- `egui_view_viewbox_set_compact_mode()/set_read_only_mode()`
-- `egui_view_viewbox_set_palette()`
-- `egui_view_viewbox_get_preset_region()`
-- `egui_view_viewbox_override_static_preview_api()`
-
-## 9. 验收目标
-
+## 9. 编译、单测、运行时与文档检查
 ```bash
 make all APP=HelloCustomWidgets APP_SUB=layout/viewbox PORT=pc
+
+# 在 X:\ 短路径下执行；修改 HelloUnitTest 后先 clean 再重建
+make clean APP=HelloUnitTest PORT=pc_test
 make all APP=HelloUnitTest PORT=pc_test
-output\main.exe
+X:\output\main.exe
+
 python scripts/sync_widget_catalog.py
 python scripts/checks/check_touch_release_semantics.py --scope custom --category layout
+python scripts/checks/check_docs_encoding.py
+python scripts/checks/check_widget_catalog.py
 python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub layout/viewbox --track reference --timeout 10 --keep-screenshots
 python scripts/code_compile_check.py --custom-widgets --category layout --bits64
 python scripts/code_runtime_check.py --app HelloCustomWidgets --category layout --track reference --bits64
-python scripts/checks/check_docs_encoding.py
-python scripts/checks/check_widget_catalog.py
 python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub layout/viewbox
-python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --name-filter viewbox
+python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_layout_viewbox
 ```
 
-## 10. 已知限制与后续方向
+## 10. 验收重点
+- 主控件和底部 `compact / read only` preview 必须完整可见，不能黑白屏、裁切或重叠。
+- 主区三组 snapshot 和一次 preset 切换要清晰可辨，底部 preview 全程保持静态。
+- `dispatch_key_event` 路径下的 `Right / Tab / Enter / Space`、`read only`、`!enable`、`static preview keeps state` 都要通过单测。
+- `snapshot / preset / stretch / compact / read only / disabled` 切换后不能残留旧的 `pressed` 高亮。
+- WASM demo 必须正常加载，文档面板能渲染本 README。
 
-- 首版只做 reference 语义，不做真实的通用 child tree 缩放容器。
-- 先用 snapshot 数组描述内容边界、目标边界和 stretch preset，不下沉为 SDK 级通用缩放布局。
-- 若后续复用价值稳定，再评估是否与 `items_repeater` / `uniform_grid` / `wrap_panel` 抽共享的容器装饰与静态 preview helper。
+## 11. 截图复核口径
+- 检查目录：`runtime_check_output/HelloCustomWidgets_layout_viewbox/default`
+- 复核目标：
+  - 主区存在多组可辨识唯一状态
+  - 底部 preview 区域在全程保持单一静态哈希
+  - 变化边界只出现在主区，不扩散到底部 preview
+
+## 12. 与现有控件的边界
+- 相比 `card_control`：这里强调缩放语义，不是卡片入口容器。
+- 相比 `uniform_grid`、`wrap_panel`：这里处理单块内容适配，不负责多项排布。
+- 相比基础布局容器：这里提供可直接审阅的 `Viewbox` 标准语义和静态 preview 对照。
+
+## 13. 本次保留的核心状态与删减项
+- 保留的核心状态：
+  - `Device preview`
+  - `Cover preview`
+  - `Inspector thumb`
+  - `compact`
+  - `read only`
+  - `stretch preset`
+- 保留的交互：
+  - preset 触摸提交
+  - 键盘 `Left / Right / Home / End / Tab / Enter / Space`
+- 删减的旧桥接与轨道：
+  - preview 点击清主控件 focus
+  - 第二条 `compact` preview 轨道
+  - 录制中的 `preview click` 收尾

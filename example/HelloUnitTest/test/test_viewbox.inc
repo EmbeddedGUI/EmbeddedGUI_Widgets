@@ -132,7 +132,7 @@ static int viewbox_send_key_to_view(egui_view_t *view, uint8_t type, uint8_t key
     memset(&event, 0, sizeof(event));
     event.type = type;
     event.key_code = key_code;
-    return view->api->on_key_event(view, &event);
+    return view->api->dispatch_key_event(view, &event);
 }
 
 static int viewbox_send_touch(uint8_t type, egui_dim_t x, egui_dim_t y)
@@ -205,32 +205,44 @@ static void viewbox_assert_pressed_cleared(egui_view_viewbox_t *widget)
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(widget)->is_pressed);
 }
 
+static void viewbox_assert_widget_state(egui_view_viewbox_t *widget, uint8_t snapshot, uint8_t preset, uint8_t stretch_mode, uint8_t compact_mode,
+                                        uint8_t read_only_mode)
+{
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot, egui_view_viewbox_get_current_snapshot(EGUI_VIEW_OF(widget)));
+    EGUI_TEST_ASSERT_EQUAL_INT(preset, egui_view_viewbox_get_current_preset(EGUI_VIEW_OF(widget)));
+    EGUI_TEST_ASSERT_EQUAL_INT(stretch_mode, egui_view_viewbox_get_stretch_mode(EGUI_VIEW_OF(widget)));
+    EGUI_TEST_ASSERT_EQUAL_INT(compact_mode, widget->compact_mode);
+    EGUI_TEST_ASSERT_EQUAL_INT(read_only_mode, widget->read_only_mode);
+}
+
+static void viewbox_assert_action_state(uint8_t count, uint8_t snapshot, uint8_t preset, uint8_t stretch_mode)
+{
+    EGUI_TEST_ASSERT_EQUAL_INT(count, viewbox_action_count);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot, viewbox_action_snapshot);
+    EGUI_TEST_ASSERT_EQUAL_INT(preset, viewbox_action_preset);
+    EGUI_TEST_ASSERT_EQUAL_INT(stretch_mode, viewbox_action_mode);
+}
+
 static void test_viewbox_set_snapshots_clamp_and_defaults(void)
 {
     viewbox_setup_widget(viewbox_overflow_snapshots, EGUI_ARRAY_SIZE(viewbox_overflow_snapshots));
 
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_VIEWBOX_MAX_SNAPSHOTS, viewbox_test_widget.snapshot_count);
-    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_viewbox_get_current_snapshot(EGUI_VIEW_OF(&viewbox_test_widget)));
-    EGUI_TEST_ASSERT_EQUAL_INT(2, egui_view_viewbox_get_current_preset(EGUI_VIEW_OF(&viewbox_test_widget)));
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_VIEWBOX_STRETCH_DOWNSCALE_ONLY, egui_view_viewbox_get_stretch_mode(EGUI_VIEW_OF(&viewbox_test_widget)));
+    viewbox_assert_widget_state(&viewbox_test_widget, 0, 2, EGUI_VIEW_VIEWBOX_STRETCH_DOWNSCALE_ONLY, 0, 0);
 
     viewbox_seed_pressed_state(&viewbox_test_widget, 1, 1);
     viewbox_test_widget.current_snapshot = 5;
     egui_view_viewbox_set_snapshots(EGUI_VIEW_OF(&viewbox_test_widget), viewbox_snapshots, 1);
     EGUI_TEST_ASSERT_EQUAL_INT(1, viewbox_test_widget.snapshot_count);
-    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_viewbox_get_current_snapshot(EGUI_VIEW_OF(&viewbox_test_widget)));
-    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_viewbox_get_current_preset(EGUI_VIEW_OF(&viewbox_test_widget)));
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_VIEWBOX_STRETCH_FILL, egui_view_viewbox_get_stretch_mode(EGUI_VIEW_OF(&viewbox_test_widget)));
+    viewbox_assert_widget_state(&viewbox_test_widget, 0, 1, EGUI_VIEW_VIEWBOX_STRETCH_FILL, 0, 0);
     viewbox_assert_pressed_cleared(&viewbox_test_widget);
 
     egui_view_viewbox_set_current_preset(EGUI_VIEW_OF(&viewbox_test_widget), EGUI_VIEW_VIEWBOX_PRESET_NONE);
-    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_viewbox_get_current_preset(EGUI_VIEW_OF(&viewbox_test_widget)));
+    viewbox_assert_widget_state(&viewbox_test_widget, 0, 1, EGUI_VIEW_VIEWBOX_STRETCH_FILL, 0, 0);
 
     egui_view_viewbox_set_snapshots(EGUI_VIEW_OF(&viewbox_test_widget), NULL, 0);
     EGUI_TEST_ASSERT_EQUAL_INT(0, viewbox_test_widget.snapshot_count);
-    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_viewbox_get_current_snapshot(EGUI_VIEW_OF(&viewbox_test_widget)));
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_VIEWBOX_PRESET_NONE, egui_view_viewbox_get_current_preset(EGUI_VIEW_OF(&viewbox_test_widget)));
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_VIEWBOX_STRETCH_UNIFORM, egui_view_viewbox_get_stretch_mode(EGUI_VIEW_OF(&viewbox_test_widget)));
+    viewbox_assert_widget_state(&viewbox_test_widget, 0, EGUI_VIEW_VIEWBOX_PRESET_NONE, EGUI_VIEW_VIEWBOX_STRETCH_UNIFORM, 0, 0);
 }
 
 static void test_viewbox_setters_clear_pressed_and_update_state(void)
@@ -249,13 +261,13 @@ static void test_viewbox_setters_clear_pressed_and_update_state(void)
 
     viewbox_seed_pressed_state(&viewbox_test_widget, 1, 1);
     egui_view_viewbox_set_compact_mode(EGUI_VIEW_OF(&viewbox_test_widget), 2);
-    EGUI_TEST_ASSERT_EQUAL_INT(1, viewbox_test_widget.compact_mode);
+    viewbox_assert_widget_state(&viewbox_test_widget, 0, 1, EGUI_VIEW_VIEWBOX_STRETCH_FILL, 1, 0);
     viewbox_assert_pressed_cleared(&viewbox_test_widget);
     egui_view_viewbox_set_compact_mode(EGUI_VIEW_OF(&viewbox_test_widget), 0);
 
     viewbox_seed_pressed_state(&viewbox_test_widget, 1, 1);
     egui_view_viewbox_set_read_only_mode(EGUI_VIEW_OF(&viewbox_test_widget), 3);
-    EGUI_TEST_ASSERT_EQUAL_INT(1, viewbox_test_widget.read_only_mode);
+    viewbox_assert_widget_state(&viewbox_test_widget, 0, 1, EGUI_VIEW_VIEWBOX_STRETCH_FILL, 0, 1);
     viewbox_assert_pressed_cleared(&viewbox_test_widget);
     egui_view_viewbox_set_read_only_mode(EGUI_VIEW_OF(&viewbox_test_widget), 0);
 
@@ -268,20 +280,16 @@ static void test_viewbox_setters_clear_pressed_and_update_state(void)
     viewbox_assert_pressed_cleared(&viewbox_test_widget);
 
     egui_view_viewbox_set_current_snapshot(EGUI_VIEW_OF(&viewbox_test_widget), 1);
-    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_viewbox_get_current_snapshot(EGUI_VIEW_OF(&viewbox_test_widget)));
-    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_viewbox_get_current_preset(EGUI_VIEW_OF(&viewbox_test_widget)));
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_VIEWBOX_STRETCH_UNIFORM, egui_view_viewbox_get_stretch_mode(EGUI_VIEW_OF(&viewbox_test_widget)));
+    viewbox_assert_widget_state(&viewbox_test_widget, 1, 0, EGUI_VIEW_VIEWBOX_STRETCH_UNIFORM, 0, 0);
 
     viewbox_seed_pressed_state(&viewbox_test_widget, 0, 1);
     egui_view_viewbox_set_current_preset(EGUI_VIEW_OF(&viewbox_test_widget), 2);
-    EGUI_TEST_ASSERT_EQUAL_INT(2, egui_view_viewbox_get_current_preset(EGUI_VIEW_OF(&viewbox_test_widget)));
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_VIEWBOX_STRETCH_DOWNSCALE_ONLY, egui_view_viewbox_get_stretch_mode(EGUI_VIEW_OF(&viewbox_test_widget)));
+    viewbox_assert_widget_state(&viewbox_test_widget, 1, 2, EGUI_VIEW_VIEWBOX_STRETCH_DOWNSCALE_ONLY, 0, 0);
     viewbox_assert_pressed_cleared(&viewbox_test_widget);
 
     viewbox_seed_pressed_state(&viewbox_test_widget, 2, 1);
     egui_view_viewbox_set_stretch_mode(EGUI_VIEW_OF(&viewbox_test_widget), EGUI_VIEW_VIEWBOX_STRETCH_FILL);
-    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_viewbox_get_current_preset(EGUI_VIEW_OF(&viewbox_test_widget)));
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_VIEWBOX_STRETCH_FILL, egui_view_viewbox_get_stretch_mode(EGUI_VIEW_OF(&viewbox_test_widget)));
+    viewbox_assert_widget_state(&viewbox_test_widget, 1, 1, EGUI_VIEW_VIEWBOX_STRETCH_FILL, 0, 0);
     viewbox_assert_pressed_cleared(&viewbox_test_widget);
 }
 
@@ -296,15 +304,13 @@ static void test_viewbox_regions_activate_and_listener(void)
     EGUI_TEST_ASSERT_TRUE(viewbox_get_preset_center(EGUI_VIEW_OF(&viewbox_test_widget), 2, &x, &y));
     egui_view_viewbox_set_current_preset(EGUI_VIEW_OF(&viewbox_test_widget), 2);
     EGUI_TEST_ASSERT_TRUE(egui_view_viewbox_activate_current_preset(EGUI_VIEW_OF(&viewbox_test_widget)));
-    EGUI_TEST_ASSERT_EQUAL_INT(1, viewbox_action_count);
-    EGUI_TEST_ASSERT_EQUAL_INT(0, viewbox_action_snapshot);
-    EGUI_TEST_ASSERT_EQUAL_INT(2, viewbox_action_preset);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_VIEWBOX_STRETCH_DOWNSCALE_ONLY, viewbox_action_mode);
+    viewbox_assert_widget_state(&viewbox_test_widget, 0, 2, EGUI_VIEW_VIEWBOX_STRETCH_DOWNSCALE_ONLY, 0, 0);
+    viewbox_assert_action_state(1, 0, 2, EGUI_VIEW_VIEWBOX_STRETCH_DOWNSCALE_ONLY);
 
     viewbox_reset_action_state();
     egui_view_viewbox_set_on_action_listener(EGUI_VIEW_OF(&viewbox_test_widget), NULL);
     EGUI_TEST_ASSERT_TRUE(egui_view_viewbox_activate_current_preset(EGUI_VIEW_OF(&viewbox_test_widget)));
-    EGUI_TEST_ASSERT_EQUAL_INT(0, viewbox_action_count);
+    viewbox_assert_action_state(0, 0xFF, EGUI_VIEW_VIEWBOX_PRESET_NONE, 0xFF);
 }
 
 static void test_viewbox_touch_same_target_release_and_cancel_behavior(void)
@@ -325,8 +331,8 @@ static void test_viewbox_touch_same_target_release_and_cancel_behavior(void)
     EGUI_TEST_ASSERT_TRUE(viewbox_send_touch(EGUI_MOTION_EVENT_ACTION_MOVE, outside_x, outside_y));
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&viewbox_test_widget)->is_pressed);
     EGUI_TEST_ASSERT_TRUE(viewbox_send_touch(EGUI_MOTION_EVENT_ACTION_UP, outside_x, outside_y));
-    EGUI_TEST_ASSERT_EQUAL_INT(0, viewbox_action_count);
-    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_viewbox_get_current_preset(EGUI_VIEW_OF(&viewbox_test_widget)));
+    viewbox_assert_widget_state(&viewbox_test_widget, 0, 1, EGUI_VIEW_VIEWBOX_STRETCH_FILL, 0, 0);
+    viewbox_assert_action_state(0, 0xFF, EGUI_VIEW_VIEWBOX_PRESET_NONE, 0xFF);
     viewbox_assert_pressed_cleared(&viewbox_test_widget);
 
     EGUI_TEST_ASSERT_TRUE(viewbox_send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, preset_x, preset_y));
@@ -334,13 +340,14 @@ static void test_viewbox_touch_same_target_release_and_cancel_behavior(void)
     EGUI_TEST_ASSERT_TRUE(viewbox_send_touch(EGUI_MOTION_EVENT_ACTION_MOVE, preset_x, preset_y));
     EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&viewbox_test_widget)->is_pressed);
     EGUI_TEST_ASSERT_TRUE(viewbox_send_touch(EGUI_MOTION_EVENT_ACTION_UP, preset_x, preset_y));
-    EGUI_TEST_ASSERT_EQUAL_INT(1, viewbox_action_count);
-    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_viewbox_get_current_preset(EGUI_VIEW_OF(&viewbox_test_widget)));
+    viewbox_assert_widget_state(&viewbox_test_widget, 0, 0, EGUI_VIEW_VIEWBOX_STRETCH_UNIFORM, 0, 0);
+    viewbox_assert_action_state(1, 0, 0, EGUI_VIEW_VIEWBOX_STRETCH_UNIFORM);
     viewbox_assert_pressed_cleared(&viewbox_test_widget);
 
     viewbox_reset_action_state();
     EGUI_TEST_ASSERT_TRUE(viewbox_send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, preset_x, preset_y));
     EGUI_TEST_ASSERT_TRUE(viewbox_send_touch(EGUI_MOTION_EVENT_ACTION_CANCEL, preset_x, preset_y));
+    viewbox_assert_action_state(0, 0xFF, EGUI_VIEW_VIEWBOX_PRESET_NONE, 0xFF);
     EGUI_TEST_ASSERT_EQUAL_INT(0, viewbox_action_count);
     viewbox_assert_pressed_cleared(&viewbox_test_widget);
 }
@@ -350,29 +357,26 @@ static void test_viewbox_key_navigation_activate_and_tab(void)
     viewbox_setup_widget(viewbox_snapshots, EGUI_ARRAY_SIZE(viewbox_snapshots));
 
     EGUI_TEST_ASSERT_TRUE(viewbox_send_key(EGUI_KEY_CODE_HOME));
-    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_viewbox_get_current_preset(EGUI_VIEW_OF(&viewbox_test_widget)));
+    viewbox_assert_widget_state(&viewbox_test_widget, 0, 0, EGUI_VIEW_VIEWBOX_STRETCH_UNIFORM, 0, 0);
     EGUI_TEST_ASSERT_TRUE(viewbox_send_key(EGUI_KEY_CODE_RIGHT));
-    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_viewbox_get_current_preset(EGUI_VIEW_OF(&viewbox_test_widget)));
+    viewbox_assert_widget_state(&viewbox_test_widget, 0, 1, EGUI_VIEW_VIEWBOX_STRETCH_FILL, 0, 0);
     EGUI_TEST_ASSERT_TRUE(viewbox_send_key(EGUI_KEY_CODE_END));
-    EGUI_TEST_ASSERT_EQUAL_INT(2, egui_view_viewbox_get_current_preset(EGUI_VIEW_OF(&viewbox_test_widget)));
+    viewbox_assert_widget_state(&viewbox_test_widget, 0, 2, EGUI_VIEW_VIEWBOX_STRETCH_DOWNSCALE_ONLY, 0, 0);
     EGUI_TEST_ASSERT_TRUE(viewbox_send_key(EGUI_KEY_CODE_LEFT));
-    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_viewbox_get_current_preset(EGUI_VIEW_OF(&viewbox_test_widget)));
+    viewbox_assert_widget_state(&viewbox_test_widget, 0, 1, EGUI_VIEW_VIEWBOX_STRETCH_FILL, 0, 0);
     EGUI_TEST_ASSERT_TRUE(viewbox_send_key(EGUI_KEY_CODE_TAB));
-    EGUI_TEST_ASSERT_EQUAL_INT(2, egui_view_viewbox_get_current_preset(EGUI_VIEW_OF(&viewbox_test_widget)));
+    viewbox_assert_widget_state(&viewbox_test_widget, 0, 2, EGUI_VIEW_VIEWBOX_STRETCH_DOWNSCALE_ONLY, 0, 0);
 
     egui_view_viewbox_set_current_preset(EGUI_VIEW_OF(&viewbox_test_widget), 2);
     EGUI_TEST_ASSERT_TRUE(viewbox_send_key(EGUI_KEY_CODE_TAB));
-    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_viewbox_get_current_snapshot(EGUI_VIEW_OF(&viewbox_test_widget)));
-    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_viewbox_get_current_preset(EGUI_VIEW_OF(&viewbox_test_widget)));
+    viewbox_assert_widget_state(&viewbox_test_widget, 1, 0, EGUI_VIEW_VIEWBOX_STRETCH_UNIFORM, 0, 0);
 
     EGUI_TEST_ASSERT_TRUE(viewbox_send_key_action(EGUI_KEY_EVENT_ACTION_DOWN, EGUI_KEY_CODE_ENTER));
     EGUI_TEST_ASSERT_EQUAL_INT(0, viewbox_test_widget.pressed_preset);
     EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&viewbox_test_widget)->is_pressed);
     EGUI_TEST_ASSERT_TRUE(viewbox_send_key_action(EGUI_KEY_EVENT_ACTION_UP, EGUI_KEY_CODE_ENTER));
-    EGUI_TEST_ASSERT_EQUAL_INT(1, viewbox_action_count);
-    EGUI_TEST_ASSERT_EQUAL_INT(1, viewbox_action_snapshot);
-    EGUI_TEST_ASSERT_EQUAL_INT(0, viewbox_action_preset);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_VIEWBOX_STRETCH_UNIFORM, viewbox_action_mode);
+    viewbox_assert_widget_state(&viewbox_test_widget, 1, 0, EGUI_VIEW_VIEWBOX_STRETCH_UNIFORM, 0, 0);
+    viewbox_assert_action_state(1, 1, 0, EGUI_VIEW_VIEWBOX_STRETCH_UNIFORM);
     viewbox_assert_pressed_cleared(&viewbox_test_widget);
 }
 
@@ -380,46 +384,99 @@ static void test_viewbox_read_only_and_disabled_guards(void)
 {
     egui_dim_t preset_x;
     egui_dim_t preset_y;
+    uint8_t initial_snapshot;
+    uint8_t initial_preset;
+    uint8_t initial_mode;
 
     viewbox_setup_widget(viewbox_snapshots, EGUI_ARRAY_SIZE(viewbox_snapshots));
     viewbox_layout_widget();
-    EGUI_TEST_ASSERT_TRUE(viewbox_get_preset_center(EGUI_VIEW_OF(&viewbox_test_widget), 1, &preset_x, &preset_y));
+    EGUI_TEST_ASSERT_TRUE(viewbox_get_preset_center(EGUI_VIEW_OF(&viewbox_test_widget), 2, &preset_x, &preset_y));
+
+    initial_snapshot = egui_view_viewbox_get_current_snapshot(EGUI_VIEW_OF(&viewbox_test_widget));
+    initial_preset = egui_view_viewbox_get_current_preset(EGUI_VIEW_OF(&viewbox_test_widget));
+    initial_mode = egui_view_viewbox_get_stretch_mode(EGUI_VIEW_OF(&viewbox_test_widget));
+    viewbox_assert_widget_state(&viewbox_test_widget, initial_snapshot, initial_preset, initial_mode, 0, 0);
+    viewbox_assert_action_state(0, 0xFF, EGUI_VIEW_VIEWBOX_PRESET_NONE, 0xFF);
 
     viewbox_seed_pressed_state(&viewbox_test_widget, 1, 1);
     egui_view_viewbox_set_read_only_mode(EGUI_VIEW_OF(&viewbox_test_widget), 1);
-    EGUI_TEST_ASSERT_FALSE(viewbox_send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, preset_x, preset_y));
-    EGUI_TEST_ASSERT_FALSE(viewbox_send_key(EGUI_KEY_CODE_ENTER));
+    viewbox_assert_widget_state(&viewbox_test_widget, initial_snapshot, initial_preset, initial_mode, 0, 1);
     viewbox_assert_pressed_cleared(&viewbox_test_widget);
+    EGUI_TEST_ASSERT_FALSE(viewbox_send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, preset_x, preset_y));
+    EGUI_TEST_ASSERT_FALSE(viewbox_send_key(EGUI_KEY_CODE_RIGHT));
+    EGUI_TEST_ASSERT_FALSE(viewbox_send_key(EGUI_KEY_CODE_ENTER));
+    viewbox_assert_widget_state(&viewbox_test_widget, initial_snapshot, initial_preset, initial_mode, 0, 1);
+    viewbox_assert_action_state(0, 0xFF, EGUI_VIEW_VIEWBOX_PRESET_NONE, 0xFF);
+    viewbox_assert_pressed_cleared(&viewbox_test_widget);
+
     egui_view_viewbox_set_read_only_mode(EGUI_VIEW_OF(&viewbox_test_widget), 0);
+    viewbox_assert_widget_state(&viewbox_test_widget, initial_snapshot, initial_preset, initial_mode, 0, 0);
+    EGUI_TEST_ASSERT_TRUE(viewbox_send_key(EGUI_KEY_CODE_RIGHT));
+    viewbox_assert_widget_state(&viewbox_test_widget, initial_snapshot, 2, EGUI_VIEW_VIEWBOX_STRETCH_DOWNSCALE_ONLY, 0, 0);
+    viewbox_assert_action_state(0, 0xFF, EGUI_VIEW_VIEWBOX_PRESET_NONE, 0xFF);
+    EGUI_TEST_ASSERT_TRUE(viewbox_send_key(EGUI_KEY_CODE_ENTER));
+    viewbox_assert_widget_state(&viewbox_test_widget, initial_snapshot, 2, EGUI_VIEW_VIEWBOX_STRETCH_DOWNSCALE_ONLY, 0, 0);
+    viewbox_assert_action_state(1, initial_snapshot, 2, EGUI_VIEW_VIEWBOX_STRETCH_DOWNSCALE_ONLY);
+    viewbox_reset_action_state();
+
+    egui_view_viewbox_set_current_snapshot(EGUI_VIEW_OF(&viewbox_test_widget), 1);
+    egui_view_viewbox_set_current_preset(EGUI_VIEW_OF(&viewbox_test_widget), 1);
+    initial_snapshot = egui_view_viewbox_get_current_snapshot(EGUI_VIEW_OF(&viewbox_test_widget));
+    initial_preset = egui_view_viewbox_get_current_preset(EGUI_VIEW_OF(&viewbox_test_widget));
+    initial_mode = egui_view_viewbox_get_stretch_mode(EGUI_VIEW_OF(&viewbox_test_widget));
+    viewbox_assert_widget_state(&viewbox_test_widget, initial_snapshot, initial_preset, initial_mode, 0, 0);
 
     viewbox_seed_pressed_state(&viewbox_test_widget, 1, 1);
     egui_view_set_enable(EGUI_VIEW_OF(&viewbox_test_widget), 0);
+    viewbox_assert_widget_state(&viewbox_test_widget, initial_snapshot, initial_preset, initial_mode, 0, 0);
+    EGUI_TEST_ASSERT_EQUAL_INT(1, viewbox_test_widget.pressed_preset);
+    EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&viewbox_test_widget)->is_pressed);
     EGUI_TEST_ASSERT_FALSE(viewbox_send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, preset_x, preset_y));
-    EGUI_TEST_ASSERT_FALSE(viewbox_send_key(EGUI_KEY_CODE_ENTER));
+    EGUI_TEST_ASSERT_FALSE(viewbox_send_key(EGUI_KEY_CODE_RIGHT));
+    EGUI_TEST_ASSERT_FALSE(viewbox_send_key(EGUI_KEY_CODE_SPACE));
+    viewbox_assert_widget_state(&viewbox_test_widget, initial_snapshot, initial_preset, initial_mode, 0, 0);
+    viewbox_assert_action_state(0, 0xFF, EGUI_VIEW_VIEWBOX_PRESET_NONE, 0xFF);
     viewbox_assert_pressed_cleared(&viewbox_test_widget);
+
     egui_view_set_enable(EGUI_VIEW_OF(&viewbox_test_widget), 1);
+    viewbox_assert_widget_state(&viewbox_test_widget, initial_snapshot, initial_preset, initial_mode, 0, 0);
+    EGUI_TEST_ASSERT_TRUE(viewbox_send_key(EGUI_KEY_CODE_RIGHT));
+    viewbox_assert_widget_state(&viewbox_test_widget, initial_snapshot, 2, EGUI_VIEW_VIEWBOX_STRETCH_DOWNSCALE_ONLY, 0, 0);
+    viewbox_assert_action_state(0, 0xFF, EGUI_VIEW_VIEWBOX_PRESET_NONE, 0xFF);
+    EGUI_TEST_ASSERT_TRUE(viewbox_send_key(EGUI_KEY_CODE_SPACE));
+    viewbox_assert_widget_state(&viewbox_test_widget, initial_snapshot, 2, EGUI_VIEW_VIEWBOX_STRETCH_DOWNSCALE_ONLY, 0, 0);
+    viewbox_assert_action_state(1, initial_snapshot, 2, EGUI_VIEW_VIEWBOX_STRETCH_DOWNSCALE_ONLY);
 }
 
-static void test_viewbox_static_preview_consumes_input_and_clears_pressed_state(void)
+static void test_viewbox_static_preview_consumes_input_and_keeps_state(void)
 {
     egui_dim_t preset_x;
     egui_dim_t preset_y;
+    uint8_t initial_snapshot;
+    uint8_t initial_preset;
+    uint8_t initial_mode;
 
     viewbox_setup_preview_widget();
     viewbox_layout_preview_widget();
     EGUI_TEST_ASSERT_TRUE(viewbox_get_preset_center(EGUI_VIEW_OF(&viewbox_preview_widget), 0, &preset_x, &preset_y));
 
-    viewbox_seed_pressed_state(&viewbox_preview_widget, 0, 1);
-    EGUI_TEST_ASSERT_TRUE(viewbox_send_preview_touch(EGUI_MOTION_EVENT_ACTION_DOWN, preset_x, preset_y));
-    viewbox_assert_pressed_cleared(&viewbox_preview_widget);
-    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_viewbox_get_current_preset(EGUI_VIEW_OF(&viewbox_preview_widget)));
-    EGUI_TEST_ASSERT_EQUAL_INT(0, viewbox_action_count);
+    initial_snapshot = egui_view_viewbox_get_current_snapshot(EGUI_VIEW_OF(&viewbox_preview_widget));
+    initial_preset = egui_view_viewbox_get_current_preset(EGUI_VIEW_OF(&viewbox_preview_widget));
+    initial_mode = egui_view_viewbox_get_stretch_mode(EGUI_VIEW_OF(&viewbox_preview_widget));
+    viewbox_assert_widget_state(&viewbox_preview_widget, initial_snapshot, initial_preset, initial_mode, 1, 0);
+    viewbox_assert_action_state(0, 0xFF, EGUI_VIEW_VIEWBOX_PRESET_NONE, 0xFF);
 
     viewbox_seed_pressed_state(&viewbox_preview_widget, 0, 1);
-    EGUI_TEST_ASSERT_TRUE(viewbox_send_preview_key(EGUI_KEY_CODE_ENTER));
+    EGUI_TEST_ASSERT_TRUE(viewbox_send_preview_touch(EGUI_MOTION_EVENT_ACTION_DOWN, preset_x, preset_y));
+    viewbox_assert_widget_state(&viewbox_preview_widget, initial_snapshot, initial_preset, initial_mode, 1, 0);
+    viewbox_assert_action_state(0, 0xFF, EGUI_VIEW_VIEWBOX_PRESET_NONE, 0xFF);
     viewbox_assert_pressed_cleared(&viewbox_preview_widget);
-    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_viewbox_get_current_preset(EGUI_VIEW_OF(&viewbox_preview_widget)));
-    EGUI_TEST_ASSERT_EQUAL_INT(0, viewbox_action_count);
+
+    viewbox_seed_pressed_state(&viewbox_preview_widget, 0, 1);
+    EGUI_TEST_ASSERT_TRUE(viewbox_send_preview_key(EGUI_KEY_CODE_RIGHT));
+    viewbox_assert_widget_state(&viewbox_preview_widget, initial_snapshot, initial_preset, initial_mode, 1, 0);
+    viewbox_assert_action_state(0, 0xFF, EGUI_VIEW_VIEWBOX_PRESET_NONE, 0xFF);
+    viewbox_assert_pressed_cleared(&viewbox_preview_widget);
 }
 
 void test_viewbox_run(void)
@@ -431,6 +488,6 @@ void test_viewbox_run(void)
     EGUI_TEST_RUN(test_viewbox_touch_same_target_release_and_cancel_behavior);
     EGUI_TEST_RUN(test_viewbox_key_navigation_activate_and_tab);
     EGUI_TEST_RUN(test_viewbox_read_only_and_disabled_guards);
-    EGUI_TEST_RUN(test_viewbox_static_preview_consumes_input_and_clears_pressed_state);
+    EGUI_TEST_RUN(test_viewbox_static_preview_consumes_input_and_keeps_state);
     EGUI_TEST_SUITE_END();
 }
