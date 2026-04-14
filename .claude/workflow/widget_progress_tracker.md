@@ -9,12 +9,12 @@
 
 ## 当前快照
 
-- 截至 `2026-04-14`，`example/HelloCustomWidgets/` 当前保留 `99` 个控件目录。
+- 截至 `2026-04-14`，`example/HelloCustomWidgets/` 当前保留 `100` 个控件目录。
 - 所有保留控件均来自 `reference` 主线：
   - `input = 32`
   - `layout = 27`
   - `navigation = 13`
-  - `display = 17`
+  - `display = 18`
   - `feedback = 10`
 - `widget_catalog.json`、`web/catalog-policy.json` 与默认 web 入口已同步到 `reference-only` 状态。
 - 已清退轨道：
@@ -119,7 +119,7 @@
 - `title_bar` -> `TitleBar`
 - `tree_view` -> `TreeView`
 
-### Display（17）
+### Display（18）
 
 - `badge` -> `Badge`
 - `badge_group` -> `BadgeGroup`
@@ -131,6 +131,7 @@
 - `font_icon` -> `FontIcon`
 - `image_icon` -> `ImageIcon`
 - `info_badge` -> `InfoBadge`
+- `info_label` -> `InfoLabel`
 - `path_icon` -> `PathIcon`
 - `person_picture` -> `PersonPicture`
 - `persona_group` -> `AvatarGroup`
@@ -153,6 +154,11 @@
 - `toast_stack` -> `Toast`
 
 ## 最近完成的收口动作
+
+- `2026-04-14`
+  - 新增 `display/info_label` reference 控件：补齐符合 Fluent 2 / Fluent UI React `InfoLabel` 语义的轻量 custom wrapper，在 custom 层实现 `label + info button + anchored bubble`，保留 `compact / read only` 静态 preview、same-target release 与 `Enter / Space / Esc` 键盘语义，不修改 SDK。
+  - `example/HelloCustomWidgets/display/info_label/egui_view_info_label.c/.h` 新增 `apply_standard_style()`、`apply_compact_style()`、`apply_read_only_style()`、`set_text()`、`set_info_title()`、`set_info_body()`、`set_font()`、`set_meta_font()`、`set_icon_font()`、`set_palette()`、`set_compact_mode()`、`set_read_only_mode()`、`set_open()`、`get_open()`、`set_on_open_changed_listener()`、`get_part_region()` 与 `override_static_preview_api()`；`example/HelloCustomWidgets/display/info_label/test.c`、`readme.md`、`example/HelloUnitTest/test/test_info_label.c/.h`、`example/HelloUnitTest/uicode.c`、`example/HelloCustomWidgets/widget_catalog.json` 与 `web/catalog-policy.json` 已同步接入。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=display/info_label PORT=pc`、`make all APP=HelloUnitTest PORT=pc_test`（在 `X:\` 短路径下） 、`output\main.exe`（总计 `812 / 812`，`info_label` suite `4 / 4`）、`python scripts/sync_widget_catalog.py`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category display`、`python scripts/checks/check_docs_encoding.py`、`python scripts/checks/check_widget_catalog.py`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub display/info_label --track reference --timeout 10 --keep-screenshots`、`python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub display/info_label` 与对应 `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_display_info_label` 验收，确认 `info_label` 已接入 reference 主线、runtime 链路与 web 发布链路。
 
 - `2026-04-14`
   - 新增 `navigation/pivot` reference 控件：补齐符合 Fluent 2 / WinUI `Pivot` 语义的轻量 custom wrapper，在 custom 层自绘 header 与 body，收口单页内容切换、`compact / read only` 静态 preview、same-target release 与键盘切换语义，不修改 SDK。
