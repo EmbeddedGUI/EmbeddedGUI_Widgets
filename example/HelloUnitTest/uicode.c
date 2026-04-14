@@ -21,6 +21,7 @@
 #include "test/test_check_box.h"
 #include "test/test_color_picker.h"
 #include "test/test_combo_box.h"
+#include "test/test_counter_badge.h"
 #include "test/test_command_bar.h"
 #include "test/test_command_bar_flyout.h"
 #include "test/test_data_grid.h"
@@ -144,6 +145,7 @@ void uicode_create_ui(void)
     test_check_box_run();
     test_color_picker_run();
     test_combo_box_run();
+    test_counter_badge_run();
     test_command_bar_run();
     test_command_bar_flyout_run();
     test_data_grid_run();

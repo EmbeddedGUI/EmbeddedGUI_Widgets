@@ -9,12 +9,12 @@
 
 ## 当前快照
 
-- 截至 `2026-04-14`，`example/HelloCustomWidgets/` 当前保留 `102` 个控件目录。
+- 截至 `2026-04-14`，`example/HelloCustomWidgets/` 当前保留 `103` 个控件目录。
 - 所有保留控件均来自 `reference` 主线：
   - `input = 33`
   - `layout = 27`
   - `navigation = 13`
-  - `display = 19`
+  - `display = 20`
   - `feedback = 10`
 - `widget_catalog.json`、`web/catalog-policy.json` 与默认 web 入口已同步到 `reference-only` 状态。
 - 已清退轨道：
@@ -120,7 +120,7 @@
 - `title_bar` -> `TitleBar`
 - `tree_view` -> `TreeView`
 
-### Display（19）
+### Display（20）
 
 - `badge` -> `Badge`
 - `badge_group` -> `BadgeGroup`
@@ -128,6 +128,7 @@
 - `animated_icon` -> `AnimatedIcon`
 - `bitmap_icon` -> `BitmapIcon`
 - `card_panel` -> `Card`
+- `counter_badge` -> `CounterBadge`
 - `divider` -> `Separator`
 - `font_icon` -> `FontIcon`
 - `image_icon` -> `ImageIcon`
@@ -156,6 +157,11 @@
 - `toast_stack` -> `Toast`
 
 ## 最近完成的收口动作
+
+- `2026-04-14`
+  - 新增 `display/counter_badge` reference 控件：补齐符合 Fluent 2 / Fluent UI React `CounterBadge` 语义的轻量 custom wrapper，在 custom 层实现独立数字提醒，覆盖 `count / overflow / dot`、`compact / read only` 静态 preview，以及白色 outline 的低噪音角标语义，不修改 SDK。
+  - `example/HelloCustomWidgets/display/counter_badge/egui_view_counter_badge.c/.h` 新增 `egui_view_counter_badge_init()`、`set_count()`、`get_count()`、`set_max_display()`、`get_max_display()`、`set_dot_mode()`、`get_dot_mode()`、`set_palette()`、`set_compact_mode()`、`get_compact_mode()`、`set_read_only_mode()`、`get_read_only_mode()`、`get_badge_region()` 与 `override_static_preview_api()`；`example/HelloCustomWidgets/display/counter_badge/test.c`、`readme.md`、`example/HelloUnitTest/test/test_counter_badge.c/.h`、`example/HelloUnitTest/uicode.c`、`example/HelloCustomWidgets/widget_catalog.json` 与 `web/catalog-policy.json` 已同步接入，并已把关键截图归档到本地 `iteration_log/` 供验收复核。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=display/counter_badge PORT=pc`、`make all APP=HelloUnitTest PORT=pc_test`（在 `X:\` 短路径下）、`output\main.exe`（总计 `825 / 825`，`counter_badge` suite `4 / 4`）、`python scripts/sync_widget_catalog.py`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category display`、`python scripts/checks/check_docs_encoding.py`、`python scripts/checks/check_widget_catalog.py`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub display/counter_badge --track reference --timeout 10 --keep-screenshots`、`python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub display/counter_badge` 与对应 `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_display_counter_badge` 验收，确认 `counter_badge` 已接入 reference 主线、runtime 链路与 web 发布链路。
 
 - `2026-04-14`
   - 新增 `display/presence_badge` reference 控件：补齐符合 Fluent 2 / Fluent UI React `PresenceBadge` 语义的轻量 custom wrapper，在 custom 层实现独立状态点，覆盖 `available / busy / away / do_not_disturb / offline`、`compact / read only` 静态 preview，以及 `offline` ring-only 与 `do_not_disturb` 减号语义，不修改 SDK。
