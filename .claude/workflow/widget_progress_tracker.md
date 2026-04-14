@@ -34,7 +34,7 @@
 
 | 状态 | 控件名 | 分类 | 开始日期 | 当前阶段 | 目标 |
 | --- | --- | --- | --- | --- | --- |
-| 进行中 | `grid_view` | `layout` | `2026-04-15` | static preview 收口准备 | 对齐 `items_repeater / uniform_grid / wrap_panel / virtualizing_wrap_panel / virtualizing_stack_panel / card_control / card_action / card_expander` 工作流，优先删除旧 preview 轨道、preview focus bridge 与旧单测 key 注入路径 |
+| 暂无 | - | - | - | - | - |
 
 ## 当前保留的 Reference 主线控件
 
@@ -161,6 +161,11 @@
 
 ## 最近完成的收口动作
 
+- `2026-04-15`
+  - 收口 `layout/grid_view` reference 控件：在不修改 SDK 的前提下，对齐 `items_repeater / uniform_grid / wrap_panel / virtualizing_wrap_panel / virtualizing_stack_panel / card_control / card_action / card_expander` 的 static preview 工作流，保留主控件 `Assets gallery / Template board / Team board` 三组主状态，把底部 `compact / read only` preview 统一收口为真正静态的 reference 对照，并删除 preview 点击清主控件焦点、第二条 `compact` preview 轨道和录制里的 `preview dismiss` 收尾动作。
+  - `example/HelloCustomWidgets/layout/grid_view/test.c` 删除旧 preview focus bridge、第二条 `compact` preview 轨道和录制里的 preview click 收尾，改为 `apply_primary_default_state()` 与 `apply_preview_states()` 统一恢复主控件和两个静态 preview，并把录制轨道收口为只导出主控件默认 `Assets gallery`、`Template board`、`Team board` 与最终稳定帧；`example/HelloUnitTest/test/test_grid_view.inc` 把 key 注入改为 `dispatch_key_event()`，补齐 `read only / !enable` 期间 `current_snapshot / current_item / layout_mode / compact_mode / read_only_mode` 不变与恢复后的 `HOME / END + ENTER` 行为断言，并把静态 preview 用例改成 “consumes input and keeps state”；`example/HelloCustomWidgets/layout/grid_view/readme.md` 重写为与当前 static preview 页面结构、录制轨道和验收命令一致的说明。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=layout/grid_view PORT=pc`、`make clean APP=HelloUnitTest PORT=pc_test`、`make all APP=HelloUnitTest PORT=pc_test`、`X:\output\main.exe`（总计 `842 / 842`，`grid_view` suite `7 / 7`）、`python scripts/sync_widget_catalog.py`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category layout`、`python scripts/checks/check_docs_encoding.py`、`python scripts/checks/check_widget_catalog.py`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub layout/grid_view --track reference --timeout 10 --keep-screenshots`、`python scripts/code_compile_check.py --custom-widgets --category layout --bits64`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --category layout --track reference --bits64`、`python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub layout/grid_view` 与对应 `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_layout_grid_view`。
+  - 复核 `runtime_check_output/HelloCustomWidgets_layout_grid_view/default` 的 `9` 帧截图：首帧差分变化区域仅位于主区 `(56, 62) - (403, 264)`；主区裁剪后出现 `3` 组唯一状态，底部 preview 区裁剪后 `9` 帧保持单一哈希，确认主区变化、preview 静态。
 - `2026-04-15`
   - 收口 `layout/card_expander` reference 控件：在不修改 SDK 的前提下，对齐 `card_action / card_control / uniform_grid / items_repeater / wrap_panel / virtualizing_wrap_panel / virtualizing_stack_panel` 的 static preview 工作流，保留主控件 `Workspace policy / Identity review / Release approval` 三组主状态，把底部 `compact / read only` preview 统一收口为真正静态的 reference 对照，并删除 preview 点击清主控件焦点、第二条 `compact` preview 轨道和录制里的 `preview dismiss` 收尾动作。
   - `example/HelloCustomWidgets/layout/card_expander/test.c` 删除旧 preview focus bridge、第二条 `compact` preview 轨道和录制里的 preview click 收尾，改为 `apply_primary_default_state()` 与 `apply_preview_states()` 统一恢复主控件和两个静态 preview，并把录制轨道收口为只导出主控件默认 `Workspace policy`、`Identity review`、`Release approval` 与最终稳定帧；`example/HelloUnitTest/test/test_card_expander.c` 把 key 注入改为 `dispatch_key_event()`，补齐 `read only / !enable` 期间 `current_snapshot / current_part / expanded_state / compact_mode / read_only_mode` 不变与恢复后的 `HOME / END + ENTER / SPACE` 行为断言，并把静态 preview 用例改成 “consumes input and keeps state”；`example/HelloCustomWidgets/layout/card_expander/readme.md` 重写为与当前 static preview 页面结构、录制轨道和验收命令一致的说明。

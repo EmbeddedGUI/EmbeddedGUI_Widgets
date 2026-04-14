@@ -145,7 +145,7 @@ static int grid_view_send_key_to_view(egui_view_t *view, uint8_t type, uint8_t k
     memset(&event, 0, sizeof(event));
     event.type = type;
     event.key_code = key_code;
-    return view->api->on_key_event(view, &event);
+    return view->api->dispatch_key_event(view, &event);
 }
 
 static int grid_view_send_touch(uint8_t type, egui_dim_t x, egui_dim_t y)
@@ -394,10 +394,16 @@ static void test_grid_view_read_only_and_disabled_guards(void)
 {
     egui_dim_t item_x;
     egui_dim_t item_y;
+    uint8_t initial_snapshot;
+    uint8_t initial_item;
+    uint8_t initial_layout;
 
     grid_view_setup_widget(grid_view_snapshots, EGUI_ARRAY_SIZE(grid_view_snapshots));
     grid_view_layout_widget();
     EGUI_TEST_ASSERT_TRUE(grid_view_get_item_center(EGUI_VIEW_OF(&grid_view_test_widget), 1, &item_x, &item_y));
+    initial_snapshot = hcw_grid_view_get_current_snapshot(EGUI_VIEW_OF(&grid_view_test_widget));
+    initial_item = hcw_grid_view_get_current_item(EGUI_VIEW_OF(&grid_view_test_widget));
+    initial_layout = hcw_grid_view_get_layout_mode(EGUI_VIEW_OF(&grid_view_test_widget));
 
     grid_view_seed_pressed_state(&grid_view_test_widget, 1, 1);
     hcw_grid_view_set_read_only_mode(EGUI_VIEW_OF(&grid_view_test_widget), 1);
@@ -405,42 +411,94 @@ static void test_grid_view_read_only_and_disabled_guards(void)
     EGUI_TEST_ASSERT_FALSE(grid_view_send_key(EGUI_KEY_CODE_ENTER));
     EGUI_TEST_ASSERT_FALSE(hcw_grid_view_handle_navigation_key(EGUI_VIEW_OF(&grid_view_test_widget), EGUI_KEY_CODE_LEFT));
     grid_view_assert_pressed_cleared(&grid_view_test_widget);
+    EGUI_TEST_ASSERT_EQUAL_INT(initial_snapshot, hcw_grid_view_get_current_snapshot(EGUI_VIEW_OF(&grid_view_test_widget)));
+    EGUI_TEST_ASSERT_EQUAL_INT(initial_item, hcw_grid_view_get_current_item(EGUI_VIEW_OF(&grid_view_test_widget)));
+    EGUI_TEST_ASSERT_EQUAL_INT(initial_layout, hcw_grid_view_get_layout_mode(EGUI_VIEW_OF(&grid_view_test_widget)));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, grid_view_test_widget.compact_mode);
+    EGUI_TEST_ASSERT_EQUAL_INT(1, grid_view_test_widget.read_only_mode);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, grid_view_action_count);
     hcw_grid_view_set_read_only_mode(EGUI_VIEW_OF(&grid_view_test_widget), 0);
 
+    EGUI_TEST_ASSERT_TRUE(grid_view_send_key(EGUI_KEY_CODE_END));
+    EGUI_TEST_ASSERT_EQUAL_INT(5, hcw_grid_view_get_current_item(EGUI_VIEW_OF(&grid_view_test_widget)));
+    EGUI_TEST_ASSERT_EQUAL_INT(initial_layout, hcw_grid_view_get_layout_mode(EGUI_VIEW_OF(&grid_view_test_widget)));
+    EGUI_TEST_ASSERT_TRUE(grid_view_send_key(EGUI_KEY_CODE_ENTER));
+    EGUI_TEST_ASSERT_EQUAL_INT(1, grid_view_action_count);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, grid_view_action_snapshot);
+    EGUI_TEST_ASSERT_EQUAL_INT(5, grid_view_action_item);
+
+    grid_view_reset_action_state();
+    hcw_grid_view_set_current_snapshot(EGUI_VIEW_OF(&grid_view_test_widget), initial_snapshot);
+    hcw_grid_view_set_current_item(EGUI_VIEW_OF(&grid_view_test_widget), initial_item);
+    initial_snapshot = hcw_grid_view_get_current_snapshot(EGUI_VIEW_OF(&grid_view_test_widget));
+    initial_item = hcw_grid_view_get_current_item(EGUI_VIEW_OF(&grid_view_test_widget));
+    initial_layout = hcw_grid_view_get_layout_mode(EGUI_VIEW_OF(&grid_view_test_widget));
     grid_view_seed_pressed_state(&grid_view_test_widget, 1, 1);
     egui_view_set_enable(EGUI_VIEW_OF(&grid_view_test_widget), 0);
     EGUI_TEST_ASSERT_FALSE(grid_view_send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, item_x, item_y));
     EGUI_TEST_ASSERT_FALSE(grid_view_send_key(EGUI_KEY_CODE_ENTER));
     EGUI_TEST_ASSERT_FALSE(hcw_grid_view_handle_navigation_key(EGUI_VIEW_OF(&grid_view_test_widget), EGUI_KEY_CODE_LEFT));
     grid_view_assert_pressed_cleared(&grid_view_test_widget);
+    EGUI_TEST_ASSERT_EQUAL_INT(initial_snapshot, hcw_grid_view_get_current_snapshot(EGUI_VIEW_OF(&grid_view_test_widget)));
+    EGUI_TEST_ASSERT_EQUAL_INT(initial_item, hcw_grid_view_get_current_item(EGUI_VIEW_OF(&grid_view_test_widget)));
+    EGUI_TEST_ASSERT_EQUAL_INT(initial_layout, hcw_grid_view_get_layout_mode(EGUI_VIEW_OF(&grid_view_test_widget)));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, grid_view_test_widget.compact_mode);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, grid_view_test_widget.read_only_mode);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, grid_view_action_count);
     egui_view_set_enable(EGUI_VIEW_OF(&grid_view_test_widget), 1);
+
+    EGUI_TEST_ASSERT_TRUE(grid_view_send_key(EGUI_KEY_CODE_HOME));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, hcw_grid_view_get_current_item(EGUI_VIEW_OF(&grid_view_test_widget)));
+    EGUI_TEST_ASSERT_EQUAL_INT(initial_layout, hcw_grid_view_get_layout_mode(EGUI_VIEW_OF(&grid_view_test_widget)));
+    EGUI_TEST_ASSERT_TRUE(grid_view_send_key(EGUI_KEY_CODE_ENTER));
+    EGUI_TEST_ASSERT_EQUAL_INT(1, grid_view_action_count);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, grid_view_action_snapshot);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, grid_view_action_item);
 }
 
-static void test_grid_view_static_preview_consumes_input_and_clears_pressed_state(void)
+static void test_grid_view_static_preview_consumes_input_and_keeps_state(void)
 {
     egui_dim_t item_x;
     egui_dim_t item_y;
 
     grid_view_setup_preview_widget();
     grid_view_layout_preview_widget();
+    EGUI_TEST_ASSERT_EQUAL_INT(0, hcw_grid_view_get_current_snapshot(EGUI_VIEW_OF(&grid_view_preview_widget)));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, hcw_grid_view_get_current_item(EGUI_VIEW_OF(&grid_view_preview_widget)));
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_GRID_VIEW_LAYOUT_STRIP, hcw_grid_view_get_layout_mode(EGUI_VIEW_OF(&grid_view_preview_widget)));
+    EGUI_TEST_ASSERT_EQUAL_INT(1, grid_view_preview_widget.compact_mode);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, grid_view_preview_widget.read_only_mode);
     EGUI_TEST_ASSERT_TRUE(grid_view_get_item_center(EGUI_VIEW_OF(&grid_view_preview_widget), 0, &item_x, &item_y));
 
     grid_view_seed_pressed_state(&grid_view_preview_widget, 0, 1);
     EGUI_TEST_ASSERT_TRUE(grid_view_send_preview_touch(EGUI_MOTION_EVENT_ACTION_DOWN, item_x, item_y));
     grid_view_assert_pressed_cleared(&grid_view_preview_widget);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, hcw_grid_view_get_current_snapshot(EGUI_VIEW_OF(&grid_view_preview_widget)));
     EGUI_TEST_ASSERT_EQUAL_INT(0, hcw_grid_view_get_current_item(EGUI_VIEW_OF(&grid_view_preview_widget)));
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_GRID_VIEW_LAYOUT_STRIP, hcw_grid_view_get_layout_mode(EGUI_VIEW_OF(&grid_view_preview_widget)));
+    EGUI_TEST_ASSERT_EQUAL_INT(1, grid_view_preview_widget.compact_mode);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, grid_view_preview_widget.read_only_mode);
     EGUI_TEST_ASSERT_EQUAL_INT(0, grid_view_action_count);
 
     grid_view_seed_pressed_state(&grid_view_preview_widget, 0, 1);
     EGUI_TEST_ASSERT_TRUE(grid_view_send_preview_key(EGUI_KEY_CODE_ENTER));
     grid_view_assert_pressed_cleared(&grid_view_preview_widget);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, hcw_grid_view_get_current_snapshot(EGUI_VIEW_OF(&grid_view_preview_widget)));
     EGUI_TEST_ASSERT_EQUAL_INT(0, hcw_grid_view_get_current_item(EGUI_VIEW_OF(&grid_view_preview_widget)));
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_GRID_VIEW_LAYOUT_STRIP, hcw_grid_view_get_layout_mode(EGUI_VIEW_OF(&grid_view_preview_widget)));
+    EGUI_TEST_ASSERT_EQUAL_INT(1, grid_view_preview_widget.compact_mode);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, grid_view_preview_widget.read_only_mode);
     EGUI_TEST_ASSERT_EQUAL_INT(0, grid_view_action_count);
 
     grid_view_seed_pressed_state(&grid_view_preview_widget, 0, 1);
     EGUI_TEST_ASSERT_TRUE(hcw_grid_view_handle_navigation_key(EGUI_VIEW_OF(&grid_view_preview_widget), EGUI_KEY_CODE_ENTER));
     grid_view_assert_pressed_cleared(&grid_view_preview_widget);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, hcw_grid_view_get_current_snapshot(EGUI_VIEW_OF(&grid_view_preview_widget)));
     EGUI_TEST_ASSERT_EQUAL_INT(0, hcw_grid_view_get_current_item(EGUI_VIEW_OF(&grid_view_preview_widget)));
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_GRID_VIEW_LAYOUT_STRIP, hcw_grid_view_get_layout_mode(EGUI_VIEW_OF(&grid_view_preview_widget)));
+    EGUI_TEST_ASSERT_EQUAL_INT(1, grid_view_preview_widget.compact_mode);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, grid_view_preview_widget.read_only_mode);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, grid_view_action_count);
 }
 
 void test_grid_view_run(void)
@@ -452,6 +510,6 @@ void test_grid_view_run(void)
     EGUI_TEST_RUN(test_grid_view_touch_same_target_release_and_cancel_behavior);
     EGUI_TEST_RUN(test_grid_view_key_navigation_activate_and_tab);
     EGUI_TEST_RUN(test_grid_view_read_only_and_disabled_guards);
-    EGUI_TEST_RUN(test_grid_view_static_preview_consumes_input_and_clears_pressed_state);
+    EGUI_TEST_RUN(test_grid_view_static_preview_consumes_input_and_keeps_state);
     EGUI_TEST_SUITE_END();
 }
