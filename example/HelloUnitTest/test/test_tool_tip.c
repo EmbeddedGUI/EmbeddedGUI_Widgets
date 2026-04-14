@@ -326,7 +326,7 @@ static void test_tool_tip_disabled_and_read_only_guard_prevent_open(void)
     assert_interaction_cleared(&test_widget);
 }
 
-static void test_tool_tip_static_preview_consumes_input_and_keeps_open_state(void)
+static void test_tool_tip_static_preview_consumes_input_and_keeps_snapshot_and_open_state(void)
 {
     egui_dim_t center_x;
     egui_dim_t center_y;
@@ -335,11 +335,14 @@ static void test_tool_tip_static_preview_consumes_input_and_keeps_open_state(voi
     layout_preview_widget();
     attach_view(EGUI_VIEW_OF(&preview_widget));
     get_target_center(EGUI_VIEW_OF(&preview_widget), &center_x, &center_y);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_tool_tip_get_current_snapshot(EGUI_VIEW_OF(&preview_widget)));
+    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_tool_tip_get_open(EGUI_VIEW_OF(&preview_widget)));
 
     seed_pending_state(&preview_widget);
     preview_widget.open = 1;
     EGUI_TEST_ASSERT_TRUE(send_touch_action(EGUI_VIEW_OF(&preview_widget), EGUI_MOTION_EVENT_ACTION_DOWN, center_x, center_y));
     EGUI_TEST_ASSERT_TRUE(send_touch_action(EGUI_VIEW_OF(&preview_widget), EGUI_MOTION_EVENT_ACTION_UP, center_x, center_y));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_tool_tip_get_current_snapshot(EGUI_VIEW_OF(&preview_widget)));
     EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_tool_tip_get_open(EGUI_VIEW_OF(&preview_widget)));
     assert_interaction_cleared(&preview_widget);
     EGUI_TEST_ASSERT_EQUAL_INT(0, g_click_count);
@@ -348,6 +351,7 @@ static void test_tool_tip_static_preview_consumes_input_and_keeps_open_state(voi
     preview_widget.open = 1;
     EGUI_TEST_ASSERT_TRUE(send_key_action(EGUI_VIEW_OF(&preview_widget), EGUI_KEY_EVENT_ACTION_DOWN, EGUI_KEY_CODE_ENTER));
     EGUI_TEST_ASSERT_TRUE(send_key_action(EGUI_VIEW_OF(&preview_widget), EGUI_KEY_EVENT_ACTION_UP, EGUI_KEY_CODE_ENTER));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_tool_tip_get_current_snapshot(EGUI_VIEW_OF(&preview_widget)));
     EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_tool_tip_get_open(EGUI_VIEW_OF(&preview_widget)));
     assert_interaction_cleared(&preview_widget);
     EGUI_TEST_ASSERT_EQUAL_INT(0, g_click_count);
@@ -384,7 +388,7 @@ void test_tool_tip_run(void)
     EGUI_TEST_RUN(test_tool_tip_key_delay_and_escape_close);
     EGUI_TEST_RUN(test_tool_tip_unhandled_key_clears_pressed_state);
     EGUI_TEST_RUN(test_tool_tip_disabled_and_read_only_guard_prevent_open);
-    EGUI_TEST_RUN(test_tool_tip_static_preview_consumes_input_and_keeps_open_state);
+    EGUI_TEST_RUN(test_tool_tip_static_preview_consumes_input_and_keeps_snapshot_and_open_state);
     EGUI_TEST_RUN(test_tool_tip_attach_and_detach_restore_pending_timer);
     EGUI_TEST_SUITE_END();
 }
