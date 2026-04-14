@@ -1,130 +1,135 @@
-# `list` 自定义控件设计说明
+# list 设计说明
 
 ## 参考来源
-- 参考设计系统：`Fluent 2`
-- 参考开源库：`Fluent UI React`
-- 对应组件名：`List`
-- 当前保留状态：`standard`、`compact`、`read only`、`accent`、`success`、`warning`、`neutral`
-- 当前保留能力：单列条目、单选高亮、同目标释放提交、键盘导航、静态 preview
-- 本轮删除内容：页面级 snapshot header/footer、双栏摘要、复杂业务卡片、额外 showcase 文案和无关装饰
-- EGUI 适配说明：目录和 demo 仍然使用 `layout/list`，公开 C API 改为 `egui_view_reference_list_*`，避免与 SDK 自带 `egui_view_list_*` 符号冲突
+- 参考设计体系：`Fluent 2`
+- 官方语义参考：`Fluent UI React List`
+- 对应组件语义：`List`
+- 本次保留语义：`Inbox / Review / Archive / compact / read only / selection focus`
+- 本次删除内容：旧录制末尾额外选中第 3 行的收尾态、旧单测 `on_key_event` 注入路径、与当前 static preview 工作流不一致的旧 README 结构
+- EGUI 适配说明：目录和 demo 继续使用 `layout/list`，公开 C API 保持 `egui_view_reference_list_*`，本轮只收口 `reference` 页面结构、录制轨道、单测入口和静态 preview 语义，不修改 `sdk/EmbeddedGUI`
 
 ## 1. 为什么需要这个控件
-`list` 用来表达“同一组轻量条目按单列顺序排列，当前只有一个焦点项，用户可以快速浏览并切换选择”的 Fluent 2 `List` 语义。它适合消息队列、审核清单、归档入口、资源面板侧栏和小规模任务摘要这类场景。
-
-当前仓库已有更重的列表类 reference 控件，但还缺一个贴近 Fluent 2 `List` 的轻量单列选择组件。这个控件补的是“低噪音、单列、单选、可嵌入”的空位。
+`list` 用来表达“同一组轻量条目按单列顺序排列，并保留当前项焦点与选择语义”的标准列表结构。它适合消息队列、审核清单、归档入口、资源面板侧栏和小规模任务摘要这类需要快速浏览与切换当前项的场景。
 
 ## 2. 为什么现有控件不够用
-- `data_list_panel` 更接近页面级 `ListView` 摘要面板，保留了 snapshot、标题层级和 footer，不适合当前这种轻量单列列表。
-- `items_repeater` 更强调重复布局宿主，不承担单选高亮、键盘焦点和列表语义。
-- SDK 自带 `List` 更偏基础控件能力，不是这个仓库当前要维护的 Fluent 2 reference 表达。
-- `settings_panel`、`master_detail` 这类控件承担的是设置页或主从布局职责，不适合充当小型列表本体。
+- `data_list_panel` 更偏页面级摘要列表，不适合轻量单列选择组件。
+- `items_repeater` 只承担重复布局宿主，不负责当前项和列表输入闭环。
+- `settings_panel`、`master_detail` 更偏设置页和主从布局，不适合承载小型列表本体。
+- SDK 自带 `List` 更偏基础能力，本仓库仍需要一个 Fluent 2 reference 风格的自定义列表页面、单测和 web 验收入口。
 
-## 3. 目标场景与示例概览
-- 页面只保留标题、一个可交互主 `list`，以及底部两个静态 preview。
-- 主控件录制三组状态：
-  - `Inbox`：accent 选中项
-  - `Review`：warning 选中项
-  - `Archive`：warning/neutral 混合条目
-- 底部保留两个静态 reference：
-  - `compact`：压缩条目高度，保留最小行语义
-  - `read only`：弱化视觉并吞掉输入
+## 3. 目标场景与页面结构
+- 页面结构统一为：标题 -> 主 `list` -> 底部 `compact / read only` 双静态 preview。
+- 主控件负责导出三组主区状态：
+  - `Inbox`
+  - `Review`
+  - `Archive`
+- 底部左侧是 `compact` 静态 preview，固定展示压缩行高与弱化 meta。
+- 底部右侧是 `read only` 静态 preview，固定展示只读弱化状态。
+- 两个 preview 统一通过 `egui_view_reference_list_override_static_preview_api()` 收口：
+  - 吞掉新的 `touch / key`
+  - 只清理残留 `pressed`
+  - 不修改 `current_index / compact_mode / read_only_mode`
+  - 不触发 selection listener
 
-目录：`example/HelloCustomWidgets/layout/list/`
+目标目录：`example/HelloCustomWidgets/layout/list/`
 
 ## 4. 视觉与布局规格
-- 画布：`480 x 480`
 - 根布局：`224 x 224`
 - 主控件：`196 x 112`
-- 底部容器：`216 x 72`
-- 单个 preview：`104 x 72`
-
-视觉原则：
-- 使用浅灰页面底板、白色列表卡片和低噪音分隔线。
-- 用单列行高、左侧 tone 指示和右侧 badge 表达 Fluent 2 `List` 的轻量层次。
-- 标准态保留 `title + meta + badge` 三层信息；`compact` 只保留最核心行语义。
-- `read only` 通过色彩弱化而不是外部标签来表达静态参考态。
+- 底部对照行：`216 x 72`
+- `compact` preview：`104 x 72`
+- `read only` preview：`104 x 72`
+- 页面结构：标题 + 主区 + 底部双 preview
+- 风格约束：
+  - 保持浅色 Fluent 容器、低噪音分隔线和轻量 tone 差异。
+  - 主区保留 `title / meta / badge` 三层信息，不叠加额外 snapshot header/footer。
+  - 底部 preview 全程静态，不再承担场景切换或额外交互职责。
 
 ## 5. 控件清单
-| 变量名 | 类型 | 尺寸 (W x H) | 用途 |
-| --- | --- | ---: | --- |
-| `root_layout` | `egui_view_linearlayout_t` | `224 x 224` | 页面根布局 |
-| `title_label` | `egui_view_label_t` | `224 x 18` | 页面标题 |
-| `primary_list` | `egui_view_reference_list_t` | `196 x 112` | 主交互列表 |
-| `compact_list` | `egui_view_reference_list_t` | `104 x 72` | 紧凑静态 preview |
-| `read_only_list` | `egui_view_reference_list_t` | `104 x 72` | 只读静态 preview |
 
-## 6. 状态矩阵
-| 状态 / 能力 | 主控件 | Compact preview | Read only preview |
-| --- | --- | --- | --- |
-| 单列条目 | 是 | 是 | 是 |
-| 单选高亮 | 是 | 是 | 是 |
-| `compact_mode` | 关闭 | 开启 | 开启 |
-| `read_only_mode` | 关闭 | 关闭 | 开启 |
-| `touch / key` 交互 | 是 | 否 | 否 |
-| 静态 preview 吞输入 | 否 | 是 | 是 |
-| tone badge | 是 | 是 | 是 |
+| 变量名 | 类型 | 尺寸 (W x H) | 初始状态 | 用途 |
+| --- | --- | ---: | --- | --- |
+| `primary_list` | `egui_view_reference_list_t` | `196 x 112` | `Inbox` | 主 `List` |
+| `compact_list` | `egui_view_reference_list_t` | `104 x 72` | `Compact` | 紧凑静态 preview |
+| `read_only_list` | `egui_view_reference_list_t` | `104 x 72` | `Read only` | 只读静态 preview |
+| `primary_snapshots` | `list_demo_state_t[3]` | - | `Inbox / Review / Archive` | 主状态轨道 |
 
-## 7. 交互语义
-- 触摸遵循 same-target release：只有 `DOWN(A) -> ... -> UP(A)` 才提交选择。
-- `ACTION_MOVE` 只更新 pressed 呈现，不改提交目标。
-- 键盘支持：
+## 6. 状态覆盖矩阵
+
+| 区域 / 轨道 | 状态 | 说明 |
+| --- | --- | --- |
+| 主控件 | `Inbox` | 默认状态，accent 选中项 |
+| 主控件 | `Review` | warning 选中项 |
+| 主控件 | `Archive` | warning / neutral 混合条目 |
+| `compact` preview | `Compact` | 固定静态对照，验证紧凑行高 |
+| `read only` preview | `Read only` | 固定静态对照，验证只读弱化与输入屏蔽 |
+
+## 7. 交互语义与单测要求
+- 主控件保留真实列表输入闭环：
   - `Up / Left`：上一项
   - `Down / Right`：下一项
   - `Home / End`：首项 / 末项
   - `Tab`：循环到下一项
-  - `Enter / Space`：仅消费，不重复通知当前项
-- `read_only` 或 `!enable` 时必须清掉残留 pressed，并忽略输入。
-- 静态 preview 通过 `egui_view_reference_list_override_static_preview_api()` 吞掉 `touch / key`，只保留视觉参考。
+  - `Enter / Space`：只消费输入，不重复通知当前项
+- 触摸遵循 same-target release：
+  - `DOWN(A) -> MOVE(B) -> UP(B)` 不提交
+  - `DOWN(A) -> MOVE(B) -> MOVE(A) -> UP(A)` 才提交
+- `set_items()`、`set_current_index()`、`set_font()`、`set_meta_font()`、`set_palette()`、`set_compact_mode()`、`set_read_only_mode()` 之后都不能残留旧的 `pressed` 高亮。
+- 主控件键盘入口统一走 `dispatch_key_event()`。
+- `read only`、`!enable` 和空数据状态下：
+  - 会先清理残留 `pressed`
+  - 后续 `touch / dispatch_key_event()` 不会改变 `current_index / compact_mode / read_only_mode`
+  - 不触发 selection listener
+- static preview 用例必须验证：
+  - 输入被消费
+  - `current_index / compact_mode / read_only_mode` 保持不变
+  - listener 不触发
+  - `pressed_index / is_pressed` 被清理
 
-## 8. 本轮收口内容
-- 新增 `egui_view_list.h/.c`
-- 提供：
-  - 数据与选择：`egui_view_reference_list_set_items()`、`get_item_count()`、`set_current_index()`、`get_current_index()`
-  - 监听：`set_on_selection_changed_listener()`
-  - 外观：`set_font()`、`set_meta_font()`、`set_palette()`、`set_compact_mode()`、`set_read_only_mode()`
-  - helper：`get_item_region()`、`override_static_preview_api()`
-- demo 页面接入主列表、`compact` preview 和 `read only` preview
-- 单测覆盖：
-  - setter 清 pressed
-  - 选择与 helper
-  - same-target touch
-  - 键盘导航
-  - 静态 preview 吞输入
+## 8. 录制动作设计
+`egui_port_get_recording_action()` 的录制顺序如下：
+1. 重置主控件和底部双 preview，输出默认 `Inbox`
+2. 切到 `Review`
+3. 切到 `Archive`
+4. 恢复默认主状态并输出最终稳定帧
 
-## 9. 录制动作设计
-1. 还原 `Inbox` 默认状态
-2. 抓取第一帧
-3. 切换到 `Review`
-4. 抓取第二帧
-5. 切换到 `Archive`
-6. 抓取第三帧
-7. 回到 `Inbox`，把选中项移到第 3 行
-8. 抓取收尾帧
+录制只导出主区状态变化。底部 `compact / read only` preview 在整条 reference 轨道里保持静态一致，不再包含额外 preview 状态切换，也不再保留旧的收尾尾帧。
 
-## 10. 编译、单测与 runtime 验收
+## 9. 编译、单测、运行时与文档检查
 ```bash
 make all APP=HelloCustomWidgets APP_SUB=layout/list PORT=pc
+
+# 在 X:\ 短路径下执行；修改 HelloUnitTest 后先 clean 再重建
+make clean APP=HelloUnitTest PORT=pc_test
 make all APP=HelloUnitTest PORT=pc_test
-output\main.exe
+X:\output\main.exe
 
 python scripts/sync_widget_catalog.py
 python scripts/checks/check_touch_release_semantics.py --scope custom --category layout
 python scripts/checks/check_docs_encoding.py
 python scripts/checks/check_widget_catalog.py
 python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub layout/list --track reference --timeout 10 --keep-screenshots
+python scripts/code_compile_check.py --custom-widgets --category layout --bits64
+python scripts/code_runtime_check.py --app HelloCustomWidgets --category layout --track reference --bits64
 python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub layout/list
 python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_layout_list
 ```
 
-验收重点：
-- 主列表和两个 preview 都必须完整可见，不黑屏、不白屏、不裁切。
-- 选中行、badge、tone 指示和分隔层次要能直接区分。
-- `compact` preview 需要保持单列列表语义，而不是退化成纯文本块。
-- 静态 preview 不参与真实输入，主控件保留 same-target release 和键盘切换。
+## 10. 验收重点
+- 主控件三组主状态必须能直接看出当前项和 tone 变化。
+- `same-target release / dispatch_key_event / read only / !enable / empty items / static preview` 全部通过单测。
+- 两个 preview 必须完整可见，不能黑白屏、裁切或重叠，并且在所有 runtime 帧里保持静态一致。
+- setter、guard 和 static preview 都必须统一遵守“先清理残留 `pressed` 再处理后续状态”的语义。
 
-## 11. 已知限制
-- 当前是固定尺寸 reference 实现，不承担长列表滚动、虚拟化和数据源绑定。
-- 当前每项只保留 `title / meta / badge / tone` 四类表达，不扩展复杂 trailing widgets。
-- 当前没有引入多选、拖拽排序、分组 header 和嵌套层级。
-- 如需进一步沉到框架层，应单独评估与 SDK 原生 `List` 的边界和命名关系。
+## 11. 截图复核口径
+- 检查目录：`runtime_check_output/HelloCustomWidgets_layout_list/default`
+- 复核目标：
+  - 主区存在 3 组可辨识唯一状态
+  - 底部 preview 区域在全程保持单一静态哈希
+  - 差分变化边界只出现在主区，不扩散到 preview 区
+
+## 12. 与现有控件的边界
+- 相比 `data_list_panel`：这里强调轻量单列列表，不是页面级摘要面板。
+- 相比 `items_repeater`：这里保留当前项和输入语义，不只是模板重复器。
+- 相比 `settings_panel`：这里不承担设置行布局，只保留列表本体。
+- 相比 SDK 原生 `List`：这里是当前仓库维护的 Fluent 2 reference 页面与验收闭环。

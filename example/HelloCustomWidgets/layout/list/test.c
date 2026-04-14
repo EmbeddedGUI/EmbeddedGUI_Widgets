@@ -7,24 +7,26 @@
 #include "core/egui_input_simulator.h"
 #endif
 
-#define LIST_ROOT_W             224
-#define LIST_ROOT_H             224
-#define LIST_PRIMARY_W          196
-#define LIST_PRIMARY_H          112
-#define LIST_PREVIEW_W          104
-#define LIST_PREVIEW_H          72
-#define LIST_BOTTOM_W           216
-#define LIST_BOTTOM_H           72
-#define LIST_RECORD_WAIT        90
-#define LIST_RECORD_FRAME_WAIT  170
-#define LIST_RECORD_FINAL_WAIT  520
+#define LIST_ROOT_WIDTH        224
+#define LIST_ROOT_HEIGHT       224
+#define LIST_PRIMARY_WIDTH     196
+#define LIST_PRIMARY_HEIGHT    112
+#define LIST_PREVIEW_WIDTH     104
+#define LIST_PREVIEW_HEIGHT    72
+#define LIST_BOTTOM_ROW_WIDTH  216
+#define LIST_BOTTOM_ROW_HEIGHT 72
+#define LIST_RECORD_WAIT       90
+#define LIST_RECORD_FRAME_WAIT 170
+#define LIST_RECORD_FINAL_WAIT 280
+
+#define PRIMARY_SNAPSHOT_COUNT ((uint8_t)EGUI_ARRAY_SIZE(primary_snapshots))
 
 typedef struct
 {
     const egui_view_reference_list_item_t *items;
     uint8_t item_count;
     uint8_t current_index;
-} list_demo_snapshot_t;
+} list_demo_state_t;
 
 static egui_view_linearlayout_t root_layout;
 static egui_view_label_t title_label;
@@ -62,7 +64,7 @@ static const egui_view_reference_list_item_t primary_items_2[] = {
         {"Audit", "History locked", "RO", EGUI_VIEW_REFERENCE_LIST_TONE_NEUTRAL, 0},
 };
 
-static const list_demo_snapshot_t primary_snapshots[] = {
+static const list_demo_state_t primary_snapshots[] = {
         {primary_items_0, EGUI_ARRAY_SIZE(primary_items_0), 0},
         {primary_items_1, EGUI_ARRAY_SIZE(primary_items_1), 1},
         {primary_items_2, EGUI_ARRAY_SIZE(primary_items_2), 2},
@@ -80,6 +82,9 @@ static const egui_view_reference_list_item_t read_only_items[] = {
         {"Selection", "Input suppressed", "1", EGUI_VIEW_REFERENCE_LIST_TONE_ACCENT, 0},
         {"Status", "Visual only", "Lock", EGUI_VIEW_REFERENCE_LIST_TONE_WARNING, 0},
 };
+
+static const list_demo_state_t compact_preview_state = {compact_items, EGUI_ARRAY_SIZE(compact_items), 0};
+static const list_demo_state_t read_only_preview_state = {read_only_items, EGUI_ARRAY_SIZE(read_only_items), 0};
 
 static void init_text_label(egui_view_label_t *label, egui_dim_t width, egui_dim_t height, const char *text, const egui_font_t *font, egui_color_t color,
                             uint8_t align)
@@ -105,7 +110,7 @@ static uint8_t clamp_index(uint8_t item_count, uint8_t index)
     return index;
 }
 
-static void apply_snapshot(egui_view_reference_list_t *view, const list_demo_snapshot_t *snapshot)
+static void apply_snapshot(egui_view_reference_list_t *view, const list_demo_state_t *snapshot)
 {
     egui_view_reference_list_set_items(EGUI_VIEW_OF(view), snapshot->items, snapshot->item_count);
     egui_view_reference_list_set_current_index(EGUI_VIEW_OF(view), clamp_index(snapshot->item_count, snapshot->current_index));
@@ -113,50 +118,61 @@ static void apply_snapshot(egui_view_reference_list_t *view, const list_demo_sna
 
 static void apply_primary_snapshot(uint8_t index)
 {
-    apply_snapshot(&primary_list, &primary_snapshots[index % EGUI_ARRAY_SIZE(primary_snapshots)]);
+    apply_snapshot(&primary_list, &primary_snapshots[index % PRIMARY_SNAPSHOT_COUNT]);
+}
+
+static void apply_primary_default_state(void)
+{
+    apply_primary_snapshot(0);
 }
 
 static void apply_preview_states(void)
 {
-    list_demo_snapshot_t compact_snapshot = {compact_items, EGUI_ARRAY_SIZE(compact_items), 0};
-    list_demo_snapshot_t read_only_snapshot = {read_only_items, EGUI_ARRAY_SIZE(read_only_items), 1};
-
-    apply_snapshot(&compact_list, &compact_snapshot);
+    apply_snapshot(&compact_list, &compact_preview_state);
     egui_view_reference_list_set_compact_mode(EGUI_VIEW_OF(&compact_list), 1);
+    egui_view_reference_list_set_read_only_mode(EGUI_VIEW_OF(&compact_list), 0);
 
-    apply_snapshot(&read_only_list, &read_only_snapshot);
+    apply_snapshot(&read_only_list, &read_only_preview_state);
     egui_view_reference_list_set_compact_mode(EGUI_VIEW_OF(&read_only_list), 1);
     egui_view_reference_list_set_read_only_mode(EGUI_VIEW_OF(&read_only_list), 1);
 }
 
+#if EGUI_CONFIG_RECORDING_TEST
+static void request_page_snapshot(void)
+{
+    egui_view_invalidate(EGUI_VIEW_OF(&root_layout));
+    recording_request_snapshot();
+}
+#endif
+
 void test_init_ui(void)
 {
     egui_view_linearlayout_init(EGUI_VIEW_OF(&root_layout));
-    egui_view_set_size(EGUI_VIEW_OF(&root_layout), LIST_ROOT_W, LIST_ROOT_H);
+    egui_view_set_size(EGUI_VIEW_OF(&root_layout), LIST_ROOT_WIDTH, LIST_ROOT_HEIGHT);
     egui_view_linearlayout_set_orientation(EGUI_VIEW_OF(&root_layout), 0);
     egui_view_linearlayout_set_align_type(EGUI_VIEW_OF(&root_layout), EGUI_ALIGN_HCENTER);
     egui_view_set_background(EGUI_VIEW_OF(&root_layout), EGUI_BG_OF(&bg_page_panel));
 
-    init_text_label(&title_label, LIST_ROOT_W, 18, title_text, (const egui_font_t *)&egui_res_font_montserrat_12_4, EGUI_COLOR_HEX(0x21303F),
+    init_text_label(&title_label, LIST_ROOT_WIDTH, 18, title_text, (const egui_font_t *)&egui_res_font_montserrat_12_4, EGUI_COLOR_HEX(0x21303F),
                     EGUI_ALIGN_CENTER);
     egui_view_set_margin(EGUI_VIEW_OF(&title_label), 0, 8, 0, 6);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label));
 
     egui_view_reference_list_init(EGUI_VIEW_OF(&primary_list));
-    egui_view_set_size(EGUI_VIEW_OF(&primary_list), LIST_PRIMARY_W, LIST_PRIMARY_H);
+    egui_view_set_size(EGUI_VIEW_OF(&primary_list), LIST_PRIMARY_WIDTH, LIST_PRIMARY_HEIGHT);
     egui_view_reference_list_set_font(EGUI_VIEW_OF(&primary_list), (const egui_font_t *)&egui_res_font_montserrat_10_4);
     egui_view_reference_list_set_meta_font(EGUI_VIEW_OF(&primary_list), (const egui_font_t *)&egui_res_font_montserrat_8_4);
     egui_view_set_margin(EGUI_VIEW_OF(&primary_list), 0, 0, 0, 8);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&primary_list));
 
     egui_view_linearlayout_init(EGUI_VIEW_OF(&bottom_row));
-    egui_view_set_size(EGUI_VIEW_OF(&bottom_row), LIST_BOTTOM_W, LIST_BOTTOM_H);
+    egui_view_set_size(EGUI_VIEW_OF(&bottom_row), LIST_BOTTOM_ROW_WIDTH, LIST_BOTTOM_ROW_HEIGHT);
     egui_view_linearlayout_set_orientation(EGUI_VIEW_OF(&bottom_row), 1);
     egui_view_linearlayout_set_align_type(EGUI_VIEW_OF(&bottom_row), EGUI_ALIGN_VCENTER);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&bottom_row));
 
     egui_view_reference_list_init(EGUI_VIEW_OF(&compact_list));
-    egui_view_set_size(EGUI_VIEW_OF(&compact_list), LIST_PREVIEW_W, LIST_PREVIEW_H);
+    egui_view_set_size(EGUI_VIEW_OF(&compact_list), LIST_PREVIEW_WIDTH, LIST_PREVIEW_HEIGHT);
     egui_view_reference_list_set_font(EGUI_VIEW_OF(&compact_list), (const egui_font_t *)&egui_res_font_montserrat_8_4);
     egui_view_reference_list_set_meta_font(EGUI_VIEW_OF(&compact_list), (const egui_font_t *)&egui_res_font_montserrat_8_4);
     egui_view_reference_list_override_static_preview_api(EGUI_VIEW_OF(&compact_list), &compact_api);
@@ -166,7 +182,7 @@ void test_init_ui(void)
     egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&compact_list));
 
     egui_view_reference_list_init(EGUI_VIEW_OF(&read_only_list));
-    egui_view_set_size(EGUI_VIEW_OF(&read_only_list), LIST_PREVIEW_W, LIST_PREVIEW_H);
+    egui_view_set_size(EGUI_VIEW_OF(&read_only_list), LIST_PREVIEW_WIDTH, LIST_PREVIEW_HEIGHT);
     egui_view_set_margin(EGUI_VIEW_OF(&read_only_list), 8, 0, 0, 0);
     egui_view_reference_list_set_font(EGUI_VIEW_OF(&read_only_list), (const egui_font_t *)&egui_res_font_montserrat_8_4);
     egui_view_reference_list_set_meta_font(EGUI_VIEW_OF(&read_only_list), (const egui_font_t *)&egui_res_font_montserrat_8_4);
@@ -176,7 +192,7 @@ void test_init_ui(void)
 #endif
     egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&read_only_list));
 
-    apply_primary_snapshot(0);
+    apply_primary_default_state();
     apply_preview_states();
 
     hello_custom_widgets_demo_apply_title_only_scaffold(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label), NULL, 0);
@@ -203,58 +219,52 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     case 0:
         if (first_call)
         {
-            apply_primary_snapshot(0);
+            apply_primary_default_state();
             apply_preview_states();
-        }
-        EGUI_SIM_SET_WAIT(p_action, LIST_RECORD_WAIT);
-        return true;
-    case 1:
-        if (first_call)
-        {
-            recording_request_snapshot();
+            request_page_snapshot();
         }
         EGUI_SIM_SET_WAIT(p_action, LIST_RECORD_FRAME_WAIT);
         return true;
-    case 2:
+    case 1:
         if (first_call)
         {
             apply_primary_snapshot(1);
         }
         EGUI_SIM_SET_WAIT(p_action, LIST_RECORD_WAIT);
         return true;
-    case 3:
+    case 2:
         if (first_call)
         {
-            recording_request_snapshot();
+            request_page_snapshot();
         }
         EGUI_SIM_SET_WAIT(p_action, LIST_RECORD_FRAME_WAIT);
         return true;
-    case 4:
+    case 3:
         if (first_call)
         {
             apply_primary_snapshot(2);
         }
         EGUI_SIM_SET_WAIT(p_action, LIST_RECORD_WAIT);
         return true;
+    case 4:
+        if (first_call)
+        {
+            request_page_snapshot();
+        }
+        EGUI_SIM_SET_WAIT(p_action, LIST_RECORD_FRAME_WAIT);
+        return true;
     case 5:
         if (first_call)
         {
-            recording_request_snapshot();
+            apply_primary_default_state();
+            apply_preview_states();
         }
-        EGUI_SIM_SET_WAIT(p_action, LIST_RECORD_FRAME_WAIT);
+        EGUI_SIM_SET_WAIT(p_action, LIST_RECORD_WAIT);
         return true;
     case 6:
         if (first_call)
         {
-            apply_primary_snapshot(0);
-            egui_view_reference_list_set_current_index(EGUI_VIEW_OF(&primary_list), 2);
-        }
-        EGUI_SIM_SET_WAIT(p_action, LIST_RECORD_WAIT);
-        return true;
-    case 7:
-        if (first_call)
-        {
-            recording_request_snapshot();
+            request_page_snapshot();
         }
         EGUI_SIM_SET_WAIT(p_action, LIST_RECORD_FINAL_WAIT);
         return true;

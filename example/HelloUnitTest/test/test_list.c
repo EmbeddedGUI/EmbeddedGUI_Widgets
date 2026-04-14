@@ -42,6 +42,19 @@ static void reset_listener_state(void)
     last_index = EGUI_VIEW_REFERENCE_LIST_INDEX_NONE;
 }
 
+static void assert_widget_state(egui_view_reference_list_t *widget, uint8_t current_index, uint8_t compact_mode, uint8_t read_only_mode)
+{
+    EGUI_TEST_ASSERT_EQUAL_INT(current_index, egui_view_reference_list_get_current_index(EGUI_VIEW_OF(widget)));
+    EGUI_TEST_ASSERT_EQUAL_INT(compact_mode, egui_view_reference_list_get_compact_mode(EGUI_VIEW_OF(widget)));
+    EGUI_TEST_ASSERT_EQUAL_INT(read_only_mode, egui_view_reference_list_get_read_only_mode(EGUI_VIEW_OF(widget)));
+}
+
+static void assert_listener_state(uint8_t count, uint8_t index)
+{
+    EGUI_TEST_ASSERT_EQUAL_INT(count, changed_count);
+    EGUI_TEST_ASSERT_EQUAL_INT(index, last_index);
+}
+
 static void layout_view(egui_view_t *view, egui_dim_t x, egui_dim_t y, egui_dim_t width, egui_dim_t height)
 {
     egui_region_t region;
@@ -54,7 +67,7 @@ static void layout_view(egui_view_t *view, egui_dim_t x, egui_dim_t y, egui_dim_
     egui_region_copy(&view->region_screen, &region);
 }
 
-static int send_touch(egui_view_t *view, uint8_t type, egui_dim_t x, egui_dim_t y)
+static int send_touch_to_view(egui_view_t *view, uint8_t type, egui_dim_t x, egui_dim_t y)
 {
     egui_motion_event_t event;
 
@@ -65,17 +78,51 @@ static int send_touch(egui_view_t *view, uint8_t type, egui_dim_t x, egui_dim_t 
     return view->api->on_touch_event(view, &event);
 }
 
-static int send_key(egui_view_t *view, uint8_t key_code)
+static int dispatch_key_event_to_view(egui_view_t *view, uint8_t type, uint8_t key_code)
 {
     egui_key_event_t event;
-    int handled = 0;
 
     memset(&event, 0, sizeof(event));
-    event.type = EGUI_KEY_EVENT_ACTION_DOWN;
+    event.type = type;
     event.key_code = key_code;
-    handled |= view->api->on_key_event(view, &event);
-    event.type = EGUI_KEY_EVENT_ACTION_UP;
-    handled |= view->api->on_key_event(view, &event);
+    return view->api->dispatch_key_event(view, &event);
+}
+
+static int send_touch(uint8_t type, egui_dim_t x, egui_dim_t y)
+{
+    return send_touch_to_view(EGUI_VIEW_OF(&test_widget), type, x, y);
+}
+
+static int send_preview_touch(uint8_t type, egui_dim_t x, egui_dim_t y)
+{
+    return send_touch_to_view(EGUI_VIEW_OF(&preview_widget), type, x, y);
+}
+
+static int send_key_action(uint8_t type, uint8_t key_code)
+{
+    return dispatch_key_event_to_view(EGUI_VIEW_OF(&test_widget), type, key_code);
+}
+
+static int send_preview_key_action(uint8_t type, uint8_t key_code)
+{
+    return dispatch_key_event_to_view(EGUI_VIEW_OF(&preview_widget), type, key_code);
+}
+
+static int send_key(uint8_t key_code)
+{
+    int handled = 0;
+
+    handled |= send_key_action(EGUI_KEY_EVENT_ACTION_DOWN, key_code);
+    handled |= send_key_action(EGUI_KEY_EVENT_ACTION_UP, key_code);
+    return handled;
+}
+
+static int send_preview_key(uint8_t key_code)
+{
+    int handled = 0;
+
+    handled |= send_preview_key_action(EGUI_KEY_EVENT_ACTION_DOWN, key_code);
+    handled |= send_preview_key_action(EGUI_KEY_EVENT_ACTION_UP, key_code);
     return handled;
 }
 
@@ -98,6 +145,12 @@ static void get_item_center(egui_view_t *view, uint8_t index, egui_dim_t *x, egu
     EGUI_TEST_ASSERT_TRUE(egui_view_reference_list_get_item_region(view, index, &region));
     *x = region.location.x + region.size.width / 2;
     *y = region.location.y + region.size.height / 2;
+}
+
+static void get_view_center(egui_view_t *view, egui_dim_t *x, egui_dim_t *y)
+{
+    *x = view->region_screen.location.x + view->region_screen.size.width / 2;
+    *y = view->region_screen.location.y + view->region_screen.size.height / 2;
 }
 
 static void setup_widget(void)
@@ -131,15 +184,15 @@ static void test_list_setters_clamp_getters_and_helpers(void)
     setup_widget();
 
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_ARRAY_SIZE(g_items), egui_view_reference_list_get_item_count(EGUI_VIEW_OF(&test_widget)));
-    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_reference_list_get_current_index(EGUI_VIEW_OF(&test_widget)));
-    EGUI_TEST_ASSERT_FALSE(egui_view_reference_list_get_compact_mode(EGUI_VIEW_OF(&test_widget)));
-    EGUI_TEST_ASSERT_FALSE(egui_view_reference_list_get_read_only_mode(EGUI_VIEW_OF(&test_widget)));
+    assert_widget_state(&test_widget, 0, 0, 0);
+    assert_listener_state(0, EGUI_VIEW_REFERENCE_LIST_INDEX_NONE);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xFFFFFF).full, test_widget.surface_color.full);
 
     seed_pressed_state(&test_widget, 1);
     egui_view_reference_list_set_items(EGUI_VIEW_OF(&test_widget), g_overflow_items, EGUI_ARRAY_SIZE(g_overflow_items));
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_REFERENCE_LIST_MAX_ITEMS, egui_view_reference_list_get_item_count(EGUI_VIEW_OF(&test_widget)));
-    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_reference_list_get_current_index(EGUI_VIEW_OF(&test_widget)));
+    assert_widget_state(&test_widget, 0, 0, 0);
+    assert_listener_state(0, EGUI_VIEW_REFERENCE_LIST_INDEX_NONE);
     assert_pressed_cleared(&test_widget);
 
     seed_pressed_state(&test_widget, 1);
@@ -163,17 +216,20 @@ static void test_list_setters_clamp_getters_and_helpers(void)
 
     seed_pressed_state(&test_widget, 3);
     egui_view_reference_list_set_compact_mode(EGUI_VIEW_OF(&test_widget), 3);
+    assert_widget_state(&test_widget, 0, 1, 0);
+    assert_listener_state(0, EGUI_VIEW_REFERENCE_LIST_INDEX_NONE);
     assert_pressed_cleared(&test_widget);
-    EGUI_TEST_ASSERT_TRUE(egui_view_reference_list_get_compact_mode(EGUI_VIEW_OF(&test_widget)));
 
     seed_pressed_state(&test_widget, 4);
     egui_view_reference_list_set_read_only_mode(EGUI_VIEW_OF(&test_widget), 2);
+    assert_widget_state(&test_widget, 0, 1, 1);
+    assert_listener_state(0, EGUI_VIEW_REFERENCE_LIST_INDEX_NONE);
     assert_pressed_cleared(&test_widget);
-    EGUI_TEST_ASSERT_TRUE(egui_view_reference_list_get_read_only_mode(EGUI_VIEW_OF(&test_widget)));
 
     egui_view_reference_list_set_items(EGUI_VIEW_OF(&test_widget), NULL, 0);
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_reference_list_get_item_count(EGUI_VIEW_OF(&test_widget)));
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_REFERENCE_LIST_INDEX_NONE, egui_view_reference_list_get_current_index(EGUI_VIEW_OF(&test_widget)));
+    assert_widget_state(&test_widget, EGUI_VIEW_REFERENCE_LIST_INDEX_NONE, 1, 1);
+    assert_listener_state(0, EGUI_VIEW_REFERENCE_LIST_INDEX_NONE);
 
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_REFERENCE_LIST_MAX_ITEMS, egui_view_reference_list_clamp_item_count(9));
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_reference_list_text_len(NULL));
@@ -217,21 +273,21 @@ static void test_list_selection_regions_and_internal_helpers(void)
                                egui_view_reference_list_hit_index(&test_widget, EGUI_VIEW_OF(&test_widget), 0, 0));
 
     egui_view_reference_list_set_current_index(EGUI_VIEW_OF(&test_widget), 2);
-    EGUI_TEST_ASSERT_EQUAL_INT(2, egui_view_reference_list_get_current_index(EGUI_VIEW_OF(&test_widget)));
-    EGUI_TEST_ASSERT_EQUAL_INT(1, changed_count);
-    EGUI_TEST_ASSERT_EQUAL_INT(2, last_index);
+    assert_widget_state(&test_widget, 2, 0, 0);
+    assert_listener_state(1, 2);
 
     seed_pressed_state(&test_widget, 2);
     egui_view_reference_list_set_current_index(EGUI_VIEW_OF(&test_widget), 2);
-    EGUI_TEST_ASSERT_EQUAL_INT(1, changed_count);
+    assert_widget_state(&test_widget, 2, 0, 0);
+    assert_listener_state(1, 2);
     assert_pressed_cleared(&test_widget);
 
     egui_view_reference_list_set_current_index(EGUI_VIEW_OF(&test_widget), 9);
-    EGUI_TEST_ASSERT_EQUAL_INT(2, egui_view_reference_list_get_current_index(EGUI_VIEW_OF(&test_widget)));
-    EGUI_TEST_ASSERT_EQUAL_INT(1, changed_count);
+    assert_widget_state(&test_widget, 2, 0, 0);
+    assert_listener_state(1, 2);
 }
 
-static void test_list_touch_same_target_release_and_guards(void)
+static void test_list_touch_same_target_release_and_cancel_behavior(void)
 {
     egui_dim_t x1;
     egui_dim_t y1;
@@ -243,101 +299,225 @@ static void test_list_touch_same_target_release_and_guards(void)
     get_item_center(EGUI_VIEW_OF(&test_widget), 1, &x1, &y1);
     get_item_center(EGUI_VIEW_OF(&test_widget), 2, &x2, &y2);
 
-    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_VIEW_OF(&test_widget), EGUI_MOTION_EVENT_ACTION_DOWN, x1, y1));
-    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_VIEW_OF(&test_widget), EGUI_MOTION_EVENT_ACTION_MOVE, x2, y2));
-    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_VIEW_OF(&test_widget), EGUI_MOTION_EVENT_ACTION_UP, x2, y2));
-    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_reference_list_get_current_index(EGUI_VIEW_OF(&test_widget)));
-    EGUI_TEST_ASSERT_EQUAL_INT(0, changed_count);
+    assert_widget_state(&test_widget, 0, 0, 0);
+    assert_listener_state(0, EGUI_VIEW_REFERENCE_LIST_INDEX_NONE);
+
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x1, y1));
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_MOVE, x2, y2));
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, x2, y2));
+    assert_widget_state(&test_widget, 0, 0, 0);
+    assert_listener_state(0, EGUI_VIEW_REFERENCE_LIST_INDEX_NONE);
     assert_pressed_cleared(&test_widget);
 
-    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_VIEW_OF(&test_widget), EGUI_MOTION_EVENT_ACTION_DOWN, x1, y1));
-    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_VIEW_OF(&test_widget), EGUI_MOTION_EVENT_ACTION_MOVE, x2, y2));
-    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_VIEW_OF(&test_widget), EGUI_MOTION_EVENT_ACTION_MOVE, x1, y1));
-    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_VIEW_OF(&test_widget), EGUI_MOTION_EVENT_ACTION_UP, x1, y1));
-    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_reference_list_get_current_index(EGUI_VIEW_OF(&test_widget)));
-    EGUI_TEST_ASSERT_EQUAL_INT(1, changed_count);
-    EGUI_TEST_ASSERT_EQUAL_INT(1, last_index);
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x1, y1));
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_MOVE, x2, y2));
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_MOVE, x1, y1));
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, x1, y1));
+    assert_widget_state(&test_widget, 1, 0, 0);
+    assert_listener_state(1, 1);
     assert_pressed_cleared(&test_widget);
 
-    seed_pressed_state(&test_widget, 1);
-    egui_view_reference_list_set_read_only_mode(EGUI_VIEW_OF(&test_widget), 1);
-    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_VIEW_OF(&test_widget), EGUI_MOTION_EVENT_ACTION_DOWN, x2, y2));
-    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_VIEW_OF(&test_widget), EGUI_MOTION_EVENT_ACTION_UP, x2, y2));
-    assert_pressed_cleared(&test_widget);
-
-    egui_view_reference_list_set_read_only_mode(EGUI_VIEW_OF(&test_widget), 0);
-    seed_pressed_state(&test_widget, 1);
-    egui_view_set_enable(EGUI_VIEW_OF(&test_widget), 0);
-    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_VIEW_OF(&test_widget), EGUI_MOTION_EVENT_ACTION_DOWN, x2, y2));
-    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_VIEW_OF(&test_widget), EGUI_MOTION_EVENT_ACTION_UP, x2, y2));
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x2, y2));
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_CANCEL, x2, y2));
+    assert_widget_state(&test_widget, 1, 0, 0);
+    assert_listener_state(1, 1);
     assert_pressed_cleared(&test_widget);
 }
 
-static void test_list_keyboard_navigation_enter_space_and_guards(void)
+static void test_list_keyboard_navigation_enter_space_and_tab(void)
 {
     setup_widget();
 
-    EGUI_TEST_ASSERT_TRUE(send_key(EGUI_VIEW_OF(&test_widget), EGUI_KEY_CODE_UP));
-    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_reference_list_get_current_index(EGUI_VIEW_OF(&test_widget)));
-    EGUI_TEST_ASSERT_EQUAL_INT(0, changed_count);
+    assert_widget_state(&test_widget, 0, 0, 0);
+    assert_listener_state(0, EGUI_VIEW_REFERENCE_LIST_INDEX_NONE);
 
-    EGUI_TEST_ASSERT_TRUE(send_key(EGUI_VIEW_OF(&test_widget), EGUI_KEY_CODE_DOWN));
-    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_reference_list_get_current_index(EGUI_VIEW_OF(&test_widget)));
-    EGUI_TEST_ASSERT_EQUAL_INT(1, changed_count);
-    EGUI_TEST_ASSERT_EQUAL_INT(1, last_index);
+    EGUI_TEST_ASSERT_TRUE(send_key(EGUI_KEY_CODE_UP));
+    assert_widget_state(&test_widget, 0, 0, 0);
+    assert_listener_state(0, EGUI_VIEW_REFERENCE_LIST_INDEX_NONE);
 
-    EGUI_TEST_ASSERT_TRUE(send_key(EGUI_VIEW_OF(&test_widget), EGUI_KEY_CODE_END));
-    EGUI_TEST_ASSERT_EQUAL_INT(3, egui_view_reference_list_get_current_index(EGUI_VIEW_OF(&test_widget)));
-    EGUI_TEST_ASSERT_EQUAL_INT(2, changed_count);
+    EGUI_TEST_ASSERT_TRUE(send_key(EGUI_KEY_CODE_DOWN));
+    assert_widget_state(&test_widget, 1, 0, 0);
+    assert_listener_state(1, 1);
 
-    EGUI_TEST_ASSERT_TRUE(send_key(EGUI_VIEW_OF(&test_widget), EGUI_KEY_CODE_HOME));
-    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_reference_list_get_current_index(EGUI_VIEW_OF(&test_widget)));
-    EGUI_TEST_ASSERT_EQUAL_INT(3, changed_count);
+    EGUI_TEST_ASSERT_TRUE(send_key(EGUI_KEY_CODE_END));
+    assert_widget_state(&test_widget, 3, 0, 0);
+    assert_listener_state(2, 3);
 
-    EGUI_TEST_ASSERT_TRUE(send_key(EGUI_VIEW_OF(&test_widget), EGUI_KEY_CODE_TAB));
-    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_reference_list_get_current_index(EGUI_VIEW_OF(&test_widget)));
-    EGUI_TEST_ASSERT_EQUAL_INT(4, changed_count);
+    EGUI_TEST_ASSERT_TRUE(send_key(EGUI_KEY_CODE_HOME));
+    assert_widget_state(&test_widget, 0, 0, 0);
+    assert_listener_state(3, 0);
 
-    EGUI_TEST_ASSERT_TRUE(send_key(EGUI_VIEW_OF(&test_widget), EGUI_KEY_CODE_ENTER));
-    EGUI_TEST_ASSERT_TRUE(send_key(EGUI_VIEW_OF(&test_widget), EGUI_KEY_CODE_SPACE));
-    EGUI_TEST_ASSERT_EQUAL_INT(4, changed_count);
-    assert_pressed_cleared(&test_widget);
+    EGUI_TEST_ASSERT_TRUE(send_key(EGUI_KEY_CODE_TAB));
+    assert_widget_state(&test_widget, 1, 0, 0);
+    assert_listener_state(4, 1);
 
-    seed_pressed_state(&test_widget, 1);
-    egui_view_reference_list_set_read_only_mode(EGUI_VIEW_OF(&test_widget), 1);
-    EGUI_TEST_ASSERT_FALSE(send_key(EGUI_VIEW_OF(&test_widget), EGUI_KEY_CODE_DOWN));
-    assert_pressed_cleared(&test_widget);
+    EGUI_TEST_ASSERT_TRUE(send_key(EGUI_KEY_CODE_ENTER));
+    assert_widget_state(&test_widget, 1, 0, 0);
+    assert_listener_state(4, 1);
 
-    egui_view_reference_list_set_read_only_mode(EGUI_VIEW_OF(&test_widget), 0);
-    seed_pressed_state(&test_widget, 1);
-    egui_view_set_enable(EGUI_VIEW_OF(&test_widget), 0);
-    EGUI_TEST_ASSERT_FALSE(send_key(EGUI_VIEW_OF(&test_widget), EGUI_KEY_CODE_DOWN));
+    EGUI_TEST_ASSERT_TRUE(send_key(EGUI_KEY_CODE_SPACE));
+    assert_widget_state(&test_widget, 1, 0, 0);
+    assert_listener_state(4, 1);
     assert_pressed_cleared(&test_widget);
 }
 
-static void test_list_static_preview_consumes_input(void)
+static void test_list_read_only_mode_ignores_input_and_clears_pressed_state(void)
+{
+    egui_dim_t x2;
+    egui_dim_t y2;
+
+    setup_widget();
+    layout_view(EGUI_VIEW_OF(&test_widget), 10, 20, 180, 112);
+    egui_view_reference_list_set_current_index(EGUI_VIEW_OF(&test_widget), 1);
+    reset_listener_state();
+    get_item_center(EGUI_VIEW_OF(&test_widget), 2, &x2, &y2);
+
+    assert_widget_state(&test_widget, 1, 0, 0);
+    assert_listener_state(0, EGUI_VIEW_REFERENCE_LIST_INDEX_NONE);
+
+    seed_pressed_state(&test_widget, 1);
+    egui_view_reference_list_set_read_only_mode(EGUI_VIEW_OF(&test_widget), 1);
+    assert_widget_state(&test_widget, 1, 0, 1);
+    assert_listener_state(0, EGUI_VIEW_REFERENCE_LIST_INDEX_NONE);
+    assert_pressed_cleared(&test_widget);
+
+    seed_pressed_state(&test_widget, 2);
+    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x2, y2));
+    assert_widget_state(&test_widget, 1, 0, 1);
+    assert_listener_state(0, EGUI_VIEW_REFERENCE_LIST_INDEX_NONE);
+    assert_pressed_cleared(&test_widget);
+    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, x2, y2));
+
+    seed_pressed_state(&test_widget, 2);
+    EGUI_TEST_ASSERT_FALSE(send_key(EGUI_KEY_CODE_DOWN));
+    assert_widget_state(&test_widget, 1, 0, 1);
+    assert_listener_state(0, EGUI_VIEW_REFERENCE_LIST_INDEX_NONE);
+    assert_pressed_cleared(&test_widget);
+
+    seed_pressed_state(&test_widget, 2);
+    EGUI_TEST_ASSERT_FALSE(send_key(EGUI_KEY_CODE_ENTER));
+    assert_widget_state(&test_widget, 1, 0, 1);
+    assert_listener_state(0, EGUI_VIEW_REFERENCE_LIST_INDEX_NONE);
+    assert_pressed_cleared(&test_widget);
+
+    egui_view_reference_list_set_read_only_mode(EGUI_VIEW_OF(&test_widget), 0);
+    assert_widget_state(&test_widget, 1, 0, 0);
+    reset_listener_state();
+
+    EGUI_TEST_ASSERT_TRUE(send_key(EGUI_KEY_CODE_DOWN));
+    assert_widget_state(&test_widget, 2, 0, 0);
+    assert_listener_state(1, 2);
+
+    EGUI_TEST_ASSERT_TRUE(send_key(EGUI_KEY_CODE_ENTER));
+    assert_widget_state(&test_widget, 2, 0, 0);
+    assert_listener_state(1, 2);
+
+    EGUI_TEST_ASSERT_TRUE(send_key(EGUI_KEY_CODE_SPACE));
+    assert_widget_state(&test_widget, 2, 0, 0);
+    assert_listener_state(1, 2);
+}
+
+static void test_list_view_disabled_ignores_input_and_clears_pressed_state(void)
+{
+    egui_dim_t x2;
+    egui_dim_t y2;
+
+    setup_widget();
+    layout_view(EGUI_VIEW_OF(&test_widget), 10, 20, 180, 112);
+    egui_view_reference_list_set_current_index(EGUI_VIEW_OF(&test_widget), 1);
+    reset_listener_state();
+    get_item_center(EGUI_VIEW_OF(&test_widget), 2, &x2, &y2);
+
+    assert_widget_state(&test_widget, 1, 0, 0);
+    assert_listener_state(0, EGUI_VIEW_REFERENCE_LIST_INDEX_NONE);
+
+    seed_pressed_state(&test_widget, 1);
+    egui_view_set_enable(EGUI_VIEW_OF(&test_widget), 0);
+    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x2, y2));
+    assert_widget_state(&test_widget, 1, 0, 0);
+    assert_listener_state(0, EGUI_VIEW_REFERENCE_LIST_INDEX_NONE);
+    assert_pressed_cleared(&test_widget);
+    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, x2, y2));
+
+    seed_pressed_state(&test_widget, 2);
+    EGUI_TEST_ASSERT_FALSE(send_key(EGUI_KEY_CODE_DOWN));
+    assert_widget_state(&test_widget, 1, 0, 0);
+    assert_listener_state(0, EGUI_VIEW_REFERENCE_LIST_INDEX_NONE);
+    assert_pressed_cleared(&test_widget);
+
+    seed_pressed_state(&test_widget, 2);
+    EGUI_TEST_ASSERT_FALSE(send_key(EGUI_KEY_CODE_SPACE));
+    assert_widget_state(&test_widget, 1, 0, 0);
+    assert_listener_state(0, EGUI_VIEW_REFERENCE_LIST_INDEX_NONE);
+    assert_pressed_cleared(&test_widget);
+
+    egui_view_set_enable(EGUI_VIEW_OF(&test_widget), 1);
+    assert_widget_state(&test_widget, 1, 0, 0);
+    reset_listener_state();
+
+    EGUI_TEST_ASSERT_TRUE(send_key(EGUI_KEY_CODE_DOWN));
+    assert_widget_state(&test_widget, 2, 0, 0);
+    assert_listener_state(1, 2);
+
+    EGUI_TEST_ASSERT_TRUE(send_key(EGUI_KEY_CODE_ENTER));
+    assert_widget_state(&test_widget, 2, 0, 0);
+    assert_listener_state(1, 2);
+
+    EGUI_TEST_ASSERT_TRUE(send_key(EGUI_KEY_CODE_SPACE));
+    assert_widget_state(&test_widget, 2, 0, 0);
+    assert_listener_state(1, 2);
+}
+
+static void test_list_static_preview_consumes_input_and_keeps_state(void)
 {
     egui_dim_t x;
     egui_dim_t y;
-    uint8_t index_before;
 
     setup_preview_widget();
     layout_view(EGUI_VIEW_OF(&preview_widget), 10, 20, 104, 72);
     get_item_center(EGUI_VIEW_OF(&preview_widget), 2, &x, &y);
-    index_before = egui_view_reference_list_get_current_index(EGUI_VIEW_OF(&preview_widget));
+
+    assert_widget_state(&preview_widget, 2, 1, 1);
+    assert_listener_state(0, EGUI_VIEW_REFERENCE_LIST_INDEX_NONE);
 
     seed_pressed_state(&preview_widget, 2);
-    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_VIEW_OF(&preview_widget), EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
-    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_VIEW_OF(&preview_widget), EGUI_MOTION_EVENT_ACTION_UP, x, y));
-    EGUI_TEST_ASSERT_EQUAL_INT(index_before, egui_view_reference_list_get_current_index(EGUI_VIEW_OF(&preview_widget)));
-    EGUI_TEST_ASSERT_EQUAL_INT(0, changed_count);
+    EGUI_TEST_ASSERT_TRUE(send_preview_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
+    assert_widget_state(&preview_widget, 2, 1, 1);
+    assert_listener_state(0, EGUI_VIEW_REFERENCE_LIST_INDEX_NONE);
     assert_pressed_cleared(&preview_widget);
 
     seed_pressed_state(&preview_widget, 2);
-    EGUI_TEST_ASSERT_TRUE(send_key(EGUI_VIEW_OF(&preview_widget), EGUI_KEY_CODE_ENTER));
-    EGUI_TEST_ASSERT_EQUAL_INT(index_before, egui_view_reference_list_get_current_index(EGUI_VIEW_OF(&preview_widget)));
-    EGUI_TEST_ASSERT_EQUAL_INT(0, changed_count);
+    EGUI_TEST_ASSERT_TRUE(send_preview_key(EGUI_KEY_CODE_DOWN));
+    assert_widget_state(&preview_widget, 2, 1, 1);
+    assert_listener_state(0, EGUI_VIEW_REFERENCE_LIST_INDEX_NONE);
     assert_pressed_cleared(&preview_widget);
+}
+
+static void test_list_empty_items_ignore_input(void)
+{
+    egui_dim_t x;
+    egui_dim_t y;
+
+    setup_widget();
+    layout_view(EGUI_VIEW_OF(&test_widget), 10, 20, 180, 112);
+    get_view_center(EGUI_VIEW_OF(&test_widget), &x, &y);
+    egui_view_reference_list_set_items(EGUI_VIEW_OF(&test_widget), NULL, 0);
+
+    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_reference_list_get_item_count(EGUI_VIEW_OF(&test_widget)));
+    assert_widget_state(&test_widget, EGUI_VIEW_REFERENCE_LIST_INDEX_NONE, 0, 0);
+    assert_listener_state(0, EGUI_VIEW_REFERENCE_LIST_INDEX_NONE);
+
+    seed_pressed_state(&test_widget, 0);
+    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
+    assert_widget_state(&test_widget, EGUI_VIEW_REFERENCE_LIST_INDEX_NONE, 0, 0);
+    assert_listener_state(0, EGUI_VIEW_REFERENCE_LIST_INDEX_NONE);
+    assert_pressed_cleared(&test_widget);
+
+    seed_pressed_state(&test_widget, 0);
+    EGUI_TEST_ASSERT_FALSE(send_key(EGUI_KEY_CODE_DOWN));
+    assert_widget_state(&test_widget, EGUI_VIEW_REFERENCE_LIST_INDEX_NONE, 0, 0);
+    assert_listener_state(0, EGUI_VIEW_REFERENCE_LIST_INDEX_NONE);
+    assert_pressed_cleared(&test_widget);
 }
 
 void test_list_run(void)
@@ -345,8 +525,11 @@ void test_list_run(void)
     EGUI_TEST_SUITE_BEGIN(list);
     EGUI_TEST_RUN(test_list_setters_clamp_getters_and_helpers);
     EGUI_TEST_RUN(test_list_selection_regions_and_internal_helpers);
-    EGUI_TEST_RUN(test_list_touch_same_target_release_and_guards);
-    EGUI_TEST_RUN(test_list_keyboard_navigation_enter_space_and_guards);
-    EGUI_TEST_RUN(test_list_static_preview_consumes_input);
+    EGUI_TEST_RUN(test_list_touch_same_target_release_and_cancel_behavior);
+    EGUI_TEST_RUN(test_list_keyboard_navigation_enter_space_and_tab);
+    EGUI_TEST_RUN(test_list_read_only_mode_ignores_input_and_clears_pressed_state);
+    EGUI_TEST_RUN(test_list_view_disabled_ignores_input_and_clears_pressed_state);
+    EGUI_TEST_RUN(test_list_static_preview_consumes_input_and_keeps_state);
+    EGUI_TEST_RUN(test_list_empty_items_ignore_input);
     EGUI_TEST_SUITE_END();
 }
