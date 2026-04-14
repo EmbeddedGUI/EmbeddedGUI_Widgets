@@ -21,8 +21,8 @@ static const egui_view_title_bar_snapshot_t g_primary_snapshots[] = {
         {EGUI_ICON_MS_INFO, "Audit", "Read back", "Frozen shell", "Ready", "Done", "Reset", 1, 0, 1},
 };
 
-static const egui_view_title_bar_snapshot_t g_read_only_snapshot[] = {
-        {EGUI_ICON_MS_LOCK, NULL, "Preview", NULL, NULL, "Read", NULL, 1, 0, 0},
+static const egui_view_title_bar_snapshot_t g_preview_snapshot[] = {
+        {EGUI_ICON_MS_HOME, NULL, "Atlas", NULL, NULL, "Sync", NULL, 1, 0, 1},
 };
 
 static void on_action(egui_view_t *self, uint8_t part, uint8_t snapshot_index)
@@ -56,7 +56,7 @@ static void setup_preview_title_bar(void)
 {
     egui_view_title_bar_init(EGUI_VIEW_OF(&preview_title_bar));
     egui_view_set_size(EGUI_VIEW_OF(&preview_title_bar), 104, 72);
-    egui_view_title_bar_set_snapshots(EGUI_VIEW_OF(&preview_title_bar), g_read_only_snapshot, 1);
+    egui_view_title_bar_set_snapshots(EGUI_VIEW_OF(&preview_title_bar), g_preview_snapshot, 1);
     egui_view_title_bar_set_font(EGUI_VIEW_OF(&preview_title_bar), NULL);
     egui_view_title_bar_set_meta_font(EGUI_VIEW_OF(&preview_title_bar), NULL);
     egui_view_title_bar_set_icon_font(EGUI_VIEW_OF(&preview_title_bar), EGUI_FONT_ICON_MS_16);
@@ -362,12 +362,15 @@ static void test_title_bar_read_only_and_disabled_guards_clear_pressed_state(voi
     EGUI_TEST_ASSERT_EQUAL_INT(0, g_action_count);
 }
 
-static void test_title_bar_static_preview_consumes_input_and_preserves_state(void)
+static void test_title_bar_static_preview_consumes_input_and_keeps_state(void)
 {
     egui_dim_t x_back;
     egui_dim_t y_back;
 
     setup_preview_title_bar();
+    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_title_bar_get_current_snapshot(EGUI_VIEW_OF(&preview_title_bar)));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_TITLE_BAR_PART_BACK, egui_view_title_bar_get_current_part(EGUI_VIEW_OF(&preview_title_bar)));
+    EGUI_TEST_ASSERT_EQUAL_INT(1, preview_title_bar.compact_mode);
     layout_preview_title_bar();
     EGUI_TEST_ASSERT_TRUE(get_part_center_for_view(EGUI_VIEW_OF(&preview_title_bar), EGUI_VIEW_TITLE_BAR_PART_BACK, &x_back, &y_back));
 
@@ -381,6 +384,7 @@ static void test_title_bar_static_preview_consumes_input_and_preserves_state(voi
     seed_pressed_state(&preview_title_bar, EGUI_VIEW_TITLE_BAR_PART_BACK, 0);
     EGUI_TEST_ASSERT_TRUE(send_preview_key(EGUI_KEY_EVENT_ACTION_UP, EGUI_KEY_CODE_END));
     assert_pressed_cleared(&preview_title_bar);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_title_bar_get_current_snapshot(EGUI_VIEW_OF(&preview_title_bar)));
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_TITLE_BAR_PART_BACK, egui_view_title_bar_get_current_part(EGUI_VIEW_OF(&preview_title_bar)));
     EGUI_TEST_ASSERT_EQUAL_INT(0, g_action_count);
 }
@@ -395,6 +399,6 @@ void test_title_bar_run(void)
     EGUI_TEST_RUN(test_title_bar_key_navigation_and_activation);
     EGUI_TEST_RUN(test_title_bar_focus_change_resolves_first_active_part);
     EGUI_TEST_RUN(test_title_bar_read_only_and_disabled_guards_clear_pressed_state);
-    EGUI_TEST_RUN(test_title_bar_static_preview_consumes_input_and_preserves_state);
+    EGUI_TEST_RUN(test_title_bar_static_preview_consumes_input_and_keeps_state);
     EGUI_TEST_SUITE_END();
 }
