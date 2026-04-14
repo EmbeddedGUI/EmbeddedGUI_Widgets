@@ -2,125 +2,144 @@
 
 ## 参考来源
 - 参考设计系统：`Fluent 2`
-- 参考开源库：`WPF UI`
-- 补充对照实现：`ModernWpf`
+- 官方语义参考：`WPF UI / WinUI SettingCard`
 - 对应组件名：`SettingCard`
-- 本次保留状态：`standard`、`compact`、`read only`、`accent`、`success`、`warning`、`neutral`
-- 本次删除效果：页面级 `guide`、外部 preview 标签、Acrylic、重阴影、复杂 hover/reveal 动效、整页桥接式设置导航
-- EGUI 适配说明：保留 `title / description / leading / trailing` 的单卡设置语义，在 `HelloCustomWidgets` 内维护 reference widget，不修改 `sdk/EmbeddedGUI`
+- 本次保留语义：`Backup window`、`Sharing scope`、`Rollout ring`、`compact`、`read only`
+- 本次删减内容：旧 preview 清主卡焦点桥接、第二条 `compact` preview 轨道、录制里的 `preview dismiss / preview click` 收尾
+- EGUI 适配说明：继续在 custom 层维护轻量 `egui_view_settings_card` reference 实现，本轮只收口参考页结构、录制轨道、静态 preview 语义和单测入口，不修改 `sdk/EmbeddedGUI`
 
-## 1. 为什么需要这个控件？
-`settings_card` 用来表达“单个设置入口卡片”。它不是分组面板，也不是可展开容器，而是 Fluent / WPF UI 里最基础的设置卡片语义：一个 leading 区、标题、描述和 trailing affordance 聚合在同一张卡片上。
+## 1. 为什么需要这个控件
+`settings_card` 用来表达“单个设置入口卡片”的标准语义。它不是设置分组容器，也不是可展开面板，而是把 `leading / title / description / trailing / footer` 汇聚到同一张卡片上的基础设置入口。
 
-## 2. 为什么现有控件不够用？
-- `settings_panel` 更偏向一组 setting rows 的集合，不负责单卡点击与单卡焦点语义。
-- `settings_expander` 是“单 setting header + nested rows”的展开卡，不适合只表达单卡入口。
-- `card_panel` 是摘要卡，不强调 settings entry 的 leading / trailing 节奏和只读弱化状态。
+## 2. 为什么现有控件不够用
+- `settings_panel` 更偏向多行设置项分组，不承担单卡点击与焦点语义。
+- `settings_expander` 面向“设置头部 + 嵌套内容”，不适合只表达单个设置入口。
+- `card_panel` 是信息摘要卡，不强调设置项的 `leading / trailing` 节奏和只读弱化状态。
 
-## 3. 目标场景与示例概览
-- 主控件展示标准 `settings_card`，录制轨道覆盖 `accent / success / warning` 三组 snapshot。
-- 底部左侧展示 `compact` 静态对照，用于验证小尺寸下卡片节奏。
-- 底部右侧展示 `read only` 静态对照，用于验证弱化 tone 与输入抑制后的被动态。
-- 页面结构统一收口为：标题 -> 主 `settings_card` -> `compact / read only`
-- 两个 preview 都通过 `egui_view_settings_card_override_static_preview_api()` 固定为静态 reference，只负责吞掉输入并协助主控件收尾 focus。
+## 3. 目标场景与页面结构
+- 页面只保留标题、一个主 `settings_card` 和两个底部静态 preview。
+- 主控件展示三组 snapshot：
+  - `Backup window`
+  - `Sharing scope`
+  - `Rollout ring`
+- 左下角是 `compact` 静态 preview，只负责对照紧凑密度。
+- 右下角是 `read only` 静态 preview，只负责对照只读弱化状态。
+- 两个 preview 统一通过 `egui_view_settings_card_override_static_preview_api()` 收口：
+  - 吞掉新的 `touch / key`
+  - 只清理残留 `pressed`
+  - 不改动 `current_snapshot / current_part / compact_mode / read_only_mode`
+  - 不触发 `on_action`
 
 目标目录：`example/HelloCustomWidgets/layout/settings_card/`
 
 ## 4. 视觉与布局规格
-- 画布：`480 x 480`
 - 根布局：`224 x 232`
 - 主控件：`196 x 96`
-- 底部对照容器：`216 x 72`
+- 底部对照行：`216 x 72`
 - `compact` preview：`104 x 72`
 - `read only` preview：`104 x 72`
-- 视觉原则：
-  - 保持浅色 page panel、低噪音白色卡片和轻量 tone 差异。
-  - tone 只在顶部 accent line、eyebrow、leading 区与 trailing affordance 上保留低强度提示。
-  - `read only` 不只弱化视觉，也必须抑制 `touch / key` 输入。
+- 页面结构：标题 -> 主 `settings_card` -> `compact / read only`
+- 样式约束：
+  - 保持浅色 Fluent 容器、低噪音边框和轻量 tone 提示。
+  - tone 只保留在顶部 accent line、eyebrow、leading 区和 trailing affordance。
+  - 底部 preview 固定为静态 reference 对照，不再承担清焦点、切换轨道或收尾叙事。
 
 ## 5. 控件清单
 
 | 变量名 | 类型 | 尺寸 (W x H) | 初始状态 | 用途 |
 | --- | --- | ---: | --- | --- |
-| `root_layout` | `egui_view_linearlayout_t` | `224 x 232` | enabled | 页面根布局 |
-| `title_label` | `egui_view_label_t` | `224 x 18` | `Settings Card` | 页面标题 |
-| `card_primary` | `egui_view_settings_card_t` | `196 x 96` | `accent` | 主卡片 |
-| `card_compact` | `egui_view_settings_card_t` | `104 x 72` | `compact` | 紧凑静态对照 |
-| `card_read_only` | `egui_view_settings_card_t` | `104 x 72` | `read only` | 只读静态对照 |
+| `card_primary` | `egui_view_settings_card_t` | `196 x 96` | `Backup window` | 主 `SettingCard` |
+| `card_compact` | `egui_view_settings_card_t` | `104 x 72` | `Compact backup` | 紧凑静态 preview |
+| `card_read_only` | `egui_view_settings_card_t` | `104 x 72` | `Read only policy` | 只读静态 preview |
+| `primary_snapshots` | `egui_view_settings_card_snapshot_t[3]` | - | `Backup / Sharing / Rollout` | 主状态轨道 |
 
 ## 6. 状态覆盖矩阵
-| 区域 / 轨道 | 关键状态 | 说明 |
+
+| 区域 / 轨道 | 状态 | 说明 |
 | --- | --- | --- |
-| 主控件 | `Backup window` | accent + switch trailing |
-| 主控件 | `Sharing scope` | success + value trailing |
-| 主控件 | `Rollout ring` | warning + chevron trailing |
-| `compact` | `Compact backup` | 紧凑对照 |
-| `compact` | `Compact rollout` | 紧凑 warning 对照 |
-| `read only` | `Read only policy` | 只读弱化对照 |
+| 主控件 | `Backup window` | 默认状态，accent + switch trailing |
+| 主控件 | `Sharing scope` | 第二组 snapshot，success + value trailing |
+| 主控件 | `Rollout ring` | 第三组 snapshot，warning + chevron trailing |
+| `compact` | `Compact backup` | 固定静态对照，只验证紧凑布局 |
+| `read only` | `Read only policy` | 固定静态对照，只验证只读弱化与输入屏蔽 |
 
-## 7. 交互与状态语义
+## 7. 交互语义与单测要求
 - `current_part` 只有一个可交互 part：`EGUI_VIEW_SETTINGS_CARD_PART_CARD`
-- `ACTION_MOVE` 采用 same-target release 语义：
-  - `DOWN(A) -> MOVE(B) -> UP(B)` 不提交
-  - `DOWN(A) -> MOVE(B) -> MOVE(A) -> UP(A)` 才提交
-- `activate_current_part()` 只在主卡 part 上触发 `on_action(snapshot_index, part)`
-- `read_only_mode`、`!enable` 和 static preview 都必须先清理残留 `pressed`，再拒绝后续输入
-- static preview 的 `touch / key` 只消费事件并保持 `snapshot / current_part` 不变
+- 主控件保留真实交互闭环：
+  - `Home / End / Tab` 保持主卡 part 为当前目标
+  - `Enter / Space` 激活当前 part 并触发 `on_action(snapshot_index, part)`
+  - 触摸遵循 same-target release：
+    - `DOWN(A) -> MOVE(B) -> UP(B)` 不提交
+    - `DOWN(A) -> MOVE(B) -> MOVE(A) -> UP(A)` 才提交
+- `set_snapshots()`、`set_current_snapshot()`、`set_current_part()`、`set_font()`、`set_meta_font()`、`set_palette()`、`set_compact_mode()`、`set_read_only_mode()` 都必须先清理残留 `pressed`
+- `read_only` 和 `!enable` 期间：
+  - `touch / dispatch_key_event` 都不能改状态
+  - `current_snapshot / current_part / compact_mode / read_only_mode` 保持符合预期
+  - 不触发 listener
+- static preview 期间：
+  - 只清理残留 `pressed`
+  - 保持 `current_snapshot / current_part / compact_mode / read_only_mode` 不变
+  - 不触发 listener
 
-## 8. `egui_port_get_recording_action()` 录制动作设计
-1. 重置主控件、`compact` 和 `read only` 到默认快照，并给主控件请求 focus。
-2. 请求初始帧。
-3. 切到 `Sharing scope`。
-4. 请求第二帧。
-5. 切到 `Rollout ring`。
-6. 请求第三帧。
-7. 切到第二组 `compact` 对照。
-8. 请求第四帧。
-9. 重新给主控件请求 focus。
-10. 点击 `compact` preview，只执行静态收尾逻辑。
-11. 请求最终稳定帧。
+## 8. 录制动作设计
+`egui_port_get_recording_action()` 的录制顺序如下：
+1. 重置主控件和底部 `compact / read only` preview，输出默认 `Backup window`
+2. 切到 `Sharing scope`，输出第二组主状态
+3. 切到 `Rollout ring`，输出第三组主状态
+4. 恢复主控件默认状态并输出最终稳定帧
 
-## 9. 编译、交互、runtime、WASM 与文档验收路径
+录制只导出主控件状态变化。底部两个 preview 在整条 reference 轨道里保持静态一致，不再包含第二条 `compact` 轨道，也不再包含 `preview dismiss / preview click` 收尾。
+
+## 9. 编译、单测、运行时与文档检查
 ```bash
 make all APP=HelloCustomWidgets APP_SUB=layout/settings_card PORT=pc
+
+# 在 X:\ 短路径下执行；修改 HelloUnitTest 后先 clean 再重建
+make clean APP=HelloUnitTest PORT=pc_test
 make all APP=HelloUnitTest PORT=pc_test
-output\main.exe
+X:\output\main.exe
+
 python scripts/sync_widget_catalog.py
 python scripts/checks/check_touch_release_semantics.py --scope custom --category layout
+python scripts/checks/check_docs_encoding.py
+python scripts/checks/check_widget_catalog.py
 python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub layout/settings_card --track reference --timeout 10 --keep-screenshots
 python scripts/code_compile_check.py --custom-widgets --category layout --bits64
 python scripts/code_runtime_check.py --app HelloCustomWidgets --category layout --track reference --bits64
-python scripts/checks/check_docs_encoding.py
-python scripts/checks/check_widget_catalog.py
 python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub layout/settings_card
 python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_layout_settings_card
 ```
 
 ## 10. 验收重点
-- 主控件和底部 `compact / read only` 对照必须完整可见，不能黑白屏、裁切或重叠。
-- leading、title、description、trailing 和 footer 在不同 snapshot 之间层级必须稳定。
-- 主卡点击必须遵守 same-target release；移出命中区后不能误触发 listener。
+- 主控件和底部 `compact / read only` preview 必须完整可见，不能黑白屏、裁切或重叠。
+- 主区三组 `SettingCard` 状态变化要清晰可辨，底部 preview 全程保持静态。
+- `same-target release / keyboard activation / read only / !enable / static preview keeps state` 要全部通过单测。
 - `snapshot / compact / read only / disabled` 切换后不能残留旧的 `pressed` 高亮。
-- static preview 不能改动 `snapshot / current_part`，也不能触发 action listener。
-- WASM demo 必须正常加载，文档面板可渲染 `README.md`。
+- WASM demo 必须正常加载，文档面板能渲染本 README。
 
-## 11. 已知限制与后续方向
-- 当前版本仍是固定尺寸 reference 实现，不覆盖超长标题、超长 description 或复杂 trailing 自定义控件。
-- 当前 trailing switch / chevron 只表达语义，不接业务状态同步。
-- 当前不做真实图标、hover glow、focus reveal 或复杂转场动画。
-- 是否下沉到 `src/widget/` 作为通用控件，后续单独评估。
+## 11. 截图复核口径
+- 检查目录：`runtime_check_output/HelloCustomWidgets_layout_settings_card/default`
+- 复核目标：
+  - 主区存在 3 组可辨识唯一状态
+  - 底部 preview 区域在全程保持单一静态哈希
+  - 变化边界只出现在主区，不扩散到底部 preview
 
 ## 12. 与现有控件的边界
-- 相比 `settings_panel`：这里是“单卡 entry”，不是多卡分组。
+- 相比 `settings_panel`：这里是单卡 `entry`，不是多卡分组。
 - 相比 `settings_expander`：这里不承接 nested rows，也不做展开/折叠。
-- 相比 `card_panel`：这里强调 settings 语义和 trailing affordance，不是摘要信息卡。
+- 相比 `card_panel`：这里强调设置项语义与 trailing affordance，不是信息摘要卡。
 
-## 13. 对参考原型删掉了哪些效果或装饰？
-- 删除页面级 guide、preview 标签、整页桥接说明和复杂装饰性 chrome。
-- 删除 Acrylic、重阴影、复杂 hover/reveal 和业务联动。
-- 只保留 `SettingCard` 最核心的 reference 语义。
-
-## 14. EGUI 适配时的简化点与约束
-- 使用固定 `snapshot` 数据模型，优先保证 `480 x 480` 下的审阅稳定性。
-- `compact` 和 `read only` 直接复用同一控件实现，通过模式位与 static preview API 收口。
-- 继续作为 `HelloCustomWidgets` 内的 reference widget 维护，避免提前修改 SDK。
+## 13. 本次保留的核心状态与删减项
+- 保留的核心状态：
+  - `Backup window`
+  - `Sharing scope`
+  - `Rollout ring`
+  - `compact`
+  - `read only`
+- 保留的交互：
+  - same-target touch release
+  - 键盘 `Home / End / Tab / Enter / Space`
+- 删减的旧桥接与轨道：
+  - preview 点击清主卡焦点
+  - 第二条 `compact` preview 轨道
+  - 录制中的 `preview dismiss / preview click` 收尾
