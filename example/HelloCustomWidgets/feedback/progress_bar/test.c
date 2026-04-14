@@ -20,6 +20,7 @@
 #define PROGRESS_BAR_BOTTOM_ROW_WIDTH  200
 #define PROGRESS_BAR_BOTTOM_ROW_HEIGHT 12
 #define PROGRESS_BAR_RECORD_WAIT       90
+#define PROGRESS_BAR_RECORD_ANIM_WAIT  260
 #define PROGRESS_BAR_RECORD_FRAME_WAIT 170
 
 static egui_view_linearlayout_t root_layout;
@@ -40,21 +41,28 @@ EGUI_BACKGROUND_COLOR_STATIC_CONST_INIT(bg_page_panel, &bg_page_panel_params);
 
 static const char *title_text = "ProgressBar";
 
-static void update_primary_status(uint8_t value)
+static void update_primary_complete_status(uint8_t value)
 {
     snprintf(primary_status_text, sizeof(primary_status_text), "%u%% complete", value);
     egui_view_label_set_text(EGUI_VIEW_OF(&progress_bar_status), primary_status_text);
 }
 
+static void update_primary_loading_status(void)
+{
+    egui_view_label_set_text(EGUI_VIEW_OF(&progress_bar_status), "Syncing...");
+}
+
 static void on_primary_progress_changed(egui_view_t *self, uint8_t progress)
 {
     EGUI_UNUSED(self);
-    update_primary_status(progress);
+    update_primary_complete_status(progress);
 }
 
-static void apply_primary_value(uint8_t value)
+static void apply_primary_loading_state(void)
 {
-    hcw_progress_bar_set_value(EGUI_VIEW_OF(&progress_bar_primary), value);
+    hcw_progress_bar_set_value(EGUI_VIEW_OF(&progress_bar_primary), 28);
+    hcw_progress_bar_apply_indeterminate_style(EGUI_VIEW_OF(&progress_bar_primary));
+    update_primary_loading_status();
 }
 
 static void apply_preview_values(void)
@@ -80,9 +88,9 @@ void test_init_ui(void)
     egui_view_set_margin(EGUI_VIEW_OF(&title_label), 0, 8, 0, 8);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label));
 
-    egui_view_progress_bar_init(EGUI_VIEW_OF(&progress_bar_primary));
+    hcw_progress_bar_init(EGUI_VIEW_OF(&progress_bar_primary));
     egui_view_set_size(EGUI_VIEW_OF(&progress_bar_primary), PROGRESS_BAR_PRIMARY_WIDTH, PROGRESS_BAR_PRIMARY_HEIGHT);
-    hcw_progress_bar_apply_standard_style(EGUI_VIEW_OF(&progress_bar_primary));
+    hcw_progress_bar_apply_indeterminate_style(EGUI_VIEW_OF(&progress_bar_primary));
     egui_view_progress_bar_set_on_progress_listener(EGUI_VIEW_OF(&progress_bar_primary), on_primary_progress_changed);
     egui_view_set_margin(EGUI_VIEW_OF(&progress_bar_primary), 0, 0, 0, 6);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&progress_bar_primary));
@@ -101,7 +109,7 @@ void test_init_ui(void)
     egui_view_linearlayout_set_align_type(EGUI_VIEW_OF(&bottom_row), EGUI_ALIGN_VCENTER);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&bottom_row));
 
-    egui_view_progress_bar_init(EGUI_VIEW_OF(&progress_bar_paused));
+    hcw_progress_bar_init(EGUI_VIEW_OF(&progress_bar_paused));
     egui_view_set_size(EGUI_VIEW_OF(&progress_bar_paused), PROGRESS_BAR_PREVIEW_WIDTH, PROGRESS_BAR_PREVIEW_HEIGHT);
     hcw_progress_bar_apply_paused_style(EGUI_VIEW_OF(&progress_bar_paused));
     hcw_progress_bar_override_static_preview_api(EGUI_VIEW_OF(&progress_bar_paused), &progress_bar_paused_api);
@@ -110,7 +118,7 @@ void test_init_ui(void)
 #endif
     egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&progress_bar_paused));
 
-    egui_view_progress_bar_init(EGUI_VIEW_OF(&progress_bar_error));
+    hcw_progress_bar_init(EGUI_VIEW_OF(&progress_bar_error));
     egui_view_set_size(EGUI_VIEW_OF(&progress_bar_error), PROGRESS_BAR_PREVIEW_WIDTH, PROGRESS_BAR_PREVIEW_HEIGHT);
     egui_view_set_margin(EGUI_VIEW_OF(&progress_bar_error), 8, 0, 0, 0);
     hcw_progress_bar_apply_error_style(EGUI_VIEW_OF(&progress_bar_error));
@@ -120,7 +128,7 @@ void test_init_ui(void)
 #endif
     egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&progress_bar_error));
 
-    apply_primary_value(28);
+    apply_primary_loading_state();
     apply_preview_values();
 
     hello_custom_widgets_demo_apply_title_only_scaffold(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label), NULL, 0);
@@ -133,6 +141,11 @@ void test_init_ui(void)
 }
 
 #if EGUI_CONFIG_RECORDING_TEST
+static void apply_primary_complete_state(uint8_t value)
+{
+    hcw_progress_bar_set_value(EGUI_VIEW_OF(&progress_bar_primary), value);
+}
+
 bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_action)
 {
     static int last_action = -1;
@@ -145,18 +158,14 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     case 0:
         if (first_call)
         {
-            apply_primary_value(28);
+            apply_primary_loading_state();
             apply_preview_values();
             recording_request_snapshot();
         }
         EGUI_SIM_SET_WAIT(p_action, PROGRESS_BAR_RECORD_FRAME_WAIT);
         return true;
     case 1:
-        if (first_call)
-        {
-            apply_primary_value(58);
-        }
-        EGUI_SIM_SET_WAIT(p_action, PROGRESS_BAR_RECORD_WAIT);
+        EGUI_SIM_SET_WAIT(p_action, PROGRESS_BAR_RECORD_ANIM_WAIT);
         return true;
     case 2:
         if (first_call)
@@ -168,7 +177,7 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     case 3:
         if (first_call)
         {
-            apply_primary_value(92);
+            apply_primary_complete_state(92);
         }
         EGUI_SIM_SET_WAIT(p_action, PROGRESS_BAR_RECORD_WAIT);
         return true;

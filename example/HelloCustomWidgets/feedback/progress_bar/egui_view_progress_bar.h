@@ -7,11 +7,15 @@
 extern "C" {
 #endif
 
+void hcw_progress_bar_init(egui_view_t *self);
 void hcw_progress_bar_apply_standard_style(egui_view_t *self);
 void hcw_progress_bar_apply_paused_style(egui_view_t *self);
 void hcw_progress_bar_apply_error_style(egui_view_t *self);
+void hcw_progress_bar_apply_indeterminate_style(egui_view_t *self);
 void hcw_progress_bar_set_value(egui_view_t *self, uint8_t value);
 void hcw_progress_bar_set_palette(egui_view_t *self, egui_color_t track_color, egui_color_t fill_color, egui_color_t control_color);
+void hcw_progress_bar_set_indeterminate_mode(egui_view_t *self, uint8_t enable);
+uint8_t hcw_progress_bar_get_indeterminate_mode(egui_view_t *self);
 void hcw_progress_bar_override_static_preview_api(egui_view_t *self, egui_view_api_t *api);
 
 #ifdef __cplusplus
