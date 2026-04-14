@@ -114,7 +114,7 @@ static int send_key_to_view(egui_view_t *view, uint8_t type, uint8_t key_code)
     memset(&event, 0, sizeof(event));
     event.type = type;
     event.key_code = key_code;
-    return view->api->on_key_event(view, &event);
+    return view->api->dispatch_key_event(view, &event);
 }
 
 static int send_touch(uint8_t type, egui_dim_t x, egui_dim_t y)
@@ -249,6 +249,10 @@ static void test_card_expander_setters_clear_pressed_and_update_state(void)
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x303132).full, test_widget.border_color.full);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x404142).full, test_widget.text_color.full);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x505152).full, test_widget.muted_text_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x606162).full, test_widget.accent_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x707172).full, test_widget.success_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x808182).full, test_widget.warning_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x909192).full, test_widget.neutral_color.full);
     assert_pressed_cleared(&test_widget);
 
     egui_view_card_expander_set_current_snapshot(EGUI_VIEW_OF(&test_widget), 1);
@@ -351,45 +355,105 @@ static void test_card_expander_read_only_and_disabled_guards(void)
 {
     egui_dim_t header_x;
     egui_dim_t header_y;
+    uint8_t initial_snapshot;
+    uint8_t initial_part;
+    uint8_t initial_expanded;
 
     setup_widget(g_snapshots, EGUI_ARRAY_SIZE(g_snapshots));
     layout_widget();
     EGUI_TEST_ASSERT_TRUE(get_part_center(EGUI_VIEW_OF(&test_widget), EGUI_VIEW_CARD_EXPANDER_PART_HEADER, &header_x, &header_y));
+    egui_view_card_expander_set_current_snapshot(EGUI_VIEW_OF(&test_widget), 2);
+    initial_snapshot = egui_view_card_expander_get_current_snapshot(EGUI_VIEW_OF(&test_widget));
+    initial_part = egui_view_card_expander_get_current_part(EGUI_VIEW_OF(&test_widget));
+    initial_expanded = egui_view_card_expander_get_expanded(EGUI_VIEW_OF(&test_widget));
 
-    seed_pressed_state(&test_widget, EGUI_VIEW_CARD_EXPANDER_PART_HEADER, 1);
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, header_x, header_y));
     egui_view_card_expander_set_read_only_mode(EGUI_VIEW_OF(&test_widget), 1);
-    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, header_x, header_y));
-    EGUI_TEST_ASSERT_FALSE(send_key(EGUI_KEY_CODE_ENTER));
     assert_pressed_cleared(&test_widget);
-    egui_view_card_expander_set_read_only_mode(EGUI_VIEW_OF(&test_widget), 0);
-
+    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, header_x, header_y));
     seed_pressed_state(&test_widget, EGUI_VIEW_CARD_EXPANDER_PART_HEADER, 1);
-    egui_view_set_enable(EGUI_VIEW_OF(&test_widget), 0);
-    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, header_x, header_y));
     EGUI_TEST_ASSERT_FALSE(send_key(EGUI_KEY_CODE_ENTER));
     assert_pressed_cleared(&test_widget);
+    EGUI_TEST_ASSERT_EQUAL_INT(initial_snapshot, egui_view_card_expander_get_current_snapshot(EGUI_VIEW_OF(&test_widget)));
+    EGUI_TEST_ASSERT_EQUAL_INT(initial_part, egui_view_card_expander_get_current_part(EGUI_VIEW_OF(&test_widget)));
+    EGUI_TEST_ASSERT_EQUAL_INT(initial_expanded, egui_view_card_expander_get_expanded(EGUI_VIEW_OF(&test_widget)));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, test_widget.compact_mode);
+    EGUI_TEST_ASSERT_EQUAL_INT(1, test_widget.read_only_mode);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, g_action_count);
+
+    egui_view_card_expander_set_read_only_mode(EGUI_VIEW_OF(&test_widget), 0);
+    EGUI_TEST_ASSERT_TRUE(send_key(EGUI_KEY_CODE_HOME));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_CARD_EXPANDER_PART_HEADER, egui_view_card_expander_get_current_part(EGUI_VIEW_OF(&test_widget)));
+    EGUI_TEST_ASSERT_TRUE(send_key(EGUI_KEY_CODE_ENTER));
+    EGUI_TEST_ASSERT_EQUAL_INT(1, g_action_count);
+    EGUI_TEST_ASSERT_EQUAL_INT(initial_snapshot, g_action_snapshot);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_CARD_EXPANDER_PART_HEADER, g_action_part);
+    EGUI_TEST_ASSERT_EQUAL_INT(initial_expanded ? 0 : 1, egui_view_card_expander_get_expanded(EGUI_VIEW_OF(&test_widget)));
+
+    reset_action_state();
+    egui_view_card_expander_set_current_snapshot(EGUI_VIEW_OF(&test_widget), initial_snapshot);
+    egui_view_card_expander_set_current_part(EGUI_VIEW_OF(&test_widget), initial_part);
+    initial_snapshot = egui_view_card_expander_get_current_snapshot(EGUI_VIEW_OF(&test_widget));
+    initial_part = egui_view_card_expander_get_current_part(EGUI_VIEW_OF(&test_widget));
+    initial_expanded = egui_view_card_expander_get_expanded(EGUI_VIEW_OF(&test_widget));
+    egui_view_set_enable(EGUI_VIEW_OF(&test_widget), 0);
+    seed_pressed_state(&test_widget, EGUI_VIEW_CARD_EXPANDER_PART_HEADER, 1);
+    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, header_x, header_y));
+    assert_pressed_cleared(&test_widget);
+    seed_pressed_state(&test_widget, EGUI_VIEW_CARD_EXPANDER_PART_HEADER, 1);
+    EGUI_TEST_ASSERT_FALSE(send_key(EGUI_KEY_CODE_ENTER));
+    assert_pressed_cleared(&test_widget);
+    EGUI_TEST_ASSERT_EQUAL_INT(initial_snapshot, egui_view_card_expander_get_current_snapshot(EGUI_VIEW_OF(&test_widget)));
+    EGUI_TEST_ASSERT_EQUAL_INT(initial_part, egui_view_card_expander_get_current_part(EGUI_VIEW_OF(&test_widget)));
+    EGUI_TEST_ASSERT_EQUAL_INT(initial_expanded, egui_view_card_expander_get_expanded(EGUI_VIEW_OF(&test_widget)));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, test_widget.compact_mode);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, test_widget.read_only_mode);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, g_action_count);
     egui_view_set_enable(EGUI_VIEW_OF(&test_widget), 1);
+
+    EGUI_TEST_ASSERT_TRUE(send_key(EGUI_KEY_CODE_END));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_CARD_EXPANDER_PART_HEADER, egui_view_card_expander_get_current_part(EGUI_VIEW_OF(&test_widget)));
+    EGUI_TEST_ASSERT_TRUE(send_key(EGUI_KEY_CODE_SPACE));
+    EGUI_TEST_ASSERT_EQUAL_INT(1, g_action_count);
+    EGUI_TEST_ASSERT_EQUAL_INT(initial_snapshot, g_action_snapshot);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_CARD_EXPANDER_PART_HEADER, g_action_part);
+    EGUI_TEST_ASSERT_EQUAL_INT(initial_expanded ? 0 : 1, egui_view_card_expander_get_expanded(EGUI_VIEW_OF(&test_widget)));
 }
 
-static void test_card_expander_static_preview_consumes_input_and_clears_pressed_state(void)
+static void test_card_expander_static_preview_consumes_input_and_keeps_state(void)
 {
     egui_dim_t header_x;
     egui_dim_t header_y;
 
     setup_preview_widget();
     layout_preview_widget();
+    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_card_expander_get_current_snapshot(EGUI_VIEW_OF(&preview_widget)));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_CARD_EXPANDER_PART_HEADER, egui_view_card_expander_get_current_part(EGUI_VIEW_OF(&preview_widget)));
+    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_card_expander_get_expanded(EGUI_VIEW_OF(&preview_widget)));
+    EGUI_TEST_ASSERT_EQUAL_INT(1, preview_widget.compact_mode);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, preview_widget.read_only_mode);
     EGUI_TEST_ASSERT_TRUE(get_part_center(EGUI_VIEW_OF(&preview_widget), EGUI_VIEW_CARD_EXPANDER_PART_HEADER, &header_x, &header_y));
 
+    preview_widget.current_part = EGUI_VIEW_CARD_EXPANDER_PART_HEADER;
     seed_pressed_state(&preview_widget, EGUI_VIEW_CARD_EXPANDER_PART_HEADER, 1);
     EGUI_TEST_ASSERT_TRUE(send_preview_touch(EGUI_MOTION_EVENT_ACTION_DOWN, header_x, header_y));
     assert_pressed_cleared(&preview_widget);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_card_expander_get_current_snapshot(EGUI_VIEW_OF(&preview_widget)));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_CARD_EXPANDER_PART_HEADER, egui_view_card_expander_get_current_part(EGUI_VIEW_OF(&preview_widget)));
     EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_card_expander_get_expanded(EGUI_VIEW_OF(&preview_widget)));
+    EGUI_TEST_ASSERT_EQUAL_INT(1, preview_widget.compact_mode);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, preview_widget.read_only_mode);
     EGUI_TEST_ASSERT_EQUAL_INT(0, g_action_count);
 
+    preview_widget.current_part = EGUI_VIEW_CARD_EXPANDER_PART_HEADER;
     seed_pressed_state(&preview_widget, EGUI_VIEW_CARD_EXPANDER_PART_HEADER, 1);
     EGUI_TEST_ASSERT_TRUE(send_preview_key(EGUI_KEY_CODE_ENTER));
     assert_pressed_cleared(&preview_widget);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_card_expander_get_current_snapshot(EGUI_VIEW_OF(&preview_widget)));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_CARD_EXPANDER_PART_HEADER, egui_view_card_expander_get_current_part(EGUI_VIEW_OF(&preview_widget)));
     EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_card_expander_get_expanded(EGUI_VIEW_OF(&preview_widget)));
+    EGUI_TEST_ASSERT_EQUAL_INT(1, preview_widget.compact_mode);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, preview_widget.read_only_mode);
     EGUI_TEST_ASSERT_EQUAL_INT(0, g_action_count);
 }
 
@@ -402,6 +466,6 @@ void test_card_expander_run(void)
     EGUI_TEST_RUN(test_card_expander_touch_same_target_release_and_cancel_behavior);
     EGUI_TEST_RUN(test_card_expander_key_navigation_activate_and_escape);
     EGUI_TEST_RUN(test_card_expander_read_only_and_disabled_guards);
-    EGUI_TEST_RUN(test_card_expander_static_preview_consumes_input_and_clears_pressed_state);
+    EGUI_TEST_RUN(test_card_expander_static_preview_consumes_input_and_keeps_state);
     EGUI_TEST_SUITE_END();
 }
