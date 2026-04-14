@@ -19,6 +19,7 @@
 #define ANNOTATED_SCROLL_BAR_BOTTOM_ROW_HEIGHT 68
 #define ANNOTATED_SCROLL_BAR_RECORD_WAIT       110
 #define ANNOTATED_SCROLL_BAR_RECORD_FRAME_WAIT 150
+#define ANNOTATED_SCROLL_BAR_RECORD_FINAL_WAIT 520
 
 typedef struct annotated_scroll_bar_snapshot annotated_scroll_bar_snapshot_t;
 struct annotated_scroll_bar_snapshot
@@ -40,6 +41,8 @@ static egui_view_annotated_scroll_bar_t annotated_scroll_bar_primary;
 static egui_view_linearlayout_t bottom_row;
 static egui_view_annotated_scroll_bar_t annotated_scroll_bar_compact;
 static egui_view_annotated_scroll_bar_t annotated_scroll_bar_read_only;
+static egui_view_api_t annotated_scroll_bar_compact_api;
+static egui_view_api_t annotated_scroll_bar_read_only_api;
 
 EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
 EGUI_BACKGROUND_PARAM_INIT(bg_page_panel_params, &bg_page_panel_param, NULL, NULL);
@@ -47,7 +50,6 @@ EGUI_BACKGROUND_COLOR_STATIC_CONST_INIT(bg_page_panel, &bg_page_panel_params);
 
 static const char *title_text = "Annotated Scroll Bar";
 static uint8_t primary_snapshot_index = 0;
-static uint8_t compact_snapshot_index = 0;
 
 static const egui_view_annotated_scroll_bar_marker_t gallery_markers[] = {
         {"2019", "Travel imports", 0, EGUI_COLOR_HEX(0x0F6CBD)},    {"2020", "Remote shoots", 146, EGUI_COLOR_HEX(0x0F6CBD)},
@@ -67,18 +69,11 @@ static const egui_view_annotated_scroll_bar_marker_t incident_markers[] = {
         {"Audit", "Replay export", 620, EGUI_COLOR_HEX(0x0F766E)},
 };
 
-static const egui_view_annotated_scroll_bar_marker_t compact_gallery_markers[] = {
+static const egui_view_annotated_scroll_bar_marker_t compact_preview_markers[] = {
         {"Mix", "Intro", 0, EGUI_COLOR_HEX(0x0F6CBD)},
         {"Edit", "Board", 104, EGUI_COLOR_HEX(0x0F6CBD)},
         {"Focus", "Focus", 222, EGUI_COLOR_HEX(0x0F6CBD)},
         {"Wrap", "Wrap", 360, EGUI_COLOR_HEX(0x0F6CBD)},
-};
-
-static const egui_view_annotated_scroll_bar_marker_t compact_docs_markers[] = {
-        {"Plan", "Start", 0, EGUI_COLOR_HEX(0x5E6A75)},
-        {"Draft", "Draft", 126, EGUI_COLOR_HEX(0x5E6A75)},
-        {"Proof", "Proof", 248, EGUI_COLOR_HEX(0x5E6A75)},
-        {"Ship", "Close", 384, EGUI_COLOR_HEX(0x5E6A75)},
 };
 
 static const egui_view_annotated_scroll_bar_marker_t read_only_markers[] = {
@@ -97,10 +92,8 @@ static const annotated_scroll_bar_snapshot_t primary_snapshots[] = {
          96},
 };
 
-static const annotated_scroll_bar_snapshot_t compact_snapshots[] = {
-        {NULL, NULL, compact_gallery_markers, (uint8_t)(sizeof(compact_gallery_markers) / sizeof(compact_gallery_markers[0])), 540, 180, 222, 18, 96},
-        {NULL, NULL, compact_docs_markers, (uint8_t)(sizeof(compact_docs_markers) / sizeof(compact_docs_markers[0])), 560, 176, 126, 18, 108},
-};
+static const annotated_scroll_bar_snapshot_t compact_snapshot = {
+        NULL, NULL, compact_preview_markers, (uint8_t)(sizeof(compact_preview_markers) / sizeof(compact_preview_markers[0])), 540, 180, 222, 18, 96};
 
 static const annotated_scroll_bar_snapshot_t read_only_snapshot = {
         NULL, NULL, read_only_markers, (uint8_t)(sizeof(read_only_markers) / sizeof(read_only_markers[0])), 600, 216, 246, 18, 110};
@@ -124,24 +117,19 @@ static void apply_primary_snapshot(uint8_t index)
     apply_snapshot(EGUI_VIEW_OF(&annotated_scroll_bar_primary), snapshot);
 }
 
-static void apply_compact_snapshot(uint8_t index)
+static void apply_primary_default_state(void)
 {
-    const annotated_scroll_bar_snapshot_t *snapshot = &compact_snapshots[index % (sizeof(compact_snapshots) / sizeof(compact_snapshots[0]))];
-
-    compact_snapshot_index = index % (sizeof(compact_snapshots) / sizeof(compact_snapshots[0]));
-    apply_snapshot(EGUI_VIEW_OF(&annotated_scroll_bar_compact), snapshot);
+    apply_primary_snapshot(0);
 }
 
-static void apply_read_only_snapshot(void)
+static void apply_preview_states(void)
 {
+    apply_snapshot(EGUI_VIEW_OF(&annotated_scroll_bar_compact), &compact_snapshot);
+    egui_view_annotated_scroll_bar_set_compact_mode(EGUI_VIEW_OF(&annotated_scroll_bar_compact), 1);
+
     apply_snapshot(EGUI_VIEW_OF(&annotated_scroll_bar_read_only), &read_only_snapshot);
-}
-
-static int consume_preview_touch(egui_view_t *self, egui_motion_event_t *event)
-{
-    EGUI_UNUSED(self);
-    EGUI_UNUSED(event);
-    return 1;
+    egui_view_annotated_scroll_bar_set_compact_mode(EGUI_VIEW_OF(&annotated_scroll_bar_read_only), 1);
+    egui_view_annotated_scroll_bar_set_read_only_mode(EGUI_VIEW_OF(&annotated_scroll_bar_read_only), 1);
 }
 
 void test_init_ui(void)
@@ -183,8 +171,7 @@ void test_init_ui(void)
     egui_view_annotated_scroll_bar_set_compact_mode(EGUI_VIEW_OF(&annotated_scroll_bar_compact), 1);
     egui_view_annotated_scroll_bar_set_palette(EGUI_VIEW_OF(&annotated_scroll_bar_compact), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD2DBE3),
                                                EGUI_COLOR_HEX(0x1A2734), EGUI_COLOR_HEX(0x6B7A89), EGUI_COLOR_HEX(0x0F6CBD), EGUI_COLOR_HEX(0xB9CCE0));
-    static egui_view_api_t annotated_scroll_bar_compact_touch_api;
-    egui_view_override_api_on_touch(EGUI_VIEW_OF(&annotated_scroll_bar_compact), &annotated_scroll_bar_compact_touch_api, consume_preview_touch);
+    egui_view_annotated_scroll_bar_override_static_preview_api(EGUI_VIEW_OF(&annotated_scroll_bar_compact), &annotated_scroll_bar_compact_api);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&annotated_scroll_bar_compact), false);
 #endif
@@ -199,16 +186,14 @@ void test_init_ui(void)
     egui_view_annotated_scroll_bar_set_read_only_mode(EGUI_VIEW_OF(&annotated_scroll_bar_read_only), 1);
     egui_view_annotated_scroll_bar_set_palette(EGUI_VIEW_OF(&annotated_scroll_bar_read_only), EGUI_COLOR_HEX(0xFBFCFD), EGUI_COLOR_HEX(0xD8DFE6),
                                                EGUI_COLOR_HEX(0x536474), EGUI_COLOR_HEX(0x8896A4), EGUI_COLOR_HEX(0xA7B4C1), EGUI_COLOR_HEX(0xC5D2DE));
-    static egui_view_api_t annotated_scroll_bar_read_only_touch_api;
-    egui_view_override_api_on_touch(EGUI_VIEW_OF(&annotated_scroll_bar_read_only), &annotated_scroll_bar_read_only_touch_api, consume_preview_touch);
+    egui_view_annotated_scroll_bar_override_static_preview_api(EGUI_VIEW_OF(&annotated_scroll_bar_read_only), &annotated_scroll_bar_read_only_api);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&annotated_scroll_bar_read_only), false);
 #endif
     egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&annotated_scroll_bar_read_only));
 
-    apply_primary_snapshot(0);
-    apply_compact_snapshot(0);
-    apply_read_only_snapshot();
+    apply_primary_default_state();
+    apply_preview_states();
 
     {
         hello_custom_widgets_demo_apply_title_only_scaffold(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label), NULL, 0);
@@ -246,88 +231,82 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     case 0:
         if (first_call)
         {
-            apply_primary_snapshot(0);
-            apply_compact_snapshot(0);
-            apply_read_only_snapshot();
-        }
-        EGUI_SIM_SET_WAIT(p_action, ANNOTATED_SCROLL_BAR_RECORD_WAIT);
-        return true;
-    case 1:
-        if (first_call)
-        {
+            apply_primary_default_state();
+            apply_preview_states();
             recording_request_snapshot();
         }
         EGUI_SIM_SET_WAIT(p_action, ANNOTATED_SCROLL_BAR_RECORD_FRAME_WAIT);
         return true;
-    case 2:
+    case 1:
         if (first_call)
         {
             apply_primary_key(EGUI_KEY_CODE_DOWN);
         }
         EGUI_SIM_SET_WAIT(p_action, ANNOTATED_SCROLL_BAR_RECORD_WAIT);
         return true;
-    case 3:
+    case 2:
         if (first_call)
         {
             recording_request_snapshot();
         }
         EGUI_SIM_SET_WAIT(p_action, ANNOTATED_SCROLL_BAR_RECORD_FRAME_WAIT);
         return true;
-    case 4:
+    case 3:
         if (first_call)
         {
             apply_primary_key(EGUI_KEY_CODE_PLUS);
         }
         EGUI_SIM_SET_WAIT(p_action, ANNOTATED_SCROLL_BAR_RECORD_WAIT);
         return true;
-    case 5:
+    case 4:
         if (first_call)
         {
             recording_request_snapshot();
         }
         EGUI_SIM_SET_WAIT(p_action, ANNOTATED_SCROLL_BAR_RECORD_FRAME_WAIT);
         return true;
-    case 6:
+    case 5:
         if (first_call)
         {
             apply_primary_key(EGUI_KEY_CODE_END);
         }
         EGUI_SIM_SET_WAIT(p_action, ANNOTATED_SCROLL_BAR_RECORD_WAIT);
         return true;
-    case 7:
+    case 6:
         if (first_call)
         {
             recording_request_snapshot();
         }
         EGUI_SIM_SET_WAIT(p_action, ANNOTATED_SCROLL_BAR_RECORD_FRAME_WAIT);
         return true;
-    case 8:
+    case 7:
         if (first_call)
         {
             apply_primary_snapshot((uint8_t)(primary_snapshot_index + 1));
         }
         EGUI_SIM_SET_WAIT(p_action, ANNOTATED_SCROLL_BAR_RECORD_WAIT);
         return true;
-    case 9:
+    case 8:
         if (first_call)
         {
             recording_request_snapshot();
         }
         EGUI_SIM_SET_WAIT(p_action, ANNOTATED_SCROLL_BAR_RECORD_FRAME_WAIT);
+        return true;
+    case 9:
+        if (first_call)
+        {
+            apply_primary_default_state();
+            apply_preview_states();
+        }
+        EGUI_SIM_SET_WAIT(p_action, ANNOTATED_SCROLL_BAR_RECORD_WAIT);
         return true;
     case 10:
         if (first_call)
         {
-            apply_compact_snapshot((uint8_t)(compact_snapshot_index + 1));
-        }
-        EGUI_SIM_SET_WAIT(p_action, ANNOTATED_SCROLL_BAR_RECORD_WAIT);
-        return true;
-    case 11:
-        if (first_call)
-        {
             recording_request_snapshot();
         }
-        EGUI_SIM_SET_WAIT(p_action, ANNOTATED_SCROLL_BAR_RECORD_FRAME_WAIT);
+        EGUI_SIM_SET_WAIT(p_action, ANNOTATED_SCROLL_BAR_RECORD_FINAL_WAIT);
         return true;
     default:
         return false;

@@ -1195,6 +1195,34 @@ static int egui_view_annotated_scroll_bar_on_key_event(egui_view_t *self, egui_k
 }
 #endif
 
+#if EGUI_CONFIG_FUNCTION_SUPPORT_KEY
+static int egui_view_annotated_scroll_bar_on_static_key_event(egui_view_t *self, egui_key_event_t *event)
+{
+    EGUI_LOCAL_INIT(egui_view_annotated_scroll_bar_t);
+    EGUI_UNUSED(event);
+
+    if (annotated_scroll_bar_clear_pressed_state(self, local))
+    {
+        egui_view_invalidate(self);
+    }
+    return 1;
+}
+#endif
+
+#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
+static int egui_view_annotated_scroll_bar_on_static_touch_event(egui_view_t *self, egui_motion_event_t *event)
+{
+    EGUI_LOCAL_INIT(egui_view_annotated_scroll_bar_t);
+    EGUI_UNUSED(event);
+
+    if (annotated_scroll_bar_clear_pressed_state(self, local))
+    {
+        egui_view_invalidate(self);
+    }
+    return 1;
+}
+#endif
+
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
 static void egui_view_annotated_scroll_bar_on_focus_change(egui_view_t *self, int is_focused)
 {
@@ -1485,6 +1513,17 @@ uint8_t egui_view_annotated_scroll_bar_get_marker_region(egui_view_t *self, uint
     region->location.x += self->region_screen.location.x;
     region->location.y += self->region_screen.location.y;
     return 1;
+}
+
+void egui_view_annotated_scroll_bar_override_static_preview_api(egui_view_t *self, egui_view_api_t *api)
+{
+    egui_view_copy_api(self, api);
+#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
+    api->on_touch_event = egui_view_annotated_scroll_bar_on_static_touch_event;
+#endif
+#if EGUI_CONFIG_FUNCTION_SUPPORT_KEY
+    api->on_key_event = egui_view_annotated_scroll_bar_on_static_key_event;
+#endif
 }
 
 const egui_view_api_t EGUI_VIEW_API_TABLE_NAME(egui_view_annotated_scroll_bar_t) = {
