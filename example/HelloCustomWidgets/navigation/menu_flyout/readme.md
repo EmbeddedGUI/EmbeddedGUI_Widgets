@@ -27,8 +27,7 @@
 - 两个 preview 统一通过 `egui_view_menu_flyout_override_static_preview_api()` 收口：
   - preview 吞掉 `touch / key` 输入；
   - preview 只负责清理残留 `pressed`；
-  - preview 不会修改 `current_snapshot`，也不会触发 click；
-  - preview 点击只保留一个最小收尾逻辑：清主控件 focus。
+  - preview 不会修改 `current_snapshot`，也不会触发 click。
 - 旧的 guide、状态栏、额外 preview 说明文字和场景化包装全部删除。
 
 目标目录：`example/HelloCustomWidgets/navigation/menu_flyout/`
@@ -57,7 +56,7 @@
 | `flyout_compact` | `egui_view_menu_flyout_t` | `104 x 78` | `Open / Copy / More` | `compact` 静态对照 |
 | `flyout_disabled` | `egui_view_menu_flyout_t` | `104 x 78` | `Rename / Export / Delete` | `disabled` 静态对照 |
 | `primary_snapshots` | `egui_view_menu_flyout_snapshot_t[4]` | - | `Open / Sort / Export / Layout` | 主控件录制轨道 |
-| `compact_snapshots` | `egui_view_menu_flyout_snapshot_t[2]` | - | `Open / Pin` | `compact` 程序化切换轨道 |
+| `compact_snapshots` | `egui_view_menu_flyout_snapshot_t[1]` | - | `Open / Copy / More` | `compact` 固定对照数据 |
 | `disabled_snapshots` | `egui_view_menu_flyout_snapshot_t[1]` | - | `Rename / Export / Delete` | `disabled` 固定对照数据 |
 
 ## 6. 状态覆盖矩阵
@@ -68,37 +67,39 @@
 | 主控件 | `Name ascending` | 排序态 | 验证 `meta` 与强调行对齐 |
 | 主控件 | `Export report` | 危险命令态 | 验证 `danger` 行的低噪音强调 |
 | 主控件 | `Layout wide` | 最终主态 | 作为交互后稳定态 |
-| `compact` | `Open / Copy / More` | 默认紧凑态 | 验证小尺寸结构 |
-| `compact` | `Pin / Density / Delete` | 第二组紧凑态 | 作为 runtime 关键帧 |
-| `disabled` | `Rename / Export / Delete` | 固定禁用态 | static preview，点击只清主控件 focus |
+| `compact` | `Open / Copy / More` | 默认紧凑态 | 固定静态对照，验证小尺寸结构 |
+| `disabled` | `Rename / Export / Delete` | 固定禁用态 | 固定静态对照，验证禁用态渲染 |
 
 ## 7. `egui_port_get_recording_action()` 录制动作设计
-1. 重置主控件和 `compact` preview 到默认状态。
-2. 请求初始帧。
+1. 重置主控件以及底部 `compact / disabled` preview 到默认状态。
+2. 输出默认 `Open panel` 截图。
 3. 切到第二组主菜单命令。
-4. 请求第二帧。
+4. 输出 `Name ascending` 截图。
 5. 切到危险命令组。
-6. 请求第三帧。
+6. 输出 `Export report` 截图。
 7. 切到第四组主菜单命令。
-8. 请求第四帧。
-9. 切换 `compact` 到第二组 snapshot，并主动给主控件请求 focus。
-10. 请求 `compact` 第二帧。
-11. 点击 `compact` preview，只执行 preview 的静态收尾逻辑。
-12. 请求 preview 点击后的收尾帧。
-13. 再请求最终稳定帧，确认没有残留 `pressed / focus`、黑白屏、裁切或整屏污染。
+8. 输出 `Layout wide` 截图。
+9. 恢复主控件默认状态，输出最终稳定帧。
+
+录制只导出主控件的状态变化。底部 `compact / disabled` preview 在整条 reference 轨道中保持静态，不承担切换、桥接或收尾职责。
 
 ## 8. 编译、touch、runtime、单测与文档检查
 ```bash
-make clean APP=HelloCustomWidgets APP_SUB=navigation/menu_flyout PORT=pc
 make all APP=HelloCustomWidgets APP_SUB=navigation/menu_flyout PORT=pc
 
-make clean APP=HelloUnitTest PORT=pc_test
+# 在 X:\ 短路径下执行
 make all APP=HelloUnitTest PORT=pc_test
-output\main.exe
+X:\output\main.exe
 
+python scripts/sync_widget_catalog.py
 python scripts/checks/check_touch_release_semantics.py --scope custom --category navigation
-python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub navigation/menu_flyout --track reference --timeout 10 --keep-screenshots
 python scripts/checks/check_docs_encoding.py
+python scripts/checks/check_widget_catalog.py
+python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub navigation/menu_flyout --track reference --timeout 10 --keep-screenshots
+python scripts/code_compile_check.py --custom-widgets --category navigation --bits64
+python scripts/code_runtime_check.py --app HelloCustomWidgets --category navigation --track reference --bits64
+python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub navigation/menu_flyout
+python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_navigation_menu_flyout
 ```
 
 ## 9. 验收重点
@@ -107,8 +108,9 @@ python scripts/checks/check_docs_encoding.py
 - `danger` 与 `disabled` 要一眼可辨，但不能退回高噪音装饰。
 - 主控件必须通过 same-target release / cancel 回归：移出命中区后不提交，回到原目标后释放才提交。
 - `set_snapshots()`、`set_current_snapshot()`、`set_font()`、`set_meta_font()`、`set_palette()`、`set_compact_mode()`、`set_disabled_mode()` 都要先清掉残留 `pressed`。
+- `compact / disabled` preview 必须统一吞掉 `touch / key`，并在所有 runtime 帧里保持静态一致。
 - `disabled_mode`、`!enable` 和 static preview 都不能误触发 click。
-- runtime 需要重点复核初始帧、危险态、`compact` 第二帧、preview 点击后的收尾帧和最终稳定帧，确认交互后渲染干净。
+- runtime 需要重点复核主区域 `Open panel -> Name ascending -> Export report -> Layout wide -> Open panel` 的变化，以及底部 `compact / disabled` preview 的静态一致性。
 
 ## 10. 已知限制与后续方向
 - 当前仍是固定尺寸 `reference` 示例，不做真实 popup 定位和级联子菜单展开。
@@ -137,7 +139,7 @@ python scripts/checks/check_docs_encoding.py
 
 ## 14. 相比参考原型删除的效果与 EGUI 适配约束
 - 删除页面级 `guide`、状态说明、preview 标签和场景化外壳。
-- 删除 preview 参与页面切换和额外交互闭环的职责，只保留静态对照与主控件 focus 收尾。
+- 删除 preview 参与页面切换和额外交互闭环的职责，只保留静态对照。
 - 删除 Acrylic、过重阴影、复杂级联子菜单动画和桌面系统级菜单接管。
 - 继续复用仓库内 `menu_flyout` 基础实现，不修改 `sdk/EmbeddedGUI`。
 - 通过统一的 `clear_pressed_state()` 和 static preview API，把 setter、guard、preview 的状态清理收口到同一套语义。

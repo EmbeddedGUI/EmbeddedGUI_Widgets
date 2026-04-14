@@ -340,12 +340,14 @@ static void test_menu_flyout_disabled_and_view_disabled_guards_clear_pressed_sta
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_menu_flyout_get_current_snapshot(EGUI_VIEW_OF(&test_flyout)));
 }
 
-static void test_menu_flyout_static_preview_consumes_input_and_clears_pressed_state(void)
+static void test_menu_flyout_static_preview_consumes_input_and_keeps_state(void)
 {
     egui_dim_t x;
     egui_dim_t y;
 
     setup_preview_flyout(1);
+    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_menu_flyout_get_current_snapshot(EGUI_VIEW_OF(&preview_flyout)));
+    EGUI_TEST_ASSERT_TRUE(preview_flyout.compact_mode);
     layout_preview_flyout();
     get_view_center(EGUI_VIEW_OF(&preview_flyout), &x, &y);
 
@@ -353,12 +355,14 @@ static void test_menu_flyout_static_preview_consumes_input_and_clears_pressed_st
     EGUI_TEST_ASSERT_TRUE(send_preview_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
     assert_pressed_cleared(EGUI_VIEW_OF(&preview_flyout));
     EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_menu_flyout_get_current_snapshot(EGUI_VIEW_OF(&preview_flyout)));
+    EGUI_TEST_ASSERT_TRUE(preview_flyout.compact_mode);
     EGUI_TEST_ASSERT_EQUAL_INT(0, click_count);
 
     seed_pressed_state(EGUI_VIEW_OF(&preview_flyout));
     EGUI_TEST_ASSERT_TRUE(send_preview_key(EGUI_KEY_CODE_ENTER));
     assert_pressed_cleared(EGUI_VIEW_OF(&preview_flyout));
     EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_menu_flyout_get_current_snapshot(EGUI_VIEW_OF(&preview_flyout)));
+    EGUI_TEST_ASSERT_TRUE(preview_flyout.compact_mode);
     EGUI_TEST_ASSERT_EQUAL_INT(0, click_count);
 }
 
@@ -385,7 +389,7 @@ void test_menu_flyout_run(void)
     EGUI_TEST_RUN(test_menu_flyout_touch_and_enter_trigger_click_listener);
     EGUI_TEST_RUN(test_menu_flyout_touch_same_target_release_and_cancel_behavior);
     EGUI_TEST_RUN(test_menu_flyout_disabled_and_view_disabled_guards_clear_pressed_state);
-    EGUI_TEST_RUN(test_menu_flyout_static_preview_consumes_input_and_clears_pressed_state);
+    EGUI_TEST_RUN(test_menu_flyout_static_preview_consumes_input_and_keeps_state);
     EGUI_TEST_RUN(test_menu_flyout_internal_helpers_clamp_focus_and_meta);
     EGUI_TEST_SUITE_END();
 }
