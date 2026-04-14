@@ -31,6 +31,7 @@
 #include "test/test_dialog_sheet.h"
 #include "test/test_drop_down_button.h"
 #include "test/test_expander.h"
+#include "test/test_field.h"
 #include "test/test_flip_view.h"
 #include "test/test_flyout.h"
 #include "test/test_font_icon.h"
@@ -152,6 +153,7 @@ void uicode_create_ui(void)
     test_dialog_sheet_run();
     test_drop_down_button_run();
     test_expander_run();
+    test_field_run();
     test_flip_view_run();
     test_flyout_run();
     test_font_icon_run();

@@ -9,9 +9,9 @@
 
 ## 当前快照
 
-- 截至 `2026-04-14`，`example/HelloCustomWidgets/` 当前保留 `100` 个控件目录。
+- 截至 `2026-04-14`，`example/HelloCustomWidgets/` 当前保留 `101` 个控件目录。
 - 所有保留控件均来自 `reference` 主线：
-  - `input = 32`
+  - `input = 33`
   - `layout = 27`
   - `navigation = 13`
   - `display = 18`
@@ -38,7 +38,7 @@
 
 ## 当前保留的 Reference 主线控件
 
-### Input（32）
+### Input（33）
 
 - `auto_suggest_box` -> `AutoSuggestBox`
 - `button` -> `Button`
@@ -50,6 +50,7 @@
 - `command_bar_flyout` -> `CommandBarFlyout`
 - `date_picker` -> `DatePicker`
 - `drop_down_button` -> `DropDownButton`
+- `field` -> `Field`
 - `hyperlink_button` -> `HyperlinkButton`
 - `number_box` -> `NumberBox`
 - `password_box` -> `PasswordBox`
@@ -154,6 +155,11 @@
 - `toast_stack` -> `Toast`
 
 ## 最近完成的收口动作
+
+- `2026-04-14`
+  - 新增 `input/field` reference 控件：补齐符合 Fluent 2 / Fluent UI React `Field` 语义的轻量 custom wrapper，在 custom 层实现 `label + required marker + helper text + validation message + field box + info button / bubble`，保留 `compact / read only` 静态 preview、same-target release 与 `Enter / Space / Esc` 键盘语义，不修改 SDK。
+  - `example/HelloCustomWidgets/input/field/egui_view_field.c/.h` 新增 `apply_standard_style()`、`apply_compact_style()`、`apply_read_only_style()`、`set_label()`、`set_field_text()`、`set_placeholder()`、`set_helper_text()`、`set_validation_text()`、`set_validation_state()`、`set_required()`、`set_info_title()`、`set_info_body()`、`set_font()`、`set_meta_font()`、`set_icon_font()`、`set_palette()`、`set_compact_mode()`、`set_read_only_mode()`、`set_open()`、`get_open()`、`set_on_open_changed_listener()`、`get_part_region()` 与 `override_static_preview_api()`；`example/HelloCustomWidgets/input/field/test.c`、`readme.md`、`example/HelloUnitTest/test/test_field.c/.h`、`example/HelloUnitTest/uicode.c`、`example/HelloCustomWidgets/widget_catalog.json` 与 `web/catalog-policy.json` 已同步接入。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=input/field PORT=pc`、`make all APP=HelloUnitTest PORT=pc_test`（在 `X:\` 短路径下）、`output\main.exe`（总计 `817 / 817`，`field` suite `5 / 5`）、`python scripts/sync_widget_catalog.py`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category input`、`python scripts/checks/check_docs_encoding.py`、`python scripts/checks/check_widget_catalog.py`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/field --track reference --timeout 10 --keep-screenshots`、`python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub input/field` 与对应 `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_input_field` 验收，确认 `field` 已接入 reference 主线、runtime 链路与 web 发布链路。
 
 - `2026-04-14`
   - 新增 `display/info_label` reference 控件：补齐符合 Fluent 2 / Fluent UI React `InfoLabel` 语义的轻量 custom wrapper，在 custom 层实现 `label + info button + anchored bubble`，保留 `compact / read only` 静态 preview、same-target release 与 `Enter / Space / Esc` 键盘语义，不修改 SDK。
