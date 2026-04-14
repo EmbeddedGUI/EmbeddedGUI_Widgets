@@ -531,12 +531,15 @@ static void test_dialog_sheet_disabled_ignores_input(void)
     EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, primary_x, primary_y));
 }
 
-static void test_dialog_sheet_static_preview_consumes_input_and_clears_pressed_state(void)
+static void test_dialog_sheet_static_preview_consumes_input_and_keeps_snapshot_and_action(void)
 {
     egui_dim_t x;
     egui_dim_t y;
 
     setup_preview_sheet();
+    EGUI_TEST_ASSERT_EQUAL_INT(2, egui_view_dialog_sheet_get_current_snapshot(EGUI_VIEW_OF(&preview_sheet)));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_DIALOG_SHEET_ACTION_PRIMARY, egui_view_dialog_sheet_get_current_action(EGUI_VIEW_OF(&preview_sheet)));
+    EGUI_TEST_ASSERT_EQUAL_INT(1, preview_sheet.compact_mode);
     layout_preview_sheet();
     x = EGUI_VIEW_OF(&preview_sheet)->region_screen.location.x + EGUI_VIEW_OF(&preview_sheet)->region_screen.size.width / 2;
     y = EGUI_VIEW_OF(&preview_sheet)->region_screen.location.y + EGUI_VIEW_OF(&preview_sheet)->region_screen.size.height / 2;
@@ -645,7 +648,7 @@ void test_dialog_sheet_run(void)
     EGUI_TEST_RUN(test_dialog_sheet_keyboard_navigation_and_guards);
     EGUI_TEST_RUN(test_dialog_sheet_read_only_mode_clears_pressed_and_ignores_input);
     EGUI_TEST_RUN(test_dialog_sheet_disabled_ignores_input);
-    EGUI_TEST_RUN(test_dialog_sheet_static_preview_consumes_input_and_clears_pressed_state);
+    EGUI_TEST_RUN(test_dialog_sheet_static_preview_consumes_input_and_keeps_snapshot_and_action);
     EGUI_TEST_RUN(test_dialog_sheet_internal_helpers_cover_tone_glyph_metrics_and_regions);
     EGUI_TEST_SUITE_END();
 }
