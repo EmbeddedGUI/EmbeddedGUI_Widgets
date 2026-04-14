@@ -1,140 +1,144 @@
 # settings_panel 设计说明
 
 ## 参考来源
-
 - 参考设计系统：`Fluent 2`
-- 参考开源库：`WPF UI`
-- 补充对照实现：`ModernWpf`
-- 对应组件名：`SettingCard` / `SettingsGroup`
-- 本次保留状态：`standard`、`compact`、`read only`、`accent`、`success`、`warning`、`neutral`
-- 本次删除效果：页面级 `guide`、状态回显、外部 preview 标签、旧双列包裹壳、过重的 section row 对比、过重的 value badge 和 footer meta chrome
-- EGUI 适配说明：保留设置卡分组、focus row 驱动 tone、尾部 `value / switch / chevron` 语义和 read-only 对照，仅在 `HelloCustomWidgets` 内维护 `reference widget` 版本；`snapshot / compact / read only / disabled` 切换共享同一套 `pressed` 清理语义，底部 preview 统一通过 `egui_view_settings_panel_override_static_preview_api()` 固定为静态 reference
+- 官方语义参考：`WPF UI / WinUI SettingsCard`
+- 对应组件语义：`SettingCardGroup`
+- 本次保留语义：`Workspace settings`、`Backup and alerts`、`Release controls`、`Account review`、`compact`、`read only`
+- 本次删除内容：旧 preview focus bridge、第二条 `compact` preview 轨道、录制里的 `preview dismiss / preview click` 收尾
+- EGUI 适配说明：继续在 custom 层维护轻量 `egui_view_settings_panel` reference 实现，本轮只收口参考页结构、录制轨道、静态 preview 语义和单测入口，不修改 `sdk/EmbeddedGUI`
 
-## 1. 为什么需要这个控件？
-`settings_panel` 用来表达一组风格统一的设置卡行，适合设置页、偏好面板和系统信息页。它强调分组卡片、focus row、尾部值和开关语义，而不是普通列表或摘要卡片。
+## 1. 为什么需要这个控件
+`settings_panel` 用来表达“多行设置项分组”的标准语义。它不是普通列表，也不是单张设置卡，而是把一组带 `value / switch / chevron` 尾部 affordance 的设置行稳定地组织在同一块 Fluent 风格容器里。
 
-## 2. 为什么现有控件不够用？
-- `card_panel` 更偏摘要信息卡，不是标准设置面板。
-- `data_list_panel` 只有列表语义，没有 Fluent 设置卡的层级和尾部控件节奏。
-- `nav_panel` 偏导航入口，不适合承载 `value / switch / chevron` 这类设置行尾部状态。
-- `number_box`、`toggle_button` 等输入控件只解决单点交互，不解决整组设置卡的编排。
+## 2. 为什么现有控件不够用
+- `settings_card` 只覆盖单个设置入口，不承载多行分组。
+- `settings_expander` 面向“设置头部 + 可展开嵌套项”，不是平铺的 setting group。
+- `data_list_panel` 更接近通用列表，不强调 setting row 的层级、tone 和尾部控件节奏。
 
-## 3. 目标场景与示例概览
-- 主控件展示标准 `settings_panel`，录制轨道覆盖 `accent / success / warning / neutral` 四组 snapshot。
-- 底部左侧展示 `compact` 静态对照，验证小尺寸下 rows、value badge 和 switch 的密度。
-- 底部右侧展示 `read only` 静态对照，验证视觉弱化和输入抑制后的被动态。
-- 页面结构统一收口为：标题 -> 主 `settings_panel` -> `compact / read only`。
-- 两个 preview 都通过 `egui_view_settings_panel_override_static_preview_api()` 吞掉 `touch / key`，点击 preview 时只清主控件 `panel_primary` 的 focus，不再承接页面桥接逻辑。
+## 3. 目标场景与页面结构
+- 页面只保留标题、一个主 `settings_panel`，以及底部两个静态 preview。
+- 主控件展示四组 snapshot：
+  - `Workspace settings`
+  - `Backup and alerts`
+  - `Release controls`
+  - `Account review`
+- 左下角是 `compact` 静态 preview，只负责对照紧凑布局密度。
+- 右下角是 `read only` 静态 preview，只负责对照只读弱化状态。
+- 两个 preview 统一通过 `egui_view_settings_panel_override_static_preview_api()` 收口：
+  - 吞掉新的 `touch / key`
+  - 只清理残留 `pressed`
+  - 不改变 `current_snapshot / compact_mode / read_only_mode`
+  - 不触发点击行为
 
 目标目录：`example/HelloCustomWidgets/layout/settings_panel/`
 
 ## 4. 视觉与布局规格
-- 画布：`480 x 480`
 - 根布局：`224 x 258`
 - 主控件：`196 x 132`
-- 底部对照容器：`216 x 84`
-- `compact` 预览：`104 x 84`
-- `read only` 预览：`104 x 84`
-- 视觉原则：
-  - 使用浅灰 page panel + 低噪音白底卡片，统一到 Fluent / WPF UI 的浅色基线。
-  - focus tone 只在 eyebrow、section rows、footer meta 和尾部控件里保留低强度提示。
-  - section rows 必须保持稳定节奏，不能压住 footer，也不能让尾部 `value / switch / chevron` 抢过标题层级。
-  - `read only` 预览除了 tone 弱化，还必须抑制输入，避免语义和交互脱节。
+- 底部对照行：`216 x 84`
+- `compact` preview：`104 x 84`
+- `read only` preview：`104 x 84`
+- 页面结构：标题 -> 主 `settings_panel` -> `compact / read only`
+- 样式约束：
+  - 保持浅色 Fluent 容器、低噪音边框和轻量 tone 提示。
+  - tone 只保留在 eyebrow、focus row、尾部 affordance 和 footer 的轻量差异上。
+  - 底部 preview 固定为静态 reference 对照，不再承担清焦点、切换轨道或页面桥接职责。
 
 ## 5. 控件清单
 
 | 变量名 | 类型 | 尺寸 (W x H) | 初始状态 | 用途 |
 | --- | --- | ---: | --- | --- |
-| `root_layout` | `egui_view_linearlayout_t` | `224 x 258` | enabled | 页面根布局 |
-| `title_label` | `egui_view_label_t` | `224 x 18` | `Settings Panel` | 页面标题 |
-| `panel_primary` | `egui_view_settings_panel_t` | `196 x 132` | `accent` | 主设置面板 |
-| `panel_compact` | `egui_view_settings_panel_t` | `104 x 84` | `accent compact` | 紧凑对照 |
-| `panel_read_only` | `egui_view_settings_panel_t` | `104 x 84` | `neutral read only` | 只读对照 |
+| `panel_primary` | `egui_view_settings_panel_t` | `196 x 132` | `Workspace settings` | 主 `SettingCardGroup` |
+| `panel_compact` | `egui_view_settings_panel_t` | `104 x 84` | `Compact` | 紧凑静态 preview |
+| `panel_read_only` | `egui_view_settings_panel_t` | `104 x 84` | `Read only` | 只读静态 preview |
+| `primary_snapshots` | `egui_view_settings_panel_snapshot_t[4]` | - | `Workspace / Backup / Release / Account` | 主状态轨道 |
 
 ## 6. 状态覆盖矩阵
+| 区域 / 轨道 | 状态 | 说明 |
+| --- | --- | --- |
+| 主控件 | `Workspace settings` | 默认状态，accent value row |
+| 主控件 | `Backup and alerts` | 第二组 snapshot，switch rows 为主 |
+| 主控件 | `Release controls` | 第三组 snapshot，warning focus row |
+| 主控件 | `Account review` | 第四组 snapshot，muted review rows |
+| `compact` | `Compact` | 固定静态对照，只验证紧凑布局 |
+| `read only` | `Read only` | 固定静态对照，只验证只读弱化与输入屏蔽 |
 
-| 状态 / 区域 | 主控件 | Compact | Read only |
-| --- | --- | --- | --- |
-| 默认态 | `accent value row` | `accent compact` | `neutral read only` |
-| 切换 1 | `success switch row` | 保持 | 保持 |
-| 切换 2 | `warning update row` | 保持 | 保持 |
-| 切换 3 | `neutral privacy row` | 保持 | 保持 |
-| 紧凑切换 | 保持 | `accent -> warning` | 保持 |
-| 只读弱化 | 不适用 | 不适用 | tone 降低，同时抑制 touch / key 输入 |
+## 7. 交互语义与单测要求
+- 主控件保留真实点击闭环：
+  - `touch down/up` 触发面板点击
+  - `dispatch_key_event + Enter / Space` 触发面板点击
+- `set_snapshots()`、`set_current_snapshot()`、`set_font()`、`set_meta_font()`、`set_palette()`、`set_compact_mode()`、`set_read_only_mode()` 都必须先清理残留 `pressed`
+- `read_only` 与 `!enable` 期间：
+  - `touch / dispatch_key_event` 都不能改状态
+  - `current_snapshot / compact_mode / read_only_mode` 保持符合预期
+  - 不触发点击
+- static preview 期间：
+  - 只清理残留 `pressed`
+  - 保持 `current_snapshot / compact_mode / read_only_mode` 不变
+  - 不触发点击
 
-## 7. `egui_port_get_recording_action()` 录制动作设计
-1. 重置主控件、`compact` 和 `read only` 对照，并给主控件请求 focus。
-2. 请求第一帧截图。
-3. 程序化切到 `success` 主 snapshot。
-4. 请求第二帧截图。
-5. 程序化切到 `warning` 主 snapshot。
-6. 请求第三帧截图。
-7. 程序化切到 `neutral` 主 snapshot。
-8. 请求第四帧截图。
-9. 程序化切到第二组 `compact` snapshot。
-10. 请求第五帧截图。
-11. 再次给主控件请求 focus。
-12. 点击 `compact` preview，只验证 focus 收尾。
-13. 请求最终截图并保留收尾等待。
+## 8. 录制动作设计
+`egui_port_get_recording_action()` 的录制顺序如下：
+1. 重置主控件和底部 `compact / read only` preview，输出默认 `Workspace settings`
+2. 切到 `Backup and alerts`，输出第二组主状态
+3. 切到 `Release controls`，输出第三组主状态
+4. 切到 `Account review`，输出第四组主状态
+5. 恢复主控件默认状态并输出最终稳定帧
 
-## 8. 编译、交互、runtime、截图验收标准
+录制只导出主控件状态变化。底部两个 preview 在整条 reference 轨道里保持静态一致，不再包含第二条 `compact` 轨道，也不再包含 `preview dismiss / preview click` 收尾。
+
+## 9. 编译、单测、运行时与文档检查
 ```bash
 make all APP=HelloCustomWidgets APP_SUB=layout/settings_panel PORT=pc
-python scripts/checks/check_touch_release_semantics.py --scope custom --category layout
-python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub layout/settings_panel --track reference --timeout 10 --keep-screenshots
+
+# 在 X:\ 短路径下执行；修改 HelloUnitTest 后先 clean 再重建
+make clean APP=HelloUnitTest PORT=pc_test
 make all APP=HelloUnitTest PORT=pc_test
-output\main.exe
+X:\output\main.exe
+
+python scripts/sync_widget_catalog.py
+python scripts/checks/check_touch_release_semantics.py --scope custom --category layout
 python scripts/checks/check_docs_encoding.py
+python scripts/checks/check_widget_catalog.py
+python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub layout/settings_panel --track reference --timeout 10 --keep-screenshots
+python scripts/code_compile_check.py --custom-widgets --category layout --bits64
+python scripts/code_runtime_check.py --app HelloCustomWidgets --category layout --track reference --bits64
+python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub layout/settings_panel
+python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_layout_settings_panel
 ```
 
-验收重点：
-- 主控件和底部 `compact / read only` 对照必须完整可见，不能被裁切。
-- section rows、value badge、switch 和 chevron 在主态与切换态下都要保持可辨识。
-- `read only` 需要同时满足视觉弱化和输入抑制，单测必须覆盖 pressed 清理与 touch / key 忽略。
-- `snapshot / compact / read only / disabled` 切换后不能残留 `pressed` 高亮或下压位移渲染。
-- `read only / disabled` 不仅要忽略后续 touch / key 输入，还要在收到新输入时清理残留 `pressed` 渲染。
-- 底部 preview 必须统一通过 `egui_view_settings_panel_override_static_preview_api()` 吞掉 `touch / key`，且不能改变 `snapshot`。
-- 点击底部 preview 时只允许清主控件 `panel_primary` 的 focus，最终收尾帧不能出现焦点残留、黑白屏或异常重排。
-- runtime 关键帧里，snapshot 切换后的 footer meta、focus row 和 section block 层级必须稳定。
-- 页面中不再出现旧列容器壳、guide、状态回显或额外 preview 标签。
+## 10. 验收重点
+- 主控件和底部 `compact / read only` preview 必须完整可见，不能黑白屏、裁切或重叠。
+- 主区四组 `SettingCardGroup` 状态变化要清晰可辨，底部 preview 全程保持静态。
+- `dispatch_key_event` 路径下的 `Enter / Space`、`read only`、`!enable`、`static preview keeps state` 要全部通过单测。
+- `snapshot / compact / read only / disabled` 切换后不能残留旧的 `pressed` 高亮。
+- WASM demo 必须正常加载，文档面板能渲染本 README。
 
-## 9. 已知限制与后续方向
-- 当前版本仍是固定尺寸 reference 实现，不覆盖超长标题和超过 4 行 settings rows。
-- 当前不做真实图标、hover、focus ring 和复杂桌面设置页联动。
-- 当前 switch 是示例级绘制语义，不接真实业务状态同步。
-- 是否下沉到 `src/widget/` 作为通用控件，后续单独评估。
+## 11. 截图复核口径
+- 检查目录：`runtime_check_output/HelloCustomWidgets_layout_settings_panel/default`
+- 复核目标：
+  - 主区存在 4 组可辨识唯一状态
+  - 底部 preview 区域在全程保持单一静态哈希
+  - 变化边界只出现在主区，不扩散到底部 preview
 
-## 10. 与现有控件的边界
-- 相比 `card_panel`：这里不是摘要卡，而是设置行分组。
-- 相比 `data_list_panel`：这里不是通用列表，重点在 setting card 节奏和尾部控件语义。
-- 相比 `nav_panel`：这里不是导航入口，不强调 rail 或 selected destination。
-- 相比单个输入控件：这里关注的是整组设置面板的层级和阅读稳定性。
+## 12. 与现有控件的边界
+- 相比 `settings_card`：这里是多行设置分组，不是单个入口卡。
+- 相比 `settings_expander`：这里不承接 `expand / collapse`，只保留平铺 rows。
+- 相比 `data_list_panel`：这里强调 setting row 语义和尾部 affordance，不是通用列表。
 
-## 11. 参考设计系统与开源母本
-- 参考设计系统：`Fluent 2`
-- 参考开源库：`WPF UI`
-- 补充对照实现：`ModernWpf`
-
-## 12. 对应组件名与本次保留的核心状态
-- 对应组件名：`SettingCard` / `SettingsGroup`
-- 本次保留核心状态：
-  - `standard`
+## 13. 本次保留的核心状态与删减项
+- 保留的核心状态：
+  - `Workspace settings`
+  - `Backup and alerts`
+  - `Release controls`
+  - `Account review`
   - `compact`
   - `read only`
-  - `accent`
-  - `success`
-  - `warning`
-  - `neutral`
-
-## 13. 相比参考原型删掉了哪些效果或装饰？
-- 删除页面级 `guide`、状态回显、preview 标签和旧双列包裹壳。
-- 删除过重的 section row 对比、value badge chrome 和 footer meta chrome。
-- 删除真实图标、Acrylic、长列表滚动和完整桌面设置页联动。
-- 删除 hover、focus ring 和复杂展开动效。
-- 删除示例外的页面桥接逻辑，只保留单组 `settings_panel` 的核心语义。
-
-## 14. EGUI 适配时的简化点与约束
-- 使用固定 `snapshot + item` 数据，优先保证 `480 x 480` 下的审阅稳定性。
-- `compact` 与 `read only` 直接复用同一控件模式，并通过 `egui_view_settings_panel_override_static_preview_api()` 固定为静态对照，减少页面级桥接逻辑。
-- `read only` 不仅弱化视觉，也抑制输入，避免语义和交互脱节。
-- 当前先作为 `HelloCustomWidgets` 的 `reference widget` 维护，后续再评估是否下沉框架层。
+- 保留的交互：
+  - 面板点击
+  - 键盘 `Enter / Space`
+- 删减的旧桥接与轨道：
+  - preview 点击清主控件 focus
+  - 第二条 `compact` preview 轨道
+  - 录制中的 `preview dismiss / preview click` 收尾

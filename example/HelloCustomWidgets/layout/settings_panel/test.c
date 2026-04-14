@@ -17,8 +17,8 @@
 #define SETTINGS_PANEL_BOTTOM_ROW_HEIGHT 84
 #define SETTINGS_PANEL_RECORD_WAIT       90
 #define SETTINGS_PANEL_RECORD_FRAME_WAIT 170
+#define SETTINGS_PANEL_RECORD_FINAL_WAIT 280
 #define PRIMARY_SNAPSHOT_COUNT           ((uint8_t)(sizeof(primary_snapshots) / sizeof(primary_snapshots[0])))
-#define COMPACT_SNAPSHOT_COUNT           ((uint8_t)(sizeof(compact_snapshots) / sizeof(compact_snapshots[0])))
 
 static egui_view_linearlayout_t root_layout;
 static egui_view_label_t title_label;
@@ -34,8 +34,6 @@ EGUI_BACKGROUND_PARAM_INIT(bg_page_panel_params, &bg_page_panel_param, NULL, NUL
 EGUI_BACKGROUND_COLOR_STATIC_CONST_INIT(bg_page_panel, &bg_page_panel_params);
 
 static const char *title_text = "Settings Panel";
-static uint8_t primary_snapshot_index = 0;
-static uint8_t compact_snapshot_index = 0;
 
 static const egui_view_settings_panel_item_t primary_items_0[] = {
         {"TH", "Theme", "Light", 0, 1, EGUI_VIEW_SETTINGS_PANEL_TRAILING_VALUE},
@@ -66,11 +64,6 @@ static const egui_view_settings_panel_item_t compact_items_0[] = {
         {"BK", "Sync", NULL, 1, 0, EGUI_VIEW_SETTINGS_PANEL_TRAILING_SWITCH_ON},
 };
 
-static const egui_view_settings_panel_item_t compact_items_1[] = {
-        {"UP", "Patch", "Hold", 2, 1, EGUI_VIEW_SETTINGS_PANEL_TRAILING_VALUE},
-        {"NW", "Data", NULL, 3, 0, EGUI_VIEW_SETTINGS_PANEL_TRAILING_SWITCH_OFF},
-};
-
 static const egui_view_settings_panel_item_t read_only_items_0[] = {
         {"PR", "Privacy", NULL, 3, 1, EGUI_VIEW_SETTINGS_PANEL_TRAILING_CHEVRON},
         {"AC", "Account", "Managed", 3, 0, EGUI_VIEW_SETTINGS_PANEL_TRAILING_VALUE},
@@ -83,59 +76,33 @@ static const egui_view_settings_panel_snapshot_t primary_snapshots[] = {
         {"PRIVACY", "Account review", "Muted rows stay calm in review.", "Privacy stays calm.", primary_items_3, 3, 0},
 };
 
-static const egui_view_settings_panel_snapshot_t compact_snapshots[] = {
-        {"SET", "Compact", "", "Theme ready.", compact_items_0, 2, 0},
-        {"WARN", "Compact", "", "Pause held.", compact_items_1, 2, 0},
-};
+static const egui_view_settings_panel_snapshot_t compact_snapshot = {"SET", "Compact", "", "Theme ready.", compact_items_0, 2, 0};
 
-static const egui_view_settings_panel_snapshot_t read_only_snapshots[] = {
-        {"ARCHIVE", "Read only", "", "Privacy calm.", read_only_items_0, 2, 0},
-};
-
-static int dismiss_primary_focus_on_preview_touch(egui_view_t *self, egui_motion_event_t *event)
-{
-    EGUI_UNUSED(self);
-
-#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
-    if (event->type == EGUI_MOTION_EVENT_ACTION_DOWN)
-    {
-        egui_view_clear_focus(EGUI_VIEW_OF(&panel_primary));
-    }
-#else
-    EGUI_UNUSED(event);
-#endif
-    return 1;
-}
-
-#if EGUI_CONFIG_RECORDING_TEST
-static void set_click_view_center(egui_sim_action_t *p_action, egui_view_t *view, int interval_ms)
-{
-    p_action->type = EGUI_SIM_ACTION_CLICK;
-    p_action->x1 = view->region_screen.location.x + view->region_screen.size.width / 2;
-    p_action->y1 = view->region_screen.location.y + view->region_screen.size.height / 2;
-    p_action->x2 = 0;
-    p_action->y2 = 0;
-    p_action->steps = 0;
-    p_action->interval_ms = interval_ms;
-}
-#endif
+static const egui_view_settings_panel_snapshot_t read_only_snapshot = {"ARCHIVE", "Read only", "", "Privacy calm.", read_only_items_0, 2, 0};
 
 static void apply_primary_snapshot(uint8_t index)
 {
-    primary_snapshot_index = (uint8_t)(index % PRIMARY_SNAPSHOT_COUNT);
-    egui_view_settings_panel_set_current_snapshot(EGUI_VIEW_OF(&panel_primary), primary_snapshot_index);
+    egui_view_settings_panel_set_current_snapshot(EGUI_VIEW_OF(&panel_primary), index % PRIMARY_SNAPSHOT_COUNT);
 }
 
-static void apply_compact_snapshot(uint8_t index)
+static void apply_primary_default_state(void)
 {
-    compact_snapshot_index = (uint8_t)(index % COMPACT_SNAPSHOT_COUNT);
-    egui_view_settings_panel_set_current_snapshot(EGUI_VIEW_OF(&panel_compact), compact_snapshot_index);
+    apply_primary_snapshot(0);
 }
 
-static void apply_read_only_state(void)
+static void apply_preview_states(void)
 {
+    egui_view_settings_panel_set_current_snapshot(EGUI_VIEW_OF(&panel_compact), 0);
     egui_view_settings_panel_set_current_snapshot(EGUI_VIEW_OF(&panel_read_only), 0);
 }
+
+#if EGUI_CONFIG_RECORDING_TEST
+static void request_page_snapshot(void)
+{
+    egui_view_invalidate(EGUI_VIEW_OF(&root_layout));
+    recording_request_snapshot();
+}
+#endif
 
 void test_init_ui(void)
 {
@@ -173,7 +140,7 @@ void test_init_ui(void)
 
     egui_view_settings_panel_init(EGUI_VIEW_OF(&panel_compact));
     egui_view_set_size(EGUI_VIEW_OF(&panel_compact), SETTINGS_PANEL_PREVIEW_WIDTH, SETTINGS_PANEL_PREVIEW_HEIGHT);
-    egui_view_settings_panel_set_snapshots(EGUI_VIEW_OF(&panel_compact), compact_snapshots, COMPACT_SNAPSHOT_COUNT);
+    egui_view_settings_panel_set_snapshots(EGUI_VIEW_OF(&panel_compact), &compact_snapshot, 1);
     egui_view_settings_panel_set_font(EGUI_VIEW_OF(&panel_compact), (const egui_font_t *)&egui_res_font_montserrat_8_4);
     egui_view_settings_panel_set_meta_font(EGUI_VIEW_OF(&panel_compact), (const egui_font_t *)&egui_res_font_montserrat_8_4);
     egui_view_settings_panel_set_compact_mode(EGUI_VIEW_OF(&panel_compact), 1);
@@ -181,9 +148,6 @@ void test_init_ui(void)
                                          EGUI_COLOR_HEX(0x1A2734), EGUI_COLOR_HEX(0x6B7A89), EGUI_COLOR_HEX(0x0F6CBD), EGUI_COLOR_HEX(0x0F7B45),
                                          EGUI_COLOR_HEX(0x9D5D00), EGUI_COLOR_HEX(0x7A8796));
     egui_view_settings_panel_override_static_preview_api(EGUI_VIEW_OF(&panel_compact), &panel_compact_api);
-#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
-    panel_compact_api.on_touch = dismiss_primary_focus_on_preview_touch;
-#endif
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&panel_compact), false);
 #endif
@@ -192,7 +156,7 @@ void test_init_ui(void)
     egui_view_settings_panel_init(EGUI_VIEW_OF(&panel_read_only));
     egui_view_set_size(EGUI_VIEW_OF(&panel_read_only), SETTINGS_PANEL_PREVIEW_WIDTH, SETTINGS_PANEL_PREVIEW_HEIGHT);
     egui_view_set_margin(EGUI_VIEW_OF(&panel_read_only), 8, 0, 0, 0);
-    egui_view_settings_panel_set_snapshots(EGUI_VIEW_OF(&panel_read_only), read_only_snapshots, 1);
+    egui_view_settings_panel_set_snapshots(EGUI_VIEW_OF(&panel_read_only), &read_only_snapshot, 1);
     egui_view_settings_panel_set_font(EGUI_VIEW_OF(&panel_read_only), (const egui_font_t *)&egui_res_font_montserrat_8_4);
     egui_view_settings_panel_set_meta_font(EGUI_VIEW_OF(&panel_read_only), (const egui_font_t *)&egui_res_font_montserrat_8_4);
     egui_view_settings_panel_set_compact_mode(EGUI_VIEW_OF(&panel_read_only), 1);
@@ -201,17 +165,13 @@ void test_init_ui(void)
                                          EGUI_COLOR_HEX(0x233241), EGUI_COLOR_HEX(0x708091), EGUI_COLOR_HEX(0x98A5B2), EGUI_COLOR_HEX(0xA7B4BF),
                                          EGUI_COLOR_HEX(0xB8B0A2), EGUI_COLOR_HEX(0xB4BDC8));
     egui_view_settings_panel_override_static_preview_api(EGUI_VIEW_OF(&panel_read_only), &panel_read_only_api);
-#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
-    panel_read_only_api.on_touch = dismiss_primary_focus_on_preview_touch;
-#endif
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&panel_read_only), false);
 #endif
     egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&panel_read_only));
 
-    apply_primary_snapshot(0);
-    apply_compact_snapshot(0);
-    apply_read_only_state();
+    apply_primary_default_state();
+    apply_preview_states();
 
     {
         hello_custom_widgets_demo_apply_title_only_scaffold(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label), NULL, 0);
@@ -241,99 +201,74 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     case 0:
         if (first_call)
         {
-            apply_primary_snapshot(0);
-            apply_compact_snapshot(0);
-            apply_read_only_state();
+            apply_primary_default_state();
+            apply_preview_states();
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
             egui_view_request_focus(EGUI_VIEW_OF(&panel_primary));
 #endif
-        }
-        EGUI_SIM_SET_WAIT(p_action, SETTINGS_PANEL_RECORD_WAIT);
-        return true;
-    case 1:
-        if (first_call)
-        {
-            recording_request_snapshot();
+            request_page_snapshot();
         }
         EGUI_SIM_SET_WAIT(p_action, SETTINGS_PANEL_RECORD_FRAME_WAIT);
         return true;
-    case 2:
+    case 1:
         if (first_call)
         {
             apply_primary_snapshot(1);
         }
         EGUI_SIM_SET_WAIT(p_action, SETTINGS_PANEL_RECORD_WAIT);
         return true;
-    case 3:
+    case 2:
         if (first_call)
         {
-            recording_request_snapshot();
+            request_page_snapshot();
         }
         EGUI_SIM_SET_WAIT(p_action, SETTINGS_PANEL_RECORD_FRAME_WAIT);
         return true;
-    case 4:
+    case 3:
         if (first_call)
         {
             apply_primary_snapshot(2);
         }
         EGUI_SIM_SET_WAIT(p_action, SETTINGS_PANEL_RECORD_WAIT);
         return true;
-    case 5:
+    case 4:
         if (first_call)
         {
-            recording_request_snapshot();
+            request_page_snapshot();
         }
         EGUI_SIM_SET_WAIT(p_action, SETTINGS_PANEL_RECORD_FRAME_WAIT);
         return true;
-    case 6:
+    case 5:
         if (first_call)
         {
             apply_primary_snapshot(3);
         }
         EGUI_SIM_SET_WAIT(p_action, SETTINGS_PANEL_RECORD_WAIT);
         return true;
+    case 6:
+        if (first_call)
+        {
+            request_page_snapshot();
+        }
+        EGUI_SIM_SET_WAIT(p_action, SETTINGS_PANEL_RECORD_FRAME_WAIT);
+        return true;
     case 7:
         if (first_call)
         {
-            recording_request_snapshot();
-        }
-        EGUI_SIM_SET_WAIT(p_action, SETTINGS_PANEL_RECORD_FRAME_WAIT);
-        return true;
-    case 8:
-        if (first_call)
-        {
-            apply_compact_snapshot(1);
-        }
-        EGUI_SIM_SET_WAIT(p_action, SETTINGS_PANEL_RECORD_WAIT);
-        return true;
-    case 9:
-        if (first_call)
-        {
-            recording_request_snapshot();
-        }
-        EGUI_SIM_SET_WAIT(p_action, SETTINGS_PANEL_RECORD_FRAME_WAIT);
-        return true;
-    case 10:
-        if (first_call)
-        {
+            apply_primary_default_state();
+            apply_preview_states();
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
             egui_view_request_focus(EGUI_VIEW_OF(&panel_primary));
 #endif
         }
         EGUI_SIM_SET_WAIT(p_action, SETTINGS_PANEL_RECORD_WAIT);
         return true;
-    case 11:
+    case 8:
         if (first_call)
         {
-            set_click_view_center(p_action, EGUI_VIEW_OF(&panel_compact), 220);
+            request_page_snapshot();
         }
-        return true;
-    case 12:
-        if (first_call)
-        {
-            recording_request_snapshot();
-        }
-        EGUI_SIM_SET_WAIT(p_action, 520);
+        EGUI_SIM_SET_WAIT(p_action, SETTINGS_PANEL_RECORD_FINAL_WAIT);
         return true;
     default:
         return false;
