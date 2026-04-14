@@ -112,7 +112,7 @@ static int send_key_to_view(egui_view_t *view, uint8_t type, uint8_t key_code)
     memset(&event, 0, sizeof(event));
     event.type = type;
     event.key_code = key_code;
-    return view->api->on_key_event(view, &event);
+    return view->api->dispatch_key_event(view, &event);
 }
 
 static int send_touch(uint8_t type, egui_dim_t x, egui_dim_t y)
@@ -181,27 +181,39 @@ static void assert_pressed_cleared(egui_view_grid_splitter_t *widget)
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(widget)->is_pressed);
 }
 
+static void assert_widget_state(egui_view_grid_splitter_t *widget, uint8_t snapshot, uint8_t ratio, uint8_t compact_mode, uint8_t read_only_mode)
+{
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot, egui_view_grid_splitter_get_current_snapshot(EGUI_VIEW_OF(widget)));
+    EGUI_TEST_ASSERT_EQUAL_INT(ratio, egui_view_grid_splitter_get_split_ratio(EGUI_VIEW_OF(widget)));
+    EGUI_TEST_ASSERT_EQUAL_INT(compact_mode, widget->compact_mode);
+    EGUI_TEST_ASSERT_EQUAL_INT(read_only_mode, widget->read_only_mode);
+}
+
+static void assert_ratio_listener_state(uint8_t count, uint8_t snapshot, uint8_t ratio)
+{
+    EGUI_TEST_ASSERT_EQUAL_INT(count, g_ratio_change_count);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot, g_ratio_snapshot);
+    EGUI_TEST_ASSERT_EQUAL_INT(ratio, g_ratio_value);
+}
+
 static void test_grid_splitter_set_snapshots_clamp_and_defaults(void)
 {
     setup_widget(g_overflow_snapshots, EGUI_ARRAY_SIZE(g_overflow_snapshots));
 
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_GRID_SPLITTER_MAX_SNAPSHOTS, test_widget.snapshot_count);
-    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_grid_splitter_get_current_snapshot(EGUI_VIEW_OF(&test_widget)));
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_GRID_SPLITTER_SPLIT_RATIO_MIN, egui_view_grid_splitter_get_split_ratio(EGUI_VIEW_OF(&test_widget)));
+    assert_widget_state(&test_widget, 0, EGUI_VIEW_GRID_SPLITTER_SPLIT_RATIO_MIN, 0, 0);
 
     seed_pressed_state(&test_widget, 1, 1);
     test_widget.current_snapshot = 5;
     test_widget.split_ratio = 77;
     egui_view_grid_splitter_set_snapshots(EGUI_VIEW_OF(&test_widget), g_snapshots, 1);
     EGUI_TEST_ASSERT_EQUAL_INT(1, test_widget.snapshot_count);
-    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_grid_splitter_get_current_snapshot(EGUI_VIEW_OF(&test_widget)));
-    EGUI_TEST_ASSERT_EQUAL_INT(42, egui_view_grid_splitter_get_split_ratio(EGUI_VIEW_OF(&test_widget)));
+    assert_widget_state(&test_widget, 0, 42, 0, 0);
     assert_pressed_cleared(&test_widget);
 
     egui_view_grid_splitter_set_snapshots(EGUI_VIEW_OF(&test_widget), NULL, 0);
     EGUI_TEST_ASSERT_EQUAL_INT(0, test_widget.snapshot_count);
-    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_grid_splitter_get_current_snapshot(EGUI_VIEW_OF(&test_widget)));
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_GRID_SPLITTER_SPLIT_RATIO_DEFAULT, egui_view_grid_splitter_get_split_ratio(EGUI_VIEW_OF(&test_widget)));
+    assert_widget_state(&test_widget, 0, EGUI_VIEW_GRID_SPLITTER_SPLIT_RATIO_DEFAULT, 0, 0);
 }
 
 static void test_grid_splitter_setters_clear_pressed_and_update_state(void)
@@ -220,14 +232,15 @@ static void test_grid_splitter_setters_clear_pressed_and_update_state(void)
 
     seed_pressed_state(&test_widget, 1, 1);
     egui_view_grid_splitter_set_compact_mode(EGUI_VIEW_OF(&test_widget), 2);
-    EGUI_TEST_ASSERT_EQUAL_INT(1, test_widget.compact_mode);
+    assert_widget_state(&test_widget, 0, 42, 1, 0);
     assert_pressed_cleared(&test_widget);
 
     seed_pressed_state(&test_widget, 1, 1);
     egui_view_grid_splitter_set_read_only_mode(EGUI_VIEW_OF(&test_widget), 3);
-    EGUI_TEST_ASSERT_EQUAL_INT(1, test_widget.read_only_mode);
+    assert_widget_state(&test_widget, 0, 42, 1, 1);
     assert_pressed_cleared(&test_widget);
     egui_view_grid_splitter_set_read_only_mode(EGUI_VIEW_OF(&test_widget), 0);
+    egui_view_grid_splitter_set_compact_mode(EGUI_VIEW_OF(&test_widget), 0);
 
     seed_pressed_state(&test_widget, 1, 1);
     egui_view_grid_splitter_set_palette(EGUI_VIEW_OF(&test_widget), EGUI_COLOR_HEX(0x101112), EGUI_COLOR_HEX(0x202122), EGUI_COLOR_HEX(0x303132),
@@ -239,19 +252,14 @@ static void test_grid_splitter_setters_clear_pressed_and_update_state(void)
 
     reset_ratio_state();
     egui_view_grid_splitter_set_current_snapshot(EGUI_VIEW_OF(&test_widget), 1);
-    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_grid_splitter_get_current_snapshot(EGUI_VIEW_OF(&test_widget)));
-    EGUI_TEST_ASSERT_EQUAL_INT(58, egui_view_grid_splitter_get_split_ratio(EGUI_VIEW_OF(&test_widget)));
-    EGUI_TEST_ASSERT_EQUAL_INT(1, g_ratio_change_count);
-    EGUI_TEST_ASSERT_EQUAL_INT(1, g_ratio_snapshot);
-    EGUI_TEST_ASSERT_EQUAL_INT(58, g_ratio_value);
+    assert_widget_state(&test_widget, 1, 58, 0, 0);
+    assert_ratio_listener_state(1, 1, 58);
 
     reset_ratio_state();
     seed_pressed_state(&test_widget, 1, 1);
     egui_view_grid_splitter_set_split_ratio(EGUI_VIEW_OF(&test_widget), 72);
-    EGUI_TEST_ASSERT_EQUAL_INT(72, egui_view_grid_splitter_get_split_ratio(EGUI_VIEW_OF(&test_widget)));
-    EGUI_TEST_ASSERT_EQUAL_INT(1, g_ratio_change_count);
-    EGUI_TEST_ASSERT_EQUAL_INT(1, g_ratio_snapshot);
-    EGUI_TEST_ASSERT_EQUAL_INT(72, g_ratio_value);
+    assert_widget_state(&test_widget, 1, 72, 0, 0);
+    assert_ratio_listener_state(1, 1, 72);
     assert_pressed_cleared(&test_widget);
 }
 
@@ -290,30 +298,25 @@ static void test_grid_splitter_key_navigation_and_reset(void)
     setup_widget(g_snapshots, EGUI_ARRAY_SIZE(g_snapshots));
 
     EGUI_TEST_ASSERT_TRUE(send_key(EGUI_KEY_CODE_RIGHT));
-    EGUI_TEST_ASSERT_EQUAL_INT(47, egui_view_grid_splitter_get_split_ratio(EGUI_VIEW_OF(&test_widget)));
+    assert_widget_state(&test_widget, 0, 47, 0, 0);
     EGUI_TEST_ASSERT_TRUE(send_key(EGUI_KEY_CODE_END));
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_GRID_SPLITTER_SPLIT_RATIO_MAX, egui_view_grid_splitter_get_split_ratio(EGUI_VIEW_OF(&test_widget)));
+    assert_widget_state(&test_widget, 0, EGUI_VIEW_GRID_SPLITTER_SPLIT_RATIO_MAX, 0, 0);
     EGUI_TEST_ASSERT_TRUE(send_key(EGUI_KEY_CODE_HOME));
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_GRID_SPLITTER_SPLIT_RATIO_MIN, egui_view_grid_splitter_get_split_ratio(EGUI_VIEW_OF(&test_widget)));
+    assert_widget_state(&test_widget, 0, EGUI_VIEW_GRID_SPLITTER_SPLIT_RATIO_MIN, 0, 0);
 
     reset_ratio_state();
     EGUI_TEST_ASSERT_TRUE(send_key(EGUI_KEY_CODE_TAB));
-    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_grid_splitter_get_current_snapshot(EGUI_VIEW_OF(&test_widget)));
-    EGUI_TEST_ASSERT_EQUAL_INT(58, egui_view_grid_splitter_get_split_ratio(EGUI_VIEW_OF(&test_widget)));
-    EGUI_TEST_ASSERT_EQUAL_INT(1, g_ratio_change_count);
-    EGUI_TEST_ASSERT_EQUAL_INT(1, g_ratio_snapshot);
-    EGUI_TEST_ASSERT_EQUAL_INT(58, g_ratio_value);
+    assert_widget_state(&test_widget, 1, 58, 0, 0);
+    assert_ratio_listener_state(1, 1, 58);
 
     egui_view_grid_splitter_set_split_ratio(EGUI_VIEW_OF(&test_widget), 72);
     reset_ratio_state();
-    EGUI_TEST_ASSERT_TRUE(send_key_action(EGUI_KEY_EVENT_ACTION_DOWN, EGUI_KEY_CODE_ENTER));
+    EGUI_TEST_ASSERT_TRUE(send_key_action(EGUI_KEY_EVENT_ACTION_DOWN, EGUI_KEY_CODE_SPACE));
     EGUI_TEST_ASSERT_EQUAL_INT(1, test_widget.pressed_handle);
     EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&test_widget)->is_pressed);
-    EGUI_TEST_ASSERT_TRUE(send_key_action(EGUI_KEY_EVENT_ACTION_UP, EGUI_KEY_CODE_ENTER));
-    EGUI_TEST_ASSERT_EQUAL_INT(58, egui_view_grid_splitter_get_split_ratio(EGUI_VIEW_OF(&test_widget)));
-    EGUI_TEST_ASSERT_EQUAL_INT(1, g_ratio_change_count);
-    EGUI_TEST_ASSERT_EQUAL_INT(1, g_ratio_snapshot);
-    EGUI_TEST_ASSERT_EQUAL_INT(58, g_ratio_value);
+    EGUI_TEST_ASSERT_TRUE(send_key_action(EGUI_KEY_EVENT_ACTION_UP, EGUI_KEY_CODE_SPACE));
+    assert_widget_state(&test_widget, 1, 58, 0, 0);
+    assert_ratio_listener_state(1, 1, 58);
     assert_pressed_cleared(&test_widget);
 }
 
@@ -321,45 +324,84 @@ static void test_grid_splitter_read_only_and_disabled_guards(void)
 {
     egui_dim_t handle_x;
     egui_dim_t handle_y;
+    uint8_t initial_snapshot;
+    uint8_t initial_ratio;
 
     setup_widget(g_snapshots, EGUI_ARRAY_SIZE(g_snapshots));
     layout_widget();
     EGUI_TEST_ASSERT_TRUE(get_handle_center(EGUI_VIEW_OF(&test_widget), &handle_x, &handle_y));
 
+    egui_view_grid_splitter_set_current_snapshot(EGUI_VIEW_OF(&test_widget), 1);
+    reset_ratio_state();
+    initial_snapshot = egui_view_grid_splitter_get_current_snapshot(EGUI_VIEW_OF(&test_widget));
+    initial_ratio = egui_view_grid_splitter_get_split_ratio(EGUI_VIEW_OF(&test_widget));
+
     seed_pressed_state(&test_widget, 1, 1);
     egui_view_grid_splitter_set_read_only_mode(EGUI_VIEW_OF(&test_widget), 1);
+    assert_widget_state(&test_widget, initial_snapshot, initial_ratio, 0, 1);
+    assert_pressed_cleared(&test_widget);
+
     EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, handle_x, handle_y));
     EGUI_TEST_ASSERT_FALSE(send_key(EGUI_KEY_CODE_RIGHT));
+    assert_widget_state(&test_widget, initial_snapshot, initial_ratio, 0, 1);
+    assert_ratio_listener_state(0, 0xFF, 0xFF);
     assert_pressed_cleared(&test_widget);
+
     egui_view_grid_splitter_set_read_only_mode(EGUI_VIEW_OF(&test_widget), 0);
+    EGUI_TEST_ASSERT_TRUE(send_key(EGUI_KEY_CODE_RIGHT));
+    assert_widget_state(&test_widget, initial_snapshot, initial_ratio + EGUI_VIEW_GRID_SPLITTER_SPLIT_RATIO_STEP, 0, 0);
+    assert_ratio_listener_state(1, initial_snapshot, initial_ratio + EGUI_VIEW_GRID_SPLITTER_SPLIT_RATIO_STEP);
+
+    egui_view_grid_splitter_set_split_ratio(EGUI_VIEW_OF(&test_widget), 72);
+    reset_ratio_state();
+    initial_snapshot = egui_view_grid_splitter_get_current_snapshot(EGUI_VIEW_OF(&test_widget));
+    initial_ratio = egui_view_grid_splitter_get_split_ratio(EGUI_VIEW_OF(&test_widget));
 
     seed_pressed_state(&test_widget, 1, 1);
     egui_view_set_enable(EGUI_VIEW_OF(&test_widget), 0);
     EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, handle_x, handle_y));
-    EGUI_TEST_ASSERT_FALSE(send_key(EGUI_KEY_CODE_RIGHT));
+    assert_widget_state(&test_widget, initial_snapshot, initial_ratio, 0, 0);
+    assert_ratio_listener_state(0, 0xFF, 0xFF);
     assert_pressed_cleared(&test_widget);
+
+    seed_pressed_state(&test_widget, 1, 1);
+    EGUI_TEST_ASSERT_FALSE(send_key(EGUI_KEY_CODE_ENTER));
+    assert_widget_state(&test_widget, initial_snapshot, initial_ratio, 0, 0);
+    assert_ratio_listener_state(0, 0xFF, 0xFF);
+    assert_pressed_cleared(&test_widget);
+
     egui_view_set_enable(EGUI_VIEW_OF(&test_widget), 1);
+    EGUI_TEST_ASSERT_TRUE(send_key(EGUI_KEY_CODE_ENTER));
+    assert_widget_state(&test_widget, initial_snapshot, 58, 0, 0);
+    assert_ratio_listener_state(1, initial_snapshot, 58);
 }
 
-static void test_grid_splitter_static_preview_consumes_input_and_clears_pressed_state(void)
+static void test_grid_splitter_static_preview_consumes_input_and_keeps_state(void)
 {
     egui_dim_t handle_x;
     egui_dim_t handle_y;
+    uint8_t initial_snapshot;
+    uint8_t initial_ratio;
 
     setup_preview_widget();
     layout_preview_widget();
     EGUI_TEST_ASSERT_TRUE(get_handle_center(EGUI_VIEW_OF(&preview_widget), &handle_x, &handle_y));
 
+    initial_snapshot = egui_view_grid_splitter_get_current_snapshot(EGUI_VIEW_OF(&preview_widget));
+    initial_ratio = egui_view_grid_splitter_get_split_ratio(EGUI_VIEW_OF(&preview_widget));
+    assert_widget_state(&preview_widget, initial_snapshot, initial_ratio, 1, 0);
+    assert_ratio_listener_state(0, 0xFF, 0xFF);
+
     seed_pressed_state(&preview_widget, 1, 1);
     EGUI_TEST_ASSERT_TRUE(send_preview_touch(EGUI_MOTION_EVENT_ACTION_DOWN, handle_x, handle_y));
-    EGUI_TEST_ASSERT_EQUAL_INT(46, egui_view_grid_splitter_get_split_ratio(EGUI_VIEW_OF(&preview_widget)));
-    EGUI_TEST_ASSERT_EQUAL_INT(0, g_ratio_change_count);
+    assert_widget_state(&preview_widget, initial_snapshot, initial_ratio, 1, 0);
+    assert_ratio_listener_state(0, 0xFF, 0xFF);
     assert_pressed_cleared(&preview_widget);
 
     seed_pressed_state(&preview_widget, 1, 1);
-    EGUI_TEST_ASSERT_TRUE(send_preview_key(EGUI_KEY_CODE_ENTER));
-    EGUI_TEST_ASSERT_EQUAL_INT(46, egui_view_grid_splitter_get_split_ratio(EGUI_VIEW_OF(&preview_widget)));
-    EGUI_TEST_ASSERT_EQUAL_INT(0, g_ratio_change_count);
+    EGUI_TEST_ASSERT_TRUE(send_preview_key(EGUI_KEY_CODE_RIGHT));
+    assert_widget_state(&preview_widget, initial_snapshot, initial_ratio, 1, 0);
+    assert_ratio_listener_state(0, 0xFF, 0xFF);
     assert_pressed_cleared(&preview_widget);
 }
 
@@ -371,6 +413,6 @@ void test_grid_splitter_run(void)
     EGUI_TEST_RUN(test_grid_splitter_handle_region_drag_and_listener);
     EGUI_TEST_RUN(test_grid_splitter_key_navigation_and_reset);
     EGUI_TEST_RUN(test_grid_splitter_read_only_and_disabled_guards);
-    EGUI_TEST_RUN(test_grid_splitter_static_preview_consumes_input_and_clears_pressed_state);
+    EGUI_TEST_RUN(test_grid_splitter_static_preview_consumes_input_and_keeps_state);
     EGUI_TEST_SUITE_END();
 }
