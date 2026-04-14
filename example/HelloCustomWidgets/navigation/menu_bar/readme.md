@@ -24,7 +24,7 @@
 - 主控件：展示标准 `MenuBar`，保留当前菜单高亮、下拉面板、危险项、子菜单入口和只读外的真实交互。
 - `compact` 预览：保留相同菜单语义，但压缩为更小尺寸，用于验证小尺寸 reference 收口。
 - `read only` 预览：保留菜单摘要和锁定态，只作为静态对照，不再承担点击或焦点循环职责。
-- 底部两个 preview 统一走静态 preview API，吞掉 touch / key 输入；点击 preview 只负责清主控件焦点。
+- 底部两个 preview 统一走静态 preview API，吞掉 touch / key 输入，不再承担切换或清焦收尾职责。
 - 页面只保留标题、主 `menu_bar` 和底部 `compact / read only` 双预览，不再保留 guide、状态栏、额外说明 chrome。
 
 ## 4. 视觉与布局规格
@@ -47,8 +47,8 @@
 | `menu_bar_primary` | `egui_view_menu_bar_t` | `196 x 108` | `File` 菜单展开 | 主 `MenuBar` |
 | `menu_bar_compact` | `egui_view_menu_bar_t` | `104 x 74` | compact | 底部紧凑静态对照 |
 | `menu_bar_read_only` | `egui_view_menu_bar_t` | `104 x 74` | read only | 底部只读静态对照 |
-| `primary_snapshots` | `egui_view_menu_bar_snapshot_t[4]` | - | `File / Edit / View / Tools` | 主控件录制轨道 |
-| `compact_snapshots` | `egui_view_menu_bar_snapshot_t[3]` | - | `Open / Panels / Review` | 紧凑预览程序化切换轨道 |
+| `primary_snapshots` | `egui_view_menu_bar_snapshot_t[4]` | - | `File / Edit / View / Tools` | 主控件状态轨道 |
+| `compact_snapshots` | `egui_view_menu_bar_snapshot_t[1]` | - | `Open / Compact` | 紧凑预览固定对照轨道 |
 | `read_only_snapshots` | `egui_view_menu_bar_snapshot_t[1]` | - | `Pinned` 摘要 | 只读预览固定数据 |
 
 ## 6. 状态覆盖矩阵
@@ -58,42 +58,48 @@
 | 主控件 | `Edit` | 键盘与焦点迁移 | 验证当前项切换和选中行 |
 | 主控件 | `View` | 紧凑/过滤类状态项 | 验证 `On` meta 与当前行高亮 |
 | 主控件 | `Tools` | 危险命令 | 验证 danger 行仍保持低噪音 |
-| `compact` | `Open / Compact` | 紧凑对照 | 验证小尺寸结构和菜单摘要 |
-| `compact` | `Panels / Density` | 子菜单入口 | 验证 compact 下的 trailing affordance |
-| `compact` | `Review / Sync` | 轻量状态对照 | 只做程序化切换，不参与交互 |
+| `compact` | `Open / Compact` | 紧凑对照 | 固定 compact 对照，不参与状态切换 |
 | `read only` | `Pinned` | 只读摘要 | 固定锁定态，对外禁用触摸和焦点 |
 
 ## 7. `egui_port_get_recording_action()` 录制动作设计
-1. 重置主控件、`compact` 和 `read only` 到默认 snapshot，并输出首帧。
-2. 记录 `View` 顶层菜单按压态。
-3. 记录 `Open recent` 行按压态。
-4. 程序化切到 `compact / Panels`。
-5. 程序化切到 `compact / Review`。
-6. 回到主控件 `Tools` 菜单并激活当前行。
-7. 点击 `compact` preview，验证静态 preview 只清主控件 focus。
-8. 输出结束帧。
+1. 重置主控件、`compact` 和 `read only` 到默认 snapshot。
+2. 输出默认 `File` 截图。
+3. 程序化切到主控件 `Edit`。
+4. 输出 `Edit` 截图。
+5. 程序化切到主控件 `View`。
+6. 输出 `View` 截图。
+7. 程序化切到主控件 `Tools`。
+8. 输出 `Tools` 截图。
+9. 恢复主控件默认状态，输出最终稳定帧。
+
+录制只导出主控件的状态变化。底部 `compact / read only` preview 在整条 reference 轨道中保持静态，不承担切换、桥接或收尾职责。
 
 ## 8. 编译、touch、runtime、单测与文档检查
 ```bash
-make clean APP=HelloUnitTest PORT=pc_test
+make all APP=HelloCustomWidgets APP_SUB=navigation/menu_bar PORT=pc
+
 make all APP=HelloUnitTest PORT=pc_test
 output\main.exe
 
-make clean APP=HelloCustomWidgets APP_SUB=navigation/menu_bar PORT=pc
-make all APP=HelloCustomWidgets APP_SUB=navigation/menu_bar PORT=pc
-
+python scripts/sync_widget_catalog.py
 python scripts/checks/check_touch_release_semantics.py --scope custom --category navigation
-python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub navigation/menu_bar --track reference --timeout 10 --keep-screenshots
 python scripts/checks/check_docs_encoding.py
+python scripts/checks/check_widget_catalog.py
+python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub navigation/menu_bar --track reference --timeout 10 --keep-screenshots
+python scripts/code_compile_check.py --custom-widgets --category navigation --bits64
+python scripts/code_runtime_check.py --app HelloCustomWidgets --category navigation --track reference --bits64
+python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub navigation/menu_bar
+python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_navigation_menu_bar
 ```
 
 验收重点：
 - 主控件和底部 `compact / read only` 预览都必须完整可见。
 - 顶层菜单 underline、面板锚点、separator、当前行和危险项都必须可辨识，但不能变成高噪音装饰。
 - `compact / read only` preview 必须统一吞掉 touch / key，不再参与焦点循环或菜单切换。
-- 点击 preview 只能清主控件 focus，不能切换 snapshot 或激活菜单项。
+- `compact / read only` preview 在所有 runtime 帧里都必须保持静态一致。
 - 切换到 `read only`、`disabled` 或 setter 更新时都要立即清空残留 `pressed_menu / pressed_item / is_pressed`。
 - 触摸释放语义必须继续满足“按下与抬起命中同一目标才提交”。
+- runtime 需要重点复核主区域 `File -> Edit -> View -> Tools -> File` 的变化，以及底部 `compact / read only` preview 的静态一致性。
 
 ## 9. 已知限制与后续方向
 - 当前仍用固定 `snapshot` 驱动菜单与面板，不实现真实多级子菜单状态机。
@@ -122,7 +128,7 @@ python scripts/checks/check_docs_encoding.py
 
 ## 13. 相比参考原型删掉的效果或装饰
 - 删掉页面级 guide、状态说明和 section label。
-- 删掉可点击 preview 卡与 preview 焦点循环。
+- 删掉可点击 preview 卡、preview 焦点循环和 preview 清焦收尾职责。
 - 删掉重阴影、厚描边、重型 focus ring 和强按钮化顶层菜单。
 - 删掉桌面系统级菜单接管、复杂 nested submenu 动画和原生快捷键分发。
 

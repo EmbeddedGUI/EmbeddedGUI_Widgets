@@ -633,12 +633,15 @@ static void test_menu_bar_read_only_mode_clears_pressed_and_ignores_input(void)
     EGUI_TEST_ASSERT_EQUAL_INT(1, g_selection_item);
 }
 
-static void test_menu_bar_static_preview_consumes_input_and_clears_pressed_state(void)
+static void test_menu_bar_static_preview_consumes_input_and_keeps_state(void)
 {
     egui_dim_t x = 0;
     egui_dim_t y = 0;
 
     setup_preview_menu_bar(g_test_snapshots, 3, 1);
+    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_menu_bar_get_current_snapshot(EGUI_VIEW_OF(&preview_menu_bar)));
+    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_menu_bar_get_current_item(EGUI_VIEW_OF(&preview_menu_bar)));
+    EGUI_TEST_ASSERT_EQUAL_INT(1, preview_menu_bar.compact_mode);
     layout_preview_menu_bar();
     get_preview_menu_center(1, &x, &y);
 
@@ -698,7 +701,7 @@ void test_menu_bar_run(void)
     EGUI_TEST_RUN(test_menu_bar_key_navigation_skips_disabled_menu_snapshot);
     EGUI_TEST_RUN(test_menu_bar_read_only_and_disabled_guards_clear_pressed_state);
     EGUI_TEST_RUN(test_menu_bar_read_only_mode_clears_pressed_and_ignores_input);
-    EGUI_TEST_RUN(test_menu_bar_static_preview_consumes_input_and_clears_pressed_state);
+    EGUI_TEST_RUN(test_menu_bar_static_preview_consumes_input_and_keeps_state);
     EGUI_TEST_RUN(test_menu_bar_disabled_ignores_input);
 
     EGUI_TEST_SUITE_END();
