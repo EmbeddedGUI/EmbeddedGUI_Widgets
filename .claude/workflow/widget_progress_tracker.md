@@ -34,7 +34,7 @@
 
 | 状态 | 控件名 | 分类 | 开始日期 | 当前阶段 | 目标 |
 | --- | --- | --- | --- | --- | --- |
-| 暂无 | - | - | - | - | - |
+| 进行中 | `scroll_viewer` | `layout` | `2026-04-15` | 静态 preview 收口准备 | 对齐 `ScrollViewer` reference 页面，保留主控件 surface / viewport / scrollbar 语义，并让底部 `compact / read only` preview 完全静态 |
 
 ## 当前保留的 Reference 主线控件
 
