@@ -34,7 +34,7 @@
 
 | 状态 | 控件名 | 分类 | 开始日期 | 当前阶段 | 目标 |
 | --- | --- | --- | --- | --- | --- |
-| 进行中 | `split_button` | `input` | `2026-04-15` | static preview 收口 | 对齐主区 split 轨道、静态 preview 单测与 README 验收链 |
+| 进行中 | `toggle_split_button` | `input` | `2026-04-15` | static preview 收口 | 对齐主区 toggle split 轨道、静态 preview 单测与 README 验收链 |
 
 ## 当前保留的 Reference 主线控件
 
@@ -160,6 +160,12 @@
 - `toast_stack` -> `Toast`
 
 ## 最近完成的收口动作
+
+- `2026-04-15`
+  - 收口 `input/split_button` reference 控件：在不修改 SDK 的前提下，对齐当前 input 主线里已经采用的 static preview 工作流，保留主区 `Save draft`、`Share handoff`、`Export file`、`Archive page` 四组 reference 状态，把底部 `compact / disabled` preview 统一收口为真正静态的 `Quick / Locked` 对照，并移除旧录制轨道里的 preview 快照轮换、preview 清焦桥接与额外收尾态。
+  - `example/HelloCustomWidgets/input/split_button/test.c` 新增 `SPLIT_BUTTON_RECORD_FINAL_WAIT`、`SPLIT_BUTTON_DEFAULT_SNAPSHOT`、`PRIMARY_SNAPSHOT_COUNT`、`ui_ready`、`apply_primary_default_state()`、`apply_preview_states()`、`layout_local_views()`、`layout_page()`、`focus_primary_button()` 与 `request_page_snapshot()`，把录制轨道改为只导出主区 `Save draft`、`Share handoff`、`Export file`、`Archive page` 与最终稳定帧，并确保底部 `compact / disabled` preview 全程静态；`example/HelloUnitTest/test/test_split_button.c` 新增 `split_button_preview_snapshot_t`、`capture_preview_snapshot()` 与 `assert_preview_state_unchanged()`，把 preview 键盘入口统一改为 `dispatch_key_event()`，将静态 preview 用例收口为 “consumes input and keeps state”，补齐 `region_screen / snapshots / font / meta_font / on_part_changed / surface_color / border_color / text_color / muted_text_color / accent_color / success_color / warning_color / danger_color / neutral_color / snapshot_count / current_snapshot / current_part / compact_mode / disabled_mode / alpha` 固定断言，以及 `changed_count == 0`、`last_part == PART_NONE` 与 `is_pressed / pressed_part` 清理断言；`example/HelloCustomWidgets/input/split_button/readme.md` 重写为与当前 static preview 页面结构、录制轨道、单测口径和完整验收命令链一致的说明。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=input/split_button PORT=pc`、`make clean APP=HelloUnitTest PORT=pc_test`、`make all APP=HelloUnitTest PORT=pc_test`、`X:\output\main.exe`（总计 `845 / 845`，`split_button` suite `11 / 11`）、`python scripts/sync_widget_catalog.py`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category input`、`python scripts/checks/check_docs_encoding.py`、`python scripts/checks/check_widget_catalog.py`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/split_button --track reference --timeout 10 --keep-screenshots`、`python scripts/code_compile_check.py --custom-widgets --category input --bits64`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --category input --track reference --bits64`、`python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub input/split_button` 与对应 `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_input_split_button`。
+  - 复核 `runtime_check_output/HelloCustomWidgets_input_split_button/default` 的 `10` 帧截图：按 RGB 差分得到主区变化边界位于 `(52, 157) - (428, 256)`；遮罩该边界后边界外区域保持单哈希，确认主区外全程静态；按主区裁剪后共出现 `4` 组唯一状态，符合 `Save draft`、`Share handoff`、`Export file`、`Archive page` 四态轨道；按 `y >= 257` 裁剪底部 preview 区域后全部帧保持单哈希，确认底部 `compact / disabled` preview 在整条录制轨道中保持静态一致。
 
 - `2026-04-15`
   - 收口 `input/drop_down_button` reference 控件：在不修改 SDK 的前提下，对齐当前 input 主线里已经采用的 static preview 工作流，保留主区 `Sort`、`Layout`、`Theme`、`Filter` 四组 reference 状态，把底部 `compact / read only` preview 统一收口为真正静态的 `Quick / Locked` 对照，并移除旧录制轨道里的 preview 快照轮换、preview 清焦桥接与额外收尾态。
