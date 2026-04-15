@@ -7,6 +7,41 @@
 #include "../../HelloCustomWidgets/input/rich_edit_box/egui_view_rich_edit_box.h"
 #include "../../HelloCustomWidgets/input/rich_edit_box/egui_view_rich_edit_box.c"
 
+typedef struct rich_edit_box_preview_snapshot rich_edit_box_preview_snapshot_t;
+struct rich_edit_box_preview_snapshot
+{
+    egui_region_t region_screen;
+    egui_background_t *background;
+    const egui_view_rich_edit_box_document_t *documents;
+    const egui_font_t *font;
+    const egui_font_t *meta_font;
+    egui_view_on_rich_edit_box_action_listener_t on_action;
+    egui_color_t surface_color;
+    egui_color_t border_color;
+    egui_color_t editor_color;
+    egui_color_t text_color;
+    egui_color_t muted_text_color;
+    egui_color_t accent_color;
+    egui_color_t shadow_color;
+    char editor_text[EGUI_CONFIG_TEXTINPUT_MAX_LENGTH + 1];
+    uint8_t document_count;
+    uint8_t current_document;
+    uint8_t current_part;
+    uint8_t current_preset;
+    uint8_t applied_preset;
+    uint8_t compact_mode;
+    uint8_t read_only_mode;
+    uint8_t pressed_part;
+    uint8_t text_len;
+    egui_alpha_t alpha;
+    uint8_t enable;
+    uint8_t is_focused;
+    egui_dim_t padding_left;
+    egui_dim_t padding_right;
+    egui_dim_t padding_top;
+    egui_dim_t padding_bottom;
+};
+
 static egui_view_rich_edit_box_t rich_edit_box_test_widget;
 static egui_view_rich_edit_box_t rich_edit_box_preview_widget;
 static egui_view_api_t rich_edit_box_preview_api;
@@ -66,6 +101,14 @@ static void rich_edit_box_reset_action_state(void)
     rich_edit_box_action_text_length = 0xFF;
 }
 
+static void assert_region_equal(const egui_region_t *expected, const egui_region_t *actual)
+{
+    EGUI_TEST_ASSERT_EQUAL_INT(expected->location.x, actual->location.x);
+    EGUI_TEST_ASSERT_EQUAL_INT(expected->location.y, actual->location.y);
+    EGUI_TEST_ASSERT_EQUAL_INT(expected->size.width, actual->size.width);
+    EGUI_TEST_ASSERT_EQUAL_INT(expected->size.height, actual->size.height);
+}
+
 static void rich_edit_box_setup_widget(const egui_view_rich_edit_box_document_t *documents, uint8_t document_count)
 {
     egui_view_rich_edit_box_init(EGUI_VIEW_OF(&rich_edit_box_test_widget));
@@ -119,7 +162,7 @@ static int rich_edit_box_send_touch_to_view(egui_view_t *view, uint8_t type, egu
     event.type = type;
     event.location.x = x;
     event.location.y = y;
-    return view->api->on_touch_event(view, &event);
+    return view->api->dispatch_touch_event(view, &event);
 }
 
 static int rich_edit_box_send_key_to_view(egui_view_t *view, uint8_t type, uint8_t key_code)
@@ -129,7 +172,7 @@ static int rich_edit_box_send_key_to_view(egui_view_t *view, uint8_t type, uint8
     memset(&event, 0, sizeof(event));
     event.type = type;
     event.key_code = key_code;
-    return view->api->on_key_event(view, &event);
+    return view->api->dispatch_key_event(view, &event);
 }
 
 static int rich_edit_box_send_touch(uint8_t type, egui_dim_t x, egui_dim_t y)
@@ -168,6 +211,80 @@ static int rich_edit_box_send_preview_key(uint8_t key_code)
     handled |= rich_edit_box_send_preview_key_action(EGUI_KEY_EVENT_ACTION_DOWN, key_code);
     handled |= rich_edit_box_send_preview_key_action(EGUI_KEY_EVENT_ACTION_UP, key_code);
     return handled;
+}
+
+static void rich_edit_box_capture_preview_snapshot(rich_edit_box_preview_snapshot_t *snapshot)
+{
+    snapshot->region_screen = EGUI_VIEW_OF(&rich_edit_box_preview_widget)->region_screen;
+    snapshot->background = EGUI_VIEW_OF(&rich_edit_box_preview_widget)->background;
+    snapshot->documents = rich_edit_box_preview_widget.documents;
+    snapshot->font = rich_edit_box_preview_widget.font;
+    snapshot->meta_font = rich_edit_box_preview_widget.meta_font;
+    snapshot->on_action = rich_edit_box_preview_widget.on_action;
+    snapshot->surface_color = rich_edit_box_preview_widget.surface_color;
+    snapshot->border_color = rich_edit_box_preview_widget.border_color;
+    snapshot->editor_color = rich_edit_box_preview_widget.editor_color;
+    snapshot->text_color = rich_edit_box_preview_widget.text_color;
+    snapshot->muted_text_color = rich_edit_box_preview_widget.muted_text_color;
+    snapshot->accent_color = rich_edit_box_preview_widget.accent_color;
+    snapshot->shadow_color = rich_edit_box_preview_widget.shadow_color;
+    strcpy(snapshot->editor_text, rich_edit_box_preview_widget.editor_text);
+    snapshot->document_count = rich_edit_box_preview_widget.document_count;
+    snapshot->current_document = rich_edit_box_preview_widget.current_document;
+    snapshot->current_part = rich_edit_box_preview_widget.current_part;
+    snapshot->current_preset = rich_edit_box_preview_widget.current_preset;
+    snapshot->applied_preset = rich_edit_box_preview_widget.applied_preset;
+    snapshot->compact_mode = rich_edit_box_preview_widget.compact_mode;
+    snapshot->read_only_mode = rich_edit_box_preview_widget.read_only_mode;
+    snapshot->pressed_part = rich_edit_box_preview_widget.pressed_part;
+    snapshot->text_len = rich_edit_box_preview_widget.text_len;
+    snapshot->alpha = EGUI_VIEW_OF(&rich_edit_box_preview_widget)->alpha;
+    snapshot->enable = (uint8_t)egui_view_get_enable(EGUI_VIEW_OF(&rich_edit_box_preview_widget));
+    snapshot->is_focused = EGUI_VIEW_OF(&rich_edit_box_preview_widget)->is_focused;
+    snapshot->padding_left = EGUI_VIEW_OF(&rich_edit_box_preview_widget)->padding.left;
+    snapshot->padding_right = EGUI_VIEW_OF(&rich_edit_box_preview_widget)->padding.right;
+    snapshot->padding_top = EGUI_VIEW_OF(&rich_edit_box_preview_widget)->padding.top;
+    snapshot->padding_bottom = EGUI_VIEW_OF(&rich_edit_box_preview_widget)->padding.bottom;
+}
+
+static void rich_edit_box_assert_preview_state_unchanged(const rich_edit_box_preview_snapshot_t *snapshot)
+{
+    assert_region_equal(&snapshot->region_screen, &EGUI_VIEW_OF(&rich_edit_box_preview_widget)->region_screen);
+    EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&rich_edit_box_preview_widget)->background == snapshot->background);
+    EGUI_TEST_ASSERT_TRUE(rich_edit_box_preview_widget.documents == snapshot->documents);
+    EGUI_TEST_ASSERT_TRUE(rich_edit_box_preview_widget.font == snapshot->font);
+    EGUI_TEST_ASSERT_TRUE(rich_edit_box_preview_widget.meta_font == snapshot->meta_font);
+    EGUI_TEST_ASSERT_TRUE(rich_edit_box_preview_widget.on_action == snapshot->on_action);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->surface_color.full, rich_edit_box_preview_widget.surface_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->border_color.full, rich_edit_box_preview_widget.border_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->editor_color.full, rich_edit_box_preview_widget.editor_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->text_color.full, rich_edit_box_preview_widget.text_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->muted_text_color.full, rich_edit_box_preview_widget.muted_text_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->accent_color.full, rich_edit_box_preview_widget.accent_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->shadow_color.full, rich_edit_box_preview_widget.shadow_color.full);
+    EGUI_TEST_ASSERT_TRUE(strcmp(snapshot->editor_text, rich_edit_box_preview_widget.editor_text) == 0);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->document_count, rich_edit_box_preview_widget.document_count);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->current_document, rich_edit_box_preview_widget.current_document);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->current_part, rich_edit_box_preview_widget.current_part);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->current_preset, rich_edit_box_preview_widget.current_preset);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->applied_preset, rich_edit_box_preview_widget.applied_preset);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->compact_mode, rich_edit_box_preview_widget.compact_mode);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->read_only_mode, rich_edit_box_preview_widget.read_only_mode);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->pressed_part, rich_edit_box_preview_widget.pressed_part);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->text_len, rich_edit_box_preview_widget.text_len);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->alpha, EGUI_VIEW_OF(&rich_edit_box_preview_widget)->alpha);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->enable, egui_view_get_enable(EGUI_VIEW_OF(&rich_edit_box_preview_widget)));
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->is_focused, EGUI_VIEW_OF(&rich_edit_box_preview_widget)->is_focused);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->padding_left, EGUI_VIEW_OF(&rich_edit_box_preview_widget)->padding.left);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->padding_right, EGUI_VIEW_OF(&rich_edit_box_preview_widget)->padding.right);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->padding_top, EGUI_VIEW_OF(&rich_edit_box_preview_widget)->padding.top);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->padding_bottom, EGUI_VIEW_OF(&rich_edit_box_preview_widget)->padding.bottom);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&rich_edit_box_preview_widget)->is_pressed);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, rich_edit_box_action_count);
+    EGUI_TEST_ASSERT_EQUAL_INT(0xFF, rich_edit_box_action_document);
+    EGUI_TEST_ASSERT_EQUAL_INT(0xFF, rich_edit_box_action_preset);
+    EGUI_TEST_ASSERT_EQUAL_INT(0xFF, rich_edit_box_action_style);
+    EGUI_TEST_ASSERT_EQUAL_INT(0xFF, rich_edit_box_action_text_length);
 }
 
 static uint8_t rich_edit_box_get_part_center(egui_view_t *view, uint8_t part, egui_dim_t *x, egui_dim_t *y)
@@ -405,8 +522,9 @@ static void test_rich_edit_box_read_only_and_disabled_guards(void)
     egui_view_set_enable(EGUI_VIEW_OF(&rich_edit_box_test_widget), 1);
 }
 
-static void test_rich_edit_box_static_preview_consumes_input_and_clears_pressed_state(void)
+static void test_rich_edit_box_static_preview_consumes_input_and_keeps_state(void)
 {
+    rich_edit_box_preview_snapshot_t initial_snapshot;
     egui_dim_t preset_x;
     egui_dim_t preset_y;
 
@@ -414,18 +532,15 @@ static void test_rich_edit_box_static_preview_consumes_input_and_clears_pressed_
     rich_edit_box_layout_preview_widget();
     EGUI_TEST_ASSERT_TRUE(
             rich_edit_box_get_part_center(EGUI_VIEW_OF(&rich_edit_box_preview_widget), EGUI_VIEW_RICH_EDIT_BOX_PART_PRESET_0, &preset_x, &preset_y));
+    rich_edit_box_capture_preview_snapshot(&initial_snapshot);
 
     rich_edit_box_seed_pressed_state(&rich_edit_box_preview_widget, EGUI_VIEW_RICH_EDIT_BOX_PART_PRESET_0, 1);
     EGUI_TEST_ASSERT_TRUE(rich_edit_box_send_preview_touch(EGUI_MOTION_EVENT_ACTION_DOWN, preset_x, preset_y));
-    rich_edit_box_assert_pressed_cleared(&rich_edit_box_preview_widget);
-    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_rich_edit_box_get_current_preset(EGUI_VIEW_OF(&rich_edit_box_preview_widget)));
-    EGUI_TEST_ASSERT_EQUAL_INT(0, rich_edit_box_action_count);
+    rich_edit_box_assert_preview_state_unchanged(&initial_snapshot);
 
     rich_edit_box_seed_pressed_state(&rich_edit_box_preview_widget, EGUI_VIEW_RICH_EDIT_BOX_PART_PRESET_0, 1);
     EGUI_TEST_ASSERT_TRUE(rich_edit_box_send_preview_key(EGUI_KEY_CODE_ENTER));
-    rich_edit_box_assert_pressed_cleared(&rich_edit_box_preview_widget);
-    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_rich_edit_box_get_current_preset(EGUI_VIEW_OF(&rich_edit_box_preview_widget)));
-    EGUI_TEST_ASSERT_EQUAL_INT(0, rich_edit_box_action_count);
+    rich_edit_box_assert_preview_state_unchanged(&initial_snapshot);
 }
 
 void test_rich_edit_box_run(void)
@@ -437,6 +552,6 @@ void test_rich_edit_box_run(void)
     EGUI_TEST_RUN(test_rich_edit_box_touch_same_target_release_and_cancel_behavior);
     EGUI_TEST_RUN(test_rich_edit_box_key_navigation_apply_and_editing);
     EGUI_TEST_RUN(test_rich_edit_box_read_only_and_disabled_guards);
-    EGUI_TEST_RUN(test_rich_edit_box_static_preview_consumes_input_and_clears_pressed_state);
+    EGUI_TEST_RUN(test_rich_edit_box_static_preview_consumes_input_and_keeps_state);
     EGUI_TEST_SUITE_END();
 }

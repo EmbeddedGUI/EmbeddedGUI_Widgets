@@ -1,115 +1,173 @@
-# rich_edit_box 设计说明
+# rich_edit_box 自定义控件设计说明
 
 ## 参考来源
 - 参考设计体系：`Fluent 2`
 - 参考开源库：`WinUI 3`
-- 平台语义参考：`RichEditBox`
-- 补充对照控件：`text_box`、`rich_text_block`
-- 对应组件名：`RichEditBox`
-- 计划保留状态：`standard`、`compact`、`read only`、`format preset`
-- EGUI 适配说明：在 custom 层实现轻量 `egui_view_rich_edit_box`，优先收口单文档富文本编辑 surface、段落样式 preset 和静态 preview，不修改 `sdk/EmbeddedGUI`
+- 对应组件：`RichEditBox`
+- 当前保留形态：`standard`、`compact`、`read only`
+- 当前保留交互：主区保留轻量富文本编辑面板、document snapshot 和 preset 语义；底部 `compact / read only` 统一收口为静态 preview 对照
+- 当前移除内容：页面级 guide、preview 清焦桥接、录制阶段真实键盘输入、preset 实录切换、preview dismiss 轨道和场景化说明块
 
-## 1. 为什么需要这个控件？
-`rich_edit_box` 用来表达“同一个输入面板里既能编辑文字，又能保留轻量格式层级”的语义。它适合备注编辑、发布说明、问题复盘、设备诊断摘要这类需要一小段标题、正文、强调句或清单项共存的场景。
+## 1. 为什么需要这个控件
+`rich_edit_box` 用来表达“同一个输入面板里既能编辑文本，又能保留轻量格式层级”的语义。它适合承载交接摘要、发布说明、回顾记录和诊断备注这类需要标题、正文和段落风格共存的输入场景。
 
 ## 2. 为什么现有控件不够用
-
-- `text_box` 只覆盖纯文本输入，不负责段落样式、强调块和格式 preset。
+- `text_box` 只覆盖最小单行文本输入，不承担段落样式和 preset 语义。
 - `rich_text_block` 只负责展示，不承担真实编辑、焦点和键盘输入链路。
-- `token_input`、`shortcut_recorder` 这类输入控件关注结构化录入，不适合连续富文本编辑。
-- 当前仓库还没有一个符合 Fluent / WinUI `RichEditBox` 语义的 reference 页面、单测和 web 验证闭环。
+- `token_input` 和 `shortcut_recorder` 面向结构化录入，不适合连续富文本编辑。
+- 主线仓库仍需要一版与 `Fluent 2 / WinUI RichEditBox` 语义对齐的 `RichEditBox` reference 页面、单测和 web 验收闭环。
 
-## 3. 目标场景与示例概览
-
-- 主区域展示一个标准 `rich_edit_box`：在固定编辑面板内同时表达标题、正文和轻量强调段落。
-- 底部左侧展示 `compact` 静态 preview，用于对照窄尺寸下的格式层级。
-- 底部右侧展示 `read only` 静态 preview，用于对照只读弱化后的展示结果。
-- 首轮录制动作优先覆盖 `focus -> preset switch -> apply -> preview dismiss` 的主链路。
+## 3. 当前页面结构
+- 标题：`Rich Edit Box`
+- 主区：一个标准 `rich_edit_box`
+- 底部：一行并排的两个静态 preview
+- 左侧 preview：`compact`，固定显示 `Compact note / Hold draft.`
+- 右侧 preview：`read only`，固定显示 `Read only draft / Callout stays muted.`
 
 目录：
 - `example/HelloCustomWidgets/input/rich_edit_box/`
 
-## 4. 视觉与布局规格
+## 4. 主区 reference 快照
+主区录制轨道只保留 3 组程序化 document snapshot，不再在录制阶段发送真实键盘事件、preset 切换事件或 preview 点击：
 
-- 页面结构延续 input 类 reference：标题 + 主控件 + 双 preview。
-- 主控件建议尺寸：`196 x 146` 左右，用于容纳格式摘要、编辑面板和底部 preset row。
-- 主体保持浅色 Fluent 卡片容器，内部保留：
-  - 顶部 document title / helper
-  - 中部编辑 surface
-  - 底部 format preset pills
-- 需要额外保留一层低噪音 rich edit 信息，例如：
-  - 当前 snapshot 名称
-  - 当前 preset
-  - 段落数量 / 只读状态
+1. 快照 1
+   header：`OPS`
+   title：`Shift briefing`
+   preset：`Body`
+   text：`Line check complete.`
+2. 快照 2
+   header：`QA`
+   title：`Bug scrub`
+   preset：`Callout`
+   text：`Investigate focus ring drift.`
+3. 快照 3
+   header：`REL`
+   title：`Launch checklist`
+   preset：`Checklist`
+   text：`Ship build\nVerify smoke`
 
-## 5. 控件清单
+底部 preview 在整条轨道中始终固定：
+1. `compact`
+   header：`UI`
+   title：`Compact note`
+   text：`Hold draft.`
+2. `read only`
+   header：`LOCK`
+   title：`Read only draft`
+   footer：`Preview only`
+   text：`Callout stays muted.`
 
-| 变量名 | 类型 | 建议尺寸 | 初始状态 | 用途 |
-| --- | --- | ---: | --- | --- |
-| `root_layout` | `egui_view_linearlayout_t` | `224 x 270` | enabled | 页面根布局 |
-| `title_label` | `egui_view_label_t` | `224 x 18` | `Rich Edit Box` | 页面标题 |
-| `rich_edit_primary` | `egui_view_rich_edit_box_t` | `196 x 146` | `standard` | 主 reference 控件 |
-| `rich_edit_compact` | `egui_view_rich_edit_box_t` | `104 x 82` | compact | 紧凑静态 preview |
-| `rich_edit_read_only` | `egui_view_rich_edit_box_t` | `104 x 82` | compact + read only | 只读静态 preview |
+## 5. 视觉与布局规格
+- 画布：`480 x 480`
+- 根布局：`224 x 270`
+- 主控件：`196 x 146`
+- 底部 preview 行：`216 x 82`
+- 单个 preview：`104 x 82`
+- 页面结构：标题 -> 主 `rich_edit_box` -> 底部 `compact / read only`
+- 风格约束：浅灰 page panel、白色主表面、低噪音边框、弱阴影、轻量 focus ring 和稳定的段落层级，不回退到 showcase 式说明卡片
 
 ## 6. 状态矩阵
+| 状态 | 主控件 | Compact preview | Read only preview |
+| --- | --- | --- | --- |
+| 默认显示 | `Shift briefing / Body` | `Compact note` | `Read only draft` |
+| 快照 2 | `Bug scrub / Callout` | 保持不变 | 保持不变 |
+| 快照 3 | `Launch checklist / Checklist` | 保持不变 | 保持不变 |
+| 录制最终稳定帧 | `Launch checklist / Checklist` | 保持不变 | 保持不变 |
+| 静态 preview 对照 | 否 | 是 | 是 |
 
-| 区域 | 关键状态 | 说明 |
-| --- | --- | --- |
-| 主控件 | `Draft note` | 默认正文编辑态 |
-| 主控件 | `Callout preset` | 当前段落切到强调样式 |
-| 主控件 | `Checklist preset` | 当前段落切到清单样式 |
-| 主控件 | `Action commit` | `Enter / Space` 提交当前 preset 或动作 |
-| `compact` | `Compact preview` | 窄尺寸下的格式层级对照 |
-| `read only` | `Read only rich edit` | 只读弱化对照 |
+## 7. 录制动作设计
+`egui_port_get_recording_action()` 已收口为静态 preview 工作流：
 
-## 7. 交互与状态语义
+1. 应用主区默认快照和底部 preview 固定状态
+2. 抓取首帧
+3. 切到 `Bug scrub`
+4. 抓取第二组主区快照
+5. 切到 `Launch checklist`
+6. 抓取第三组主区快照
+7. 等待并抓取最终稳定帧
 
-- 主控件默认聚焦到编辑 surface，保留真实键盘编辑链路。
-- 首版聚焦以下键盘语义：
-  - `Left / Right`：在 format preset 之间切换。
-  - `Home / End`：跳到首 / 尾 preset。
-  - `Tab`：在编辑 surface 与 preset row 之间移动。
-  - `Enter / Space`：应用当前 preset，或提交当前动作。
-- 触摸语义保持 same-target release：
-  - `ACTION_DOWN` 命中某个 preset 后，仅在同一 preset `UP` 时提交。
-  - `MOVE` 离开原 preset 时取消 pressed，移回原 preset 再恢复。
-- `set_documents()`、`set_current_document()`、`set_current_preset()`、`set_font()`、`set_meta_font()`、`set_palette()`、`set_compact_mode()`、`set_read_only_mode()` 都要清理 `pressed`。
-- `read_only_mode`、`!enable` 和 static preview 需要吞掉新的 `touch / key` 输入，并先清旧状态。
+说明：
+- 录制阶段不再发送 `R / E / V / I / E / W`
+- 录制阶段不再发送 `Tab / Right / Enter`
+- 录制阶段不再点击底部 `compact` preview
+- 底部 preview 统一通过 `egui_view_rich_edit_box_override_static_preview_api()` 吞掉 `touch / key`
+- preview 只负责静态 reference 对照，不再承担清焦或页面状态桥接职责
 
-## 8. 计划 API
+## 8. 单元测试口径
+`example/HelloUnitTest/test/test_rich_edit_box.inc` 当前覆盖两部分：
 
-- `egui_view_rich_edit_box_init()`
-- `egui_view_rich_edit_box_set_documents()/get_current_document()`
-- `egui_view_rich_edit_box_set_current_document()`
-- `egui_view_rich_edit_box_set_current_preset()/get_current_preset()`
-- `egui_view_rich_edit_box_apply_current_preset()`
-- `egui_view_rich_edit_box_set_on_action_listener()`
-- `egui_view_rich_edit_box_set_font()/set_meta_font()`
-- `egui_view_rich_edit_box_set_compact_mode()/set_read_only_mode()`
-- `egui_view_rich_edit_box_set_palette()`
-- `egui_view_rich_edit_box_get_part_region()`
-- `egui_view_rich_edit_box_override_static_preview_api()`
+1. 主控件交互与状态守卫
+   覆盖 document / preset 切换、same-target release、键盘导航、preset apply、文本编辑，以及 `read only / !enable` guard。
+2. 静态 preview 不变性断言
+   通过 `rich_edit_box_preview_snapshot_t`、`rich_edit_box_capture_preview_snapshot()`、`rich_edit_box_assert_preview_state_unchanged()` 固定校验以下字段：
+   `region_screen`、`background`、`documents`、`font`、`meta_font`、`on_action`、`surface_color`、`border_color`、`editor_color`、`text_color`、`muted_text_color`、`accent_color`、`shadow_color`、`editor_text`、`document_count`、`current_document`、`current_part`、`current_preset`、`applied_preset`、`compact_mode`、`read_only_mode`、`pressed_part`、`text_len`、`alpha`、`enable`、`is_focused`、`padding`
 
-## 9. 验收目标
+同时要求：
+- `is_pressed == false`
+- `rich_edit_box_action_count == 0`
+- `rich_edit_box_action_document == 0xFF`
+- `rich_edit_box_action_preset == 0xFF`
+- `rich_edit_box_action_style == 0xFF`
+- `rich_edit_box_action_text_length == 0xFF`
 
+## 9. 验收命令
 ```bash
 make all APP=HelloCustomWidgets APP_SUB=input/rich_edit_box PORT=pc
+
+make clean APP=HelloUnitTest PORT=pc_test
 make all APP=HelloUnitTest PORT=pc_test
-output\main.exe
+X:\output\main.exe
+
 python scripts/sync_widget_catalog.py
 python scripts/checks/check_touch_release_semantics.py --scope custom --category input
+python scripts/checks/check_docs_encoding.py
+python scripts/checks/check_widget_catalog.py
 python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/rich_edit_box --track reference --timeout 10 --keep-screenshots
 python scripts/code_compile_check.py --custom-widgets --category input --bits64
 python scripts/code_runtime_check.py --app HelloCustomWidgets --category input --track reference --bits64
-python scripts/checks/check_docs_encoding.py
-python scripts/checks/check_widget_catalog.py
 python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub input/rich_edit_box
-python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --name-filter rich_edit_box
+python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_input_rich_edit_box
 ```
 
-## 10. 已知限制与后续方向
+## 10. 当前结果
+- `HelloCustomWidgets` 单控件编译：PASS
+- `HelloUnitTest`：`845 / 845` 通过，其中 `rich_edit_box` suite `7 / 7`
+- `sync_widget_catalog.py`：PASS（`106` entries）
+- `touch release semantics`：PASS（`custom_audited=28`，`custom_skipped_allowlist=5`）
+- `docs encoding`：PASS（`134 files`）
+- `widget catalog check`：PASS（`106 widgets: reference=106, showcase=0, deprecated=0`）
+- 单控件 runtime：PASS（`8` frames captured）
+- input 分类 compile/runtime 回归：PASS（`33 / 33`）
+- wasm 构建：PASS（`web/demos/HelloCustomWidgets_input_rich_edit_box`）
+- web smoke：`PASS status=Running canvas=480x480 ratio=0.2059 colors=238`
 
-- 首版只做 reference 语义，不做完整 inline object tree、图片嵌入或复杂 IME 组合输入。
-- 先用 document snapshot 数组描述段落内容、preset 和只读对照，不下沉为 SDK 级通用富文本编辑器。
-- 若后续复用价值稳定，再评估是否与 `text_box`、`rich_text_block` 抽共享的文本测量、段落排布和静态 preview helper。
+## 11. Runtime 复核结论
+复核目录：
+- `runtime_check_output/HelloCustomWidgets_input_rich_edit_box/default`
+
+复核结果：
+- 总帧数：`8`
+- 主区 RGB 差分边界：`(54, 73) - (425, 274)`
+- 遮罩主区差分边界后，主区外唯一哈希数：`1`
+- 按主区差分边界裁切后，主区唯一状态数：`3`
+- 按 `y >= 291` 裁切底部 preview 区域后，preview 区唯一哈希数：`1`
+
+目标：
+- 主区唯一状态数 = `3`
+- 主区外唯一哈希数 = `1`
+- 底部 preview 区唯一哈希数 = `1`
+
+## 12. 已知限制
+- 当前只覆盖轻量 `RichEditBox` reference，不扩展 inline object、图片嵌入或复杂 IME 组合输入。
+- 当前以 document snapshot 数组描述标题、正文和 preset，不下沉为 SDK 级通用富文本编辑器。
+- 底部 preview 只作为静态 reference，不承载额外交互职责。
+
+## 13. 与现有控件的边界
+- 相比 `text_box`：这里保留多段落样式和 preset 语义，而不是最小文本输入。
+- 相比 `rich_text_block`：这里保留真实编辑、焦点和键盘链路，而不只是展示。
+- 相比 `field`：这里聚焦富文本编辑面板本身，不承载标签、必填标记和帮助信息容器。
+
+## 14. EGUI 适配说明
+- 继续使用当前目录下的 `egui_view_rich_edit_box` custom view，不修改 SDK。
+- document snapshot、preset 视觉和 static preview 语义都收口在 custom 层。
+- 当前优先保证主区 3 组 reference 快照、底部 preview 全程静态，以及 runtime 录制无污染，再评估是否扩展更复杂的富文本编辑能力。
