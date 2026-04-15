@@ -95,20 +95,61 @@ static int send_touch(egui_view_t *view, uint8_t type, egui_dim_t x, egui_dim_t 
     return view->api->on_touch_event(view, &event);
 }
 
-static int send_key(egui_view_t *view, uint8_t type, uint8_t key_code)
+static int dispatch_key_event_to_view(egui_view_t *view, uint8_t type, uint8_t key_code)
 {
     egui_key_event_t event;
 
     memset(&event, 0, sizeof(event));
     event.type = type;
     event.key_code = key_code;
-    return view->api->on_key_event(view, &event);
+    return view->api->dispatch_key_event(view, &event);
+}
+
+static int send_key(egui_view_t *view, uint8_t key_code)
+{
+    int handled = 0;
+
+    handled |= dispatch_key_event_to_view(view, EGUI_KEY_EVENT_ACTION_DOWN, key_code);
+    handled |= dispatch_key_event_to_view(view, EGUI_KEY_EVENT_ACTION_UP, key_code);
+    return handled;
 }
 
 static void get_view_center(egui_view_t *view, egui_dim_t *x, egui_dim_t *y)
 {
     *x = view->region_screen.location.x + view->region_screen.size.width / 2;
     *y = view->region_screen.location.y + view->region_screen.size.height / 2;
+}
+
+static void capture_regions(egui_view_label_t *items, uint8_t count, egui_region_t *regions)
+{
+    uint8_t index;
+
+    for (index = 0; index < count; index++)
+    {
+        egui_region_copy(&regions[index], &EGUI_VIEW_OF(&items[index])->region);
+    }
+}
+
+static void assert_regions_equal(egui_view_label_t *items, uint8_t count, const egui_region_t *regions)
+{
+    uint8_t index;
+
+    for (index = 0; index < count; index++)
+    {
+        EGUI_TEST_ASSERT_EQUAL_INT(regions[index].location.x, EGUI_VIEW_OF(&items[index])->region.location.x);
+        EGUI_TEST_ASSERT_EQUAL_INT(regions[index].location.y, EGUI_VIEW_OF(&items[index])->region.location.y);
+        EGUI_TEST_ASSERT_EQUAL_INT(regions[index].size.width, EGUI_VIEW_OF(&items[index])->region.size.width);
+        EGUI_TEST_ASSERT_EQUAL_INT(regions[index].size.height, EGUI_VIEW_OF(&items[index])->region.size.height);
+    }
+}
+
+static void assert_preview_state_unchanged(const egui_region_t *regions)
+{
+    EGUI_TEST_ASSERT_EQUAL_INT(1, preview_dock_panel.last_child_fill);
+    EGUI_TEST_ASSERT_EQUAL_INT(4, preview_dock_panel.content_inset);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&preview_dock_panel)->is_pressed);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, g_click_count);
+    assert_regions_equal(preview_items, EGUI_ARRAY_SIZE(preview_items), regions);
 }
 
 static void test_dock_panel_style_helpers_and_setters_clear_pressed_state(void)
@@ -201,10 +242,11 @@ static void test_dock_panel_layout_childs_places_bottom_without_last_fill(void)
     EGUI_TEST_ASSERT_EQUAL_INT(38, EGUI_VIEW_OF(&test_items[2])->region.size.height);
 }
 
-static void test_dock_panel_static_preview_consumes_input(void)
+static void test_dock_panel_static_preview_consumes_input_and_keeps_state(void)
 {
     egui_dim_t center_x;
     egui_dim_t center_y;
+    egui_region_t initial_regions[EGUI_ARRAY_SIZE(preview_items)];
 
     setup_preview_panel();
 
@@ -212,19 +254,20 @@ static void test_dock_panel_static_preview_consumes_input(void)
     hcw_dock_panel_set_child_dock(EGUI_VIEW_OF(&preview_items[1]), HCW_DOCK_PANEL_DOCK_LEFT);
     hcw_dock_panel_set_child_dock(EGUI_VIEW_OF(&preview_items[2]), HCW_DOCK_PANEL_DOCK_FILL);
     layout_panel(EGUI_VIEW_OF(&preview_dock_panel), 84, 40);
+    capture_regions(preview_items, EGUI_ARRAY_SIZE(preview_items), initial_regions);
     get_view_center(EGUI_VIEW_OF(&preview_dock_panel), &center_x, &center_y);
 
     egui_view_set_pressed(EGUI_VIEW_OF(&preview_dock_panel), 1);
     EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_VIEW_OF(&preview_dock_panel), EGUI_MOTION_EVENT_ACTION_DOWN, center_x, center_y));
-    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_VIEW_OF(&preview_dock_panel), EGUI_MOTION_EVENT_ACTION_UP, center_x, center_y));
-    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&preview_dock_panel)->is_pressed);
-    EGUI_TEST_ASSERT_EQUAL_INT(0, g_click_count);
+    assert_preview_state_unchanged(initial_regions);
 
     egui_view_set_pressed(EGUI_VIEW_OF(&preview_dock_panel), 1);
-    EGUI_TEST_ASSERT_TRUE(send_key(EGUI_VIEW_OF(&preview_dock_panel), EGUI_KEY_EVENT_ACTION_DOWN, EGUI_KEY_CODE_ENTER));
-    EGUI_TEST_ASSERT_TRUE(send_key(EGUI_VIEW_OF(&preview_dock_panel), EGUI_KEY_EVENT_ACTION_UP, EGUI_KEY_CODE_ENTER));
-    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&preview_dock_panel)->is_pressed);
-    EGUI_TEST_ASSERT_EQUAL_INT(0, g_click_count);
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_VIEW_OF(&preview_dock_panel), EGUI_MOTION_EVENT_ACTION_UP, center_x, center_y));
+    assert_preview_state_unchanged(initial_regions);
+
+    egui_view_set_pressed(EGUI_VIEW_OF(&preview_dock_panel), 1);
+    EGUI_TEST_ASSERT_TRUE(send_key(EGUI_VIEW_OF(&preview_dock_panel), EGUI_KEY_CODE_ENTER));
+    assert_preview_state_unchanged(initial_regions);
 }
 
 void test_dock_panel_run(void)
@@ -233,6 +276,6 @@ void test_dock_panel_run(void)
     EGUI_TEST_RUN(test_dock_panel_style_helpers_and_setters_clear_pressed_state);
     EGUI_TEST_RUN(test_dock_panel_layout_childs_places_top_left_right_and_fill);
     EGUI_TEST_RUN(test_dock_panel_layout_childs_places_bottom_without_last_fill);
-    EGUI_TEST_RUN(test_dock_panel_static_preview_consumes_input);
+    EGUI_TEST_RUN(test_dock_panel_static_preview_consumes_input_and_keeps_state);
     EGUI_TEST_SUITE_END();
 }

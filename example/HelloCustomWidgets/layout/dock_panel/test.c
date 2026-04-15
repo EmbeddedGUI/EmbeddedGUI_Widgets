@@ -24,8 +24,10 @@
 #define DOCK_PANEL_FOOTER_ITEM_COUNT     2
 #define DOCK_PANEL_RECORD_WAIT           90
 #define DOCK_PANEL_RECORD_FRAME_WAIT     170
-#define DOCK_PANEL_RECORD_FINAL_WAIT     520
-#define DOCK_PANEL_DEFAULT_SNAPSHOT      1
+#define DOCK_PANEL_RECORD_FINAL_WAIT     280
+#define DOCK_PANEL_DEFAULT_SNAPSHOT      0
+
+#define PRIMARY_SNAPSHOT_COUNT           ((uint8_t)EGUI_ARRAY_SIZE(primary_snapshots))
 
 typedef enum
 {
@@ -313,21 +315,24 @@ static void layout_local_views(void)
     egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&root_layout));
 }
 
-#if EGUI_CONFIG_RECORDING_TEST
-static void refresh_root_layout(void)
+static void layout_page(void)
 {
     layout_local_views();
     egui_core_layout_childs_user_root_view(EGUI_LAYOUT_VERTICAL, EGUI_ALIGN_HCENTER | EGUI_ALIGN_VCENTER);
 }
-#endif
 
-static void apply_primary_snapshot(uint8_t index)
+static void apply_primary_state(uint8_t index)
 {
-    const dock_snapshot_t *snapshot = &primary_snapshots[index % EGUI_ARRAY_SIZE(primary_snapshots)];
+    const dock_snapshot_t *snapshot = &primary_snapshots[index % PRIMARY_SNAPSHOT_COUNT];
 
     egui_view_label_set_text(EGUI_VIEW_OF(&primary_heading_label), snapshot->heading);
     egui_view_label_set_text(EGUI_VIEW_OF(&primary_note_label), snapshot->note);
     apply_snapshot_to_dock_panel(EGUI_VIEW_OF(&primary_dock_panel), primary_cards, primary_card_titles, DOCK_PANEL_ITEM_CAPACITY, snapshot);
+}
+
+static void apply_primary_default_state(void)
+{
+    apply_primary_state(DOCK_PANEL_DEFAULT_SNAPSHOT);
 }
 
 static void apply_preview_states(void)
@@ -335,6 +340,15 @@ static void apply_preview_states(void)
     apply_snapshot_to_dock_panel(EGUI_VIEW_OF(&rail_preview_panel), rail_cards, rail_card_titles, DOCK_PANEL_RAIL_ITEM_COUNT, &rail_preview_snapshot);
     apply_snapshot_to_dock_panel(EGUI_VIEW_OF(&footer_preview_panel), footer_cards, footer_card_titles, DOCK_PANEL_FOOTER_ITEM_COUNT, &footer_preview_snapshot);
 }
+
+#if EGUI_CONFIG_RECORDING_TEST
+static void request_page_snapshot(void)
+{
+    layout_page();
+    egui_view_invalidate(EGUI_VIEW_OF(&root_layout));
+    recording_request_snapshot();
+}
+#endif
 
 void test_init_ui(void)
 {
@@ -429,18 +443,14 @@ void test_init_ui(void)
                     EGUI_ALIGN_CENTER);
     egui_view_group_add_child(EGUI_VIEW_OF(&footer_panel), EGUI_VIEW_OF(&footer_note_label));
 
+    apply_primary_default_state();
     apply_preview_states();
-    apply_primary_snapshot(DOCK_PANEL_DEFAULT_SNAPSHOT);
 
     hello_custom_widgets_demo_apply_title_only_scaffold(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label), NULL, 0);
 
     layout_local_views();
     egui_core_add_user_root_view(EGUI_VIEW_OF(&root_layout));
-    egui_core_layout_childs_user_root_view(EGUI_LAYOUT_VERTICAL, EGUI_ALIGN_HCENTER | EGUI_ALIGN_VCENTER);
-    apply_preview_states();
-    apply_primary_snapshot(DOCK_PANEL_DEFAULT_SNAPSHOT);
-    layout_local_views();
-    egui_core_layout_childs_user_root_view(EGUI_LAYOUT_VERTICAL, EGUI_ALIGN_HCENTER | EGUI_ALIGN_VCENTER);
+    layout_page();
 }
 
 #if EGUI_CONFIG_RECORDING_TEST
@@ -456,58 +466,50 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     case 0:
         if (first_call)
         {
-            apply_preview_states();
-            apply_primary_snapshot(DOCK_PANEL_DEFAULT_SNAPSHOT);
-            refresh_root_layout();
+            apply_primary_default_state();
+            request_page_snapshot();
         }
-        EGUI_SIM_SET_WAIT(p_action, DOCK_PANEL_RECORD_WAIT);
+        EGUI_SIM_SET_WAIT(p_action, DOCK_PANEL_RECORD_FRAME_WAIT);
         return true;
     case 1:
         if (first_call)
         {
-            apply_preview_states();
-            apply_primary_snapshot(DOCK_PANEL_DEFAULT_SNAPSHOT);
-            refresh_root_layout();
-            recording_request_snapshot();
+            apply_primary_state(1);
         }
-        EGUI_SIM_SET_WAIT(p_action, DOCK_PANEL_RECORD_FRAME_WAIT);
+        EGUI_SIM_SET_WAIT(p_action, DOCK_PANEL_RECORD_WAIT);
         return true;
     case 2:
         if (first_call)
         {
-            apply_primary_snapshot(0);
-            refresh_root_layout();
+            request_page_snapshot();
         }
-        EGUI_SIM_SET_WAIT(p_action, DOCK_PANEL_RECORD_WAIT);
+        EGUI_SIM_SET_WAIT(p_action, DOCK_PANEL_RECORD_FRAME_WAIT);
         return true;
     case 3:
         if (first_call)
         {
-            recording_request_snapshot();
+            apply_primary_state(2);
         }
-        EGUI_SIM_SET_WAIT(p_action, DOCK_PANEL_RECORD_FRAME_WAIT);
+        EGUI_SIM_SET_WAIT(p_action, DOCK_PANEL_RECORD_WAIT);
         return true;
     case 4:
         if (first_call)
         {
-            apply_primary_snapshot(2);
-            refresh_root_layout();
+            request_page_snapshot();
         }
-        EGUI_SIM_SET_WAIT(p_action, DOCK_PANEL_RECORD_WAIT);
+        EGUI_SIM_SET_WAIT(p_action, DOCK_PANEL_RECORD_FRAME_WAIT);
         return true;
     case 5:
         if (first_call)
         {
-            recording_request_snapshot();
+            apply_primary_default_state();
         }
-        EGUI_SIM_SET_WAIT(p_action, DOCK_PANEL_RECORD_FRAME_WAIT);
+        EGUI_SIM_SET_WAIT(p_action, DOCK_PANEL_RECORD_WAIT);
         return true;
     case 6:
         if (first_call)
         {
-            apply_primary_snapshot(DOCK_PANEL_DEFAULT_SNAPSHOT);
-            refresh_root_layout();
-            recording_request_snapshot();
+            request_page_snapshot();
         }
         EGUI_SIM_SET_WAIT(p_action, DOCK_PANEL_RECORD_FINAL_WAIT);
         return true;
