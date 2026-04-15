@@ -7,6 +7,33 @@
 #include "../../HelloCustomWidgets/input/token_input/egui_view_token_input.h"
 #include "../../HelloCustomWidgets/input/token_input/egui_view_token_input.c"
 
+typedef struct token_input_preview_snapshot token_input_preview_snapshot_t;
+struct token_input_preview_snapshot
+{
+    egui_region_t region_screen;
+    const egui_font_t *font;
+    const egui_font_t *meta_font;
+    egui_view_on_token_input_changed_listener_t on_changed;
+    egui_color_t surface_color;
+    egui_color_t border_color;
+    egui_color_t text_color;
+    egui_color_t muted_text_color;
+    egui_color_t accent_color;
+    egui_color_t shadow_color;
+    char placeholder[EGUI_VIEW_TOKEN_INPUT_MAX_TOKEN_LEN + 1];
+    char draft_text[EGUI_VIEW_TOKEN_INPUT_MAX_DRAFT_LEN + 1];
+    char tokens[EGUI_VIEW_TOKEN_INPUT_MAX_TOKENS][EGUI_VIEW_TOKEN_INPUT_MAX_TOKEN_LEN + 1];
+    uint8_t token_count;
+    uint8_t draft_len;
+    uint8_t current_part;
+    uint8_t pressed_part;
+    uint8_t pressed_remove;
+    uint8_t compact_mode;
+    uint8_t read_only_mode;
+    uint8_t restore_input_focus;
+    egui_alpha_t alpha;
+};
+
 static egui_view_token_input_t test_token_input;
 static egui_view_token_input_t preview_token_input;
 static egui_view_api_t preview_api;
@@ -29,6 +56,14 @@ static void on_token_input_changed(egui_view_t *self, uint8_t token_count, uint8
     g_changed_count++;
 }
 
+static void assert_region_equal(const egui_region_t *expected, const egui_region_t *actual)
+{
+    EGUI_TEST_ASSERT_EQUAL_INT(expected->location.x, actual->location.x);
+    EGUI_TEST_ASSERT_EQUAL_INT(expected->location.y, actual->location.y);
+    EGUI_TEST_ASSERT_EQUAL_INT(expected->size.width, actual->size.width);
+    EGUI_TEST_ASSERT_EQUAL_INT(expected->size.height, actual->size.height);
+}
+
 static void setup_token_input(const char **tokens, uint8_t count)
 {
     egui_view_token_input_init(EGUI_VIEW_OF(&test_token_input));
@@ -41,12 +76,18 @@ static void setup_token_input(const char **tokens, uint8_t count)
 static void setup_preview_token_input(const char **tokens, uint8_t count)
 {
     egui_view_token_input_init(EGUI_VIEW_OF(&preview_token_input));
-    egui_view_set_size(EGUI_VIEW_OF(&preview_token_input), 106, 48);
+    egui_view_set_size(EGUI_VIEW_OF(&preview_token_input), 104, 48);
     egui_view_token_input_set_placeholder(EGUI_VIEW_OF(&preview_token_input), "Add");
+    egui_view_token_input_set_font(EGUI_VIEW_OF(&preview_token_input), (const egui_font_t *)&egui_res_font_montserrat_8_4);
+    egui_view_token_input_set_meta_font(EGUI_VIEW_OF(&preview_token_input), (const egui_font_t *)&egui_res_font_montserrat_8_4);
+    egui_view_token_input_set_palette(EGUI_VIEW_OF(&preview_token_input), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD5DCE4), EGUI_COLOR_HEX(0x1A2734),
+                                      EGUI_COLOR_HEX(0x6B7A89), EGUI_COLOR_HEX(0x0F6CBD), EGUI_COLOR_HEX(0xEAF0F6));
     egui_view_token_input_set_tokens(EGUI_VIEW_OF(&preview_token_input), tokens, count);
     egui_view_token_input_set_compact_mode(EGUI_VIEW_OF(&preview_token_input), 1);
+    egui_view_token_input_set_on_changed_listener(EGUI_VIEW_OF(&preview_token_input), on_token_input_changed);
     egui_view_token_input_set_current_part(EGUI_VIEW_OF(&preview_token_input), 0);
     egui_view_token_input_override_static_preview_api(EGUI_VIEW_OF(&preview_token_input), &preview_api);
+    reset_changed_state();
 }
 
 static void layout_view(egui_view_t *view, egui_dim_t x, egui_dim_t y, egui_dim_t width, egui_dim_t height)
@@ -68,7 +109,7 @@ static void layout_token_input(egui_dim_t x, egui_dim_t y, egui_dim_t width, egu
 
 static void layout_preview_token_input(void)
 {
-    layout_view(EGUI_VIEW_OF(&preview_token_input), 12, 18, 106, 48);
+    layout_view(EGUI_VIEW_OF(&preview_token_input), 12, 18, 104, 48);
 }
 
 static int send_touch_to_view(egui_view_t *view, uint8_t type, egui_dim_t x, egui_dim_t y)
@@ -79,7 +120,7 @@ static int send_touch_to_view(egui_view_t *view, uint8_t type, egui_dim_t x, egu
     event.type = type;
     event.location.x = x;
     event.location.y = y;
-    return view->api->on_touch_event(view, &event);
+    return view->api->dispatch_touch_event(view, &event);
 }
 
 static int send_key_to_view(egui_view_t *view, uint8_t type, uint8_t key_code)
@@ -89,7 +130,7 @@ static int send_key_to_view(egui_view_t *view, uint8_t type, uint8_t key_code)
     memset(&event, 0, sizeof(event));
     event.type = type;
     event.key_code = key_code;
-    return view->api->on_key_event(view, &event);
+    return view->api->dispatch_key_event(view, &event);
 }
 
 static int send_touch_event(uint8_t type, egui_dim_t x, egui_dim_t y)
@@ -107,9 +148,74 @@ static int send_key_event(uint8_t type, uint8_t key_code)
     return send_key_to_view(EGUI_VIEW_OF(&test_token_input), type, key_code);
 }
 
-static int send_preview_key_event(uint8_t type, uint8_t key_code)
+static int send_key(egui_view_t *view, uint8_t key_code)
 {
-    return send_key_to_view(EGUI_VIEW_OF(&preview_token_input), type, key_code);
+    int handled = 0;
+
+    handled |= send_key_to_view(view, EGUI_KEY_EVENT_ACTION_DOWN, key_code);
+    handled |= send_key_to_view(view, EGUI_KEY_EVENT_ACTION_UP, key_code);
+    return handled;
+}
+
+static void capture_preview_snapshot(token_input_preview_snapshot_t *snapshot)
+{
+    snapshot->region_screen = EGUI_VIEW_OF(&preview_token_input)->region_screen;
+    snapshot->font = preview_token_input.font;
+    snapshot->meta_font = preview_token_input.meta_font;
+    snapshot->on_changed = preview_token_input.on_changed;
+    snapshot->surface_color = preview_token_input.surface_color;
+    snapshot->border_color = preview_token_input.border_color;
+    snapshot->text_color = preview_token_input.text_color;
+    snapshot->muted_text_color = preview_token_input.muted_text_color;
+    snapshot->accent_color = preview_token_input.accent_color;
+    snapshot->shadow_color = preview_token_input.shadow_color;
+    memcpy(snapshot->placeholder, preview_token_input.placeholder, sizeof(snapshot->placeholder));
+    memcpy(snapshot->draft_text, preview_token_input.draft_text, sizeof(snapshot->draft_text));
+    memcpy(snapshot->tokens, preview_token_input.tokens, sizeof(snapshot->tokens));
+    snapshot->token_count = preview_token_input.token_count;
+    snapshot->draft_len = preview_token_input.draft_len;
+    snapshot->current_part = preview_token_input.current_part;
+    snapshot->pressed_part = preview_token_input.pressed_part;
+    snapshot->pressed_remove = preview_token_input.pressed_remove;
+    snapshot->compact_mode = preview_token_input.compact_mode;
+    snapshot->read_only_mode = preview_token_input.read_only_mode;
+    snapshot->restore_input_focus = preview_token_input.restore_input_focus;
+    snapshot->alpha = EGUI_VIEW_OF(&preview_token_input)->alpha;
+}
+
+static void assert_preview_state_unchanged(const token_input_preview_snapshot_t *snapshot)
+{
+    uint8_t index;
+
+    assert_region_equal(&snapshot->region_screen, &EGUI_VIEW_OF(&preview_token_input)->region_screen);
+    EGUI_TEST_ASSERT_TRUE(preview_token_input.font == snapshot->font);
+    EGUI_TEST_ASSERT_TRUE(preview_token_input.meta_font == snapshot->meta_font);
+    EGUI_TEST_ASSERT_TRUE(preview_token_input.on_changed == snapshot->on_changed);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->surface_color.full, preview_token_input.surface_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->border_color.full, preview_token_input.border_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->text_color.full, preview_token_input.text_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->muted_text_color.full, preview_token_input.muted_text_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->accent_color.full, preview_token_input.accent_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->shadow_color.full, preview_token_input.shadow_color.full);
+    EGUI_TEST_ASSERT_TRUE(strcmp(snapshot->placeholder, preview_token_input.placeholder) == 0);
+    EGUI_TEST_ASSERT_TRUE(strcmp(snapshot->draft_text, preview_token_input.draft_text) == 0);
+    for (index = 0; index < EGUI_VIEW_TOKEN_INPUT_MAX_TOKENS; index++)
+    {
+        EGUI_TEST_ASSERT_TRUE(strcmp(snapshot->tokens[index], preview_token_input.tokens[index]) == 0);
+    }
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->token_count, preview_token_input.token_count);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->draft_len, preview_token_input.draft_len);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->current_part, preview_token_input.current_part);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->pressed_part, preview_token_input.pressed_part);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->pressed_remove, preview_token_input.pressed_remove);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->compact_mode, preview_token_input.compact_mode);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->read_only_mode, preview_token_input.read_only_mode);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->restore_input_focus, preview_token_input.restore_input_focus);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->alpha, EGUI_VIEW_OF(&preview_token_input)->alpha);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&preview_token_input)->is_pressed);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, g_changed_count);
+    EGUI_TEST_ASSERT_EQUAL_INT(0xFF, g_changed_token_count);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_TOKEN_INPUT_PART_NONE, g_changed_part);
 }
 
 static void seed_pressed_state(uint8_t part, uint8_t pressed_remove)
@@ -1450,42 +1556,32 @@ static void test_token_input_set_tokens_skips_empty_and_whitespace_entries(void)
     EGUI_TEST_ASSERT_EQUAL_INT(0, g_changed_count);
 }
 
-static void test_token_input_static_preview_consumes_input_and_clears_pressed_state(void)
+static void test_token_input_static_preview_consumes_input_and_keeps_state(void)
 {
-    static const char *tokens[] = {"ui", "qa", "ops"};
-    egui_region_t remove_region;
+    static const char *tokens[] = {"UI", "QA", "OPS", "SYS", "NET"};
+    token_input_preview_snapshot_t initial_snapshot;
+    egui_region_t token_region;
     egui_dim_t x;
     egui_dim_t y;
 
-    setup_preview_token_input(tokens, 3);
+    setup_preview_token_input(tokens, 5);
     layout_preview_token_input();
-    EGUI_TEST_ASSERT_TRUE(egui_view_token_input_get_remove_region(EGUI_VIEW_OF(&preview_token_input), 0, &remove_region));
-    x = remove_region.location.x + remove_region.size.width / 2;
-    y = remove_region.location.y + remove_region.size.height / 2;
+    EGUI_TEST_ASSERT_TRUE(egui_view_token_input_get_part_region(EGUI_VIEW_OF(&preview_token_input), 0, &token_region));
+    x = token_region.location.x + token_region.size.width / 2;
+    y = token_region.location.y + token_region.size.height / 2;
+    capture_preview_snapshot(&initial_snapshot);
 
     EGUI_VIEW_OF(&preview_token_input)->is_pressed = 1;
     preview_token_input.pressed_part = 0;
     preview_token_input.pressed_remove = 1;
     EGUI_TEST_ASSERT_TRUE(send_preview_touch_event(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
-    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&preview_token_input)->is_pressed);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_TOKEN_INPUT_PART_NONE, preview_token_input.pressed_part);
-    EGUI_TEST_ASSERT_EQUAL_INT(0, preview_token_input.pressed_remove);
-    EGUI_TEST_ASSERT_EQUAL_INT(3, egui_view_token_input_get_token_count(EGUI_VIEW_OF(&preview_token_input)));
-    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_token_input_get_current_part(EGUI_VIEW_OF(&preview_token_input)));
-    EGUI_TEST_ASSERT_TRUE(strcmp("", egui_view_token_input_get_draft_text(EGUI_VIEW_OF(&preview_token_input))) == 0);
+    assert_preview_state_unchanged(&initial_snapshot);
 
     EGUI_VIEW_OF(&preview_token_input)->is_pressed = 1;
     preview_token_input.pressed_part = 0;
     preview_token_input.pressed_remove = 0;
-    EGUI_TEST_ASSERT_TRUE(send_preview_key_event(EGUI_KEY_EVENT_ACTION_DOWN, EGUI_KEY_CODE_BACKSPACE));
-    EGUI_TEST_ASSERT_TRUE(send_preview_key_event(EGUI_KEY_EVENT_ACTION_UP, EGUI_KEY_CODE_BACKSPACE));
-    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&preview_token_input)->is_pressed);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_TOKEN_INPUT_PART_NONE, preview_token_input.pressed_part);
-    EGUI_TEST_ASSERT_EQUAL_INT(0, preview_token_input.pressed_remove);
-    EGUI_TEST_ASSERT_EQUAL_INT(3, egui_view_token_input_get_token_count(EGUI_VIEW_OF(&preview_token_input)));
-    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_token_input_get_current_part(EGUI_VIEW_OF(&preview_token_input)));
-    EGUI_TEST_ASSERT_TRUE(strcmp("", egui_view_token_input_get_draft_text(EGUI_VIEW_OF(&preview_token_input))) == 0);
-    EGUI_TEST_ASSERT_EQUAL_INT(0, preview_token_input.restore_input_focus);
+    EGUI_TEST_ASSERT_TRUE(send_key(EGUI_VIEW_OF(&preview_token_input), EGUI_KEY_CODE_BACKSPACE));
+    assert_preview_state_unchanged(&initial_snapshot);
 }
 
 void test_token_input_run(void)
@@ -1535,7 +1631,7 @@ void test_token_input_run(void)
     EGUI_TEST_RUN(test_token_input_add_token_clamps_at_max_capacity);
     EGUI_TEST_RUN(test_token_input_add_token_trims_surrounding_whitespace);
     EGUI_TEST_RUN(test_token_input_set_tokens_skips_empty_and_whitespace_entries);
-    EGUI_TEST_RUN(test_token_input_static_preview_consumes_input_and_clears_pressed_state);
+    EGUI_TEST_RUN(test_token_input_static_preview_consumes_input_and_keeps_state);
 
     EGUI_TEST_SUITE_END();
 }
