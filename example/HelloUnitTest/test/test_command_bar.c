@@ -13,6 +13,31 @@ static egui_view_api_t preview_api;
 static uint8_t changed_count;
 static uint8_t last_index;
 
+typedef struct
+{
+    egui_region_t region_screen;
+    const egui_view_command_bar_snapshot_t *snapshots;
+    const egui_font_t *font;
+    const egui_font_t *meta_font;
+    egui_view_on_command_bar_selection_changed_listener_t on_selection_changed;
+    egui_color_t surface_color;
+    egui_color_t section_color;
+    egui_color_t border_color;
+    egui_color_t text_color;
+    egui_color_t muted_text_color;
+    egui_color_t accent_color;
+    egui_color_t success_color;
+    egui_color_t warning_color;
+    egui_color_t danger_color;
+    egui_color_t neutral_color;
+    uint8_t snapshot_count;
+    uint8_t current_snapshot;
+    uint8_t current_index;
+    uint8_t compact_mode;
+    uint8_t disabled_mode;
+    egui_alpha_t alpha;
+} command_bar_preview_snapshot_t;
+
 static const egui_view_command_bar_item_t g_items_0[] = {
         {"SV", "Save", EGUI_VIEW_COMMAND_BAR_TONE_ACCENT, 1, 1, EGUI_VIEW_COMMAND_BAR_ITEM_KIND_NORMAL},
         {"LK", "Locked", EGUI_VIEW_COMMAND_BAR_TONE_NEUTRAL, 0, 0, EGUI_VIEW_COMMAND_BAR_ITEM_KIND_NORMAL},
@@ -49,10 +74,29 @@ static const egui_view_command_bar_snapshot_t g_invalid_focus_snapshot = {
         "Warn", "Invalid focus", "Build", "Fallback to first enabled", g_items_1, 4, 9,
 };
 
+static const egui_view_command_bar_item_t g_preview_items[] = {
+        {"SV", "Save", EGUI_VIEW_COMMAND_BAR_TONE_ACCENT, 1, 1, EGUI_VIEW_COMMAND_BAR_ITEM_KIND_NORMAL},
+        {"SH", "Share", EGUI_VIEW_COMMAND_BAR_TONE_ACCENT, 0, 1, EGUI_VIEW_COMMAND_BAR_ITEM_KIND_NORMAL},
+        {"CL", "Clone", EGUI_VIEW_COMMAND_BAR_TONE_NEUTRAL, 0, 1, EGUI_VIEW_COMMAND_BAR_ITEM_KIND_NORMAL},
+        {"...", "Overflow", EGUI_VIEW_COMMAND_BAR_TONE_NEUTRAL, 0, 1, EGUI_VIEW_COMMAND_BAR_ITEM_KIND_OVERFLOW},
+};
+
+static const egui_view_command_bar_snapshot_t g_preview_snapshot = {
+        "Quick", "Compact rail", "Quick", "Tight icon rail", g_preview_items, EGUI_ARRAY_SIZE(g_preview_items), 0,
+};
+
 static void reset_changed_state(void)
 {
     changed_count = 0;
     last_index = EGUI_VIEW_COMMAND_BAR_INDEX_NONE;
+}
+
+static void assert_region_equal(const egui_region_t *expected, const egui_region_t *actual)
+{
+    EGUI_TEST_ASSERT_EQUAL_INT(expected->location.x, actual->location.x);
+    EGUI_TEST_ASSERT_EQUAL_INT(expected->location.y, actual->location.y);
+    EGUI_TEST_ASSERT_EQUAL_INT(expected->size.width, actual->size.width);
+    EGUI_TEST_ASSERT_EQUAL_INT(expected->size.height, actual->size.height);
 }
 
 static void on_selection_changed(egui_view_t *self, uint8_t index)
@@ -87,10 +131,11 @@ static void setup_preview_bar(void)
 {
     egui_view_command_bar_init(EGUI_VIEW_OF(&preview_bar));
     egui_view_set_size(EGUI_VIEW_OF(&preview_bar), 104, 64);
-    egui_view_command_bar_set_snapshots(EGUI_VIEW_OF(&preview_bar), g_snapshots, 3);
+    egui_view_command_bar_set_snapshots(EGUI_VIEW_OF(&preview_bar), &g_preview_snapshot, 1);
     egui_view_command_bar_set_compact_mode(EGUI_VIEW_OF(&preview_bar), 1);
-    egui_view_command_bar_set_current_snapshot(EGUI_VIEW_OF(&preview_bar), 1);
+    egui_view_command_bar_set_on_selection_changed_listener(EGUI_VIEW_OF(&preview_bar), on_selection_changed);
     egui_view_command_bar_override_static_preview_api(EGUI_VIEW_OF(&preview_bar), &preview_api);
+    reset_changed_state();
 }
 
 static void layout_preview_bar(void)
@@ -127,28 +172,33 @@ static int send_preview_touch(uint8_t type, egui_dim_t x, egui_dim_t y)
     return EGUI_VIEW_OF(&preview_bar)->api->on_touch_event(EGUI_VIEW_OF(&preview_bar), &event);
 }
 
-static int send_key(uint8_t key_code)
-{
-    egui_key_event_t event;
-    int handled = 0;
-
-    memset(&event, 0, sizeof(event));
-    event.type = EGUI_KEY_EVENT_ACTION_DOWN;
-    event.key_code = key_code;
-    handled |= EGUI_VIEW_OF(&test_bar)->api->on_key_event(EGUI_VIEW_OF(&test_bar), &event);
-    event.type = EGUI_KEY_EVENT_ACTION_UP;
-    handled |= EGUI_VIEW_OF(&test_bar)->api->on_key_event(EGUI_VIEW_OF(&test_bar), &event);
-    return handled;
-}
-
-static int send_preview_key_action(uint8_t type, uint8_t key_code)
+static int dispatch_key_event_to_view(egui_view_t *view, uint8_t type, uint8_t key_code)
 {
     egui_key_event_t event;
 
     memset(&event, 0, sizeof(event));
     event.type = type;
     event.key_code = key_code;
-    return EGUI_VIEW_OF(&preview_bar)->api->on_key_event(EGUI_VIEW_OF(&preview_bar), &event);
+    return view->api->dispatch_key_event(view, &event);
+}
+
+static int send_key_to_view(egui_view_t *view, uint8_t key_code)
+{
+    int handled = 0;
+
+    handled |= dispatch_key_event_to_view(view, EGUI_KEY_EVENT_ACTION_DOWN, key_code);
+    handled |= dispatch_key_event_to_view(view, EGUI_KEY_EVENT_ACTION_UP, key_code);
+    return handled;
+}
+
+static int send_key(uint8_t key_code)
+{
+    return send_key_to_view(EGUI_VIEW_OF(&test_bar), key_code);
+}
+
+static int send_preview_key(uint8_t key_code)
+{
+    return send_key_to_view(EGUI_VIEW_OF(&preview_bar), key_code);
 }
 
 static void get_metrics(egui_view_command_bar_metrics_t *metrics)
@@ -157,6 +207,68 @@ static void get_metrics(egui_view_command_bar_metrics_t *metrics)
     uint8_t item_count = snapshot == NULL ? 0 : egui_view_command_bar_clamp_item_count(snapshot->item_count);
 
     egui_view_command_bar_get_metrics(&test_bar, EGUI_VIEW_OF(&test_bar), snapshot, item_count, metrics);
+}
+
+static void get_preview_metrics(egui_view_command_bar_metrics_t *metrics)
+{
+    const egui_view_command_bar_snapshot_t *snapshot = egui_view_command_bar_get_snapshot(&preview_bar);
+    uint8_t item_count = snapshot == NULL ? 0 : egui_view_command_bar_clamp_item_count(snapshot->item_count);
+
+    egui_view_command_bar_get_metrics(&preview_bar, EGUI_VIEW_OF(&preview_bar), snapshot, item_count, metrics);
+}
+
+static void capture_preview_snapshot(command_bar_preview_snapshot_t *snapshot)
+{
+    snapshot->region_screen = EGUI_VIEW_OF(&preview_bar)->region_screen;
+    snapshot->snapshots = preview_bar.snapshots;
+    snapshot->font = preview_bar.font;
+    snapshot->meta_font = preview_bar.meta_font;
+    snapshot->on_selection_changed = preview_bar.on_selection_changed;
+    snapshot->surface_color = preview_bar.surface_color;
+    snapshot->section_color = preview_bar.section_color;
+    snapshot->border_color = preview_bar.border_color;
+    snapshot->text_color = preview_bar.text_color;
+    snapshot->muted_text_color = preview_bar.muted_text_color;
+    snapshot->accent_color = preview_bar.accent_color;
+    snapshot->success_color = preview_bar.success_color;
+    snapshot->warning_color = preview_bar.warning_color;
+    snapshot->danger_color = preview_bar.danger_color;
+    snapshot->neutral_color = preview_bar.neutral_color;
+    snapshot->snapshot_count = preview_bar.snapshot_count;
+    snapshot->current_snapshot = preview_bar.current_snapshot;
+    snapshot->current_index = preview_bar.current_index;
+    snapshot->compact_mode = preview_bar.compact_mode;
+    snapshot->disabled_mode = preview_bar.disabled_mode;
+    snapshot->alpha = EGUI_VIEW_OF(&preview_bar)->alpha;
+}
+
+static void assert_preview_state_unchanged(const command_bar_preview_snapshot_t *snapshot)
+{
+    assert_region_equal(&snapshot->region_screen, &EGUI_VIEW_OF(&preview_bar)->region_screen);
+    EGUI_TEST_ASSERT_TRUE(preview_bar.snapshots == snapshot->snapshots);
+    EGUI_TEST_ASSERT_TRUE(preview_bar.font == snapshot->font);
+    EGUI_TEST_ASSERT_TRUE(preview_bar.meta_font == snapshot->meta_font);
+    EGUI_TEST_ASSERT_TRUE(preview_bar.on_selection_changed == snapshot->on_selection_changed);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->surface_color.full, preview_bar.surface_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->section_color.full, preview_bar.section_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->border_color.full, preview_bar.border_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->text_color.full, preview_bar.text_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->muted_text_color.full, preview_bar.muted_text_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->accent_color.full, preview_bar.accent_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->success_color.full, preview_bar.success_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->warning_color.full, preview_bar.warning_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->danger_color.full, preview_bar.danger_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->neutral_color.full, preview_bar.neutral_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->snapshot_count, preview_bar.snapshot_count);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->current_snapshot, preview_bar.current_snapshot);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->current_index, preview_bar.current_index);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->compact_mode, preview_bar.compact_mode);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->disabled_mode, preview_bar.disabled_mode);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->alpha, EGUI_VIEW_OF(&preview_bar)->alpha);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, changed_count);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_COMMAND_BAR_INDEX_NONE, last_index);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&preview_bar)->is_pressed);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_COMMAND_BAR_INDEX_NONE, preview_bar.pressed_index);
 }
 
 static void test_command_bar_setters_clear_pressed_state_and_clamp(void)
@@ -607,32 +719,29 @@ static void test_command_bar_internal_helpers_cover_metrics_measurements_and_sta
     EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(sample, EGUI_COLOR_DARK_GREY, 68).full, mixed.full);
 }
 
-static void test_command_bar_static_preview_consumes_input_and_clears_pressed_state(void)
+static void test_command_bar_static_preview_consumes_input_and_keeps_state(void)
 {
+    command_bar_preview_snapshot_t initial_snapshot;
+    egui_view_command_bar_metrics_t metrics;
     egui_dim_t x;
     egui_dim_t y;
 
     setup_preview_bar();
     layout_preview_bar();
-    x = EGUI_VIEW_OF(&preview_bar)->region_screen.location.x + EGUI_VIEW_OF(&preview_bar)->region_screen.size.width / 2;
-    y = EGUI_VIEW_OF(&preview_bar)->region_screen.location.y + EGUI_VIEW_OF(&preview_bar)->region_screen.size.height / 2;
+    capture_preview_snapshot(&initial_snapshot);
+    get_preview_metrics(&metrics);
+    x = metrics.item_regions[2].location.x + metrics.item_regions[2].size.width / 2;
+    y = metrics.item_regions[2].location.y + metrics.item_regions[2].size.height / 2;
 
     EGUI_VIEW_OF(&preview_bar)->is_pressed = true;
     preview_bar.pressed_index = 2;
     EGUI_TEST_ASSERT_TRUE(send_preview_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
-    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&preview_bar)->is_pressed);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_COMMAND_BAR_INDEX_NONE, preview_bar.pressed_index);
-    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_command_bar_get_current_snapshot(EGUI_VIEW_OF(&preview_bar)));
-    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_command_bar_get_current_index(EGUI_VIEW_OF(&preview_bar)));
+    assert_preview_state_unchanged(&initial_snapshot);
 
     EGUI_VIEW_OF(&preview_bar)->is_pressed = true;
     preview_bar.pressed_index = 0;
-    EGUI_TEST_ASSERT_TRUE(send_preview_key_action(EGUI_KEY_EVENT_ACTION_DOWN, EGUI_KEY_CODE_ENTER));
-    EGUI_TEST_ASSERT_TRUE(send_preview_key_action(EGUI_KEY_EVENT_ACTION_UP, EGUI_KEY_CODE_ENTER));
-    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&preview_bar)->is_pressed);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_COMMAND_BAR_INDEX_NONE, preview_bar.pressed_index);
-    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_command_bar_get_current_snapshot(EGUI_VIEW_OF(&preview_bar)));
-    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_command_bar_get_current_index(EGUI_VIEW_OF(&preview_bar)));
+    EGUI_TEST_ASSERT_TRUE(send_preview_key(EGUI_KEY_CODE_ENTER));
+    assert_preview_state_unchanged(&initial_snapshot);
 }
 
 void test_command_bar_run(void)
@@ -647,6 +756,6 @@ void test_command_bar_run(void)
     EGUI_TEST_RUN(test_command_bar_compact_mode_clears_pressed_and_ignores_input);
     EGUI_TEST_RUN(test_command_bar_keyboard_navigation_and_guards);
     EGUI_TEST_RUN(test_command_bar_internal_helpers_cover_metrics_measurements_and_states);
-    EGUI_TEST_RUN(test_command_bar_static_preview_consumes_input_and_clears_pressed_state);
+    EGUI_TEST_RUN(test_command_bar_static_preview_consumes_input_and_keeps_state);
     EGUI_TEST_SUITE_END();
 }
