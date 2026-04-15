@@ -11,6 +11,41 @@ static egui_view_calendar_view_t test_calendar_view;
 static egui_view_calendar_view_t preview_calendar_view;
 static egui_view_api_t preview_api;
 
+typedef struct
+{
+    egui_region_t region_screen;
+    const egui_font_t *font;
+    const egui_font_t *meta_font;
+    const char *label;
+    const char *helper;
+    egui_color_t surface_color;
+    egui_color_t border_color;
+    egui_color_t text_color;
+    egui_color_t muted_text_color;
+    egui_color_t accent_color;
+    egui_color_t today_color;
+    uint16_t display_year;
+    uint16_t selection_year;
+    uint16_t committed_year;
+    uint16_t today_year;
+    uint8_t display_month;
+    uint8_t selection_month;
+    uint8_t committed_month;
+    uint8_t start_day;
+    uint8_t end_day;
+    uint8_t committed_start_day;
+    uint8_t committed_end_day;
+    uint8_t focus_day;
+    uint8_t anchor_day;
+    uint8_t today_month;
+    uint8_t today_day;
+    uint8_t first_day_of_week;
+    uint8_t compact_mode;
+    uint8_t read_only_mode;
+    uint8_t editing_range;
+    uint8_t current_part;
+} calendar_view_preview_snapshot_t;
+
 static uint8_t calendar_view_test_day_of_week(uint16_t year, uint8_t month, uint8_t day)
 {
     static const int offsets[] = {0, 3, 2, 5, 0, 3, 5, 1, 4, 6, 2, 4};
@@ -53,6 +88,14 @@ static void setup_preview_calendar_view(void)
     egui_view_calendar_view_override_static_preview_api(EGUI_VIEW_OF(&preview_calendar_view), &preview_api);
 }
 
+static void assert_region_equal(const egui_region_t *expected, const egui_region_t *actual)
+{
+    EGUI_TEST_ASSERT_EQUAL_INT(expected->location.x, actual->location.x);
+    EGUI_TEST_ASSERT_EQUAL_INT(expected->location.y, actual->location.y);
+    EGUI_TEST_ASSERT_EQUAL_INT(expected->size.width, actual->size.width);
+    EGUI_TEST_ASSERT_EQUAL_INT(expected->size.height, actual->size.height);
+}
+
 static void layout_preview_calendar_view(void)
 {
     egui_region_t region;
@@ -76,14 +119,19 @@ static int send_touch_event(uint8_t type, egui_dim_t x, egui_dim_t y)
     return EGUI_VIEW_OF(&test_calendar_view)->api->on_touch_event(EGUI_VIEW_OF(&test_calendar_view), &event);
 }
 
-static int send_key_event(uint8_t type, uint8_t key_code)
+static int dispatch_key_event_to_view(egui_view_t *view, uint8_t type, uint8_t key_code)
 {
     egui_key_event_t event;
 
     memset(&event, 0, sizeof(event));
     event.type = type;
     event.key_code = key_code;
-    return EGUI_VIEW_OF(&test_calendar_view)->api->on_key_event(EGUI_VIEW_OF(&test_calendar_view), &event);
+    return view->api->dispatch_key_event(view, &event);
+}
+
+static int send_key_event(uint8_t type, uint8_t key_code)
+{
+    return dispatch_key_event_to_view(EGUI_VIEW_OF(&test_calendar_view), type, key_code);
 }
 
 static int send_preview_touch_event(uint8_t type, egui_dim_t x, egui_dim_t y)
@@ -99,12 +147,7 @@ static int send_preview_touch_event(uint8_t type, egui_dim_t x, egui_dim_t y)
 
 static int send_preview_key_event(uint8_t type, uint8_t key_code)
 {
-    egui_key_event_t event;
-
-    memset(&event, 0, sizeof(event));
-    event.type = type;
-    event.key_code = key_code;
-    return EGUI_VIEW_OF(&preview_calendar_view)->api->on_key_event(EGUI_VIEW_OF(&preview_calendar_view), &event);
+    return dispatch_key_event_to_view(EGUI_VIEW_OF(&preview_calendar_view), type, key_code);
 }
 
 static void get_day_center(uint8_t day, egui_dim_t *x, egui_dim_t *y)
@@ -124,6 +167,79 @@ static void get_day_center(uint8_t day, egui_dim_t *x, egui_dim_t *y)
     cell_h = grid_region.size.height / 6;
     *x = grid_region.location.x + col * cell_w + cell_w / 2;
     *y = grid_region.location.y + row * cell_h + cell_h / 2;
+}
+
+static void capture_preview_snapshot(calendar_view_preview_snapshot_t *snapshot)
+{
+    snapshot->region_screen = EGUI_VIEW_OF(&preview_calendar_view)->region_screen;
+    snapshot->font = preview_calendar_view.font;
+    snapshot->meta_font = preview_calendar_view.meta_font;
+    snapshot->label = preview_calendar_view.label;
+    snapshot->helper = preview_calendar_view.helper;
+    snapshot->surface_color = preview_calendar_view.surface_color;
+    snapshot->border_color = preview_calendar_view.border_color;
+    snapshot->text_color = preview_calendar_view.text_color;
+    snapshot->muted_text_color = preview_calendar_view.muted_text_color;
+    snapshot->accent_color = preview_calendar_view.accent_color;
+    snapshot->today_color = preview_calendar_view.today_color;
+    snapshot->display_year = preview_calendar_view.display_year;
+    snapshot->selection_year = preview_calendar_view.selection_year;
+    snapshot->committed_year = preview_calendar_view.committed_year;
+    snapshot->today_year = preview_calendar_view.today_year;
+    snapshot->display_month = preview_calendar_view.display_month;
+    snapshot->selection_month = preview_calendar_view.selection_month;
+    snapshot->committed_month = preview_calendar_view.committed_month;
+    snapshot->start_day = preview_calendar_view.start_day;
+    snapshot->end_day = preview_calendar_view.end_day;
+    snapshot->committed_start_day = preview_calendar_view.committed_start_day;
+    snapshot->committed_end_day = preview_calendar_view.committed_end_day;
+    snapshot->focus_day = preview_calendar_view.focus_day;
+    snapshot->anchor_day = preview_calendar_view.anchor_day;
+    snapshot->today_month = preview_calendar_view.today_month;
+    snapshot->today_day = preview_calendar_view.today_day;
+    snapshot->first_day_of_week = preview_calendar_view.first_day_of_week;
+    snapshot->compact_mode = preview_calendar_view.compact_mode;
+    snapshot->read_only_mode = preview_calendar_view.read_only_mode;
+    snapshot->editing_range = preview_calendar_view.editing_range;
+    snapshot->current_part = preview_calendar_view.current_part;
+}
+
+static void assert_preview_state_unchanged(const calendar_view_preview_snapshot_t *snapshot)
+{
+    assert_region_equal(&snapshot->region_screen, &EGUI_VIEW_OF(&preview_calendar_view)->region_screen);
+    EGUI_TEST_ASSERT_TRUE(preview_calendar_view.font == snapshot->font);
+    EGUI_TEST_ASSERT_TRUE(preview_calendar_view.meta_font == snapshot->meta_font);
+    EGUI_TEST_ASSERT_TRUE(preview_calendar_view.label == snapshot->label);
+    EGUI_TEST_ASSERT_TRUE(preview_calendar_view.helper == snapshot->helper);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->surface_color.full, preview_calendar_view.surface_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->border_color.full, preview_calendar_view.border_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->text_color.full, preview_calendar_view.text_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->muted_text_color.full, preview_calendar_view.muted_text_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->accent_color.full, preview_calendar_view.accent_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->today_color.full, preview_calendar_view.today_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->display_year, preview_calendar_view.display_year);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->selection_year, preview_calendar_view.selection_year);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->committed_year, preview_calendar_view.committed_year);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->today_year, preview_calendar_view.today_year);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->display_month, preview_calendar_view.display_month);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->selection_month, preview_calendar_view.selection_month);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->committed_month, preview_calendar_view.committed_month);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->start_day, preview_calendar_view.start_day);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->end_day, preview_calendar_view.end_day);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->committed_start_day, preview_calendar_view.committed_start_day);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->committed_end_day, preview_calendar_view.committed_end_day);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->focus_day, preview_calendar_view.focus_day);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->anchor_day, preview_calendar_view.anchor_day);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->today_month, preview_calendar_view.today_month);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->today_day, preview_calendar_view.today_day);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->first_day_of_week, preview_calendar_view.first_day_of_week);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->compact_mode, preview_calendar_view.compact_mode);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->read_only_mode, preview_calendar_view.read_only_mode);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->editing_range, preview_calendar_view.editing_range);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->current_part, preview_calendar_view.current_part);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&preview_calendar_view)->is_pressed);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_CALENDAR_VIEW_PART_NONE, preview_calendar_view.pressed_part);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, preview_calendar_view.pressed_day);
 }
 
 static void test_calendar_view_tab_cycles_parts(void)
@@ -352,13 +468,15 @@ static void test_calendar_view_read_only_and_compact_ignore_interaction(void)
     EGUI_TEST_ASSERT_EQUAL_INT(0, test_calendar_view.pressed_day);
 }
 
-static void test_calendar_view_static_preview_consumes_input_and_clears_pressed_state(void)
+static void test_calendar_view_static_preview_consumes_input_and_keeps_state(void)
 {
+    calendar_view_preview_snapshot_t initial_snapshot;
     egui_dim_t x;
     egui_dim_t y;
 
     setup_preview_calendar_view();
     layout_preview_calendar_view();
+    capture_preview_snapshot(&initial_snapshot);
 
     x = EGUI_VIEW_OF(&preview_calendar_view)->region_screen.location.x + EGUI_VIEW_OF(&preview_calendar_view)->region_screen.size.width / 2;
     y = EGUI_VIEW_OF(&preview_calendar_view)->region_screen.location.y + EGUI_VIEW_OF(&preview_calendar_view)->region_screen.size.height / 2;
@@ -367,21 +485,14 @@ static void test_calendar_view_static_preview_consumes_input_and_clears_pressed_
     preview_calendar_view.pressed_part = EGUI_VIEW_CALENDAR_VIEW_PART_GRID;
     preview_calendar_view.pressed_day = 6;
     EGUI_TEST_ASSERT_TRUE(send_preview_touch_event(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
-    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&preview_calendar_view)->is_pressed);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_CALENDAR_VIEW_PART_NONE, preview_calendar_view.pressed_part);
-    EGUI_TEST_ASSERT_EQUAL_INT(0, preview_calendar_view.pressed_day);
-    EGUI_TEST_ASSERT_EQUAL_INT(5, egui_view_calendar_view_get_start_day(EGUI_VIEW_OF(&preview_calendar_view)));
-    EGUI_TEST_ASSERT_EQUAL_INT(8, egui_view_calendar_view_get_end_day(EGUI_VIEW_OF(&preview_calendar_view)));
+    assert_preview_state_unchanged(&initial_snapshot);
 
     EGUI_VIEW_OF(&preview_calendar_view)->is_pressed = 1;
     preview_calendar_view.pressed_part = EGUI_VIEW_CALENDAR_VIEW_PART_PREV;
     preview_calendar_view.pressed_day = 0;
     EGUI_TEST_ASSERT_TRUE(send_preview_key_event(EGUI_KEY_EVENT_ACTION_DOWN, EGUI_KEY_CODE_LEFT));
     EGUI_TEST_ASSERT_TRUE(send_preview_key_event(EGUI_KEY_EVENT_ACTION_UP, EGUI_KEY_CODE_LEFT));
-    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&preview_calendar_view)->is_pressed);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_CALENDAR_VIEW_PART_NONE, preview_calendar_view.pressed_part);
-    EGUI_TEST_ASSERT_EQUAL_INT(0, preview_calendar_view.pressed_day);
-    EGUI_TEST_ASSERT_EQUAL_INT(5, egui_view_calendar_view_get_display_month(EGUI_VIEW_OF(&preview_calendar_view)));
+    assert_preview_state_unchanged(&initial_snapshot);
 }
 
 void test_calendar_view_run(void)
@@ -396,6 +507,6 @@ void test_calendar_view_run(void)
     EGUI_TEST_RUN(test_calendar_view_setters_clear_pressed_state);
     EGUI_TEST_RUN(test_calendar_view_set_range_clamps_order);
     EGUI_TEST_RUN(test_calendar_view_read_only_and_compact_ignore_interaction);
-    EGUI_TEST_RUN(test_calendar_view_static_preview_consumes_input_and_clears_pressed_state);
+    EGUI_TEST_RUN(test_calendar_view_static_preview_consumes_input_and_keeps_state);
     EGUI_TEST_SUITE_END();
 }

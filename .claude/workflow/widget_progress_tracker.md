@@ -34,7 +34,7 @@
 
 | 状态 | 控件名 | 分类 | 开始日期 | 当前阶段 | 目标 |
 | --- | --- | --- | --- | --- | --- |
-| 进行中 | `calendar_view` | `input` | `2026-04-15` | static preview 收口 | 对齐主区月份浏览轨道、静态 preview 单测与 README 验收链 |
+| 进行中 | `button` | `input` | `2026-04-15` | static preview 收口 | 对齐主区点击轨道、静态 preview 单测与 README 验收链 |
 
 ## 当前保留的 Reference 主线控件
 
@@ -161,6 +161,11 @@
 
 ## 最近完成的收口动作
 
+- `2026-04-15`
+  - 收口 `input/calendar_view` reference 控件：在不修改 SDK 的前提下，对齐当前 input 主线里已经采用的 static preview 工作流，保留主区 `默认 / 区间预览 / 月份浏览 / Release freeze` 四组 reference 状态，把底部 `compact / read only` preview 统一收口为真正静态的 reference 对照，并移除旧录制轨道里的 `compact` preview 快照切换与 preview 触摸清焦桥接。
+  - `example/HelloCustomWidgets/input/calendar_view/test.c` 新增 `CALENDAR_VIEW_DEFAULT_SNAPSHOT`、`PRIMARY_SNAPSHOT_COUNT`、`apply_primary_default_state()`、`apply_preview_states()`、`layout_local_views()`、`layout_page()` 与 `request_page_snapshot()`，把录制轨道改为只导出主区默认、区间预览、月份浏览、`Release freeze` 与最终稳定帧，并确保底部 `compact / read only` preview 全程静态；`example/HelloUnitTest/test/test_calendar_view.c` 把 preview 键盘入口统一改为 `dispatch_key_event()`，将静态 preview 用例收口为 “consumes input and keeps state”，补齐 `selection / display month / current_part / region_screen / palette / font / meta_font` 固定断言以及 `pressed` 清理断言；`example/HelloCustomWidgets/input/calendar_view/readme.md` 重写为与当前 static preview 页面结构、录制轨道、单测口径和完整验收命令链一致的说明。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=input/calendar_view PORT=pc`、`make clean APP=HelloUnitTest PORT=pc_test`、`make all APP=HelloUnitTest PORT=pc_test`、`X:\output\main.exe`（总计 `845 / 845`，`calendar_view` suite `10 / 10`）、`python scripts/sync_widget_catalog.py`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category input`、`python scripts/checks/check_docs_encoding.py`、`python scripts/checks/check_widget_catalog.py`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/calendar_view --track reference --timeout 10 --keep-screenshots`、`python scripts/code_compile_check.py --custom-widgets --category input --bits64`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --category input --track reference --bits64`、`python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub input/calendar_view` 与对应 `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_input_calendar_view`。
+  - 复核 `runtime_check_output/HelloCustomWidgets_input_calendar_view/default` 的 `10` 帧截图：按 RGB 差分得到主区变化边界位于 `(44, 93) - (435, 308)`；遮罩该边界后边界外区域保持单哈希，确认主区外全程静态；按主区裁剪后共出现 `4` 组唯一状态，符合 `默认 / 区间预览 / 月份浏览 / Release freeze` 轨道；按 `y >= 309` 裁剪底部 preview 区域后全部帧保持单哈希，确认底部 `compact / read only` preview 在整条录制轨道中保持静态一致。
 - `2026-04-15`
   - 收口 `input/auto_suggest_box` reference 控件：在不修改 SDK 的前提下，对齐当前 input 主线里已经采用的 static preview 工作流，保留主区 `默认 / 展开 / 高亮导航 / Deploy Worker 提交结果` 四组 reference 状态，把底部 `compact / read only` preview 统一收口为真正静态的 reference 对照，并移除旧录制轨道里的 preview touch bridge、`compact` preview 快照切换与 preview 收尾动作。
   - `example/HelloCustomWidgets/input/auto_suggest_box/test.c` 新增 `AUTO_SUGGEST_BOX_RECORD_FINAL_WAIT`、`AUTO_SUGGEST_BOX_DEFAULT_SNAPSHOT`、`PRIMARY_SNAPSHOT_COUNT`、`apply_primary_default_state()`、`apply_preview_states()`、`layout_local_views()`、`layout_page()` 与 `request_page_snapshot()`，把录制轨道改为只导出主区默认、展开、高亮导航、`Deploy Worker` 提交结果与最终稳定帧，并确保底部 `compact / read only` preview 全程静态；`example/HelloUnitTest/test/test_auto_suggest_box.c` 把 preview 键盘入口统一改为 `dispatch_key_event()`，将静态 preview 用例收口为 “consumes input and keeps state”，补齐 `items / item_count / current_index / current_text / region_screen / palette / font / icons` 固定断言以及 listener 不触发、`pressed` 清理断言；`example/HelloCustomWidgets/input/auto_suggest_box/readme.md` 重写为与当前 static preview 页面结构、录制轨道、单测口径和完整验收命令链一致的说明。
@@ -1367,7 +1372,7 @@
   - web 入口、构建脚本、默认 `APP_SUB` 与 catalog policy 全部对齐到 `reference-only`。
 - `2026-04-08`
   - 修复 `HelloCustomWidgets_plan.md`、web 入口文档与脚本文案中的历史残留描述。
-  - 当前默认维护入口统一为 `input/calendar_view`。
+  - 当前默认维护入口统一为 `input/button`。
 
 ## 已搁置 / 待恢复
 
