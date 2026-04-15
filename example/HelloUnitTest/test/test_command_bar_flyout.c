@@ -14,6 +14,33 @@ static uint8_t g_action_count;
 static uint8_t g_action_snapshot;
 static uint8_t g_action_part;
 
+typedef struct
+{
+    egui_region_t region_screen;
+    const egui_view_command_bar_flyout_snapshot_t *snapshots;
+    const egui_font_t *font;
+    const egui_font_t *meta_font;
+    egui_view_on_command_bar_flyout_action_listener_t on_action;
+    egui_color_t surface_color;
+    egui_color_t section_color;
+    egui_color_t border_color;
+    egui_color_t text_color;
+    egui_color_t muted_text_color;
+    egui_color_t accent_color;
+    egui_color_t success_color;
+    egui_color_t warning_color;
+    egui_color_t danger_color;
+    egui_color_t neutral_color;
+    egui_color_t shadow_color;
+    uint8_t snapshot_count;
+    uint8_t current_snapshot;
+    uint8_t current_part;
+    uint8_t open_state;
+    uint8_t compact_mode;
+    uint8_t disabled_mode;
+    egui_alpha_t alpha;
+} command_bar_flyout_preview_snapshot_t;
+
 static const egui_view_command_bar_flyout_primary_item_t g_primary_items_0[] = {
         {"SV", "Save", EGUI_VIEW_COMMAND_BAR_FLYOUT_TONE_ACCENT, 1, 1},
         {"SH", "Share", EGUI_VIEW_COMMAND_BAR_FLYOUT_TONE_ACCENT, 0, 1},
@@ -74,6 +101,20 @@ static const egui_view_command_bar_flyout_snapshot_t g_overflow_snapshots[] = {
          EGUI_VIEW_COMMAND_BAR_FLYOUT_PRIMARY_PART(0)},
 };
 
+static const egui_view_command_bar_flyout_primary_item_t g_preview_primary_items[] = {
+        {"SV", "Save", EGUI_VIEW_COMMAND_BAR_FLYOUT_TONE_ACCENT, 1, 1},
+        {"SH", "Share", EGUI_VIEW_COMMAND_BAR_FLYOUT_TONE_ACCENT, 0, 1},
+};
+
+static const egui_view_command_bar_flyout_secondary_item_t g_preview_secondary_items[] = {
+        {"LK", "Copy", "", EGUI_VIEW_COMMAND_BAR_FLYOUT_TONE_NEUTRAL, 0, 1, 0},
+        {"MR", "More", "", EGUI_VIEW_COMMAND_BAR_FLYOUT_TONE_NEUTRAL, 0, 1, 0},
+};
+
+static const egui_view_command_bar_flyout_snapshot_t g_preview_snapshot = {
+        "Quick", "Compact flyout", "Compact surface", "", g_preview_primary_items, EGUI_ARRAY_SIZE(g_preview_primary_items), g_preview_secondary_items,
+        EGUI_ARRAY_SIZE(g_preview_secondary_items), 1, EGUI_VIEW_COMMAND_BAR_FLYOUT_PRIMARY_PART(0)};
+
 static void on_action(egui_view_t *self, uint8_t snapshot_index, uint8_t part)
 {
     EGUI_UNUSED(self);
@@ -89,6 +130,14 @@ static void reset_action_state(void)
     g_action_part = EGUI_VIEW_COMMAND_BAR_FLYOUT_PART_NONE;
 }
 
+static void assert_region_equal(const egui_region_t *expected, const egui_region_t *actual)
+{
+    EGUI_TEST_ASSERT_EQUAL_INT(expected->location.x, actual->location.x);
+    EGUI_TEST_ASSERT_EQUAL_INT(expected->location.y, actual->location.y);
+    EGUI_TEST_ASSERT_EQUAL_INT(expected->size.width, actual->size.width);
+    EGUI_TEST_ASSERT_EQUAL_INT(expected->size.height, actual->size.height);
+}
+
 static void setup_flyout(const egui_view_command_bar_flyout_snapshot_t *snapshots, uint8_t snapshot_count)
 {
     egui_view_command_bar_flyout_init(EGUI_VIEW_OF(&test_flyout));
@@ -102,8 +151,9 @@ static void setup_preview_flyout(void)
 {
     egui_view_command_bar_flyout_init(EGUI_VIEW_OF(&preview_flyout));
     egui_view_set_size(EGUI_VIEW_OF(&preview_flyout), 104, 72);
-    egui_view_command_bar_flyout_set_snapshots(EGUI_VIEW_OF(&preview_flyout), &g_snapshots[0], 1);
+    egui_view_command_bar_flyout_set_snapshots(EGUI_VIEW_OF(&preview_flyout), &g_preview_snapshot, 1);
     egui_view_command_bar_flyout_set_compact_mode(EGUI_VIEW_OF(&preview_flyout), 1);
+    egui_view_command_bar_flyout_set_on_action_listener(EGUI_VIEW_OF(&preview_flyout), on_action);
     egui_view_command_bar_flyout_override_static_preview_api(EGUI_VIEW_OF(&preview_flyout), &preview_api);
     reset_action_state();
 }
@@ -130,6 +180,65 @@ static void layout_preview_flyout(void)
     layout_view(EGUI_VIEW_OF(&preview_flyout), 12, 18, 104, 72);
 }
 
+static void capture_preview_snapshot(command_bar_flyout_preview_snapshot_t *snapshot)
+{
+    snapshot->region_screen = EGUI_VIEW_OF(&preview_flyout)->region_screen;
+    snapshot->snapshots = preview_flyout.snapshots;
+    snapshot->font = preview_flyout.font;
+    snapshot->meta_font = preview_flyout.meta_font;
+    snapshot->on_action = preview_flyout.on_action;
+    snapshot->surface_color = preview_flyout.surface_color;
+    snapshot->section_color = preview_flyout.section_color;
+    snapshot->border_color = preview_flyout.border_color;
+    snapshot->text_color = preview_flyout.text_color;
+    snapshot->muted_text_color = preview_flyout.muted_text_color;
+    snapshot->accent_color = preview_flyout.accent_color;
+    snapshot->success_color = preview_flyout.success_color;
+    snapshot->warning_color = preview_flyout.warning_color;
+    snapshot->danger_color = preview_flyout.danger_color;
+    snapshot->neutral_color = preview_flyout.neutral_color;
+    snapshot->shadow_color = preview_flyout.shadow_color;
+    snapshot->snapshot_count = preview_flyout.snapshot_count;
+    snapshot->current_snapshot = preview_flyout.current_snapshot;
+    snapshot->current_part = preview_flyout.current_part;
+    snapshot->open_state = preview_flyout.open_state;
+    snapshot->compact_mode = preview_flyout.compact_mode;
+    snapshot->disabled_mode = preview_flyout.disabled_mode;
+    snapshot->alpha = EGUI_VIEW_OF(&preview_flyout)->alpha;
+}
+
+static void assert_preview_state_unchanged(const command_bar_flyout_preview_snapshot_t *snapshot)
+{
+    assert_region_equal(&snapshot->region_screen, &EGUI_VIEW_OF(&preview_flyout)->region_screen);
+    EGUI_TEST_ASSERT_TRUE(preview_flyout.snapshots == snapshot->snapshots);
+    EGUI_TEST_ASSERT_TRUE(preview_flyout.font == snapshot->font);
+    EGUI_TEST_ASSERT_TRUE(preview_flyout.meta_font == snapshot->meta_font);
+    EGUI_TEST_ASSERT_TRUE(preview_flyout.on_action == snapshot->on_action);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->surface_color.full, preview_flyout.surface_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->section_color.full, preview_flyout.section_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->border_color.full, preview_flyout.border_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->text_color.full, preview_flyout.text_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->muted_text_color.full, preview_flyout.muted_text_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->accent_color.full, preview_flyout.accent_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->success_color.full, preview_flyout.success_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->warning_color.full, preview_flyout.warning_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->danger_color.full, preview_flyout.danger_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->neutral_color.full, preview_flyout.neutral_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->shadow_color.full, preview_flyout.shadow_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->snapshot_count, preview_flyout.snapshot_count);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->current_snapshot, preview_flyout.current_snapshot);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->current_part, preview_flyout.current_part);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->open_state, preview_flyout.open_state);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->compact_mode, preview_flyout.compact_mode);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->disabled_mode, preview_flyout.disabled_mode);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->alpha, EGUI_VIEW_OF(&preview_flyout)->alpha);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, g_action_count);
+    EGUI_TEST_ASSERT_EQUAL_INT(0xFF, g_action_snapshot);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_COMMAND_BAR_FLYOUT_PART_NONE, g_action_part);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&preview_flyout)->is_pressed);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_COMMAND_BAR_FLYOUT_PART_NONE, preview_flyout.pressed_part);
+}
+
 static int send_touch_to_view(egui_view_t *view, uint8_t type, egui_dim_t x, egui_dim_t y)
 {
     egui_motion_event_t event;
@@ -141,14 +250,14 @@ static int send_touch_to_view(egui_view_t *view, uint8_t type, egui_dim_t x, egu
     return view->api->on_touch_event(view, &event);
 }
 
-static int send_key_to_view(egui_view_t *view, uint8_t type, uint8_t key_code)
+static int dispatch_key_event_to_view(egui_view_t *view, uint8_t type, uint8_t key_code)
 {
     egui_key_event_t event;
 
     memset(&event, 0, sizeof(event));
     event.type = type;
     event.key_code = key_code;
-    return view->api->on_key_event(view, &event);
+    return view->api->dispatch_key_event(view, &event);
 }
 
 static int send_touch(uint8_t type, egui_dim_t x, egui_dim_t y)
@@ -163,21 +272,26 @@ static int send_preview_touch(uint8_t type, egui_dim_t x, egui_dim_t y)
 
 static int send_key_action(uint8_t type, uint8_t key_code)
 {
-    return send_key_to_view(EGUI_VIEW_OF(&test_flyout), type, key_code);
+    return dispatch_key_event_to_view(EGUI_VIEW_OF(&test_flyout), type, key_code);
+}
+
+static int send_key_to_view(egui_view_t *view, uint8_t key_code)
+{
+    int handled = 0;
+
+    handled |= dispatch_key_event_to_view(view, EGUI_KEY_EVENT_ACTION_DOWN, key_code);
+    handled |= dispatch_key_event_to_view(view, EGUI_KEY_EVENT_ACTION_UP, key_code);
+    return handled;
 }
 
 static int send_key(uint8_t key_code)
 {
-    int handled = 0;
-
-    handled |= send_key_action(EGUI_KEY_EVENT_ACTION_DOWN, key_code);
-    handled |= send_key_action(EGUI_KEY_EVENT_ACTION_UP, key_code);
-    return handled;
+    return send_key_to_view(EGUI_VIEW_OF(&test_flyout), key_code);
 }
 
-static int send_preview_key_action(uint8_t type, uint8_t key_code)
+static int send_preview_key(uint8_t key_code)
 {
-    return send_key_to_view(EGUI_VIEW_OF(&preview_flyout), type, key_code);
+    return send_key_to_view(EGUI_VIEW_OF(&preview_flyout), key_code);
 }
 
 static uint8_t get_part_center(egui_view_t *view, uint8_t part, egui_dim_t *x, egui_dim_t *y)
@@ -456,35 +570,24 @@ static void test_command_bar_flyout_disabled_compact_and_view_disabled_guards(vo
     assert_pressed_cleared(&test_flyout);
 }
 
-static void test_command_bar_flyout_static_preview_consumes_input_and_preserves_state(void)
+static void test_command_bar_flyout_static_preview_consumes_input_and_keeps_state(void)
 {
+    command_bar_flyout_preview_snapshot_t initial_snapshot;
     egui_dim_t trigger_x;
     egui_dim_t trigger_y;
-    uint8_t snapshot_before;
-    uint8_t open_before;
-    uint8_t part_before;
 
     setup_preview_flyout();
     layout_preview_flyout();
-    snapshot_before = egui_view_command_bar_flyout_get_current_snapshot(EGUI_VIEW_OF(&preview_flyout));
-    open_before = egui_view_command_bar_flyout_get_open(EGUI_VIEW_OF(&preview_flyout));
-    part_before = egui_view_command_bar_flyout_get_current_part(EGUI_VIEW_OF(&preview_flyout));
+    capture_preview_snapshot(&initial_snapshot);
     EGUI_TEST_ASSERT_TRUE(get_part_center(EGUI_VIEW_OF(&preview_flyout), EGUI_VIEW_COMMAND_BAR_FLYOUT_PART_TRIGGER, &trigger_x, &trigger_y));
 
     seed_pressed_state(&preview_flyout, EGUI_VIEW_COMMAND_BAR_FLYOUT_PART_TRIGGER, 1);
     EGUI_TEST_ASSERT_TRUE(send_preview_touch(EGUI_MOTION_EVENT_ACTION_DOWN, trigger_x, trigger_y));
-    assert_pressed_cleared(&preview_flyout);
-    EGUI_TEST_ASSERT_EQUAL_INT(snapshot_before, egui_view_command_bar_flyout_get_current_snapshot(EGUI_VIEW_OF(&preview_flyout)));
-    EGUI_TEST_ASSERT_EQUAL_INT(open_before, egui_view_command_bar_flyout_get_open(EGUI_VIEW_OF(&preview_flyout)));
-    EGUI_TEST_ASSERT_EQUAL_INT(part_before, egui_view_command_bar_flyout_get_current_part(EGUI_VIEW_OF(&preview_flyout)));
+    assert_preview_state_unchanged(&initial_snapshot);
 
-    seed_pressed_state(&preview_flyout, EGUI_VIEW_COMMAND_BAR_FLYOUT_PRIMARY_PART(0), 0);
-    EGUI_TEST_ASSERT_TRUE(send_preview_key_action(EGUI_KEY_EVENT_ACTION_UP, EGUI_KEY_CODE_END));
-    assert_pressed_cleared(&preview_flyout);
-    EGUI_TEST_ASSERT_EQUAL_INT(snapshot_before, egui_view_command_bar_flyout_get_current_snapshot(EGUI_VIEW_OF(&preview_flyout)));
-    EGUI_TEST_ASSERT_EQUAL_INT(open_before, egui_view_command_bar_flyout_get_open(EGUI_VIEW_OF(&preview_flyout)));
-    EGUI_TEST_ASSERT_EQUAL_INT(part_before, egui_view_command_bar_flyout_get_current_part(EGUI_VIEW_OF(&preview_flyout)));
-    EGUI_TEST_ASSERT_EQUAL_INT(0, g_action_count);
+    seed_pressed_state(&preview_flyout, EGUI_VIEW_COMMAND_BAR_FLYOUT_PRIMARY_PART(0), 1);
+    EGUI_TEST_ASSERT_TRUE(send_preview_key(EGUI_KEY_CODE_END));
+    assert_preview_state_unchanged(&initial_snapshot);
 }
 
 void test_command_bar_flyout_run(void)
@@ -496,6 +599,6 @@ void test_command_bar_flyout_run(void)
     EGUI_TEST_RUN(test_command_bar_flyout_touch_trigger_and_same_target_release);
     EGUI_TEST_RUN(test_command_bar_flyout_keyboard_navigation_activation_and_escape);
     EGUI_TEST_RUN(test_command_bar_flyout_disabled_compact_and_view_disabled_guards);
-    EGUI_TEST_RUN(test_command_bar_flyout_static_preview_consumes_input_and_preserves_state);
+    EGUI_TEST_RUN(test_command_bar_flyout_static_preview_consumes_input_and_keeps_state);
     EGUI_TEST_SUITE_END();
 }
