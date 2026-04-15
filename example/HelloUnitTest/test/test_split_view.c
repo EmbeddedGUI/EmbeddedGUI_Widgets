@@ -15,6 +15,16 @@ static uint8_t g_last_selection_index;
 static uint8_t g_pane_state_count;
 static uint8_t g_last_pane_expanded;
 
+typedef struct
+{
+    egui_view_split_view_metrics_t metrics;
+    uint8_t current_index;
+    uint8_t item_count;
+    uint8_t pane_expanded;
+    uint8_t compact_mode;
+    uint8_t read_only_mode;
+} split_view_preview_snapshot_t;
+
 static const egui_view_split_view_item_t g_items[] = {
         {"OV", "Overview", "8", "Workspace", "Overview board", "Updated 2m ago", "Pinned modules stay visible", "Status cards stay aligned", "Open",
          EGUI_VIEW_SPLIT_VIEW_TONE_ACCENT, 1},
@@ -55,6 +65,14 @@ static void reset_listener_state(void)
     g_last_selection_index = EGUI_VIEW_SPLIT_VIEW_INDEX_NONE;
     g_pane_state_count = 0;
     g_last_pane_expanded = 0xFF;
+}
+
+static void assert_region_equal(const egui_region_t *expected, const egui_region_t *actual)
+{
+    EGUI_TEST_ASSERT_EQUAL_INT(expected->location.x, actual->location.x);
+    EGUI_TEST_ASSERT_EQUAL_INT(expected->location.y, actual->location.y);
+    EGUI_TEST_ASSERT_EQUAL_INT(expected->size.width, actual->size.width);
+    EGUI_TEST_ASSERT_EQUAL_INT(expected->size.height, actual->size.height);
 }
 
 static void setup_split_view(void)
@@ -125,9 +143,9 @@ static int send_key_to_view(egui_view_t *view, uint8_t key_code)
     memset(&event, 0, sizeof(event));
     event.type = EGUI_KEY_EVENT_ACTION_DOWN;
     event.key_code = key_code;
-    handled |= view->api->on_key_event(view, &event);
+    handled |= view->api->dispatch_key_event(view, &event);
     event.type = EGUI_KEY_EVENT_ACTION_UP;
-    handled |= view->api->on_key_event(view, &event);
+    handled |= view->api->dispatch_key_event(view, &event);
     return handled;
 }
 
@@ -180,6 +198,46 @@ static void get_view_outside_point(egui_view_t *view, egui_dim_t *x, egui_dim_t 
 static void get_metrics(egui_view_split_view_metrics_t *metrics)
 {
     sv_get_metrics(&test_split_view, EGUI_VIEW_OF(&test_split_view), metrics);
+}
+
+static void capture_preview_snapshot(split_view_preview_snapshot_t *snapshot)
+{
+    sv_get_metrics(&preview_split_view, EGUI_VIEW_OF(&preview_split_view), &snapshot->metrics);
+    snapshot->current_index = egui_view_split_view_get_current_index(EGUI_VIEW_OF(&preview_split_view));
+    snapshot->item_count = egui_view_split_view_get_item_count(EGUI_VIEW_OF(&preview_split_view));
+    snapshot->pane_expanded = egui_view_split_view_get_pane_expanded(EGUI_VIEW_OF(&preview_split_view));
+    snapshot->compact_mode = preview_split_view.compact_mode;
+    snapshot->read_only_mode = preview_split_view.read_only_mode;
+}
+
+static void assert_preview_state_unchanged(const split_view_preview_snapshot_t *snapshot)
+{
+    egui_view_split_view_metrics_t metrics;
+    uint8_t index;
+
+    sv_get_metrics(&preview_split_view, EGUI_VIEW_OF(&preview_split_view), &metrics);
+    assert_region_equal(&snapshot->metrics.content, &metrics.content);
+    assert_region_equal(&snapshot->metrics.pane, &metrics.pane);
+    assert_region_equal(&snapshot->metrics.toggle, &metrics.toggle);
+    assert_region_equal(&snapshot->metrics.title, &metrics.title);
+    assert_region_equal(&snapshot->metrics.detail, &metrics.detail);
+    for (index = 0; index < EGUI_VIEW_SPLIT_VIEW_MAX_ITEMS; index++)
+    {
+        assert_region_equal(&snapshot->metrics.rows[index], &metrics.rows[index]);
+    }
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->metrics.show_secondary_body, metrics.show_secondary_body);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->metrics.show_meta, metrics.show_meta);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->metrics.draw_detail, metrics.draw_detail);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->current_index, egui_view_split_view_get_current_index(EGUI_VIEW_OF(&preview_split_view)));
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->item_count, egui_view_split_view_get_item_count(EGUI_VIEW_OF(&preview_split_view)));
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->pane_expanded, egui_view_split_view_get_pane_expanded(EGUI_VIEW_OF(&preview_split_view)));
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->compact_mode, preview_split_view.compact_mode);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->read_only_mode, preview_split_view.read_only_mode);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, g_selection_count);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_SPLIT_VIEW_INDEX_NONE, g_last_selection_index);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, g_pane_state_count);
+    EGUI_TEST_ASSERT_EQUAL_INT(0xFF, g_last_pane_expanded);
+    assert_pressed_cleared(&preview_split_view, EGUI_VIEW_OF(&preview_split_view));
 }
 
 static void get_row_center(uint8_t index, egui_dim_t *x, egui_dim_t *y)
@@ -625,30 +683,29 @@ static void test_split_view_view_disabled_ignores_input_and_clears_pressed_state
     EGUI_TEST_ASSERT_EQUAL_INT(1, g_pane_state_count);
 }
 
-static void test_split_view_static_preview_consumes_input_and_clears_pressed_state(void)
+static void test_split_view_static_preview_consumes_input_and_keeps_state(void)
 {
-    egui_dim_t x;
-    egui_dim_t y;
+    egui_dim_t row_x;
+    egui_dim_t row_y;
+    split_view_preview_snapshot_t initial_snapshot;
 
     setup_preview_split_view();
     layout_preview_split_view();
-    get_view_center(EGUI_VIEW_OF(&preview_split_view), &x, &y);
+    capture_preview_snapshot(&initial_snapshot);
+    row_x = initial_snapshot.metrics.rows[2].location.x + initial_snapshot.metrics.rows[2].size.width / 2;
+    row_y = initial_snapshot.metrics.rows[2].location.y + initial_snapshot.metrics.rows[2].size.height / 2;
 
     seed_pressed_state(&preview_split_view, EGUI_VIEW_OF(&preview_split_view), 2, 1, 1);
-    EGUI_TEST_ASSERT_TRUE(send_preview_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
-    assert_pressed_cleared(&preview_split_view, EGUI_VIEW_OF(&preview_split_view));
-    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_split_view_get_current_index(EGUI_VIEW_OF(&preview_split_view)));
-    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_split_view_get_pane_expanded(EGUI_VIEW_OF(&preview_split_view)));
-    EGUI_TEST_ASSERT_EQUAL_INT(0, g_selection_count);
-    EGUI_TEST_ASSERT_EQUAL_INT(0, g_pane_state_count);
+    EGUI_TEST_ASSERT_TRUE(send_preview_touch(EGUI_MOTION_EVENT_ACTION_DOWN, row_x, row_y));
+    assert_preview_state_unchanged(&initial_snapshot);
+
+    seed_pressed_state(&preview_split_view, EGUI_VIEW_OF(&preview_split_view), 2, 1, 1);
+    EGUI_TEST_ASSERT_TRUE(send_preview_touch(EGUI_MOTION_EVENT_ACTION_UP, row_x, row_y));
+    assert_preview_state_unchanged(&initial_snapshot);
 
     seed_pressed_state(&preview_split_view, EGUI_VIEW_OF(&preview_split_view), 1, 1, 1);
-    EGUI_TEST_ASSERT_TRUE(send_preview_key(EGUI_KEY_CODE_ENTER));
-    assert_pressed_cleared(&preview_split_view, EGUI_VIEW_OF(&preview_split_view));
-    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_split_view_get_current_index(EGUI_VIEW_OF(&preview_split_view)));
-    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_split_view_get_pane_expanded(EGUI_VIEW_OF(&preview_split_view)));
-    EGUI_TEST_ASSERT_EQUAL_INT(0, g_selection_count);
-    EGUI_TEST_ASSERT_EQUAL_INT(0, g_pane_state_count);
+    EGUI_TEST_ASSERT_TRUE(send_preview_key(EGUI_KEY_CODE_RIGHT));
+    assert_preview_state_unchanged(&initial_snapshot);
 }
 
 static void test_split_view_read_only_disabled_and_empty_guards(void)
@@ -691,7 +748,7 @@ void test_split_view_run(void)
     EGUI_TEST_RUN(test_split_view_keyboard_navigation_and_guards);
     EGUI_TEST_RUN(test_split_view_read_only_mode_ignores_input_and_clears_pressed_state);
     EGUI_TEST_RUN(test_split_view_view_disabled_ignores_input_and_clears_pressed_state);
-    EGUI_TEST_RUN(test_split_view_static_preview_consumes_input_and_clears_pressed_state);
+    EGUI_TEST_RUN(test_split_view_static_preview_consumes_input_and_keeps_state);
     EGUI_TEST_RUN(test_split_view_read_only_disabled_and_empty_guards);
     EGUI_TEST_SUITE_END();
 }

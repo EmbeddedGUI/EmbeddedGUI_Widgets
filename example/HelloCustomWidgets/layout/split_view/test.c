@@ -17,6 +17,16 @@
 #define SPLIT_VIEW_BOTTOM_H        74
 #define SPLIT_VIEW_RECORD_WAIT     90
 #define SPLIT_VIEW_RECORD_FRAME_WAIT 170
+#define SPLIT_VIEW_RECORD_FINAL_WAIT 280
+#define SPLIT_VIEW_DEFAULT_STATE   0
+
+typedef struct
+{
+    uint8_t item_index;
+    uint8_t pane_expanded;
+} split_view_state_t;
+
+#define PRIMARY_SNAPSHOT_COUNT     ((uint8_t)EGUI_ARRAY_SIZE(primary_states))
 
 static egui_view_linearlayout_t root_layout;
 static egui_view_label_t title_label;
@@ -34,10 +44,13 @@ EGUI_BACKGROUND_PARAM_INIT(bg_page_panel_params, &bg_page_panel_param, NULL, NUL
 EGUI_BACKGROUND_COLOR_STATIC_CONST_INIT(bg_page_panel, &bg_page_panel_params);
 
 static const char *title_text = "Split View";
-static uint8_t primary_index = 0;
-static uint8_t primary_pane_expanded = 1;
-static uint8_t compact_index = 0;
-static uint8_t compact_pane_expanded = 0;
+
+static const split_view_state_t primary_states[] = {
+        {0, 1},
+        {0, 0},
+        {2, 1},
+        {3, 1},
+};
 
 static const egui_view_split_view_item_t primary_items[] = {
         {"OV", "Overview", "8", "Workspace", "Overview board", "Updated 2m ago", "Pinned modules stay visible", "Status cards stay aligned", "Open",
@@ -68,50 +81,47 @@ static const egui_view_split_view_item_t read_only_items[] = {
          EGUI_VIEW_SPLIT_VIEW_TONE_NEUTRAL, 0},
 };
 
-static void dismiss_primary_split_view_focus(void)
+static void apply_primary_state(uint8_t index)
 {
-#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
-    egui_view_clear_focus(EGUI_VIEW_OF(&panel_primary));
-#endif
+    const split_view_state_t *state = &primary_states[index % PRIMARY_SNAPSHOT_COUNT];
+
+    egui_view_split_view_set_current_index(EGUI_VIEW_OF(&panel_primary), state->item_index);
+    egui_view_split_view_set_pane_expanded(EGUI_VIEW_OF(&panel_primary), state->pane_expanded);
 }
 
-static int dismiss_primary_focus_on_preview_touch(egui_view_t *self, egui_motion_event_t *event)
+static void apply_primary_default_state(void)
 {
-    EGUI_UNUSED(self);
-
-    if (event->type == EGUI_MOTION_EVENT_ACTION_DOWN)
-    {
-        dismiss_primary_split_view_focus();
-    }
-    return 1;
+    apply_primary_state(SPLIT_VIEW_DEFAULT_STATE);
 }
 
-static void apply_primary_state(uint8_t item_index, uint8_t pane_expanded)
+static void apply_preview_states(void)
 {
-    primary_index = (uint8_t)(item_index % EGUI_ARRAY_SIZE(primary_items));
-    primary_pane_expanded = pane_expanded ? 1 : 0;
-    egui_view_split_view_set_current_index(EGUI_VIEW_OF(&panel_primary), primary_index);
-    egui_view_split_view_set_pane_expanded(EGUI_VIEW_OF(&panel_primary), primary_pane_expanded);
+    egui_view_split_view_set_current_index(EGUI_VIEW_OF(&panel_compact), 0);
+    egui_view_split_view_set_pane_expanded(EGUI_VIEW_OF(&panel_compact), 0);
+    egui_view_split_view_set_current_index(EGUI_VIEW_OF(&panel_read_only), 0);
+    egui_view_split_view_set_pane_expanded(EGUI_VIEW_OF(&panel_read_only), 0);
 }
 
-static void apply_compact_state(uint8_t item_index, uint8_t pane_expanded)
+static void layout_local_views(void)
 {
-    compact_index = (uint8_t)(item_index % EGUI_ARRAY_SIZE(compact_items));
-    compact_pane_expanded = pane_expanded ? 1 : 0;
-    egui_view_split_view_set_current_index(EGUI_VIEW_OF(&panel_compact), compact_index);
-    egui_view_split_view_set_pane_expanded(EGUI_VIEW_OF(&panel_compact), compact_pane_expanded);
+    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&compact_column));
+    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&read_only_column));
+    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&bottom_row));
+    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&root_layout));
+}
+
+static void layout_page(void)
+{
+    layout_local_views();
+    egui_core_layout_childs_user_root_view(EGUI_LAYOUT_VERTICAL, EGUI_ALIGN_HCENTER | EGUI_ALIGN_VCENTER);
 }
 
 #if EGUI_CONFIG_RECORDING_TEST
-static void set_click_view_center(egui_sim_action_t *p_action, egui_view_t *view, int interval_ms)
+static void request_page_snapshot(void)
 {
-    p_action->type = EGUI_SIM_ACTION_CLICK;
-    p_action->x1 = view->region_screen.location.x + view->region_screen.size.width / 2;
-    p_action->y1 = view->region_screen.location.y + view->region_screen.size.height / 2;
-    p_action->x2 = 0;
-    p_action->y2 = 0;
-    p_action->steps = 0;
-    p_action->interval_ms = interval_ms;
+    layout_page();
+    egui_view_invalidate(EGUI_VIEW_OF(&root_layout));
+    recording_request_snapshot();
 }
 #endif
 
@@ -168,9 +178,6 @@ void test_init_ui(void)
                                      EGUI_COLOR_HEX(0x1A2734), EGUI_COLOR_HEX(0x6B7A89), EGUI_COLOR_HEX(0x0F6CBD), EGUI_COLOR_HEX(0x0F7B45),
                                      EGUI_COLOR_HEX(0x9D5D00), EGUI_COLOR_HEX(0x7A8796));
     egui_view_split_view_override_static_preview_api(EGUI_VIEW_OF(&panel_compact), &panel_compact_api);
-#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
-    panel_compact_api.on_touch = dismiss_primary_focus_on_preview_touch;
-#endif
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&panel_compact), false);
 #endif
@@ -194,30 +201,22 @@ void test_init_ui(void)
                                      EGUI_COLOR_HEX(0x536474), EGUI_COLOR_HEX(0x8896A4), EGUI_COLOR_HEX(0xB3BFCA), EGUI_COLOR_HEX(0xA7BDB6),
                                      EGUI_COLOR_HEX(0xC3AE88), EGUI_COLOR_HEX(0x9AA7B3));
     egui_view_split_view_override_static_preview_api(EGUI_VIEW_OF(&panel_read_only), &panel_read_only_api);
-#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
-    panel_read_only_api.on_touch = dismiss_primary_focus_on_preview_touch;
-#endif
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&panel_read_only), false);
 #endif
     egui_view_group_add_child(EGUI_VIEW_OF(&read_only_column), EGUI_VIEW_OF(&panel_read_only));
 
-    apply_primary_state(0, 1);
-    apply_compact_state(0, 0);
-    egui_view_split_view_set_current_index(EGUI_VIEW_OF(&panel_read_only), 0);
-    egui_view_split_view_set_pane_expanded(EGUI_VIEW_OF(&panel_read_only), 0);
+    apply_primary_default_state();
+    apply_preview_states();
 
-    {
-        hello_custom_widgets_demo_apply_title_only_scaffold(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label), NULL, 0);
-    }
+    hello_custom_widgets_demo_apply_title_only_scaffold(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label), NULL, 0);
 
-    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&compact_column));
-    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&read_only_column));
-    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&bottom_row));
-    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&root_layout));
-
+    layout_local_views();
     egui_core_add_user_root_view(EGUI_VIEW_OF(&root_layout));
-    egui_core_layout_childs_user_root_view(EGUI_LAYOUT_VERTICAL, EGUI_ALIGN_HCENTER | EGUI_ALIGN_VCENTER);
+    layout_page();
+#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
+    egui_view_request_focus(EGUI_VIEW_OF(&panel_primary));
+#endif
 }
 
 #if EGUI_CONFIG_RECORDING_TEST
@@ -233,96 +232,74 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     case 0:
         if (first_call)
         {
-            apply_primary_state(0, 1);
-            apply_compact_state(0, 0);
+            apply_primary_default_state();
+            apply_preview_states();
+#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
+            egui_view_request_focus(EGUI_VIEW_OF(&panel_primary));
+#endif
+            request_page_snapshot();
         }
-        EGUI_SIM_SET_WAIT(p_action, SPLIT_VIEW_RECORD_WAIT);
+        EGUI_SIM_SET_WAIT(p_action, SPLIT_VIEW_RECORD_FRAME_WAIT);
         return true;
     case 1:
         if (first_call)
         {
-            recording_request_snapshot();
+            apply_primary_state(1);
         }
-        EGUI_SIM_SET_WAIT(p_action, SPLIT_VIEW_RECORD_FRAME_WAIT);
+        EGUI_SIM_SET_WAIT(p_action, SPLIT_VIEW_RECORD_WAIT);
         return true;
     case 2:
         if (first_call)
         {
-            apply_primary_state(0, 0);
+            request_page_snapshot();
         }
-        EGUI_SIM_SET_WAIT(p_action, SPLIT_VIEW_RECORD_WAIT);
+        EGUI_SIM_SET_WAIT(p_action, SPLIT_VIEW_RECORD_FRAME_WAIT);
         return true;
     case 3:
         if (first_call)
         {
-            recording_request_snapshot();
+            apply_primary_state(2);
         }
-        EGUI_SIM_SET_WAIT(p_action, SPLIT_VIEW_RECORD_FRAME_WAIT);
+        EGUI_SIM_SET_WAIT(p_action, SPLIT_VIEW_RECORD_WAIT);
         return true;
     case 4:
         if (first_call)
         {
-            apply_primary_state(2, 1);
+            request_page_snapshot();
         }
-        EGUI_SIM_SET_WAIT(p_action, SPLIT_VIEW_RECORD_WAIT);
+        EGUI_SIM_SET_WAIT(p_action, SPLIT_VIEW_RECORD_FRAME_WAIT);
         return true;
     case 5:
         if (first_call)
         {
-            recording_request_snapshot();
+            apply_primary_state(3);
         }
-        EGUI_SIM_SET_WAIT(p_action, SPLIT_VIEW_RECORD_FRAME_WAIT);
+        EGUI_SIM_SET_WAIT(p_action, SPLIT_VIEW_RECORD_WAIT);
         return true;
     case 6:
         if (first_call)
         {
-            apply_primary_state(3, 1);
+            request_page_snapshot();
         }
-        EGUI_SIM_SET_WAIT(p_action, SPLIT_VIEW_RECORD_WAIT);
+        EGUI_SIM_SET_WAIT(p_action, SPLIT_VIEW_RECORD_FRAME_WAIT);
         return true;
     case 7:
         if (first_call)
         {
-            recording_request_snapshot();
-        }
-        EGUI_SIM_SET_WAIT(p_action, SPLIT_VIEW_RECORD_FRAME_WAIT);
-        return true;
-    case 8:
-        if (first_call)
-        {
-            apply_compact_state(1, 1);
+            apply_primary_default_state();
+            apply_preview_states();
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
             egui_view_request_focus(EGUI_VIEW_OF(&panel_primary));
 #endif
         }
         EGUI_SIM_SET_WAIT(p_action, SPLIT_VIEW_RECORD_WAIT);
         return true;
-    case 9:
+    case 8:
         if (first_call)
         {
-            recording_request_snapshot();
+            request_page_snapshot();
         }
-        EGUI_SIM_SET_WAIT(p_action, SPLIT_VIEW_RECORD_FRAME_WAIT);
-        return true;
-    case 10:
-        if (first_call)
-        {
-            set_click_view_center(p_action, EGUI_VIEW_OF(&panel_compact), SPLIT_VIEW_RECORD_WAIT);
-        }
-        return true;
-    case 11:
-        if (first_call)
-        {
-            recording_request_snapshot();
-        }
-        EGUI_SIM_SET_WAIT(p_action, SPLIT_VIEW_RECORD_FRAME_WAIT);
-        return true;
-    case 12:
-        if (first_call)
-        {
-            recording_request_snapshot();
-        }
-        EGUI_SIM_SET_WAIT(p_action, 520);
+        EGUI_SIM_SET_WAIT(p_action, SPLIT_VIEW_RECORD_FINAL_WAIT);
         return true;
     default:
         return false;
