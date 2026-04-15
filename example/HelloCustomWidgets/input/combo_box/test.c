@@ -9,16 +9,20 @@
 #include "core/egui_input_simulator.h"
 #endif
 
-#define COMBO_BOX_ROOT_WIDTH        224
-#define COMBO_BOX_ROOT_HEIGHT       206
-#define COMBO_BOX_PRIMARY_WIDTH     196
-#define COMBO_BOX_PRIMARY_HEIGHT    34
-#define COMBO_BOX_PREVIEW_WIDTH     104
-#define COMBO_BOX_PREVIEW_HEIGHT    28
-#define COMBO_BOX_BOTTOM_ROW_WIDTH  216
-#define COMBO_BOX_BOTTOM_ROW_HEIGHT 28
-#define COMBO_BOX_RECORD_WAIT       90
-#define COMBO_BOX_RECORD_FRAME_WAIT 170
+#define COMBO_BOX_ROOT_WIDTH         224
+#define COMBO_BOX_ROOT_HEIGHT        206
+#define COMBO_BOX_PRIMARY_WIDTH      196
+#define COMBO_BOX_PRIMARY_HEIGHT     34
+#define COMBO_BOX_PREVIEW_WIDTH      104
+#define COMBO_BOX_PREVIEW_HEIGHT     28
+#define COMBO_BOX_BOTTOM_ROW_WIDTH   216
+#define COMBO_BOX_BOTTOM_ROW_HEIGHT  28
+#define COMBO_BOX_RECORD_WAIT        90
+#define COMBO_BOX_RECORD_FRAME_WAIT  170
+#define COMBO_BOX_RECORD_FINAL_WAIT  280
+#define COMBO_BOX_DEFAULT_SNAPSHOT   0
+
+#define PRIMARY_SNAPSHOT_COUNT ((uint8_t)EGUI_ARRAY_SIZE(primary_snapshots))
 
 typedef struct combo_box_snapshot combo_box_snapshot_t;
 struct combo_box_snapshot
@@ -38,7 +42,7 @@ static egui_view_linearlayout_t read_only_column;
 static egui_view_combobox_t control_read_only;
 static egui_view_api_t control_compact_api;
 static egui_view_api_t control_read_only_api;
-static uint8_t ui_ready = 0;
+static uint8_t ui_ready;
 
 EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
 EGUI_BACKGROUND_PARAM_INIT(bg_page_panel_params, &bg_page_panel_param, NULL, NULL);
@@ -48,37 +52,18 @@ static const char *title_text = "Combo Box";
 
 static const char *primary_items_0[] = {"Personal", "Work", "Travel", "Archive"};
 static const char *primary_items_1[] = {"Balanced", "Detailed", "Compact"};
-static const char *primary_items_2[] = {"Today", "This week", "This month", "Quarter"};
 
 static const combo_box_snapshot_t primary_snapshots[] = {
         {primary_items_0, 4, 1},
         {primary_items_1, 3, 0},
-        {primary_items_2, 4, 2},
 };
 
-static const char *compact_items_0[] = {"Auto", "Manual"};
-static const char *compact_items_1[] = {"Light", "Dark"};
-
-static const combo_box_snapshot_t compact_snapshots[] = {
-        {compact_items_0, 2, 0},
-        {compact_items_1, 2, 1},
-};
+static const char *compact_items[] = {"Auto", "Manual"};
+static const combo_box_snapshot_t compact_snapshot = {compact_items, 2, 0};
 
 static const char *read_only_items[] = {"Desktop", "Tablet", "Mobile"};
 
-static void relayout_demo(void)
-{
-    if (!ui_ready)
-    {
-        return;
-    }
-
-    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&compact_column));
-    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&read_only_column));
-    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&bottom_row));
-    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&root_layout));
-    egui_core_layout_childs_user_root_view(EGUI_LAYOUT_VERTICAL, EGUI_ALIGN_HCENTER | EGUI_ALIGN_VCENTER);
-}
+static void layout_page(void);
 
 static void apply_snapshot(egui_view_t *view, const combo_box_snapshot_t *snapshot)
 {
@@ -89,21 +74,59 @@ static void apply_snapshot(egui_view_t *view, const combo_box_snapshot_t *snapsh
 
 static void apply_primary_snapshot(uint8_t index)
 {
-    apply_snapshot(EGUI_VIEW_OF(&control_primary), &primary_snapshots[index % EGUI_ARRAY_SIZE(primary_snapshots)]);
-    relayout_demo();
+    apply_snapshot(EGUI_VIEW_OF(&control_primary), &primary_snapshots[index % PRIMARY_SNAPSHOT_COUNT]);
+    if (ui_ready)
+    {
+        layout_page();
+    }
 }
 
-static void apply_compact_snapshot(uint8_t index)
+static void apply_primary_default_state(void)
 {
-    apply_snapshot(EGUI_VIEW_OF(&control_compact), &compact_snapshots[index % EGUI_ARRAY_SIZE(compact_snapshots)]);
+    apply_primary_snapshot(COMBO_BOX_DEFAULT_SNAPSHOT);
 }
 
-static void apply_read_only_state(void)
+static void apply_preview_states(void)
 {
+    apply_snapshot(EGUI_VIEW_OF(&control_compact), &compact_snapshot);
     hcw_combo_box_set_items(EGUI_VIEW_OF(&control_read_only), read_only_items, EGUI_ARRAY_SIZE(read_only_items));
     hcw_combo_box_set_current_index(EGUI_VIEW_OF(&control_read_only), 1);
     egui_view_combobox_collapse(EGUI_VIEW_OF(&control_read_only));
+    if (ui_ready)
+    {
+        layout_page();
+    }
 }
+
+static void layout_local_views(void)
+{
+    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&compact_column));
+    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&read_only_column));
+    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&bottom_row));
+    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&root_layout));
+}
+
+static void layout_page(void)
+{
+    layout_local_views();
+    egui_core_layout_childs_user_root_view(EGUI_LAYOUT_VERTICAL, EGUI_ALIGN_HCENTER | EGUI_ALIGN_VCENTER);
+}
+
+static void focus_primary_box(void)
+{
+#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
+    egui_view_request_focus(EGUI_VIEW_OF(&control_primary));
+#endif
+}
+
+#if EGUI_CONFIG_RECORDING_TEST
+static void request_page_snapshot(void)
+{
+    layout_page();
+    egui_view_invalidate(EGUI_VIEW_OF(&root_layout));
+    recording_request_snapshot();
+}
+#endif
 
 void test_init_ui(void)
 {
@@ -168,37 +191,34 @@ void test_init_ui(void)
 #endif
     egui_view_group_add_child(EGUI_VIEW_OF(&read_only_column), EGUI_VIEW_OF(&control_read_only));
 
-    apply_primary_snapshot(0);
-    apply_compact_snapshot(0);
-    apply_read_only_state();
+    apply_primary_default_state();
+    apply_preview_states();
 
     hello_custom_widgets_demo_apply_title_only_scaffold(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label), NULL, 0);
 
-    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&compact_column));
-    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&read_only_column));
-    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&bottom_row));
-    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&root_layout));
+    layout_local_views();
     egui_core_add_user_root_view(EGUI_VIEW_OF(&root_layout));
-    egui_core_layout_childs_user_root_view(EGUI_LAYOUT_VERTICAL, EGUI_ALIGN_HCENTER | EGUI_ALIGN_VCENTER);
     ui_ready = 1;
-#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
-    egui_view_request_focus(EGUI_VIEW_OF(&control_primary));
-#endif
+    layout_page();
+    focus_primary_box();
 }
 
 #if EGUI_CONFIG_RECORDING_TEST
 static void apply_primary_key(uint8_t key_code)
 {
-    egui_key_event_t event;
+    egui_key_event_t event = {0};
 
-    memset(&event, 0, sizeof(event));
+    focus_primary_box();
     event.type = EGUI_KEY_EVENT_ACTION_DOWN;
     event.key_code = key_code;
     egui_view_dispatch_key_event(EGUI_VIEW_OF(&control_primary), &event);
 
     event.type = EGUI_KEY_EVENT_ACTION_UP;
     egui_view_dispatch_key_event(EGUI_VIEW_OF(&control_primary), &event);
-    relayout_demo();
+    if (ui_ready)
+    {
+        layout_page();
+    }
 }
 
 bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_action)
@@ -213,13 +233,10 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     case 0:
         if (first_call)
         {
-            apply_primary_snapshot(0);
-            apply_compact_snapshot(0);
-            apply_read_only_state();
-#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
-            egui_view_request_focus(EGUI_VIEW_OF(&control_primary));
-#endif
-            recording_request_snapshot();
+            apply_primary_default_state();
+            apply_preview_states();
+            focus_primary_box();
+            request_page_snapshot();
         }
         EGUI_SIM_SET_WAIT(p_action, COMBO_BOX_RECORD_FRAME_WAIT);
         return true;
@@ -233,7 +250,7 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     case 2:
         if (first_call)
         {
-            recording_request_snapshot();
+            request_page_snapshot();
         }
         EGUI_SIM_SET_WAIT(p_action, COMBO_BOX_RECORD_FRAME_WAIT);
         return true;
@@ -247,13 +264,17 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     case 4:
         if (first_call)
         {
-            recording_request_snapshot();
+            request_page_snapshot();
         }
         EGUI_SIM_SET_WAIT(p_action, COMBO_BOX_RECORD_FRAME_WAIT);
         return true;
     case 5:
         if (first_call)
         {
+            apply_primary_snapshot(1);
+            focus_primary_box();
+            apply_primary_key(EGUI_KEY_CODE_ENTER);
+            apply_primary_key(EGUI_KEY_CODE_END);
             apply_primary_key(EGUI_KEY_CODE_SPACE);
         }
         EGUI_SIM_SET_WAIT(p_action, COMBO_BOX_RECORD_WAIT);
@@ -261,56 +282,19 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     case 6:
         if (first_call)
         {
-            recording_request_snapshot();
+            request_page_snapshot();
         }
         EGUI_SIM_SET_WAIT(p_action, COMBO_BOX_RECORD_FRAME_WAIT);
         return true;
     case 7:
-        if (first_call)
-        {
-            apply_primary_snapshot(1);
-#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
-            egui_view_request_focus(EGUI_VIEW_OF(&control_primary));
-#endif
-            recording_request_snapshot();
-        }
-        EGUI_SIM_SET_WAIT(p_action, COMBO_BOX_RECORD_FRAME_WAIT);
+        EGUI_SIM_SET_WAIT(p_action, COMBO_BOX_RECORD_FINAL_WAIT);
         return true;
     case 8:
         if (first_call)
         {
-            apply_primary_key(EGUI_KEY_CODE_ENTER);
+            request_page_snapshot();
         }
-        EGUI_SIM_SET_WAIT(p_action, COMBO_BOX_RECORD_WAIT);
-        return true;
-    case 9:
-        if (first_call)
-        {
-            apply_primary_key(EGUI_KEY_CODE_END);
-        }
-        EGUI_SIM_SET_WAIT(p_action, COMBO_BOX_RECORD_WAIT);
-        return true;
-    case 10:
-        if (first_call)
-        {
-            apply_primary_key(EGUI_KEY_CODE_SPACE);
-        }
-        EGUI_SIM_SET_WAIT(p_action, COMBO_BOX_RECORD_WAIT);
-        return true;
-    case 11:
-        if (first_call)
-        {
-            recording_request_snapshot();
-        }
-        EGUI_SIM_SET_WAIT(p_action, COMBO_BOX_RECORD_FRAME_WAIT);
-        return true;
-    case 12:
-        if (first_call)
-        {
-            apply_compact_snapshot(1);
-            recording_request_snapshot();
-        }
-        EGUI_SIM_SET_WAIT(p_action, 520);
+        EGUI_SIM_SET_WAIT(p_action, COMBO_BOX_RECORD_FINAL_WAIT);
         return true;
     default:
         return false;
