@@ -1,120 +1,178 @@
-# info_label 设计说明
+# info_label 自定义控件设计说明
 
 ## 参考来源
-- 参考设计系统：`Fluent 2`
+- 参考设计体系：`Fluent 2`
 - 参考开源库：`Fluent UI React`
-- 对应组件名：`InfoLabel`
-- 本次保留状态：`label`、`info button`、`anchored bubble / popover`、`compact`、`read only`
-- 本次删除内容：`TeachingTip` 式重型引导、复杂页面级讲解、额外故事化卡片与高噪音装饰
-- EGUI 适配说明：当前仅在 `HelloCustomWidgets` 的 custom 层实现轻量 wrapper，不修改 `sdk/EmbeddedGUI`
+- 对应组件：`InfoLabel`
+- 当前保留语义：`label`、`info button`、`anchored bubble`、`compact`、`read only`、静态 preview 输入抑制
+- 当前移除内容：主面板包装、preview panel / heading、录制阶段真实 icon click、额外故事化说明与高噪音页面壳层
+- EGUI 适配说明：继续使用 `HelloCustomWidgets` custom 层的轻量 `wrapper`，不修改 `sdk/EmbeddedGUI`
 
 ## 1. 为什么需要这个控件
-`InfoLabel` 用于在正文标签旁边提供一个低打扰的信息入口。用户可以在需要时展开一段简短说明，而不是被更重的提示卡片或整行反馈打断。它适合设置项、数据字段、只读说明和表单上下文提示。
-
-当前仓库的 `reference` 主线里还没有一个对齐 `Fluent 2 / Fluent UI React InfoLabel` 语义的控件，因此需要补齐这一类轻量说明入口。
+`info_label` 用来在正文标签旁边提供一个低打扰的信息入口。它适合出现在设置项、表单字段、只读说明和摘要行附近，让用户按需展开一段短说明，而不是被 `TeachingTip` 或块级反馈容器打断。
 
 ## 2. 为什么现有控件不够用
-- `tool_tip` 更像短暂悬停提示，强调 target + hint，不承担标签旁边常驻信息入口的语义。
-- `teaching_tip` 信息量更大，层级更高，适合教学和引导，不适合这里的轻量说明。
-- `text_block` 只能静态显示文本，无法承担按需展开的说明气泡。
+- `tool_tip` 更偏悬停提示，不承担标签旁常驻解释入口的语义。
+- `teaching_tip` 层级更高、信息量更大，不适合这里的轻量说明。
+- `text_block` 只能静态展示文本，无法表达按需展开的解释气泡。
 - `info_badge` 表达的是状态或数量提醒，不表达“标签解释”。
 
-## 3. 目标场景与示例概览
-- 主控件展示标准 `InfoLabel`，默认收起。
-- 录制轨道依次覆盖 `closed accent`、`open accent`、`open warning`、`open neutral` 三组关键状态。
-- 底部左侧 preview 展示 `compact` 的静态展开态。
-- 底部右侧 preview 展示 `read only` 的静态展开态。
-- 页面结构统一为：标题 -> 主 `InfoLabel` -> `Compact / Read only` 双 preview。
+## 3. 当前页面结构
+- 标题：`InfoLabel`
+- 主区：一个主 `info_label`
+- 底部：一行并排的两个静态 preview
+- 左侧 preview：`compact`
+- 右侧 preview：`read only`
 
-目标目录：`example/HelloCustomWidgets/display/info_label/`
+目录：
+- `example/HelloCustomWidgets/display/info_label/`
 
-## 4. 视觉与布局规格
-- 根容器尺寸：`224 x 228`
-- 主控件尺寸：`196 x 96`
-- 底部对照行尺寸：`216 x 88`
-- 单个 preview 面板尺寸：`104 x 88`
-- preview 控件尺寸：`84 x 54`
-- 视觉约束：
-  - 页面背景保持浅灰低噪音。
-  - 主控件保持白底、柔和描边和轻量气泡阴影。
-  - `accent / warning / neutral` 仅通过强调色和气泡语气变化，不引入额外大面积装饰。
-  - `compact / read only` 通过控件自身样式表达，不依赖外部说明标签。
+## 4. 主区 reference 快照
+主区录制轨道只保留 3 组目标快照：
 
-## 5. 控件清单
+1. 默认态
+   `Project policy`
+   `Versioning`
+   `Keep release notes aligned with the approved branch.`
+   主区保持 `closed accent`
+2. 快照 2
+   `Export guidance`
+   `Sensitive content`
+   `Mask personal data before sharing outside the tenant.`
+   主区保持 `open warning`
+3. 快照 3
+   `Reading help`
+   `Reference note`
+   `Use the compact preview when the layout has limited width.`
+   主区保持 `open neutral`
 
-| 变量名 | 类型 | 尺寸 (W x H) | 初始状态 | 用途 |
-| --- | --- | ---: | --- | --- |
-| `root_layout` | `egui_view_linearlayout_t` | `224 x 228` | enabled | 页面根布局 |
-| `title_label` | `egui_view_label_t` | `224 x 18` | `InfoLabel` | 页面标题 |
-| `primary_info_label` | `hcw_info_label_t` | `196 x 96` | closed | 主参考控件 |
-| `compact_info_label` | `hcw_info_label_t` | `84 x 54` | compact + open | 紧凑静态 preview |
-| `read_only_info_label` | `hcw_info_label_t` | `84 x 54` | read only + open | 只读静态 preview |
+底部 preview 在整条轨道中始终固定：
 
-## 6. 状态覆盖矩阵
+1. `compact`
+   `Compact help`
+   `Inline note`
+   `Compact mode keeps the bubble short.`
+2. `read only`
+   `Audit note`
+   `Read only`
+   `Static preview keeps input disabled.`
 
-| 区域 / 轨道 | 状态 | 说明 |
-| --- | --- | --- |
-| 主控件 | `Project policy` | 默认 `accent`，初始关闭 |
-| 主控件 | `Project policy open` | 点击信息按钮后展开 |
-| 主控件 | `Export guidance` | `warning` 语气展开态 |
-| 主控件 | `Reading help` | `neutral` 语气展开态 |
-| `compact` preview | `Compact help` | 固定紧凑展开态 |
-| `read only` preview | `Audit note` | 固定只读展开态，吞掉输入 |
+## 5. 视觉与布局规格
+- 画布：`480 x 480`
+- 根布局：`224 x 194`
+- 标题：`224 x 18`
+- 主控件：`196 x 96`
+- 底部 preview 行：`176 x 54`
+- 单个 preview：`84 x 54`
+- 页面结构：标题 -> 主 `info_label` -> 底部 `compact / read only`
+- 风格约束：浅色 page panel、主区保留 `closed / open` 与 palette 语义变化，底部 preview 只做静态 reference
+
+## 6. 状态矩阵
+| 状态 / 区域 | 主控件 | Compact preview | Read only preview |
+| --- | --- | --- | --- |
+| `closed` | 是 | 否 | 否 |
+| `open` | 是 | 是 | 是 |
+| `accent / warning / neutral` | 是 | 是 | 是 |
+| `compact_mode` | 否 | 是 | 是 |
+| `read_only_mode` | 否 | 否 | 是 |
+| `touch / key` 真实开关 | 是 | 否 | 否 |
+| 静态 preview 吞掉 `touch / key` | 否 | 是 | 是 |
 
 ## 7. 录制动作设计
-1. 重置主控件和两个 preview 到默认状态。
-2. 请求默认关闭态截图。
-3. 点击主控件的信息按钮，展开 `accent` 气泡。
-4. 请求展开后的第二张截图。
-5. 切换到 `warning` 快照并保持展开。
-6. 请求第三张截图。
-7. 切换到 `neutral` 快照并保持展开。
-8. 请求最终稳定截图。
+`egui_port_get_recording_action()` 已收口为 static preview 工作流：
 
-## 8. 编译、单测、touch、runtime 与 web 验收
+1. 应用主区默认快照和底部 preview 固定状态
+2. 抓取首帧
+3. 切到 `open warning`
+4. 抓取第二组主区快照
+5. 切到 `open neutral`
+6. 抓取第三组主区快照
+7. 等待并抓取最终稳定帧
+
+说明：
+- 录制阶段不再依赖真实 icon click 来驱动主区展开。
+- 页面层不再保留旧 preview panel、heading 和额外说明文案。
+- 底部 preview 统一通过 `hcw_info_label_override_static_preview_api()` 吞掉 `touch / key`，只负责静态 reference 对照。
+
+## 8. 单元测试口径
+`example/HelloUnitTest/test/test_info_label.c` 当前覆盖四部分：
+
+1. 样式 helper 与 setter
+   覆盖 `apply_compact_style()`、`apply_read_only_style()`、`set_text()`、`set_info_title()`、`set_info_body()`、`set_font()`、`set_meta_font()`、`set_icon_font()`、`set_palette()`、`set_compact_mode()`、`set_read_only_mode()`
+2. touch 语义
+   覆盖 `DOWN(A) -> MOVE(B) -> UP(B)` 不提交，以及回到同一 target 后 `UP(A)` 才提交
+3. 键盘开关
+   覆盖 `Enter / Space` 开关和 `Esc` 关闭
+4. 静态 preview 不变性断言
+   通过 `info_label_preview_snapshot_t`、`capture_preview_snapshot()` 与 `assert_preview_state_unchanged()` 固定校验以下字段：
+   `region_screen`、`background`、`label`、`info_title`、`info_body`、`font`、`meta_font`、`icon_font`、`on_open_changed`、`surface_color`、`border_color`、`text_color`、`muted_text_color`、`accent_color`、`bubble_surface_color`、`shadow_color`、`compact_mode`、`read_only_mode`、`open`、`pressed_part`、`icon_region`、`bubble_region`、`alpha`、`enable`、`is_focused`、`is_pressed`、`padding`
+
+补充说明：
+- 静态 preview 用例已收口为 “consumes input and keeps state”。
+- 为兼容当前 `HelloUnitTest` harness，preview 用例继续直接调用 `on_touch_event()` / `on_key_event()`。
+
+## 9. 验收命令
 ```bash
 make all APP=HelloCustomWidgets APP_SUB=display/info_label PORT=pc
+
+# 在 X:\ 短路径工作区执行，规避 Windows 命令行长度限制
+make clean APP=HelloUnitTest PORT=pc_test
 make all APP=HelloUnitTest PORT=pc_test
-output\main.exe
+X:\output\main.exe
+
 python scripts/sync_widget_catalog.py
 python scripts/checks/check_touch_release_semantics.py --scope custom --category display
 python scripts/checks/check_docs_encoding.py
 python scripts/checks/check_widget_catalog.py
 python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub display/info_label --track reference --timeout 10 --keep-screenshots
+python scripts/code_compile_check.py --custom-widgets --category display --bits64
+python scripts/code_runtime_check.py --app HelloCustomWidgets --category display --track reference --bits64
 python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub display/info_label
 python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_display_info_label
 ```
 
-## 9. 验收重点
-- 主控件关闭态和展开态都必须完整可见，不能裁切。
-- 气泡必须锚定在信息按钮附近，而不是漂浮成页面级卡片。
-- `DOWN(A) -> MOVE(B) -> UP(B)` 不能切换开关。
-- `DOWN(A) -> MOVE(B) -> MOVE(A) -> UP(A)` 才允许提交。
-- `Enter / Space` 必须切换开关，`Esc` 必须关闭已展开的气泡。
-- 静态 preview 必须吞掉 `touch / key`，同时保持当前展开状态。
+## 10. 当前结果
+- `HelloCustomWidgets` 单控件编译：已通过 `make all APP=HelloCustomWidgets APP_SUB=display/info_label PORT=pc`
+- `HelloUnitTest`：已在 `X:\` 短路径通过 `make clean APP=HelloUnitTest PORT=pc_test`、`make all APP=HelloUnitTest PORT=pc_test` 与 `X:\output\main.exe`，总计 `845 / 845`，其中 `info_label` suite `4 / 4`
+- `sync_widget_catalog.py`：已通过，`widget_catalog.json` 与 `web/catalog-policy.json` 保持同步，本轮无额外目录漂移
+- `touch release semantics`：已通过，结果 `custom_audited=21 custom_skipped_allowlist=0`
+- `docs encoding`：已通过，结果 `134 files`
+- `widget catalog check`：已通过，结果 `106 widgets: reference=106, showcase=0, deprecated=0`
+- 单控件 runtime：已通过 `python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub display/info_label --track reference --timeout 10 --keep-screenshots`，输出 `8` 帧截图
+- `display` 分类 compile/runtime 回归：已通过 `python scripts/code_compile_check.py --custom-widgets --category display --bits64` 与 `python scripts/code_runtime_check.py --app HelloCustomWidgets --category display --track reference --bits64`，分类内 `21` 个控件全部通过
+- wasm 构建：已通过 `python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub display/info_label`，输出 `web/demos/HelloCustomWidgets_display_info_label`
+- web smoke：已通过 `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_display_info_label`，结果 `PASS status=Running canvas=480x480 ratio=0.1479 colors=136`
 
-## 10. 与现有控件的边界
-- 相比 `tool_tip`：这里强调 label 附近的解释入口，而不是独立 target 的悬停提示。
+## 11. Runtime 复核结论
+复核目录：
+- `runtime_check_output/HelloCustomWidgets_display_info_label/default`
+
+复核结果：
+- 总帧数：`8`
+- 主区 RGB 差分边界：`(44, 121) - (436, 265)`
+- 遮罩主区差分边界后，主区外唯一哈希数：`1`
+- 按主区裁剪后，主区唯一状态数：`3`
+- 按 `y >= 265` 裁剪底部 preview 区域后，preview 区唯一哈希数：`1`
+
+目标：
+- 主区唯一状态数 = `3`
+- 主区外唯一哈希数 = `1`
+- 底部 preview 区唯一哈希数 = `1`
+
+## 12. 已知限制
+- 当前 demo 只覆盖 `closed / open` 与 `accent / warning / neutral` 的最小 `InfoLabel` 语义。
+- 气泡使用控件内 anchored bubble，而不是系统级 popup。
+- 当前页面优先保证 reference 录制稳定，不额外扩展更复杂的定位避让和多气泡管理。
+- 底部 `compact / read only` preview 只承担静态 reference 对照，不承载额外交互职责。
+
+## 13. 与现有控件的边界
+- 相比 `tool_tip`：这里强调标签旁解释入口，而不是悬停提示。
 - 相比 `teaching_tip`：这里不承担教学卡片或高层级引导。
 - 相比 `text_block`：这里保留按需展开的轻交互语义。
-- 相比 `info_badge`：这里表达的是解释信息，不是状态角标。
+- 相比 `info_badge`：这里表达的是解释信息，而不是状态角标。
 
-## 11. 对应组件名与本次保留的核心状态
-- 对应组件名：`InfoLabel`
-- 本次保留核心状态：
-  - `closed`
-  - `open`
-  - `accent / warning / neutral`
-  - `compact`
-  - `read only`
-
-## 12. 删除的效果或装饰
-- 删除额外的故事化页面文案和无关说明卡片。
-- 删除大阴影、重浮层和过强动画。
-- 删除 `TeachingTip` 式引导动作与复杂按钮区。
-
-## 13. EGUI 适配时的简化点与限制
-- 气泡采用控件内自绘的 anchored bubble，而不是系统级 popup。
-- 只保留单按钮展开/收起，不做复杂定位避让。
-- `compact` 与 `read only` 直接复用同一个控件 API，通过模式切换完成 reference 对照。
-- 当前不下沉到 `src/widget/`，先保持在 `HelloCustomWidgets` 的 reference 维护范围内。
+## 14. EGUI 适配说明
+- 继续复用当前目录下的 `egui_view_info_label` custom view，不修改 SDK。
+- 主区保留 3 组 reference 快照：`closed accent`、`open warning`、`open neutral`。
+- 底部 preview 通过 `hcw_info_label_override_static_preview_api()` 明确收口为静态 reference。
+- 当前优先保证主区 3 组 reference 快照、底部 preview 全程静态，以及 runtime 录制稳定，再评估是否需要扩展更多 `InfoLabel` 页面场景。
