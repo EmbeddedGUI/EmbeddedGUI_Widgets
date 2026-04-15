@@ -19,6 +19,10 @@
 #define CHECK_BOX_BOTTOM_ROW_HEIGHT 28
 #define CHECK_BOX_RECORD_WAIT       90
 #define CHECK_BOX_RECORD_FRAME_WAIT 170
+#define CHECK_BOX_RECORD_FINAL_WAIT 280
+#define CHECK_BOX_DEFAULT_SNAPSHOT  0
+
+#define PRIMARY_SNAPSHOT_COUNT ((uint8_t)EGUI_ARRAY_SIZE(primary_snapshots))
 
 typedef struct check_box_snapshot check_box_snapshot_t;
 struct check_box_snapshot
@@ -36,6 +40,8 @@ static egui_view_checkbox_t control_read_only;
 static egui_view_api_t control_primary_api;
 static egui_view_api_t control_compact_api;
 static egui_view_api_t control_read_only_api;
+static uint8_t current_primary_snapshot;
+static uint8_t ui_ready;
 
 EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
 EGUI_BACKGROUND_PARAM_INIT(bg_page_panel_params, &bg_page_panel_param, NULL, NULL);
@@ -46,17 +52,12 @@ static const char *title_text = "Check Box";
 static const check_box_snapshot_t primary_snapshots[] = {
         {"Email alerts", 0},
         {"Offline sync", 0},
-        {"Archive reports", 1},
 };
 
-static const check_box_snapshot_t compact_snapshots[] = {
-        {"Auto", 1},
-        {"Muted", 0},
-};
+static const check_box_snapshot_t compact_snapshot = {"Auto", 1};
+static const check_box_snapshot_t read_only_snapshot = {"Accepted", 1};
 
-static const check_box_snapshot_t read_only_snapshot = {
-        "Accepted", 1,
-};
+static void layout_page(void);
 
 static void apply_snapshot_to_box(egui_view_checkbox_t *box, const check_box_snapshot_t *snapshot)
 {
@@ -66,18 +67,56 @@ static void apply_snapshot_to_box(egui_view_checkbox_t *box, const check_box_sna
 
 static void apply_primary_snapshot(uint8_t index)
 {
-    apply_snapshot_to_box(&control_primary, &primary_snapshots[index % EGUI_ARRAY_SIZE(primary_snapshots)]);
+    current_primary_snapshot = index % PRIMARY_SNAPSHOT_COUNT;
+    apply_snapshot_to_box(&control_primary, &primary_snapshots[current_primary_snapshot]);
+    if (ui_ready)
+    {
+        layout_page();
+    }
 }
 
-static void apply_compact_snapshot(uint8_t index)
+static void apply_primary_default_state(void)
 {
-    apply_snapshot_to_box(&control_compact, &compact_snapshots[index % EGUI_ARRAY_SIZE(compact_snapshots)]);
+    apply_primary_snapshot(CHECK_BOX_DEFAULT_SNAPSHOT);
 }
 
-static void apply_read_only_snapshot(void)
+static void apply_preview_states(void)
 {
+    apply_snapshot_to_box(&control_compact, &compact_snapshot);
     apply_snapshot_to_box(&control_read_only, &read_only_snapshot);
+    if (ui_ready)
+    {
+        layout_page();
+    }
 }
+
+static void layout_local_views(void)
+{
+    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&bottom_row));
+    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&root_layout));
+}
+
+static void layout_page(void)
+{
+    layout_local_views();
+    egui_core_layout_childs_user_root_view(EGUI_LAYOUT_VERTICAL, EGUI_ALIGN_HCENTER | EGUI_ALIGN_VCENTER);
+}
+
+static void focus_primary_box(void)
+{
+#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
+    egui_view_request_focus(EGUI_VIEW_OF(&control_primary));
+#endif
+}
+
+#if EGUI_CONFIG_RECORDING_TEST
+static void request_page_snapshot(void)
+{
+    layout_page();
+    egui_view_invalidate(EGUI_VIEW_OF(&root_layout));
+    recording_request_snapshot();
+}
+#endif
 
 void test_init_ui(void)
 {
@@ -134,33 +173,52 @@ void test_init_ui(void)
 #endif
     egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&control_read_only));
 
-    apply_primary_snapshot(0);
-    apply_compact_snapshot(0);
-    apply_read_only_snapshot();
+    apply_primary_default_state();
+    apply_preview_states();
 
     hello_custom_widgets_demo_apply_title_only_scaffold(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label), NULL, 0);
 
-    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&bottom_row));
-    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&root_layout));
+    layout_local_views();
     egui_core_add_user_root_view(EGUI_VIEW_OF(&root_layout));
-    egui_core_layout_childs_user_root_view(EGUI_LAYOUT_VERTICAL, EGUI_ALIGN_HCENTER | EGUI_ALIGN_VCENTER);
-#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
-    egui_view_request_focus(EGUI_VIEW_OF(&control_primary));
-#endif
+    ui_ready = 1;
+    layout_page();
+    focus_primary_box();
 }
 
 #if EGUI_CONFIG_RECORDING_TEST
 static void apply_primary_key(uint8_t key_code)
 {
-    egui_key_event_t event;
+    egui_key_event_t event = {0};
 
-    memset(&event, 0, sizeof(event));
+    focus_primary_box();
     event.type = EGUI_KEY_EVENT_ACTION_DOWN;
     event.key_code = key_code;
     egui_view_dispatch_key_event(EGUI_VIEW_OF(&control_primary), &event);
 
     event.type = EGUI_KEY_EVENT_ACTION_UP;
     egui_view_dispatch_key_event(EGUI_VIEW_OF(&control_primary), &event);
+    if (ui_ready)
+    {
+        layout_page();
+    }
+}
+
+static void dispatch_primary_touch_toggle(void)
+{
+    egui_motion_event_t event = {0};
+
+    event.location.x = EGUI_VIEW_OF(&control_primary)->region_screen.location.x + EGUI_VIEW_OF(&control_primary)->region_screen.size.height / 2;
+    event.location.y = EGUI_VIEW_OF(&control_primary)->region_screen.location.y + EGUI_VIEW_OF(&control_primary)->region_screen.size.height / 2;
+
+    event.type = EGUI_MOTION_EVENT_ACTION_DOWN;
+    egui_view_dispatch_touch_event(EGUI_VIEW_OF(&control_primary), &event);
+
+    event.type = EGUI_MOTION_EVENT_ACTION_UP;
+    egui_view_dispatch_touch_event(EGUI_VIEW_OF(&control_primary), &event);
+    if (ui_ready)
+    {
+        layout_page();
+    }
 }
 
 bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_action)
@@ -175,27 +233,24 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     case 0:
         if (first_call)
         {
-            apply_primary_snapshot(0);
-            apply_compact_snapshot(0);
-            apply_read_only_snapshot();
-#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
-            egui_view_request_focus(EGUI_VIEW_OF(&control_primary));
-#endif
-            recording_request_snapshot();
+            apply_primary_default_state();
+            apply_preview_states();
+            focus_primary_box();
+            request_page_snapshot();
         }
         EGUI_SIM_SET_WAIT(p_action, CHECK_BOX_RECORD_FRAME_WAIT);
         return true;
     case 1:
         if (first_call)
         {
-            apply_primary_key(EGUI_KEY_CODE_SPACE);
+            dispatch_primary_touch_toggle();
         }
         EGUI_SIM_SET_WAIT(p_action, CHECK_BOX_RECORD_WAIT);
         return true;
     case 2:
         if (first_call)
         {
-            recording_request_snapshot();
+            request_page_snapshot();
         }
         EGUI_SIM_SET_WAIT(p_action, CHECK_BOX_RECORD_FRAME_WAIT);
         return true;
@@ -203,35 +258,40 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
         if (first_call)
         {
             apply_primary_snapshot(1);
-#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
-            egui_view_request_focus(EGUI_VIEW_OF(&control_primary));
-#endif
-            recording_request_snapshot();
+            focus_primary_box();
+        }
+        EGUI_SIM_SET_WAIT(p_action, CHECK_BOX_RECORD_WAIT);
+        return true;
+    case 4:
+        if (first_call)
+        {
+            request_page_snapshot();
         }
         EGUI_SIM_SET_WAIT(p_action, CHECK_BOX_RECORD_FRAME_WAIT);
         return true;
-    case 4:
+    case 5:
         if (first_call)
         {
             apply_primary_key(EGUI_KEY_CODE_ENTER);
         }
         EGUI_SIM_SET_WAIT(p_action, CHECK_BOX_RECORD_WAIT);
         return true;
-    case 5:
-        if (first_call)
-        {
-            recording_request_snapshot();
-        }
-        EGUI_SIM_SET_WAIT(p_action, CHECK_BOX_RECORD_FRAME_WAIT);
-        return true;
     case 6:
         if (first_call)
         {
-            apply_compact_snapshot(1);
-            apply_primary_snapshot(2);
-            recording_request_snapshot();
+            request_page_snapshot();
         }
-        EGUI_SIM_SET_WAIT(p_action, 520);
+        EGUI_SIM_SET_WAIT(p_action, CHECK_BOX_RECORD_FRAME_WAIT);
+        return true;
+    case 7:
+        EGUI_SIM_SET_WAIT(p_action, CHECK_BOX_RECORD_FINAL_WAIT);
+        return true;
+    case 8:
+        if (first_call)
+        {
+            request_page_snapshot();
+        }
+        EGUI_SIM_SET_WAIT(p_action, CHECK_BOX_RECORD_FINAL_WAIT);
         return true;
     default:
         return false;
