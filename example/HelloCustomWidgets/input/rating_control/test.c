@@ -16,7 +16,11 @@
 #define RATING_BOTTOM_ROW_WIDTH  216
 #define RATING_BOTTOM_ROW_HEIGHT 42
 #define RATING_RECORD_WAIT       90
-#define RATING_RECORD_FRAME_WAIT 130
+#define RATING_RECORD_FRAME_WAIT 170
+#define RATING_RECORD_FINAL_WAIT 280
+#define RATING_DEFAULT_SNAPSHOT  0
+
+#define PRIMARY_SNAPSHOT_COUNT ((uint8_t)EGUI_ARRAY_SIZE(primary_snapshots))
 
 typedef struct rating_demo_snapshot rating_demo_snapshot_t;
 struct rating_demo_snapshot
@@ -39,6 +43,7 @@ static egui_view_rating_control_t control_compact;
 static egui_view_rating_control_t control_read_only;
 static egui_view_api_t compact_api;
 static egui_view_api_t read_only_api;
+static uint8_t ui_ready;
 
 EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
 EGUI_BACKGROUND_PARAM_INIT(bg_page_panel_params, &bg_page_panel_param, NULL, NULL);
@@ -56,33 +61,16 @@ static const rating_demo_snapshot_t primary_snapshots[] = {
         {"Setup experience", "Hard", "Easy", primary_labels_2, 6, 5, 5, 1},
 };
 
-static const char *compact_labels_0[] = {"No rating", "Poor", "Fair", "Good", "Great", "Excellent"};
-static const char *compact_labels_1[] = {"No rating", "Weak", "Okay", "Good", "Strong", "Top"};
-
-static const rating_demo_snapshot_t compact_snapshots[] = {
-        {"", "", "", compact_labels_0, 6, 5, 3, 0},
-        {"", "", "", compact_labels_1, 6, 5, 4, 0},
+static const rating_demo_snapshot_t compact_snapshot = {
+        "", "", "", primary_labels_0, 6, 5, 3, 0,
 };
 
-static const rating_demo_snapshot_t read_only_snapshot = {"", "", "", primary_labels_0, 6, 5, 4, 0};
+static const rating_demo_snapshot_t read_only_snapshot = {
+        "", "", "", primary_labels_0, 6, 5, 4, 0,
+};
 
-static void dismiss_primary_rating_control(void)
-{
-#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
-    egui_view_clear_focus(EGUI_VIEW_OF(&control_primary));
-#endif
-}
-
-static int dismiss_primary_focus_on_preview_touch(egui_view_t *self, egui_motion_event_t *event)
-{
-    EGUI_UNUSED(self);
-
-    if (event->type == EGUI_MOTION_EVENT_ACTION_DOWN)
-    {
-        dismiss_primary_rating_control();
-    }
-    return 1;
-}
+static void layout_page(void);
+static void focus_primary_widget(void);
 
 static void apply_snapshot(egui_view_t *view, const rating_demo_snapshot_t *snapshot)
 {
@@ -103,43 +91,59 @@ static void apply_snapshot(egui_view_t *view, const rating_demo_snapshot_t *snap
 
 static void apply_primary_snapshot(uint8_t index)
 {
-    apply_snapshot(EGUI_VIEW_OF(&control_primary), &primary_snapshots[index % EGUI_ARRAY_SIZE(primary_snapshots)]);
+    apply_snapshot(EGUI_VIEW_OF(&control_primary), &primary_snapshots[index % PRIMARY_SNAPSHOT_COUNT]);
+    if (ui_ready)
+    {
+        layout_page();
+        focus_primary_widget();
+    }
 }
 
-static void apply_compact_snapshot(uint8_t index)
+static void apply_primary_default_state(void)
 {
-    apply_snapshot(EGUI_VIEW_OF(&control_compact), &compact_snapshots[index % EGUI_ARRAY_SIZE(compact_snapshots)]);
+    apply_primary_snapshot(RATING_DEFAULT_SNAPSHOT);
+}
+
+static void apply_preview_states(void)
+{
+    apply_snapshot(EGUI_VIEW_OF(&control_compact), &compact_snapshot);
+    egui_view_rating_control_set_compact_mode(EGUI_VIEW_OF(&control_compact), 1);
+
+    apply_snapshot(EGUI_VIEW_OF(&control_read_only), &read_only_snapshot);
+    egui_view_rating_control_set_compact_mode(EGUI_VIEW_OF(&control_read_only), 1);
+    egui_view_rating_control_set_read_only_mode(EGUI_VIEW_OF(&control_read_only), 1);
+
+    if (ui_ready)
+    {
+        layout_page();
+    }
+}
+
+static void layout_local_views(void)
+{
+    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&bottom_row));
+    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&root_layout));
+}
+
+static void layout_page(void)
+{
+    layout_local_views();
+    egui_core_layout_childs_user_root_view(EGUI_LAYOUT_VERTICAL, EGUI_ALIGN_HCENTER | EGUI_ALIGN_VCENTER);
+}
+
+static void focus_primary_widget(void)
+{
+#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
+    egui_view_request_focus(EGUI_VIEW_OF(&control_primary));
+#endif
 }
 
 #if EGUI_CONFIG_RECORDING_TEST
-static void apply_primary_key(uint8_t key_code)
+static void request_page_snapshot(void)
 {
-    egui_key_event_t event = {0};
-
-    event.type = EGUI_KEY_EVENT_ACTION_DOWN;
-    event.key_code = key_code;
-    EGUI_VIEW_OF(&control_primary)->api->dispatch_key_event(EGUI_VIEW_OF(&control_primary), &event);
-    event.type = EGUI_KEY_EVENT_ACTION_UP;
-    EGUI_VIEW_OF(&control_primary)->api->dispatch_key_event(EGUI_VIEW_OF(&control_primary), &event);
-}
-
-static void set_click_rating_part(egui_sim_action_t *p_action, egui_view_t *view, uint8_t part, int interval_ms)
-{
-    egui_region_t region;
-
-    if (!egui_view_rating_control_get_part_region(view, part, &region))
-    {
-        EGUI_SIM_SET_WAIT(p_action, interval_ms);
-        return;
-    }
-
-    p_action->type = EGUI_SIM_ACTION_CLICK;
-    p_action->x1 = region.location.x + region.size.width / 2;
-    p_action->y1 = region.location.y + region.size.height / 2;
-    p_action->x2 = 0;
-    p_action->y2 = 0;
-    p_action->steps = 0;
-    p_action->interval_ms = interval_ms;
+    layout_page();
+    egui_view_invalidate(EGUI_VIEW_OF(&root_layout));
+    recording_request_snapshot();
 }
 #endif
 
@@ -182,13 +186,9 @@ void test_init_ui(void)
     egui_view_set_size(EGUI_VIEW_OF(&control_compact), RATING_PREVIEW_WIDTH, RATING_PREVIEW_HEIGHT);
     egui_view_rating_control_set_font(EGUI_VIEW_OF(&control_compact), (const egui_font_t *)&egui_res_font_montserrat_10_4);
     egui_view_rating_control_set_meta_font(EGUI_VIEW_OF(&control_compact), (const egui_font_t *)&egui_res_font_montserrat_8_4);
-    egui_view_rating_control_set_compact_mode(EGUI_VIEW_OF(&control_compact), 1);
     egui_view_rating_control_set_palette(EGUI_VIEW_OF(&control_compact), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xDADFE5), EGUI_COLOR_HEX(0x2B3138),
                                          EGUI_COLOR_HEX(0x74808C), EGUI_COLOR_HEX(0xC78C16), EGUI_COLOR_HEX(0xE0E6EC));
     egui_view_rating_control_override_static_preview_api(EGUI_VIEW_OF(&control_compact), &compact_api);
-#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
-    compact_api.on_touch = dismiss_primary_focus_on_preview_touch;
-#endif
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&control_compact), 0);
 #endif
@@ -199,33 +199,24 @@ void test_init_ui(void)
     egui_view_set_margin(EGUI_VIEW_OF(&control_read_only), 8, 0, 0, 0);
     egui_view_rating_control_set_font(EGUI_VIEW_OF(&control_read_only), (const egui_font_t *)&egui_res_font_montserrat_10_4);
     egui_view_rating_control_set_meta_font(EGUI_VIEW_OF(&control_read_only), (const egui_font_t *)&egui_res_font_montserrat_8_4);
-    egui_view_rating_control_set_compact_mode(EGUI_VIEW_OF(&control_read_only), 1);
-    egui_view_rating_control_set_read_only_mode(EGUI_VIEW_OF(&control_read_only), 1);
     egui_view_rating_control_set_palette(EGUI_VIEW_OF(&control_read_only), EGUI_COLOR_HEX(0xFBFCFD), EGUI_COLOR_HEX(0xD9E1E8), EGUI_COLOR_HEX(0x596878),
                                          EGUI_COLOR_HEX(0x8C98A5), EGUI_COLOR_HEX(0x9DA9B5), EGUI_COLOR_HEX(0xE3E9EF));
     egui_view_rating_control_override_static_preview_api(EGUI_VIEW_OF(&control_read_only), &read_only_api);
-#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
-    read_only_api.on_touch = dismiss_primary_focus_on_preview_touch;
-#endif
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&control_read_only), 0);
 #endif
     egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&control_read_only));
 
-    apply_primary_snapshot(0);
-    apply_compact_snapshot(0);
-    apply_snapshot(EGUI_VIEW_OF(&control_read_only), &read_only_snapshot);
+    apply_primary_default_state();
+    apply_preview_states();
 
     hello_custom_widgets_demo_apply_title_only_scaffold(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label), NULL, 0);
 
-    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&bottom_row));
-    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&root_layout));
-
+    layout_local_views();
     egui_core_add_user_root_view(EGUI_VIEW_OF(&root_layout));
-    egui_core_layout_childs_user_root_view(EGUI_LAYOUT_VERTICAL, EGUI_ALIGN_HCENTER | EGUI_ALIGN_VCENTER);
-#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
-    egui_view_request_focus(EGUI_VIEW_OF(&control_primary));
-#endif
+    ui_ready = 1;
+    layout_page();
+    focus_primary_widget();
 }
 
 #if EGUI_CONFIG_RECORDING_TEST
@@ -241,72 +232,50 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     case 0:
         if (first_call)
         {
-            apply_primary_snapshot(0);
-            apply_compact_snapshot(0);
-#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
-            egui_view_request_focus(EGUI_VIEW_OF(&control_primary));
-#endif
+            apply_primary_default_state();
+            apply_preview_states();
+            focus_primary_widget();
+            request_page_snapshot();
         }
-        EGUI_SIM_SET_WAIT(p_action, RATING_RECORD_WAIT);
+        EGUI_SIM_SET_WAIT(p_action, RATING_RECORD_FRAME_WAIT);
         return true;
     case 1:
         if (first_call)
         {
-            recording_request_snapshot();
+            apply_primary_snapshot(1);
         }
-        EGUI_SIM_SET_WAIT(p_action, RATING_RECORD_FRAME_WAIT);
+        EGUI_SIM_SET_WAIT(p_action, RATING_RECORD_WAIT);
         return true;
     case 2:
-        set_click_rating_part(p_action, EGUI_VIEW_OF(&control_primary), 5, RATING_RECORD_WAIT);
+        if (first_call)
+        {
+            request_page_snapshot();
+        }
+        EGUI_SIM_SET_WAIT(p_action, RATING_RECORD_FRAME_WAIT);
         return true;
     case 3:
         if (first_call)
         {
-            recording_request_snapshot();
+            apply_primary_snapshot(2);
         }
-        EGUI_SIM_SET_WAIT(p_action, RATING_RECORD_FRAME_WAIT);
+        EGUI_SIM_SET_WAIT(p_action, RATING_RECORD_WAIT);
         return true;
     case 4:
-        set_click_rating_part(p_action, EGUI_VIEW_OF(&control_primary), EGUI_VIEW_RATING_CONTROL_PART_CLEAR, RATING_RECORD_WAIT);
-        return true;
-    case 5:
         if (first_call)
         {
-            recording_request_snapshot();
+            request_page_snapshot();
         }
         EGUI_SIM_SET_WAIT(p_action, RATING_RECORD_FRAME_WAIT);
+        return true;
+    case 5:
+        EGUI_SIM_SET_WAIT(p_action, RATING_RECORD_FINAL_WAIT);
         return true;
     case 6:
         if (first_call)
         {
-            apply_primary_snapshot(1);
-#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
-            egui_view_request_focus(EGUI_VIEW_OF(&control_primary));
-#endif
-            apply_primary_key(EGUI_KEY_CODE_END);
+            request_page_snapshot();
         }
-        EGUI_SIM_SET_WAIT(p_action, RATING_RECORD_WAIT);
-        return true;
-    case 7:
-        if (first_call)
-        {
-            recording_request_snapshot();
-        }
-        EGUI_SIM_SET_WAIT(p_action, RATING_RECORD_FRAME_WAIT);
-        return true;
-    case 8:
-        if (first_call)
-        {
-            apply_compact_snapshot(1);
-        }
-        EGUI_SIM_SET_WAIT(p_action, RATING_RECORD_WAIT);
-        return true;
-    case 9:
-        if (first_call)
-        {
-            recording_request_snapshot();
-        }
-        EGUI_SIM_SET_WAIT(p_action, 520);
+        EGUI_SIM_SET_WAIT(p_action, RATING_RECORD_FINAL_WAIT);
         return true;
     default:
         return false;
