@@ -7,6 +7,21 @@
 #include "../../HelloCustomWidgets/input/switch/egui_view_switch.h"
 #include "../../HelloCustomWidgets/input/switch/egui_view_switch.c"
 
+typedef struct
+{
+    egui_region_t region_screen;
+    egui_view_on_checked_listener_t on_checked_changed;
+    uint8_t is_checked;
+    const char *icon_on;
+    const char *icon_off;
+    const egui_font_t *icon_font;
+    egui_color_t switch_color_on;
+    egui_color_t switch_color_off;
+    egui_color_t bk_color_on;
+    egui_color_t bk_color_off;
+    egui_alpha_t alpha;
+} switch_preview_snapshot_t;
+
 static egui_view_switch_t test_switch;
 static egui_view_switch_t preview_switch;
 static egui_view_api_t test_switch_api;
@@ -25,6 +40,14 @@ static void reset_listener_state(void)
 {
     g_checked_count = 0;
     g_last_checked = 0xFF;
+}
+
+static void assert_region_equal(const egui_region_t *expected, const egui_region_t *actual)
+{
+    EGUI_TEST_ASSERT_EQUAL_INT(expected->location.x, actual->location.x);
+    EGUI_TEST_ASSERT_EQUAL_INT(expected->location.y, actual->location.y);
+    EGUI_TEST_ASSERT_EQUAL_INT(expected->size.width, actual->size.width);
+    EGUI_TEST_ASSERT_EQUAL_INT(expected->size.height, actual->size.height);
 }
 
 static void setup_switch(uint8_t checked)
@@ -48,10 +71,45 @@ static void setup_preview_switch(uint8_t checked)
     egui_view_switch_init(EGUI_VIEW_OF(&preview_switch));
     egui_view_set_size(EGUI_VIEW_OF(&preview_switch), 76, 32);
     hcw_switch_apply_compact_style(EGUI_VIEW_OF(&preview_switch));
-    hcw_switch_set_state_icons(EGUI_VIEW_OF(&preview_switch), EGUI_ICON_MS_DONE, EGUI_ICON_MS_CROSS);
+    hcw_switch_set_state_icons(EGUI_VIEW_OF(&preview_switch), EGUI_ICON_MS_DONE, NULL);
     hcw_switch_set_icon_font(EGUI_VIEW_OF(&preview_switch), EGUI_FONT_ICON_MS_16);
     hcw_switch_set_checked(EGUI_VIEW_OF(&preview_switch), checked);
+    egui_view_switch_set_on_checked_listener(EGUI_VIEW_OF(&preview_switch), on_checked);
     hcw_switch_override_static_preview_api(EGUI_VIEW_OF(&preview_switch), &preview_switch_api);
+    reset_listener_state();
+}
+
+static void capture_preview_snapshot(switch_preview_snapshot_t *snapshot)
+{
+    snapshot->region_screen = EGUI_VIEW_OF(&preview_switch)->region_screen;
+    snapshot->on_checked_changed = preview_switch.on_checked_changed;
+    snapshot->is_checked = preview_switch.is_checked;
+    snapshot->icon_on = preview_switch.icon_on;
+    snapshot->icon_off = preview_switch.icon_off;
+    snapshot->icon_font = preview_switch.icon_font;
+    snapshot->switch_color_on = preview_switch.switch_color_on;
+    snapshot->switch_color_off = preview_switch.switch_color_off;
+    snapshot->bk_color_on = preview_switch.bk_color_on;
+    snapshot->bk_color_off = preview_switch.bk_color_off;
+    snapshot->alpha = preview_switch.alpha;
+}
+
+static void assert_preview_state_unchanged(const switch_preview_snapshot_t *snapshot)
+{
+    assert_region_equal(&snapshot->region_screen, &EGUI_VIEW_OF(&preview_switch)->region_screen);
+    EGUI_TEST_ASSERT_TRUE(preview_switch.on_checked_changed == snapshot->on_checked_changed);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->is_checked, preview_switch.is_checked);
+    EGUI_TEST_ASSERT_TRUE(preview_switch.icon_on == snapshot->icon_on);
+    EGUI_TEST_ASSERT_TRUE(preview_switch.icon_off == snapshot->icon_off);
+    EGUI_TEST_ASSERT_TRUE(preview_switch.icon_font == snapshot->icon_font);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->switch_color_on.full, preview_switch.switch_color_on.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->switch_color_off.full, preview_switch.switch_color_off.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->bk_color_on.full, preview_switch.bk_color_on.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->bk_color_off.full, preview_switch.bk_color_off.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->alpha, preview_switch.alpha);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, g_checked_count);
+    EGUI_TEST_ASSERT_EQUAL_INT(0xFF, g_last_checked);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&preview_switch)->is_pressed);
 }
 
 static void layout_switch(egui_view_t *view, egui_dim_t x, egui_dim_t y, egui_dim_t width, egui_dim_t height)
@@ -79,26 +137,23 @@ static int send_touch(egui_view_switch_t *control, uint8_t type, egui_dim_t x, e
 
 static int send_key(egui_view_switch_t *control, uint8_t key_code)
 {
-    egui_key_event_t event;
     int handled = 0;
 
-    memset(&event, 0, sizeof(event));
-    event.type = EGUI_KEY_EVENT_ACTION_DOWN;
-    event.key_code = key_code;
-    handled |= EGUI_VIEW_OF(control)->api->dispatch_key_event(EGUI_VIEW_OF(control), &event);
-    event.type = EGUI_KEY_EVENT_ACTION_UP;
-    handled |= EGUI_VIEW_OF(control)->api->dispatch_key_event(EGUI_VIEW_OF(control), &event);
+    handled |= EGUI_VIEW_OF(control)->api->dispatch_key_event(EGUI_VIEW_OF(control),
+                                                              &(egui_key_event_t){.type = EGUI_KEY_EVENT_ACTION_DOWN, .key_code = key_code});
+    handled |= EGUI_VIEW_OF(control)->api->dispatch_key_event(EGUI_VIEW_OF(control),
+                                                              &(egui_key_event_t){.type = EGUI_KEY_EVENT_ACTION_UP, .key_code = key_code});
     return handled;
 }
 
-static int send_preview_key_action(egui_view_switch_t *control, uint8_t type, uint8_t key_code)
+static int dispatch_key_event_to_view(egui_view_t *view, uint8_t type, uint8_t key_code)
 {
     egui_key_event_t event;
 
     memset(&event, 0, sizeof(event));
     event.type = type;
     event.key_code = key_code;
-    return EGUI_VIEW_OF(control)->api->on_key_event(EGUI_VIEW_OF(control), &event);
+    return view->api->dispatch_key_event(view, &event);
 }
 
 static void get_switch_center(egui_view_switch_t *control, egui_dim_t *x, egui_dim_t *y)
@@ -237,25 +292,25 @@ static void test_switch_unhandled_key_clears_pressed_state(void)
     EGUI_TEST_ASSERT_EQUAL_INT(0, g_checked_count);
 }
 
-static void test_switch_static_preview_consumes_input_and_clears_pressed_state(void)
+static void test_switch_static_preview_consumes_input_and_keeps_state(void)
 {
+    switch_preview_snapshot_t initial_snapshot;
     egui_dim_t inside_x;
     egui_dim_t inside_y;
 
     setup_preview_switch(1);
     layout_switch(EGUI_VIEW_OF(&preview_switch), 10, 20, 76, 32);
     get_switch_center(&preview_switch, &inside_x, &inside_y);
+    capture_preview_snapshot(&initial_snapshot);
 
     egui_view_set_pressed(EGUI_VIEW_OF(&preview_switch), 1);
     EGUI_TEST_ASSERT_TRUE(send_touch(&preview_switch, EGUI_MOTION_EVENT_ACTION_DOWN, inside_x, inside_y));
-    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&preview_switch)->is_pressed);
-    EGUI_TEST_ASSERT_TRUE(preview_switch.is_checked);
+    assert_preview_state_unchanged(&initial_snapshot);
 
     egui_view_set_pressed(EGUI_VIEW_OF(&preview_switch), 1);
-    EGUI_TEST_ASSERT_TRUE(send_preview_key_action(&preview_switch, EGUI_KEY_EVENT_ACTION_DOWN, EGUI_KEY_CODE_SPACE));
-    EGUI_TEST_ASSERT_TRUE(send_preview_key_action(&preview_switch, EGUI_KEY_EVENT_ACTION_UP, EGUI_KEY_CODE_SPACE));
-    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&preview_switch)->is_pressed);
-    EGUI_TEST_ASSERT_TRUE(preview_switch.is_checked);
+    EGUI_TEST_ASSERT_TRUE(dispatch_key_event_to_view(EGUI_VIEW_OF(&preview_switch), EGUI_KEY_EVENT_ACTION_DOWN, EGUI_KEY_CODE_SPACE));
+    EGUI_TEST_ASSERT_TRUE(dispatch_key_event_to_view(EGUI_VIEW_OF(&preview_switch), EGUI_KEY_EVENT_ACTION_UP, EGUI_KEY_CODE_SPACE));
+    assert_preview_state_unchanged(&initial_snapshot);
 }
 
 void test_switch_run(void)
@@ -267,6 +322,6 @@ void test_switch_run(void)
     EGUI_TEST_RUN(test_switch_keyboard_space_and_enter_toggle);
     EGUI_TEST_RUN(test_switch_disabled_input_does_not_toggle);
     EGUI_TEST_RUN(test_switch_unhandled_key_clears_pressed_state);
-    EGUI_TEST_RUN(test_switch_static_preview_consumes_input_and_clears_pressed_state);
+    EGUI_TEST_RUN(test_switch_static_preview_consumes_input_and_keeps_state);
     EGUI_TEST_SUITE_END();
 }
