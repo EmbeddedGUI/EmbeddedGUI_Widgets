@@ -1,118 +1,171 @@
-# info_badge 设计说明
+# info_badge 自定义控件设计说明
 
 ## 参考来源
-- 参考设计系统：`Fluent 2`
-- 参考开源库：`WPF UI`
-- 对应组件名：`InfoBadge`
-- 本次保留状态：`count`、`icon`、`attention dot`
-- 本次删除内容：页面级 guide、showcase 式叙事容器、和 `InfoBadge` 无关的说明卡片与额外交互
-- EGUI 适配说明：复用 SDK `notification_badge`，custom 层只补样式 helper、attention dot draw 语义、静态 preview API 与 reference 页面，不修改 `sdk/EmbeddedGUI`
+- 参考设计体系：`Fluent 2`
+- 参考开源库：`WinUI / WPF UI`
+- 对应组件：`InfoBadge`
+- 当前保留语义：`count`、`icon`、`attention dot` 三种核心附着提醒语义、palette setter、静态 preview 输入抑制
+- 当前移除内容：主面板包装、页面级 guide / note、preview panel / heading / body、轮换 preview 轨道、SDK 改动
+- EGUI 适配说明：继续复用 SDK `notification_badge`，custom 层只补样式 helper、attention dot draw 语义与静态 preview API，不修改 `sdk/EmbeddedGUI`
 
 ## 1. 为什么需要这个控件
-`InfoBadge` 用于在不打断主流程的前提下提示数量、状态或需要关注的细粒度信息。它常附着在设置项、列表行、摘要面板或状态行中，承担“轻量提醒”而不是“重型告警”的职责。
-
-当前 `HelloCustomWidgets` 的 `reference` 主线里还没有一个对齐 Fluent / WPF UI `InfoBadge` 语义的页面，因此需要补齐。
+`info_badge` 用来表达“附着在宿主元素旁边的轻量状态提醒”。它适合用于设置项、摘要条目、导航入口或列表行上的数量、信息提示和 attention dot，而不是块级反馈或故事化告警容器。
 
 ## 2. 为什么现有控件不够用
-- SDK `notification_badge` 只有基础计数/图标绘制，没有当前仓库要求的 `InfoBadge` reference 页面、静态 preview API 与 catalog 闭环。
-- `badge_group` 关注一组 badge 的组合展示，不是单个附着型信息角标。
-- `message_bar`、`toast_stack` 这类反馈控件层级更高，噪音更大，不适合替代行内提示。
+- SDK `notification_badge` 只有基础计数/图标绘制，没有当前仓库要求的 `InfoBadge` 语义收口、attention dot draw 语义和静态 preview API。
+- `badge`、`badge_group` 更偏独立标签或组合展示，不是附着型信息角标。
+- `message_bar`、`toast_stack` 这类反馈控件层级更高、噪音更大，不适合替代行内提醒。
 
-## 3. 目标场景与示例概览
-- 主场景面板展示三种核心语义：`count`、`icon`、`attention dot`
-- 录制轨道覆盖三组 snapshot：默认提醒、警告提醒、安静总结
-- 底部左侧 preview 展示 `99+` 溢出计数
-- 底部右侧 preview 展示 attention dot 的最小语义
-- 页面结构统一收口为：标题 -> 主面板 -> 两个静态 preview
+## 3. 当前页面结构
+- 标题：`InfoBadge`
+- 主区：三行并列的 `count / icon / attention dot`
+- 底部：一行并排的两个静态 preview
+- 左侧 preview：`overflow`
+- 右侧 preview：`attention`
 
-目标目录：`example/HelloCustomWidgets/display/info_badge/`
+目录：
+- `example/HelloCustomWidgets/display/info_badge/`
 
-## 4. 视觉与布局规格
-- 根容器尺寸：`224 x 246`
-- 主面板尺寸：`196 x 118`
-- 底部对照行尺寸：`216 x 80`
-- 左侧 preview：`104 x 80`
-- 右侧 preview：`104 x 80`
-- 视觉约束：
-  - 页面背景保持低噪音浅灰
-  - 主面板与 preview 面板保持白底/浅白底
-  - `count` 默认用危险红，`icon` 默认用 Fluent 蓝，`attention dot` 默认用危险红
-  - 允许通过 palette setter 把 `count` / `icon` 切到成功色或警告色，但整体仍保持低面积、低噪音
+## 4. 主区 reference 快照
+主区录制轨道只保留 3 组目标快照：
 
-## 5. 控件清单
+1. 默认态
+   `Inbox updates` + `18`
+   `Policy note` + `Info`
+   `Review pending` + red dot
+2. 快照 2
+   `Build blockers` + `7`
+   `QA warning` + `Warning`
+   `Deployment paused` + red dot
+3. 快照 3
+   `Finished checks` + `2`
+   `Published` + `Done`
+   `Watch list` + blue dot
 
-| 变量名 | 类型 | 尺寸 (W x H) | 初始状态 | 用途 |
-| --- | --- | ---: | --- | --- |
-| `root_layout` | `egui_view_linearlayout_t` | `224 x 246` | enabled | 页面根布局 |
-| `title_label` | `egui_view_label_t` | `224 x 18` | `InfoBadge` | 页面标题 |
-| `primary_panel` | `egui_view_linearlayout_t` | `196 x 118` | default | 主参考面板 |
-| `count_badge` | `egui_view_notification_badge_t` | `34 x 20` | `18` | `count` 语义 |
-| `icon_badge` | `egui_view_notification_badge_t` | `20 x 20` | `info` | `icon` 语义 |
-| `dot_badge` | `egui_view_notification_badge_t` | `12 x 12` | `attention dot` | 无字小圆点语义 |
-| `overflow_badge` | `egui_view_notification_badge_t` | `40 x 20` | `99+` | 溢出计数 preview |
-| `attention_badge` | `egui_view_notification_badge_t` | `12 x 12` | `attention dot` | 静态 dot preview |
+底部 preview 在整条轨道中始终固定：
 
-## 6. 状态覆盖矩阵
+1. `overflow`
+   `99+`
+2. `attention`
+   red dot
 
-| 区域 / 轨道 | 状态 | 说明 |
-| --- | --- | --- |
-| 主面板 | `Workspace alerts` | 默认 `count / icon / dot` 组合 |
-| 主面板 | `Release board` | `warning` icon 与高优先级提醒 |
-| 主面板 | `Calm summary` | 成功/安静 tone |
-| 左侧 preview | `Overflow` | 固定 `99+` 溢出计数 |
-| 右侧 preview | `Attention` | 固定 attention dot |
+## 5. 视觉与布局规格
+- 画布：`480 x 480`
+- 根布局：`224 x 144`
+- 标题：`224 x 18`
+- 主区单行：`176 x 24`
+- `count` badge：`34 x 20`
+- `icon` badge：`20 x 20`
+- `dot` badge：`12 x 12`
+- 底部 preview 行：`60 x 20`
+- `overflow` preview：`40 x 20`
+- `attention` preview：`12 x 12`
+- 页面结构：标题 -> 三行主语义 -> 底部 `overflow / attention`
+- 风格约束：浅色 page panel、主区只保留行标签与 badge 语义切换，底部 preview 只做静态 reference
+
+## 6. 状态矩阵
+| 状态 / 区域 | 主控件 | Overflow preview | Attention preview |
+| --- | --- | --- | --- |
+| `count` | 是 | 是 | 否 |
+| `icon` | 是 | 否 | 否 |
+| `attention dot` | 是 | 否 | 是 |
+| `set_count()` 切换 | 支持 | 支持 | 否 |
+| `set_icon()` / `set_icon(NULL)` 切换 | 支持 | 否 | 支持 |
+| `set_palette()` 改色 | 支持 | 支持 | 支持 |
+| 静态 preview 吞掉 `touch / key` | 否 | 是 | 是 |
 
 ## 7. 录制动作设计
-1. 重置主面板与底部 preview 到默认状态
-2. 请求默认截图
-3. 切到 `Release board`
-4. 请求第二张截图
-5. 切到 `Calm summary`
-6. 请求第三张截图
-7. 恢复默认状态并请求最终稳定帧
+`egui_port_get_recording_action()` 已收口为 static preview 工作流：
 
-## 8. 编译、touch、runtime、文档与 catalog 检查
+1. 应用主区默认快照和底部 preview 固定状态
+2. 抓取首帧
+3. 切到 `Release board` 对应快照
+4. 抓取第二组主区快照
+5. 切到 `Calm summary` 对应快照
+6. 抓取第三组主区快照
+7. 等待并抓取最终稳定帧
+
+说明：
+- 录制阶段不再保留旧版主面板、heading、note 和 preview 包装容器。
+- 页面层不再为 preview 保留额外说明文案。
+- 底部 preview 统一通过 `hcw_info_badge_override_static_preview_api()` 吞掉 `touch / key`，只负责静态 reference 对照。
+
+## 8. 单元测试口径
+`example/HelloUnitTest/test/test_info_badge.c` 当前覆盖三部分：
+
+1. 样式 helper
+   覆盖 `apply_count_style()`、`apply_icon_style()`、`apply_attention_style()` 的 `content_style`、默认 icon 与 palette。
+2. setter 守卫
+   覆盖 `set_count()`、`set_icon()`、`set_icon(NULL)`、`set_palette()` 对 `pressed` 状态的清理和模式切换。
+3. 静态 preview 不变性断言
+   通过 `info_badge_preview_snapshot_t`、`capture_preview_snapshot()` 与 `assert_preview_state_unchanged()` 固定校验以下字段：
+   `region_screen`、`background`、`count`、`max_display`、`badge_color`、`text_color`、`font`、`content_style`、`icon`、`icon_font`、`alpha`、`enable`、`is_focused`、`is_pressed`、`padding`
+
+补充说明：
+- 静态 preview 用例已收口为 “consumes input and keeps state”。
+- 为兼容当前 `HelloUnitTest` harness，preview 用例继续直接调用 `on_touch_event()` / `on_key_event()`。
+
+## 9. 验收命令
 ```bash
 make all APP=HelloCustomWidgets APP_SUB=display/info_badge PORT=pc
+
+# 在 X:\ 短路径工作区执行，规避 Windows 命令行长度限制
+make clean APP=HelloUnitTest PORT=pc_test
 make all APP=HelloUnitTest PORT=pc_test
-output\main.exe
+X:\output\main.exe
+
 python scripts/sync_widget_catalog.py
 python scripts/checks/check_touch_release_semantics.py --scope custom --category display
 python scripts/checks/check_docs_encoding.py
 python scripts/checks/check_widget_catalog.py
 python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub display/info_badge --track reference --timeout 10 --keep-screenshots
+python scripts/code_compile_check.py --custom-widgets --category display --bits64
+python scripts/code_runtime_check.py --app HelloCustomWidgets --category display --track reference --bits64
+python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub display/info_badge
+python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_display_info_badge
 ```
 
-验收重点：
-- 主面板里的 `count / icon / dot` 都必须完整可见
-- `99+` preview 不能因为文本溢出被裁切
-- attention dot 必须在没有图标文本时仍保持稳定绘制
-- 静态 preview 不能响应 `touch / key`
+## 10. 当前结果
+- `HelloCustomWidgets` 单控件编译：已通过 `make all APP=HelloCustomWidgets APP_SUB=display/info_badge PORT=pc`
+- `HelloUnitTest`：已在 `X:\` 短路径通过 `make clean APP=HelloUnitTest PORT=pc_test`、`make all APP=HelloUnitTest PORT=pc_test` 与 `X:\output\main.exe`，总计 `845 / 845`，其中 `info_badge` suite `3 / 3`
+- `sync_widget_catalog.py`：已通过，`widget_catalog.json` 与 `web/catalog-policy.json` 保持同步，本轮无额外目录漂移
+- `touch release semantics`：已通过，结果 `custom_audited=21 custom_skipped_allowlist=0`
+- `docs encoding`：已通过，结果 `134 files`
+- `widget catalog check`：已通过，结果 `106 widgets: reference=106, showcase=0, deprecated=0`
+- 单控件 runtime：已通过 `python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub display/info_badge --track reference --timeout 10 --keep-screenshots`，输出 `8` 帧截图
+- `display` 分类 compile/runtime 回归：已通过 `python scripts/code_compile_check.py --custom-widgets --category display --bits64` 与 `python scripts/code_runtime_check.py --app HelloCustomWidgets --category display --track reference --bits64`，分类内 `21` 个控件全部通过
+- wasm 构建：已通过 `python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub display/info_badge`，输出 `web/demos/HelloCustomWidgets_display_info_badge`
+- web smoke：已通过 `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_display_info_badge`，结果 `PASS status=Running canvas=480x480 ratio=0.1099 colors=95`
 
-## 9. 已知限制与后续方向
-- 当前只覆盖固定尺寸 reference 页面，不扩展到动态附着定位或复杂宿主布局
-- SDK 原生没有 dot 模式，因此由 custom draw 在 `icon == NULL && style == ICON` 时收口 attention dot
-- 当前不下沉到 `src/widget/`，先保持在 `HelloCustomWidgets` 的 reference 维护范围内
+## 11. Runtime 复核结论
+复核目录：
+- `runtime_check_output/HelloCustomWidgets_display_info_badge/default`
 
-## 10. 与现有控件的边界
-- 相比 `badge_group`：这里是单个 `InfoBadge`，不是多 badge 组合卡片
-- 相比 `message_bar`：这里不承载块级反馈文案，只表达极小面积状态
-- 相比 SDK `notification_badge`：这里补的是 Fluent / WPF UI `InfoBadge` 语义、页面与验证闭环
+复核结果：
+- 总帧数：`8`
+- 主区 RGB 差分边界：`(64, 163) - (366, 271)`
+- 遮罩主区差分边界后，主区外唯一哈希数：`1`
+- 按主区裁剪后，主区唯一状态数：`3`
+- 按 `y >= 272` 裁剪底部 preview 区域后，preview 区唯一哈希数：`1`
 
-## 11. 对应组件名与本次保留的核心状态
-- 对应组件名：`InfoBadge`
-- 本次保留核心状态：
-  - `count`
-  - `icon`
-  - `attention dot`
+目标：
+- 主区唯一状态数 = `3`
+- 主区外唯一哈希数 = `1`
+- 底部 preview 区唯一哈希数 = `1`
 
-## 12. 删掉的效果或装饰
-- 删除页面级 guide、标签切换和与 `InfoBadge` 无关的故事化说明块
-- 删除高噪音 hover/动画装饰，只保留静态 reference 所需的变化
-- 删除额外壳层和复杂组合布局，避免主语义被弱化
+## 12. 已知限制
+- 当前 demo 只覆盖 `count`、`icon`、`attention dot` 三种最小 `InfoBadge` 语义。
+- `attention dot` 通过 custom draw 收口为 `icon == NULL && style == ICON` 的无字圆点，不扩展到更复杂的宿主附着定位。
+- 当前页面优先保证 reference 录制稳定，不额外扩展 hover、动画或组合式交互容器。
+- 底部 `overflow / attention` preview 只承担静态 reference 对照，不承载额外交互职责。
 
-## 13. EGUI 适配时的简化点与约束
-- 继续复用 SDK `notification_badge` 的计数与图标绘制
-- custom 层只补一层 draw 适配，把 `attention dot` 收敛成无字圆点
-- 通过 `hcw_info_badge_override_static_preview_api()` 统一吞掉 preview 的 `touch / key`
-- palette setter 只暴露 badge/text 两个关键颜色，避免 reference 页面对外扩散多余样式面
+## 13. 与现有控件的边界
+- 相比 `badge`：这里强调附着型信息提醒，而不是独立标签展示。
+- 相比 `badge_group`：这里是单个 `InfoBadge` 语义，不是多 badge 组合容器。
+- 相比 SDK `notification_badge`：这里补齐 `InfoBadge` 语义 helper、attention dot 和静态 preview 输入抑制。
+
+## 14. EGUI 适配说明
+- 继续复用当前目录下的 `egui_view_info_badge` custom view，不修改 SDK。
+- 主区保留三行 `count / icon / attention dot` 与 3 组 reference 快照。
+- 底部 preview 通过 `hcw_info_badge_override_static_preview_api()` 明确收口为静态 reference。
+- 当前优先保证主区 3 组 reference 快照、底部 preview 全程静态，以及 runtime 录制稳定，再评估是否需要扩展更多宿主布局场景。

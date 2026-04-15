@@ -8,19 +8,21 @@
 #endif
 
 #define INFO_BADGE_ROOT_WIDTH        224
-#define INFO_BADGE_ROOT_HEIGHT       246
-#define INFO_BADGE_PRIMARY_WIDTH     196
-#define INFO_BADGE_PRIMARY_HEIGHT    118
-#define INFO_BADGE_PREVIEW_WIDTH     104
-#define INFO_BADGE_PREVIEW_HEIGHT    80
-#define INFO_BADGE_BOTTOM_ROW_WIDTH  216
-#define INFO_BADGE_BOTTOM_ROW_HEIGHT 80
+#define INFO_BADGE_ROOT_HEIGHT       144
+#define INFO_BADGE_ROW_WIDTH         176
+#define INFO_BADGE_ROW_HEIGHT        24
+#define INFO_BADGE_BOTTOM_ROW_WIDTH  60
+#define INFO_BADGE_BOTTOM_ROW_HEIGHT 20
 #define INFO_BADGE_RECORD_WAIT       90
 #define INFO_BADGE_RECORD_FRAME_WAIT 170
+#define INFO_BADGE_RECORD_FINAL_WAIT 280
+#define INFO_BADGE_DEFAULT_SNAPSHOT  0
 
-typedef struct
+#define PRIMARY_SNAPSHOT_COUNT ((uint8_t)EGUI_ARRAY_SIZE(primary_snapshots))
+
+typedef struct info_badge_snapshot info_badge_snapshot_t;
+struct info_badge_snapshot
 {
-    const char *heading;
     const char *count_label;
     uint16_t count_value;
     egui_color_t count_color;
@@ -29,13 +31,10 @@ typedef struct
     egui_color_t icon_color;
     const char *dot_label;
     egui_color_t dot_color;
-    const char *note;
-} info_badge_snapshot_t;
+};
 
 static egui_view_linearlayout_t root_layout;
 static egui_view_label_t title_label;
-static egui_view_linearlayout_t primary_panel;
-static egui_view_label_t primary_heading_label;
 static egui_view_linearlayout_t count_row;
 static egui_view_label_t count_row_label;
 static egui_view_notification_badge_t count_badge;
@@ -45,36 +44,21 @@ static egui_view_notification_badge_t icon_badge;
 static egui_view_linearlayout_t dot_row;
 static egui_view_label_t dot_row_label;
 static egui_view_notification_badge_t dot_badge;
-static egui_view_label_t primary_note_label;
 static egui_view_linearlayout_t bottom_row;
-static egui_view_linearlayout_t overflow_panel;
-static egui_view_label_t overflow_heading_label;
 static egui_view_notification_badge_t overflow_badge;
-static egui_view_label_t overflow_body_label;
-static egui_view_linearlayout_t attention_panel;
-static egui_view_label_t attention_heading_label;
 static egui_view_notification_badge_t attention_badge;
-static egui_view_label_t attention_body_label;
 static egui_view_api_t overflow_badge_api;
 static egui_view_api_t attention_badge_api;
+static uint8_t ui_ready;
 
 EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
 EGUI_BACKGROUND_PARAM_INIT(bg_page_panel_params, &bg_page_panel_param, NULL, NULL);
 EGUI_BACKGROUND_COLOR_STATIC_CONST_INIT(bg_page_panel, &bg_page_panel_params);
 
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_surface_panel_param, EGUI_COLOR_HEX(0xFFFFFF), EGUI_ALPHA_100, 12);
-EGUI_BACKGROUND_PARAM_INIT(bg_surface_panel_params, &bg_surface_panel_param, NULL, NULL);
-EGUI_BACKGROUND_COLOR_STATIC_CONST_INIT(bg_surface_panel, &bg_surface_panel_params);
-
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_muted_panel_param, EGUI_COLOR_HEX(0xFBFCFD), EGUI_ALPHA_100, 12);
-EGUI_BACKGROUND_PARAM_INIT(bg_muted_panel_params, &bg_muted_panel_param, NULL, NULL);
-EGUI_BACKGROUND_COLOR_STATIC_CONST_INIT(bg_muted_panel, &bg_muted_panel_params);
-
 static const char *title_text = "InfoBadge";
 
 static const info_badge_snapshot_t primary_snapshots[] = {
         {
-                "Workspace alerts",
                 "Inbox updates",
                 18,
                 EGUI_COLOR_HEX(0xC42B1C),
@@ -83,10 +67,8 @@ static const info_badge_snapshot_t primary_snapshots[] = {
                 EGUI_COLOR_HEX(0x0F6CBD),
                 "Review pending",
                 EGUI_COLOR_HEX(0xC42B1C),
-                "Count, icon, and dot stay compact.",
         },
         {
-                "Release board",
                 "Build blockers",
                 7,
                 EGUI_COLOR_HEX(0xC42B1C),
@@ -95,10 +77,8 @@ static const info_badge_snapshot_t primary_snapshots[] = {
                 EGUI_COLOR_HEX(0xB95A00),
                 "Deployment paused",
                 EGUI_COLOR_HEX(0xC42B1C),
-                "Warnings surface without extra chrome.",
         },
         {
-                "Calm summary",
                 "Finished checks",
                 2,
                 EGUI_COLOR_HEX(0x0F7B45),
@@ -107,9 +87,10 @@ static const info_badge_snapshot_t primary_snapshots[] = {
                 EGUI_COLOR_HEX(0x0F7B45),
                 "Watch list",
                 EGUI_COLOR_HEX(0x0F6CBD),
-                "Quiet palettes still keep status visible.",
         },
 };
+
+static void layout_page(void);
 
 static void init_text_label(egui_view_label_t *label, egui_dim_t width, egui_dim_t height, const char *text, const egui_font_t *font, egui_color_t color,
                             uint8_t align)
@@ -122,33 +103,21 @@ static void init_text_label(egui_view_label_t *label, egui_dim_t width, egui_dim
     egui_view_label_set_font_color(EGUI_VIEW_OF(label), color, EGUI_ALPHA_100);
 }
 
-static void init_panel(egui_view_linearlayout_t *panel, egui_dim_t width, egui_dim_t height, egui_background_t *background, uint8_t align)
-{
-    egui_view_linearlayout_init(EGUI_VIEW_OF(panel));
-    egui_view_set_size(EGUI_VIEW_OF(panel), width, height);
-    egui_view_linearlayout_set_orientation(EGUI_VIEW_OF(panel), 0);
-    egui_view_linearlayout_set_align_type(EGUI_VIEW_OF(panel), align);
-    egui_view_set_background(EGUI_VIEW_OF(panel), background);
-    egui_view_set_padding(EGUI_VIEW_OF(panel), 10, 10, 10, 10);
-}
-
 static void init_row(egui_view_linearlayout_t *row)
 {
     egui_view_linearlayout_init(EGUI_VIEW_OF(row));
-    egui_view_set_size(EGUI_VIEW_OF(row), 176, 24);
+    egui_view_set_size(EGUI_VIEW_OF(row), INFO_BADGE_ROW_WIDTH, INFO_BADGE_ROW_HEIGHT);
     egui_view_linearlayout_set_orientation(EGUI_VIEW_OF(row), 1);
     egui_view_linearlayout_set_align_type(EGUI_VIEW_OF(row), EGUI_ALIGN_VCENTER);
 }
 
 static void apply_primary_snapshot(uint8_t index)
 {
-    const info_badge_snapshot_t *snapshot = &primary_snapshots[index % EGUI_ARRAY_SIZE(primary_snapshots)];
+    const info_badge_snapshot_t *snapshot = &primary_snapshots[index % PRIMARY_SNAPSHOT_COUNT];
 
-    egui_view_label_set_text(EGUI_VIEW_OF(&primary_heading_label), snapshot->heading);
     egui_view_label_set_text(EGUI_VIEW_OF(&count_row_label), snapshot->count_label);
     egui_view_label_set_text(EGUI_VIEW_OF(&icon_row_label), snapshot->icon_label);
     egui_view_label_set_text(EGUI_VIEW_OF(&dot_row_label), snapshot->dot_label);
-    egui_view_label_set_text(EGUI_VIEW_OF(&primary_note_label), snapshot->note);
 
     hcw_info_badge_apply_count_style(EGUI_VIEW_OF(&count_badge));
     hcw_info_badge_set_count(EGUI_VIEW_OF(&count_badge), snapshot->count_value);
@@ -160,6 +129,16 @@ static void apply_primary_snapshot(uint8_t index)
 
     hcw_info_badge_apply_attention_style(EGUI_VIEW_OF(&dot_badge));
     hcw_info_badge_set_palette(EGUI_VIEW_OF(&dot_badge), snapshot->dot_color, EGUI_COLOR_WHITE);
+
+    if (ui_ready)
+    {
+        layout_page();
+    }
+}
+
+static void apply_primary_default_state(void)
+{
+    apply_primary_snapshot(INFO_BADGE_DEFAULT_SNAPSHOT);
 }
 
 static void apply_preview_states(void)
@@ -171,7 +150,36 @@ static void apply_preview_states(void)
 
     hcw_info_badge_apply_attention_style(EGUI_VIEW_OF(&attention_badge));
     hcw_info_badge_set_palette(EGUI_VIEW_OF(&attention_badge), EGUI_COLOR_HEX(0xC42B1C), EGUI_COLOR_WHITE);
+
+    if (ui_ready)
+    {
+        layout_page();
+    }
 }
+
+static void layout_local_views(void)
+{
+    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&count_row));
+    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&icon_row));
+    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&dot_row));
+    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&bottom_row));
+    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&root_layout));
+}
+
+static void layout_page(void)
+{
+    layout_local_views();
+    egui_core_layout_childs_user_root_view(EGUI_LAYOUT_VERTICAL, EGUI_ALIGN_HCENTER | EGUI_ALIGN_VCENTER);
+}
+
+#if EGUI_CONFIG_RECORDING_TEST
+static void request_page_snapshot(void)
+{
+    layout_page();
+    egui_view_invalidate(EGUI_VIEW_OF(&root_layout));
+    recording_request_snapshot();
+}
+#endif
 
 void test_init_ui(void)
 {
@@ -181,23 +189,18 @@ void test_init_ui(void)
     egui_view_linearlayout_set_align_type(EGUI_VIEW_OF(&root_layout), EGUI_ALIGN_HCENTER);
     egui_view_set_background(EGUI_VIEW_OF(&root_layout), EGUI_BG_OF(&bg_page_panel));
 
-    init_text_label(&title_label, INFO_BADGE_ROOT_WIDTH, 18, title_text, (const egui_font_t *)&egui_res_font_montserrat_12_4, EGUI_COLOR_HEX(0x21303F),
-                    EGUI_ALIGN_CENTER);
-    egui_view_set_margin(EGUI_VIEW_OF(&title_label), 0, 8, 0, 6);
+    egui_view_label_init(EGUI_VIEW_OF(&title_label));
+    egui_view_set_size(EGUI_VIEW_OF(&title_label), INFO_BADGE_ROOT_WIDTH, 18);
+    egui_view_label_set_text(EGUI_VIEW_OF(&title_label), title_text);
+    egui_view_label_set_align_type(EGUI_VIEW_OF(&title_label), EGUI_ALIGN_CENTER);
+    egui_view_label_set_font(EGUI_VIEW_OF(&title_label), (const egui_font_t *)&egui_res_font_montserrat_12_4);
+    egui_view_label_set_font_color(EGUI_VIEW_OF(&title_label), EGUI_COLOR_HEX(0x21303F), EGUI_ALPHA_100);
+    egui_view_set_margin(EGUI_VIEW_OF(&title_label), 0, 8, 0, 8);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label));
-
-    init_panel(&primary_panel, INFO_BADGE_PRIMARY_WIDTH, INFO_BADGE_PRIMARY_HEIGHT, EGUI_BG_OF(&bg_surface_panel), EGUI_ALIGN_LEFT);
-    egui_view_set_margin(EGUI_VIEW_OF(&primary_panel), 0, 0, 0, 10);
-    egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&primary_panel));
-
-    init_text_label(&primary_heading_label, 176, 14, "Workspace alerts", (const egui_font_t *)&egui_res_font_montserrat_10_4, EGUI_COLOR_HEX(0x1A2734),
-                    EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER);
-    egui_view_set_margin(EGUI_VIEW_OF(&primary_heading_label), 0, 0, 0, 8);
-    egui_view_group_add_child(EGUI_VIEW_OF(&primary_panel), EGUI_VIEW_OF(&primary_heading_label));
 
     init_row(&count_row);
     egui_view_set_margin(EGUI_VIEW_OF(&count_row), 0, 0, 0, 4);
-    egui_view_group_add_child(EGUI_VIEW_OF(&primary_panel), EGUI_VIEW_OF(&count_row));
+    egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&count_row));
 
     init_text_label(&count_row_label, 124, 12, "Inbox updates", (const egui_font_t *)&egui_res_font_montserrat_8_4, EGUI_COLOR_HEX(0x233241),
                     EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER);
@@ -207,11 +210,14 @@ void test_init_ui(void)
     egui_view_set_size(EGUI_VIEW_OF(&count_badge), 34, 20);
     egui_view_set_margin(EGUI_VIEW_OF(&count_badge), 18, 0, 0, 0);
     egui_view_notification_badge_set_font(EGUI_VIEW_OF(&count_badge), (const egui_font_t *)&egui_res_font_montserrat_8_4);
+#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
+    egui_view_set_focusable(EGUI_VIEW_OF(&count_badge), 0);
+#endif
     egui_view_group_add_child(EGUI_VIEW_OF(&count_row), EGUI_VIEW_OF(&count_badge));
 
     init_row(&icon_row);
     egui_view_set_margin(EGUI_VIEW_OF(&icon_row), 0, 0, 0, 4);
-    egui_view_group_add_child(EGUI_VIEW_OF(&primary_panel), EGUI_VIEW_OF(&icon_row));
+    egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&icon_row));
 
     init_text_label(&icon_row_label, 124, 12, "Policy note", (const egui_font_t *)&egui_res_font_montserrat_8_4, EGUI_COLOR_HEX(0x233241),
                     EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER);
@@ -221,11 +227,14 @@ void test_init_ui(void)
     egui_view_set_size(EGUI_VIEW_OF(&icon_badge), 20, 20);
     egui_view_set_margin(EGUI_VIEW_OF(&icon_badge), 32, 0, 0, 0);
     egui_view_notification_badge_set_icon_font(EGUI_VIEW_OF(&icon_badge), EGUI_FONT_ICON_MS_16);
+#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
+    egui_view_set_focusable(EGUI_VIEW_OF(&icon_badge), 0);
+#endif
     egui_view_group_add_child(EGUI_VIEW_OF(&icon_row), EGUI_VIEW_OF(&icon_badge));
 
     init_row(&dot_row);
-    egui_view_set_margin(EGUI_VIEW_OF(&dot_row), 0, 0, 0, 8);
-    egui_view_group_add_child(EGUI_VIEW_OF(&primary_panel), EGUI_VIEW_OF(&dot_row));
+    egui_view_set_margin(EGUI_VIEW_OF(&dot_row), 0, 0, 0, 10);
+    egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&dot_row));
 
     init_text_label(&dot_row_label, 124, 12, "Review pending", (const egui_font_t *)&egui_res_font_montserrat_8_4, EGUI_COLOR_HEX(0x233241),
                     EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER);
@@ -234,11 +243,11 @@ void test_init_ui(void)
     egui_view_notification_badge_init(EGUI_VIEW_OF(&dot_badge));
     egui_view_set_size(EGUI_VIEW_OF(&dot_badge), 12, 12);
     egui_view_set_margin(EGUI_VIEW_OF(&dot_badge), 40, 0, 0, 0);
+    egui_view_notification_badge_set_icon_font(EGUI_VIEW_OF(&dot_badge), EGUI_FONT_ICON_MS_16);
+#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
+    egui_view_set_focusable(EGUI_VIEW_OF(&dot_badge), 0);
+#endif
     egui_view_group_add_child(EGUI_VIEW_OF(&dot_row), EGUI_VIEW_OF(&dot_badge));
-
-    init_text_label(&primary_note_label, 176, 10, "Count, icon, and dot stay compact.", (const egui_font_t *)&egui_res_font_montserrat_8_4,
-                    EGUI_COLOR_HEX(0x5F6E7D), EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER);
-    egui_view_group_add_child(EGUI_VIEW_OF(&primary_panel), EGUI_VIEW_OF(&primary_note_label));
 
     egui_view_linearlayout_init(EGUI_VIEW_OF(&bottom_row));
     egui_view_set_size(EGUI_VIEW_OF(&bottom_row), INFO_BADGE_BOTTOM_ROW_WIDTH, INFO_BADGE_BOTTOM_ROW_HEIGHT);
@@ -246,65 +255,35 @@ void test_init_ui(void)
     egui_view_linearlayout_set_align_type(EGUI_VIEW_OF(&bottom_row), EGUI_ALIGN_VCENTER);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&bottom_row));
 
-    init_panel(&overflow_panel, INFO_BADGE_PREVIEW_WIDTH, INFO_BADGE_PREVIEW_HEIGHT, EGUI_BG_OF(&bg_muted_panel), EGUI_ALIGN_HCENTER);
-    egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&overflow_panel));
-
-    init_text_label(&overflow_heading_label, 84, 12, "Overflow", (const egui_font_t *)&egui_res_font_montserrat_8_4, EGUI_COLOR_HEX(0x233241), EGUI_ALIGN_CENTER);
-    egui_view_set_margin(EGUI_VIEW_OF(&overflow_heading_label), 0, 0, 0, 6);
-    egui_view_group_add_child(EGUI_VIEW_OF(&overflow_panel), EGUI_VIEW_OF(&overflow_heading_label));
-
     egui_view_notification_badge_init(EGUI_VIEW_OF(&overflow_badge));
     egui_view_set_size(EGUI_VIEW_OF(&overflow_badge), 40, 20);
-    egui_view_set_margin(EGUI_VIEW_OF(&overflow_badge), 0, 0, 0, 8);
     egui_view_notification_badge_set_font(EGUI_VIEW_OF(&overflow_badge), (const egui_font_t *)&egui_res_font_montserrat_8_4);
     hcw_info_badge_override_static_preview_api(EGUI_VIEW_OF(&overflow_badge), &overflow_badge_api);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&overflow_badge), 0);
 #endif
-    egui_view_group_add_child(EGUI_VIEW_OF(&overflow_panel), EGUI_VIEW_OF(&overflow_badge));
-
-    init_text_label(&overflow_body_label, 84, 20, "99+ stays stable.", (const egui_font_t *)&egui_res_font_montserrat_8_4, EGUI_COLOR_HEX(0x6B7A89),
-                    EGUI_ALIGN_CENTER);
-    egui_view_group_add_child(EGUI_VIEW_OF(&overflow_panel), EGUI_VIEW_OF(&overflow_body_label));
-
-    init_panel(&attention_panel, INFO_BADGE_PREVIEW_WIDTH, INFO_BADGE_PREVIEW_HEIGHT, EGUI_BG_OF(&bg_surface_panel), EGUI_ALIGN_HCENTER);
-    egui_view_set_margin(EGUI_VIEW_OF(&attention_panel), 8, 0, 0, 0);
-    egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&attention_panel));
-
-    init_text_label(&attention_heading_label, 84, 12, "Attention", (const egui_font_t *)&egui_res_font_montserrat_8_4, EGUI_COLOR_HEX(0x1A2734),
-                    EGUI_ALIGN_CENTER);
-    egui_view_set_margin(EGUI_VIEW_OF(&attention_heading_label), 0, 0, 0, 6);
-    egui_view_group_add_child(EGUI_VIEW_OF(&attention_panel), EGUI_VIEW_OF(&attention_heading_label));
+    egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&overflow_badge));
 
     egui_view_notification_badge_init(EGUI_VIEW_OF(&attention_badge));
     egui_view_set_size(EGUI_VIEW_OF(&attention_badge), 12, 12);
-    egui_view_set_margin(EGUI_VIEW_OF(&attention_badge), 0, 0, 0, 16);
+    egui_view_set_margin(EGUI_VIEW_OF(&attention_badge), 8, 0, 0, 0);
+    egui_view_notification_badge_set_icon_font(EGUI_VIEW_OF(&attention_badge), EGUI_FONT_ICON_MS_16);
     hcw_info_badge_override_static_preview_api(EGUI_VIEW_OF(&attention_badge), &attention_badge_api);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&attention_badge), 0);
 #endif
-    egui_view_group_add_child(EGUI_VIEW_OF(&attention_panel), EGUI_VIEW_OF(&attention_badge));
+    egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&attention_badge));
 
-    init_text_label(&attention_body_label, 84, 20, "Dot stays compact.", (const egui_font_t *)&egui_res_font_montserrat_8_4,
-                    EGUI_COLOR_HEX(0x5F6E7D), EGUI_ALIGN_CENTER);
-    egui_view_group_add_child(EGUI_VIEW_OF(&attention_panel), EGUI_VIEW_OF(&attention_body_label));
-
-    apply_primary_snapshot(0);
+    apply_primary_default_state();
     apply_preview_states();
 
     hello_custom_widgets_demo_apply_title_only_scaffold(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label), NULL, 0);
 
-    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&count_row));
-    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&icon_row));
-    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&dot_row));
-    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&primary_panel));
-    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&overflow_panel));
-    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&attention_panel));
-    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&bottom_row));
-    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&root_layout));
-
+    layout_local_views();
     egui_core_add_user_root_view(EGUI_VIEW_OF(&root_layout));
-    egui_core_layout_childs_user_root_view(EGUI_LAYOUT_VERTICAL, EGUI_ALIGN_HCENTER | EGUI_ALIGN_VCENTER);
+    ui_ready = 1;
+    apply_primary_default_state();
+    apply_preview_states();
 }
 
 #if EGUI_CONFIG_RECORDING_TEST
@@ -320,53 +299,49 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     case 0:
         if (first_call)
         {
-            apply_primary_snapshot(0);
+            apply_primary_default_state();
             apply_preview_states();
-        }
-        EGUI_SIM_SET_WAIT(p_action, INFO_BADGE_RECORD_WAIT);
-        return true;
-    case 1:
-        if (first_call)
-        {
-            recording_request_snapshot();
+            request_page_snapshot();
         }
         EGUI_SIM_SET_WAIT(p_action, INFO_BADGE_RECORD_FRAME_WAIT);
         return true;
-    case 2:
+    case 1:
         if (first_call)
         {
             apply_primary_snapshot(1);
         }
         EGUI_SIM_SET_WAIT(p_action, INFO_BADGE_RECORD_WAIT);
         return true;
-    case 3:
+    case 2:
         if (first_call)
         {
-            recording_request_snapshot();
+            request_page_snapshot();
         }
         EGUI_SIM_SET_WAIT(p_action, INFO_BADGE_RECORD_FRAME_WAIT);
         return true;
-    case 4:
+    case 3:
         if (first_call)
         {
             apply_primary_snapshot(2);
         }
         EGUI_SIM_SET_WAIT(p_action, INFO_BADGE_RECORD_WAIT);
         return true;
-    case 5:
+    case 4:
         if (first_call)
         {
-            recording_request_snapshot();
+            request_page_snapshot();
         }
         EGUI_SIM_SET_WAIT(p_action, INFO_BADGE_RECORD_FRAME_WAIT);
+        return true;
+    case 5:
+        EGUI_SIM_SET_WAIT(p_action, INFO_BADGE_RECORD_FINAL_WAIT);
         return true;
     case 6:
         if (first_call)
         {
-            apply_primary_snapshot(0);
-            recording_request_snapshot();
+            request_page_snapshot();
         }
-        EGUI_SIM_SET_WAIT(p_action, 520);
+        EGUI_SIM_SET_WAIT(p_action, INFO_BADGE_RECORD_FINAL_WAIT);
         return true;
     default:
         return false;
