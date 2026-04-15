@@ -1,85 +1,132 @@
-# StackPanel 设计说明
+# stack_panel 设计说明
 
 ## 参考来源
-- 参考设计系统：`Fluent 2`
-- 参考开源库：`WPF UI`
-- 对应组件名：`StackPanel`
-- 本次保留语义：顺序堆叠、纵向主态、横向排布静态 preview、紧凑静态 preview、固定 snapshot 对照
-- 本次不做内容：子项虚拟化、自动换行、复杂测量、共享尺寸组、拖拽重排
-- EGUI 适配说明：在 custom 层复用 SDK `egui_view_linearlayout`，只补轻量 style helper、静态 preview API 与 reference 演示页面
+- 参考设计体系：`Fluent 2`
+- 官方语义参考：`WPF StackPanel`
+- 对应组件语义：`StackPanel`
+- 本次保留语义：`Review flow / Inline tools / Compact notes / Horizontal / Compact / ordered stacking`
+- 本次删除内容：旧录制末尾“恢复后立即抓帧”的模板化收尾、旧单测 `on_key_event` 直调入口、与当前 static preview 工作流不一致的旧 README 结构
+- EGUI 适配说明：目录和 demo 继续使用 `layout/stack_panel`，底层仍复用 SDK `egui_view_linearlayout`，本轮只收口 `reference` 页面结构、录制轨道、单测入口和静态 preview 语义，不修改 `sdk/EmbeddedGUI`
 
 ## 1. 为什么需要这个控件
-`StackPanel` 是最基础的顺序布局语义之一，用来表达“内容按固定顺序连续堆叠”的 Fluent / WPF 布局关系，适合设置摘要、审核步骤、操作列表和轻量信息面板。
+`stack_panel` 用来表达“子项按单一方向顺序堆叠”的基础布局语义，适合审核流程、工具条、摘要列表和轻量信息面板。它是 Fluent / WPF 里最常见的基础容器之一，适合作为多个高层布局控件的 reference 语义底座。
 
 ## 2. 为什么现有控件不够用
-- `grid` 强调列对齐，不适合纯顺序堆叠。
-- `wrap_panel` 负责自动换行，不适合固定阅读顺序的纵向信息流。
-- 直接使用底层 `linearlayout` 不足以作为 reference 组件展示 Fluent / WPF 的布局语义和静态 preview 对照。
+- `grid` 更强调显式列布局，不适合纯顺序堆叠。
+- `dock_panel` 负责停靠边和剩余区域填充，不是顺序布局容器。
+- `wrap_panel` 会自动换行，不适合固定阅读顺序的单轴内容流。
+- 直接裸用 `linearlayout` 不能完整承载当前 reference 页面、static preview 和验收闭环。
 
-## 3. 目标场景与示例概览
-- 主面板展示一个 `StackPanel`，录制轨道依次切换：
+## 3. 目标场景与页面结构
+- 页面结构统一为：标题 -> 主 `stack_panel` -> 底部 `Horizontal / Compact` 双静态 preview。
+- 主控件负责导出三组主区状态：
   - `Review flow`
   - `Inline tools`
   - `Compact notes`
-- 底部两个静态 preview：
-  - `Horizontal`
-  - `Compact`
+- 底部左侧是 `Horizontal` 静态 preview，固定展示横向操作条堆叠语义。
+- 底部右侧是 `Compact` 静态 preview，固定展示紧凑纵向堆叠语义。
+- 两个 preview 统一通过 `hcw_stack_panel_override_static_preview_api()` 收口：
+  - 吞掉新的 `touch / key`
+  - 只清理残留 `pressed`
+  - 不修改 `orientation / align_type / auto_size`
+  - 不触发布局外的额外交互
+
+目标目录：`example/HelloCustomWidgets/layout/stack_panel/`
 
 ## 4. 视觉与布局规格
-- 画布：`480 x 480`
 - 根布局：`224 x 226`
 - 主面板：`196 x 116`
-- 主 `StackPanel`：`176 x 64`
-- 底部容器：`216 x 74`
+- 主 `stack_panel`：`176 x 64`
+- 底部对照行：`216 x 74`
 - 单个 preview 面板：`104 x 74`
+- `Horizontal` preview 的内部堆叠区：`84 x 34`
+- `Compact` preview 的内部堆叠区：`84 x 32`
+- 风格约束：
+  - 保持浅色 Fluent surface、低噪音色块和轻量文字层级。
+  - 主区只保留堆叠方向、密度和 item 顺序差异，不叠加额外交互 chrome。
+  - 底部 preview 全程静态，不再承担场景切换或收尾刷新职责。
 
-## 5. 控件清单与状态矩阵
-| 区域 | 语义 | 说明 |
+## 5. 控件清单
+
+| 变量名 | 类型 | 尺寸 (W x H) | 初始状态 | 用途 |
+| --- | --- | ---: | --- | --- |
+| `primary_stack_panel` | `egui_view_linearlayout_t` | `176 x 64` | `Review flow` | 主 `StackPanel` |
+| `horizontal_preview_stack` | `egui_view_linearlayout_t` | `84 x 34` | `Horizontal` | 横向静态 preview |
+| `compact_preview_stack` | `egui_view_linearlayout_t` | `84 x 32` | `Compact` | 紧凑静态 preview |
+| `primary_snapshots` | `stack_snapshot_t[3]` | - | `Review / Inline / Compact` | 主状态轨道 |
+
+## 6. 状态覆盖矩阵
+
+| 区域 / 轨道 | 状态 | 说明 |
 | --- | --- | --- |
-| 主控件 | Vertical stack | 默认纵向堆叠 |
-| 主控件 | Horizontal strip | 横向排布对照 |
-| 主控件 | Compact stack | 紧凑堆叠对照 |
-| Horizontal preview | Static preview | 吞掉 `touch / key` |
-| Compact preview | Static preview | 吞掉 `touch / key` |
+| 主控件 | `Review flow` | 默认纵向阅读流 |
+| 主控件 | `Inline tools` | 横向工具条 |
+| 主控件 | `Compact notes` | 紧凑纵向摘要流 |
+| `Horizontal` preview | `Horizontal` | 固定静态对照，验证横向堆叠 |
+| `Compact` preview | `Compact` | 固定静态对照，验证紧凑纵向堆叠 |
 
-## 6. 录制动作设计
-1. 初始显示 `Review flow`
-2. 抓取第一帧
-3. 切换到 `Inline tools`
-4. 抓取第二帧
-5. 切换到 `Compact notes`
-6. 抓取第三帧
-7. 恢复默认状态并收尾
+## 7. 交互语义与单测要求
+- `stack_panel` 本体不承担选择或提交语义，核心验收点是布局结果与静态 preview 防输入行为。
+- `apply_standard_style()`、`apply_horizontal_style()`、`apply_compact_style()`、`set_orientation()`、`set_align_type()` 之后都不能残留旧的 `pressed` 高亮。
+- `layout_childs()` 必须覆盖：
+  - 标准纵向堆叠
+  - 横向排布
+  - 紧凑纵向排布
+- static preview 用例必须验证：
+  - `touch / dispatch_key_event()` 输入会被消耗
+  - `is_orientation_horizontal / align_type / is_auto_width / is_auto_height` 保持不变
+  - 子项布局区域保持不变
+  - `on_click_listener` 不触发
+  - `pressed / is_pressed` 被清理
+- 预览态键盘入口统一走 `dispatch_key_event()`，不再直接调用 `on_key_event()`。
 
-## 7. 编译 / runtime / 截图验收标准
+## 8. 录制动作设计
+`egui_port_get_recording_action()` 的录制顺序如下：
+1. 重置主控件和底部双 preview，直接输出默认 `Review flow`
+2. 切到 `Inline tools`
+3. 输出第二帧
+4. 切到 `Compact notes`
+5. 输出第三帧
+6. 恢复默认主状态
+7. 输出最终稳定帧
+
+录制只导出主区状态变化。底部 `Horizontal / Compact` preview 在整条 reference 轨道里保持静态一致，不再包含额外 preview 刷新或“恢复后立刻抓帧”的旧式收尾。
+
+## 9. 编译、单测、运行时与文档检查
 ```bash
 make all APP=HelloCustomWidgets APP_SUB=layout/stack_panel PORT=pc
+
+# 在 X:\ 短路径下执行；修改 HelloUnitTest 后先 clean 再重建
+make clean APP=HelloUnitTest PORT=pc_test
 make all APP=HelloUnitTest PORT=pc_test
-output\main.exe
+X:\output\main.exe
 
 python scripts/sync_widget_catalog.py
 python scripts/checks/check_touch_release_semantics.py --scope custom --category layout
 python scripts/checks/check_docs_encoding.py
 python scripts/checks/check_widget_catalog.py
 python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub layout/stack_panel --track reference --timeout 10 --keep-screenshots
+python scripts/code_compile_check.py --custom-widgets --category layout --bits64
+python scripts/code_runtime_check.py --app HelloCustomWidgets --category layout --track reference --bits64
 python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub layout/stack_panel
 python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_layout_stack_panel
 ```
 
-验收重点：
-- 主 `StackPanel` 与两个 preview 都必须完整可见。
-- 三组 snapshot 的排布切换不能出现裁切、错位或重叠。
-- 静态 preview 必须吞掉新增的 `touch / key` 输入。
+## 10. 验收重点
+- 主控件三组主状态必须能直接看出方向或密度切换差异。
+- `vertical -> horizontal -> compact vertical` 切换过程中不能出现重叠、裁切、整块缺失或旧布局残留。
+- 单测里的 style helper、布局路径、`dispatch_key_event()` 入口和 static preview 状态保持断言必须全部通过。
+- 两个 preview 必须完整可见，不黑白屏、不抖动，并且在所有 runtime 帧里保持静态一致。
 
-## 8. 参考设计体系与母本
-- Fluent 2 基础布局语义
-- WPF UI `StackPanel`
+## 11. 截图复核口径
+- 检查目录：`runtime_check_output/HelloCustomWidgets_layout_stack_panel/default`
+- 复核目标：
+  - 主区存在 `3` 组可辨识唯一状态
+  - 底部 preview 区域在全程保持单一静态哈希
+  - 差分变化边界只出现在主区，不扩散到 preview 区
 
-## 9. 保留与删减
-- 保留：顺序堆叠、纵向与横向基础布局语义、低噪音 surface 对照
-- 删减：复杂滚动、虚拟化、动态测量、交互式拖拽
-
-## 10. EGUI 简化点与限制
-- 当前仅做 reference wrapper，不下沉 SDK。
-- 不实现自动换行与虚拟化能力。
-- style helper 只服务 reference 语义，不扩展为完整通用布局系统。
+## 12. 与现有控件的边界
+- 相比 `grid`：这里强调单轴顺序堆叠，不表达显式列数。
+- 相比 `dock_panel`：这里不处理边缘停靠和剩余区域填充。
+- 相比 `wrap_panel`：这里不做流式换行，顺序和方向显式可控。
+- 相比 `virtualizing_stack_panel`：这里不做虚拟化或滚动容器能力，只保留基础布局语义。
