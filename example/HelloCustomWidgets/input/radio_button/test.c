@@ -1,5 +1,3 @@
-#include <string.h>
-
 #include "egui.h"
 #include "egui_view_radio_button.h"
 #include "uicode.h"
@@ -23,6 +21,10 @@
 #define RADIO_BUTTON_BOTTOM_ROW_HEIGHT      52
 #define RADIO_BUTTON_RECORD_WAIT            90
 #define RADIO_BUTTON_RECORD_FRAME_WAIT      170
+#define RADIO_BUTTON_RECORD_FINAL_WAIT      280
+#define RADIO_BUTTON_DEFAULT_SNAPSHOT       0
+
+#define PRIMARY_SNAPSHOT_COUNT ((uint8_t)EGUI_ARRAY_SIZE(primary_snapshots))
 
 typedef struct primary_radio_snapshot primary_radio_snapshot_t;
 struct primary_radio_snapshot
@@ -53,6 +55,7 @@ static egui_view_linearlayout_t read_only_column;
 static egui_view_radio_button_t read_only_buttons[2];
 static egui_view_radio_group_t read_only_group;
 static egui_view_api_t read_only_button_api[2];
+static uint8_t ui_ready;
 
 EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
 EGUI_BACKGROUND_PARAM_INIT(bg_page_panel_params, &bg_page_panel_param, NULL, NULL);
@@ -66,16 +69,18 @@ static const primary_radio_snapshot_t primary_snapshots[] = {
         {{"Daily", "Weekly", "Monthly"}, 2},
 };
 
-static const preview_radio_snapshot_t compact_snapshots[] = {
-        {{"Auto", "Manual"}, 0},
-        {{"Light", "Dark"}, 1},
+static const preview_radio_snapshot_t compact_snapshot = {
+        {"Auto", "Manual"}, 0,
 };
 
 static const preview_radio_snapshot_t read_only_snapshot = {
         {"Desktop", "Tablet"}, 1,
 };
 
-static void set_group_snapshot(egui_view_radio_button_t *buttons, uint8_t count, const char *const *texts, uint8_t selected_index)
+static void layout_page(void);
+static void focus_primary_button(uint8_t index);
+
+static void apply_snapshot_to_group(egui_view_radio_button_t *buttons, uint8_t count, const char *const *texts, uint8_t selected_index)
 {
     uint8_t i;
 
@@ -93,21 +98,29 @@ static void set_group_snapshot(egui_view_radio_button_t *buttons, uint8_t count,
 
 static void apply_primary_snapshot(uint8_t index)
 {
-    const primary_radio_snapshot_t *snapshot = &primary_snapshots[index % EGUI_ARRAY_SIZE(primary_snapshots)];
+    const primary_radio_snapshot_t *snapshot = &primary_snapshots[index % PRIMARY_SNAPSHOT_COUNT];
 
-    set_group_snapshot(primary_buttons, EGUI_ARRAY_SIZE(primary_buttons), snapshot->texts, snapshot->selected_index);
+    apply_snapshot_to_group(primary_buttons, EGUI_ARRAY_SIZE(primary_buttons), snapshot->texts, snapshot->selected_index);
+    if (ui_ready)
+    {
+        focus_primary_button(snapshot->selected_index);
+        layout_page();
+    }
 }
 
-static void apply_compact_snapshot(uint8_t index)
+static void apply_primary_default_state(void)
 {
-    const preview_radio_snapshot_t *snapshot = &compact_snapshots[index % EGUI_ARRAY_SIZE(compact_snapshots)];
-
-    set_group_snapshot(compact_buttons, EGUI_ARRAY_SIZE(compact_buttons), snapshot->texts, snapshot->selected_index);
+    apply_primary_snapshot(RADIO_BUTTON_DEFAULT_SNAPSHOT);
 }
 
-static void apply_read_only_snapshot(void)
+static void apply_preview_states(void)
 {
-    set_group_snapshot(read_only_buttons, EGUI_ARRAY_SIZE(read_only_buttons), read_only_snapshot.texts, read_only_snapshot.selected_index);
+    apply_snapshot_to_group(compact_buttons, EGUI_ARRAY_SIZE(compact_buttons), compact_snapshot.texts, compact_snapshot.selected_index);
+    apply_snapshot_to_group(read_only_buttons, EGUI_ARRAY_SIZE(read_only_buttons), read_only_snapshot.texts, read_only_snapshot.selected_index);
+    if (ui_ready)
+    {
+        layout_page();
+    }
 }
 
 static void init_radio_button(egui_view_radio_button_t *button, egui_view_api_t *api, egui_dim_t width, egui_dim_t height, const egui_font_t *font,
@@ -132,6 +145,21 @@ static void init_radio_button(egui_view_radio_button_t *button, egui_view_api_t 
 #endif
 }
 
+static void layout_local_views(void)
+{
+    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&primary_column));
+    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&compact_column));
+    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&read_only_column));
+    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&bottom_row));
+    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&root_layout));
+}
+
+static void layout_page(void)
+{
+    layout_local_views();
+    egui_core_layout_childs_user_root_view(EGUI_LAYOUT_VERTICAL, EGUI_ALIGN_HCENTER | EGUI_ALIGN_VCENTER);
+}
+
 static void focus_primary_button(uint8_t index)
 {
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
@@ -143,6 +171,15 @@ static void focus_primary_button(uint8_t index)
     EGUI_UNUSED(index);
 #endif
 }
+
+#if EGUI_CONFIG_RECORDING_TEST
+static void request_page_snapshot(void)
+{
+    layout_page();
+    egui_view_invalidate(EGUI_VIEW_OF(&root_layout));
+    recording_request_snapshot();
+}
+#endif
 
 void test_init_ui(void)
 {
@@ -228,37 +265,19 @@ void test_init_ui(void)
         egui_view_group_add_child(EGUI_VIEW_OF(&read_only_column), EGUI_VIEW_OF(&read_only_buttons[i]));
     }
 
-    apply_primary_snapshot(0);
-    apply_compact_snapshot(0);
-    apply_read_only_snapshot();
+    apply_primary_default_state();
+    apply_preview_states();
 
     hello_custom_widgets_demo_apply_title_only_scaffold(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label), NULL, 0);
 
-    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&primary_column));
-    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&compact_column));
-    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&read_only_column));
-    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&bottom_row));
-    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&root_layout));
+    layout_local_views();
     egui_core_add_user_root_view(EGUI_VIEW_OF(&root_layout));
-    egui_core_layout_childs_user_root_view(EGUI_LAYOUT_VERTICAL, EGUI_ALIGN_HCENTER | EGUI_ALIGN_VCENTER);
-    focus_primary_button(0);
+    ui_ready = 1;
+    layout_page();
+    focus_primary_button(primary_snapshots[RADIO_BUTTON_DEFAULT_SNAPSHOT].selected_index);
 }
 
 #if EGUI_CONFIG_RECORDING_TEST
-static void dispatch_primary_key(uint8_t index, uint8_t key_code)
-{
-    egui_key_event_t event;
-
-    memset(&event, 0, sizeof(event));
-    focus_primary_button(index);
-    event.type = EGUI_KEY_EVENT_ACTION_DOWN;
-    event.key_code = key_code;
-    EGUI_VIEW_OF(&primary_buttons[index])->api->dispatch_key_event(EGUI_VIEW_OF(&primary_buttons[index]), &event);
-
-    event.type = EGUI_KEY_EVENT_ACTION_UP;
-    EGUI_VIEW_OF(&primary_buttons[index])->api->dispatch_key_event(EGUI_VIEW_OF(&primary_buttons[index]), &event);
-}
-
 bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_action)
 {
     static int last_action = -1;
@@ -271,59 +290,50 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     case 0:
         if (first_call)
         {
-            apply_primary_snapshot(0);
-            apply_compact_snapshot(0);
-            apply_read_only_snapshot();
-            focus_primary_button(0);
-            recording_request_snapshot();
+            apply_primary_default_state();
+            apply_preview_states();
+            focus_primary_button(primary_snapshots[RADIO_BUTTON_DEFAULT_SNAPSHOT].selected_index);
+            request_page_snapshot();
         }
         EGUI_SIM_SET_WAIT(p_action, RADIO_BUTTON_RECORD_FRAME_WAIT);
         return true;
     case 1:
         if (first_call)
         {
-            dispatch_primary_key(1, EGUI_KEY_CODE_SPACE);
+            apply_primary_snapshot(1);
         }
         EGUI_SIM_SET_WAIT(p_action, RADIO_BUTTON_RECORD_WAIT);
         return true;
     case 2:
         if (first_call)
         {
-            recording_request_snapshot();
+            request_page_snapshot();
         }
         EGUI_SIM_SET_WAIT(p_action, RADIO_BUTTON_RECORD_FRAME_WAIT);
         return true;
     case 3:
         if (first_call)
         {
-            apply_primary_snapshot(1);
-            focus_primary_button(2);
-            recording_request_snapshot();
+            apply_primary_snapshot(2);
         }
-        EGUI_SIM_SET_WAIT(p_action, RADIO_BUTTON_RECORD_FRAME_WAIT);
+        EGUI_SIM_SET_WAIT(p_action, RADIO_BUTTON_RECORD_WAIT);
         return true;
     case 4:
         if (first_call)
         {
-            dispatch_primary_key(2, EGUI_KEY_CODE_ENTER);
-        }
-        EGUI_SIM_SET_WAIT(p_action, RADIO_BUTTON_RECORD_WAIT);
-        return true;
-    case 5:
-        if (first_call)
-        {
-            recording_request_snapshot();
+            request_page_snapshot();
         }
         EGUI_SIM_SET_WAIT(p_action, RADIO_BUTTON_RECORD_FRAME_WAIT);
+        return true;
+    case 5:
+        EGUI_SIM_SET_WAIT(p_action, RADIO_BUTTON_RECORD_FINAL_WAIT);
         return true;
     case 6:
         if (first_call)
         {
-            apply_primary_snapshot(2);
-            apply_compact_snapshot(1);
-            recording_request_snapshot();
+            request_page_snapshot();
         }
-        EGUI_SIM_SET_WAIT(p_action, 520);
+        EGUI_SIM_SET_WAIT(p_action, RADIO_BUTTON_RECORD_FINAL_WAIT);
         return true;
     default:
         return false;
