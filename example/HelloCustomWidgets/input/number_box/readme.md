@@ -1,160 +1,156 @@
 # number_box 自定义控件设计说明
-
 ## 参考来源
-
-- 参考设计系统：`Fluent 2`
+- 参考设计体系：`Fluent 2`
 - 参考开源库：`WPF UI`
-- 次级补充参考：`ModernWpf`
-- 对应组件名：`NumberBox`
-- 本次保留状态：`standard`、`compact`、`read only`、`step up`、`step down`
-- 删除效果：页面级 guide / 状态文案 / standard label / section divider / preview label、键盘输入校验、错误提示气泡、图标前后缀、Acrylic 与复杂焦点动画
-- EGUI 适配说明：使用固定范围、轻量步进按钮和静态单位后缀，在 `480 x 480` 页面里优先保证数字输入框的可读性与对照关系稳定；主控件补齐 `same-target release`，底部 `compact / read only` 统一走 `egui_view_number_box_override_static_preview_api()`
+- 对应组件：`NumberBox`
+- 当前保留形态：`standard`、`compact`、`read only`
+- 当前保留交互：主区保留标准步进数值输入；底部 `compact / read only` 仅作为静态 preview 对照
+- 当前移除内容：页面级 guide、状态说明、preview 清焦桥接、录制阶段 preview 状态切换、文本编辑态、错误提示、额外装饰动画
 
 ## 1. 为什么需要这个控件
-
-`number_box` 用来在表单、设置页和属性面板里输入离散数字，比如边距、延迟、字号和数量限制。它应该比 `slider` 更精确，比 `number_picker` 更贴近表单控件，也比纯 `textinput` 更适合低风险的整数步进输入。
+`number_box` 用于在表单、属性面板和设置页里输入离散数值，例如间距、字号、数量、延时或阈值。它需要比 `slider` 更精确，比 `text_box` 更低风险，也比滚轮式的 `number_picker` 更接近标准桌面表单里的数值输入语义。
 
 ## 2. 为什么现有控件不够用
+- `slider` 更偏向连续拖动，不适合表达明确步长和离散值。
+- `text_box` 是通用文本输入，不自带范围、步进和增减按钮语义。
+- `number_picker` 更偏滚轮选择，不是标准表单中的紧凑数值框。
+- 当前主线仍需要一个与 `Fluent 2 / WPF UI` 语义对齐的 `NumberBox` reference。
 
-- `number_picker` 是滚轮式选择，适合列表值滚动，不适合标准表单里的轻量数字输入
-- `slider` 更偏连续拖动，难以表达精确步进
-- `textinput` 是通用文本编辑，不自带数值范围与加减步进语义
-- 当前主线需要一版接近 `Fluent 2 / WPF UI` 的标准 `NumberBox` reference
-
-因此这里继续保留 `number_box`，但示例页必须回到统一的 reference 结构。
-
-## 3. 目标场景与示例概览
-
-- 主区域展示标准 `number_box`，用于调节 `Spacing`
-- 左下 `compact` 预览展示窄宽度下的轻量数字输入
-- 右下 `read only` 预览展示只读弱化版数字框
-- 示例页只保留标题、主 `number_box` 和底部 `compact / read only` 双预览，不再保留外部 guide、状态回显和标签点击
-- 底部两个 preview 统一通过控件自己的 static preview API 吞掉 `touch / key`；页面层只在 preview `ACTION_DOWN` 时负责清理主控件 focus
+## 3. 当前页面结构
+- 标题：`Number Box`
+- 主区：一个可真实承载数值切换的 `number_box`
+- 底部：一行并排的两个静态 preview
+- 左侧 preview：`compact`，固定显示 `12 ms`
+- 右侧 preview：`read only`，固定显示 `16 px`
 
 目录：
-
 - `example/HelloCustomWidgets/input/number_box/`
 
-## 4. 视觉与布局规格
+## 4. 主区 reference 快照
+主区录制轨道只保留 3 组程序化快照，不再在录制阶段对 preview 发送输入，也不再切换 preview 自身状态：
 
+1. 默认态
+   `Spacing = 24 px`
+2. 快照 2
+   `Spacing = 28 px`
+3. 快照 3
+   `Spacing = 32 px`
+
+底部 preview 在整条轨道中始终固定：
+1. `compact`
+   `12 ms`
+2. `read only`
+   `16 px`
+
+## 5. 视觉与布局规格
 - 画布：`480 x 480`
 - 根布局：`224 x 154`
-- 页面结构：标题 -> 主 `number_box` -> `compact / read only` 双预览
-- 主数字框：`196 x 70`
-- 底部双预览容器：`216 x 44`
-- `compact` 预览：`104 x 44`
-- `read only` 预览：`104 x 44`
-- 视觉规则：
-  - 使用浅灰白 page panel + 白底轻边框容器
-  - 主数字框保留 label、helper、value field 与 `- / +` 按钮语义
-  - `compact` 预览压缩为更轻量的 field + stepper 结构
-  - `compact / read only` 作为静态对照，不承接真实交互
-- 只读态移除步进按钮，只保留弱化数值展示，并抑制后续输入
+- 主控件：`196 x 70`
+- 底部 preview 行：`216 x 44`
+- 单个 preview：`104 x 44`
+- 页面结构：标题 -> 主 `number_box` -> 底部 `compact / read only`
+- 风格约束：浅灰 page panel、白色主表面、低噪音边框、清晰的 `- / +` 步进按钮和稳定的数值文本层级
 
-## 5. 控件清单
-
-| 变量名 | 类型 | 尺寸 (W x H) | 初始状态 | 用途 |
-| --- | --- | ---: | --- | --- |
-| `root_layout` | `egui_view_linearlayout_t` | `224 x 154` | enabled | 页面根布局 |
-| `title_label` | `egui_view_label_t` | `224 x 18` | `Number Box` | 页面标题 |
-| `box_primary` | `egui_view_number_box_t` | `196 x 70` | `Spacing = 24 px` | 标准数字框 |
-| `box_compact` | `egui_view_number_box_t` | `104 x 44` | `12 ms` | 紧凑预览 |
-| `box_read_only` | `egui_view_number_box_t` | `104 x 44` | `16 px` | 只读静态预览 |
-
-## 6. 状态覆盖矩阵
-
-| 状态 / 区域 | 主数字框 | Compact | Read only |
+## 6. 状态矩阵
+| 状态 | 主控件 | Compact preview | Read only preview |
 | --- | --- | --- | --- |
-| 默认态 | `24 px` | `12 ms` | `16 px` |
-| 轮换 1 | `28 px` | 保持 | 保持 |
-| 轮换 2 | `32 px` | 保持 | 保持 |
-| 轮换 3 | `28 px` | 保持 | 保持 |
-| 紧凑轮换 | 保持 | `14 ms` | 保持 |
-| 只读弱化 | 不适用 | 不适用 | 移除步进按钮，仅保留弱化数值展示，并在切入时清空 pressed |
-| static preview | 不适用 | 点击只清主控件 focus | 点击只清主控件 focus，`touch / key` 被控件自己的 static preview API 吞掉 |
+| 默认显示 | `24 px` | `12 ms` | `16 px` |
+| 快照 2 | `28 px` | 保持不变 | 保持不变 |
+| 快照 3 | `32 px` | 保持不变 | 保持不变 |
+| 录制最终稳定帧 | `32 px` | 保持不变 | 保持不变 |
+| 静态 preview 对照 | 否 | 是 | 是 |
 
-## 7. `egui_port_get_recording_action()` 录制动作设计
+## 7. 录制动作设计
+`egui_port_get_recording_action()` 已收口为静态 preview 工作流：
 
-1. 应用默认主值与 `compact` 值
-2. 请求第一页截图
-3. 程序化切换主数字框到 `28 px`
-4. 请求第二页截图
-5. 程序化切换主数字框到 `32 px`
-6. 请求第三页截图
-7. 程序化切换主数字框回 `28 px`
-8. 请求第四页截图
-9. 程序化切换 `compact` 到 `14 ms`
-10. 请求最终截图并保留收尾等待
+1. 应用主区默认快照和底部 preview 固定状态
+2. 抓取首帧
+3. 切到 `28 px`
+4. 抓取第二组主区快照
+5. 切到 `32 px`
+6. 抓取第三组主区快照
+7. 等待并抓取最终稳定帧
 
-## 8. 编译、runtime、截图验收标准
+说明：
+- 录制阶段不再切换 `compact` preview 到 `14 ms`
+- 页面层不再负责 preview 清主控件 focus
+- 底部 preview 统一通过 `egui_view_number_box_override_static_preview_api()` 吞掉 `touch / key`
 
+## 8. 单元测试口径
+`example/HelloUnitTest/test/test_number_box.c` 当前覆盖两部分：
+
+1. 主控件交互与状态清理
+   覆盖 `range / value / step` clamp、`same-target release`、`compact / read only / disabled` 输入抑制、`touch cancel`、setter 清理 `pressed`
+2. 静态 preview 不变性断言
+   通过 `number_box_preview_snapshot_t`、`capture_preview_snapshot()`、`assert_preview_state_unchanged()` 固定校验以下字段：
+   `region_screen`、`on_value_changed`、`font`、`meta_font`、`label`、`suffix`、`helper`、`surface_color`、`border_color`、`text_color`、`muted_text_color`、`accent_color`、`value`、`min_value`、`max_value`、`step`、`compact_mode`、`read_only_mode`、`pressed_part`、`alpha`、`enable`
+
+同时要求：
+- `is_pressed == false`
+- `changed_count == 0`
+- `changed_value == -1`
+
+## 9. 验收命令
 ```bash
 make all APP=HelloCustomWidgets APP_SUB=input/number_box PORT=pc
-python scripts/checks/check_touch_release_semantics.py --scope custom --category input
-python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/number_box --track reference --timeout 10 --keep-screenshots
+
+make clean APP=HelloUnitTest PORT=pc_test
 make all APP=HelloUnitTest PORT=pc_test
-output\main.exe
+X:\output\main.exe
+
+python scripts/sync_widget_catalog.py
+python scripts/checks/check_touch_release_semantics.py --scope custom --category input
 python scripts/checks/check_docs_encoding.py
+python scripts/checks/check_widget_catalog.py
+python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/number_box --track reference --timeout 10 --keep-screenshots
+python scripts/code_compile_check.py --custom-widgets --category input --bits64
+python scripts/code_runtime_check.py --app HelloCustomWidgets --category input --track reference --bits64
+python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub input/number_box
+python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_input_number_box
 ```
 
-验收重点：
+## 10. 当前结果
+- `HelloCustomWidgets` 单控件编译：PASS
+- `HelloUnitTest`：`845 / 845` 通过，其中 `number_box` suite `12 / 12`
+- `sync_widget_catalog.py`：PASS，`106` entries
+- `touch release semantics`：PASS，`custom_audited=28`，`custom_skipped_allowlist=5`
+- `docs encoding`：PASS，`134 files`
+- `widget catalog check`：PASS，`106 widgets: reference=106, showcase=0, deprecated=0`
+- 单控件 runtime：PASS，`8` frames captured
+- input 分类 compile 回归：PASS，`33 / 33`
+- input 分类 runtime 回归：PASS，`33 / 33`
+- wasm 构建：PASS，`web/demos/HelloCustomWidgets_input_number_box`
+- web smoke：`PASS status=Running canvas=480x480 ratio=0.1175 colors=97`
 
-- 主数字框和底部双预览必须完整可见，不能被裁切
-- 主数字框必须看起来像标准表单数字输入，而不是滚轮或 slider
-- 数值与单位后缀要保持居中，不能贴边
-- 主卡与双预览都必须维持 `Fluent 2 / WPF UI` 低噪音浅色语义
-- `read only` 只做静态展示，不能响应 touch、key 或页面桥接，并且切入时要立即清空 pressed
-- 页面中不再出现 guide、状态回显、standard label、section divider、`Compact` / `Read only` 外部标签
-- `value / range / step / compact / read only / view disabled` 切换链路需要共用同一套 `pressed` 清理语义
-- `font / meta font / palette / value / range / step / compact / read only / view disabled` 切换链路需要共用同一套 `pressed` 清理语义
-- setter 更新、模式切换后和 `touch cancel` 后，不能残留 `- / +` 的 `pressed` 高亮
-- `compact / read_only_mode / !enable` 收到新的 touch 或 key 输入时，必须先清理残留 pressed，再拒绝后续交互
-- 触摸释放语义必须继续满足 same-target release：`DOWN(A) -> MOVE(B) -> UP(B)` 不提交，`DOWN(A) -> MOVE(B) -> MOVE(A) -> UP(A)` 才提交
-- `compact / read only` preview 必须通过 `egui_view_number_box_override_static_preview_api()` 吞掉 `touch / key`，且不能改 value
-- unit test 中已有的步进点击、异目标释放、`compact / read only / !enable` 输入抑制和 `touch cancel` 语义不能回归
+## 11. Runtime 复核结论
+复核目录：
+- `runtime_check_output/HelloCustomWidgets_input_number_box/default`
 
-## 9. 已知限制与后续方向
+复核结果：
+- 总帧数：`8`
+- 主区 RGB 差分边界：`(221, 181) - (236, 190)`
+- 遮罩该差分边界后，主区外唯一哈希数：`1`
+- 按差分边界裁切后，主区唯一状态数：`3`
+- 按 `y >= 271` 裁切底部 preview 区后，preview 区唯一哈希数：`1`
 
-- 当前版本只覆盖整数步进，不做键盘文本编辑
-- 当前不做错误校验提示、placeholder 和复杂焦点环
-- 当前 `compact` 与 `read only` 仅作为静态对照，不承担交互职责
-- 若后续要沉入框架层，再单独评估与文本输入、校验态和表单系统的联动
+目标：
+- 主区唯一状态数 = `3`
+- 主区外唯一哈希数 = `1`
+- 底部 preview 区唯一哈希数 = `1`
 
-## 10. 与现有控件的重叠分析与差异化边界
+## 12. 已知限制
+- 当前只覆盖离散整数步进，不做自由文本编辑。
+- 当前不扩展错误校验、placeholder、滚轮输入或复杂焦点环。
+- 底部 `compact / read only` 只承担静态 reference 对照，不承载额外交互职责。
 
-- 相比 `number_picker`：本控件是标准表单数字输入，不是滚轮选择器
-- 相比 `slider`：本控件表达离散步进，不是连续拖动
-- 相比 `textinput`：本控件有明确范围、步长与加减按钮语义
-- 相比 `stepper`：本控件编辑数字值，不表达流程步骤
+## 13. 与现有控件的边界
+- 相比 `slider`：这里表达离散数值输入，不是连续拖动。
+- 相比 `text_box`：这里保留范围、步长与步进按钮语义。
+- 相比 `number_picker`：这里强调标准表单数值框，而不是滚轮式选择。
+- 相比 `stepper`：这里表达单个字段的数值输入，不表达流程步骤。
 
-## 11. 参考设计系统与开源母本
-
-- 参考设计系统：`Fluent 2`
-- 开源母本：`WPF UI`
-- 次级补充参考：`ModernWpf`
-
-## 12. 对应组件名，以及本次保留的核心状态
-
-- 对应组件名：`NumberBox`
-- 本次保留状态：
-  - `standard`
-  - `compact`
-  - `read only`
-  - `step up`
-  - `step down`
-
-## 13. 相比参考原型删掉了哪些效果或装饰
-
-- 不做页面级 guide、状态回显、standard label、section divider 和 preview label
-- 不做键盘输入、选中文本和光标编辑
-- 不做错误态图标、浮层提示和复杂校验动画
-- 不做鼠标滚轮输入、hover 光效和系统级焦点环
-
-## 14. EGUI 适配时的简化点与约束
-
-- 使用固定整数范围和步进，优先保证 `480 x 480` 页面里的可审阅性
-- 通过轻量 `- / +` 按钮承载交互，不引入复杂文本输入状态机
-- `compact` 与 `read only` 固定放底部双列，便于和主卡直接对照
-- 交互收口阶段统一要求 setter、模式切换、禁用 guard、`ACTION_MOVE` 下的 same-target release 和 `touch cancel` 都能清理残留 `pressed`，确保交互后的渲染稳定
-- preview 交互职责收口到控件自己的 `static preview API`，页面层不再直接兜底 preview 的输入吞掉逻辑
-- 先完成示例级数字框，再决定是否上升到框架公共控件
+## 14. EGUI 适配说明
+- 继续复用仓库内已有 `number_box` 基础实现，不修改 SDK。
+- 主区保留标准 `- / +` 步进交互和 `same-target release` 语义。
+- 底部 preview 通过 `egui_view_number_box_override_static_preview_api()` 明确收口为静态 reference。
+- 当前优先保证主区 3 组 reference 快照、底部 preview 全程静态，以及 runtime 录制无污染，再评估是否继续上升到框架层公共控件。
