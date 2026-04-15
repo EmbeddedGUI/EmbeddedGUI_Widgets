@@ -34,7 +34,7 @@
 
 | 状态 | 控件名 | 分类 | 开始日期 | 当前阶段 | 目标 |
 | --- | --- | --- | --- | --- | --- |
-| 进行中 | `badge` | `display` | `2026-04-16` | static preview 收口 | 对齐主区 reference snapshots、底部静态 preview、单测、README 与 web 验收链，评估并移除旧 preview 桥接与非必要录制轨道 |
+| 进行中 | `badge_group` | `display` | `2026-04-16` | static preview 收口 | 对齐主区 reference snapshots、底部静态 preview、单测、README 与 web 验收链，评估并移除旧 preview 桥接与非必要录制轨道 |
 
 ## 当前保留的 Reference 主线控件
 
@@ -122,7 +122,7 @@
 - `title_bar` -> `TitleBar`
 - `tree_view` -> `TreeView`
 
-### Display（20）
+### Display（21）
 
 - `badge` -> `Badge`
 - `badge_group` -> `BadgeGroup`
@@ -160,6 +160,12 @@
 - `toast_stack` -> `Toast`
 
 ## 最近完成的收口动作
+
+- `2026-04-16`
+  - 收口 `display/badge` reference 控件：在不修改 SDK 的前提下，对齐当前主线已经采用的 static preview 工作流，把页面收口为标题、主 `badge` 和底部 `compact / read only` 双静态 preview，保留主区 `Verified`、`Preview`、`Needs review` 三组 reference 快照，并移除主 panel / heading / note、底部 panel 包装、preview 说明文字与录制阶段额外恢复帧。
+  - `example/HelloCustomWidgets/display/badge/test.c` 新增 `BADGE_DEFAULT_SNAPSHOT`、`PRIMARY_SNAPSHOT_COUNT`、`ui_ready`、`apply_primary_default_state()`、`apply_preview_states()`、`layout_local_views()`、`layout_page()` 与 `request_page_snapshot()`，把录制轨道改为只导出主区 `Verified`、`Preview`、`Needs review` 三态与最终稳定帧，并确保底部 `compact / read only` preview 全程静态；`example/HelloUnitTest/test/test_badge.c` 新增 `badge_preview_snapshot_t`、`assert_region_equal()`、`assert_optional_string_equal()`、`capture_preview_snapshot()` 与 `assert_preview_state_unchanged()`，把输入入口统一改为 `dispatch_touch_event()` / `dispatch_key_event()`，将静态 preview 用例收口为 “consumes input and keeps state”，补齐 `region_screen / background / font / icon_font / surface_color / border_color / text_color / accent_color / text / icon / compact_mode / read_only_mode / outline_mode / subtle_mode / alpha / enable / is_focused / is_pressed / padding` 固定断言；`example/HelloCustomWidgets/display/badge/readme.md` 重写为与当前 static preview 页面结构、录制轨道、单测口径和完整验收链一致的 UTF-8 说明，并回填 runtime 复核数字。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=display/badge PORT=pc`、`make clean APP=HelloUnitTest PORT=pc_test`、`make all APP=HelloUnitTest PORT=pc_test`、`X:\output\main.exe`（总计 `845 / 845`，`badge` suite `5 / 5`）、`python scripts/sync_widget_catalog.py`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category display`、`python scripts/checks/check_docs_encoding.py`、`python scripts/checks/check_widget_catalog.py`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub display/badge --track reference --timeout 10 --keep-screenshots`、`python scripts/code_compile_check.py --custom-widgets --category display --bits64`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --category display --track reference --bits64`、`python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub display/badge` 与对应 `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_display_badge`（`PASS status=Running canvas=480x480 ratio=0.0855 colors=106`）。
+  - 复核 `runtime_check_output/HelloCustomWidgets_display_badge/default` 的 `8` 帧截图：按 RGB 差分得到主区变化边界位于 `(114, 183) - (366, 225)`；遮罩该边界后边界外区域保持单哈希，确认主区外全程静态；按主区裁剪后共出现 `3` 组唯一状态，符合 `Verified`、`Preview` 与 `Needs review` 三态轨道；按 `y >= 252` 裁剪底部 preview 区域后全部帧保持单哈希，确认底部 `compact / read only` preview 在整条录制轨道中保持静态一致。
 
 - `2026-04-16`
   - 收口 `input/slider` reference 控件：在不修改 SDK 的前提下，对齐当前 input 主线已经采用的 static preview 工作流，把页面收口为标题、主 `slider` 和底部 `compact / read only` 双静态 preview，保留主区 `18%`、`52%`、`86%` 三组 reference 快照，并移除录制阶段真实 `Right / Plus / End` 键盘轨道、preview 值轮换与额外收尾帧。
