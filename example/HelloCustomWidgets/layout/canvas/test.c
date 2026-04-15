@@ -24,7 +24,10 @@
 #define CANVAS_COMPACT_ITEM_COUNT     3
 #define CANVAS_RECORD_WAIT            90
 #define CANVAS_RECORD_FRAME_WAIT      170
-#define CANVAS_RECORD_FINAL_WAIT      520
+#define CANVAS_RECORD_FINAL_WAIT      280
+#define CANVAS_DEFAULT_SNAPSHOT       0
+
+#define PRIMARY_SNAPSHOT_COUNT        ((uint8_t)EGUI_ARRAY_SIZE(primary_snapshots))
 
 typedef enum
 {
@@ -288,21 +291,24 @@ static void layout_local_views(void)
     egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&root_layout));
 }
 
-#if EGUI_CONFIG_RECORDING_TEST
-static void refresh_root_layout(void)
+static void layout_page(void)
 {
     layout_local_views();
     egui_core_layout_childs_user_root_view(EGUI_LAYOUT_VERTICAL, EGUI_ALIGN_HCENTER | EGUI_ALIGN_VCENTER);
 }
-#endif
 
-static void apply_primary_snapshot(uint8_t index)
+static void apply_primary_state(uint8_t index)
 {
-    const canvas_snapshot_t *snapshot = &primary_snapshots[index % EGUI_ARRAY_SIZE(primary_snapshots)];
+    const canvas_snapshot_t *snapshot = &primary_snapshots[index % PRIMARY_SNAPSHOT_COUNT];
 
     egui_view_label_set_text(EGUI_VIEW_OF(&primary_heading_label), snapshot->heading);
     egui_view_label_set_text(EGUI_VIEW_OF(&primary_note_label), snapshot->note);
     apply_snapshot_to_canvas(EGUI_VIEW_OF(&primary_canvas), primary_cards, primary_card_titles, CANVAS_ITEM_CAPACITY, snapshot);
+}
+
+static void apply_primary_default_state(void)
+{
+    apply_primary_state(CANVAS_DEFAULT_SNAPSHOT);
 }
 
 static void apply_preview_states(void)
@@ -310,6 +316,15 @@ static void apply_preview_states(void)
     apply_snapshot_to_canvas(EGUI_VIEW_OF(&pinned_preview_canvas), pinned_cards, pinned_card_titles, CANVAS_PINNED_ITEM_COUNT, &pinned_preview_snapshot);
     apply_snapshot_to_canvas(EGUI_VIEW_OF(&compact_preview_canvas), compact_cards, compact_card_titles, CANVAS_COMPACT_ITEM_COUNT, &compact_preview_snapshot);
 }
+
+#if EGUI_CONFIG_RECORDING_TEST
+static void request_page_snapshot(void)
+{
+    layout_page();
+    egui_view_invalidate(EGUI_VIEW_OF(&root_layout));
+    recording_request_snapshot();
+}
+#endif
 
 void test_init_ui(void)
 {
@@ -330,7 +345,8 @@ void test_init_ui(void)
     egui_view_set_margin(EGUI_VIEW_OF(&primary_panel), 0, 0, 0, 10);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&primary_panel));
 
-    init_text_label(&primary_heading_label, 176, 12, primary_snapshots[0].heading, (const egui_font_t *)&egui_res_font_montserrat_8_4,
+    init_text_label(&primary_heading_label, 176, 12, primary_snapshots[CANVAS_DEFAULT_SNAPSHOT].heading,
+                    (const egui_font_t *)&egui_res_font_montserrat_8_4,
                     EGUI_COLOR_HEX(0x5E6D7C), EGUI_ALIGN_CENTER);
     egui_view_set_margin(EGUI_VIEW_OF(&primary_heading_label), 0, 0, 0, 4);
     egui_view_group_add_child(EGUI_VIEW_OF(&primary_panel), EGUI_VIEW_OF(&primary_heading_label));
@@ -346,8 +362,8 @@ void test_init_ui(void)
         egui_view_group_add_child(EGUI_VIEW_OF(&primary_canvas), EGUI_VIEW_OF(&primary_cards[index]));
     }
 
-    init_text_label(&primary_note_label, 176, 10, primary_snapshots[0].note, (const egui_font_t *)&egui_res_font_montserrat_8_4, EGUI_COLOR_HEX(0x6B7A89),
-                    EGUI_ALIGN_CENTER);
+    init_text_label(&primary_note_label, 176, 10, primary_snapshots[CANVAS_DEFAULT_SNAPSHOT].note,
+                    (const egui_font_t *)&egui_res_font_montserrat_8_4, EGUI_COLOR_HEX(0x6B7A89), EGUI_ALIGN_CENTER);
     egui_view_group_add_child(EGUI_VIEW_OF(&primary_panel), EGUI_VIEW_OF(&primary_note_label));
 
     egui_view_linearlayout_init(EGUI_VIEW_OF(&bottom_row));
@@ -367,6 +383,9 @@ void test_init_ui(void)
     egui_view_set_size(EGUI_VIEW_OF(&pinned_preview_canvas), CANVAS_PREVIEW_CANVAS_WIDTH, CANVAS_PREVIEW_CANVAS_HEIGHT);
     egui_view_set_margin(EGUI_VIEW_OF(&pinned_preview_canvas), 0, 0, 0, 4);
     hcw_canvas_override_static_preview_api(EGUI_VIEW_OF(&pinned_preview_canvas), &pinned_preview_api);
+#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
+    egui_view_set_focusable(EGUI_VIEW_OF(&pinned_preview_canvas), false);
+#endif
     egui_view_group_add_child(EGUI_VIEW_OF(&pinned_panel), EGUI_VIEW_OF(&pinned_preview_canvas));
 
     for (index = 0; index < CANVAS_PINNED_ITEM_COUNT; index++)
@@ -392,6 +411,9 @@ void test_init_ui(void)
     egui_view_set_size(EGUI_VIEW_OF(&compact_preview_canvas), CANVAS_PREVIEW_CANVAS_WIDTH, CANVAS_PREVIEW_CANVAS_HEIGHT);
     egui_view_set_margin(EGUI_VIEW_OF(&compact_preview_canvas), 0, 0, 0, 4);
     hcw_canvas_override_static_preview_api(EGUI_VIEW_OF(&compact_preview_canvas), &compact_preview_api);
+#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
+    egui_view_set_focusable(EGUI_VIEW_OF(&compact_preview_canvas), false);
+#endif
     egui_view_group_add_child(EGUI_VIEW_OF(&compact_panel), EGUI_VIEW_OF(&compact_preview_canvas));
 
     for (index = 0; index < CANVAS_COMPACT_ITEM_COUNT; index++)
@@ -404,14 +426,14 @@ void test_init_ui(void)
                     EGUI_ALIGN_CENTER);
     egui_view_group_add_child(EGUI_VIEW_OF(&compact_panel), EGUI_VIEW_OF(&compact_note_label));
 
+    apply_primary_default_state();
     apply_preview_states();
-    apply_primary_snapshot(0);
 
     hello_custom_widgets_demo_apply_title_only_scaffold(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label), NULL, 0);
 
     layout_local_views();
     egui_core_add_user_root_view(EGUI_VIEW_OF(&root_layout));
-    egui_core_layout_childs_user_root_view(EGUI_LAYOUT_VERTICAL, EGUI_ALIGN_HCENTER | EGUI_ALIGN_VCENTER);
+    layout_page();
 }
 
 #if EGUI_CONFIG_RECORDING_TEST
@@ -428,54 +450,50 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
         if (first_call)
         {
             apply_preview_states();
-            apply_primary_snapshot(0);
-            refresh_root_layout();
+            apply_primary_default_state();
+            request_page_snapshot();
         }
-        EGUI_SIM_SET_WAIT(p_action, CANVAS_RECORD_WAIT);
+        EGUI_SIM_SET_WAIT(p_action, CANVAS_RECORD_FRAME_WAIT);
         return true;
     case 1:
         if (first_call)
         {
-            recording_request_snapshot();
+            apply_primary_state(1);
         }
-        EGUI_SIM_SET_WAIT(p_action, CANVAS_RECORD_FRAME_WAIT);
+        EGUI_SIM_SET_WAIT(p_action, CANVAS_RECORD_WAIT);
         return true;
     case 2:
         if (first_call)
         {
-            apply_primary_snapshot(1);
-            refresh_root_layout();
+            request_page_snapshot();
         }
-        EGUI_SIM_SET_WAIT(p_action, CANVAS_RECORD_WAIT);
+        EGUI_SIM_SET_WAIT(p_action, CANVAS_RECORD_FRAME_WAIT);
         return true;
     case 3:
         if (first_call)
         {
-            recording_request_snapshot();
+            apply_primary_state(2);
         }
-        EGUI_SIM_SET_WAIT(p_action, CANVAS_RECORD_FRAME_WAIT);
+        EGUI_SIM_SET_WAIT(p_action, CANVAS_RECORD_WAIT);
         return true;
     case 4:
         if (first_call)
         {
-            apply_primary_snapshot(2);
-            refresh_root_layout();
+            request_page_snapshot();
         }
-        EGUI_SIM_SET_WAIT(p_action, CANVAS_RECORD_WAIT);
+        EGUI_SIM_SET_WAIT(p_action, CANVAS_RECORD_FRAME_WAIT);
         return true;
     case 5:
         if (first_call)
         {
-            recording_request_snapshot();
+            apply_primary_default_state();
         }
-        EGUI_SIM_SET_WAIT(p_action, CANVAS_RECORD_FRAME_WAIT);
+        EGUI_SIM_SET_WAIT(p_action, CANVAS_RECORD_WAIT);
         return true;
     case 6:
         if (first_call)
         {
-            apply_primary_snapshot(0);
-            refresh_root_layout();
-            recording_request_snapshot();
+            request_page_snapshot();
         }
         EGUI_SIM_SET_WAIT(p_action, CANVAS_RECORD_FINAL_WAIT);
         return true;

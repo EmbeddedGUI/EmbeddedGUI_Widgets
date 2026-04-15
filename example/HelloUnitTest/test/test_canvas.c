@@ -10,6 +10,7 @@
 static egui_view_group_t test_canvas_group;
 static egui_view_group_t preview_canvas_group;
 static egui_view_label_t test_cards[3];
+static egui_view_label_t preview_cards[3];
 static egui_view_api_t preview_api;
 static uint8_t g_click_count;
 
@@ -26,30 +27,30 @@ static void init_card(egui_view_label_t *card, const char *text, egui_dim_t widt
     egui_view_label_set_text(EGUI_VIEW_OF(card), text);
 }
 
-static void setup_canvas(egui_view_group_t *canvas, egui_dim_t width, egui_dim_t height)
+static void setup_canvas(egui_view_group_t *canvas, egui_view_label_t *cards, egui_dim_t width, egui_dim_t height)
 {
     egui_view_group_init(EGUI_VIEW_OF(canvas));
     egui_view_set_size(EGUI_VIEW_OF(canvas), width, height);
     hcw_canvas_apply_standard_style(EGUI_VIEW_OF(canvas));
 
-    init_card(&test_cards[0], "A", 40, 16);
-    init_card(&test_cards[1], "B", 36, 16);
-    init_card(&test_cards[2], "C", 44, 14);
+    init_card(&cards[0], "A", 40, 16);
+    init_card(&cards[1], "B", 36, 16);
+    init_card(&cards[2], "C", 44, 14);
 
-    egui_view_group_add_child(EGUI_VIEW_OF(canvas), EGUI_VIEW_OF(&test_cards[0]));
-    egui_view_group_add_child(EGUI_VIEW_OF(canvas), EGUI_VIEW_OF(&test_cards[1]));
-    egui_view_group_add_child(EGUI_VIEW_OF(canvas), EGUI_VIEW_OF(&test_cards[2]));
+    egui_view_group_add_child(EGUI_VIEW_OF(canvas), EGUI_VIEW_OF(&cards[0]));
+    egui_view_group_add_child(EGUI_VIEW_OF(canvas), EGUI_VIEW_OF(&cards[1]));
+    egui_view_group_add_child(EGUI_VIEW_OF(canvas), EGUI_VIEW_OF(&cards[2]));
 }
 
 static void setup_test_canvas(void)
 {
-    setup_canvas(&test_canvas_group, 120, 72);
+    setup_canvas(&test_canvas_group, test_cards, 120, 72);
     g_click_count = 0;
 }
 
 static void setup_preview_canvas(void)
 {
-    setup_canvas(&preview_canvas_group, 84, 40);
+    setup_canvas(&preview_canvas_group, preview_cards, 84, 40);
     egui_view_set_on_click_listener(EGUI_VIEW_OF(&preview_canvas_group), on_preview_click);
     hcw_canvas_override_static_preview_api(EGUI_VIEW_OF(&preview_canvas_group), &preview_api);
     g_click_count = 0;
@@ -84,20 +85,60 @@ static int send_touch(egui_view_t *view, uint8_t type, egui_dim_t x, egui_dim_t 
     return view->api->on_touch_event(view, &event);
 }
 
-static int send_key(egui_view_t *view, uint8_t type, uint8_t key_code)
+static int dispatch_key_event_to_view(egui_view_t *view, uint8_t type, uint8_t key_code)
 {
     egui_key_event_t event;
 
     memset(&event, 0, sizeof(event));
     event.type = type;
     event.key_code = key_code;
-    return view->api->on_key_event(view, &event);
+    return view->api->dispatch_key_event(view, &event);
+}
+
+static int send_key(egui_view_t *view, uint8_t key_code)
+{
+    int handled = 0;
+
+    handled |= dispatch_key_event_to_view(view, EGUI_KEY_EVENT_ACTION_DOWN, key_code);
+    handled |= dispatch_key_event_to_view(view, EGUI_KEY_EVENT_ACTION_UP, key_code);
+    return handled;
 }
 
 static void get_view_center(egui_view_t *view, egui_dim_t *x, egui_dim_t *y)
 {
     *x = view->region_screen.location.x + view->region_screen.size.width / 2;
     *y = view->region_screen.location.y + view->region_screen.size.height / 2;
+}
+
+static void capture_regions(egui_view_label_t *cards, uint8_t count, egui_region_t *regions)
+{
+    uint8_t index;
+
+    for (index = 0; index < count; index++)
+    {
+        egui_region_copy(&regions[index], &EGUI_VIEW_OF(&cards[index])->region);
+    }
+}
+
+static void assert_regions_equal(egui_view_label_t *cards, uint8_t count, const egui_region_t *regions)
+{
+    uint8_t index;
+
+    for (index = 0; index < count; index++)
+    {
+        EGUI_TEST_ASSERT_EQUAL_INT(regions[index].location.x, EGUI_VIEW_OF(&cards[index])->region.location.x);
+        EGUI_TEST_ASSERT_EQUAL_INT(regions[index].location.y, EGUI_VIEW_OF(&cards[index])->region.location.y);
+        EGUI_TEST_ASSERT_EQUAL_INT(regions[index].size.width, EGUI_VIEW_OF(&cards[index])->region.size.width);
+        EGUI_TEST_ASSERT_EQUAL_INT(regions[index].size.height, EGUI_VIEW_OF(&cards[index])->region.size.height);
+    }
+}
+
+static void assert_preview_state_unchanged(const egui_region_t *regions)
+{
+    EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&preview_canvas_group)->background == NULL);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&preview_canvas_group)->is_pressed);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, g_click_count);
+    assert_regions_equal(preview_cards, EGUI_ARRAY_SIZE(preview_cards), regions);
 }
 
 static void test_canvas_style_helpers_and_child_origin_clear_pressed_state(void)
@@ -161,29 +202,31 @@ static void test_canvas_layout_childs_clears_pressed_state(void)
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_canvas_group)->is_pressed);
 }
 
-static void test_canvas_static_preview_consumes_input(void)
+static void test_canvas_static_preview_consumes_input_and_keeps_state(void)
 {
     egui_dim_t center_x;
     egui_dim_t center_y;
+    egui_region_t initial_regions[EGUI_ARRAY_SIZE(preview_cards)];
 
     setup_preview_canvas();
-    hcw_canvas_set_child_origin(EGUI_VIEW_OF(&test_cards[0]), 0, 0);
-    hcw_canvas_set_child_origin(EGUI_VIEW_OF(&test_cards[1]), 30, 8);
-    hcw_canvas_set_child_origin(EGUI_VIEW_OF(&test_cards[2]), 12, 18);
+    hcw_canvas_set_child_origin(EGUI_VIEW_OF(&preview_cards[0]), 0, 0);
+    hcw_canvas_set_child_origin(EGUI_VIEW_OF(&preview_cards[1]), 30, 8);
+    hcw_canvas_set_child_origin(EGUI_VIEW_OF(&preview_cards[2]), 12, 18);
     layout_canvas(EGUI_VIEW_OF(&preview_canvas_group), 84, 40);
+    capture_regions(preview_cards, EGUI_ARRAY_SIZE(preview_cards), initial_regions);
     get_view_center(EGUI_VIEW_OF(&preview_canvas_group), &center_x, &center_y);
 
     egui_view_set_pressed(EGUI_VIEW_OF(&preview_canvas_group), 1);
     EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_VIEW_OF(&preview_canvas_group), EGUI_MOTION_EVENT_ACTION_DOWN, center_x, center_y));
-    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_VIEW_OF(&preview_canvas_group), EGUI_MOTION_EVENT_ACTION_UP, center_x, center_y));
-    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&preview_canvas_group)->is_pressed);
-    EGUI_TEST_ASSERT_EQUAL_INT(0, g_click_count);
+    assert_preview_state_unchanged(initial_regions);
 
     egui_view_set_pressed(EGUI_VIEW_OF(&preview_canvas_group), 1);
-    EGUI_TEST_ASSERT_TRUE(send_key(EGUI_VIEW_OF(&preview_canvas_group), EGUI_KEY_EVENT_ACTION_DOWN, EGUI_KEY_CODE_ENTER));
-    EGUI_TEST_ASSERT_TRUE(send_key(EGUI_VIEW_OF(&preview_canvas_group), EGUI_KEY_EVENT_ACTION_UP, EGUI_KEY_CODE_ENTER));
-    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&preview_canvas_group)->is_pressed);
-    EGUI_TEST_ASSERT_EQUAL_INT(0, g_click_count);
+    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_VIEW_OF(&preview_canvas_group), EGUI_MOTION_EVENT_ACTION_UP, center_x, center_y));
+    assert_preview_state_unchanged(initial_regions);
+
+    egui_view_set_pressed(EGUI_VIEW_OF(&preview_canvas_group), 1);
+    EGUI_TEST_ASSERT_TRUE(send_key(EGUI_VIEW_OF(&preview_canvas_group), EGUI_KEY_CODE_ENTER));
+    assert_preview_state_unchanged(initial_regions);
 }
 
 void test_canvas_run(void)
@@ -192,6 +235,6 @@ void test_canvas_run(void)
     EGUI_TEST_RUN(test_canvas_style_helpers_and_child_origin_clear_pressed_state);
     EGUI_TEST_RUN(test_canvas_layout_childs_places_cards_for_standard_and_compact_modes);
     EGUI_TEST_RUN(test_canvas_layout_childs_clears_pressed_state);
-    EGUI_TEST_RUN(test_canvas_static_preview_consumes_input);
+    EGUI_TEST_RUN(test_canvas_static_preview_consumes_input_and_keeps_state);
     EGUI_TEST_SUITE_END();
 }
