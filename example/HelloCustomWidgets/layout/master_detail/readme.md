@@ -1,54 +1,50 @@
-# master_detail 自定义控件设计说明
+# master_detail 设计说明
 
 ## 参考来源
-
 - 参考设计系统：`Fluent 2`
-- 参考开源库：`WPF UI`
-- 次级补充参考：`ModernWpf`
-- 对应组件名：`MasterDetail`
-- 本次保留状态：`standard`、`compact`、`read only`、`accent`、`success`、`warning`、`neutral`
-- 删除效果：页面级 guide / 状态文案 / standard label / section divider / preview label、Acrylic、复杂 hover、系统级转场动画
-- EGUI 适配说明：保留 master 列表驱动 detail 面板的核心语义，在 `480 x 480` 页面里优先保证双栏结构与 `compact / read only` 对照稳定；`selection / compact / read only / view disabled` 切换共享同一套 `pressed` 清理语义，底部 preview 统一通过 `egui_view_master_detail_override_static_preview_api()` 固定为静态 reference
+- 官方语义参考：`WPF UI / MasterDetail`
+- 补充参考：`ModernWpf`
+- 对应组件语义：`MasterDetail`
+- 本轮保留语义：`Files / Review / Archive / compact / read only`
+- 本轮移除内容：页面级 guide、状态说明文案、preview 点击桥接、旧录制轨道里的额外 preview 切换与收尾动作
+- EGUI 适配说明：继续复用仓库内 `layout/master_detail` 控件实现，本轮只收口 `reference` 页面结构、静态 preview 语义、README 口径与验收链，不修改 `sdk/EmbeddedGUI`
 
 ## 1. 为什么需要这个控件
-
-`master_detail` 用于在同一块页面区域里同时呈现“列表选择”和“详情阅读”两层信息。它适合文件库、成员列表、审核队列和内容分组等需要先选中条目，再在同屏查看对应摘要的场景。
+`master_detail` 用于在同一块区域里同时承载“左侧条目选择”和“右侧详情阅读”。它适合文件列表、审核队列、成员清单、归档浏览这类需要先定位条目，再在当前页立即查看摘要的场景。
 
 ## 2. 为什么现有控件不够用
+- `nav_panel` 解决的是导航入口，不强调当前条目的 detail pane。
+- `settings_panel` 强调设置项与 value cell，不是 master-detail 双栏结构。
+- `list` 和 `data_grid` 只负责列出条目，缺少同屏 detail 面板语义。
+- `card_control` 更偏单卡摘要，不承担左列驱动右侧详情的联动。
 
-- `nav_panel` 解决的是导航入口，不强调右侧详情阅读
-- `settings_panel` 强调设置项行和尾部控件，不是 master-detail 双栏结构
-- `card_panel` 更像单卡片信息摘要，没有左侧列表驱动
-- `list`、`table` 只能列出条目，缺少同屏 detail 面板语义
+## 3. 目标场景与页面结构
+- 页面结构统一为：标题 -> 主 `master_detail` -> 底部 `compact / read only` 双静态 preview。
+- 主区保留三组录制状态：
+  - `Files`
+  - `Review`
+  - `Archive`
+- 底部左侧是 `compact` 静态 preview，固定展示紧凑版 master-detail。
+- 底部右侧是 `read only` 静态 preview，固定展示只读版 master-detail。
+- 两个 preview 都通过 `egui_view_master_detail_override_static_preview_api()` 收口：
+  - 吞掉新的 `touch / dispatch_key_event()`
+  - 只清理残留 `pressed`
+  - 不改 `current_index / compact_mode / read_only_mode`
+  - 不触发 `on_selection_changed`
 
-因此这里继续保留 `master_detail`，但示例页必须回到统一的 reference 结构。
-
-## 3. 目标场景与示例概览
-
-- 主区域展示标准 `master_detail`，覆盖 `files`、`review`、`members`、`archive` 四组关键状态
-- 左下 `compact` 预览展示小尺寸 master-detail 的缩窄布局
-- 右下 `read only` 预览展示不可交互的静态对照态
-- 示例页只保留标题、主 `master_detail` 和底部 `compact / read only` 双预览，不再保留外部 guide、状态回显和标签点击
-- 底部两个 preview 统一通过 `egui_view_master_detail_override_static_preview_api()` 吞掉 `touch / key`，点击 preview 时只清主控件 `panel_primary` 的 focus
-
-目录：
-
-- `example/HelloCustomWidgets/layout/master_detail/`
+目标目录：`example/HelloCustomWidgets/layout/master_detail/`
 
 ## 4. 视觉与布局规格
-
 - 画布：`480 x 480`
 - 根布局：`224 x 208`
-- 页面结构：标题 -> 主 `master_detail` -> `compact / read only` 双预览
-- 主卡区域：`196 x 96`
-- 底部双预览容器：`216 x 72`
-- `compact` 预览：`104 x 72`
-- `read only` 预览：`104 x 72`
-- 视觉规则：
-  - 使用浅灰 page panel + 白底低噪音 master-detail 容器
-  - 主卡保留左侧列表、中央分隔与右侧 detail pane 的标准层级
-  - `compact` 预览压缩 master rail 和 detail 文本，不再依赖外部标签说明
-  - `read only` 通过控件自身弱化态表达，不再依赖页面状态桥接
+- 主控件：`196 x 96`
+- 底部对照行：`216 x 72`
+- `compact` preview：`104 x 72`
+- `read only` preview：`104 x 72`
+- 视觉约束：
+  - 使用浅灰 page panel 和白底低噪音 master-detail 容器。
+  - 主区保留左侧 master list、中央分隔与右侧 detail pane 的标准层级。
+  - 底部两个 preview 只做静态参考，不再承担焦点收尾或状态切换职责。
 
 ## 5. 控件清单
 
@@ -56,102 +52,82 @@
 | --- | --- | ---: | --- | --- |
 | `root_layout` | `egui_view_linearlayout_t` | `224 x 208` | enabled | 页面根布局 |
 | `title_label` | `egui_view_label_t` | `224 x 18` | `Master Detail` | 页面标题 |
-| `panel_primary` | `egui_view_master_detail_t` | `196 x 96` | `files` | 标准 master-detail 主卡 |
-| `panel_compact` | `egui_view_master_detail_t` | `104 x 72` | `files compact` | 紧凑预览 |
-| `panel_read_only` | `egui_view_master_detail_t` | `104 x 72` | `members read only` | 只读静态预览 |
+| `panel_primary` | `egui_view_master_detail_t` | `196 x 96` | `Files` | 主区标准 master-detail |
+| `panel_compact` | `egui_view_master_detail_t` | `104 x 72` | `Files compact` | 紧凑静态 preview |
+| `panel_read_only` | `egui_view_master_detail_t` | `104 x 72` | `Members read only` | 只读静态 preview |
+| `primary_snapshots` | `uint8_t[3]` | - | `Files / Review / Archive` | 主区录制轨道 |
 
 ## 6. 状态覆盖矩阵
 
-| 状态 / 区域 | 主卡 | Compact | Read only |
-| --- | --- | --- | --- |
-| 默认态 | `files + accent` | `files compact` | `members read only` |
-| 轮换 1 | `review + warning` | 保持 | 保持 |
-| 轮换 2 | `members + success` | 保持 | 保持 |
-| 轮换 3 | `archive + neutral` | 保持 | 保持 |
-| 紧凑轮换 | 保持 | `files -> review` | 保持 |
-| 只读弱化 | 不适用 | 不适用 | tone 弱化、内容可见但不可交互 |
+| 区域 | 状态 | 说明 |
+| --- | --- | --- |
+| 主控件 | `Files` | 默认 reference 状态，展示标准双栏结构 |
+| 主控件 | `Review` | 切到 warning 语义详情 |
+| 主控件 | `Archive` | 切到 neutral 语义详情 |
+| `compact` preview | `Files compact` | 固定静态对照，不随录制轨道变化 |
+| `read only` preview | `Members read only` | 固定静态对照，不随录制轨道变化 |
 
-## 7. `egui_port_get_recording_action()` 录制动作设计
+## 7. 交互语义与单测要求
+- 主控件继续保留真实的 `touch` 选中与键盘导航。
+- 单测覆盖：
+  - `set_items / set_current_index / set_compact_mode / set_read_only_mode` 的 pressed 清理语义
+  - `touch` 选中、`read only`、`!enable` 守卫
+  - `Left / Right / Up / Down / Home / End / Tab` 键盘切换
+  - 静态 preview 用例改为 “consumes input and keeps state”
+- preview 键盘入口统一走 `dispatch_key_event()`，不再回退到旧的 `on_key_event()` 直连路径。
+- 静态 preview 用例必须验证：
+  - 输入前后的 `current_index / compact_mode / read_only_mode / item_count` 保持不变
+  - `master_region / detail_region / row_regions` 保持不变
+  - `pressed_index / is_pressed` 被清理
+  - `on_selection_changed` 不触发
 
-1. 应用默认主状态与 `compact` 状态，并给主控件请求 focus
-2. 请求第一页截图
-3. 程序化切换主卡到 `review`
-4. 请求第二页截图
-5. 程序化切换主卡到 `members`
-6. 请求第三页截图
-7. 程序化切换主卡到 `archive`
-8. 请求第四页截图
-9. 程序化切换 `compact` 到 `review`
-10. 请求第五张截图
-11. 再次给主控件请求 focus
-12. 点击 `compact` preview，只验证 focus 收尾
-13. 请求最终截图并保留收尾等待
+## 8. 录制动作设计
+`egui_port_get_recording_action()` 的录制顺序如下：
+1. 恢复主控件默认 `Files`，同时恢复底部 `compact / read only` preview，并直接输出首帧
+2. 切到主区 `Review`
+3. 输出第二组主区帧
+4. 切到主区 `Archive`
+5. 输出第三组主区帧
+6. 恢复主区默认 `Files`
+7. 输出最终稳定帧
 
-## 8. 编译、runtime、截图验收标准
+录制只导出主区状态变化。底部 `compact / read only` preview 在整条 reference 轨道里保持静态一致。
 
+## 9. 编译、单测、运行时与文档检查
 ```bash
 make all APP=HelloCustomWidgets APP_SUB=layout/master_detail PORT=pc
-python scripts/checks/check_touch_release_semantics.py --scope custom --category layout
-python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub layout/master_detail --track reference --timeout 10 --keep-screenshots
+
+# 修改 HelloUnitTest 后优先在 X:\ 短路径下 clean + rebuild
+make clean APP=HelloUnitTest PORT=pc_test
 make all APP=HelloUnitTest PORT=pc_test
-output\main.exe
+X:\output\main.exe
+
+python scripts/sync_widget_catalog.py
+python scripts/checks/check_touch_release_semantics.py --scope custom --category layout
 python scripts/checks/check_docs_encoding.py
+python scripts/checks/check_widget_catalog.py
+python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub layout/master_detail --track reference --timeout 10 --keep-screenshots
+python scripts/code_compile_check.py --custom-widgets --category layout --bits64
+python scripts/code_runtime_check.py --app HelloCustomWidgets --category layout --track reference --bits64
+python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub layout/master_detail
+python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_layout_master_detail
 ```
 
-验收重点：
+## 10. 验收重点
+- 主区和底部双 preview 必须完整可见，不能裁切、黑屏或白屏。
+- 主区录制只允许出现 `Files / Review / Archive` 三组可识别状态。
+- 底部 `compact / read only` preview 必须在全程 runtime 帧里保持静态一致。
+- 静态 preview 输入后不能改变 `current_index`、布局区域或 listener 状态。
+- README、demo 录制轨道、单测入口与验收命令链必须保持一致。
 
-- 主卡与底部双预览必须完整可见，不能被裁切
-- 主卡左侧列表、中央分隔和右侧 detail pane 之间要保留稳定留白
-- 主卡与双预览都必须维持 `Fluent 2 / WPF UI` 低噪音浅色语义
-- 页面中不再出现 guide、状态回显、standard label、section divider、`Compact` / `Read only` 外部标签
-- `selection / compact / read only / view disabled` 切换后不能残留 master row 的 `pressed` 高亮或下压位移渲染
-- `read_only_mode / !enable` 不仅要忽略后续 touch / key 输入，还要在收到新输入时清理残留 `pressed` 渲染
-- 底部预览必须统一通过 `egui_view_master_detail_override_static_preview_api()` 吞掉 `touch / key`，且不能改当前选中项
-- 点击底部 preview 时只允许清主控件 `panel_primary` 的 focus，最终收尾帧不能出现焦点残留、黑白屏或异常重排
+## 11. 截图复核口径
+- 检查目录：`runtime_check_output/HelloCustomWidgets_layout_master_detail/default`
+- 复核目标：
+  - 主区裁剪后只出现 `3` 组唯一状态
+  - 遮掉主区变化边界后，边界外区域保持单哈希
+  - 按底部 preview 区域裁剪后，所有帧保持单哈希
 
-## 9. 已知限制与下一轮迭代计划
-
-- 当前是固定尺寸 reference 实现，未覆盖更长列表和长文本详情
-- 当前 detail 正文仍是静态快照，不接入真实数据源
-- 当前不做 hover、focus ring 与系统级转场动画
-- 若后续要沉入框架层，再单独评估数据绑定、滚动与详情区域模型
-
-## 10. 与现有控件的重叠分析与差异化边界
-
-- 相比 `nav_panel`：这里强调列表驱动的详情阅读，不承担页面导航容器职责
-- 相比 `settings_panel`：这里没有设置项 value cell、switch、chevron 语义
-- 相比 `card_panel`：这里不是单卡摘要，而是双栏联动结构
-- 相比 `list` / `table`：这里强调“当前选中项 + detail pane”的同步关系
-
-## 11. 参考设计系统与开源母本
-
-- 参考设计系统：`Fluent 2`
-- 开源母本：`WPF UI`
-- 次级补充参考：`ModernWpf`
-
-## 12. 对应组件名，以及本次保留的核心状态
-
-- 对应组件名：`MasterDetail`
-- 本次保留状态：
-  - `standard`
-  - `compact`
-  - `read only`
-  - `accent`
-  - `success`
-  - `warning`
-  - `neutral`
-
-## 13. 相比参考原型删掉了哪些效果或装饰
-
-- 不做页面级 guide、状态回显、standard label、section divider 和 preview label
-- 不做 Acrylic、复杂阴影、hover reveal 和系统级转场
-- 不做完整页面容器联动，只保留控件自身的 selection 与 detail 语义
-- 不做桌面级长文本与复杂数据源驱动
-
-## 14. EGUI 适配时的简化点与约束
-
-- 使用固定 item 数组驱动，先保证 reference 展示稳定
-- `compact` 与 `read only` 固定放底部双列，便于和主卡直接对照
-- 主卡保留 selection 切换，录制时改为程序化触发
-- 底部 `compact / read only` 统一通过 `egui_view_master_detail_override_static_preview_api()` 固定为静态对照
-- 先完成示例级 `master_detail`，后续再决定是否沉入通用框架控件
+## 12. 与现有控件的边界
+- 相比 `nav_panel`：这里强调“当前选中项 + detail pane”的同步关系，不承担导航容器职责。
+- 相比 `settings_panel`：这里没有 value cell、switch、chevron 语义。
+- 相比 `list` / `data_grid`：这里保留条目驱动详情的双栏联动，而不是单纯列表展示。

@@ -17,6 +17,10 @@
 #define MASTER_DETAIL_BOTTOM_ROW_HEIGHT 72
 #define MASTER_DETAIL_RECORD_WAIT       90
 #define MASTER_DETAIL_RECORD_FRAME_WAIT 170
+#define MASTER_DETAIL_RECORD_FINAL_WAIT 280
+#define MASTER_DETAIL_DEFAULT_SNAPSHOT  0
+
+#define PRIMARY_SNAPSHOT_COUNT          ((uint8_t)EGUI_ARRAY_SIZE(primary_snapshots))
 
 static egui_view_linearlayout_t root_layout;
 static egui_view_label_t title_label;
@@ -34,8 +38,8 @@ EGUI_BACKGROUND_PARAM_INIT(bg_page_panel_params, &bg_page_panel_param, NULL, NUL
 EGUI_BACKGROUND_COLOR_STATIC_CONST_INIT(bg_page_panel, &bg_page_panel_params);
 
 static const char *title_text = "Master Detail";
-static uint8_t primary_index = 0;
-static uint8_t compact_index = 0;
+
+static const uint8_t primary_snapshots[] = {0, 1, 3};
 
 static const egui_view_master_detail_item_t primary_items[] = {
         {"FI", "Files", "12 docs", "Workspace", "Files library", "Updated 3m ago", "Pinned drafts stay ready", "Shared notes stay close", "Open",
@@ -66,43 +70,42 @@ static const egui_view_master_detail_item_t read_only_items[] = {
          EGUI_VIEW_MASTER_DETAIL_TONE_ACCENT, 0},
 };
 
-static int dismiss_primary_focus_on_preview_touch(egui_view_t *self, egui_motion_event_t *event)
+static void apply_primary_state(uint8_t index)
 {
-    EGUI_UNUSED(self);
-
-#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
-    if (event->type == EGUI_MOTION_EVENT_ACTION_DOWN)
-    {
-        egui_view_clear_focus(EGUI_VIEW_OF(&panel_primary));
-    }
-#else
-    EGUI_UNUSED(event);
-#endif
-    return 1;
+    egui_view_master_detail_set_current_index(EGUI_VIEW_OF(&panel_primary), primary_snapshots[index % PRIMARY_SNAPSHOT_COUNT]);
 }
 
-static void apply_primary_item(uint8_t index)
+static void apply_primary_default_state(void)
 {
-    primary_index = (uint8_t)(index % EGUI_ARRAY_SIZE(primary_items));
-    egui_view_master_detail_set_current_index(EGUI_VIEW_OF(&panel_primary), primary_index);
+    apply_primary_state(MASTER_DETAIL_DEFAULT_SNAPSHOT);
 }
 
-static void apply_compact_item(uint8_t index)
+static void apply_preview_states(void)
 {
-    compact_index = (uint8_t)(index % EGUI_ARRAY_SIZE(compact_items));
-    egui_view_master_detail_set_current_index(EGUI_VIEW_OF(&panel_compact), compact_index);
+    egui_view_master_detail_set_current_index(EGUI_VIEW_OF(&panel_compact), 0);
+    egui_view_master_detail_set_current_index(EGUI_VIEW_OF(&panel_read_only), 0);
+}
+
+static void layout_local_views(void)
+{
+    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&compact_column));
+    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&read_only_column));
+    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&bottom_row));
+    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&root_layout));
+}
+
+static void layout_page(void)
+{
+    layout_local_views();
+    egui_core_layout_childs_user_root_view(EGUI_LAYOUT_VERTICAL, EGUI_ALIGN_HCENTER | EGUI_ALIGN_VCENTER);
 }
 
 #if EGUI_CONFIG_RECORDING_TEST
-static void set_click_view_center(egui_sim_action_t *p_action, egui_view_t *view, int interval_ms)
+static void request_page_snapshot(void)
 {
-    p_action->type = EGUI_SIM_ACTION_CLICK;
-    p_action->x1 = view->region_screen.location.x + view->region_screen.size.width / 2;
-    p_action->y1 = view->region_screen.location.y + view->region_screen.size.height / 2;
-    p_action->x2 = 0;
-    p_action->y2 = 0;
-    p_action->steps = 0;
-    p_action->interval_ms = interval_ms;
+    layout_page();
+    egui_view_invalidate(EGUI_VIEW_OF(&root_layout));
+    recording_request_snapshot();
 }
 #endif
 
@@ -159,9 +162,6 @@ void test_init_ui(void)
                                         EGUI_COLOR_HEX(0x1A2734), EGUI_COLOR_HEX(0x6B7A89), EGUI_COLOR_HEX(0x0F6CBD), EGUI_COLOR_HEX(0x0F7B45),
                                         EGUI_COLOR_HEX(0x9D5D00), EGUI_COLOR_HEX(0x7A8796));
     egui_view_master_detail_override_static_preview_api(EGUI_VIEW_OF(&panel_compact), &panel_compact_api);
-#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
-    panel_compact_api.on_touch = dismiss_primary_focus_on_preview_touch;
-#endif
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&panel_compact), false);
 #endif
@@ -185,29 +185,19 @@ void test_init_ui(void)
                                         EGUI_COLOR_HEX(0x1A2734), EGUI_COLOR_HEX(0x6B7A89), EGUI_COLOR_HEX(0x0F6CBD), EGUI_COLOR_HEX(0x0F7B45),
                                         EGUI_COLOR_HEX(0x9D5D00), EGUI_COLOR_HEX(0x7A8796));
     egui_view_master_detail_override_static_preview_api(EGUI_VIEW_OF(&panel_read_only), &panel_read_only_api);
-#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
-    panel_read_only_api.on_touch = dismiss_primary_focus_on_preview_touch;
-#endif
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&panel_read_only), false);
 #endif
     egui_view_group_add_child(EGUI_VIEW_OF(&read_only_column), EGUI_VIEW_OF(&panel_read_only));
 
-    apply_primary_item(0);
-    apply_compact_item(0);
-    egui_view_master_detail_set_current_index(EGUI_VIEW_OF(&panel_read_only), 0);
+    apply_primary_default_state();
+    apply_preview_states();
 
-    {
-        hello_custom_widgets_demo_apply_title_only_scaffold(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label), NULL, 0);
-    }
+    hello_custom_widgets_demo_apply_title_only_scaffold(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label), NULL, 0);
 
-    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&compact_column));
-    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&read_only_column));
-    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&bottom_row));
-    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&root_layout));
-
+    layout_local_views();
     egui_core_add_user_root_view(EGUI_VIEW_OF(&root_layout));
-    egui_core_layout_childs_user_root_view(EGUI_LAYOUT_VERTICAL, EGUI_ALIGN_HCENTER | EGUI_ALIGN_VCENTER);
+    layout_page();
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_request_focus(EGUI_VIEW_OF(&panel_primary));
 #endif
@@ -226,98 +216,53 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     case 0:
         if (first_call)
         {
-            apply_primary_item(0);
-            apply_compact_item(0);
-#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
-            egui_view_request_focus(EGUI_VIEW_OF(&panel_primary));
-#endif
+            apply_preview_states();
+            apply_primary_default_state();
+            request_page_snapshot();
         }
-        EGUI_SIM_SET_WAIT(p_action, MASTER_DETAIL_RECORD_WAIT);
+        EGUI_SIM_SET_WAIT(p_action, MASTER_DETAIL_RECORD_FRAME_WAIT);
         return true;
     case 1:
         if (first_call)
         {
-            recording_request_snapshot();
+            apply_primary_state(1);
         }
-        EGUI_SIM_SET_WAIT(p_action, MASTER_DETAIL_RECORD_FRAME_WAIT);
+        EGUI_SIM_SET_WAIT(p_action, MASTER_DETAIL_RECORD_WAIT);
         return true;
     case 2:
         if (first_call)
         {
-            apply_primary_item(1);
+            request_page_snapshot();
         }
-        EGUI_SIM_SET_WAIT(p_action, MASTER_DETAIL_RECORD_WAIT);
+        EGUI_SIM_SET_WAIT(p_action, MASTER_DETAIL_RECORD_FRAME_WAIT);
         return true;
     case 3:
         if (first_call)
         {
-            recording_request_snapshot();
+            apply_primary_state(2);
         }
-        EGUI_SIM_SET_WAIT(p_action, MASTER_DETAIL_RECORD_FRAME_WAIT);
+        EGUI_SIM_SET_WAIT(p_action, MASTER_DETAIL_RECORD_WAIT);
         return true;
     case 4:
         if (first_call)
         {
-            apply_primary_item(2);
+            request_page_snapshot();
         }
-        EGUI_SIM_SET_WAIT(p_action, MASTER_DETAIL_RECORD_WAIT);
+        EGUI_SIM_SET_WAIT(p_action, MASTER_DETAIL_RECORD_FRAME_WAIT);
         return true;
     case 5:
         if (first_call)
         {
-            recording_request_snapshot();
+            apply_primary_default_state();
         }
-        EGUI_SIM_SET_WAIT(p_action, MASTER_DETAIL_RECORD_FRAME_WAIT);
+        EGUI_SIM_SET_WAIT(p_action, MASTER_DETAIL_RECORD_WAIT);
         return true;
     case 6:
         if (first_call)
         {
-            apply_primary_item(3);
+            request_page_snapshot();
         }
-        EGUI_SIM_SET_WAIT(p_action, MASTER_DETAIL_RECORD_WAIT);
-        return true;
-    case 7:
-        if (first_call)
-        {
-            recording_request_snapshot();
-        }
-        EGUI_SIM_SET_WAIT(p_action, MASTER_DETAIL_RECORD_FRAME_WAIT);
-        return true;
-    case 8:
-        if (first_call)
-        {
-            apply_compact_item(1);
-        }
-        EGUI_SIM_SET_WAIT(p_action, MASTER_DETAIL_RECORD_WAIT);
-        return true;
-    case 9:
-        if (first_call)
-        {
-            recording_request_snapshot();
-        }
-        EGUI_SIM_SET_WAIT(p_action, MASTER_DETAIL_RECORD_FRAME_WAIT);
-        return true;
-    case 10:
-        if (first_call)
-        {
-#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
-            egui_view_request_focus(EGUI_VIEW_OF(&panel_primary));
-#endif
-        }
-        EGUI_SIM_SET_WAIT(p_action, MASTER_DETAIL_RECORD_WAIT);
-        return true;
-    case 11:
-        if (first_call)
-        {
-            set_click_view_center(p_action, EGUI_VIEW_OF(&panel_compact), 220);
-        }
-        return true;
-    case 12:
-        if (first_call)
-        {
-            recording_request_snapshot();
-        }
-        EGUI_SIM_SET_WAIT(p_action, 520);
+        EGUI_SIM_SET_WAIT(p_action, MASTER_DETAIL_RECORD_FINAL_WAIT);
         return true;
     default:
         return false;
