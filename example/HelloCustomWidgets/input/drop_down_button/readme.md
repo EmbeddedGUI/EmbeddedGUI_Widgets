@@ -1,140 +1,163 @@
-# drop_down_button 自定义控件设计说明
+# drop_down_button 设计说明
+
 ## 参考来源
 - 参考设计系统：`Fluent 2`
-- 参考开源库：`WPF UI`
-- 次级补充参考：`ModernWpf`
+- 官方语义参考：`WinUI 3 DropDownButton`
+- 开源母本：`WPF UI`
 - 对应组件名：`DropDownButton`
-- 本次保留状态：`standard`、`compact`、`read only`
-- 删除效果：页面级 `guide`、状态回显、`section divider`、外部 `preview` 标签、标签点击切换、场景化 demo 壳、复杂 hover / pressed 动画、真实 flyout 定位与多级菜单
-- EGUI 适配说明：保留“整个按钮都是下拉入口”的核心语义，在 `480 x 480` 画布中优先保证标题层级、主按钮信息密度、底部 `compact / read only` 双预览和键盘闭环稳定；`snapshot / compact / read only / disabled` 切换共享同一套 `pressed` 清理语义，主控件补齐 `same-target release`，底部 preview 统一走 `egui_view_drop_down_button_override_static_preview_api()`
+- 本轮保留语义：`single-entry menu trigger / compact / read only / static preview`
+- 本轮移除内容：页面级 `guide`、旧 preview 快照轮换、preview 清焦桥接、额外收尾态、真实 flyout 定位、多级菜单与 showcase 化包装
+- EGUI 适配说明：继续复用 custom 层现有 `egui_view_drop_down_button` 绘制与输入语义，本轮只收口 `reference` 页面结构、录制轨道、静态 preview、README 与单测口径，不修改 `sdk/EmbeddedGUI`
 
-## 1. 为什么需要这个控件？
-`drop_down_button` 用来表达“单一入口打开一组选项”的标准命令按钮语义。它适合排序、布局切换、主题切换、过滤切换这类场景：用户点击整个按钮即可进入下拉动作，而不是像 `split_button` 那样区分主动作段和菜单段。
+## 1. 为什么需要这个控件
+`drop_down_button` 用来表达“整个按钮本身就是下拉入口”的标准命令触发语义。它适合排序、布局、主题和筛选这类场景：用户点击整个按钮，进入一组可选动作，而不是像 `split_button` 那样在主动作段和菜单段之间做双入口分工。
 
 ## 2. 为什么现有控件不够用
-- `split_button` 强调“主动作 + 菜单段”双入口，不等于整个按钮统一展开
-- `toggle_split_button` 还带 `checked` 语义，不适合纯下拉命令入口
-- `menu_flyout` 是独立弹出菜单容器，不是页内按钮控件
-- `command_bar` 承担的是工具栏语义，不是单个下拉按钮语义
+- `split_button` 强调“主动作 + 菜单段”的双入口，不等于整个按钮统一展开。
+- `toggle_split_button` 还携带 `checked` 语义，不适合纯下拉入口。
+- `menu_flyout` 是独立弹出菜单容器，不是页内按钮控件。
+- `command_bar` 承担的是工具栏语义，不是单个下拉按钮语义。
 
-因此这里继续保留 `drop_down_button`，但示例页面必须收口到统一的 `Fluent 2 / WPF UI` reference 结构。
+因此这里继续保留 `drop_down_button` reference 控件，用来承接 Fluent / WPF UI 里的单入口下拉命令按钮。
 
-## 3. 目标场景与示例概览
-- 主区域展示标准 `drop_down_button`，覆盖 `Sort`、`Layout`、`Theme` 三组主线 snapshot
-- 左下 `compact` 预览展示紧凑尺寸下的静态对照
-- 右下 `read only` 预览展示可见但不可交互的锁定对照
-- 主控件保留真实触摸点击和 `Enter` 键触发闭环
-- `compact / read only` preview 统一通过 `egui_view_drop_down_button_override_static_preview_api()` 覆盖成静态 API，点击 preview 时只收主控件 focus，不切换 snapshot
-- 页面只保留标题、主 `drop_down_button` 和底部 `compact / read only` 双预览，不再保留旧版 `guide`、状态文本、分隔线和 label-click 场景切换
+## 3. 目标场景与页面结构
+- 页面结构统一为：标题 -> 主 `drop_down_button` -> 底部 `compact / read only` 双静态 preview。
+- 主区保留 4 组 reference 状态：`Sort`、`Layout`、`Theme`、`Filter`。
+- 主控件继续保留真实 `touch` 点击与 `Enter` 键闭环，用于驱动主区 snapshot 切换。
+- 底部 `compact` preview 固定显示 `Quick`，只作为紧凑静态对照。
+- 底部 `read only` preview 固定显示 `Locked`，只作为只读静态对照。
+- 两个 preview 统一通过 `egui_view_drop_down_button_override_static_preview_api()` 收口。
+- preview 收到 `touch` 或 `dispatch_key_event()` 后，只允许清理残留 `is_pressed`，不能改写 `snapshots / current_snapshot / compact_mode / read_only_mode / region_screen / palette / click_count`。
 
-目录：
-- `example/HelloCustomWidgets/input/drop_down_button/`
+目标目录：`example/HelloCustomWidgets/input/drop_down_button/`
 
 ## 4. 视觉与布局规格
 - 画布：`480 x 480`
 - 根布局：`224 x 160`
-- 页面结构：标题 -> 主 `drop_down_button` -> `compact / read only` 双预览
 - 主控件：`196 x 76`
-- 底部双预览容器：`216 x 44`
-- `compact` 预览：`104 x 44`
-- `read only` 预览：`104 x 44`
-- 视觉规则：
-  - 使用浅灰白 `page panel` 和低噪音白色按钮表面
-  - 主控件保留 `title + row + helper` 三段式信息层级，明确“整块点击打开选项”
-  - `compact` 预览收敛为静态紧凑摘要，不再承担演示切换职责
-  - `read only` 预览通过只读调色板和输入屏蔽表达锁定态，而不是额外加重装饰
+- 底部对照行：`216 x 44`
+- `compact` preview：`104 x 44`
+- `read only` preview：`104 x 44`
+
+视觉约束：
+- 保持浅色 `page panel`、低噪音描边和 Fluent 风格的单入口按钮表面。
+- 主区保留 `title + glyph + helper` 的最小信息层级，明确“整块点击打开选项”。
+- runtime 轨道里只允许主区变化，底部 `compact / read only` preview 必须全程静态。
+- 不再保留旧版 `guide`、状态回显、外部 preview 标签、preview 点击清焦桥接和额外收尾动作。
 
 ## 5. 控件清单
 
 | 变量名 | 类型 | 尺寸 (W x H) | 初始状态 | 用途 |
 | --- | --- | ---: | --- | --- |
-| `root_layout` | `egui_view_linearlayout_t` | `224 x 160` | enabled | 页面根布局 |
+| `root_layout` | `egui_view_linearlayout_t` | `224 x 160` | enabled | 页面根容器 |
 | `title_label` | `egui_view_label_t` | `224 x 18` | `Drop Down Button` | 页面标题 |
-| `button_primary` | `egui_view_drop_down_button_t` | `196 x 76` | `Sort` | 标准主控件 |
-| `button_compact` | `egui_view_drop_down_button_t` | `104 x 44` | `Sort` | 紧凑静态预览 |
-| `button_read_only` | `egui_view_drop_down_button_t` | `104 x 44` | `Locked` | 只读静态预览 |
+| `button_primary` | `egui_view_drop_down_button_t` | `196 x 76` | `Sort` | 主控件 |
+| `button_compact` | `egui_view_drop_down_button_t` | `104 x 44` | `Quick` | 紧凑静态 preview |
+| `button_read_only` | `egui_view_drop_down_button_t` | `104 x 44` | `Locked` | 只读静态 preview |
 
 ## 6. 状态覆盖矩阵
 
-| 状态 / 区域 | 主控件 | Compact | Read only |
-| --- | --- | --- | --- |
-| 默认 `Sort` | 是 | 是 | 否 |
-| 切换到 `Layout` | 是 | 否 | 否 |
-| 切换到 `Theme` | 是 | 否 | 否 |
-| 切换到 `Filter` | 否 | 是 | 否 |
-| 触摸点击 | 是 | 否 | 否 |
-| 键盘 `Enter` | 是 | 否 | 否 |
-| 只读锁定 | 否 | 否 | 是 |
-| 静态对照 | 否 | 是 | 是 |
+| 区域 | 状态 | 说明 |
+| --- | --- | --- |
+| 主控件 | `Sort` | 默认主状态，accent tone |
+| 主控件 | `Layout` | 点击主按钮后的第二态 |
+| 主控件 | `Theme` | `Enter` 键切换后的第三态 |
+| 主控件 | `Filter` | 第二次点击后的第四态，也是最终稳定态 |
+| `compact` preview | `Quick` | 全程静态，不参与轮换 |
+| `read only` preview | `Locked` | 全程静态，不参与轮换 |
 
-## 7. `egui_port_get_recording_action()` 录制动作设计
-1. 应用默认主控件和 `compact` 预览状态
-2. 抓取首帧 `Sort` reference
-3. 通过主控件真实触摸点击切换到 `Layout`
-4. 抓取第二帧触摸切换结果
-5. 通过 `Enter` 键再切换到 `Theme`
-6. 抓取第三帧键盘切换结果
-7. 程序化把 `compact` 预览切到 `Filter`
-8. 抓取最终收尾截图并保留静态 `read only` 对照
+## 7. 交互语义与单测口径
+- 主控件继续保留单按钮面的 `same-target release` 语义：
+  - `DOWN(inside) -> MOVE(outside) -> UP(outside)` 不提交。
+  - 只有回到原命中区后 `UP(inside)` 才提交。
+- `set_snapshots()`、`set_current_snapshot()`、`set_font()`、`set_meta_font()`、`set_palette()`、`set_compact_mode()`、`set_read_only_mode()` 都必须先清理残留 `pressed`。
+- 主控件的 `touch cancel`、无关键盘输入、`Enter` 的 `ACTION_DOWN -> ACTION_UP` 闭环都不能留下残留 `pressed`。
+- preview 键盘入口统一走 `dispatch_key_event()`，不再直接走旧的 `on_key_event()`。
+- 静态 preview 用例统一收口为 `test_drop_down_button_static_preview_consumes_input_and_keeps_state`。
+- preview 固定断言覆盖：
+  - `region_screen`
+  - `snapshots`
+  - `font`
+  - `meta_font`
+  - `on_click_listener`
+  - 全 palette 字段
+  - `snapshot_count`
+  - `current_snapshot`
+  - `compact_mode`
+  - `read_only_mode`
+  - `alpha`
+  - `click_count == 0`
+  - `is_pressed` / `pressed` 残留被清理
 
-## 8. 编译、runtime、截图验收标准
+## 8. 录制动作设计
+`egui_port_get_recording_action()` 的 reference 轨道顺序如下：
+
+1. 恢复主控件默认 `Sort`，同步底部 `Quick / Locked` 静态 preview，请求首帧截图。
+2. 对主控件执行一次真实 `touch` 点击，切到 `Layout`。
+3. 请求 `Layout` 主区截图。
+4. 对主控件注入一次 `Enter` 键闭环，切到 `Theme`。
+5. 请求 `Theme` 主区截图。
+6. 对主控件再次执行一次真实 `touch` 点击，切到 `Filter`。
+7. 请求 `Filter` 主区截图。
+8. 保持 `Filter` 不变，等待最终稳定帧。
+9. 请求最终稳定帧。
+
+录制只允许主区发生变化。底部 `compact / read only` preview 在整条 reference 轨道里必须保持单一静态对照。
+
+## 9. 编译、单测、runtime 与 web 验收链
 ```bash
 make all APP=HelloCustomWidgets APP_SUB=input/drop_down_button PORT=pc
-python scripts/checks/check_touch_release_semantics.py --scope custom --category input
-python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/drop_down_button --track reference --timeout 10 --keep-screenshots
+
+make clean APP=HelloUnitTest PORT=pc_test
 make all APP=HelloUnitTest PORT=pc_test
-output\main.exe
+X:\output\main.exe
+
+python scripts/sync_widget_catalog.py
+python scripts/checks/check_touch_release_semantics.py --scope custom --category input
 python scripts/checks/check_docs_encoding.py
+python scripts/checks/check_widget_catalog.py
+python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/drop_down_button --track reference --timeout 10 --keep-screenshots
+python scripts/code_compile_check.py --custom-widgets --category input --bits64
+python scripts/code_runtime_check.py --app HelloCustomWidgets --category input --track reference --bits64
+python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub input/drop_down_button
+python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_input_drop_down_button
 ```
 
-验收重点：
-- 主控件和底部双预览必须完整可见，不能被裁切
-- 主按钮必须被识别为单一点击面，而不是误读成 `split button`
-- 主控件触摸点击和 `Enter` 键切换都必须生效
-- 必须满足 `DOWN(inside) -> MOVE(outside) -> UP(outside)` 不提交，只有回到原命中区后 `UP(inside)` 才提交
-- `snapshot / compact / read only / disabled` 切换后不能残留 `pressed` 高亮或下压位移渲染
-- `read only / disabled` 不仅要忽略后续 touch / key 输入，还要在收到新输入时清理残留 `pressed` 渲染
-- 主控件的 `touch cancel`、无关按键和 `Enter` 的 `ACTION_DOWN -> ACTION_UP` 闭环都必须稳定，不能留下残留 `pressed`
-- 底部 `compact / read only` 预览必须通过 `egui_view_drop_down_button_override_static_preview_api()` 统一吞掉 touch / key 输入，并在收到输入后立即清理残留 `pressed` 渲染，且不能改 `current_snapshot`
-- 页面中不再出现旧版 `guide`、状态回显、分隔线和外部 `preview` 标签
-- `compact` 与 `read only` 必须保持 Fluent / WPF UI 风格的低噪音浅色 reference
+## 10. 验收重点
+- 主区与底部双 preview 必须完整可见，不能黑屏、白屏或被裁切。
+- 主区录制只允许出现 `Sort`、`Layout`、`Theme`、`Filter` 四组可识别状态。
+- 底部 `Quick / Locked` preview 必须在全部 runtime 帧里保持静态一致。
+- 静态 preview 收到输入后，不能改写 `snapshots / current_snapshot / compact_mode / read_only_mode / region_screen / palette`。
+- README、录制轨道、单测断言和验收命令链必须保持一致。
 
-## 9. 已知限制与后续方向
-- 当前先做示例级 `DropDownButton`，不实现真实 flyout 布局系统
-- 当前 glyph 仍使用轻量字母占位，不接入真实图标资源
-- `compact` 与 `read only` 预览只做静态对照，不承担交互职责
-- 若后续下沉到框架层，再评估与 `button`、`menu_flyout` 的复用边界
+## 11. runtime 截图复核口径
+- 检查目录：`runtime_check_output/HelloCustomWidgets_input_drop_down_button/default`
+- 截图帧数：`10`
+- 主区变化边界：`(50, 150) - (429, 257)`
+- 主区唯一状态数：`4`
+- 主区外唯一哈希数：`1`
+- preview 区唯一哈希数：`1`
+- preview 裁剪起点：`y >= 258`
 
-## 10. 与现有控件的重叠分析与差异化边界
-- 相比 `split_button`：这里是整个按钮统一展开，没有主段 / 菜单段双入口
-- 相比 `toggle_split_button`：这里没有 `checked` 复合语义
-- 相比 `menu_flyout`：这里是按钮控件，不是独立弹出菜单容器
-- 相比 `command_bar`：这里是单控件命令入口，不承载整条工具栏布局职责
+复核结论：
+- 遮罩主区变化边界后，边界外区域保持单哈希，确认主区外全程静态。
+- 按主区裁剪后共出现 `4` 组唯一状态，符合 `Sort / Layout / Theme / Filter` 四态轨道。
+- 按 `y >= 258` 裁剪底部 preview 区域后全部帧保持单哈希，确认 `Quick / Locked` preview 在整条录制轨道中保持静态一致。
 
-## 11. 参考设计系统与开源母本
-- 参考设计系统：`Fluent 2`
-- 开源母本：`WPF UI`
-- 次级补充参考：`ModernWpf`
+## 12. 已知限制
+- 当前版本只保留 snapshot 驱动的 reference `DropDownButton`，不实现真实 popup 定位与菜单布局系统。
+- glyph 继续使用轻量字母占位，不接入真实图标资源。
+- 底部 `compact / read only` preview 只承担静态对照，不承载真实交互职责。
 
-## 12. 对应组件名，以及本次保留的核心状态
-- 对应组件名：`DropDownButton`
-- 本次保留状态：
-  - `standard`
-  - `compact`
-  - `read only`
-  - `sort`
-  - `layout`
-  - `theme`
-
-## 13. 相比参考原型删掉了哪些效果或装饰
-- 不做页面级 `guide`、状态文本、分隔线和外部 `preview` 标签
-- 不做真实 flyout 弹层、滚动菜单和多级 submenu
-- 不做桌面级 hover / pressed 动画、复杂阴影和 Acrylic
-- 不做真实图标资源、快捷键标记和额外徽标
+## 13. 与现有控件的边界
+- 相比 `split_button`：这里是整个按钮统一展开，没有主动作段 / 菜单段双入口。
+- 相比 `toggle_split_button`：这里没有 `checked` 复合语义。
+- 相比 `menu_flyout`：这里是按钮控件，不是独立弹出菜单容器。
+- 相比 `command_bar`：这里是单控件命令入口，不承载整条工具栏布局职责。
 
 ## 14. EGUI 适配时的简化点与约束
-- 用固定 snapshot 驱动 reference，优先保证 `480 x 480` 下的稳定审阅
-- 主控件保留 `title + row + helper` 三段式信息层级
-- `compact` 预览通过 `egui_view_drop_down_button_override_static_preview_api()` 固定为静态对照
-- `read only` 预览通过 `read_only_mode + compact_mode` 固定为静态锁定态
-- 本轮补齐了 `same-target release`、setter `pressed` 清理、`touch cancel / key guard` 清残留与静态 preview 吞输入，确保交互后的渲染稳定
+- 用固定 snapshot 驱动 reference，优先保证 `480 x 480` 页面内的稳定审阅。
+- 主控件保留最小必要的 `title + glyph + helper` 信息层级。
+- `compact` preview 通过 `egui_view_drop_down_button_override_static_preview_api()` 固定为静态对照。
+- `read only` preview 通过 `read_only_mode + compact_mode` 固定为静态锁定态。
+- 本轮额外补齐了 `PRIMARY_SNAPSHOT_COUNT`、`apply_primary_default_state()`、`apply_preview_states()`、`layout_local_views()`、`layout_page()`、`focus_primary_button()` 与 `request_page_snapshot()` 对应的页面收口逻辑，保证主区轨道、底部静态 preview 与最终稳定帧使用同一套布局恢复路径。
