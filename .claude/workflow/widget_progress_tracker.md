@@ -34,7 +34,7 @@
 
 | 状态 | 控件名 | 分类 | 开始日期 | 当前阶段 | 目标 |
 | --- | --- | --- | --- | --- | --- |
-| 进行中 | `scroll_viewer` | `layout` | `2026-04-15` | static preview 收口 | 对齐主区滚动轨道、静态 preview 单测与 README 验收链 |
+| 进行中 | `calendar_view` | `input` | `2026-04-15` | static preview 收口 | 对齐主区月份浏览轨道、静态 preview 单测与 README 验收链 |
 
 ## 当前保留的 Reference 主线控件
 
@@ -161,6 +161,11 @@
 
 ## 最近完成的收口动作
 
+- `2026-04-15`
+  - 收口 `input/auto_suggest_box` reference 控件：在不修改 SDK 的前提下，对齐当前 input 主线里已经采用的 static preview 工作流，保留主区 `默认 / 展开 / 高亮导航 / Deploy Worker 提交结果` 四组 reference 状态，把底部 `compact / read only` preview 统一收口为真正静态的 reference 对照，并移除旧录制轨道里的 preview touch bridge、`compact` preview 快照切换与 preview 收尾动作。
+  - `example/HelloCustomWidgets/input/auto_suggest_box/test.c` 新增 `AUTO_SUGGEST_BOX_RECORD_FINAL_WAIT`、`AUTO_SUGGEST_BOX_DEFAULT_SNAPSHOT`、`PRIMARY_SNAPSHOT_COUNT`、`apply_primary_default_state()`、`apply_preview_states()`、`layout_local_views()`、`layout_page()` 与 `request_page_snapshot()`，把录制轨道改为只导出主区默认、展开、高亮导航、`Deploy Worker` 提交结果与最终稳定帧，并确保底部 `compact / read only` preview 全程静态；`example/HelloUnitTest/test/test_auto_suggest_box.c` 把 preview 键盘入口统一改为 `dispatch_key_event()`，将静态 preview 用例收口为 “consumes input and keeps state”，补齐 `items / item_count / current_index / current_text / region_screen / palette / font / icons` 固定断言以及 listener 不触发、`pressed` 清理断言；`example/HelloCustomWidgets/input/auto_suggest_box/readme.md` 重写为与当前 static preview 页面结构、录制轨道、单测口径和完整验收命令链一致的说明。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=input/auto_suggest_box PORT=pc`、`make clean APP=HelloUnitTest PORT=pc_test`、`make all APP=HelloUnitTest PORT=pc_test`、`X:\output\main.exe`（总计 `845 / 845`，`auto_suggest_box` suite `7 / 7`）、`python scripts/sync_widget_catalog.py`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category input`、`python scripts/checks/check_docs_encoding.py`、`python scripts/checks/check_widget_catalog.py`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/auto_suggest_box --track reference --timeout 10 --keep-screenshots`、`python scripts/code_compile_check.py --custom-widgets --category input --bits64`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --category input --track reference --bits64`、`python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub input/auto_suggest_box` 与对应 `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_input_auto_suggest_box`。
+  - 复核 `runtime_check_output/HelloCustomWidgets_input_auto_suggest_box/default` 的 `10` 帧截图：按 RGB 差分得到主区变化边界位于 `(22, 124) - (457, 283)`；遮罩该边界后边界外区域保持单哈希，确认主区外全程静态；按主区裁剪后共出现 `4` 组唯一状态，符合 `默认 / 展开 / 高亮导航 / Deploy Worker 提交结果` 轨道；按 `y >= 284` 裁剪底部 preview 区域后全部帧保持单哈希，确认底部 `compact / read only` preview 在整条录制轨道中保持静态一致。
 - `2026-04-15`
   - 收口 `layout/parallax_view` reference 控件：在不修改 SDK 的前提下，对齐 `canvas / drawer / master_detail / data_list_panel / split_view` 这一批布局控件已经采用的 static preview 工作流，保留主区 `Hero Banner / Pinned Deck / Quiet Layer / System Cards` 四组 reference 状态，把底部 `compact / read only` preview 统一收口为真正静态的 reference 对照，并移除旧录制轨道里的 preview touch bridge、compact preview 切换和 preview click 收尾动作。
   - `example/HelloCustomWidgets/layout/parallax_view/test.c` 新增 `PARALLAX_RECORD_FINAL_WAIT`、`PARALLAX_DEFAULT_SNAPSHOT`、`PRIMARY_SNAPSHOT_COUNT`、`apply_primary_default_state()`、`apply_preview_states()`、`layout_local_views()`、`layout_page()` 与 `request_page_snapshot()`，把录制轨道改为只导出主区默认 `Hero Banner`、`Pinned Deck`、`Quiet Layer`、`System Cards` 与最终稳定帧，并确保底部 `compact / read only` preview 全程静态；`example/HelloUnitTest/test/test_parallax_view.c` 把键盘入口统一改为 `dispatch_key_event()`，将静态 preview 用例收口为 “consumes input and keeps state”，补齐 `offset / active_row / content_length / viewport_length / vertical_shift / line_step / page_step / compact_mode / read_only_mode / row_count / content / hero / title / subtitle / progress / footer / rows` 固定断言以及 listener 不触发、`pressed` 清理断言；`example/HelloCustomWidgets/layout/parallax_view/readme.md` 重写为与当前 static preview 页面结构、录制轨道、单测口径和完整验收命令链一致的说明。
@@ -1362,7 +1367,7 @@
   - web 入口、构建脚本、默认 `APP_SUB` 与 catalog policy 全部对齐到 `reference-only`。
 - `2026-04-08`
   - 修复 `HelloCustomWidgets_plan.md`、web 入口文档与脚本文案中的历史残留描述。
-  - 当前默认维护入口统一为 `input/auto_suggest_box`。
+  - 当前默认维护入口统一为 `input/calendar_view`。
 
 ## 已搁置 / 待恢复
 

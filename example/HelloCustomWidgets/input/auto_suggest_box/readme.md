@@ -3,53 +3,54 @@
 ## 参考来源
 
 - 参考设计系统：`Fluent 2`
-- 参考开源库：`WPF UI`
-- 次级补充参考：`ModernWpf`
+- 官方语义参考：`WinUI 3 AutoSuggestBox`
+- 开源母本：`WPF UI`
 - 对应组件名：`AutoSuggestBox`
-- 本次保留状态：`standard`、`compact`、`read only`、`expanded`、`focused`
-- 删除效果：页面级 guide / 状态文案 / standard label / section divider / preview label、标签点击切换、搜索图标、复杂 hover、桌面阴影、Acrylic、异步建议流
-- EGUI 适配说明：继续复用仓库里的 `autocomplete -> combobox` 基础实现，本轮重点收口 reference 页面结构、统一 palette，并保留轻量键盘展开/选择闭环
+- 本轮保留语义：`standard / compact / read only / expanded / focused`
+- 本轮移除内容：页面级 guide、状态文案、preview 标签点击桥接、旧录制轨道里的 `compact` 快照切换与 preview 收尾动作
+- EGUI 适配说明：继续复用仓库内 `autocomplete -> combobox` 基础实现，本轮只收口 `reference` 页面结构、静态 preview 语义、README 口径与验收链，不修改 `sdk/EmbeddedGUI`
 
 ## 1. 为什么需要这个控件
 
-`auto_suggest_box` 适合做轻量命令查找、成员搜索、模板选择和最近项匹配。它比普通下拉框更强调“建议结果”，也比完整文本输入更轻，适合小屏和固定候选集。
+`auto_suggest_box` 用来表达“在输入语义下展示候选建议，并允许用户快速确认一个结果”的标准场景，适合成员搜索、命令查找、模板选择和最近项匹配。它比纯 `combo_box` 更强调建议列表，也比完整文本框更轻。
 
 ## 2. 为什么现有控件不够用
 
-- `combobox` / `autocomplete` 现有示例更偏基础功能验证，缺少统一的 reference 页面
-- `textinput` 更偏自由输入，不适合直接展示固定建议集
-- `menu_flyout` 更偏命令面板，不是输入语义
-- 当前主线需要一版更接近 `Fluent 2 / WPF UI AutoSuggestBox` 的标准建议输入 reference
+- `combo_box` 更强调固定候选里的当前值选择，不强调建议语义。
+- `text_box` 更偏自由输入，不提供标准的建议结果列表表达。
+- `menu_flyout` 与 `command_bar` 更偏命令容器，而不是输入字段。
+- 仓库里旧版 `auto_suggest_box` 页面虽然已经完成 reference 化，但录制轨道、静态 preview 单测和 README 仍停留在旧口径，没有真正收口到当前 static preview 工作流。
 
-因此这里继续保留 `auto_suggest_box`，但示例页必须回到统一的 reference 结构。
+## 3. 目标场景与页面结构
 
-## 3. 目标场景与示例概览
+- 页面结构统一为：标题 -> 主 `auto_suggest_box` -> 底部 `compact / read only` 双静态 preview。
+- 主区只负责展示真实 `AutoSuggestBox` 的建议展开、键盘导航和提交结果。
+- 底部 `compact` preview 固定显示紧凑态建议框，不再承担录制轨道切换职责。
+- 底部 `read only` preview 固定显示只读对照态，不再承担任何交互职责。
+- 两个 preview 都通过 `hcw_auto_suggest_box_override_static_preview_api()` 收口：
+  - 吞掉新增 `touch / dispatch_key_event()`
+  - 收到输入时立即清理残留 `pressed / expanded`
+  - 不改 `suggestions / current_index / current_text / region_screen / palette`
+  - 不触发 `on_selected`
 
-- 主区域展示标准 `auto_suggest_box`，用于建议集切换
-- 左下 `compact` 预览展示窄宽度建议框
-- 右下 `read only` 预览展示只读静态对照态
-- 示例页只保留标题、主 `auto_suggest_box` 和底部 `compact / read only` 双预览，不再保留 guide、状态回显和标签点击
-- 录制动作改为程序化 `expand/collapse`、键盘选择和 snapshot 切换，不再依赖坐标点击页面 chrome
-
-组件目录：
-
-- `example/HelloCustomWidgets/input/auto_suggest_box/`
+目标目录：`example/HelloCustomWidgets/input/auto_suggest_box/`
 
 ## 4. 视觉与布局规格
 
-- 页面尺寸：`480 x 480`
+- 画布：`480 x 480`
 - 根布局：`224 x 206`
-- 页面结构：标题 -> 主 `auto_suggest_box` -> `compact / read only` 双预览
-- 主控件尺寸：`196 x 34`
-- 底部双预览行：`216 x 28`
-- `compact` 预览：`104 x 28`
-- `read only` 预览：`104 x 28`
-- 视觉约束：
-  - 保持浅色 page panel、白色输入面和轻边框
-  - 展开列表只保留单层白底与低饱和高亮，不增加 showcase 装饰
-  - focus 反馈维持轻量边框强调，不做 glow
-  - `compact` 只收紧尺寸与可见项数量，不改变语义
-  - `read only` 保留当前建议文本，但不承担交互职责
+- 主控件：`196 x 34`
+- 底部对照行：`216 x 28`
+- `compact` preview：`104 x 28`
+- `read only` preview：`104 x 28`
+
+视觉约束：
+
+- 使用浅色 page panel、白色字段面和轻边框，不回退到 showcase 式重装饰。
+- 展开列表只保留低噪音高亮和单层白底，不引入额外装饰 chrome。
+- 焦点强调保留轻量边框，不做 glow。
+- `compact` 只缩减尺寸与可见项数量，不改变语义。
+- `read only` 保留当前值显示，但不再接管交互。
 
 ## 5. 控件清单
 
@@ -58,99 +59,101 @@
 | `root_layout` | `egui_view_linearlayout_t` | `224 x 206` | enabled | 页面根容器 |
 | `title_label` | `egui_view_label_t` | `224 x 18` | `AutoSuggest Box` | 页面标题 |
 | `control_primary` | `egui_view_autocomplete_t` | `196 x 34` | `Alicia Gomez` | 主建议框 |
-| `control_compact` | `egui_view_autocomplete_t` | `104 x 28` | `Recent` | 紧凑静态预览 |
-| `control_read_only` | `egui_view_autocomplete_t` | `104 x 28` | `Recent` | 只读静态预览 |
+| `control_compact` | `egui_view_autocomplete_t` | `104 x 28` | `Recent` | 紧凑静态 preview |
+| `control_read_only` | `egui_view_autocomplete_t` | `104 x 28` | `Recent` | 只读静态 preview |
 
 ## 6. 状态覆盖矩阵
 
-| 状态 / 区域 | 主建议框 | Compact | Read only |
-| --- | --- | --- | --- |
-| 默认态 | `Alicia Gomez` | `Recent` | `Recent` |
-| 展开态 | 列出当前 suggestions | 不响应 | 不响应 |
-| 键盘选择 | `Down / End / Space / Enter` 闭环选择 | 不响应 | 不响应 |
-| 主 snapshot 轮换 | 人员建议 -> 部署命令 | 保持 | 保持 |
-| 紧凑 snapshot 轮换 | 保持 | `Recent` -> `Auto` | 保持 |
-| 只读弱化 | 不适用 | 不适用 | 保留静态只读对照 |
+| 区域 | 状态 | 说明 |
+| --- | --- | --- |
+| 主控件 | `Alicia Gomez` | 默认折叠态 |
+| 主控件 | people suggestions expanded | 默认建议列表展开 |
+| 主控件 | `Allen Park` highlighted | 键盘向下导航后的展开态 |
+| 主控件 | `Deploy Worker` committed | 切到命令集后 `Enter + End + Space` 提交结果 |
+| `compact` preview | `Recent` | 全程静态对照 |
+| `read only` preview | `Recent` | 全程静态对照 |
 
-## 7. `egui_port_get_recording_action()` 录制动作设计
+## 7. 交互语义与单测口径
 
-1. 应用默认主 snapshot、`compact` snapshot 和只读对照，并请求主控件焦点
-2. 请求第一页默认截图
-3. 程序化展开主 suggestions
-4. 请求第二页展开态截图
-5. 发送 `Down`，切换高亮建议项
-6. 请求第三页键盘导航截图
-7. 发送 `Space` 提交当前项并收起
-8. 请求第四页提交结果截图
-9. 程序化切换主 snapshot 到部署命令集
-10. 请求第五页 snapshot 切换截图
-11. 发送 `Enter` 展开，再发送 `End + Space` 选择最后一项
-12. 请求第六页命令集提交结果截图
-13. 程序化切换 `compact` 预览到第二个静态快照
-14. 请求最终对照截图
+- 主控件继续保留真实 `touch` 展开/提交与 `Down / Home / End / Enter / Space / Escape` 键盘闭环。
+- 包装层 `set_suggestions()`、`set_current_index()` 与样式 helper 必须在切换时清理残留 `pressed / expanded`。
+- 静态 preview 用例统一收口为 “consumes input and keeps state”。
+- preview 键盘入口统一走 `dispatch_key_event()`，不再直接调用旧的 `on_key_event()`。
+- 静态 preview 用例必须验证：
+  - `items / item_count / current_index / current_text` 不变
+  - `collapsed_height / item_height / max_visible_items / colors / icons / font` 不变
+  - `region_screen` 不变
+  - `pressed_index / pressed_is_header / is_pressed` 被清理
+  - `on_selected` 不触发
 
-## 8. 编译、runtime、截图验收标准
+## 8. 录制动作设计
+
+`egui_port_get_recording_action()` 的 reference 轨道顺序如下：
+
+1. 恢复主控件默认 `Alicia Gomez`，同时恢复底部 `compact / read only` 静态 preview，并输出首帧。
+2. 发送一次 `Down`，展开 people suggestions。
+3. 输出展开态截图。
+4. 再发送一次 `Down`，把高亮移动到 `Allen Park`。
+5. 输出键盘导航态截图。
+6. 切换到命令 suggestions，并发送 `Enter + End + Space`，提交 `Deploy Worker`。
+7. 输出命令提交结果截图。
+8. 保持 `Deploy Worker` 提交结果不变，作为尾帧稳定等待。
+9. 输出最终稳定帧。
+
+录制只允许主区发生状态变化。底部 `compact / read only` preview 在整条 reference 轨道里必须保持静态一致。
+
+## 9. 编译、单测、运行时与文档检查
 
 ```bash
 make all APP=HelloCustomWidgets APP_SUB=input/auto_suggest_box PORT=pc
-python scripts/checks/check_touch_release_semantics.py --scope custom --category input
-python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/auto_suggest_box --track reference --timeout 10 --keep-screenshots
+
+# 修改 HelloUnitTest 后优先在 X:\ 短路径下 clean + rebuild
+make clean APP=HelloUnitTest PORT=pc_test
 make all APP=HelloUnitTest PORT=pc_test
-output\main.exe
+X:\output\main.exe
+
+python scripts/sync_widget_catalog.py
+python scripts/checks/check_touch_release_semantics.py --scope custom --category input
 python scripts/checks/check_docs_encoding.py
+python scripts/checks/check_widget_catalog.py
+python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/auto_suggest_box --track reference --timeout 10 --keep-screenshots
+python scripts/code_compile_check.py --custom-widgets --category input --bits64
+python scripts/code_runtime_check.py --app HelloCustomWidgets --category input --track reference --bits64
+python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub input/auto_suggest_box
+python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_input_auto_suggest_box
 ```
 
-验收重点：
+## 10. 验收重点
 
-- 主建议框、展开列表和底部双预览必须完整可见
-- 展开列表边框、文字和当前高亮项都要清晰可辨
-- 主控件必须像标准 `AutoSuggestBox`，而不是状态展示卡片
-- `set_suggestions / current index / style helper` 切换后不能残留展开态、header pressed 或 item pressed 高亮
-- 底部 `compact / read only` 预览必须统一吞掉 touch / key 输入，并在收到输入后立即清理残留展开态与 pressed 渲染
-- `compact` 与 `read only` 必须是静态对照，不再承担标签切换职责
-- 页面中不再出现 guide、状态文案、standard label、section divider 和外部 preview label
+- 主区与底部双 preview 必须完整可见，不能黑屏、白屏或被裁切。
+- 主区录制只允许出现 `默认 / 展开 / 高亮导航 / 命令提交` 四组可识别状态。
+- 底部 `compact / read only` preview 必须在全部 runtime 帧里保持单一静态对照。
+- 静态 preview 收到输入后，不能改 `suggestions / current_index / current_text / region_screen / palette`。
+- README、demo 录制轨道、单测断言与验收命令链必须保持一致。
 
-## 9. 已知限制与后续方向
+## 11. runtime 截图复核口径
 
-- 当前版本是固定 suggestions 数组，不做动态过滤
-- 当前不支持输入中高亮匹配字串
-- 当前不做多段 icon / category item
-- 如后续沉入框架层，可继续补 placeholder、leading icon 和滚动长列表
+- 检查目录：`runtime_check_output/HelloCustomWidgets_input_auto_suggest_box/default`
+- 复核目标：
+  - 主区裁剪后只出现 `4` 组唯一状态
+  - 遮罩主区变化边界后，边界外区域保持单哈希
+  - 按底部 preview 区域裁剪后，所有帧保持单哈希
 
-## 10. 与现有控件的重叠分析与差异化边界
+## 12. 已知限制
 
-- 相比 `combobox`：这轮重点是标准建议输入语义和 reference 页面收口，而不是基础 API 验证
-- 相比 `textinput`：这里不强调自由文本编辑，而是固定建议项选择
-- 相比 `menu_flyout`：这里是输入语义，不是命令面板
-- 相比 `segmented_control`：这里是可展开建议列表，而不是互斥胶囊切换
+- 当前版本仍使用固定 suggestions 数组，不做动态过滤。
+- 当前不支持输入中高亮匹配字串。
+- 当前不做图标化建议项、分组标题或异步结果刷新。
 
-## 11. 参考设计系统与开源母本
+## 13. 与现有控件的边界
 
-- 参考设计系统：`Fluent 2`
-- 开源母本：`WPF UI`
-- 次级补充参考：`ModernWpf`
-
-## 12. 对应组件名与保留核心状态
-
-- 对应组件名：`AutoSuggestBox`
-- 本次保留核心状态：
-  - `standard`
-  - `compact`
-  - `read only`
-  - `expanded`
-  - `focused`
-
-## 13. 相比参考原型删除的效果或装饰
-
-- 不做页面级 guide、状态回显、standard label、section divider 和 preview label
-- 不做标签点击轮换和外部状态桥接
-- 不做搜索图标、异步结果刷新和复杂 hover / 阴影
-- 不做带 icon / shortcut 的富建议项模板
+- 相比 `combo_box`：这里强调建议输入与候选结果，不是固定当前值字段。
+- 相比 `text_box`：这里保留建议列表语义，不强调自由文本编辑能力。
+- 相比 `menu_flyout / command_bar`：这里是输入字段，不是命令容器。
 
 ## 14. EGUI 适配时的简化点与约束
 
-- 直接复用 `autocomplete/combobox` 基础结构，避免新增重复基础控件
-- 通过样式 helper 和示例层 setter 统一 Reference Track 颜色、尺寸与交互状态清理
-- 用程序化 `expand/collapse` 与键盘事件替代页面标签点击
-- `compact / read only` 预览通过统一的 static preview override 固定为静态对照
-- 先完成示例级 `AutoSuggestBox`，再决定是否继续补 placeholder / 过滤能力
+- 直接复用 `autocomplete / combobox` 基础结构，避免重复实现底层列表逻辑。
+- 通过 wrapper 统一收口尺寸、palette、状态清理与静态 preview 语义。
+- 主区录制保留最小必要键盘闭环，preview 不再承担轨道切换或点击桥接职责。
+- 先完成 reference 级 `AutoSuggestBox` 收口，再决定是否继续补 placeholder、leading icon 或更复杂过滤逻辑。
