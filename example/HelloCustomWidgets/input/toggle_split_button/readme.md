@@ -1,146 +1,165 @@
-# toggle_split_button 自定义控件设计说明
+# toggle_split_button 设计说明
 
 ## 参考来源
 - 参考设计系统：`Fluent 2`
-- 参考开源库：`WPF UI`
-- 次级补充参考：`WinUI ToggleSplitButton`
+- 官方语义参考：`WinUI ToggleSplitButton`
+- 开源母本：`WPF UI`
 - 对应组件名：`ToggleSplitButton`
-- 本次保留状态：`standard`、`compact`、`read only`、`checked`、`unchecked`、`primary part`、`menu part`
-- 删除效果：页面级 guide、状态回显、外部 preview 标签、section divider、场景化轮播入口、复杂 hover / pressed 动画、Acrylic 与真实 flyout
-- EGUI 适配说明：保留 checked 主动作与菜单入口并存的复合语义，在 `480 x 480` 页面中优先保证双段边界、`ON/OFF` 徽标和底部双 preview 对照稳定；底部 preview 统一通过 `egui_view_toggle_split_button_override_static_preview_api()` 固定为静态 reference
+- 本轮保留语义：`checked / unchecked / primary part / menu part / compact / read only / static preview`
+- 本轮移除内容：页面级 `guide`、旧 preview 快照轮换、preview 清焦桥接、额外收尾态、真实 flyout、多层菜单和 showcase 化包装
+- EGUI 适配说明：继续复用 custom 层现有 `egui_view_toggle_split_button` 绘制与输入语义，本轮只收口 `reference` 页面结构、录制轨道、静态 preview、README 与单测口径，不修改 `sdk/EmbeddedGUI`
 
 ## 1. 为什么需要这个控件
-`toggle_split_button` 用来表达“主按钮本身是一个持久开关，同时右侧还保留更多动作入口”的标准复合控件。它适合告警路由、同步监控、关注订阅、录制开关这类场景：既要保留 `on / off` 状态，又要通过菜单段切换附加模式。
+`toggle_split_button` 用来表达“主按钮本身是一个持久开关，同时右侧还保留更多动作入口”的复合命令按钮。它适合告警路由、后台同步、订阅跟随和录制开关这类场景：既要保留 `on / off` 状态，又要通过菜单段切换附加模式。
 
 ## 2. 为什么现有控件不够用
-- `toggle_button` 只有 checked 主动作，没有菜单入口
-- `split_button` 有主动作和菜单入口，但不保留 checked 语义
-- `menu_flyout` 是独立弹出面板，不是页内双段按钮
-- 当前 reference 主线仍需要一版更接近 `Fluent 2 / WPF UI` 的 `ToggleSplitButton`
+- `toggle_button` 只有 checked 主动作，没有菜单入口。
+- `split_button` 有主动作和菜单入口，但不保留 checked 语义。
+- `menu_flyout` 是独立弹出菜单容器，不是页内双段按钮。
+- `command_bar` 面向工具栏场景，不是单个复合开关命令。
 
-因此这里继续保留 `toggle_split_button`，但示例页和 preview 交互要统一到当前 reference 模板。
+因此这里继续保留 `toggle_split_button` reference 控件，用来承接 Fluent / WPF UI 里的双入口开关命令按钮。
 
-## 3. 目标场景与示例概览
-- 主区域展示标准 `toggle_split_button`，保留 `checked / unchecked` 与 `primary part / menu part` 双重语义
-- 左下 `compact` preview 展示紧凑尺寸下的静态 reference
-- 右下 `read only` preview 展示只读静态对照
-- 主控件保留 `Left / Right / Tab / Enter / Space / Plus / Minus / Escape` 键盘闭环
-- 底部两个 preview 统一通过 `egui_view_toggle_split_button_override_static_preview_api()` 固定为静态 reference
-- 点击 preview 时只清 `button_primary` 的 focus，不改变 preview 自身状态，也不让 preview 进入交互态
+## 3. 目标场景与页面结构
+- 页面结构统一为：标题 -> 主 `toggle_split_button` -> 底部 `compact / read only` 双静态 preview。
+- 主区保留 4 组 reference 状态：`Alert routing`、`Sync monitor`、`Follow thread`、`Record scene`。
+- 主控件继续保留真实 toggle split 语义，状态中同时包含 `checked` 与 `primary / menu` 两个 part。
+- 底部 `compact` preview 固定显示 `Quick / Quick`，只作为紧凑静态对照。
+- 底部 `read only` preview 固定显示 `Locked / Publish`，只作为只读静态对照。
+- 两个 preview 统一通过 `egui_view_toggle_split_button_override_static_preview_api()` 收口。
+- preview 收到 `touch` 或 `dispatch_key_event()` 后，只允许清理残留 `is_pressed / pressed_part`，不能改写 `snapshots / checked_states / current_snapshot / current_part / compact_mode / read_only_mode / region_screen / palette`。
 
-目录：
-- `example/HelloCustomWidgets/input/toggle_split_button/`
+目标目录：`example/HelloCustomWidgets/input/toggle_split_button/`
 
 ## 4. 视觉与布局规格
 - 画布：`480 x 480`
 - 根布局：`224 x 160`
-- 页面结构：标题 -> 主 `toggle_split_button` -> 底部 `compact / read only` 双 preview
 - 主控件：`196 x 80`
-- 底部双 preview 容器：`216 x 44`
+- 底部对照行：`216 x 44`
 - `compact` preview：`104 x 44`
 - `read only` preview：`104 x 44`
-- 视觉规则：
-  - 使用浅灰白 page panel + 低噪音白底表面
-  - 主控件保留 `ON/OFF` badge、主段 / 菜单段边界和右侧菜单入口
-  - `compact` preview 保留相同双段与 checked 语义，但压缩信息密度
-  - `read only` preview 只保留静态状态表达，不承担真实交互
+
+视觉约束：
+- 保持浅色 `page panel`、低噪音描边和 Fluent 风格的 toggle split 双段结构。
+- 主区保留 `title + toggle row + helper` 的最小信息层级，明确 `ON/OFF` 徽标、主动作段和菜单段边界。
+- runtime 轨道里只允许主区变化，底部 `compact / read only` preview 必须全程静态。
+- 不再保留旧版 `guide`、状态回显、外部 preview 标签、preview 清焦桥接和 preview 快照轮换。
 
 ## 5. 控件清单
+
 | 变量名 | 类型 | 尺寸 (W x H) | 初始状态 | 用途 |
 | --- | --- | ---: | --- | --- |
-| `root_layout` | `egui_view_linearlayout_t` | `224 x 160` | enabled | 页面根布局 |
+| `root_layout` | `egui_view_linearlayout_t` | `224 x 160` | enabled | 页面根容器 |
 | `title_label` | `egui_view_label_t` | `224 x 18` | `Toggle Split Button` | 页面标题 |
-| `button_primary` | `egui_view_toggle_split_button_t` | `196 x 80` | `Alert routing / On` | 标准主控件 |
-| `button_compact` | `egui_view_toggle_split_button_t` | `104 x 44` | `Quick / On` | 紧凑静态 preview |
-| `button_read_only` | `egui_view_toggle_split_button_t` | `104 x 44` | `Locked / On` | 只读静态 preview |
+| `button_primary` | `egui_view_toggle_split_button_t` | `196 x 80` | `Alert routing / checked / primary` | 主控件 |
+| `button_compact` | `egui_view_toggle_split_button_t` | `104 x 44` | `Quick / checked / primary` | 紧凑静态 preview |
+| `button_read_only` | `egui_view_toggle_split_button_t` | `104 x 44` | `Locked / checked / primary` | 只读静态 preview |
 
 ## 6. 状态覆盖矩阵
-| 状态 / 区域 | 主控件 | Compact | Read only |
-| --- | --- | --- | --- |
-| `checked / unchecked` | 是 | 是 | 是 |
-| `primary part` | 是 | 是 | 是 |
-| `menu part` | 是 | 是 | 是 |
-| 主线 snapshot 切换 | 是 | 否 | 否 |
-| 触摸激活 | 是 | 否 | 否 |
-| 键盘切换 | 是 | 否 | 否 |
-| 静态对照 | 否 | 是 | 是 |
 
-## 7. `egui_port_get_recording_action()` 录制动作设计
-1. 应用默认主控件与 `compact` preview 状态，并给主控件请求 focus
-2. 请求第一页截图
-3. 通过 `Space` 切换主控件 checked 状态
-4. 请求第二页截图
-5. 通过 `Right + Enter` 把主控件切到菜单段并切换到下一组 snapshot
-6. 请求第三页截图
-7. 程序化切换主控件到 `Follow thread`，并通过 `Left` 回到主段
-8. 请求第四页截图
-9. 程序化切换主控件到 `Record scene`，同时把 `compact` preview 切到第二组静态对照
-10. 请求第五页截图
-11. 再次给主控件请求 focus
-12. 点击 `compact` preview，只触发 focus 收尾，不改变 preview 状态
-13. 请求最终收尾截图并保留等待
+| 区域 | 状态 | 说明 |
+| --- | --- | --- |
+| 主控件 | `Alert routing / checked / primary` | 默认主状态，焦点落在主动作段 |
+| 主控件 | `Sync monitor / unchecked / menu` | 第二态，默认落在菜单段 |
+| 主控件 | `Follow thread / checked / primary` | 第三态，回到主动作段 |
+| 主控件 | `Record scene / unchecked / menu` | 第四态，也是最终稳定态 |
+| `compact` preview | `Quick / checked / primary` | 全程静态，不参与轮换 |
+| `read only` preview | `Locked / checked / primary` | 全程静态，不参与轮换 |
 
-## 8. 编译、单测、touch audit、runtime 与文档验收标准
+## 7. 交互语义与单测口径
+- 主控件继续保留 toggle split 双段语义：
+  - 主段触发 `checked` 翻转。
+  - 菜单段触发 `current_snapshot` 轮换。
+  - `Left / Right / Tab / Enter / Space / Plus / Minus / Escape` 保持键盘闭环。
+- `set_snapshots()`、`set_current_snapshot()`、`set_checked()`、`set_current_part()`、`set_compact_mode()`、`set_read_only_mode()` 都必须先清理残留 `pressed`。
+- 主控件的 `touch cancel`、无关键盘输入、`compact / read only / !enable` guard 都不能留下残留 `pressed_part / is_pressed`。
+- preview 键盘入口统一走 `dispatch_key_event()`，不再直接走旧的 `on_key_event()`。
+- 静态 preview 用例统一收口为 `test_toggle_split_button_static_preview_consumes_input_and_keeps_state`。
+- preview 固定断言覆盖：
+  - `region_screen`
+  - `snapshots`
+  - `font`
+  - `meta_font`
+  - `on_changed`
+  - 全部 palette 字段
+  - `checked_states`
+  - `snapshot_count`
+  - `current_snapshot`
+  - `current_part`
+  - `compact_mode`
+  - `read_only_mode`
+  - `alpha`
+  - `changed_count == 0`
+  - `last_snapshot == 0xFF`
+  - `last_checked == 0xFF`
+  - `last_part == PART_NONE`
+  - `is_pressed / pressed_part` 残留被清理
+
+## 8. 录制动作设计
+`egui_port_get_recording_action()` 的 `reference` 轨道顺序如下：
+1. 恢复主控件默认 `Alert routing`，同步底部 `Quick / Locked` 静态 preview，并请求首帧截图。
+2. 切到 `Sync monitor`，请求第二帧主区截图。
+3. 切到 `Follow thread`，请求第三帧主区截图。
+4. 切到 `Record scene`，请求第四帧主区截图。
+5. 保持 `Record scene` 不变，等待最终稳定帧。
+6. 请求最终稳定帧。
+
+录制只允许主区发生变化。底部 `compact / read only` preview 在整条 `reference` 轨道里必须保持单一静态对照。
+
+## 9. 编译、单测、runtime 与 web 验收链
 ```bash
-make clean APP=HelloCustomWidgets APP_SUB=input/toggle_split_button PORT=pc
 make all APP=HelloCustomWidgets APP_SUB=input/toggle_split_button PORT=pc
+
 make clean APP=HelloUnitTest PORT=pc_test
 make all APP=HelloUnitTest PORT=pc_test
-output\main.exe
+X:\output\main.exe
+
+python scripts/sync_widget_catalog.py
 python scripts/checks/check_touch_release_semantics.py --scope custom --category input
-python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/toggle_split_button --track reference --timeout 10 --keep-screenshots
 python scripts/checks/check_docs_encoding.py
+python scripts/checks/check_widget_catalog.py
+python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/toggle_split_button --track reference --timeout 10 --keep-screenshots
+python scripts/code_compile_check.py --custom-widgets --category input --bits64
+python scripts/code_runtime_check.py --app HelloCustomWidgets --category input --track reference --bits64
+python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub input/toggle_split_button
+python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_input_toggle_split_button
 ```
 
-验收重点：
-- 主控件和底部双 preview 必须完整可见，不能被裁切
-- `ON/OFF` 徽标、主段 / 菜单段边界和 chevron 必须清晰可辨
-- checked 与 unchecked 两态必须一眼可辨，不能退化回普通 split button
-- 页面中不再出现 guide、状态回显、section divider 和外部 preview 标签
-- `compact` 与 `read only` preview 必须统一通过 `egui_view_toggle_split_button_override_static_preview_api()` 吞掉 `touch / key`
-- static preview 在收到输入后必须立即清理残留 `pressed`，但不能修改 `checked / current_snapshot / current_part`
-- preview 点击只允许清主控件 `button_primary` 的 focus，不能让 preview 自己接管焦点
-- runtime 末尾必须包含“重新 request focus -> 点击 compact preview -> 最终收尾帧”的动作链，用于复核 focus 收口
-- 现有 `HelloUnitTest` 中的 checked 切换、snapshot 循环、`compact / read only` guard、`touch cancel` 与新增 static preview 回归都必须通过
+## 10. 验收重点
+- 主区与底部双 preview 必须完整可见，不能黑屏、白屏或被裁切。
+- 主区录制只允许出现 `Alert routing`、`Sync monitor`、`Follow thread`、`Record scene` 四组可识别状态。
+- 底部 `Quick / Locked` preview 必须在全部 runtime 帧里保持静态一致。
+- 静态 preview 收到输入后，不能改写 `snapshots / checked_states / current_snapshot / current_part / compact_mode / read_only_mode / region_screen / palette`。
+- README、录制轨道、单测断言和验收命令链必须保持一致。
 
-## 9. 已知限制与后续方向
-- 当前只保留菜单入口语义，不弹出真实 flyout
-- 当前 glyph 使用双字母占位，不接真实图标资源
-- 当前 `compact` 与 `read only` 仅作为静态对照，不承担真实交互职责
-- 若后续要下沉到框架层，再单独评估与 `toggle_button`、`split_button`、`menu_flyout` 的复用边界
+## 11. runtime 截图复核口径
+- 检查目录：`runtime_check_output/HelloCustomWidgets_input_toggle_split_button/default`
+- 截图帧数：`10`
+- 主区变化边界：`(53, 156) - (426, 215)`
+- 主区唯一状态数：`4`
+- 主区外唯一哈希数：`1`
+- preview 区唯一哈希数：`1`
+- preview 裁切起点：`y >= 216`
 
-## 10. 与现有控件的重叠分析与差异化边界
-- 相比 `toggle_button`：本控件额外保留菜单入口
-- 相比 `split_button`：本控件额外保留 checked 语义
-- 相比 `menu_flyout`：本控件是页内复合按钮，不是独立弹出面板
-- 相比 `command_bar`：本控件是单个复合命令，不承担整条工具栏语义
+复核结论：
+- 遮罩主区变化边界后，边界外区域保持单哈希，确认主区外全程静态。
+- 按主区裁剪后共出现 `4` 组唯一状态，符合 `Alert routing`、`Sync monitor`、`Follow thread`、`Record scene` 四态轨道。
+- 按 `y >= 216` 裁剪底部 preview 区域后全部帧保持单哈希，确认底部 `compact / read only` preview 在整条录制轨道中保持静态一致。
 
-## 11. 参考设计系统与开源母本
-- 参考设计系统：`Fluent 2`
-- 开源母本：`WPF UI`
-- 次级补充参考：`WinUI ToggleSplitButton`
+## 12. 已知限制
+- 当前版本只保留 snapshot 驱动的 reference `ToggleSplitButton`，不实现真实 popup 菜单与定位系统。
+- glyph 继续使用轻量字母占位，不接入真实图标资源。
+- 底部 `compact / read only` preview 只承担静态对照，不承载真实交互职责。
 
-## 12. 对应组件名，以及本次保留的核心状态
-- 对应组件名：`ToggleSplitButton`
-- 本次保留状态：
-  - `standard`
-  - `compact`
-  - `read only`
-  - `checked`
-  - `unchecked`
-  - `primary part`
-  - `menu part`
-
-## 13. 相比参考原型删除了哪些效果或装饰
-- 不做页面级 guide、状态回显、外部 preview 标签和 section divider
-- 不做真实菜单弹层和二级命令列表
-- 不做桌面级 hover、pressed、阴影扩散和 Acrylic
-- 不做系统级图标资源、快捷键标签和复杂主题联动
+## 13. 与现有控件的边界
+- 相比 `toggle_button`：这里额外保留菜单入口。
+- 相比 `split_button`：这里额外保留 checked 语义。
+- 相比 `menu_flyout`：这里是页内复合按钮，不是独立弹出菜单容器。
+- 相比 `command_bar`：这里是单控件命令入口，不承担整条工具栏布局职责。
 
 ## 14. EGUI 适配时的简化点与约束
-- 用固定 snapshot 驱动，优先保证 `480 x 480` 页面中的稳定 reference
-- 主控件保留 `title + checked badge + split row + helper` 四段结构
-- 底部 `compact` 与 `read only` 统一通过 `egui_view_toggle_split_button_override_static_preview_api()` 固定为静态对照
-- preview 只负责对照显示与清主控件焦点，不再承担额外交互职责
-- 交互收口阶段统一要求 setter、模式切换、`touch cancel`、key guard 和 static preview 输入都能清理残留 `pressed`
-- 示例页、单测和 runtime 录制统一使用同一套 static preview 语义，避免文档与实现脱节
+- 用固定 snapshot 驱动 reference，优先保证 `480 x 480` 页面内的稳定审阅。
+- 主控件保留最小必要的 `title + toggle row + helper` 信息层级。
+- `compact` preview 通过 `egui_view_toggle_split_button_override_static_preview_api()` 固定为静态对照。
+- `read only` preview 通过 `read_only_mode + compact_mode` 固定为静态只读态。
+- 本轮额外补齐了 `PRIMARY_SNAPSHOT_COUNT`、`apply_primary_default_state()`、`apply_preview_states()`、`layout_local_views()`、`layout_page()`、`focus_primary_button()` 与 `request_page_snapshot()` 对应的页面收口逻辑，保证主区轨道、底部静态 preview 与最终稳定帧使用同一套布局恢复路径。
