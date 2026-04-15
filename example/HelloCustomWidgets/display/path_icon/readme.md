@@ -1,92 +1,114 @@
-# PathIcon 设计说明
+# path_icon 自定义控件设计说明
 
 ## 参考来源
-- 参考设计系统：`Fluent 2`
-- 参考开源库：`WPF UI`
-- 对应组件名：`PathIcon`
-- 本次保留语义：只读单色矢量图标显示、预解析 path 数据切换、静态 preview 输入抑制
-- 删减内容：完整 SVG path string 解析、多色分层渲染、动画描边、SDK 改动
-- EGUI 适配说明：在 `custom` 层新增轻量 `egui_view_path_icon`，接受 `MOVE_TO / LINE_TO / QUAD_TO / CUBIC_TO / CLOSE` 预解析命令数组，在 view 的 `on_draw` 中做有限步数 flatten，并在 SDK 现有 polygon / polyline canvas 能力上完成绘制，不修改 `sdk/EmbeddedGUI`
+- 参考设计体系：`Fluent 2`
+- 参考开源库：`WinUI / WPF UI`
+- 对应组件：`PathIcon`
+- 当前保留语义：预解析 path 数据切换、单色 palette helper、默认路径回退、静态 preview 输入抑制
+- 当前移除内容：主 panel / heading / note、preview panel / body、场景化叙事文案、完整 SVG/XAML path 字符串解析、SDK 改动
+- EGUI 适配说明：继续复用 `custom` 层 `egui_view_path_icon`，通过 `MOVE_TO / LINE_TO / QUAD_TO / CUBIC_TO / CLOSE` 命令数组和 `on_draw` 内有限步数 flatten 完成绘制，不修改 `sdk/EmbeddedGUI`
 
-## 1. 为什么需要这个控件？
-`PathIcon` 用来承载“图标来源是矢量路径、颜色来自前景色、缩放由控件尺寸决定”的单色图标语义。它和 `BitmapIcon`、`ImageIcon`、`FontIcon` 互补，适合表达没有位图资源、也不依赖字体字形的轻量图标场景。
+## 1. 为什么需要这个控件
+`path_icon` 用来表达“图标来源是一段单色矢量路径数据”的显示语义。它适合承载没有位图资源、也不依赖图标字体映射的轻量图标场景，让调用方直接通过 path 数据和前景色控制图形本身，而不是退化成位图或字体字形。
 
-## 2. 为什么现有控件不够用？
-- `bitmap_icon` 依赖 alpha-only 位图资源，资源准备成本更高，缩放本质上仍是位图重采样。
-- `image_icon` 面向完整图片缩略图，不适合表达纯单色几何图标。
-- `font_icon` / `symbol_icon` 依赖字体与字形映射，不适合承载任意业务自定义矢量路径。
-- 直接使用 SDK canvas API 虽然能画折线和多边形，但缺少 `PathIcon` 这层统一的默认数据回退、样式 helper 和静态 preview 行为收口。
+## 2. 为什么现有控件不够用
+- `bitmap_icon` 依赖 alpha-only 位图资源，缩放后仍然是位图重采样，不适合表达纯路径数据。
+- `image_icon` 面向完整图片内容，不适合单色几何图标。
+- `font_icon`、`symbol_icon` 依赖字体和字形映射，无法承载任意业务自定义路径。
+- 直接使用 SDK canvas API 虽然能画多边形和折线，但缺少 `PathIcon` 这一层默认回退、样式 helper 和静态 preview 输入抑制。
 
-## 3. 目标场景与示例概览
-- 主区域保留一个主 `PathIcon`，录制时切换 `Bookmark -> Heart -> Send -> Bookmark`
-- 底部保留两个静态 preview，分别展示 `Subtle / Heart` 与 `Accent / Send`
-- 页面只保留标题、主展示面板和底部双 preview，不承担额外交互职责
-- 目录：`example/HelloCustomWidgets/display/path_icon/`
+## 3. 当前页面结构
+- 标题：`PathIcon`
+- 主区：一个主 `path_icon` 和一个当前图标名称 label
+- 底部：一行并排的两个静态 preview
+- 左侧 preview：`Heart` + `subtle`
+- 右侧 preview：`Send` + `accent`
 
-## 4. 视觉与布局规格
+目录：
+- `example/HelloCustomWidgets/display/path_icon/`
+
+## 4. 主区 reference 快照
+主区录制轨道只保留 3 组目标快照：
+
+1. 默认态
+   path：`Bookmark`
+   palette：蓝色主线
+2. 快照 2
+   path：`Heart`
+   palette：玫红强调
+3. 快照 3
+   path：`Send`
+   palette：绿色语义
+
+底部 preview 在整条轨道中始终固定：
+
+1. `subtle`
+   path：`Heart`
+2. `accent`
+   path：`Send`
+
+## 5. 视觉与布局规格
 - 画布：`480 x 480`
-- 根布局：`224 x 212`
-- 主面板：`196 x 116`
+- 根布局：`224 x 148`
+- 标题：`224 x 18`
 - 主图标：`56 x 56`
-- 底部容器：`216 x 72`
-- 单个 preview：`104 x 72`
+- 主状态 label：`224 x 12`
+- 底部 preview 行：`68 x 30`
 - 单个 preview 图标：`30 x 30`
-
-视觉原则：
-- 保持 Fluent 主线中的浅灰背景与白色表面
-- `PathIcon` 自身只承担单色路径缩放与填充，不额外承担边框、容器、阴影职责
-- 主状态通过路径数据与前景色切换表达差异，底部 preview 保持静态 reference 对照
-
-## 5. 控件清单
-| 变量名 | 类型 | 尺寸 | 用途 |
-| --- | --- | --- | --- |
-| `root_layout` | `egui_view_linearlayout_t` | `224 x 212` | 页面根容器 |
-| `title_label` | `egui_view_label_t` | `224 x 18` | 页面标题 |
-| `primary_panel` | `egui_view_linearlayout_t` | `196 x 116` | 主展示面板 |
-| `primary_heading_label` | `egui_view_label_t` | `176 x 12` | 主场景标题 |
-| `primary_icon` | `egui_view_path_icon_t` | `56 x 56` | 主路径图标 |
-| `primary_name_label` | `egui_view_label_t` | `176 x 14` | 当前路径名称 |
-| `primary_note_label` | `egui_view_label_t` | `176 x 18` | 当前说明文案 |
-| `subtle_icon` | `egui_view_path_icon_t` | `30 x 30` | `Heart` 静态 preview |
-| `accent_icon` | `egui_view_path_icon_t` | `30 x 30` | `Send` 静态 preview |
+- 页面结构：标题 -> 主 `path_icon` -> 名称 label -> 底部 `subtle / accent`
+- 风格约束：浅色 page panel、主区只保留路径数据与 palette 变化，底部 preview 只做静态 reference
 
 ## 6. 状态矩阵
-| 状态 / 区域 | 主控件 | Subtle | Accent |
+| 状态 / 区域 | 主控件 | Subtle preview | Accent preview |
 | --- | --- | --- | --- |
 | 默认 `Bookmark` | 是 | 否 | 否 |
-| `Heart` | 录制切换 | 是 | 否 |
-| `Send` | 录制切换 | 否 | 是 |
-| `set_data(NULL)` 回退默认路径 | 是 | 是 | 是 |
-| `apply_standard/subtle/accent_style()` | 是 | 是 | 是 |
-| 静态 preview 吞 `touch / key` | 否 | 是 | 是 |
+| `Heart` | 是 | 是 | 否 |
+| `Send` | 是 | 否 | 是 |
+| `set_data(NULL)` 回退默认路径 | 支持 | 支持 | 支持 |
+| `apply_standard_style()` | 是 | 否 | 否 |
+| `apply_subtle_style()` | 否 | 是 | 否 |
+| `apply_accent_style()` | 否 | 否 | 是 |
+| 静态 preview 吞掉 `touch / key` | 否 | 是 | 是 |
 
-## 7. 交互语义
-- `PathIcon` 本轮只保留只读显示语义，不承担 click、toggle 或导航职责
-- 主控件录制时通过 `set_data()` 与 `set_palette()` 切换路径数据和前景色
-- 底部 preview 通过静态 preview API 吞掉 `touch / key`，避免误接管 pressed 或 click
+## 7. 录制动作设计
+`egui_port_get_recording_action()` 已收口为 static preview 工作流：
 
-## 8. 本轮收口内容
-- 新增 `egui_view_path_icon.h/.c`，实现 `PathIcon` 轻量数据结构与自绘逻辑
-- 提供三组内置路径：`bookmark / heart / send`
-- 补齐 `standard / subtle / accent` 样式 helper、`set_data()`、`get_data()`、内置路径 getter、`set_palette()` 与静态 preview API
-- demo 页面保留一个主 `PathIcon` 与两个静态 preview，录制轨道覆盖三组路径快照
-- 单测覆盖默认初始化、样式 helper、路径切换 / 默认回退、palette setter 与静态 preview 输入抑制
+1. 应用主区默认快照和底部 preview 固定状态
+2. 抓取首帧
+3. 切到 `Heart`
+4. 抓取第二组主区快照
+5. 切到 `Send`
+6. 抓取第三组主区快照
+7. 等待并抓取最终稳定帧
 
-## 9. 录制动作设计
-1. 还原 `Bookmark` 初始态
-2. 抓取初始帧
-3. 切换到 `Heart`
-4. 抓取第二帧
-5. 切换到 `Send`
-6. 抓取第三帧
-7. 回到 `Bookmark`
-8. 抓取最终收尾帧
+说明：
+- 录制阶段不再回切 `Bookmark` 后额外补一帧。
+- 页面层不再保留旧主 panel、heading、note 和 preview body。
+- 底部 preview 统一通过 `egui_view_path_icon_override_static_preview_api()` 吞掉 `touch / key`，只负责静态 reference 对照。
 
-## 10. 编译、测试与 runtime 验收
+## 8. 单元测试口径
+`example/HelloUnitTest/test/test_path_icon.c` 当前覆盖三部分：
+
+1. 主控件初始化与默认语义
+   覆盖默认 `Bookmark` 数据、内置三组路径 getter 和默认 palette
+2. setter 与样式 helper 守卫
+   覆盖 `apply_standard_style()`、`apply_subtle_style()`、`apply_accent_style()`、`set_data()`、`set_palette()`、`set_data(NULL)` 对 `pressed` 状态的清理和默认回退
+3. 静态 preview 不变性断言
+   通过 `path_icon_preview_snapshot_t`、`capture_preview_snapshot()` 与 `assert_preview_state_unchanged()` 固定校验以下字段：
+   `region_screen`、`background`、`data`、`icon_color`、`on_click_listener`、`api`、`alpha`、`enable`、`is_focused`、`is_pressed`、`padding`
+
+补充说明：
+- 静态 preview 用例已收口为 “consumes input and keeps state”。
+- 为兼容当前 `HelloUnitTest` harness，preview 用例继续直接调用 `on_touch_event()` / `on_key_event()`。
+
+## 9. 验收命令
 ```bash
 make all APP=HelloCustomWidgets APP_SUB=display/path_icon PORT=pc
+
+# 在 X:\ 短路径工作区执行，规避 Windows 命令行长度限制
+make clean APP=HelloUnitTest PORT=pc_test
 make all APP=HelloUnitTest PORT=pc_test
-output\main.exe
+X:\output\main.exe
 
 python scripts/sync_widget_catalog.py
 python scripts/checks/check_touch_release_semantics.py --scope custom --category display
@@ -99,14 +121,49 @@ python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub displa
 python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_display_path_icon
 ```
 
-验收重点：
-- 主图标与底部 preview 必须完整可见，不黑屏、不白屏、不裁切
-- `Bookmark / Heart / Send` 三组快照必须稳定可区分，并能看出 path 数据切换
-- 曲线路径在主图标尺寸下不能出现明显断裂、空洞或整块缺失
-- 底部两个 preview 必须保持静态 reference，不响应真实输入
+## 10. 当前结果
+- `HelloCustomWidgets` 单控件编译：已通过 `make all APP=HelloCustomWidgets APP_SUB=display/path_icon PORT=pc`
+- `HelloUnitTest`：已在 `X:\` 短路径通过 `make clean APP=HelloUnitTest PORT=pc_test`、`make all APP=HelloUnitTest PORT=pc_test` 与 `X:\output\main.exe`，总计 `845 / 845`，其中 `path_icon` suite `3 / 3`
+- `sync_widget_catalog.py`：已通过，重新同步 `example/HelloCustomWidgets/widget_catalog.json` 与 `web/catalog-policy.json`，本轮无额外变更
+- `touch release semantics`：已通过，结果 `custom_audited=21 custom_skipped_allowlist=0`
+- `docs encoding`：已通过，结果 `134 files`
+- `widget catalog check`：已通过，结果 `106 widgets: reference=106, showcase=0, deprecated=0`
+- 单控件 runtime：已通过 `python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub display/path_icon --track reference --timeout 10 --keep-screenshots`，输出 `8` 帧截图
+- display 分类 compile/runtime 回归：已通过 `python scripts/code_compile_check.py --custom-widgets --category display --bits64` 与 `python scripts/code_runtime_check.py --app HelloCustomWidgets --category display --track reference --bits64`，分类内 `21` 个控件全部通过
+- wasm 构建：已通过 `python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub display/path_icon`，输出 `web/demos/HelloCustomWidgets_display_path_icon`
+- web smoke：已通过 `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_display_path_icon`，结果 `PASS status=Running canvas=480x480 ratio=0.1159 colors=136`
 
-## 11. 已知限制
-- 当前只覆盖最小 `PathIcon` 语义，不支持完整 SVG/XAML path 字符串解析
-- 当前 filled path 依赖 SDK `egui_canvas_draw_polygon_fill()`，单个 contour 最终顶点数会压缩到 `16` 以内
-- 曲线路径使用有限步数 flatten，目标是 reference 图标稳定可读，不追求高精度矢量拟合
-- 多 contour 会逐个填充，复杂镂空与布尔运算不在本轮范围内
+## 11. Runtime 复核结论
+复核目录：
+- `runtime_check_output/HelloCustomWidgets_display_path_icon/default`
+
+复核结果：
+- 总帧数：`8`
+- 主区 RGB 差分边界：`(213, 170) - (268, 265)`
+- 遮罩主区差分边界后，主区外唯一哈希数：`1`
+- 按主区裁剪后，主区唯一状态数：`3`
+- 按 `y >= 266` 裁剪底部 preview 区域后，preview 区唯一哈希数：`1`
+
+目标：
+- 主区唯一状态数 = `3`
+- 主区外唯一哈希数 = `1`
+- 底部 preview 区唯一哈希数 = `1`
+
+## 12. 已知限制
+- 当前 demo 只覆盖 `Bookmark / Heart / Send` 三组内置预解析路径数据。
+- 当前不支持完整 SVG/XAML path 字符串解析。
+- filled path 依赖 `egui_canvas_draw_polygon_fill()`，单个 contour 最终顶点数会压缩到 `16` 以内。
+- 曲线路径使用有限步数 flatten，目标是 reference 图标稳定可读，不追求高精度矢量拟合。
+- 底部 `subtle / accent` preview 只承担静态 reference 对照，不承载额外交互职责。
+
+## 13. 与现有控件的边界
+- 相比 `bitmap_icon`：这里表达矢量路径数据，而不是 alpha-only 位图遮罩。
+- 相比 `image_icon`：这里不承载完整图片内容，而是单色几何图标。
+- 相比 `font_icon`、`symbol_icon`：这里不依赖字体和字形映射，调用方直接传入 path 数据。
+- 相比直接使用 SDK canvas：这里补齐默认回退、palette helper 和静态 preview 输入抑制。
+
+## 14. EGUI 适配说明
+- 继续复用当前目录下的 `egui_view_path_icon` custom view，不修改 SDK。
+- 主区保留 `Bookmark`、`Heart`、`Send` 三组 reference 快照。
+- 底部 preview 通过 `egui_view_path_icon_override_static_preview_api()` 明确收口为静态 reference。
+- 当前优先保证主区 3 组 reference 快照、底部 preview 全程静态，以及 runtime 录制稳定，再评估是否需要扩展更多 path 数据来源。
