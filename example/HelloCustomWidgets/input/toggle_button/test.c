@@ -17,6 +17,10 @@
 #define TOGGLE_BUTTON_BOTTOM_ROW_HEIGHT 44
 #define TOGGLE_BUTTON_RECORD_WAIT       90
 #define TOGGLE_BUTTON_RECORD_FRAME_WAIT 170
+#define TOGGLE_BUTTON_RECORD_FINAL_WAIT 280
+#define TOGGLE_BUTTON_DEFAULT_SNAPSHOT  0
+
+#define PRIMARY_SNAPSHOT_COUNT ((uint8_t)EGUI_ARRAY_SIZE(primary_snapshots))
 
 typedef struct toggle_button_snapshot toggle_button_snapshot_t;
 struct toggle_button_snapshot
@@ -34,6 +38,10 @@ static egui_view_toggle_button_t button_primary;
 static egui_view_linearlayout_t bottom_row;
 static egui_view_toggle_button_t button_compact;
 static egui_view_toggle_button_t button_read_only;
+static egui_view_api_t button_primary_interaction_api;
+static egui_view_api_t button_compact_api;
+static egui_view_api_t button_read_only_api;
+static uint8_t ui_ready;
 
 EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
 EGUI_BACKGROUND_PARAM_INIT(bg_page_panel_params, &bg_page_panel_param, NULL, NULL);
@@ -47,32 +55,15 @@ static const toggle_button_snapshot_t primary_snapshots[] = {
         {"Favorite", EGUI_ICON_MS_FAVORITE, EGUI_COLOR_HEX(0xB146C2), EGUI_COLOR_HEX(0xF5E9F8), 1},
 };
 
-static const toggle_button_snapshot_t compact_snapshots[] = {
-        {"Visible", EGUI_ICON_MS_VISIBILITY, EGUI_COLOR_HEX(0x0F766E), EGUI_COLOR_HEX(0xE4F2EF), 1},
-        {"Alerts", EGUI_ICON_MS_NOTIFICATIONS, EGUI_COLOR_HEX(0x0F6CBD), EGUI_COLOR_HEX(0xE9F1FB), 0},
+static const toggle_button_snapshot_t compact_snapshot = {
+        "Visible", EGUI_ICON_MS_VISIBILITY, EGUI_COLOR_HEX(0x0F766E), EGUI_COLOR_HEX(0xE4F2EF), 1,
 };
 
 static const toggle_button_snapshot_t read_only_snapshot = {
         "Pinned", EGUI_ICON_MS_FAVORITE, EGUI_COLOR_HEX(0xA5AFBA), EGUI_COLOR_HEX(0xEEF2F6), 1,
 };
 
-static uint8_t current_primary_snapshot = 0;
-static uint8_t current_compact_snapshot = 0;
-
-static int dismiss_primary_focus_on_preview_touch(egui_view_t *self, egui_motion_event_t *event)
-{
-    EGUI_UNUSED(self);
-
-#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
-    if (event->type == EGUI_MOTION_EVENT_ACTION_DOWN)
-    {
-        egui_view_clear_focus(EGUI_VIEW_OF(&button_primary));
-    }
-#else
-    EGUI_UNUSED(event);
-#endif
-    return 1;
-}
+static void layout_page(void);
 
 static void apply_snapshot_to_button(egui_view_toggle_button_t *button, const toggle_button_snapshot_t *snapshot)
 {
@@ -85,20 +76,55 @@ static void apply_snapshot_to_button(egui_view_toggle_button_t *button, const to
 
 static void apply_primary_snapshot(uint8_t index)
 {
-    current_primary_snapshot = index % EGUI_ARRAY_SIZE(primary_snapshots);
-    apply_snapshot_to_button(&button_primary, &primary_snapshots[current_primary_snapshot]);
+    apply_snapshot_to_button(&button_primary, &primary_snapshots[index % PRIMARY_SNAPSHOT_COUNT]);
+    if (ui_ready)
+    {
+        layout_page();
+    }
 }
 
-static void apply_compact_snapshot(uint8_t index)
+static void apply_primary_default_state(void)
 {
-    current_compact_snapshot = index % EGUI_ARRAY_SIZE(compact_snapshots);
-    apply_snapshot_to_button(&button_compact, &compact_snapshots[current_compact_snapshot]);
+    apply_primary_snapshot(TOGGLE_BUTTON_DEFAULT_SNAPSHOT);
 }
 
-static void apply_read_only_snapshot(void)
+static void apply_preview_states(void)
 {
+    apply_snapshot_to_button(&button_compact, &compact_snapshot);
     apply_snapshot_to_button(&button_read_only, &read_only_snapshot);
+    if (ui_ready)
+    {
+        layout_page();
+    }
 }
+
+static void layout_local_views(void)
+{
+    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&bottom_row));
+    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&root_layout));
+}
+
+static void layout_page(void)
+{
+    layout_local_views();
+    egui_core_layout_childs_user_root_view(EGUI_LAYOUT_VERTICAL, EGUI_ALIGN_HCENTER | EGUI_ALIGN_VCENTER);
+}
+
+static void focus_primary_button(void)
+{
+#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
+    egui_view_request_focus(EGUI_VIEW_OF(&button_primary));
+#endif
+}
+
+#if EGUI_CONFIG_RECORDING_TEST
+static void request_page_snapshot(void)
+{
+    layout_page();
+    egui_view_invalidate(EGUI_VIEW_OF(&root_layout));
+    recording_request_snapshot();
+}
+#endif
 
 void test_init_ui(void)
 {
@@ -126,7 +152,6 @@ void test_init_ui(void)
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&button_primary), true);
 #endif
-    static egui_view_api_t button_primary_interaction_api;
     hcw_toggle_button_override_interaction_api(EGUI_VIEW_OF(&button_primary), &button_primary_interaction_api);
     egui_view_set_margin(EGUI_VIEW_OF(&button_primary), 0, 0, 0, 8);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&button_primary));
@@ -143,9 +168,7 @@ void test_init_ui(void)
     egui_view_toggle_button_set_icon_font(EGUI_VIEW_OF(&button_compact), EGUI_FONT_ICON_MS_16);
     hcw_toggle_button_apply_compact_style(EGUI_VIEW_OF(&button_compact));
     egui_view_set_padding(EGUI_VIEW_OF(&button_compact), 1, 1, 0, 0);
-    static egui_view_api_t button_compact_preview_api;
-    hcw_toggle_button_override_static_preview_api(EGUI_VIEW_OF(&button_compact), &button_compact_preview_api);
-    button_compact_preview_api.on_touch = dismiss_primary_focus_on_preview_touch;
+    hcw_toggle_button_override_static_preview_api(EGUI_VIEW_OF(&button_compact), &button_compact_api);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&button_compact), false);
 #endif
@@ -158,39 +181,25 @@ void test_init_ui(void)
     egui_view_toggle_button_set_icon_font(EGUI_VIEW_OF(&button_read_only), EGUI_FONT_ICON_MS_16);
     hcw_toggle_button_apply_read_only_style(EGUI_VIEW_OF(&button_read_only));
     egui_view_set_padding(EGUI_VIEW_OF(&button_read_only), 1, 1, 0, 0);
-    static egui_view_api_t button_read_only_preview_api;
-    hcw_toggle_button_override_static_preview_api(EGUI_VIEW_OF(&button_read_only), &button_read_only_preview_api);
-    button_read_only_preview_api.on_touch = dismiss_primary_focus_on_preview_touch;
+    hcw_toggle_button_override_static_preview_api(EGUI_VIEW_OF(&button_read_only), &button_read_only_api);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&button_read_only), false);
 #endif
     egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&button_read_only));
 
-    apply_primary_snapshot(0);
-    apply_compact_snapshot(0);
-    apply_read_only_snapshot();
+    apply_primary_default_state();
+    apply_preview_states();
 
     hello_custom_widgets_demo_apply_title_only_scaffold(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label), NULL, 0);
 
-    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&bottom_row));
-    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&root_layout));
-
+    layout_local_views();
     egui_core_add_user_root_view(EGUI_VIEW_OF(&root_layout));
-    egui_core_layout_childs_user_root_view(EGUI_LAYOUT_VERTICAL, EGUI_ALIGN_HCENTER | EGUI_ALIGN_VCENTER);
+    ui_ready = 1;
+    layout_page();
+    focus_primary_button();
 }
 
 #if EGUI_CONFIG_RECORDING_TEST
-static void apply_primary_key(uint8_t key_code)
-{
-    egui_key_event_t event = {0};
-
-    event.type = EGUI_KEY_EVENT_ACTION_DOWN;
-    event.key_code = key_code;
-    EGUI_VIEW_OF(&button_primary)->api->dispatch_key_event(EGUI_VIEW_OF(&button_primary), &event);
-    event.type = EGUI_KEY_EVENT_ACTION_UP;
-    EGUI_VIEW_OF(&button_primary)->api->dispatch_key_event(EGUI_VIEW_OF(&button_primary), &event);
-}
-
 bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_action)
 {
     static int last_action = -1;
@@ -203,74 +212,50 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     case 0:
         if (first_call)
         {
-            apply_primary_snapshot(0);
-            apply_compact_snapshot(0);
+            apply_primary_default_state();
+            apply_preview_states();
+            focus_primary_button();
+            request_page_snapshot();
         }
-        EGUI_SIM_SET_WAIT(p_action, TOGGLE_BUTTON_RECORD_WAIT);
+        EGUI_SIM_SET_WAIT(p_action, TOGGLE_BUTTON_RECORD_FRAME_WAIT);
         return true;
     case 1:
-        if (first_call)
-        {
-            recording_request_snapshot();
-        }
-        EGUI_SIM_SET_WAIT(p_action, TOGGLE_BUTTON_RECORD_FRAME_WAIT);
-        return true;
-    case 2:
-        if (first_call)
-        {
-            apply_primary_key(EGUI_KEY_CODE_SPACE);
-        }
-        EGUI_SIM_SET_WAIT(p_action, TOGGLE_BUTTON_RECORD_WAIT);
-        return true;
-    case 3:
-        if (first_call)
-        {
-            recording_request_snapshot();
-        }
-        EGUI_SIM_SET_WAIT(p_action, TOGGLE_BUTTON_RECORD_FRAME_WAIT);
-        return true;
-    case 4:
         if (first_call)
         {
             apply_primary_snapshot(1);
         }
         EGUI_SIM_SET_WAIT(p_action, TOGGLE_BUTTON_RECORD_WAIT);
         return true;
-    case 5:
+    case 2:
         if (first_call)
         {
-            recording_request_snapshot();
+            request_page_snapshot();
         }
         EGUI_SIM_SET_WAIT(p_action, TOGGLE_BUTTON_RECORD_FRAME_WAIT);
         return true;
-    case 6:
+    case 3:
         if (first_call)
         {
-            apply_primary_key(EGUI_KEY_CODE_ENTER);
-        }
-        EGUI_SIM_SET_WAIT(p_action, TOGGLE_BUTTON_RECORD_WAIT);
-        return true;
-    case 7:
-        if (first_call)
-        {
-            recording_request_snapshot();
-        }
-        EGUI_SIM_SET_WAIT(p_action, TOGGLE_BUTTON_RECORD_FRAME_WAIT);
-        return true;
-    case 8:
-        if (first_call)
-        {
-            apply_compact_snapshot(1);
             apply_primary_snapshot(2);
         }
         EGUI_SIM_SET_WAIT(p_action, TOGGLE_BUTTON_RECORD_WAIT);
         return true;
-    case 9:
+    case 4:
         if (first_call)
         {
-            recording_request_snapshot();
+            request_page_snapshot();
         }
-        EGUI_SIM_SET_WAIT(p_action, 520);
+        EGUI_SIM_SET_WAIT(p_action, TOGGLE_BUTTON_RECORD_FRAME_WAIT);
+        return true;
+    case 5:
+        EGUI_SIM_SET_WAIT(p_action, TOGGLE_BUTTON_RECORD_FINAL_WAIT);
+        return true;
+    case 6:
+        if (first_call)
+        {
+            request_page_snapshot();
+        }
+        EGUI_SIM_SET_WAIT(p_action, TOGGLE_BUTTON_RECORD_FINAL_WAIT);
         return true;
     default:
         return false;

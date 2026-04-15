@@ -1,153 +1,159 @@
-# toggle_button 自定义控件设计说明
+# toggle_button 设计说明
 
 ## 参考来源
-
 - 参考设计系统：`Fluent 2`
-- 参考开源库：`WPF UI`
-- 次级补充参考：`WinUI ToggleButton`
+- 官方语义参考：`WinUI ToggleButton`
+- 开源母本：`WPF UI`
 - 对应组件名：`ToggleButton`
-- 本次保留状态：`standard`、`compact`、`read only`、`on`、`off`
-- 删除效果：页面级 guide、状态回显、`Standard` / `Compact` / `Read only` 外部标签、section divider、场景化轮播入口、复杂 hover / shadow / Acrylic 表达
-- EGUI 适配说明：保留单按钮 checked 语义、图标 + 文本组合和键盘 `Enter / Space` 闭环，在 `480 x 480` 页面里优先保证主按钮识别度与底部双预览对照稳定；主按钮补齐 `same-target release`，底部 `compact / read only` 统一通过 `hcw_toggle_button_override_static_preview_api()` 固定为静态 preview
+- 本轮保留语义：`standard / compact / read only / on / off / static preview`
+- 本轮移除内容：页面级 `guide`、旧 preview 快照轮换、preview 点击清焦桥接、额外收尾态、外部标签、section divider、showcase 化装饰
+- EGUI 适配说明：继续复用 custom 层现有 `egui_view_toggle_button` 绘制与输入语义，本轮只收口 `reference` 页面结构、录制轨道、静态 preview、README 和单测口径，不修改 `sdk/EmbeddedGUI`
 
 ## 1. 为什么需要这个控件
-
-`toggle_button` 适合表达“按钮自身就是持续状态”的页内命令，例如提醒开关、可见性切换、收藏态和固定态。它不是设置页拨杆，也不是带菜单的复合按钮，而是最小可用的 checked command。
+`toggle_button` 用来表达“按钮本身就是一个持久开关命令”的场景，例如提醒开关、可见性切换、收藏态和固定态。它不是设置页拨杆，也不是带菜单入口的复合命令，而是最小可用的 checked command。
 
 ## 2. 为什么现有控件不够用
+- `switch` 更像设置项里的开关拨杆，不强调命令按钮语义。
+- `button` 只有瞬时动作，不保留 checked 状态。
+- `split_button` 与 `toggle_split_button` 都带入了额外菜单或分段入口，信息密度更高。
+- 当前 `reference` 主线需要一版更接近 `Fluent 2 / WPF UI` 的标准 `ToggleButton`。
 
-- `switch` 更像设置项中的开关拨杆，不强调命令按钮语义
-- `button` 只有瞬时动作，不保留 checked 状态
-- `split_button` 与 `toggle_split_button` 都引入了额外分段或菜单入口，信息密度更高
-- 当前 reference 主线需要一版更接近 `Fluent 2 / WPF UI` 的标准 `ToggleButton`
+因此这里继续保留 `toggle_button` reference 控件，但示例页必须回到统一的静态 preview 工作流。
 
-因此这里继续保留 `toggle_button`，但示例页必须回到统一的 reference 结构。
+## 3. 目标场景与页面结构
+- 页面结构统一为：标题 -> 主 `toggle_button` -> 底部 `compact / read only` 双静态 preview。
+- 主区保留 3 组 reference 状态：`Alerts`、`Visible`、`Favorite`。
+- 主控件继续承载真实 toggle 语义，保留 `Enter / Space` 键盘闭环与 `same-target release` 触摸提交规则。
+- 底部 `compact` preview 固定显示 `Visible`，只作为紧凑样式对照，不再参与轮换。
+- 底部 `read only` preview 固定显示 `Pinned`，只作为只读样式对照，不再承担交互职责。
+- 两个 preview 统一通过 `hcw_toggle_button_override_static_preview_api()` 收口。
+- preview 收到 `touch` 或 `dispatch_key_event()` 后，只允许清理残留 `is_pressed`，不能改写 `text / icon / on_color / off_color / corner_radius / icon_text_gap / is_toggled / region_screen / alpha`。
 
-## 3. 目标场景与示例概览
-
-- 主区域展示标准 `toggle_button`，保留图标 + 文本 + on/off 切换
-- 左下 `compact` 预览展示紧凑尺寸下的轻量 reference
-- 右下 `read only` 预览展示静态只读对照
-- 底部 `compact / read only` 预览统一通过 `hcw_toggle_button_override_static_preview_api()` 吞掉 touch / key；点击 preview 时只清主按钮 focus，不改 checked 状态
-- 示例页只保留标题、主按钮和底部 `compact / read only` 双预览，不再保留 guide、状态回显和标签点击入口
-
-目录：
-
-- `example/HelloCustomWidgets/input/toggle_button/`
+目标目录：`example/HelloCustomWidgets/input/toggle_button/`
 
 ## 4. 视觉与布局规格
-
 - 画布：`480 x 480`
 - 根布局：`224 x 142`
-- 页面结构：标题 -> 主 `toggle_button` -> `compact / read only` 双预览
-- 主按钮：`196 x 52`
-- 底部双预览容器：`216 x 44`
-- `compact` 预览：`104 x 44`
-- `read only` 预览：`104 x 44`
-- 视觉规则：
-  - 使用浅灰白 page panel + 白底低噪音表面
-  - 主按钮保留 Fluent 风格强调色，off 态退回浅色 surface
-  - `compact` 预览保留相同图标 + 文本语义，但尺寸更轻
-  - `read only` 预览只保留静态状态表达，不承担真实交互
+- 主控件：`196 x 52`
+- 底部对照行：`216 x 44`
+- `compact` preview：`104 x 44`
+- `read only` preview：`104 x 44`
+
+视觉约束：
+- 保持浅色 `page panel`、低噪音描边和 Fluent 风格的单按钮 checked 表达。
+- 主区只保留图标 + 文本 + on/off 填充色，不再叠加旧 demo 的解释性 chrome。
+- runtime 轨道里只允许主区 reference 状态变化，底部 `compact / read only` preview 必须全程静态。
+- 不再保留旧版 preview 轮换、preview 清焦桥接和额外收尾态。
 
 ## 5. 控件清单
 
 | 变量名 | 类型 | 尺寸 (W x H) | 初始状态 | 用途 |
 | --- | --- | ---: | --- | --- |
-| `root_layout` | `egui_view_linearlayout_t` | `224 x 142` | enabled | 页面根布局 |
+| `root_layout` | `egui_view_linearlayout_t` | `224 x 142` | enabled | 页面根容器 |
 | `title_label` | `egui_view_label_t` | `224 x 18` | `Toggle Button` | 页面标题 |
-| `button_primary` | `egui_view_toggle_button_t` | `196 x 52` | `Alerts / On` | 标准主按钮 |
-| `button_compact` | `egui_view_toggle_button_t` | `104 x 44` | `Visible / On` | 紧凑静态预览 |
-| `button_read_only` | `egui_view_toggle_button_t` | `104 x 44` | `Pinned / On` | 只读静态预览 |
+| `button_primary` | `egui_view_toggle_button_t` | `196 x 52` | `Alerts / On` | 主控件 |
+| `button_compact` | `egui_view_toggle_button_t` | `104 x 44` | `Visible / On` | 紧凑静态 preview |
+| `button_read_only` | `egui_view_toggle_button_t` | `104 x 44` | `Pinned / On` | 只读静态 preview |
 
 ## 6. 状态覆盖矩阵
 
-| 状态 / 区域 | 主按钮 | Compact | Read only |
-| --- | --- | --- | --- |
-| `on / off` | 是 | 是 | 是 |
-| 图标 + 文本 | 是 | 是 | 是 |
-| 主线 snapshot 轮换 | 是 | 否 | 否 |
-| 触摸切换 | 是 | 否 | 否 |
-| 键盘 `Enter / Space` | 是 | 否 | 否 |
-| 静态对照 | 否 | 是 | 是 |
+| 区域 | 状态 | 说明 |
+| --- | --- | --- |
+| 主控件 | `Alerts / On` | 默认 reference 状态 |
+| 主控件 | `Visible / Off` | 第二组 reference 状态 |
+| 主控件 | `Favorite / On` | 第三组 reference 状态，也是最终稳定态 |
+| `compact` preview | `Visible / On` | 全程静态，不参与录制轮换 |
+| `read only` preview | `Pinned / On` | 全程静态，不参与录制轮换 |
 
-## 7. `egui_port_get_recording_action()` 录制动作设计
+## 7. 交互语义与单测口径
+- 主控件继续保留标准 toggle 语义：
+  - 触摸 `DOWN(inside) -> UP(inside)` 才提交切换。
+  - `DOWN(inside) -> MOVE(outside) -> UP(outside)` 不提交。
+  - 只有回到原命中区后 `UP(inside)` 才重新提交。
+  - 键盘 `Enter / Space` 通过完整 `ACTION_DOWN -> ACTION_UP` 闭环切换。
+- `set_toggled()`、样式 helper、`touch cancel`、`!enable` guard、无关键盘输入都必须清理残留 `pressed`。
+- preview 键盘入口统一走 `dispatch_key_event()`，不再直接调用旧的 `on_key_event()`。
+- 静态 preview 用例统一收口为 `test_toggle_button_static_preview_consumes_input_and_keeps_state`。
+- preview 固定断言覆盖：
+  - `region_screen`
+  - `icon`
+  - `text`
+  - `font`
+  - `icon_font`
+  - `on_toggled`
+  - `text_color`
+  - `on_color`
+  - `off_color`
+  - `corner_radius`
+  - `icon_text_gap`
+  - `is_toggled`
+  - `alpha`
+  - `toggled_count == 0`
+  - `is_pressed` 被清理
 
-1. 应用默认主按钮与 `compact` 预览状态
-2. 请求第一页截图
-3. 通过 `Space` 切换主按钮到 `Alerts / Off`
-4. 请求第二页截图
-5. 程序化切换主按钮到 `Visible / Off`
-6. 请求第三页截图
-7. 通过 `Enter` 切换主按钮到 `Visible / On`
-8. 请求第四页截图
-9. 程序化切换主按钮到 `Favorite / On`，并把 `compact` 预览切换到第二组静态对照
-10. 请求最终截图并保留收尾等待
+## 8. 录制动作设计
+`egui_port_get_recording_action()` 的 `reference` 轨道顺序如下：
+1. 恢复主控件默认 `Alerts / On`，同步底部 `Visible / Pinned` 静态 preview，并请求首帧截图。
+2. 程序化切到 `Visible / Off`，请求第二帧主区截图。
+3. 程序化切到 `Favorite / On`，请求第三帧主区截图。
+4. 保持 `Favorite / On` 不变，等待最终稳定帧。
+5. 请求最终稳定帧。
 
-## 8. 编译、runtime、截图验收标准
+录制只允许主区发生变化。底部 `compact / read only` preview 在整条 `reference` 轨道里必须保持单一静态对照。
 
+## 9. 编译、单测、runtime 与 web 验收链
 ```bash
 make all APP=HelloCustomWidgets APP_SUB=input/toggle_button PORT=pc
-python scripts/checks/check_touch_release_semantics.py --scope custom --category input
-python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/toggle_button --track reference --timeout 10 --keep-screenshots
+
+make clean APP=HelloUnitTest PORT=pc_test
 make all APP=HelloUnitTest PORT=pc_test
-output\main.exe
+X:\output\main.exe
+
+python scripts/sync_widget_catalog.py
+python scripts/checks/check_touch_release_semantics.py --scope custom --category input
 python scripts/checks/check_docs_encoding.py
+python scripts/checks/check_widget_catalog.py
+python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/toggle_button --track reference --timeout 10 --keep-screenshots
+python scripts/code_compile_check.py --custom-widgets --category input --bits64
+python scripts/code_runtime_check.py --app HelloCustomWidgets --category input --track reference --bits64
+python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub input/toggle_button
+python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_input_toggle_button
 ```
 
-验收重点：
+## 10. 验收重点
+- 主区与底部双 preview 必须完整可见，不能黑屏、白屏或被裁切。
+- 主区录制只允许出现 `Alerts`、`Visible`、`Favorite` 三组可识别状态。
+- 底部 `Visible / Pinned` preview 必须在全部 runtime 帧里保持静态一致。
+- 静态 preview 收到输入后，不能改写 `icon / text / on_toggled / on_color / off_color / corner_radius / icon_text_gap / is_toggled / region_screen / alpha`。
+- README、录制轨道、单测断言和验收命令链必须保持一致。
 
-- 主按钮 on/off 两态必须一眼可辨，不能退回普通按钮视觉
-- 主按钮和底部双预览必须完整可见，不能被裁切
-- 图标、文本和左右留白必须均衡，不能出现图标压字或文本贴边
-- 页面中不再出现 guide、状态回显、section divider 和外部 preview 标签
-- `compact` 与 `read only` 必须保持 Fluent / WPF UI 的低噪音浅色 reference
-- 主按钮的 setter 更新、样式切换、`touch cancel`、`!enable` guard 和 key guard 之后都不能残留 `pressed` 覆盖层
-- 必须满足 `DOWN(inside) -> MOVE(outside) -> UP(outside)` 不切换，只有回到原命中区后 `UP(inside)` 才切换
-- `Enter / Space` 只允许在完整 `ACTION_DOWN -> ACTION_UP` 闭环后切换状态；无关按键不能留下残留 `pressed`
-- 底部 `compact / read only` 预览必须通过 `hcw_toggle_button_override_static_preview_api()` 吞掉 touch / key 输入，并在收到输入后立即清理残留 `pressed`，保证静态对照渲染稳定
+## 11. runtime 截图复核口径
+- 检查目录：`runtime_check_output/HelloCustomWidgets_input_toggle_button/default`
+- 截图帧数：`8`
+- 主区变化边界：`(44, 160) - (435, 237)`
+- 主区唯一状态数：`3`
+- 主区外唯一哈希数：`1`
+- preview 区唯一哈希数：`1`
+- preview 裁切起点：`y >= 238`
 
-## 9. 已知限制与后续方向
+复核结论：
+- 遮罩主区变化边界后，边界外区域保持单哈希，确认主区外全程静态。
+- 按主区裁剪后共出现 `3` 组唯一状态，对应 `Alerts`、`Visible`、`Favorite` 三态轨道。
+- 按 `y >= 238` 裁切底部 preview 区后全部帧保持单哈希，确认底部 `compact / read only` preview 全程静态一致。
 
-- 当前版本只保留最小 checked command，不覆盖 toolbar group、menu button 组合关系
-- 当前 `read only` 通过 `hcw_toggle_button_override_static_preview_api()` 与 preview 样式包装实现静态对照，不引入额外业务状态
-- 当前不做 hover、focus ring、Acrylic 和系统级主题动画
-- 若后续要沉入框架层，再单独评估与命令栏、导航栏和表单系统的联动
+## 12. 已知限制
+- 当前版本只保留最小 `checked command`，不覆盖 toolbar group、menu button 组合关系。
+- 底部 `compact / read only` preview 只承担静态对照，不承载真实交互职责。
+- 当前不做 hover、focus ring、Acrylic 和系统级主题动画。
 
-## 10. 与现有控件的重叠分析与差异化边界
-
-- 相比 `switch`：本控件是页内命令按钮，不是设置页拨杆
-- 相比 `button`：本控件保留 checked 状态，而不是一次性触发
-- 相比 `split_button`：本控件没有下拉入口
-- 相比 `toggle_split_button`：本控件只保留单入口切换，不保留复合分段
-
-## 11. 参考设计系统与开源母本
-
-- 参考设计系统：`Fluent 2`
-- 开源母本：`WPF UI`
-- 次级补充参考：`WinUI ToggleButton`
-
-## 12. 对应组件名，以及本次保留的核心状态
-
-- 对应组件名：`ToggleButton`
-- 本次保留状态：
-  - `standard`
-  - `compact`
-  - `read only`
-  - `on`
-  - `off`
-
-## 13. 相比参考原型删掉了哪些效果或装饰
-
-- 不做页面级 guide、状态回显、外部 preview 标签和 section divider
-- 不做 hover 阴影、Acrylic、系统主题切换过渡和复杂焦点动画
-- 不做 toolbar / command bar 级组合布局
-- 不做场景化轮播入口，只保留程序化 reference snapshot
+## 13. 与现有控件的边界
+- 相比 `switch`：这里是页内命令按钮，不是设置拨杆。
+- 相比 `button`：这里保留 checked 状态，而不是一次性点击动作。
+- 相比 `split_button`：这里没有下拉入口。
+- 相比 `toggle_split_button`：这里只保留单入口切换，不保留复合分段。
 
 ## 14. EGUI 适配时的简化点与约束
-
-- 基于现有 `egui_view_toggle_button` 核心控件做示例级 reference 收口，不下沉到框架层
-- 颜色与圆角由当前目录的样式包装统一收敛
-- 主按钮保留最小键盘闭环，底部 `compact` 与 `read only` 通过 `hcw_toggle_button_override_static_preview_api()` 固定为静态对照
-- 本轮示例层额外补了一层 touch / key 包装，用来统一清理 `pressed`、保证 `same-target release`、拦截禁用态输入，并确保静态 preview 不会误切换
-- 先完成示例级审阅稳定性，再评估是否抽象出更完整的 read-only / focus API
+- 基于现有 `egui_view_toggle_button` 核心控件做 reference 收口，不下沉到框架层。
+- 颜色、圆角和图标间距继续由当前目录的样式包装统一管理。
+- 主控件保留最小必要的键盘闭环；底部 preview 统一通过 `hcw_toggle_button_override_static_preview_api()` 固定为静态对照。
+- 本轮补齐 `PRIMARY_SNAPSHOT_COUNT`、`TOGGLE_BUTTON_RECORD_FINAL_WAIT`、`apply_primary_default_state()`、`apply_preview_states()`、`layout_local_views()`、`layout_page()`、`focus_primary_button()` 和 `request_page_snapshot()`，让主区轨道、底部静态 preview 与最终稳定帧共用同一套页面恢复路径。
