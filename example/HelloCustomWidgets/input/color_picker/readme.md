@@ -1,150 +1,155 @@
-# color_picker 自定义控件设计说明
+# color_picker 设计说明
 
 ## 参考来源
-
 - 参考设计系统：`Fluent 2`
-- 参考开源库：`WPF UI`
-- 次级补充参考：`ModernWpf`
+- 官方语义参考：`WinUI 3 ColorPicker`
+- 开源母本：`WPF UI`
 - 对应组件名：`ColorPicker`
-- 本次保留状态：`tone palette`、`hue rail`、`compact`、`read only`、`keyboard focus`
-- 删除效果：页面级 guide / 状态文案 / standard label / section divider / preview label、标签点击切换、弹出式高级编辑器、透明度通道、桌面 hover 动画
-- EGUI 适配说明：保留标准颜色选择器的 tone palette + hue rail + 当前色预览语义，在 `480 x 480` 下优先保证色块可辨识、hex 文本可读与 `compact / read only` 对照稳定
+- 本轮保留语义：`tone palette / hue rail / compact / read only / focused`
+- 本轮移除内容：页面级 guide、状态说明文案、preview 快照轮换、额外收尾态、弹出式高级编辑器、透明度通道、eyedropper
+- EGUI 适配说明：继续保留标准 `ColorPicker` 的 `tone palette + hue rail + 当前色预览` 语义，本轮只收口 `reference` 页面结构、static preview 轨道、单测断言和验收链，不修改 `sdk/EmbeddedGUI`
 
-## 1. 为什么需要这个控件
-
-`color_picker` 用于表达标准颜色选择语义，比如主题色、状态色、卡片强调色和图标前景色等。它补足了当前 `HelloCustomWidgets` 里“可派生色调 + 连续色相切换”的标准颜色选择器能力。
+## 1. 为什么需要这个控件?
+`color_picker` 用来表达标准颜色选择语义，适合主题色、状态色、卡片强调色、图标前景色等离散但可导出 tone 的场景。它补上了当前 `HelloCustomWidgets` 里“同一 hue 下继续选择明暗与饱和度”的标准输入能力。
 
 ## 2. 为什么现有控件不够用
 
-- `swatch_picker` 只覆盖离散色样切换，不支持从同一 hue 派生明暗 / 饱和度变化
-- `slider` / `xy_pad` 有连续输入能力，但不具备颜色语义和即时色彩预览
-- `number_box` / `textinput` 可以录数值或文本，但不适合直接做颜色选择体验
-- 当前主线需要一版更接近 `Fluent 2 / WPF UI ColorPicker` 的标准轻量色彩选择器
+- `swatch_picker` 只覆盖离散色板切换，不支持 `tone palette + hue rail` 的组合语义。
+- `slider` / `xy_pad` 虽然能做连续输入，但不直接表达颜色选择，也没有当前色预览和 `hex` 摘要。
+- `number_box` / `text_box` 可以承载数值或文本，却不适合作为主颜色选择入口。
+- 当前仓库里的 `color_picker` 页面虽然已经 reference 化，但录制轨道、静态 preview 单测和 README 仍停留在旧 workflow，没有对齐到当前 static preview 模板。
 
-因此这里继续保留 `color_picker`，但示例页必须回到统一的 reference 结构。
+## 3. 目标场景与页面结构
 
-## 3. 目标场景与示例概览
+- 页面结构统一为：标题 -> 主 `color_picker` -> 底部 `compact / read only` 双静态 preview。
+- 主区保留真实 `ColorPicker` 的键盘 `tone / hue` 调整能力。
+- 底部 `compact` preview 固定显示 `Mint` 配色，不再承担快照轮换职责。
+- 底部 `read only` preview 固定显示 `Locked` 配色，作为只读静态对照。
+- 两个 preview 统一通过 `egui_view_color_picker_override_static_preview_api()` 收口：
+  - 吞掉 `touch / dispatch_key_event()`
+  - 收到输入后立刻清理残留 `pressed`
+  - 不改 `label / helper / selection / hex / region_screen / palette`
 
-- 主区域展示标准 `color_picker`，包含 label、preview swatch、hex 文本、tone palette 与 hue rail
-- 左下 `compact` 预览展示紧凑颜色选择卡
-- 右下 `read only` 预览展示只读配色卡
-- 示例页只保留标题、主 `color_picker` 和底部 `compact / read only` 双预览，不再保留 guide、状态回显和标签点击
-- 录制动作改为程序化切换主 preset、键盘 tone/hue 切换和 `compact` 静态快照轮换
-
-目录：
-
-- `example/HelloCustomWidgets/input/color_picker/`
+目标目录：`example/HelloCustomWidgets/input/color_picker/`
 
 ## 4. 视觉与布局规格
 
 - 画布：`480 x 480`
 - 根布局：`224 x 204`
-- 页面结构：标题 -> 主 `color_picker` -> `compact / read only` 双预览
-- 主色彩选择器：`196 x 112`
-- 底部双预览容器：`216 x 52`
-- `compact` 预览：`104 x 52`
-- `read only` 预览：`104 x 52`
-- 视觉规则：
-  - 使用浅灰白 page panel + 白底轻边框 palette
-  - 主卡保留标准颜色选择器语义，不再叠页面级说明与状态桥接
-  - `compact` 与 `read only` 作为静态对照，只通过统一 static preview API 吞掉 touch / key 输入，不承担交互职责
-  - accent、边框和文本色统一向 Fluent / WPF UI 低噪音浅色体系收口
+- 主控件：`196 x 112`
+- 底部对照行：`216 x 52`
+- `compact` preview：`104 x 52`
+- `read only` preview：`104 x 52`
+
+视觉约束：
+
+- 使用浅色 page panel、低噪音边框和单层白底主卡，不回退到 showcase 式装饰。
+- 主区保留 `tone palette + hue rail + swatch + hex` 的最小完整语义，不额外叠加外部说明卡。
+- `compact` 与 `read only` 只做静态 reference 对照，整条 runtime 轨道中必须保持不变。
+- focus 仅在主控件内部的 `palette / hue rail` 间切换，不叠加夸张 glow 或复杂阴影。
 
 ## 5. 控件清单
 
 | 变量名 | 类型 | 尺寸 (W x H) | 初始状态 | 用途 |
 | --- | --- | ---: | --- | --- |
-| `root_layout` | `egui_view_linearlayout_t` | `224 x 204` | enabled | 页面根布局 |
+| `root_layout` | `egui_view_linearlayout_t` | `224 x 204` | enabled | 页面根容器 |
 | `title_label` | `egui_view_label_t` | `224 x 18` | `Color Picker` | 页面标题 |
-| `picker_primary` | `egui_view_color_picker_t` | `196 x 112` | `Ocean` preset | 标准颜色选择器 |
-| `picker_compact` | `egui_view_color_picker_t` | `104 x 52` | `Mint` preset | 紧凑静态预览 |
-| `picker_read_only` | `egui_view_color_picker_t` | `104 x 52` | `Locked` preset | 只读静态预览 |
+| `picker_primary` | `egui_view_color_picker_t` | `196 x 112` | `Accent color` | 主控件 |
+| `picker_compact` | `egui_view_color_picker_t` | `104 x 52` | `Mint` / compact | 静态 preview |
+| `picker_read_only` | `egui_view_color_picker_t` | `104 x 52` | `Locked` / read only | 静态 preview |
 
 ## 6. 状态覆盖矩阵
 
-| 状态 / 区域 | 主色彩选择器 | Compact | Read only |
-| --- | --- | --- | --- |
-| 默认态 | `Ocean` 配色 | `Mint` 配色 | `Locked` 配色 |
-| `Right` | 提升当前 tone 饱和度 | 不响应 | 不响应 |
-| `Tab` / `Down` | 切到 hue rail 并切换色相 | 不响应 | 不响应 |
-| 主 preset 轮换 | `Ocean` -> `Coral` | 保持 | 保持 |
-| 紧凑 preset 轮换 | 保持 | `Mint` -> `Sun` | 保持 |
-| 只读弱化 | 不适用 | 不适用 | 保留静态只读颜色卡 |
+| 区域 | 状态 | 说明 |
+| --- | --- | --- |
+| 主控件 | `Accent color` / palette focused | 默认状态 |
+| 主控件 | `Accent color` / tone adjusted | `Right` 后 |
+| 主控件 | `Accent color` / hue adjusted | `Tab + Down` 后 |
+| 主控件 | `Signal color` / palette focused | 第二组主快照 |
+| `compact` preview | `Mint` / compact | 全程静态对照 |
+| `read only` preview | `Locked` / read only | 全程静态对照 |
 
-## 7. `egui_port_get_recording_action()` 录制动作设计
+## 7. 交互语义与单测口径
 
-1. 应用默认主 preset、`compact` preset 和只读预览
-2. 请求第一页默认截图
-3. 发送 `Right`，提升当前 tone
-4. 请求第二页截图
-5. 发送 `Tab` + `Down`，切到 hue rail 并切换色相
-6. 请求第三页截图
-7. 程序化切换主 preset 到 `Coral`
-8. 请求第四页截图
-9. 程序化切换 `compact` 预览到 `Sun`
-10. 请求最终对照截图
+- 主控件继续保留真实 `touch` palette/hue 命中、`Tab / Left / Right / Up / Down / Home / End / Escape` 键盘闭环。
+- `set_selection()`、`set_current_part()`、`set_palette()`、`set_compact_mode()` 与 `set_read_only_mode()` 必须清理残留 `pressed_part / is_pressed`。
+- preview 键盘入口统一走 `dispatch_key_event()`，不再直连旧的 `on_key_event()`。
+- 静态 preview 用例统一收口为 “consumes input and keeps state”。
+- preview 固定断言覆盖：
+  - `font / meta_font / label / helper` 不变
+  - `region_screen / alpha / surface_color / border_color / text_color / muted_text_color / accent_color / selected_color` 不变
+  - `hue / saturation / value / current_part / compact_mode / read_only_mode / hex_text` 不变
+  - `g_changed_count == 0`，`g_changed_hue / saturation / value == 0xFF`，`g_changed_part == EGUI_VIEW_COLOR_PICKER_PART_NONE`
+  - `is_pressed` 与 `pressed_part` 被清理
 
-## 8. 编译、runtime、截图验收标准
+## 8. 录制动作设计
+
+`egui_port_get_recording_action()` 的 reference 轨道顺序如下：
+
+1. 恢复主控件默认 `Accent color` 状态，并同步底部 `compact / read only` 静态 preview，输出首帧。
+2. 对主控件发送 `Right`，把当前 tone 向高饱和方向推进一格。
+3. 输出 tone 调整后的主区截图。
+4. 对主控件发送 `Tab + Down`，切到 hue rail 并切换下一条色相。
+5. 输出 hue 调整后的主区截图。
+6. 程序化切换到第二组主快照 `Signal color`。
+7. 输出第二组主快照截图。
+8. 保持第二组主快照不变，做最终稳定等待。
+9. 输出最终稳定帧。
+
+录制只允许主区发生变化。底部 `compact / read only` preview 在整条 reference 轨道里必须保持单一静态对照。
+
+## 9. 编译、单测、运行时与文档检查
 
 ```bash
 make all APP=HelloCustomWidgets APP_SUB=input/color_picker PORT=pc
-python scripts/checks/check_touch_release_semantics.py --scope custom --category input
-python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/color_picker --track reference --timeout 10 --keep-screenshots
+
+# 修改 HelloUnitTest 后优先在 X:\ 短路径下 clean + rebuild
+make clean APP=HelloUnitTest PORT=pc_test
 make all APP=HelloUnitTest PORT=pc_test
-output\main.exe
+X:\output\main.exe
+
+python scripts/sync_widget_catalog.py
+python scripts/checks/check_touch_release_semantics.py --scope custom --category input
 python scripts/checks/check_docs_encoding.py
+python scripts/checks/check_widget_catalog.py
+python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/color_picker --track reference --timeout 10 --keep-screenshots
+python scripts/code_compile_check.py --custom-widgets --category input --bits64
+python scripts/code_runtime_check.py --app HelloCustomWidgets --category input --track reference --bits64
+python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub input/color_picker
+python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_input_color_picker
 ```
 
-验收重点：
+## 10. 验收重点
 
-- 主色板、hue rail、preview swatch 与 hex 文本都必须完整可见
-- 色块之间要能清楚区分，不能因边框或留白不足混在一起
-- 主卡必须仍然像标准颜色选择器，而不是场景化装饰卡片
-- `compact` 与 `read only` 必须是静态对照，不再承担标签切换职责
-- `set_selection / current part / palette / compact / read only` 切换后不能残留 `pressed_part / is_pressed` 污染
-- 底部 `compact / read only` 预览必须统一吞掉 touch / key 输入，并在收到输入后立即清理残留 `pressed` 渲染
-- 页面中不再出现 guide、状态文案、standard label、section divider 和外部 preview label
+- 主区与底部双 preview 必须完整可见，不能黑屏、白屏或被裁切。
+- 主区录制只允许出现 `Accent default / Accent tone adjusted / Accent hue adjusted / Signal color` 四组可识别状态。
+- 底部 `compact / read only` preview 必须在全部 runtime 帧里保持单一静态对照。
+- 静态 preview 收到输入后，不能改 `selection / hex / label / helper / palette / region_screen`。
+- README、demo 录制轨道、单测断言与验收命令链必须保持一致。
 
-## 9. 已知限制与后续方向
+## 11. runtime 截图复核口径
 
-- 当前只覆盖 hue + tone，不含 alpha channel
-- 当前没有加入文本输入式 `#RRGGBB` 编辑
-- 当前 `compact` 与 `read only` 仅作为静态对照，不承载真实交互
-- 若后续要沉入框架层，再补数值输入、透明度、最近使用色与 eyedropper 语义
+- 检查目录：`runtime_check_output/HelloCustomWidgets_input_color_picker/default`
+- 复核目标：
+  - 主区裁剪后只出现 `4` 组唯一状态
+  - 遮罩主区变化边界后，边界外区域保持单哈希
+  - 按底部 preview 区域裁剪后，所有帧保持单哈希
 
-## 10. 与现有控件的重叠分析与差异化边界
+## 12. 已知限制
 
-- 相比 `swatch_picker`：核心在派生 tone palette + hue rail，不是离散命名色样列表
-- 相比 `xy_pad`：核心在颜色语义、即时色预览和 hex 摘要，不是二维参数控制
-- 相比 `slider` / `range_band_editor`：核心在综合色彩选择，而不是单轴数值变化
-- 相比 `number_box` / `textinput`：本控件直接表达颜色选择，而不是文本或数值输入
+- 当前只覆盖 `hue + tone`，不包含 `alpha channel`。
+- 不做文本输入式 `#RRGGBB` 编辑。
+- `compact` 与 `read only` 当前只作为静态 reference 对照，不承载真实交互。
 
-## 11. 参考设计系统与开源母本
+## 13. 与现有控件的边界
 
-- 参考设计系统：`Fluent 2`
-- 开源母本：`WPF UI`
-- 次级补充参考：`ModernWpf`
-
-## 12. 对应组件名，以及本次保留的核心状态
-
-- 对应组件名：`ColorPicker`
-- 本次保留状态：
-  - `tone palette`
-  - `hue rail`
-  - `compact`
-  - `read only`
-  - `keyboard focus`
-
-## 13. 相比参考原型删掉了哪些效果或装饰
-
-- 不做页面级 guide、状态回显、standard label、section divider 和 preview label
-- 不做标签点击轮换和外部状态桥接
-- 不做弹出式高级编辑器、透明度轨道与最近使用色面板
-- 不做 eyedropper、系统主题联动、hover 光效和复杂阴影层级
+- 相比 `swatch_picker`：这里保留 `tone palette + hue rail`，不是离散色板列表。
+- 相比 `xy_pad`：这里强调颜色语义、当前色预览与 `hex` 摘要，不是二维参数输入。
+- 相比 `slider` / `number_box`：这里直接表达颜色选择，不是单轴数值调节或文本输入。
 
 ## 14. EGUI 适配时的简化点与约束
 
-- 使用固定 preset 与离散键盘步进，优先保证 `480 x 480` 页面里的可审阅性
-- 只保留单层 tone palette + hue rail，不引入浮层面板
-- `compact` 与 `read only` 固定放底部双列，便于和主卡直接对照，并通过统一 static preview API 吞掉 touch / key 输入
-- 先完成示例级颜色选择器，再决定是否上升到框架公共控件
+- 继续复用 custom 层现有 `color_picker` 绘制与输入语义，不改 `sdk/EmbeddedGUI`。
+- 主控件只保留最小必要的 `tone palette + hue rail` 闭环与 focus 切换。
+- preview 固定放在底部双列，并统一挂接 static preview API，避免继续承担场景切换或收尾逻辑。
+- 先完成 reference 级 `ColorPicker` 收口，再决定是否补充 `alpha`、文本输入或 eyedropper。

@@ -34,7 +34,7 @@
 
 | 状态 | 控件名 | 分类 | 开始日期 | 当前阶段 | 目标 |
 | --- | --- | --- | --- | --- | --- |
-| 进行中 | `color_picker` | `input` | `2026-04-15` | static preview 收口 | 对齐主区调色轨道、静态 preview 单测与 README 验收链 |
+| 进行中 | `command_bar` | `input` | `2026-04-15` | static preview 收口 | 对齐主区命令轨道、静态 preview 单测与 README 验收链 |
 
 ## 当前保留的 Reference 主线控件
 
@@ -161,6 +161,11 @@
 
 ## 最近完成的收口动作
 
+- `2026-04-15`
+  - 收口 `input/color_picker` reference 控件：在不修改 SDK 的前提下，对齐当前 input 主线里已经采用的 static preview 工作流，保留主区 `Accent color` 默认态、tone 调整态、hue 调整态与 `Signal color` 四组 reference 状态，把底部 `compact / read only` preview 统一收口为真正静态的 reference 对照，并移除旧录制轨道里的 preview 快照切换与额外收尾态。
+  - `example/HelloCustomWidgets/input/color_picker/test.c` 新增 `COLOR_PICKER_RECORD_FINAL_WAIT`、`COLOR_PICKER_DEFAULT_SNAPSHOT`、`PRIMARY_SNAPSHOT_COUNT`、`ui_ready`、`apply_primary_default_state()`、`apply_preview_states()`、`layout_local_views()`、`layout_page()`、`request_page_snapshot()` 与 `focus_primary_picker()`，把录制轨道改为只导出主区 `Accent color` 默认态、tone 调整态、hue 调整态、`Signal color` 与最终稳定帧，并确保底部 `compact / read only` preview 全程静态；`example/HelloUnitTest/test/test_color_picker.c` 去掉旧 BOM，把 preview 键盘入口统一改为 `dispatch_key_event()`，将静态 preview 用例收口为 “consumes input and keeps state”，补齐 `region_screen / on_changed / font / meta_font / label / helper / surface_color / border_color / text_color / muted_text_color / accent_color / selected_color / hue_index / saturation_index / value_index / current_part / compact_mode / read_only_mode / alpha / hex_text` 固定断言，以及 listener 不触发、`is_pressed / pressed_part` 清理断言；`example/HelloCustomWidgets/input/color_picker/readme.md` 重写为与当前 static preview 页面结构、录制轨道、单测口径和完整验收命令链一致的说明。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=input/color_picker PORT=pc`、`make clean APP=HelloUnitTest PORT=pc_test`、`make all APP=HelloUnitTest PORT=pc_test`、`X:\output\main.exe`（总计 `845 / 845`，`color_picker` suite `12 / 12`）、`python scripts/sync_widget_catalog.py`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category input`、`python scripts/checks/check_docs_encoding.py`、`python scripts/checks/check_widget_catalog.py`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/color_picker --track reference --timeout 10 --keep-screenshots`、`python scripts/code_compile_check.py --custom-widgets --category input --bits64`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --category input --track reference --bits64`、`python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub input/color_picker` 与对应 `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_input_color_picker`。
+  - 复核 `runtime_check_output/HelloCustomWidgets_input_color_picker/default` 的 `10` 帧截图：按 RGB 差分得到主区变化边界位于 `(52, 123) - (427, 273)`；遮罩该边界后边界外区域保持单哈希，确认主区外全程静态；按主区裁剪后共出现 `4` 组唯一状态，符合 `Accent default / Accent tone adjusted / Accent hue adjusted / Signal color` 四态轨道；按 `y >= 273` 裁剪底部 preview 区域后全部帧保持单哈希，确认底部 `compact / read only` preview 在整条录制轨道中保持静态一致。
 - `2026-04-15`
   - 收口 `input/combo_box` reference 控件：在不修改 SDK 的前提下，对齐当前 input 主线里已经采用的 static preview 工作流，保留主区 `Work / Travel / Compact` 相关的四组 reference 状态，把底部 `compact / read only` preview 统一收口为真正静态的 reference 对照，并移除旧录制轨道里的 preview 快照切换与额外收尾态。
   - `example/HelloCustomWidgets/input/combo_box/test.c` 新增 `COMBO_BOX_RECORD_FINAL_WAIT`、`COMBO_BOX_DEFAULT_SNAPSHOT`、`PRIMARY_SNAPSHOT_COUNT`、`apply_primary_default_state()`、`apply_preview_states()`、`layout_local_views()`、`layout_page()`、`request_page_snapshot()` 与 `focus_primary_box()`，把录制轨道改为只导出主区 `Work` 折叠态、`Work` 展开态、`Travel` 展开态、`Compact` 提交结果与最终稳定帧，并确保底部 `compact / read only` preview 全程静态；`example/HelloUnitTest/test/test_combo_box.c` 把 preview 键盘入口统一改为 `dispatch_key_event()`，将静态 preview 用例收口为 “consumes input and keeps state”，补齐 `items / current_index / current_text / font / icon_font / expand_icon / collapse_icon / region_screen / alpha / palette / collapsed_height / item_height / icon_text_gap / max_visible_items` 固定断言，以及 listener 不触发、`pressed / pressed_index / pressed_is_header` 清理断言；`example/HelloCustomWidgets/input/combo_box/readme.md` 重写为与当前 static preview 页面结构、录制轨道、单测口径和完整验收命令链一致的说明。
