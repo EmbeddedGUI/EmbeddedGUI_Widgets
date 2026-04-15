@@ -1,141 +1,164 @@
 # password_box 自定义控件设计说明
 
 ## 参考来源
-- 参考设计系统：`Fluent 2`
+- 参考设计体系：`Fluent 2`
 - 参考开源库：`WPF UI`
-- 次级补充参考：`ModernWpf`
-- 对应组件名：`PasswordBox`
-- 本次保留状态：`masked`、`revealed`、`compact`、`read only`、`focused`
-- 删除效果：页面级 guide、状态文案、standard label、section divider、preview label、标签点击切换、复杂校验提示、Acrylic 与桌面级 hover 装饰
-- EGUI 适配说明：保留标准密码字段、右侧 reveal 切换和 `compact / read only` 对照，在 `480 x 480` 里优先保证遮罩文本、光标和图标都清晰可辨
+- 对应组件：`PasswordBox`
+- 当前保留形态：`masked`、`revealed`、`compact`、`read only`
+- 当前保留交互：主区保留标准密码字段与 reveal 切换；底部 `compact / read only` 统一收口为静态 preview 对照
+- 当前移除内容：页面级 guide、状态说明、preview 清焦桥接、录制阶段 preview 状态轮换、额外键盘驱动轨道和 showcase 化页面 chrome
 
 ## 1. 为什么需要这个控件
-`password_box` 用于表达标准密码输入语义，例如 Wi-Fi 密码、部署密钥、管理员口令等。它比通用 `textinput` 更接近 Fluent / WPF UI 中的安全输入场景，也是当前 `input` 主线里需要保留的一类标准表单控件。
+`password_box` 用于承载 Wi-Fi 密码、部署密钥、管理员口令这类单值秘密字段。它需要保留遮罩文本、reveal 切换和标准表单输入语义，不能退化成普通 `text_box`，也不能被多值输入类控件替代。
 
 ## 2. 为什么现有控件不够用
-- `textinput` 只有通用文本编辑，没有密码遮罩和 reveal 入口
-- `token_input` 面向多值编辑，不适合单条秘密字段
-- `auto_suggest_box` 偏建议输入，不适合安全信息录入
-- 当前主线需要一版明确对齐 `Fluent 2 / WPF UI PasswordBox` 的标准 password field reference
+- `text_box` 是通用文本输入，不具备密码遮罩和 reveal 入口。
+- `token_input` 面向多值编辑，不适合单条秘密字段。
+- `auto_suggest_box` 更偏建议输入，不承担安全字段语义。
+- 当前主线仍需要一版与 `Fluent 2 / WPF UI PasswordBox` 语义对齐的 `PasswordBox` reference。
 
-## 3. 目标场景与示例概览
-- 主区域展示标准 `password_box`，包含 `label`、`helper`、遮罩文本和 reveal 按钮
-- 左下 `compact` 预览展示紧凑密码字段
-- 右下 `read only` 预览展示只读遮罩字段
-- 示例页只保留标题、主 `password_box` 和底部 `compact / read only` 双预览，不再保留 guide、外部状态回显和标签点击
-- 录制动作只保留主控件 snapshot 切换、键盘编辑和 reveal 切换，不再点按页面 chrome
+## 3. 当前页面结构
+- 标题：`Password Box`
+- 主区：一个可切换 `masked / revealed` 的主 `password_box`
+- 底部：一行并排的两个静态 preview
+- 左侧 preview：`compact`，固定显示 `7429`
+- 右侧 preview：`read only`，固定显示 `fleet-admin`
 
 目录：
 - `example/HelloCustomWidgets/input/password_box/`
 
-## 4. 视觉与布局规格
+## 4. 主区 reference 快照
+主区录制轨道只保留 3 组程序化快照，不再在录制阶段对 preview 发送输入，也不再依赖 preview 帮主区清焦：
+
+1. `Wi-Fi passphrase`
+   文本：`studio-24`
+   状态：`masked`
+2. `Wi-Fi passphrase`
+   文本：`studio-24`
+   状态：`revealed`
+3. `Deploy secret`
+   文本：`release-key-7`
+   状态：`masked`
+
+底部 preview 在整条轨道中始终保持不变：
+
+1. `compact`
+   placeholder：`Quick PIN`
+   文本：`7429`
+2. `read only`
+   placeholder：`Read only`
+   文本：`fleet-admin`
+
+## 5. 视觉与布局规格
 - 画布：`480 x 480`
 - 根布局：`224 x 154`
-- 页面结构：标题 -> 主 `password_box` -> `compact / read only` 双预览
-- 主密码框：`196 x 70`
-- 底部双预览容器：`216 x 44`
-- `compact` 预览：`106 x 44`
-- `read only` 预览：`106 x 44`
-- 视觉规则：
-  - 使用浅灰白 page panel + 白底轻边框 palette
-  - 主密码框保留标准表单卡语义，不再叠加页面级说明和状态桥接
-  - `compact` 与 `read only` 作为静态对照，不承担额外交互职责
-  - accent、边框和文本色统一向 Fluent / WPF UI 的低噪音浅色体系收口
+- 主控件：`196 x 70`
+- 底部 preview 行：`216 x 44`
+- 单个 preview：`106 x 44`
+- 页面结构：标题 -> 主 `password_box` -> 底部 `compact / read only`
+- 风格约束：浅灰 page panel、白色主表面、低噪音边框、清晰的遮罩文本与 reveal 图标层级，不回退到页面级状态卡片
 
-## 5. 控件清单
-
-| 变量名 | 类型 | 尺寸 (W x H) | 初始状态 | 用途 |
-| --- | --- | ---: | --- | --- |
-| `root_layout` | `egui_view_linearlayout_t` | `224 x 154` | enabled | 页面根布局 |
-| `title_label` | `egui_view_label_t` | `224 x 18` | `Password Box` | 页面标题 |
-| `box_primary` | `egui_view_password_box_t` | `196 x 70` | `studio-24` | 标准密码框 |
-| `box_compact` | `egui_view_password_box_t` | `106 x 44` | `7429` | 紧凑静态预览 |
-| `box_read_only` | `egui_view_password_box_t` | `106 x 44` | `fleet-admin` | 只读静态预览 |
-
-## 6. 状态覆盖矩阵
-
-| 状态 / 区域 | 主密码框 | Compact | Read only |
+## 6. 状态矩阵
+| 状态 | 主控件 | Compact preview | Read only preview |
 | --- | --- | --- | --- |
-| 默认态 | `studio-24` 遮罩显示 | `7429` 遮罩显示 | `fleet-admin` 遮罩显示 |
-| 键盘编辑 | `Backspace` + `2` | 不响应 | 不响应 |
-| reveal 切换 | 明文 / 遮罩切换 | 仅作静态对照 | 不适用 |
-| `Tab` / `Space` | field / reveal 闭环切换 | 不响应 | 不响应 |
-| snapshot 切换 | `Wi-Fi` -> `Deploy secret` | `7429` -> `A-1709` | 固定 |
-| 只读弱化 | 不适用 | 不适用 | 仅保留只读遮罩预览 |
+| 默认显示 | `studio-24` 遮罩态 | `7429` | `fleet-admin` |
+| 快照 2 | `studio-24` 明文态 | 保持不变 | 保持不变 |
+| 快照 3 | `release-key-7` 遮罩态 | 保持不变 | 保持不变 |
+| 录制最终稳定帧 | `release-key-7` 遮罩态 | 保持不变 | 保持不变 |
+| 静态 preview 对照 | 否 | 是 | 是 |
 
-本轮交互收口补充：
-- `set_text / clear / current_part / compact / read only / revealed / palette` 切换后，必须同步清掉残留 `pressed_part / is_pressed`
-- 底部 `compact / read only` 预览统一通过 static preview API 吞掉 `touch / key` 输入，并立即清理残留 pressed，不再保留旧的只吞 touch 逻辑
-- `disabled` 分支继续保留原有 `touch` 返回语义，但同样必须清理残留 `pressed_part / is_pressed`
+## 7. 录制动作设计
+`egui_port_get_recording_action()` 已收口为静态 preview 工作流：
 
-## 7. `egui_port_get_recording_action()` 录制动作设计
-1. 应用默认主 snapshot、`compact` snapshot 和只读预览
-2. 请求第一页默认遮罩态截图
-3. 点击主密码框聚焦
-4. 发送 `Backspace` 和 `2`，验证字段编辑
-5. 请求第二页编辑后截图
-6. 程序化切换到 `revealed`
-7. 请求第三页明文截图
-8. 发送 `Tab` 和 `Space`，回到遮罩态
-9. 请求第四页截图
-10. 程序化切换主 snapshot 到 `Deploy secret`
-11. 请求第五页截图
-12. 程序化切换 `compact` 预览到第二个静态值
-13. 请求最终对照截图
+1. 应用主区默认快照和底部 preview 固定状态
+2. 抓取首帧
+3. 切到 `Wi-Fi passphrase / revealed`
+4. 抓取第二组主区快照
+5. 切到 `Deploy secret / masked`
+6. 抓取第三组主区快照
+7. 等待并抓取最终稳定帧
 
-## 8. 编译、runtime、截图验收标准
+说明：
+- 录制阶段不再发送 `Backspace`、数字键、`Tab`、`Space`
+- 录制阶段不再切换 `compact` preview 到其他文本
+- 底部 preview 统一通过 `egui_view_password_box_override_static_preview_api()` 吞掉 `touch / key`
+- preview 只负责静态 reference 对照，不再承担清焦或页面状态桥接职责
+
+## 8. 单元测试口径
+`example/HelloUnitTest/test/test_password_box.c` 当前覆盖两部分：
+
+1. 主控件交互与状态清理
+   覆盖 `Tab` 闭环、`Space / Enter` reveal 切换、same-target release、只读守卫，以及 `compact / read only / disabled` 分支的 `pressed` 清理。
+2. 静态 preview 不变性断言
+   通过 `password_box_preview_snapshot_t`、`capture_preview_snapshot()`、`assert_preview_state_unchanged()` 固定校验以下字段：
+   `region_screen`、`on_changed`、`font`、`meta_font`、`icon_font`、`label`、`helper`、`placeholder`、`surface_color`、`border_color`、`text_color`、`muted_text_color`、`accent_color`、`text`、`masked_text`、`text_len`、`cursor_pos`、`current_part`、`pressed_part`、`compact_mode`、`read_only_mode`、`revealed`、`cursor_visible`、`scroll_offset_x`、`alpha`、`enable`
+
+同时要求：
+- `is_pressed == false`
+- `changed_count == 0`
+- `changed_revealed == 0xFF`
+- `changed_part == EGUI_VIEW_PASSWORD_BOX_PART_NONE`
+- `changed_text == ""`
+
+## 9. 验收命令
 ```bash
 make all APP=HelloCustomWidgets APP_SUB=input/password_box PORT=pc
-python scripts/checks/check_touch_release_semantics.py --scope custom --category input
-python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/password_box --track reference --timeout 10 --keep-screenshots
+
+make clean APP=HelloUnitTest PORT=pc_test
 make all APP=HelloUnitTest PORT=pc_test
-output\main.exe
+X:\output\main.exe
+
+python scripts/sync_widget_catalog.py
+python scripts/checks/check_touch_release_semantics.py --scope custom --category input
 python scripts/checks/check_docs_encoding.py
+python scripts/checks/check_widget_catalog.py
+python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/password_box --track reference --timeout 10 --keep-screenshots
+python scripts/code_compile_check.py --custom-widgets --category input --bits64
+python scripts/code_runtime_check.py --app HelloCustomWidgets --category input --track reference --bits64
+python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub input/password_box
+python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_input_password_box
 ```
 
-验收重点：
-- 主密码框和底部双预览必须完整可见，不能被裁切
-- 主卡必须看起来像标准密码输入，而不是自造状态卡片
-- 遮罩文本、光标和 reveal 图标要可辨识，不能挤压
-- `compact` 和 `read only` 必须是静态对照，不再承担标签切换职责
-- setter、guard 和 static preview 触发后，不能残留 `pressed_part / is_pressed` 高亮
-- `compact / read only` 预览必须同时吞掉 `touch / key`，交互后也不能误切换 `revealed`、文本或当前部位
-- 页面中不再出现 guide、状态文案、standard label、section divider 和外部 preview label
+## 10. 当前结果
+- `HelloCustomWidgets` 单控件编译：PASS
+- `HelloUnitTest`：`845 / 845` 通过，其中 `password_box` suite `7 / 7`
+- `sync_widget_catalog.py`：PASS（`106` entries）
+- `touch release semantics`：PASS（`custom_audited=28`，`custom_skipped_allowlist=5`）
+- `docs encoding`：PASS（`134 files`）
+- `widget catalog check`：PASS（`106 widgets: reference=106, showcase=0, deprecated=0`）
+- 单控件 runtime：PASS（`8` frames captured）
+- input 分类 compile/runtime 回归：PASS（`33 / 33`）
+- wasm 构建：PASS
+- web smoke：`PASS status=Running canvas=480x480 ratio=0.1196 colors=71`
 
-## 9. 已知限制与后续方向
-- 当前只覆盖简化键盘闭环，不做完整桌面输入法行为
-- 当前不做 caps lock、strength、validation 和错误提示
-- 当前 `compact` 与 `read only` 仅作为静态对照，不承载真实交互
-- 若后续要沉入框架层，再单独评估与表单校验、凭据管理和 submit 流程的联动
+## 11. Runtime 复核结论
+复核目录：
+- `runtime_check_output/HelloCustomWidgets_input_password_box/default`
 
-## 10. 与现有控件的重叠分析与差异化边界
-- 相比 `textinput`：核心差异是密码遮罩和 reveal 按钮，而不是通用文本编辑
-- 相比 `token_input`：核心差异是单值秘密字段，而不是多 token 管理
-- 相比 `auto_suggest_box`：核心差异是安全输入，不涉及建议列表或下拉面板
-- 相比 `number_box`：本控件表达秘密文本输入，不承担数值范围和步进语义
+复核结果：
+- 总帧数：`8`
+- 主区 RGB 差分边界：`(54, 160) - (420, 214)`
+- 遮罩主区差分边界后，主区外唯一哈希数：`1`
+- 按主区差分边界裁切后，主区唯一状态数：`3`
+- 按 `y >= 275` 裁切底部 preview 区域后，preview 区唯一哈希数：`1`
 
-## 11. 参考设计系统与开源母本
-- 参考设计系统：`Fluent 2`
-- 开源母本：`WPF UI`
-- 次级补充参考：`ModernWpf`
+目标：
+- 主区唯一状态数 = `3`
+- 主区外唯一哈希数 = `1`
+- 底部 preview 区唯一哈希数 = `1`
 
-## 12. 对应组件名，以及本次保留的核心状态
-- 对应组件名：`PasswordBox`
-- 本次保留状态：
-  - `masked`
-  - `revealed`
-  - `compact`
-  - `read only`
-  - `focused`
+## 12. 已知限制
+- 当前只覆盖标准密码字段 reference，不扩展 validation、caps lock、密码强度或错误提示。
+- 底部 preview 只作为静态 reference，对外不承担交互职责。
+- 页面不承载复杂表单流，只验证控件级视觉与交互闭环。
 
-## 13. 相比参考原型删掉了哪些效果或装饰
-- 不做页面级 guide、状态回显、standard label、section divider 和 preview label
-- 不做标签点击切换和外部状态桥接
-- 不做复杂 validation、caps lock、密码强度和系统凭据入口
-- 不做 Acrylic、hover 光效和复杂焦点动画
+## 13. 与现有控件的边界
+- 相比 `text_box`：这里强调秘密字段的遮罩与 reveal 语义，不是通用文本编辑。
+- 相比 `token_input`：这里表达单值口令输入，不是多 token 管理。
+- 相比 `auto_suggest_box`：这里不涉及建议列表或下拉面板。
 
-## 14. EGUI 适配时的简化点与约束
-- 使用固定 snapshot 与轻量键盘事件，优先保证 `480 x 480` 页面里的可审阅性
-- 只保留单一 reveal 入口，不引入浮层或额外辅助提示
-- `compact` 与 `read only` 固定放底部双列，便于和主卡直接对照，并统一走 static preview API
-- 先完成示例级 password field，再决定是否上升到框架公共控件
+## 14. EGUI 适配说明
+- 继续复用仓库内已有 `password_box` 实现，不修改 SDK。
+- 主区保留标准 `field / reveal` 部位切换与键盘闭环。
+- 底部 preview 通过 `egui_view_password_box_override_static_preview_api()` 明确收口为静态 reference。
+- 当前优先保证主区 3 组 reference 快照、底部 preview 全程静态，以及 runtime 录制无污染，再评估是否继续上升到框架层公共控件。

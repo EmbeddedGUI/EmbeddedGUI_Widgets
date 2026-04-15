@@ -19,6 +19,10 @@
 #define PASSWORD_BOX_BOTTOM_ROW_HEIGHT 44
 #define PASSWORD_BOX_RECORD_WAIT       90
 #define PASSWORD_BOX_RECORD_FRAME_WAIT 170
+#define PASSWORD_BOX_RECORD_FINAL_WAIT 280
+#define PASSWORD_BOX_DEFAULT_SNAPSHOT  0
+
+#define PRIMARY_SNAPSHOT_COUNT ((uint8_t)EGUI_ARRAY_SIZE(primary_snapshots))
 
 typedef struct password_box_snapshot password_box_snapshot_t;
 struct password_box_snapshot
@@ -27,19 +31,18 @@ struct password_box_snapshot
     const char *helper;
     const char *placeholder;
     const char *text;
+    uint8_t revealed;
 };
 
 static egui_view_linearlayout_t root_layout;
 static egui_view_label_t title_label;
 static egui_view_password_box_t box_primary;
 static egui_view_linearlayout_t bottom_row;
-static egui_view_linearlayout_t compact_column;
 static egui_view_password_box_t box_compact;
-static egui_view_linearlayout_t read_only_column;
 static egui_view_password_box_t box_read_only;
-
-static uint8_t primary_snapshot_index = 0;
-static uint8_t compact_snapshot_index = 0;
+static egui_view_api_t box_compact_api;
+static egui_view_api_t box_read_only_api;
+static uint8_t ui_ready;
 
 EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
 EGUI_BACKGROUND_PARAM_INIT(bg_page_panel_params, &bg_page_panel_param, NULL, NULL);
@@ -48,32 +51,15 @@ EGUI_BACKGROUND_COLOR_STATIC_CONST_INIT(bg_page_panel, &bg_page_panel_params);
 static const char *title_text = "Password Box";
 
 static const password_box_snapshot_t primary_snapshots[] = {
-        {"Wi-Fi passphrase", "Use 8 to 32 chars", "Enter password", "studio-24"},
-        {"Deploy secret", "Keep this hidden on shared screens", "Secret", "release-key-7"},
+        {"Wi-Fi passphrase", "Use 8 to 32 chars", "Enter password", "studio-24", 0},
+        {"Wi-Fi passphrase", "Use 8 to 32 chars", "Enter password", "studio-24", 1},
+        {"Deploy secret", "Keep this hidden on shared screens", "Secret", "release-key-7", 0},
 };
 
-static const password_box_snapshot_t compact_snapshots[] = {
-        {NULL, NULL, "Quick PIN", "7429"},
-        {NULL, NULL, "Quick PIN", "A-1709"},
-};
+static const password_box_snapshot_t compact_snapshot = {NULL, NULL, "Quick PIN", "7429", 0};
+static const password_box_snapshot_t read_only_snapshot = {NULL, NULL, "Read only", "fleet-admin", 0};
 
-static void dismiss_primary_password_box(void)
-{
-#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
-    egui_view_clear_focus(EGUI_VIEW_OF(&box_primary));
-#endif
-}
-
-static int dismiss_primary_focus_on_preview_touch(egui_view_t *self, egui_motion_event_t *event)
-{
-    EGUI_UNUSED(self);
-
-    if (event->type == EGUI_MOTION_EVENT_ACTION_DOWN)
-    {
-        dismiss_primary_password_box();
-    }
-    return 1;
-}
+static void layout_page(void);
 
 static void apply_snapshot(egui_view_t *view, const password_box_snapshot_t *snapshot)
 {
@@ -81,31 +67,57 @@ static void apply_snapshot(egui_view_t *view, const password_box_snapshot_t *sna
     egui_view_password_box_set_helper(view, snapshot->helper);
     egui_view_password_box_set_placeholder(view, snapshot->placeholder);
     egui_view_password_box_set_text(view, snapshot->text);
-    egui_view_password_box_set_revealed(view, 0);
+    egui_view_password_box_set_revealed(view, snapshot->revealed ? 1 : 0);
     egui_view_password_box_set_current_part(view, EGUI_VIEW_PASSWORD_BOX_PART_FIELD);
 }
 
 static void apply_primary_snapshot(uint8_t index)
 {
-    primary_snapshot_index = index % EGUI_ARRAY_SIZE(primary_snapshots);
-    apply_snapshot(EGUI_VIEW_OF(&box_primary), &primary_snapshots[primary_snapshot_index]);
+    apply_snapshot(EGUI_VIEW_OF(&box_primary), &primary_snapshots[index % PRIMARY_SNAPSHOT_COUNT]);
+    if (ui_ready)
+    {
+        layout_page();
+    }
 }
 
-static void apply_compact_snapshot(uint8_t index)
+static void apply_primary_default_state(void)
 {
-    compact_snapshot_index = index % EGUI_ARRAY_SIZE(compact_snapshots);
-    apply_snapshot(EGUI_VIEW_OF(&box_compact), &compact_snapshots[compact_snapshot_index]);
+    apply_primary_snapshot(PASSWORD_BOX_DEFAULT_SNAPSHOT);
 }
 
-static void apply_read_only_state(void)
+static void apply_preview_states(void)
 {
-    egui_view_password_box_set_label(EGUI_VIEW_OF(&box_read_only), NULL);
-    egui_view_password_box_set_helper(EGUI_VIEW_OF(&box_read_only), NULL);
-    egui_view_password_box_set_placeholder(EGUI_VIEW_OF(&box_read_only), "Read only");
-    egui_view_password_box_set_text(EGUI_VIEW_OF(&box_read_only), "fleet-admin");
-    egui_view_password_box_set_revealed(EGUI_VIEW_OF(&box_read_only), 0);
-    egui_view_password_box_set_current_part(EGUI_VIEW_OF(&box_read_only), EGUI_VIEW_PASSWORD_BOX_PART_FIELD);
+    apply_snapshot(EGUI_VIEW_OF(&box_compact), &compact_snapshot);
+
+    apply_snapshot(EGUI_VIEW_OF(&box_read_only), &read_only_snapshot);
+    egui_view_password_box_set_read_only_mode(EGUI_VIEW_OF(&box_read_only), 1);
+
+    if (ui_ready)
+    {
+        layout_page();
+    }
 }
+
+static void layout_local_views(void)
+{
+    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&bottom_row));
+    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&root_layout));
+}
+
+static void layout_page(void)
+{
+    layout_local_views();
+    egui_core_layout_childs_user_root_view(EGUI_LAYOUT_VERTICAL, EGUI_ALIGN_HCENTER | EGUI_ALIGN_VCENTER);
+}
+
+#if EGUI_CONFIG_RECORDING_TEST
+static void request_page_snapshot(void)
+{
+    layout_page();
+    egui_view_invalidate(EGUI_VIEW_OF(&root_layout));
+    recording_request_snapshot();
+}
+#endif
 
 void test_init_ui(void)
 {
@@ -139,12 +151,6 @@ void test_init_ui(void)
     egui_view_linearlayout_set_align_type(EGUI_VIEW_OF(&bottom_row), EGUI_ALIGN_VCENTER);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&bottom_row));
 
-    egui_view_linearlayout_init(EGUI_VIEW_OF(&compact_column));
-    egui_view_set_size(EGUI_VIEW_OF(&compact_column), PASSWORD_BOX_PREVIEW_WIDTH, PASSWORD_BOX_BOTTOM_ROW_HEIGHT);
-    egui_view_linearlayout_set_orientation(EGUI_VIEW_OF(&compact_column), 0);
-    egui_view_linearlayout_set_align_type(EGUI_VIEW_OF(&compact_column), EGUI_ALIGN_HCENTER);
-    egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&compact_column));
-
     egui_view_password_box_init(EGUI_VIEW_OF(&box_compact));
     egui_view_set_size(EGUI_VIEW_OF(&box_compact), PASSWORD_BOX_PREVIEW_WIDTH, PASSWORD_BOX_PREVIEW_HEIGHT);
     egui_view_password_box_set_font(EGUI_VIEW_OF(&box_compact), (const egui_font_t *)&egui_res_font_montserrat_10_4);
@@ -152,73 +158,40 @@ void test_init_ui(void)
     egui_view_password_box_set_compact_mode(EGUI_VIEW_OF(&box_compact), 1);
     egui_view_password_box_set_palette(EGUI_VIEW_OF(&box_compact), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD5DCE4), EGUI_COLOR_HEX(0x1A2734),
                                        EGUI_COLOR_HEX(0x6B7A89), EGUI_COLOR_HEX(0x0F6CBD));
-    static egui_view_api_t box_compact_api;
     egui_view_password_box_override_static_preview_api(EGUI_VIEW_OF(&box_compact), &box_compact_api);
-#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
-    box_compact_api.on_touch = dismiss_primary_focus_on_preview_touch;
-#endif
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&box_compact), false);
 #endif
-    egui_view_group_add_child(EGUI_VIEW_OF(&compact_column), EGUI_VIEW_OF(&box_compact));
-
-    egui_view_linearlayout_init(EGUI_VIEW_OF(&read_only_column));
-    egui_view_set_size(EGUI_VIEW_OF(&read_only_column), PASSWORD_BOX_PREVIEW_WIDTH, PASSWORD_BOX_BOTTOM_ROW_HEIGHT);
-    egui_view_set_margin(EGUI_VIEW_OF(&read_only_column), 4, 0, 0, 0);
-    egui_view_linearlayout_set_orientation(EGUI_VIEW_OF(&read_only_column), 0);
-    egui_view_linearlayout_set_align_type(EGUI_VIEW_OF(&read_only_column), EGUI_ALIGN_HCENTER);
-    egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&read_only_column));
+    egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&box_compact));
 
     egui_view_password_box_init(EGUI_VIEW_OF(&box_read_only));
     egui_view_set_size(EGUI_VIEW_OF(&box_read_only), PASSWORD_BOX_PREVIEW_WIDTH, PASSWORD_BOX_PREVIEW_HEIGHT);
+    egui_view_set_margin(EGUI_VIEW_OF(&box_read_only), 4, 0, 0, 0);
     egui_view_password_box_set_font(EGUI_VIEW_OF(&box_read_only), (const egui_font_t *)&egui_res_font_montserrat_10_4);
     egui_view_password_box_set_meta_font(EGUI_VIEW_OF(&box_read_only), (const egui_font_t *)&egui_res_font_montserrat_8_4);
     egui_view_password_box_set_compact_mode(EGUI_VIEW_OF(&box_read_only), 1);
     egui_view_password_box_set_read_only_mode(EGUI_VIEW_OF(&box_read_only), 1);
     egui_view_password_box_set_palette(EGUI_VIEW_OF(&box_read_only), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD5DCE4), EGUI_COLOR_HEX(0x1A2734),
                                        EGUI_COLOR_HEX(0x6B7A89), EGUI_COLOR_HEX(0x7A8796));
-    static egui_view_api_t box_read_only_api;
     egui_view_password_box_override_static_preview_api(EGUI_VIEW_OF(&box_read_only), &box_read_only_api);
-#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
-    box_read_only_api.on_touch = dismiss_primary_focus_on_preview_touch;
-#endif
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&box_read_only), false);
 #endif
-    egui_view_group_add_child(EGUI_VIEW_OF(&read_only_column), EGUI_VIEW_OF(&box_read_only));
+    egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&box_read_only));
 
-    apply_primary_snapshot(0);
-    apply_compact_snapshot(0);
-    apply_read_only_state();
+    apply_primary_default_state();
+    apply_preview_states();
 
-    {
-        hello_custom_widgets_demo_apply_title_only_scaffold(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label), NULL, 0);
-    }
+    hello_custom_widgets_demo_apply_title_only_scaffold(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label), NULL, 0);
 
-    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&compact_column));
-    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&read_only_column));
-    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&bottom_row));
-    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&root_layout));
-
+    layout_local_views();
     egui_core_add_user_root_view(EGUI_VIEW_OF(&root_layout));
-    egui_core_layout_childs_user_root_view(EGUI_LAYOUT_VERTICAL, EGUI_ALIGN_HCENTER | EGUI_ALIGN_VCENTER);
+    ui_ready = 1;
+    apply_primary_default_state();
+    apply_preview_states();
 }
 
 #if EGUI_CONFIG_RECORDING_TEST
-static void apply_primary_key(uint8_t key_code, uint8_t is_shift)
-{
-    egui_key_event_t event;
-
-    memset(&event, 0, sizeof(event));
-    event.type = EGUI_KEY_EVENT_ACTION_DOWN;
-    event.key_code = key_code;
-    event.is_shift = is_shift ? 1 : 0;
-    EGUI_VIEW_OF(&box_primary)->api->on_key_event(EGUI_VIEW_OF(&box_primary), &event);
-
-    event.type = EGUI_KEY_EVENT_ACTION_UP;
-    EGUI_VIEW_OF(&box_primary)->api->on_key_event(EGUI_VIEW_OF(&box_primary), &event);
-}
-
 bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_action)
 {
     static int last_action = -1;
@@ -231,105 +204,49 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     case 0:
         if (first_call)
         {
-            apply_primary_snapshot(0);
-            apply_compact_snapshot(0);
-            apply_read_only_state();
+            apply_primary_default_state();
+            apply_preview_states();
+            request_page_snapshot();
         }
-        EGUI_SIM_SET_WAIT(p_action, PASSWORD_BOX_RECORD_WAIT);
+        EGUI_SIM_SET_WAIT(p_action, PASSWORD_BOX_RECORD_FRAME_WAIT);
         return true;
     case 1:
-        if (first_call)
-        {
-            recording_request_snapshot();
-        }
-        EGUI_SIM_SET_WAIT(p_action, PASSWORD_BOX_RECORD_FRAME_WAIT);
-        return true;
-    case 2:
-        EGUI_SIM_SET_CLICK_VIEW(p_action, &box_primary, PASSWORD_BOX_RECORD_WAIT);
-        return true;
-    case 3:
-        if (first_call)
-        {
-            apply_primary_key(EGUI_KEY_CODE_BACKSPACE, 0);
-        }
-        EGUI_SIM_SET_WAIT(p_action, PASSWORD_BOX_RECORD_WAIT);
-        return true;
-    case 4:
-        if (first_call)
-        {
-            apply_primary_key(EGUI_KEY_CODE_2, 0);
-        }
-        EGUI_SIM_SET_WAIT(p_action, PASSWORD_BOX_RECORD_WAIT);
-        return true;
-    case 5:
-        if (first_call)
-        {
-            recording_request_snapshot();
-        }
-        EGUI_SIM_SET_WAIT(p_action, PASSWORD_BOX_RECORD_FRAME_WAIT);
-        return true;
-    case 6:
-        if (first_call)
-        {
-            egui_view_password_box_set_revealed(EGUI_VIEW_OF(&box_primary), 1);
-        }
-        EGUI_SIM_SET_WAIT(p_action, PASSWORD_BOX_RECORD_WAIT);
-        return true;
-    case 7:
-        if (first_call)
-        {
-            recording_request_snapshot();
-        }
-        EGUI_SIM_SET_WAIT(p_action, PASSWORD_BOX_RECORD_FRAME_WAIT);
-        return true;
-    case 8:
-        if (first_call)
-        {
-            apply_primary_key(EGUI_KEY_CODE_TAB, 0);
-        }
-        EGUI_SIM_SET_WAIT(p_action, PASSWORD_BOX_RECORD_WAIT);
-        return true;
-    case 9:
-        if (first_call)
-        {
-            apply_primary_key(EGUI_KEY_CODE_SPACE, 0);
-        }
-        EGUI_SIM_SET_WAIT(p_action, PASSWORD_BOX_RECORD_WAIT);
-        return true;
-    case 10:
-        if (first_call)
-        {
-            recording_request_snapshot();
-        }
-        EGUI_SIM_SET_WAIT(p_action, PASSWORD_BOX_RECORD_FRAME_WAIT);
-        return true;
-    case 11:
         if (first_call)
         {
             apply_primary_snapshot(1);
         }
         EGUI_SIM_SET_WAIT(p_action, PASSWORD_BOX_RECORD_WAIT);
         return true;
-    case 12:
+    case 2:
         if (first_call)
         {
-            recording_request_snapshot();
+            request_page_snapshot();
         }
         EGUI_SIM_SET_WAIT(p_action, PASSWORD_BOX_RECORD_FRAME_WAIT);
         return true;
-    case 13:
+    case 3:
         if (first_call)
         {
-            apply_compact_snapshot(1);
+            apply_primary_snapshot(2);
         }
         EGUI_SIM_SET_WAIT(p_action, PASSWORD_BOX_RECORD_WAIT);
         return true;
-    case 14:
+    case 4:
         if (first_call)
         {
-            recording_request_snapshot();
+            request_page_snapshot();
         }
-        EGUI_SIM_SET_WAIT(p_action, 520);
+        EGUI_SIM_SET_WAIT(p_action, PASSWORD_BOX_RECORD_FRAME_WAIT);
+        return true;
+    case 5:
+        EGUI_SIM_SET_WAIT(p_action, PASSWORD_BOX_RECORD_FINAL_WAIT);
+        return true;
+    case 6:
+        if (first_call)
+        {
+            request_page_snapshot();
+        }
+        EGUI_SIM_SET_WAIT(p_action, PASSWORD_BOX_RECORD_FINAL_WAIT);
         return true;
     default:
         return false;
