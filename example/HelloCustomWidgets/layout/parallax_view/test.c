@@ -17,6 +17,12 @@
 #define PARALLAX_BOTTOM_HEIGHT   82
 #define PARALLAX_RECORD_WAIT     90
 #define PARALLAX_RECORD_FRAME_WAIT 170
+#define PARALLAX_RECORD_FINAL_WAIT 280
+#define PARALLAX_DEFAULT_SNAPSHOT 0
+#define PARALLAX_COMPACT_PREVIEW_SNAPSHOT 1
+#define PARALLAX_READ_ONLY_PREVIEW_SNAPSHOT 1
+
+#define PRIMARY_SNAPSHOT_COUNT   ((uint8_t)EGUI_ARRAY_SIZE(primary_rows))
 
 static egui_view_linearlayout_t root_layout;
 static egui_view_label_t title_label;
@@ -63,7 +69,7 @@ static const egui_view_parallax_view_row_t *get_row(const egui_view_parallax_vie
 
 static void apply_primary_state(uint8_t index)
 {
-    const egui_view_parallax_view_row_t *row = get_row(primary_rows, 4, index);
+    const egui_view_parallax_view_row_t *row = get_row(primary_rows, PRIMARY_SNAPSHOT_COUNT, index);
 
     if (row == NULL)
     {
@@ -73,48 +79,44 @@ static void apply_primary_state(uint8_t index)
     egui_view_parallax_view_set_offset(EGUI_VIEW_OF(&parallax_primary), row->anchor_offset);
 }
 
-static void apply_compact_state(uint8_t index)
+static void apply_primary_default_state(void)
 {
-    const egui_view_parallax_view_row_t *row = get_row(compact_rows, 3, index);
-
-    if (row == NULL)
-    {
-        return;
-    }
-
-    egui_view_parallax_view_set_offset(EGUI_VIEW_OF(&parallax_compact), row->anchor_offset);
+    apply_primary_state(PARALLAX_DEFAULT_SNAPSHOT);
 }
 
-static void apply_read_only_state(void)
+static void apply_preview_states(void)
 {
-    egui_view_parallax_view_set_offset(EGUI_VIEW_OF(&parallax_read_only), read_only_rows[1].anchor_offset);
+    const egui_view_parallax_view_row_t *compact_row = get_row(compact_rows, EGUI_ARRAY_SIZE(compact_rows), PARALLAX_COMPACT_PREVIEW_SNAPSHOT);
+    const egui_view_parallax_view_row_t *read_only_row = get_row(read_only_rows, EGUI_ARRAY_SIZE(read_only_rows), PARALLAX_READ_ONLY_PREVIEW_SNAPSHOT);
+
+    if (compact_row != NULL)
+    {
+        egui_view_parallax_view_set_offset(EGUI_VIEW_OF(&parallax_compact), compact_row->anchor_offset);
+    }
+    if (read_only_row != NULL)
+    {
+        egui_view_parallax_view_set_offset(EGUI_VIEW_OF(&parallax_read_only), read_only_row->anchor_offset);
+    }
 }
 
-static int dismiss_primary_focus_on_preview_touch(egui_view_t *self, egui_motion_event_t *event)
+static void layout_local_views(void)
 {
-    EGUI_UNUSED(self);
+    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&bottom_row));
+    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&root_layout));
+}
 
-#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
-    if (event->type == EGUI_MOTION_EVENT_ACTION_DOWN)
-    {
-        egui_view_clear_focus(EGUI_VIEW_OF(&parallax_primary));
-    }
-#else
-    EGUI_UNUSED(event);
-#endif
-    return 1;
+static void layout_page(void)
+{
+    layout_local_views();
+    egui_core_layout_childs_user_root_view(EGUI_LAYOUT_VERTICAL, EGUI_ALIGN_HCENTER | EGUI_ALIGN_VCENTER);
 }
 
 #if EGUI_CONFIG_RECORDING_TEST
-static void set_click_view_center(egui_sim_action_t *p_action, egui_view_t *view, int interval_ms)
+static void request_page_snapshot(void)
 {
-    p_action->type = EGUI_SIM_ACTION_CLICK;
-    p_action->x1 = view->region_screen.location.x + view->region_screen.size.width / 2;
-    p_action->y1 = view->region_screen.location.y + view->region_screen.size.height / 2;
-    p_action->x2 = 0;
-    p_action->y2 = 0;
-    p_action->steps = 0;
-    p_action->interval_ms = interval_ms;
+    layout_page();
+    egui_view_invalidate(EGUI_VIEW_OF(&root_layout));
+    recording_request_snapshot();
 }
 #endif
 
@@ -164,9 +166,6 @@ void test_init_ui(void)
     egui_view_parallax_view_set_step_size(EGUI_VIEW_OF(&parallax_compact), 60, 180);
     egui_view_parallax_view_set_compact_mode(EGUI_VIEW_OF(&parallax_compact), 1);
     egui_view_parallax_view_override_static_preview_api(EGUI_VIEW_OF(&parallax_compact), &parallax_compact_api);
-#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
-    parallax_compact_api.on_touch = dismiss_primary_focus_on_preview_touch;
-#endif
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&parallax_compact), false);
 #endif
@@ -185,28 +184,19 @@ void test_init_ui(void)
     egui_view_parallax_view_set_compact_mode(EGUI_VIEW_OF(&parallax_read_only), 1);
     egui_view_parallax_view_set_read_only_mode(EGUI_VIEW_OF(&parallax_read_only), 1);
     egui_view_parallax_view_override_static_preview_api(EGUI_VIEW_OF(&parallax_read_only), &parallax_read_only_api);
-#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
-    parallax_read_only_api.on_touch = dismiss_primary_focus_on_preview_touch;
-#endif
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&parallax_read_only), false);
 #endif
     egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&parallax_read_only));
 
-    apply_primary_state(0);
-    apply_compact_state(1);
-    apply_read_only_state();
+    apply_primary_default_state();
+    apply_preview_states();
 
-    {
-        hello_custom_widgets_demo_apply_title_only_scaffold(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label), NULL, 0);
-    }
+    hello_custom_widgets_demo_apply_title_only_scaffold(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label), NULL, 0);
 
-    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&bottom_row));
-    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&root_layout));
-
+    layout_local_views();
     egui_core_add_user_root_view(EGUI_VIEW_OF(&root_layout));
-    egui_core_layout_childs_user_root_view(EGUI_LAYOUT_VERTICAL, EGUI_ALIGN_HCENTER | EGUI_ALIGN_VCENTER);
-    egui_view_invalidate(EGUI_VIEW_OF(&root_layout));
+    layout_page();
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_request_focus(EGUI_VIEW_OF(&parallax_primary));
 #endif
@@ -225,99 +215,70 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     case 0:
         if (first_call)
         {
-            apply_primary_state(0);
-            apply_compact_state(1);
-            apply_read_only_state();
+            apply_primary_default_state();
+            apply_preview_states();
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
             egui_view_request_focus(EGUI_VIEW_OF(&parallax_primary));
 #endif
-        }
-        EGUI_SIM_SET_WAIT(p_action, PARALLAX_RECORD_WAIT);
-        return true;
-    case 1:
-        if (first_call)
-        {
-            recording_request_snapshot();
+            request_page_snapshot();
         }
         EGUI_SIM_SET_WAIT(p_action, PARALLAX_RECORD_FRAME_WAIT);
         return true;
-    case 2:
+    case 1:
         if (first_call)
         {
             apply_primary_state(1);
         }
         EGUI_SIM_SET_WAIT(p_action, PARALLAX_RECORD_WAIT);
         return true;
-    case 3:
+    case 2:
         if (first_call)
         {
-            recording_request_snapshot();
+            request_page_snapshot();
         }
         EGUI_SIM_SET_WAIT(p_action, PARALLAX_RECORD_FRAME_WAIT);
         return true;
-    case 4:
+    case 3:
         if (first_call)
         {
             apply_primary_state(2);
         }
         EGUI_SIM_SET_WAIT(p_action, PARALLAX_RECORD_WAIT);
         return true;
+    case 4:
+        if (first_call)
+        {
+            request_page_snapshot();
+        }
+        EGUI_SIM_SET_WAIT(p_action, PARALLAX_RECORD_FRAME_WAIT);
+        return true;
     case 5:
-        if (first_call)
-        {
-            recording_request_snapshot();
-        }
-        EGUI_SIM_SET_WAIT(p_action, PARALLAX_RECORD_FRAME_WAIT);
-        return true;
-    case 6:
-        if (first_call)
-        {
-            apply_compact_state(2);
-        }
-        EGUI_SIM_SET_WAIT(p_action, PARALLAX_RECORD_WAIT);
-        return true;
-    case 7:
-        if (first_call)
-        {
-            recording_request_snapshot();
-        }
-        EGUI_SIM_SET_WAIT(p_action, PARALLAX_RECORD_FRAME_WAIT);
-        return true;
-    case 8:
         if (first_call)
         {
             apply_primary_state(3);
         }
         EGUI_SIM_SET_WAIT(p_action, PARALLAX_RECORD_WAIT);
         return true;
-    case 9:
+    case 6:
         if (first_call)
         {
-            recording_request_snapshot();
+            request_page_snapshot();
         }
         EGUI_SIM_SET_WAIT(p_action, PARALLAX_RECORD_FRAME_WAIT);
         return true;
-    case 10:
+    case 7:
         if (first_call)
         {
-#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
-            egui_view_request_focus(EGUI_VIEW_OF(&parallax_primary));
-#endif
+            apply_primary_default_state();
         }
         EGUI_SIM_SET_WAIT(p_action, PARALLAX_RECORD_WAIT);
         return true;
-    case 11:
+    case 8:
         if (first_call)
         {
-            set_click_view_center(p_action, EGUI_VIEW_OF(&parallax_compact), 220);
+            request_page_snapshot();
         }
-        return true;
-    case 12:
-        if (first_call)
-        {
-            recording_request_snapshot();
-        }
-        EGUI_SIM_SET_WAIT(p_action, 520);
+        EGUI_SIM_SET_WAIT(p_action, PARALLAX_RECORD_FINAL_WAIT);
         return true;
     default:
         return false;

@@ -34,7 +34,7 @@
 
 | 状态 | 控件名 | 分类 | 开始日期 | 当前阶段 | 目标 |
 | --- | --- | --- | --- | --- | --- |
-| 进行中 | `parallax_view` | `layout` | `2026-04-15` | static preview 收口 | 对齐主区快照轨道、静态 preview 单测与 README 验收链 |
+| 进行中 | `scroll_viewer` | `layout` | `2026-04-15` | static preview 收口 | 对齐主区滚动轨道、静态 preview 单测与 README 验收链 |
 
 ## 当前保留的 Reference 主线控件
 
@@ -160,6 +160,12 @@
 - `toast_stack` -> `Toast`
 
 ## 最近完成的收口动作
+
+- `2026-04-15`
+  - 收口 `layout/parallax_view` reference 控件：在不修改 SDK 的前提下，对齐 `canvas / drawer / master_detail / data_list_panel / split_view` 这一批布局控件已经采用的 static preview 工作流，保留主区 `Hero Banner / Pinned Deck / Quiet Layer / System Cards` 四组 reference 状态，把底部 `compact / read only` preview 统一收口为真正静态的 reference 对照，并移除旧录制轨道里的 preview touch bridge、compact preview 切换和 preview click 收尾动作。
+  - `example/HelloCustomWidgets/layout/parallax_view/test.c` 新增 `PARALLAX_RECORD_FINAL_WAIT`、`PARALLAX_DEFAULT_SNAPSHOT`、`PRIMARY_SNAPSHOT_COUNT`、`apply_primary_default_state()`、`apply_preview_states()`、`layout_local_views()`、`layout_page()` 与 `request_page_snapshot()`，把录制轨道改为只导出主区默认 `Hero Banner`、`Pinned Deck`、`Quiet Layer`、`System Cards` 与最终稳定帧，并确保底部 `compact / read only` preview 全程静态；`example/HelloUnitTest/test/test_parallax_view.c` 把键盘入口统一改为 `dispatch_key_event()`，将静态 preview 用例收口为 “consumes input and keeps state”，补齐 `offset / active_row / content_length / viewport_length / vertical_shift / line_step / page_step / compact_mode / read_only_mode / row_count / content / hero / title / subtitle / progress / footer / rows` 固定断言以及 listener 不触发、`pressed` 清理断言；`example/HelloCustomWidgets/layout/parallax_view/readme.md` 重写为与当前 static preview 页面结构、录制轨道、单测口径和完整验收命令链一致的说明。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=layout/parallax_view PORT=pc`、`make clean APP=HelloUnitTest PORT=pc_test`、`make all APP=HelloUnitTest PORT=pc_test`、`X:\output\main.exe`（总计 `845 / 845`，`parallax_view` suite `12 / 12`）、`python scripts/sync_widget_catalog.py`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category layout`、`python scripts/checks/check_docs_encoding.py`、`python scripts/checks/check_widget_catalog.py`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub layout/parallax_view --track reference --timeout 10 --keep-screenshots`、`python scripts/code_compile_check.py --custom-widgets --category layout --bits64`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --category layout --track reference --bits64`、`python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub layout/parallax_view` 与对应 `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_layout_parallax_view`。
+  - 复核 `runtime_check_output/HelloCustomWidgets_layout_parallax_view/default` 的 `11` 帧截图：按 RGB 差分求得主区变化边界位于 `(57, 54) - (416, 232)`；将该变化边界遮罩后，边界外区域 `11` 帧保持单一哈希，确认主区外全程静态；按主区裁剪后共出现 `4` 组唯一状态，符合 `Hero Banner / Pinned Deck / Quiet Layer / System Cards` 四态轨道；按 `y >= 233` 裁剪底部 preview 区域后 `11` 帧保持单一哈希，确认底部 `compact / read only` preview 在整条录制轨道中保持静态一致。
 
 - `2026-04-15`
   - 收口 `layout/split_view` reference 控件：在不修改 SDK 的前提下，对齐 `canvas / drawer / stack_panel / master_detail / data_list_panel` 这一批布局控件已经采用的 static preview 工作流，保留主区 `Overview open / Overview compact / Review / Archive` 四组 reference 状态，把底部 `compact / read only` preview 统一收口为真正静态的 reference 对照，并移除旧录制轨道里的 preview touch bridge、preview click 收尾动作和额外的 `compact` preview 交互轨道。
