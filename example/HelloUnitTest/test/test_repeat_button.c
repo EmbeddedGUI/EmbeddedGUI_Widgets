@@ -7,6 +7,23 @@
 #include "../../HelloCustomWidgets/input/repeat_button/egui_view_repeat_button.h"
 #include "../../HelloCustomWidgets/input/repeat_button/egui_view_repeat_button.c"
 
+typedef struct repeat_button_preview_snapshot repeat_button_preview_snapshot_t;
+struct repeat_button_preview_snapshot
+{
+    egui_region_t region_screen;
+    const char *text;
+    const char *icon;
+    const egui_font_t *font;
+    const egui_font_t *icon_font;
+    egui_background_t *background;
+    egui_color_t color;
+    egui_alpha_t alpha;
+    egui_dim_t icon_text_gap;
+    egui_view_on_click_listener_t on_click_listener;
+    uint16_t initial_delay_ms;
+    uint16_t repeat_interval_ms;
+};
+
 static egui_view_repeat_button_t test_widget;
 static egui_view_repeat_button_t preview_widget;
 static egui_view_api_t preview_api;
@@ -16,6 +33,14 @@ static void on_repeat_button_click(egui_view_t *self)
 {
     EGUI_UNUSED(self);
     g_click_count++;
+}
+
+static void assert_region_equal(const egui_region_t *expected, const egui_region_t *actual)
+{
+    EGUI_TEST_ASSERT_EQUAL_INT(expected->location.x, actual->location.x);
+    EGUI_TEST_ASSERT_EQUAL_INT(expected->location.y, actual->location.y);
+    EGUI_TEST_ASSERT_EQUAL_INT(expected->size.width, actual->size.width);
+    EGUI_TEST_ASSERT_EQUAL_INT(expected->size.height, actual->size.height);
 }
 
 static void setup_widget(void)
@@ -39,7 +64,7 @@ static void setup_preview_widget(void)
 {
     egui_timer_init();
     egui_view_repeat_button_init(EGUI_VIEW_OF(&preview_widget));
-    egui_view_set_size(EGUI_VIEW_OF(&preview_widget), 84, 32);
+    egui_view_set_size(EGUI_VIEW_OF(&preview_widget), 96, 32);
     egui_view_repeat_button_apply_compact_style(EGUI_VIEW_OF(&preview_widget));
     egui_view_repeat_button_set_text(EGUI_VIEW_OF(&preview_widget), "Fast");
     egui_view_repeat_button_set_icon(EGUI_VIEW_OF(&preview_widget), EGUI_ICON_MS_REFRESH);
@@ -48,6 +73,54 @@ static void setup_preview_widget(void)
     egui_view_set_on_click_listener(EGUI_VIEW_OF(&preview_widget), on_repeat_button_click);
     egui_view_repeat_button_override_static_preview_api(EGUI_VIEW_OF(&preview_widget), &preview_api);
     g_click_count = 0;
+}
+
+static void capture_preview_snapshot(repeat_button_preview_snapshot_t *snapshot)
+{
+    snapshot->region_screen = EGUI_VIEW_OF(&preview_widget)->region_screen;
+    snapshot->text = preview_widget.base.base.text;
+    snapshot->icon = preview_widget.base.icon;
+    snapshot->font = preview_widget.base.base.font;
+    snapshot->icon_font = preview_widget.base.icon_font;
+    snapshot->background = EGUI_VIEW_OF(&preview_widget)->background;
+    snapshot->color = preview_widget.base.base.color;
+    snapshot->alpha = preview_widget.base.base.alpha;
+    snapshot->icon_text_gap = preview_widget.base.icon_text_gap;
+    snapshot->on_click_listener = EGUI_VIEW_OF(&preview_widget)->on_click_listener;
+    snapshot->initial_delay_ms = preview_widget.initial_delay_ms;
+    snapshot->repeat_interval_ms = preview_widget.repeat_interval_ms;
+}
+
+static void assert_timer_stopped(egui_view_repeat_button_t *widget)
+{
+    EGUI_TEST_ASSERT_FALSE(widget->timer_started);
+    EGUI_TEST_ASSERT_FALSE(egui_timer_check_timer_start(&widget->repeat_timer));
+}
+
+static void assert_pressed_state_cleared(egui_view_repeat_button_t *widget)
+{
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(widget)->is_pressed);
+    EGUI_TEST_ASSERT_FALSE(widget->touch_active);
+    EGUI_TEST_ASSERT_FALSE(widget->key_active);
+    assert_timer_stopped(widget);
+}
+
+static void assert_preview_state_unchanged(const repeat_button_preview_snapshot_t *snapshot)
+{
+    assert_region_equal(&snapshot->region_screen, &EGUI_VIEW_OF(&preview_widget)->region_screen);
+    EGUI_TEST_ASSERT_TRUE(strcmp(snapshot->text, preview_widget.base.base.text) == 0);
+    EGUI_TEST_ASSERT_TRUE(strcmp(snapshot->icon, preview_widget.base.icon) == 0);
+    EGUI_TEST_ASSERT_TRUE(snapshot->font == preview_widget.base.base.font);
+    EGUI_TEST_ASSERT_TRUE(snapshot->icon_font == preview_widget.base.icon_font);
+    EGUI_TEST_ASSERT_TRUE(snapshot->background == EGUI_VIEW_OF(&preview_widget)->background);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->color.full, preview_widget.base.base.color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->alpha, preview_widget.base.base.alpha);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->icon_text_gap, preview_widget.base.icon_text_gap);
+    EGUI_TEST_ASSERT_TRUE(snapshot->on_click_listener == EGUI_VIEW_OF(&preview_widget)->on_click_listener);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->initial_delay_ms, preview_widget.initial_delay_ms);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->repeat_interval_ms, preview_widget.repeat_interval_ms);
+    assert_pressed_state_cleared(&preview_widget);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, g_click_count);
 }
 
 static void layout_view(egui_view_t *view, egui_dim_t x, egui_dim_t y, egui_dim_t width, egui_dim_t height)
@@ -69,7 +142,7 @@ static void layout_widget(void)
 
 static void layout_preview_widget(void)
 {
-    layout_view(EGUI_VIEW_OF(&preview_widget), 14, 22, 84, 32);
+    layout_view(EGUI_VIEW_OF(&preview_widget), 14, 22, 96, 32);
 }
 
 static void attach_view(egui_view_t *view)
@@ -93,7 +166,7 @@ static int send_touch_action(egui_view_t *view, uint8_t type, egui_dim_t x, egui
     return view->api->dispatch_touch_event(view, &event);
 }
 
-static int send_key_action(egui_view_t *view, uint8_t type, uint8_t key_code)
+static int dispatch_key_event_to_view(egui_view_t *view, uint8_t type, uint8_t key_code)
 {
     egui_key_event_t event;
 
@@ -107,8 +180,8 @@ static int send_key(egui_view_t *view, uint8_t key_code)
 {
     int handled = 0;
 
-    handled |= send_key_action(view, EGUI_KEY_EVENT_ACTION_DOWN, key_code);
-    handled |= send_key_action(view, EGUI_KEY_EVENT_ACTION_UP, key_code);
+    handled |= dispatch_key_event_to_view(view, EGUI_KEY_EVENT_ACTION_DOWN, key_code);
+    handled |= dispatch_key_event_to_view(view, EGUI_KEY_EVENT_ACTION_UP, key_code);
     return handled;
 }
 
@@ -116,20 +189,6 @@ static void get_view_center(egui_view_t *view, egui_dim_t *x, egui_dim_t *y)
 {
     *x = view->region_screen.location.x + view->region_screen.size.width / 2;
     *y = view->region_screen.location.y + view->region_screen.size.height / 2;
-}
-
-static void assert_timer_stopped(egui_view_repeat_button_t *widget)
-{
-    EGUI_TEST_ASSERT_FALSE(widget->timer_started);
-    EGUI_TEST_ASSERT_FALSE(egui_timer_check_timer_start(&widget->repeat_timer));
-}
-
-static void assert_pressed_state_cleared(egui_view_repeat_button_t *widget)
-{
-    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(widget)->is_pressed);
-    EGUI_TEST_ASSERT_FALSE(widget->touch_active);
-    EGUI_TEST_ASSERT_FALSE(widget->key_active);
-    assert_timer_stopped(widget);
 }
 
 static void start_touch_hold(egui_dim_t *center_x, egui_dim_t *center_y)
@@ -290,7 +349,7 @@ static void test_repeat_button_key_repeat_works_for_space_and_enter(void)
     setup_widget();
     attach_view(EGUI_VIEW_OF(&test_widget));
 
-    EGUI_TEST_ASSERT_TRUE(send_key_action(EGUI_VIEW_OF(&test_widget), EGUI_KEY_EVENT_ACTION_DOWN, EGUI_KEY_CODE_SPACE));
+    EGUI_TEST_ASSERT_TRUE(dispatch_key_event_to_view(EGUI_VIEW_OF(&test_widget), EGUI_KEY_EVENT_ACTION_DOWN, EGUI_KEY_CODE_SPACE));
     EGUI_TEST_ASSERT_EQUAL_INT(1, g_click_count);
     EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&test_widget)->is_pressed);
     EGUI_TEST_ASSERT_TRUE(test_widget.key_active);
@@ -299,7 +358,7 @@ static void test_repeat_button_key_repeat_works_for_space_and_enter(void)
     egui_view_repeat_button_tick(&test_widget.repeat_timer);
     EGUI_TEST_ASSERT_EQUAL_INT(2, g_click_count);
 
-    EGUI_TEST_ASSERT_TRUE(send_key_action(EGUI_VIEW_OF(&test_widget), EGUI_KEY_EVENT_ACTION_UP, EGUI_KEY_CODE_SPACE));
+    EGUI_TEST_ASSERT_TRUE(dispatch_key_event_to_view(EGUI_VIEW_OF(&test_widget), EGUI_KEY_EVENT_ACTION_UP, EGUI_KEY_CODE_SPACE));
     EGUI_TEST_ASSERT_EQUAL_INT(2, g_click_count);
     assert_pressed_state_cleared(&test_widget);
 
@@ -313,12 +372,12 @@ static void test_repeat_button_unhandled_key_clears_pressed_state_and_stops_time
     setup_widget();
     attach_view(EGUI_VIEW_OF(&test_widget));
 
-    EGUI_TEST_ASSERT_TRUE(send_key_action(EGUI_VIEW_OF(&test_widget), EGUI_KEY_EVENT_ACTION_DOWN, EGUI_KEY_CODE_SPACE));
+    EGUI_TEST_ASSERT_TRUE(dispatch_key_event_to_view(EGUI_VIEW_OF(&test_widget), EGUI_KEY_EVENT_ACTION_DOWN, EGUI_KEY_CODE_SPACE));
     EGUI_TEST_ASSERT_EQUAL_INT(1, g_click_count);
     EGUI_TEST_ASSERT_TRUE(test_widget.key_active);
     EGUI_TEST_ASSERT_TRUE(test_widget.timer_started);
 
-    EGUI_TEST_ASSERT_FALSE(send_key_action(EGUI_VIEW_OF(&test_widget), EGUI_KEY_EVENT_ACTION_DOWN, EGUI_KEY_CODE_TAB));
+    EGUI_TEST_ASSERT_FALSE(dispatch_key_event_to_view(EGUI_VIEW_OF(&test_widget), EGUI_KEY_EVENT_ACTION_DOWN, EGUI_KEY_CODE_TAB));
     EGUI_TEST_ASSERT_EQUAL_INT(1, g_click_count);
     assert_pressed_state_cleared(&test_widget);
 }
@@ -342,31 +401,24 @@ static void test_repeat_button_disabled_guard_prevents_click_and_clears_state(vo
     assert_pressed_state_cleared(&test_widget);
 }
 
-static void test_repeat_button_static_preview_consumes_input_and_clears_timer_state(void)
+static void test_repeat_button_static_preview_consumes_input_and_keeps_state(void)
 {
+    repeat_button_preview_snapshot_t initial_snapshot;
     egui_dim_t center_x;
     egui_dim_t center_y;
 
     setup_preview_widget();
     layout_preview_widget();
     get_view_center(EGUI_VIEW_OF(&preview_widget), &center_x, &center_y);
+    capture_preview_snapshot(&initial_snapshot);
 
     seed_preview_timer_state(1, 0);
     EGUI_TEST_ASSERT_TRUE(send_touch_action(EGUI_VIEW_OF(&preview_widget), EGUI_MOTION_EVENT_ACTION_DOWN, center_x, center_y));
-    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&preview_widget)->is_pressed);
-    EGUI_TEST_ASSERT_FALSE(preview_widget.touch_active);
-    EGUI_TEST_ASSERT_FALSE(preview_widget.key_active);
-    assert_timer_stopped(&preview_widget);
-    EGUI_TEST_ASSERT_EQUAL_INT(0, g_click_count);
+    assert_preview_state_unchanged(&initial_snapshot);
 
     seed_preview_timer_state(0, 1);
-    EGUI_TEST_ASSERT_TRUE(send_key_action(EGUI_VIEW_OF(&preview_widget), EGUI_KEY_EVENT_ACTION_DOWN, EGUI_KEY_CODE_ENTER));
-    EGUI_TEST_ASSERT_TRUE(send_key_action(EGUI_VIEW_OF(&preview_widget), EGUI_KEY_EVENT_ACTION_UP, EGUI_KEY_CODE_ENTER));
-    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&preview_widget)->is_pressed);
-    EGUI_TEST_ASSERT_FALSE(preview_widget.touch_active);
-    EGUI_TEST_ASSERT_FALSE(preview_widget.key_active);
-    assert_timer_stopped(&preview_widget);
-    EGUI_TEST_ASSERT_EQUAL_INT(0, g_click_count);
+    EGUI_TEST_ASSERT_TRUE(send_key(EGUI_VIEW_OF(&preview_widget), EGUI_KEY_CODE_ENTER));
+    assert_preview_state_unchanged(&initial_snapshot);
 }
 
 static void test_repeat_button_attach_and_detach_restore_repeat_timer(void)
@@ -403,7 +455,7 @@ void test_repeat_button_run(void)
     EGUI_TEST_RUN(test_repeat_button_key_repeat_works_for_space_and_enter);
     EGUI_TEST_RUN(test_repeat_button_unhandled_key_clears_pressed_state_and_stops_timer);
     EGUI_TEST_RUN(test_repeat_button_disabled_guard_prevents_click_and_clears_state);
-    EGUI_TEST_RUN(test_repeat_button_static_preview_consumes_input_and_clears_timer_state);
+    EGUI_TEST_RUN(test_repeat_button_static_preview_consumes_input_and_keeps_state);
     EGUI_TEST_RUN(test_repeat_button_attach_and_detach_restore_repeat_timer);
     EGUI_TEST_SUITE_END();
 }
