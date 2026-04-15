@@ -17,7 +17,10 @@
 #define DRAWER_BOTTOM_H           72
 #define DRAWER_RECORD_WAIT        90
 #define DRAWER_RECORD_FRAME_WAIT  170
-#define DRAWER_RECORD_FINAL_WAIT  520
+#define DRAWER_RECORD_FINAL_WAIT  280
+#define DRAWER_DEFAULT_SNAPSHOT   0
+
+#define PRIMARY_SNAPSHOT_COUNT    ((uint8_t)EGUI_ARRAY_SIZE(primary_snapshots))
 
 typedef struct
 {
@@ -79,14 +82,26 @@ static void apply_snapshot(egui_view_t *view, const drawer_demo_snapshot_t *snap
     egui_view_drawer_set_open(view, snapshot->open);
 }
 
-static void apply_primary_snapshot(uint8_t index)
+static void layout_local_views(void)
 {
-    apply_snapshot(EGUI_VIEW_OF(&primary_drawer), &primary_snapshots[index % EGUI_ARRAY_SIZE(primary_snapshots)]);
+    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&bottom_row));
+    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&root_layout));
+}
+
+static void layout_page(void)
+{
+    layout_local_views();
+    egui_core_layout_childs_user_root_view(EGUI_LAYOUT_VERTICAL, EGUI_ALIGN_HCENTER | EGUI_ALIGN_VCENTER);
+}
+
+static void apply_primary_state(uint8_t index)
+{
+    apply_snapshot(EGUI_VIEW_OF(&primary_drawer), &primary_snapshots[index % PRIMARY_SNAPSHOT_COUNT]);
 }
 
 static void apply_primary_default_state(void)
 {
-    apply_primary_snapshot(0);
+    apply_primary_state(DRAWER_DEFAULT_SNAPSHOT);
 }
 
 static void apply_preview_states(void)
@@ -105,6 +120,15 @@ static void apply_preview_states(void)
     egui_view_drawer_set_compact_mode(EGUI_VIEW_OF(&read_only_drawer), 1);
     egui_view_drawer_set_read_only_mode(EGUI_VIEW_OF(&read_only_drawer), 1);
 }
+
+#if EGUI_CONFIG_RECORDING_TEST
+static void request_page_snapshot(void)
+{
+    layout_page();
+    egui_view_invalidate(EGUI_VIEW_OF(&root_layout));
+    recording_request_snapshot();
+}
+#endif
 
 void test_init_ui(void)
 {
@@ -157,11 +181,8 @@ void test_init_ui(void)
     apply_preview_states();
 
     hello_custom_widgets_demo_apply_title_only_scaffold(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label), NULL, 0);
-    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&bottom_row));
-    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&root_layout));
-
     egui_core_add_user_root_view(EGUI_VIEW_OF(&root_layout));
-    egui_core_layout_childs_user_root_view(EGUI_LAYOUT_VERTICAL, EGUI_ALIGN_HCENTER | EGUI_ALIGN_VCENTER);
+    layout_page();
 }
 
 #if EGUI_CONFIG_RECORDING_TEST
@@ -179,14 +200,14 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
         {
             apply_primary_default_state();
             apply_preview_states();
-            recording_request_snapshot();
+            request_page_snapshot();
         }
         EGUI_SIM_SET_WAIT(p_action, DRAWER_RECORD_FRAME_WAIT);
         return true;
     case 1:
         if (first_call)
         {
-            apply_primary_snapshot(1);
+            apply_primary_state(1);
         }
         EGUI_SIM_SET_WAIT(p_action, DRAWER_RECORD_WAIT);
         return true;
@@ -200,7 +221,7 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     case 3:
         if (first_call)
         {
-            apply_primary_snapshot(2);
+            apply_primary_state(2);
         }
         EGUI_SIM_SET_WAIT(p_action, DRAWER_RECORD_WAIT);
         return true;
@@ -215,14 +236,13 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
         if (first_call)
         {
             apply_primary_default_state();
-            apply_preview_states();
         }
         EGUI_SIM_SET_WAIT(p_action, DRAWER_RECORD_WAIT);
         return true;
     case 6:
         if (first_call)
         {
-            recording_request_snapshot();
+            request_page_snapshot();
         }
         EGUI_SIM_SET_WAIT(p_action, DRAWER_RECORD_FINAL_WAIT);
         return true;
