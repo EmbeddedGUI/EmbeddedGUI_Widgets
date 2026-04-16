@@ -7,6 +7,38 @@
 #include "../../HelloCustomWidgets/feedback/message_bar/egui_view_message_bar.h"
 #include "../../HelloCustomWidgets/feedback/message_bar/egui_view_message_bar.c"
 
+typedef struct message_bar_preview_snapshot message_bar_preview_snapshot_t;
+struct message_bar_preview_snapshot
+{
+    egui_region_t region_screen;
+    egui_background_t *background;
+    const egui_view_message_bar_snapshot_t *snapshots;
+    const egui_font_t *font;
+    egui_view_on_click_listener_t on_click_listener;
+    const egui_view_api_t *api;
+    egui_color_t surface_color;
+    egui_color_t border_color;
+    egui_color_t text_color;
+    egui_color_t muted_text_color;
+    egui_color_t accent_color;
+    egui_color_t info_color;
+    egui_color_t success_color;
+    egui_color_t warning_color;
+    egui_color_t error_color;
+    uint8_t snapshot_count;
+    uint8_t current_snapshot;
+    uint8_t compact_mode;
+    uint8_t read_only_mode;
+    egui_alpha_t alpha;
+    uint8_t enable;
+    uint8_t is_focused;
+    uint8_t is_pressed;
+    egui_dim_t padding_left;
+    egui_dim_t padding_right;
+    egui_dim_t padding_top;
+    egui_dim_t padding_bottom;
+};
+
 static egui_view_message_bar_t test_bar;
 static egui_view_message_bar_t preview_bar;
 static egui_view_api_t preview_api;
@@ -28,6 +60,18 @@ static const egui_view_message_bar_snapshot_t g_overflow_snapshots[] = {
         {"F", "F", "F", 1, 0, 0},
         {"G", "G", "G", 2, 0, 0},
 };
+
+static const egui_view_message_bar_snapshot_t g_preview_snapshots[] = {
+        {"Quota alert", "Archive logs.", "View", 2, 0, 1},
+};
+
+static void assert_region_equal(const egui_region_t *expected, const egui_region_t *actual)
+{
+    EGUI_TEST_ASSERT_EQUAL_INT(expected->location.x, actual->location.x);
+    EGUI_TEST_ASSERT_EQUAL_INT(expected->location.y, actual->location.y);
+    EGUI_TEST_ASSERT_EQUAL_INT(expected->size.width, actual->size.width);
+    EGUI_TEST_ASSERT_EQUAL_INT(expected->size.height, actual->size.height);
+}
 
 static void on_bar_click(egui_view_t *self)
 {
@@ -53,11 +97,15 @@ static void setup_preview_bar(void)
 {
     egui_view_message_bar_init(EGUI_VIEW_OF(&preview_bar));
     egui_view_set_size(EGUI_VIEW_OF(&preview_bar), 104, 82);
-    egui_view_message_bar_set_snapshots(EGUI_VIEW_OF(&preview_bar), g_snapshots, 4);
+    egui_view_message_bar_set_snapshots(EGUI_VIEW_OF(&preview_bar), g_preview_snapshots, 1);
     egui_view_message_bar_set_current_snapshot(EGUI_VIEW_OF(&preview_bar), 0);
+    egui_view_message_bar_set_font(EGUI_VIEW_OF(&preview_bar), (const egui_font_t *)&egui_res_font_montserrat_8_4);
     egui_view_message_bar_set_compact_mode(EGUI_VIEW_OF(&preview_bar), 1);
     egui_view_set_on_click_listener(EGUI_VIEW_OF(&preview_bar), on_bar_click);
     egui_view_message_bar_override_static_preview_api(EGUI_VIEW_OF(&preview_bar), &preview_api);
+#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
+    egui_view_set_focusable(EGUI_VIEW_OF(&preview_bar), 0);
+#endif
     reset_click_count();
 }
 
@@ -91,20 +139,25 @@ static int send_touch_to_view(egui_view_t *view, uint8_t type, egui_dim_t x, egu
     event.type = type;
     event.location.x = x;
     event.location.y = y;
-    return view->api->on_touch_event(view, &event);
+    return view->api->dispatch_touch_event(view, &event);
+}
+
+static int dispatch_key_event_to_view(egui_view_t *view, uint8_t type, uint8_t key_code)
+{
+    egui_key_event_t event;
+
+    memset(&event, 0, sizeof(event));
+    event.type = type;
+    event.key_code = key_code;
+    return view->api->dispatch_key_event(view, &event);
 }
 
 static int send_key_to_view(egui_view_t *view, uint8_t key_code)
 {
-    egui_key_event_t event;
     int handled = 0;
 
-    memset(&event, 0, sizeof(event));
-    event.type = EGUI_KEY_EVENT_ACTION_DOWN;
-    event.key_code = key_code;
-    handled |= view->api->on_key_event(view, &event);
-    event.type = EGUI_KEY_EVENT_ACTION_UP;
-    handled |= view->api->on_key_event(view, &event);
+    handled |= dispatch_key_event_to_view(view, EGUI_KEY_EVENT_ACTION_DOWN, key_code);
+    handled |= dispatch_key_event_to_view(view, EGUI_KEY_EVENT_ACTION_UP, key_code);
     return handled;
 }
 
@@ -123,15 +176,72 @@ static int send_key(uint8_t key_code)
     return send_key_to_view(EGUI_VIEW_OF(&test_bar), key_code);
 }
 
-static int send_preview_key(uint8_t key_code)
-{
-    return send_key_to_view(EGUI_VIEW_OF(&preview_bar), key_code);
-}
-
 static void get_view_center(egui_view_t *view, egui_dim_t *x, egui_dim_t *y)
 {
     *x = view->region_screen.location.x + view->region_screen.size.width / 2;
     *y = view->region_screen.location.y + view->region_screen.size.height / 2;
+}
+
+static void capture_preview_snapshot(message_bar_preview_snapshot_t *snapshot)
+{
+    snapshot->region_screen = EGUI_VIEW_OF(&preview_bar)->region_screen;
+    snapshot->background = EGUI_VIEW_OF(&preview_bar)->background;
+    snapshot->snapshots = preview_bar.snapshots;
+    snapshot->font = preview_bar.font;
+    snapshot->on_click_listener = EGUI_VIEW_OF(&preview_bar)->on_click_listener;
+    snapshot->api = EGUI_VIEW_OF(&preview_bar)->api;
+    snapshot->surface_color = preview_bar.surface_color;
+    snapshot->border_color = preview_bar.border_color;
+    snapshot->text_color = preview_bar.text_color;
+    snapshot->muted_text_color = preview_bar.muted_text_color;
+    snapshot->accent_color = preview_bar.accent_color;
+    snapshot->info_color = preview_bar.info_color;
+    snapshot->success_color = preview_bar.success_color;
+    snapshot->warning_color = preview_bar.warning_color;
+    snapshot->error_color = preview_bar.error_color;
+    snapshot->snapshot_count = preview_bar.snapshot_count;
+    snapshot->current_snapshot = preview_bar.current_snapshot;
+    snapshot->compact_mode = preview_bar.compact_mode;
+    snapshot->read_only_mode = preview_bar.read_only_mode;
+    snapshot->alpha = EGUI_VIEW_OF(&preview_bar)->alpha;
+    snapshot->enable = (uint8_t)egui_view_get_enable(EGUI_VIEW_OF(&preview_bar));
+    snapshot->is_focused = EGUI_VIEW_OF(&preview_bar)->is_focused;
+    snapshot->is_pressed = EGUI_VIEW_OF(&preview_bar)->is_pressed;
+    snapshot->padding_left = EGUI_VIEW_OF(&preview_bar)->padding.left;
+    snapshot->padding_right = EGUI_VIEW_OF(&preview_bar)->padding.right;
+    snapshot->padding_top = EGUI_VIEW_OF(&preview_bar)->padding.top;
+    snapshot->padding_bottom = EGUI_VIEW_OF(&preview_bar)->padding.bottom;
+}
+
+static void assert_preview_state_unchanged(const message_bar_preview_snapshot_t *snapshot)
+{
+    assert_region_equal(&snapshot->region_screen, &EGUI_VIEW_OF(&preview_bar)->region_screen);
+    EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&preview_bar)->background == snapshot->background);
+    EGUI_TEST_ASSERT_TRUE(preview_bar.snapshots == snapshot->snapshots);
+    EGUI_TEST_ASSERT_TRUE(preview_bar.font == snapshot->font);
+    EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&preview_bar)->on_click_listener == snapshot->on_click_listener);
+    EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&preview_bar)->api == snapshot->api);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->surface_color.full, preview_bar.surface_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->border_color.full, preview_bar.border_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->text_color.full, preview_bar.text_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->muted_text_color.full, preview_bar.muted_text_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->accent_color.full, preview_bar.accent_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->info_color.full, preview_bar.info_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->success_color.full, preview_bar.success_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->warning_color.full, preview_bar.warning_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->error_color.full, preview_bar.error_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->snapshot_count, preview_bar.snapshot_count);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->current_snapshot, preview_bar.current_snapshot);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->compact_mode, preview_bar.compact_mode);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->read_only_mode, preview_bar.read_only_mode);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->alpha, EGUI_VIEW_OF(&preview_bar)->alpha);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->enable, egui_view_get_enable(EGUI_VIEW_OF(&preview_bar)));
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->is_focused, EGUI_VIEW_OF(&preview_bar)->is_focused);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->is_pressed, EGUI_VIEW_OF(&preview_bar)->is_pressed);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->padding_left, EGUI_VIEW_OF(&preview_bar)->padding.left);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->padding_right, EGUI_VIEW_OF(&preview_bar)->padding.right);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->padding_top, EGUI_VIEW_OF(&preview_bar)->padding.top);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->padding_bottom, EGUI_VIEW_OF(&preview_bar)->padding.bottom);
 }
 
 static void get_view_outside_point(egui_view_t *view, egui_dim_t *x, egui_dim_t *y)
@@ -342,27 +452,27 @@ static void test_message_bar_read_only_and_disabled_guards_clear_pressed_state(v
     EGUI_TEST_ASSERT_EQUAL_INT(1, click_count);
 }
 
-static void test_message_bar_static_preview_consumes_input_and_keeps_snapshot(void)
+static void test_message_bar_static_preview_consumes_input_and_keeps_state(void)
 {
+    message_bar_preview_snapshot_t initial_snapshot;
     egui_dim_t x;
     egui_dim_t y;
 
     setup_preview_bar();
-    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_message_bar_get_current_snapshot(EGUI_VIEW_OF(&preview_bar)));
-    EGUI_TEST_ASSERT_EQUAL_INT(1, preview_bar.compact_mode);
     layout_preview_bar();
     get_view_center(EGUI_VIEW_OF(&preview_bar), &x, &y);
+    capture_preview_snapshot(&initial_snapshot);
 
     seed_pressed_state(EGUI_VIEW_OF(&preview_bar), 1);
     EGUI_TEST_ASSERT_TRUE(send_preview_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
-    assert_pressed_cleared(EGUI_VIEW_OF(&preview_bar));
-    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_message_bar_get_current_snapshot(EGUI_VIEW_OF(&preview_bar)));
+    EGUI_TEST_ASSERT_TRUE(send_preview_touch(EGUI_MOTION_EVENT_ACTION_UP, x, y));
+    assert_preview_state_unchanged(&initial_snapshot);
     EGUI_TEST_ASSERT_EQUAL_INT(0, click_count);
 
     seed_pressed_state(EGUI_VIEW_OF(&preview_bar), 1);
-    EGUI_TEST_ASSERT_TRUE(send_preview_key(EGUI_KEY_CODE_ENTER));
-    assert_pressed_cleared(EGUI_VIEW_OF(&preview_bar));
-    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_message_bar_get_current_snapshot(EGUI_VIEW_OF(&preview_bar)));
+    EGUI_TEST_ASSERT_TRUE(dispatch_key_event_to_view(EGUI_VIEW_OF(&preview_bar), EGUI_KEY_EVENT_ACTION_DOWN, EGUI_KEY_CODE_ENTER));
+    EGUI_TEST_ASSERT_TRUE(dispatch_key_event_to_view(EGUI_VIEW_OF(&preview_bar), EGUI_KEY_EVENT_ACTION_UP, EGUI_KEY_CODE_ENTER));
+    assert_preview_state_unchanged(&initial_snapshot);
     EGUI_TEST_ASSERT_EQUAL_INT(0, click_count);
 }
 
@@ -400,7 +510,7 @@ void test_message_bar_run(void)
     EGUI_TEST_RUN(test_message_bar_keyboard_click_listener);
     EGUI_TEST_RUN(test_message_bar_compact_mode_clears_pressed_and_keeps_click_behavior);
     EGUI_TEST_RUN(test_message_bar_read_only_and_disabled_guards_clear_pressed_state);
-    EGUI_TEST_RUN(test_message_bar_static_preview_consumes_input_and_keeps_snapshot);
+    EGUI_TEST_RUN(test_message_bar_static_preview_consumes_input_and_keeps_state);
     EGUI_TEST_RUN(test_message_bar_internal_helpers_cover_severity_and_text);
     EGUI_TEST_SUITE_END();
 }
