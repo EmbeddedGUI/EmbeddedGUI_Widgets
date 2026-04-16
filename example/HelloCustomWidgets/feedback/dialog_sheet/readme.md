@@ -1,95 +1,129 @@
-# dialog_sheet 设计说明
+# ContentDialog 设计说明
 
 ## 参考来源
-- 参考设计系统：`Fluent 2`
+- 参考设计体系：`Fluent 2`
 - 参考开源库：`WPF UI`
-- 平台语义参考：`WinUI ContentDialog`
-- 补充对照实现：`ModernWpf`
+- 平台语义对照：`WinUI ContentDialog`
+- 补充参考实现：`ModernWpf`
 - 对应组件名：`ContentDialog`
-- 本次保留状态：`warning`、`error`、`accent`、`success`、`compact`、`read only`
-- 本次删除效果：preview snapshot 切换、preview 点击清 focus 的桥接动作，以及与轻量确认层无关的额外交互录制
-- EGUI 适配说明：沿用仓库内 `dialog_sheet` custom 实现，本轮只收口 `reference` 页面结构、静态 preview 语义和录制轨道，不修改 `sdk/EmbeddedGUI`
+- 当前保留状态：`warning`、`error`、`accent`、`success`、`compact`、`read only`
+- 当前移除内容：旧 preview snapshot 切换、preview 点击清主控件焦点的桥接逻辑、与 reference 页面无关的额外录制动作
+- EGUI 适配说明：继续使用仓库内 `dialog_sheet` custom 实现，本轮只收口 `reference` 页面结构、静态 preview 语义、README 和单测，不修改 `sdk/EmbeddedGUI`
 
 ## 1. 为什么需要这个控件
-`ContentDialog` 用来表达轻量确认与动作收口语义，适合同步恢复、删除确认、套用模板和发布确认这类需要短正文与明确动作按钮的场景。它不是页内反馈条，也不是通知堆栈，而是更接近 Fluent / WPF UI 的浅色确认层。
+`dialog_sheet` 对齐的是 Fluent / WinUI 的 `ContentDialog` 语义，用来承载轻量确认、删除提醒、模板应用和发布确认这类短文本、低噪音、动作明确的模态收口场景。它不是常驻反馈条，也不是 toast 通知，而是页面层级更高、动作更聚焦的确认层。
 
 ## 2. 为什么现有控件不够用
-- `message_bar` 是页内常驻反馈，不承担阻塞式动作收口。
+- `message_bar` 面向页内反馈，不承担阻断式确认收口。
 - `toast_stack` 偏短时通知，不适合作为主要确认入口。
-- `teaching_tip` 是锚定式上下文提示，不提供居中收口语义。
-- 当前仓库仍需要一版贴近 Fluent / WPF UI `ContentDialog` 的 reference 示例。
+- `teaching_tip` 是锚定式上下文提示，不提供居中确认层语义。
+- 仓库仍需要一版贴近 Fluent / WPF UI `ContentDialog` 的 `reference` 示例，用于和其它 feedback 控件形成明确边界。
 
-## 3. 目标场景与示例概览
-- 主控件展示标准 `dialog_sheet`，通过录制轨道覆盖 `warning / error / accent / success` 四组 snapshot。
-- 底部左侧展示 `compact` 静态对照，保留紧凑尺寸下的标题、正文、tag 和单动作布局。
-- 底部右侧展示 `read only` 静态对照，保留只读后的弱化状态。
-- 页面结构统一收口为：标题 -> 主 `dialog_sheet` -> `compact / read only` 双 preview。
-- 两个 preview 统一通过 `egui_view_dialog_sheet_override_static_preview_api()` 吞掉 `touch / key`，不再切换 snapshot，也不再承担清主控件 focus 的桥接职责。
+## 3. 当前页面结构
+- 标题：`Dialog Sheet`
+- 主区：一个主 `dialog_sheet`
+- 底部：两个真正静态的 preview
+- 左侧 preview：`compact`
+- 右侧 preview：`read only`
+- 页面结构统一收口为：标题 -> 主 `dialog_sheet` -> `compact / read only`
 
-目标目录：`example/HelloCustomWidgets/feedback/dialog_sheet/`
+当前目录：`example/HelloCustomWidgets/feedback/dialog_sheet/`
 
-## 4. 视觉与布局规格
-- 根容器尺寸：`224 x 258`
-- 主控件尺寸：`196 x 132`
-- 底部对照行尺寸：`216 x 86`
-- `compact` 预览：`104 x 86`
-- `read only` 预览：`104 x 86`
+## 4. 主区 reference 轨道
+主控件录制轨道只保留四组主区 snapshot 和最终稳定帧：
 
-视觉约束：
-- 页面保持浅灰 page panel、低对比 overlay、白底 sheet surface 和柔和浅边框。
-- 主控件保留 hero、title、body、footer summary、tag 和 action row 这些核心层级，但整体仍需维持低噪音的 Fluent 语法。
-- `compact` 直接通过控件模式表达，不再依赖外部标签或说明文字。
-- `read only` 继续保留完整结构，但必须作为静态 preview，不再承接任何录制桥接逻辑。
-- 主控件继续遵守 same-target release：`DOWN(A) -> MOVE(B) -> UP(B)` 不提交，回到 `A` 后 `UP(A)` 才提交。
+1. `Sync issue`
+   `warning`，双动作，默认落在 `primary`
+2. `Delete draft`
+   `error`，双动作，默认落在 `secondary`
+3. `Template`
+   `accent`，单动作，无 close
+4. `Publishing`
+   `success`，单动作，保留 close
+5. `Sync issue`
+   回到默认 `warning`，作为最终稳定帧
 
-## 5. 控件清单
+底部 preview 在整条录制轨道中保持固定：
 
-| 变量名 | 类型 | 尺寸 (W x H) | 初始状态 | 用途 |
-| --- | --- | ---: | --- | --- |
-| `root_layout` | `egui_view_linearlayout_t` | `224 x 258` | enabled | 页面根布局 |
-| `title_label` | `egui_view_label_t` | `224 x 18` | `Dialog Sheet` | 页面标题 |
-| `sheet_primary` | `egui_view_dialog_sheet_t` | `196 x 132` | `Sync issue` | 主确认层 |
-| `sheet_compact` | `egui_view_dialog_sheet_t` | `104 x 86` | `Network / static` | 紧凑静态对照 |
-| `sheet_read_only` | `egui_view_dialog_sheet_t` | `104 x 86` | `Read only / static` | 只读静态对照 |
+1. `compact`
+   `Network`
+   紧凑布局、单动作、warning tone
+2. `read only`
+   `Read only`
+   只读弱化配色、无动作
 
-## 6. 状态覆盖矩阵
+## 5. 视觉与布局规格
+- 画布：`480 x 480`
+- 根布局尺寸：`224 x 258`
+- 主 `dialog_sheet` 尺寸：`196 x 132`
+- 底部容器尺寸：`216 x 86`
+- 单个 preview 尺寸：`104 x 86`
+- 页面结构：标题 -> 主 `dialog_sheet` -> 底部 `compact / read only`
+- 页面风格：浅灰 page panel、低对比 overlay、白色 surface、柔和边框和低噪音 Fluent 层级
 
-| 区域 / 轨道 | 状态 | 说明 |
-| --- | --- | --- |
-| 主控件 | `Sync issue` | 默认 `warning`，双动作 |
-| 主控件 | `Delete draft` | `error`，默认落在 `secondary` |
-| 主控件 | `Template` | `accent`，单动作 |
-| 主控件 | `Publishing` | `success`，带 close |
-| `compact` | `Network` | 紧凑静态 preview |
-| `read only` | `Read only` | 只读静态 preview |
+## 6. 状态矩阵
+| 状态 / 区域 | 主控件 | Compact preview | Read only preview |
+| --- | --- | --- | --- |
+| `warning` | 是 | 是 | 否 |
+| `error` | 是 | 否 | 否 |
+| `accent` | 是 | 否 | 否 |
+| `success` | 是 | 否 | 否 |
+| `compact_mode` | 否 | 是 | 是 |
+| `read_only_mode` | 否 | 否 | 是 |
+| `show_close` | 是 | 否 | 否 |
+| 静态 preview 吞掉 `touch / key` 且状态不变 | 否 | 是 | 是 |
 
-## 7. 交互与状态语义
-- 主 `dialog_sheet` 继续保留四组确认内容、主次动作关系和 same-target release 语义。
-- `compact / read only` preview 都通过 static preview API 吞掉 `touch / key`，作为真正静态的 reference 对照。
-- `read only` preview 继续使用 `set_read_only_mode(..., 1)`，保证不承接真实交互。
-- 本轮不修改 SDK，只在 demo、README 和单测层面移除 preview 桥接录制逻辑。
+## 7. 交互语义
+- 主 `dialog_sheet` 继续保留 snapshot 切换、主次动作焦点和 same-target release 语义。
+- `DOWN(A) -> MOVE(B) -> UP(B)` 不提交；回到 `A` 后 `UP(A)` 才提交。
+- `compact / read only` preview 统一通过 `egui_view_dialog_sheet_override_static_preview_api()` 吞掉 `touch / key`，不再承担任何 snapshot 切换或焦点桥接职责。
+- `read only` preview 保持 `set_read_only_mode(..., 1)`，只作为静态对照，不参与真实交互。
 
-## 8. 本轮收口内容
-- 继续维护 `example/HelloCustomWidgets/feedback/dialog_sheet/test.c`
-- 调整底部 `compact` preview 为单一静态 snapshot，删除 preview snapshot 切换
-- 删除 preview 点击清主控件 focus 的桥接逻辑和对应录制动作
-- 录制轨道只保留主控件 `warning / error / accent / success` 切换与最终稳定帧
-- 单测同步补齐“静态 preview 输入抑制后仍保持固定 snapshot 和 current_action”的覆盖
+## 8. 录制动作设计
+`egui_port_get_recording_action()` 当前轨道为：
 
-## 9. `egui_port_get_recording_action()` 录制动作设计
-1. 还原主控件到 `warning`，并同步两个静态 preview 状态。
-2. 请求默认截图。
-3. 切到 `error`。
-4. 请求第二张截图。
-5. 切到 `accent`。
-6. 请求第三张截图。
-7. 切到 `success`。
-8. 请求第四张截图。
-9. 恢复默认 `warning` 并再次请求最终稳定帧，确认页面收尾状态一致。
+1. 应用主控件默认 `warning` 和底部 preview 固定状态
+2. 请求首帧
+3. 切到 `error`
+4. 请求第二帧
+5. 切到 `accent`
+6. 请求第三帧
+7. 切到 `success`
+8. 请求第四帧
+9. 回到默认 `warning` 并请求最终稳定帧
 
-## 10. 编译、测试与 runtime 验收
+说明：
+- 录制期间通过 `request_page_snapshot()` 统一触发布局、刷新和截图请求。
+- 底部 preview 在整条轨道中不发生任何视觉变化。
+- 主区变化只来自四组 snapshot 以及最终回落到默认帧。
+
+## 9. 单元测试口径
+`example/HelloUnitTest/test/test_dialog_sheet.c` 当前覆盖十一部分：
+
+1. `set_snapshots()` 钳制与状态复位
+2. `current_snapshot / current_action` guard 与 listener 通知
+3. 字体、模式、listener 和 palette setter 的 `pressed` 清理
+4. 触摸命中测试与动作切换
+5. same-target release 与 cancel 行为
+6. cancel 清理 `pressed` 且不改选择
+7. 键盘导航与 guard
+8. `read only` 下清理 `pressed` 并忽略输入
+9. `!enable` 下忽略输入
+10. 静态 preview 不变性断言
+11. 内部 helper、tone、glyph、metrics 和 region 覆盖
+
+其中静态 preview 用例通过 `dialog_sheet_preview_snapshot_t`、`capture_preview_snapshot()` 和 `assert_preview_state_unchanged()` 固定校验：
+`region_screen / background / snapshots / font / meta_font / on_action_changed / api / palette / snapshot_count / current_snapshot / current_action / compact_mode / read_only_mode / pressed_action / alpha / enable / is_focused / is_pressed / padding`
+
+补充说明：
+- preview 用例已收口为“consumes input and keeps state”。
+- 事件分发统一走 `dispatch_touch_event()` / `dispatch_key_event()`。
+
+## 10. 验收命令
 ```bash
 make all APP=HelloCustomWidgets APP_SUB=feedback/dialog_sheet PORT=pc
+
+make clean APP=HelloUnitTest PORT=pc_test
 make all APP=HelloUnitTest PORT=pc_test
 X:\output\main.exe
 
@@ -104,13 +138,43 @@ python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub feedba
 python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_feedback_dialog_sheet
 ```
 
-验收重点：
-- 主控件四张关键截图必须能清晰区分 `warning / error / accent / success`。
-- `compact / read only` preview 必须在所有 runtime 帧中保持静态，不得因点击或 snapshot 切换产生额外变化。
-- 页面不能出现黑白屏、裁切、pressed 残留或底部 preview 脏态。
-- preview 不响应触摸或键盘输入，也不改变 `current_snapshot / current_action`。
+## 11. 当前结果
+- `HelloCustomWidgets` 单控件编译：已通过 `make all APP=HelloCustomWidgets APP_SUB=feedback/dialog_sheet PORT=pc`
+- `HelloUnitTest`：已在 `X:\` 短路径通过 `make clean APP=HelloUnitTest PORT=pc_test`、`make all APP=HelloUnitTest PORT=pc_test` 和 `X:\output\main.exe`，总计 `845 / 845`，其中 `dialog_sheet` suite `11 / 11`
+- `sync_widget_catalog.py`：PASS，已同步 `widget_catalog.json` 与 `web/catalog-policy.json`
+- `touch release semantics`：PASS，结果 `custom_audited=10 custom_skipped_allowlist=0`
+- `docs encoding`：PASS，结果 `134 files`
+- `widget catalog check`：PASS，结果 `106 widgets: reference=106, showcase=0, deprecated=0`
+- 单控件 runtime：PASS，输出 `11` 帧截图到 `runtime_check_output/HelloCustomWidgets_feedback_dialog_sheet/default`
+- feedback 分类 compile/runtime 回归：PASS，分类内 `10` 个控件全部通过
+- wasm 构建：PASS，输出 `web/demos/HelloCustomWidgets_feedback_dialog_sheet`
+- web smoke：`PASS status=Running canvas=480x480 ratio=0.1967 colors=167`
 
-## 11. 已知限制
-- 当前版本仍使用固定 snapshot 数据，不接真实业务状态流。
-- 当前不做真实 modal 动画、遮罩渐变和关闭行为。
+## 12. Runtime 复核结论
+复核目录：`runtime_check_output/HelloCustomWidgets_feedback_dialog_sheet/default`
+
+- 总帧数：`11`
+- 主区 RGB 差分边界：`(48, 87) - (431, 266)`
+- 遮罩主区后主区外唯一哈希数：`1`
+- 主区唯一状态数：`4`
+- 按 `y >= 267` 裁切底部 preview 区域后的唯一哈希数：`1`
+
+结论：
+- 主区变化只来自 `warning / error / accent / success` 四组 snapshot；最终回到 `warning` 稳定帧，因此主区唯一状态数为 `4`
+- 主区外页面 chrome 全程保持单哈希静态，没有黑白屏、错位或 preview 污染
+- 底部 `compact / read only` preview 在 `11` 帧录制中保持单哈希静态一致
+
+## 13. 已知限制
+- 当前版本继续使用固定 snapshot 数据，不接真实业务状态流。
+- 当前不实现真实 modal 动画、遮罩渐变和关闭行为。
 - 当前优先保证 `reference` 页面、单测和发布链路闭环，不联动外部弹层系统。
+
+## 14. 与现有控件的边界
+- 相比 `message_bar`：这里表达阻断式确认，不是页内提示。
+- 相比 `toast_stack`：这里承载明确动作，不是短时通知。
+- 相比 `teaching_tip`：这里是居中确认层，不是锚定式说明。
+
+## 15. EGUI 适配说明
+- 保持 `dialog_sheet` custom 实现继续驻留在 widgets 仓库，不下沉到 SDK。
+- preview 统一复用静态 preview API，吞掉输入并清理残留 `pressed`。
+- README、demo、单测和 runtime 验收口径已经对齐到当前 reference workflow。
