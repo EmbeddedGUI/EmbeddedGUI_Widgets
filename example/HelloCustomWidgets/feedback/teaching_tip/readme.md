@@ -1,99 +1,127 @@
-# teaching_tip 设计说明
+# TeachingTip 设计说明
 
 ## 参考来源
-- 参考设计系统：`Fluent 2`
+- 参考设计体系：`Fluent 2`
 - 参考开源库：`WPF UI`
 - 平台语义参考：`WinUI TeachingTip`
 - 补充对照实现：`ModernWpf`
 - 对应组件名：`TeachingTip`
-- 本次保留状态：`accent`、`warning`、`top / bottom placement`、`closed / reopen`、`compact`、`read only`
-- 本次删除效果：preview snapshot 切换、preview 点击清 focus 的桥接动作，以及与 anchored callout 无关的额外交互录制
-- EGUI 适配说明：沿用仓库内 `teaching_tip` custom 实现，本轮只收口 `reference` 页面结构、静态 preview 语义和录制轨道，不修改 `sdk/EmbeddedGUI`
+- 当前保留状态：`bottom placement`、`top placement`、`warning tone`、`closed / reopen`、`compact`、`read only`
+- 当前移除内容：旧版强交互录制轨道、preview 桥接点击、与主区 reference 语义无关的额外切换动作
+- EGUI 适配说明：继续使用仓库内 `teaching_tip` custom 实现，本轮只收口 `reference` 页面结构、静态 preview、README、单测与验收链，不修改 `sdk/EmbeddedGUI`
 
 ## 1. 为什么需要这个控件
-`TeachingTip` 用来表达围绕具体目标的上下文引导语义，适合首次引导、快捷键提示、功能解释和发布前提醒。它不是页内横幅，也不是阻塞式弹层，而是更接近 Fluent / WPF UI 的轻量 anchored callout。
+`teaching_tip` 用于围绕具体目标表达带上下文的引导信息，适合首次引导、快捷操作提示、功能解释和风险提醒。它不是页内横幅，也不是阻塞式弹层，而是更接近 Fluent / WPF UI 的 anchored callout 语义。
 
-## 2. 为什么现有控件不够用
-- `message_bar` 是页内横向反馈条，不围绕目标锚定。
-- `dialog_sheet` 是收口式对话层，不是贴近控件的上下文提示。
-- `toast_stack` 偏短时通知，不承担教学引导语义。
-- `menu_flyout` 是命令面板，不是带目标锚点的提示卡片。
-- 当前仓库仍需要一版贴近 Fluent / WPF UI `TeachingTip` 的 reference 示例。
+## 2. 为什么现有控件不够
+- `tool_tip` 更偏轻量悬浮提示，不承担多动作引导卡片语义。
+- `message_bar` 是页内横向反馈，不围绕具体目标锚定。
+- `dialog_sheet` 是收口式对话层，不适合贴近目标的上下文提示。
+- `toast_stack` 偏瞬时通知，不负责教学式引导。
+- 仓库仍需要一版贴近 Fluent / WPF UI `TeachingTip` 的 `reference` 页面，和其他 feedback 控件划清边界。
 
-## 3. 目标场景与示例概览
-- 主控件展示标准 `teaching_tip`，通过录制轨道覆盖 `bottom placement`、`top placement`、warning、关闭态、重开态和键盘导航。
-- 底部左侧展示 `compact` 静态对照，保留缩小尺寸下的 coachmark、target 和单动作布局。
-- 底部右侧展示 `read only` 静态对照，保留禁用交互后的弱化 callout。
-- 页面结构统一收口为：标题 -> 主 `teaching_tip` -> `compact / read only` 双 preview。
-- 两个 preview 统一通过 `egui_view_teaching_tip_override_static_preview_api()` 吞掉 `touch / key`，不再切换 snapshot，也不再承担清主控件 focus 的桥接职责。
+## 3. 当前页面结构
+- 标题：`Teaching Tip`
+- 主区：一个主 `teaching_tip`
+- 底部：两个真正静态的 preview
+- 左侧 preview：`compact`
+- 右侧 preview：`read only`
+- 页面结构统一收口为：标题 -> 主 `teaching_tip` -> 底部 `compact / read only`
 
-目标目录：`example/HelloCustomWidgets/feedback/teaching_tip/`
+当前目录：`example/HelloCustomWidgets/feedback/teaching_tip/`
 
-## 4. 视觉与布局规格
-- 根容器尺寸：`224 x 252`
-- 主控件尺寸：`196 x 132`
-- 底部对照行尺寸：`216 x 80`
-- `compact` 预览：`104 x 80`
-- `read only` 预览：`104 x 80`
+## 4. 主区 reference 轨道
+主区录制轨道当前固定为五步：
 
-视觉约束：
-- 页面保持浅灰 page panel、白底 callout surface 和低噪音浅边框。
-- target 与 bubble 的锚定关系必须清楚，但整体不能回到旧 showcase 风格。
-- `primary / secondary / close` 仍保留清晰的动作层级，但 chrome 必须更轻。
-- 底部两个 preview 不承接真实交互，只负责静态 reference 对照。
-- 主控件继续遵守 same-target release：`DOWN(A) -> MOVE(B) -> UP(B)` 不提交，回到 `A` 后 `UP(A)` 才提交。
+1. `Quick filters / bottom open`
+   默认 `accent / bottom placement`
+2. `Cmd palette / top open`
+   程序化切到顶部气泡
+3. `Sync draft / warning open`
+   程序化切到 warning 语义
+4. `Tip hidden / closed`
+   使用同步后的 closed snapshot，保留主区关闭态
+5. `Quick filters / bottom open`
+   回到默认态，作为最终稳定帧
 
-## 5. 控件清单
+底部 preview 在整条录制轨道中保持固定：
+1. `compact`
+   `Quick tip`
+2. `read only`
+   `Preview`
 
-| 变量名 | 类型 | 尺寸 (W x H) | 初始状态 | 用途 |
-| --- | --- | ---: | --- | --- |
-| `root_layout` | `egui_view_linearlayout_t` | `224 x 252` | enabled | 页面根布局 |
-| `title_label` | `egui_view_label_t` | `224 x 18` | `Teaching Tip` | 页面标题 |
-| `tip_primary` | `egui_view_teaching_tip_t` | `196 x 132` | `Quick filters` | 标准主控件 |
-| `tip_compact` | `egui_view_teaching_tip_t` | `104 x 80` | `Quick tip / static` | 紧凑静态对照 |
-| `tip_read_only` | `egui_view_teaching_tip_t` | `104 x 80` | `Preview / static` | 只读静态对照 |
+## 5. 视觉与布局规格
+- 画布：`480 x 480`
+- 根布局尺寸：`224 x 252`
+- 主 `teaching_tip` 尺寸：`196 x 132`
+- 底部容器尺寸：`216 x 80`
+- 单个 preview 尺寸：`104 x 80`
+- 页面结构：标题 -> 主 `teaching_tip` -> 底部 `compact / read only`
+- 页面风格：浅灰 `page panel`、白色 `surface`、低噪音边框、克制的 `accent / warning` 色带
 
-## 6. 状态覆盖矩阵
+## 6. 状态矩阵
+| 状态 / 区域 | 主 `teaching_tip` | Compact preview | Read only preview |
+| --- | --- | --- | --- |
+| `bottom placement` | 是 | 是 | 是 |
+| `top placement` | 是 | 否 | 否 |
+| `warning tone` | 是 | 否 | 否 |
+| `closed / reopen` | 是 | 否 | 否 |
+| `compact_mode` | 否 | 是 | 是 |
+| `read_only_mode` | 否 | 否 | 是 |
+| 静态 preview 吞掉 `touch / key` 且状态不变 | 否 | 是 | 是 |
 
-| 区域 / 轨道 | 状态 | 说明 |
-| --- | --- | --- |
-| 主控件 | `Quick filters` | 默认 `accent / bottom placement` |
-| 主控件 | `Cmd palette` | `accent / top placement` |
-| 主控件 | `Sync draft` | `warning / bottom placement` |
-| 主控件 | `Tip hidden` | close 后的关闭态与 target 重开态 |
-| 主控件 | `keyboard nav` | `Right / Right / Escape` 的主控件状态变化 |
-| `compact` | `Quick tip` | 紧凑静态 preview |
-| `read only` | `Preview` | 只读静态 preview |
-
-## 7. 交互与状态语义
-- 主 `teaching_tip` 保留 target、bubble、`primary / secondary / close`、`top / bottom placement`、关闭态与重开态语义。
-- `compact / read only` preview 都通过 static preview API 吞掉 `touch / key`，作为真正静态的 reference 对照。
-- `read only` preview 继续使用 `set_read_only_mode(..., 1)`，保证不承接真实交互。
-- 本轮不修改 SDK，只在 demo、README 和单测层面移除 preview 桥接录制逻辑。
+## 7. 交互语义
+- 主 `teaching_tip` 继续保留 `target / primary / secondary / close` 的真实交互语义。
+- 主区继续保留 `top / bottom placement`、关闭态和重新打开态。
+- 主区继续遵守 same-target release：`DOWN(A) -> MOVE(B) -> UP(B)` 不提交，回到 `A` 后 `UP(A)` 才提交。
+- `compact / read only` preview 统一通过 `egui_view_teaching_tip_override_static_preview_api()` 吞掉 `touch / key`，只承担静态 reference 对照职责。
+- `read only` preview 继续显式设置 `set_read_only_mode(..., 1)`，避免参与真实交互。
+- 更细的交互闭环由 `HelloUnitTest` 覆盖，runtime 录制只保留稳定 reference 主状态。
 
 ## 8. 本轮收口内容
-- 继续维护 `example/HelloCustomWidgets/feedback/teaching_tip/test.c`
-- 调整底部 `compact` preview 为单一静态 snapshot，删除 preview snapshot 切换
-- 删除 preview 点击清主控件 focus 的桥接逻辑和对应录制动作
-- 保留主控件的 target / primary / secondary / close / reopen / keyboard 录制轨道
-- 单测同步补齐“静态 preview 输入抑制后仍保持固定 snapshot 和 current_part”的覆盖
+- `example/HelloCustomWidgets/feedback/teaching_tip/test.c`
+  新增 `ui_ready`、`layout_local_views()`、`layout_page()` 和统一 `request_page_snapshot()`，把录制轨道收口为主区四组 reference 状态加最终稳定帧；底部 preview 全程保持真正静态。
+- `example/HelloUnitTest/test/test_teaching_tip.c`
+  新增 `teaching_tip_preview_snapshot_t`、`assert_region_equal()`、`capture_preview_snapshot()` 和 `assert_preview_state_unchanged()`，把静态 preview 用例收口为完整状态不变断言，并统一改成 `dispatch_touch_event()` / `dispatch_key_event()`。
+- `example/HelloCustomWidgets/feedback/teaching_tip/readme.md`
+  按当前 workflow 模板重写，并在验收完成后回填 compile / unit / runtime / web 结果与 runtime 复核数字。
 
-## 9. `egui_port_get_recording_action()` 录制动作设计
-1. 还原主控件到默认 `bottom placement`，并同步两个静态 preview 状态。
-2. 请求默认截图。
-3. 点击 target 并请求截图。
-4. 点击 primary 并请求截图。
-5. 程序化切换到 `top placement`，请求截图。
-6. 点击 secondary 并请求截图。
-7. 程序化切换到 warning，点击 primary 并请求截图。
-8. 点击 close 进入关闭态，再请求截图。
-9. 点击 target 重开并请求截图。
-10. 回放 `Right / Right / Escape` 键盘导航并请求截图。
-11. 恢复默认 `bottom placement` 与两个静态 preview，再请求最终稳定帧。
+## 9. 录制动作设计
+`egui_port_get_recording_action()` 当前轨道如下：
 
-## 10. 编译、测试与 runtime 验收
+1. 还原 `Quick filters / bottom open`，同步底部两个静态 preview，并请求首帧。
+2. 切到 `Cmd palette / top open` 并请求快照。
+3. 切到 `Sync draft / warning open` 并请求快照。
+4. 同步 closed snapshot，进入 `Tip hidden / closed` 并请求快照。
+5. 回到默认 `Quick filters / bottom open` 并请求最终稳定帧。
+
+说明：
+- 所有截图请求统一走 `request_page_snapshot()`，先布局，再刷新，再申请录制。
+- 底部 preview 在整条轨道中不承担任何状态切换职责。
+- 主区变化只来自 reference snapshot 切换与 closed snapshot 同步。
+
+## 10. 单元测试口径
+`example/HelloUnitTest/test/test_teaching_tip.c` 当前覆盖十部分：
+
+1. `set_snapshots()` 的 clamp、默认 part 解析和空数据保护
+2. `current_snapshot / current_part` guard 与 pressed 清理
+3. `font / meta_font / compact / read_only / palette` setter 与内部 helper
+4. metrics 计算、placement 变化与 hit testing
+5. 触摸 same-target release、cancel 和 close / reopen
+6. keyboard navigation 与 `Left / Right / Home / End / Tab / Escape / Enter / Space`
+7. `compact_mode` 切换后的 pressed 清理和输入行为
+8. `read_only_mode` 的输入忽略与恢复
+9. `!enable` guard 与 disabled 状态下的 pressed 清理
+10. 静态 preview 吞掉输入后保持完整状态不变
+
+其中静态 preview 用例通过 `teaching_tip_preview_snapshot_t` 固定校验：
+`region_screen / background / snapshots / font / meta_font / on_part_changed / api / palette / snapshot_count / current_snapshot / current_part / compact_mode / read_only_mode / pressed_part / alpha / enable / is_focused / is_pressed / padding`
+
+## 11. 验收命令
 ```bash
 make all APP=HelloCustomWidgets APP_SUB=feedback/teaching_tip PORT=pc
+
+make clean APP=HelloUnitTest PORT=pc_test
 make all APP=HelloUnitTest PORT=pc_test
 X:\output\main.exe
 
@@ -108,15 +136,53 @@ python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub feedba
 python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_feedback_teaching_tip
 ```
 
-验收重点：
-- 主控件和底部 `compact / read only` preview 都必须完整可见。
-- target 与 bubble 的锚定关系必须清楚，`top / bottom placement` 需要能直接辨认。
-- 关闭态与重开态必须稳定，不依赖外部桥接。
-- `compact / read only` preview 必须在所有 runtime 帧中保持静态，不得因点击或 snapshot 切换产生额外变化。
-- preview 不响应触摸或键盘输入，也不改变 `current_snapshot / current_part`。
+## 12. 当前结果
+- `HelloCustomWidgets` 单控件编译：`PASS`
+  `make all APP=HelloCustomWidgets APP_SUB=feedback/teaching_tip PORT=pc`
+- `HelloUnitTest`：`PASS`
+  在 `X:\` 执行 `make clean APP=HelloUnitTest PORT=pc_test`、`make all APP=HelloUnitTest PORT=pc_test` 和 `X:\output\main.exe`，总计 `845 / 845`，其中 `teaching_tip` suite `10 / 10`
+- `sync_widget_catalog.py`：`PASS`
+  同步后保持 `106` 个 widgets
+- `touch release semantics`：`PASS`
+  `custom_audited=10 custom_skipped_allowlist=0`
+- `docs encoding`：`PASS`
+  `134` 个文档文件编码检查通过
+- `widget catalog check`：`PASS`
+  `106 widgets: reference=106, showcase=0, deprecated=0`
+- 单控件 runtime：`PASS`
+  `10 frames captured -> runtime_check_output/HelloCustomWidgets_feedback_teaching_tip/default`
+- feedback 分类 compile/runtime 回归：`PASS`
+- wasm 构建：`PASS`
+  `web/demos/HelloCustomWidgets_feedback_teaching_tip`
+- web smoke：`PASS`
+  `status=Running canvas=480x480 ratio=0.1921 colors=162`
 
-## 11. 已知限制
-- 当前版本是页内固定锚点 reference，不做真实 popup 跟随。
-- 当前不做自动避让和屏幕边缘翻转策略。
-- 当前不做真实图标资源和入场动画。
-- 当前优先验证 `reference` 语义、布局稳定性和视觉收口，不扩展成多目标引导系统。
+## 13. Runtime 复核结论
+复核目录：`runtime_check_output/HelloCustomWidgets_feedback_teaching_tip/default`
+
+- 总帧数：`10`
+- 主区 RGB 差分边界：`(68, 81) - (413, 207)`
+- 遮罩主区后主区外唯一哈希数：`1`
+- 主区唯一状态数：`4`
+- 底部 preview 区唯一哈希数：`1`
+
+结论：
+- 主区变化严格收敛在 `teaching_tip` reference 主体，遮罩主区差分边界后，主区外页面 chrome 在整条录制轨道中保持静态。
+- `10` 帧里主区共出现 `4` 组唯一状态，对应 `Quick filters / bottom open`、`Cmd palette / top open`、`Sync draft / warning open` 和 `Tip hidden / closed`；最终稳定帧回到默认 `Quick filters / bottom open`。
+- 按 `y >= 207` 裁切底部 preview 区域后保持单哈希，确认 `compact / read only` preview 在整条轨道中始终静态一致。
+
+## 14. 已知限制
+- 当前版本仍是页内固定锚点的 reference，不做系统级 popup 跟随。
+- 当前不做自动避让、屏幕边缘翻转和复杂入场动画。
+- 当前以固定 snapshot 数据保证录制稳定，不接业务侧动态文案来源。
+- 当前优先保证 `reference` 页面、单测、runtime 验收和 web 发布链闭环，不扩展成多目标引导系统。
+
+## 15. 与现有控件的边界
+- 相比 `tool_tip`：这里是带动作的引导卡片，不是轻量悬浮提示。
+- 相比 `message_bar`：这里是围绕目标的锚定 callout，不是页内横向反馈条。
+- 相比 `toast_stack`：这里不承担瞬时通知队列，只表达目标引导和功能提醒。
+
+## 16. EGUI 适配说明
+- `teaching_tip` custom 实现继续留在 widgets 仓库，不下沉到 SDK。
+- preview 统一复用 static preview API，吞掉输入并清理残留 pressed 状态。
+- README、demo、单测、runtime 验收和 web 发布口径已经对齐到当前 `reference` workflow。
