@@ -22,6 +22,7 @@
 #define PROGRESS_BAR_RECORD_WAIT       90
 #define PROGRESS_BAR_RECORD_ANIM_WAIT  260
 #define PROGRESS_BAR_RECORD_FRAME_WAIT 170
+#define PROGRESS_BAR_RECORD_FINAL_WAIT 520
 
 static egui_view_linearlayout_t root_layout;
 static egui_view_label_t title_label;
@@ -32,6 +33,7 @@ static egui_view_progress_bar_t progress_bar_paused;
 static egui_view_api_t progress_bar_paused_api;
 static egui_view_progress_bar_t progress_bar_error;
 static egui_view_api_t progress_bar_error_api;
+static uint8_t ui_ready;
 
 static char primary_status_text[24];
 
@@ -41,15 +43,25 @@ EGUI_BACKGROUND_COLOR_STATIC_CONST_INIT(bg_page_panel, &bg_page_panel_params);
 
 static const char *title_text = "ProgressBar";
 
+static void layout_page(void);
+
 static void update_primary_complete_status(uint8_t value)
 {
     snprintf(primary_status_text, sizeof(primary_status_text), "%u%% complete", value);
     egui_view_label_set_text(EGUI_VIEW_OF(&progress_bar_status), primary_status_text);
+    if (ui_ready)
+    {
+        layout_page();
+    }
 }
 
 static void update_primary_loading_status(void)
 {
     egui_view_label_set_text(EGUI_VIEW_OF(&progress_bar_status), "Syncing...");
+    if (ui_ready)
+    {
+        layout_page();
+    }
 }
 
 static void on_primary_progress_changed(egui_view_t *self, uint8_t progress)
@@ -69,7 +81,32 @@ static void apply_preview_values(void)
 {
     hcw_progress_bar_set_value(EGUI_VIEW_OF(&progress_bar_paused), 46);
     hcw_progress_bar_set_value(EGUI_VIEW_OF(&progress_bar_error), 82);
+    if (ui_ready)
+    {
+        layout_page();
+    }
 }
+
+static void layout_local_views(void)
+{
+    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&bottom_row));
+    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&root_layout));
+}
+
+static void layout_page(void)
+{
+    layout_local_views();
+    egui_core_layout_childs_user_root_view(EGUI_LAYOUT_VERTICAL, EGUI_ALIGN_HCENTER | EGUI_ALIGN_VCENTER);
+}
+
+#if EGUI_CONFIG_RECORDING_TEST
+static void request_page_snapshot(void)
+{
+    layout_page();
+    egui_view_invalidate(EGUI_VIEW_OF(&root_layout));
+    recording_request_snapshot();
+}
+#endif
 
 void test_init_ui(void)
 {
@@ -133,11 +170,11 @@ void test_init_ui(void)
 
     hello_custom_widgets_demo_apply_title_only_scaffold(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label), NULL, 0);
 
-    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&bottom_row));
-    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&root_layout));
-
+    layout_local_views();
     egui_core_add_user_root_view(EGUI_VIEW_OF(&root_layout));
-    egui_core_layout_childs_user_root_view(EGUI_LAYOUT_VERTICAL, EGUI_ALIGN_HCENTER | EGUI_ALIGN_VCENTER);
+    ui_ready = 1;
+    apply_primary_loading_state();
+    apply_preview_values();
 }
 
 #if EGUI_CONFIG_RECORDING_TEST
@@ -160,7 +197,7 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
         {
             apply_primary_loading_state();
             apply_preview_values();
-            recording_request_snapshot();
+            request_page_snapshot();
         }
         EGUI_SIM_SET_WAIT(p_action, PROGRESS_BAR_RECORD_FRAME_WAIT);
         return true;
@@ -170,7 +207,7 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     case 2:
         if (first_call)
         {
-            recording_request_snapshot();
+            request_page_snapshot();
         }
         EGUI_SIM_SET_WAIT(p_action, PROGRESS_BAR_RECORD_FRAME_WAIT);
         return true;
@@ -184,16 +221,16 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     case 4:
         if (first_call)
         {
-            recording_request_snapshot();
+            request_page_snapshot();
         }
         EGUI_SIM_SET_WAIT(p_action, PROGRESS_BAR_RECORD_FRAME_WAIT);
         return true;
     case 5:
         if (first_call)
         {
-            recording_request_snapshot();
+            request_page_snapshot();
         }
-        EGUI_SIM_SET_WAIT(p_action, 520);
+        EGUI_SIM_SET_WAIT(p_action, PROGRESS_BAR_RECORD_FINAL_WAIT);
         return true;
     default:
         return false;

@@ -1,127 +1,167 @@
-# progress_bar 设计说明
+# ProgressBar 设计说明
 
 ## 参考来源
-- 参考设计系统：`Fluent 2`
+- 参考设计体系：`Fluent 2`
 - 参考开源库：`WPF UI`
 - 补充对照实现：`WinUI ProgressBar`
 - 对应组件名：`ProgressBar`
-- 本次保留状态：`standard`、`paused`、`error`、`indeterminate`
-- 本次删除效果：页面级 guide、外部 preview 标签、场景化装饰和与进度条无关的说明壳层
-- EGUI 适配说明：继续复用 SDK `progress_bar` 的 determinate 绘制能力，在 custom 层补齐 `ProgressBar` 的 `indeterminate` 语义、timer 生命周期和静态 preview API，不修改 `sdk/EmbeddedGUI`
+- 当前保留状态：`standard`、`paused`、`error`、`indeterminate`
+- 当前移除内容：页面级 guide、外部 preview 标签、场景化装饰、与进度条无关的说明壳层和旧 feat 口径文案
+- EGUI 适配说明：继续复用 SDK `progress_bar` 的 determinate 绘制能力，在 custom 层补齐 `indeterminate` 语义、timer 生命周期和静态 preview API，不修改 `sdk/EmbeddedGUI`
 
-## 1. 为什么需要这个控件？
-`progress_bar` 用于表达明确的数值型进度，例如安装、同步、下载和处理任务。仓库里的 `ProgressBar` reference 页面已经覆盖 determinate 语义，但还缺少 Fluent / WinUI 同样核心的 `indeterminate` loading 状态，因此需要继续收口。
+## 1. 为什么需要这个控件
+`progress_bar` 用来表达明确的线性进度，适合安装、同步、下载和后台处理任务。除了常规 determinate 百分比，Fluent / WinUI 主线里同样要求支持 `indeterminate` loading，因此这里需要同时保留线性进度和低噪音等待态。
 
-## 2. 为什么现有控件不够用？
-- `skeleton` 适合内容占位，不表达确定百分比。
-- `message_bar` 更偏消息提示，不承担过程进度反馈。
-- `toast_stack` 负责短时通知，不适合持续展示任务完成度。
-- SDK 自带 `progress_bar` 只有基础 determinate 绘制，没有当前仓库统一的 Fluent 风格 `indeterminate` 动画语义。
+## 2. 为什么现有控件不够用
+- `activity_ring` 面向圆形 `ProgressRing`，不适合线性进度条语义。
+- `spinner` 更偏持续等待指示，不承担明确百分比语义。
+- `skeleton` 是内容占位，不表达当前任务进度。
+- SDK 自带 `progress_bar` 只有基础 determinate 绘制，没有当前 reference 页面需要的 `indeterminate` 动画与静态 preview 收口。
 
-## 3. 目标场景与示例概览
-- 主控件默认展示 `indeterminate` 主条，用来表达“正在同步”。
-- 主控件下方保留一行轻量状态文案：loading 时显示 `Syncing...`，回落到 determinate 后再显示当前百分比。
-- 底部左侧展示 `paused` 静态对照，用暖色表达“已暂停但保留进度”。
-- 底部右侧展示 `error` 静态对照，用红色表达“失败状态下的最后进度”。
-- 页面结构统一收口为：标题 -> 主 `progress_bar` -> 当前值文案 -> `paused / error` 双 preview。
-- 两个 preview 通过 `hcw_progress_bar_override_static_preview_api()` 统一吞掉 `touch / key`，不参与交互，只做 reference 对照。
-- runtime 录制先抓两帧动画中的 loading，再切到 `92% complete` 的 determinate 完成态。
+## 3. 当前页面结构
+- 标题：`ProgressBar`
+- 主区：一个主 `progress_bar`
+- 主区下方：一行状态文案
+- 底部：两个真正静态的 preview
+- 左侧 preview：`paused`，固定显示 `46%`
+- 右侧 preview：`error`，固定显示 `82%`
 
-目标目录：`example/HelloCustomWidgets/feedback/progress_bar/`
+当前目录：`example/HelloCustomWidgets/feedback/progress_bar/`
 
-## 4. 视觉与布局规格
-- 根容器尺寸：`224 x 116`
-- 主控件尺寸：`196 x 18`
+## 4. 主区 reference 轨道
+主控件录制轨道保持 `indeterminate -> determinate` 的主线语义：
+
+1. `Syncing...`
+   主条为 `indeterminate`，用来表达后台同步中的 loading。
+2. `Syncing...`
+   继续保留 `indeterminate`，但让流动条前移，确保录制能看出动画推进。
+3. `92% complete`
+   程序化退出 `indeterminate`，回落到 determinate 百分比完成态。
+
+底部 preview 在整条轨道中保持固定：
+
+1. `paused`
+   `46%`
+   `paused` palette
+2. `error`
+   `82%`
+   `error` palette
+
+## 5. 视觉与布局规格
+- 画布：`480 x 480`
+- 根布局尺寸：`224 x 116`
+- 主进度条尺寸：`196 x 18`
 - 状态文案尺寸：`196 x 14`
-- 底部对照行尺寸：`200 x 12`
-- `paused` 预览：`96 x 12`
-- `error` 预览：`96 x 12`
-- 页面结构：标题 + 主进度条 + 当前值文案 + 底部双预览
-- 样式约束：
-  - 页面背景保持浅灰 panel。
-  - `standard` 使用蓝色 fill + 冷灰 track。
-  - `paused` 使用橙棕 fill + 暖灰 track。
-  - `error` 使用红色 fill + 浅粉灰 track。
-  - `indeterminate` 使用单段低噪音流动条，不引入 striped 或更重的装饰动画。
-  - 不引入额外卡片、图标和强装饰性标签。
+- 底部行容器尺寸：`200 x 12`
+- 单个 preview 尺寸：`96 x 12`
+- 页面结构：标题 -> 主 `progress_bar` -> 状态文案 -> 底部 `paused / error`
+- 页面风格：浅灰 page panel、低噪音冷灰 track、标准蓝主进度、暖棕 paused、红色 error
 
-## 5. 控件清单
+## 6. 状态矩阵
+| 状态 / 区域 | 主控件 | Paused preview | Error preview |
+| --- | --- | --- | --- |
+| `indeterminate` 动画 | 是 | 否 | 否 |
+| determinate 百分比 | 是 | 是 | 是 |
+| `paused` palette | 否 | 是 | 否 |
+| `error` palette | 否 | 否 | 是 |
+| `set_value()` 退出 `indeterminate` | 是 | 否 | 否 |
+| attach 后启动 timer | 是 | 否 | 否 |
+| detach 后停止 timer | 是 | 否 | 否 |
+| 静态 preview 吞掉 `touch / key` 且保持状态不变 | 否 | 是 | 是 |
 
-| 变量名 | 类型 | 尺寸 (W x H) | 初始状态 | 用途 |
-| --- | --- | ---: | --- | --- |
-| `root_layout` | `egui_view_linearlayout_t` | `224 x 116` | enabled | 页面根布局 |
-| `title_label` | `egui_view_label_t` | `224 x 18` | `ProgressBar` | 页面标题 |
-| `progress_bar_primary` | `egui_view_progress_bar_t` | `196 x 18` | `indeterminate` | 主进度条 |
-| `progress_bar_status` | `egui_view_label_t` | `196 x 14` | `Syncing...` | 主状态文案 |
-| `progress_bar_paused` | `egui_view_progress_bar_t` | `96 x 12` | `46%` | `paused` 静态对照 |
-| `progress_bar_error` | `egui_view_progress_bar_t` | `96 x 12` | `82%` | `error` 静态对照 |
+## 7. 录制动作设计
+`egui_port_get_recording_action()` 当前轨道为：
 
-## 6. 状态覆盖矩阵
+1. 应用主条 `indeterminate` 初始态和底部 preview 固定值
+2. 抓取首帧
+3. 等待动画推进
+4. 抓取第二张 loading 帧
+5. 程序化切到 `92% complete`
+6. 抓取 determinate 完成态
+7. 再抓取一张最终稳定帧
 
-| 区域 / 轨道 | 状态 | 说明 |
-| --- | --- | --- |
-| 主控件 | `indeterminate` | attach 后开始轻量流动动画 |
-| 主控件 | `92% complete` | 录制收尾时回落到 determinate 完成态 |
-| `paused` | `46%` | 暂停状态下保留既有进度 |
-| `error` | `82%` | 错误状态下保留失败前的最后进度 |
+说明：
+- 录制阶段不再让底部 preview 承担任何状态切换或桥接职责。
+- 主区动画继续保留，但底部 preview 通过 `hcw_progress_bar_override_static_preview_api()` 完全收口为静态 reference。
+- 状态文案与主条一起作为主区变化的一部分参与 runtime 复核。
 
-## 7. `egui_port_get_recording_action()` 录制动作设计
-1. 重置主进度条到 `indeterminate`，并同步 `paused` 和 `error` preview。
-2. 请求默认截图。
-3. 等待动画推进一段时间。
-4. 请求第二张截图，确认流动条已经前移。
-5. 程序化把主进度切到 `92%` determinate。
-6. 请求第三张截图。
-7. 再请求一张最终稳定帧，确认主进度值文案和底部 preview 没有黑白屏、裁切或脏态。
+## 8. 单元测试口径
+`example/HelloUnitTest/test/test_progress_bar.c` 当前覆盖五部分：
 
-## 8. 编译、touch、runtime、单测与文档检查
+1. 样式 helper
+   覆盖 `apply_standard_style()`、`apply_paused_style()`、`apply_error_style()`、`apply_indeterminate_style()` 的 palette 与 pressed 清理。
+2. `set_value()` clamp 与 listener
+   覆盖数值钳制、listener 回调，以及从 `indeterminate` 退出到 determinate 的行为。
+3. `indeterminate` attach / tick / detach 生命周期
+   覆盖 attach 后启动 timer、tick 推进 phase、detach 后停止 timer。
+4. palette setter
+   覆盖 `set_palette()` 对颜色更新和残留 `pressed` 的清理。
+5. 静态 preview 不变性断言
+   通过 `progress_bar_preview_snapshot_t`、`capture_preview_snapshot()` 和 `assert_preview_state_unchanged()` 固定校验：
+   `region_screen / background / on_click_listener / on_progress_changed / api / control_color / bk_color / progress_color / process / is_show_control / timer_started / indeterminate_mode / phase / determinate_value / alpha / enable / is_focused / is_pressed / padding`
+
+补充说明：
+- preview 用例已收口为 “consumes input and keeps state”。
+- 事件分发已统一走 `dispatch_touch_event()` / `dispatch_key_event()`。
+
+## 9. 验收命令
 ```bash
 make all APP=HelloCustomWidgets APP_SUB=feedback/progress_bar PORT=pc
+
+make clean APP=HelloUnitTest PORT=pc_test
 make all APP=HelloUnitTest PORT=pc_test
-output\main.exe
+X:\output\main.exe
+
+python scripts/sync_widget_catalog.py
 python scripts/checks/check_touch_release_semantics.py --scope custom --category feedback
-python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub feedback/progress_bar --track reference --timeout 10 --keep-screenshots
 python scripts/checks/check_docs_encoding.py
+python scripts/checks/check_widget_catalog.py
+python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub feedback/progress_bar --track reference --timeout 10 --keep-screenshots
+python scripts/code_compile_check.py --custom-widgets --category feedback --bits64
+python scripts/code_runtime_check.py --app HelloCustomWidgets --category feedback --track reference --bits64
+python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub feedback/progress_bar
+python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_feedback_progress_bar
 ```
 
-验收重点：
-- 主进度条、当前值文案和底部 `paused / error` preview 都必须完整可见。
-- 两张 loading 关键截图要能直接看出 `indeterminate` 条带位置变化，第三张截图要能看出回落到 determinate 完成态。
-- `paused` 和 `error` 的色彩语义必须明确，但不能过度饱和。
-- preview 不能响应触摸或键盘输入。
+## 10. 当前结果
+- `HelloCustomWidgets` 单控件编译：已通过 `make all APP=HelloCustomWidgets APP_SUB=feedback/progress_bar PORT=pc`
+- `HelloUnitTest`：已在 `X:\` 短路径通过 `make clean APP=HelloUnitTest PORT=pc_test`、`make all APP=HelloUnitTest PORT=pc_test` 和 `X:\output\main.exe`，总计 `845 / 845`，其中 `progress_bar` suite `5 / 5`
+- `sync_widget_catalog.py`：PASS，重新同步 `widget_catalog.json` 与 `web/catalog-policy.json`
+- `touch release semantics`：PASS，结果 `custom_audited=10 custom_skipped_allowlist=0`
+- `docs encoding`：PASS，结果 `134 files`
+- `widget catalog check`：PASS，结果 `106 widgets: reference=106, showcase=0, deprecated=0`
+- 单控件 runtime：PASS，输出 `8` 帧截图
+- feedback 分类 compile/runtime 回归：PASS，分类内 `10` 个控件全部通过
+- wasm 构建：PASS，输出 `web/demos/HelloCustomWidgets_feedback_progress_bar`
+- web smoke：`PASS status=Running canvas=480x480 ratio=0.0885 colors=79`
 
-## 9. 已知限制与后续方向
-- 当前不叠加任务图标、剩余时间或步骤文案。
-- 当前优先保证 `reference` 页面、单测和 catalog 闭环，后续如需环形进度再单独补 `circular_progress_bar`。
-- 当前 `indeterminate` 动画通过 custom 层 timer + 自定义绘制补齐，不下沉到 SDK。
+## 11. Runtime 复核结论
+复核目录：`runtime_check_output/HelloCustomWidgets_feedback_progress_bar/default`
 
-## 10. 与现有控件的边界
-- 相比 `skeleton`：这里表达确定数值进度，不表达内容骨架。
-- 相比 `message_bar`：这里是持续进度反馈，不是一次性消息提示。
-- 相比 `toast_stack`：这里强调过程状态，不做短时通知堆栈。
+- 总帧数：`8`
+- 主区 RGB 差分边界：`(44, 190) - (403, 236)`
+- 遮罩主区变化边界后，主区外唯一哈希数：`1`
+- 按主区边界裁切后，主区唯一状态数：`5`
+- 按 `y >= 237` 裁切底部 preview 区域后，preview 区唯一哈希数：`1`
 
-## 11. 参考设计系统与开源母本
-- 参考设计系统：`Fluent 2`
-- 参考开源库：`WPF UI`
-- 补充对照实现：`WinUI ProgressBar`
+结论：
+- 主区变化来自 `indeterminate` 条带推进和最终回落到 `92% complete` 的 determinate 完成态。
+- 主区外页面 chrome 全程静态，没有黑屏、白屏、错位或 preview 污染。
+- 底部 `paused / error` preview 在整条录制轨道中保持静态一致。
 
-## 12. 对应组件名与本次保留的核心状态
-- 对应组件名：`ProgressBar`
-- 本次保留核心状态：
-  - `indeterminate`
-  - `standard`
-  - `paused`
-  - `error`
+## 12. 已知限制
+- 当前不叠加剩余时间、步骤说明或任务图标。
+- 当前 `indeterminate` 仍是 custom 层的轻量 reference 动画，不追求完整 WinUI easing。
+- 当前只维护线性 `ProgressBar`，不扩展为更复杂的进度面板容器。
+- 底部 preview 只承担 reference 对照，不承担交互职责。
 
-## 13. 相比参考原型删除的效果或装饰
-- 删除页面级 guide、说明标签和外部 preview 标题。
-- 删除与业务流程强绑定的场景文案。
-- 删除 striped、脉冲或更重的动画装饰，只保留单段低噪音流动条语义。
+## 13. 与现有控件的边界
+- 相比 `activity_ring`：这里表达线性进度，不是圆形 `ProgressRing`。
+- 相比 `spinner`：这里既保留等待态，也保留 determinate 百分比语义。
+- 相比 `skeleton`：这里表达任务进度，不是内容占位。
 
-## 14. EGUI 适配时的简化点与约束
-- determinate 继续使用 SDK 自带线性进度绘制，不改核心 widget 实现。
-- `indeterminate` 仅在 custom 层通过附加状态表、attach / detach timer 和自定义绘制补齐。
-- `set_value()` 会退出 `indeterminate` 并恢复 determinate 百分比语义。
-- 页面中的进度变化全部程序化驱动，保证 runtime 录制稳定。
-- preview 统一走静态 API，不承担任何真实交互职责。
-- 当前只作为 `HelloCustomWidgets` 的 `reference widget` 维护，是否下沉框架层后续再评估。
+## 14. EGUI 适配说明
+- determinate 继续使用 SDK `progress_bar` 的原始绘制，不修改底层 widget。
+- `indeterminate` 通过 custom 层附加状态表、attach / detach timer 和自定义 `on_draw` 补齐。
+- `set_value()` 会退出 `indeterminate`，恢复 determinate 百分比语义。
+- preview 统一走静态 API，不参与真实交互，也不启动动画 timer。
