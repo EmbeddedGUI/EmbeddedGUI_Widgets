@@ -200,6 +200,8 @@ static void apply_primary_key(uint8_t key_code)
 
 void test_init_ui(void)
 {
+    ui_ready = 0;
+
     egui_view_linearlayout_init(EGUI_VIEW_OF(&root_layout));
     egui_view_set_size(EGUI_VIEW_OF(&root_layout), COMMAND_BAR_FLYOUT_ROOT_WIDTH, COMMAND_BAR_FLYOUT_ROOT_HEIGHT);
     egui_view_linearlayout_set_orientation(EGUI_VIEW_OF(&root_layout), 0);
