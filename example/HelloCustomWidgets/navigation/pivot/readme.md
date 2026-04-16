@@ -1,189 +1,162 @@
 # Pivot 设计说明
 
 ## 参考来源
-
 - 参考设计系统：`Fluent 2`
 - 平台语义参考：`WinUI 3 Pivot`
 - 次级补充参考：`WPF UI`、`ModernWpf`
 - 对应组件名：`Pivot`
-- 本次保留状态：`standard`、`compact`、`read only`、`same-target release`、键盘切换、静态 preview
-- 本次删除效果：手势翻页动画、惰性加载、自定义 header 模板、嵌套滚动联动、场景化页面 chrome
-- EGUI 适配说明：在 custom 层实现轻量 `hcw_pivot`，自绘 header 与 body，复用现有 `tab_strip / flip_view` 的交互经验，不修改 SDK
+- 当前保留状态：`standard`、`compact`、`read only`、`same-target release`、键盘切换、静态 preview
+- 当前移除内容：旧 `compact_panel / read_only_panel` 包装、标题说明文案、preview 轮换、录制里的 preview 切换桥接、手势翻页动画、场景化页面 chrome
 
 ## 1. 为什么需要这个控件
-
-`Pivot` 用来表达“顶部 header 负责切换分区，主体区域一次只展示一个内容页”的导航语义，适合总览、活动、历史、设置这类平级 section 的轻量切换。它比 `tab_view` 更轻，不承担 close / add / 文档页签管理；又比纯 header 条更完整，因为它需要把当前页内容一起收口。
+`pivot` 用来表达“顶部 header 负责切换分区，主体区域一次只展示一个内容页”的导航语义，适合总览、活动、历史这类平级 section 的轻量切换。它比 `tab_view` 更轻，不承担页签管理；又比单纯的选择条更完整，因为它需要把当前 body 内容一起收口。
 
 ## 2. 为什么现有控件不够用
-
 - `tab_strip` 只覆盖 header 切换，不承载单页 body 区域。
+- `selector_bar` 更偏向选择入口，缺少 `header + body` 一体化结构。
 - `flip_view` 强调顺序翻页，不表达顶部 header 导航语义。
 - `tab_view` 语义更重，偏桌面页签容器，不适合轻量 section 切换。
-- `selector_bar` 只负责选择入口，本次仍缺少 `Pivot` 的“header + body”一体化结构。
 
-## 3. 目标场景与示例概览
+## 3. 当前页面结构
+- 标题：`Pivot`
+- 主区：一个可真实交互的 `primary_pivot`
+- 底部：两个并排的静态 preview
+- 左侧 preview：`compact`，固定显示 `Home`
+- 右侧 preview：`read only`，固定显示 `Audit`
 
-- 主控件展示一个标准 `Pivot`，录制轨道依次切换：
-  - `Overview`
-  - `Activity`
-  - `History`
-- 底部左侧保留 `Compact` static preview，对照窄宽度下的 header 与 body 收口。
-- 底部右侧保留 `Read only` static preview，对照冻结态的低噪音表现。
-- 页面结构统一为：标题 -> 主 `Pivot` -> `Compact / Read only` 双 preview。
+当前目录：`example/HelloCustomWidgets/navigation/pivot/`
 
-目标目录：`example/HelloCustomWidgets/navigation/pivot/`
+## 4. 主区 reference 快照
+主控件录制轨道已经收口为 3 组 reference 快照：
 
-## 4. 视觉与布局规格
+1. `Overview`
+   `Core view / Project overview / Goals, owner and next step.`
+2. `Activity`
+   `Daily feed / Recent activity / Ship notes and open reviews.`
+3. `History`
+   `Past work / Change history / Milestones and archived updates.`
 
+底部 preview 在整条轨道中保持固定：
+
+1. `compact`
+   `Home / Quick / Pinned work`
+   `compact_mode=1`
+   `current_index=0`
+2. `read only`
+   `Audit / Static / Read only`
+   `compact_mode=1`
+   `read_only_mode=1`
+   `current_index=1`
+
+## 5. 视觉与布局规格
 - 画布：`480 x 480`
-- 根容器尺寸：`224 x 206`
+- 根布局尺寸：`224 x 206`
 - 主控件尺寸：`196 x 108`
-- 底部对照行尺寸：`216 x 72`
-- 单个 preview 面板尺寸：`104 x 72`
-- 单个 preview 控件尺寸：`84 x 46`
-- 风格约束：
-  - 使用浅灰 page panel、白色主 surface、低噪音边框。
-  - header 保留轻量 active fill + underline，不回退到重型 tab shell。
-  - body 只展示单页摘要卡片，不把 demo 扩展成场景化故事板。
+- 底部行容器尺寸：`216 x 72`
+- 单个 preview 尺寸：`104 x 72`
+- 页面结构：标题 -> 主 `pivot` -> 底部 `compact / read only`
+- 页面风格：浅灰 page panel、白色主 surface、低噪音边框、轻量 active fill 与 underline
 
-## 5. 控件清单
+## 6. 状态矩阵
+| 状态 / 区域 | 主控件 | Compact preview | Read only preview |
+| --- | --- | --- | --- |
+| 默认显示 | 是 | 是 | 是 |
+| `Overview / Activity / History` 三态切换 | 是 | 否 | 否 |
+| `DOWN(A) -> MOVE(B) -> UP(B)` 不提交 | 是 | 否 | 否 |
+| `DOWN(A) -> MOVE(B) -> MOVE(A) -> UP(A)` 才提交 | 是 | 否 | 否 |
+| `Left / Right / Up / Down / Home / End / Tab` 键盘切换 | 是 | 否 | 否 |
+| `Enter / Space` consume 但不切换 | 是 | 否 | 否 |
+| 静态 preview 吞掉 `touch / key` 且保持状态不变 | 否 | 是 | 是 |
+| `read_only_mode / !enable` 先清 pressed 再拒绝输入 | 是 | 否 | 是 |
 
-| 变量名 | 类型 | 尺寸 (W x H) | 初始状态 | 用途 |
-| --- | --- | ---: | --- | --- |
-| `primary_pivot` | `hcw_pivot_t` | `196 x 108` | `Overview` | 主 `Pivot` |
-| `compact_pivot` | `hcw_pivot_t` | `84 x 46` | `Home` | 底部 compact static preview |
-| `read_only_pivot` | `hcw_pivot_t` | `84 x 46` | `Audit` | 底部 read only static preview |
-| `primary_items` | `const hcw_pivot_item_t[3]` | - | `Overview / Activity / History` | 主控件数据轨道 |
-| `compact_items` | `const hcw_pivot_item_t[2]` | - | `Home / Queue` | compact 对照 |
-| `read_only_items` | `const hcw_pivot_item_t[2]` | - | `Usage / Audit` | read only 对照 |
+## 7. 录制动作设计
+`egui_port_get_recording_action()` 已收口为 static preview 工作流：
 
-## 6. 状态覆盖矩阵
-
-| 区域 / 轨道 | 状态 | 说明 |
-| --- | --- | --- |
-| 主控件 | `Overview` | 默认状态，验证标准 `Pivot` 视觉 |
-| 主控件 | `Activity` | 程序化切换第二项 |
-| 主控件 | `History` | 程序化切换第三项 |
-| `compact` | `Home` | 默认 compact 对照 |
-| `compact` | `Queue` | 紧凑宽度下的第二项状态 |
-| `read only` | `Audit` | 默认冻结态对照 |
-
-- 主控件保留真实 `touch / key` 切换闭环：
-  - `DOWN(A) -> MOVE(B) -> UP(B)` 不提交
-  - `DOWN(A) -> MOVE(B) -> MOVE(A) -> UP(A)` 才提交
-- 键盘覆盖：
-  - `Left / Right / Up / Down / Home / End / Tab` 切换索引
-  - `Enter / Space` 只 consume，不触发切换
-- `read_only_mode`、`disabled` 与静态 preview 都会清掉残留 pressed 状态。
-- 底部 preview 通过 `hcw_pivot_override_static_preview_api()` 收口：
-  - 吞掉 `touch / key`
-  - 只清 pressed，不改变 `current_index`
-  - 不触发 `on_changed`
-
-## 7. 公开 API
-
-| API | 作用 |
-| --- | --- |
-| `hcw_pivot_init()` | 初始化控件并挂接 `hcw_pivot` API |
-| `hcw_pivot_apply_standard_style()` | 应用标准样式 |
-| `hcw_pivot_apply_compact_style()` | 应用紧凑样式 |
-| `hcw_pivot_apply_read_only_style()` | 应用只读样式 |
-| `hcw_pivot_set_items()` | 设置 `header / eyebrow / title / body / meta / tone` 轨道 |
-| `hcw_pivot_set_current_index()` | 切换当前页并在必要时回调 `on_changed` |
-| `hcw_pivot_get_current_index()` | 读取当前索引 |
-| `hcw_pivot_set_on_changed_listener()` | 注册切换回调 |
-| `hcw_pivot_set_font()` | 设置 header / title 字体 |
-| `hcw_pivot_set_meta_font()` | 设置 eyebrow / meta / body 字体 |
-| `hcw_pivot_set_palette()` | 设置 surface、border、text、muted、accent、card surface 调色板 |
-| `hcw_pivot_set_compact_mode()` | 切换紧凑模式 |
-| `hcw_pivot_set_read_only_mode()` | 切换只读模式 |
-| `hcw_pivot_get_header_region()` | 导出 header hit region，供单测验证 |
-| `hcw_pivot_override_static_preview_api()` | 把 preview 改成吞输入的静态对照态 |
-
-## 8. `egui_port_get_recording_action()` 录制动作设计
-
-1. 重置主控件、compact preview 与 read only preview 到默认状态
-2. 输出默认截图
-3. 切换主控件到 `Activity`
-4. 输出第二张截图
-5. 切换主控件到 `History`
-6. 输出第三张截图
-7. 切换 `compact` 到 `Queue`
-8. 输出最终稳定帧
+1. 应用主区默认快照和底部 preview 固定状态
+2. 抓取首帧
+3. 切到 `Activity`
+4. 抓取第二组主区快照
+5. 切到 `History`
+6. 抓取第三组主区快照
+7. 继续等待并抓取最终稳定帧
 
 说明：
+- 录制阶段不再切换 `compact` preview，也不再补录恢复默认态的额外收尾帧。
+- 底部 preview 统一通过 `hcw_pivot_override_static_preview_api()` 吞掉 `touch / key`，只承担静态 reference 对照。
+- 主区真实 touch 和 keyboard 语义仍然保留在控件实现与单测里闭环。
 
-- `read_only` preview 在整个录制链路中保持静态冻结态，用来持续对照低噪音只读外观。
-- 录制不依赖手势翻页或动画，保证 PC runtime 与 wasm 截图稳定。
+## 8. 单元测试口径
+`example/HelloUnitTest/test/test_pivot.c` 当前覆盖四部分：
 
-## 9. 编译、单测、touch、runtime 与 web 验收路径
+1. 样式 helper 与 setter 状态清理
+   覆盖 `apply_compact_style()`、`apply_read_only_style()`、`set_font()`、`set_meta_font()`、`set_palette()`、`set_items()`、`set_current_index()` 对残留 `pressed` 的清理。
+2. touch same-target release 与 cancel
+   覆盖 `DOWN(A) -> MOVE(B) -> UP(B)` 不提交，以及回到 `A` 后才提交。
+3. 键盘导航与 guard
+   覆盖 `Right / End / Home / Tab / Enter / Space`，以及 `read_only_mode / !enable` 下的拒绝输入与 pressed 清理。
+4. 静态 preview 不变性断言
+   通过 `pivot_preview_snapshot_t`、`capture_preview_snapshot()` 和 `assert_preview_state_unchanged()` 固定校验：
+   `region_screen / background / items / font / meta_font / on_changed / api / surface_color / border_color / text_color / muted_text_color / accent_color / card_surface_color / item_count / current_index / compact_mode / read_only_mode / pressed_index / alpha / enable / is_focused / is_pressed / padding`
 
+## 9. 验收命令
 ```bash
 make all APP=HelloCustomWidgets APP_SUB=navigation/pivot PORT=pc
 
+make clean APP=HelloUnitTest PORT=pc_test
 make all APP=HelloUnitTest PORT=pc_test
-output\main.exe
+X:\output\main.exe
 
 python scripts/sync_widget_catalog.py
 python scripts/checks/check_touch_release_semantics.py --scope custom --category navigation
 python scripts/checks/check_docs_encoding.py
 python scripts/checks/check_widget_catalog.py
-
 python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub navigation/pivot --track reference --timeout 10 --keep-screenshots
-
+python scripts/code_compile_check.py --custom-widgets --category navigation --bits64
+python scripts/code_runtime_check.py --app HelloCustomWidgets --category navigation --track reference --bits64
 python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub navigation/pivot
 python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_navigation_pivot
 ```
 
-## 10. 验收重点
+## 10. 当前结果
+- `HelloCustomWidgets` 单控件编译：已通过 `make all APP=HelloCustomWidgets APP_SUB=navigation/pivot PORT=pc`
+- `HelloUnitTest`：已在 `X:\` 短路径通过 `make clean APP=HelloUnitTest PORT=pc_test`、`make all APP=HelloUnitTest PORT=pc_test` 和 `X:\output\main.exe`，总计 `845 / 845`，其中 `pivot` suite `4 / 4`
+- `sync_widget_catalog.py`：PASS，重新同步 `widget_catalog.json` 与 `web/catalog-policy.json`
+- `touch release semantics`：PASS，结果 `custom_audited=12 custom_skipped_allowlist=1`
+- `docs encoding`：PASS，结果 `134 files`
+- `widget catalog check`：PASS，结果 `106 widgets: reference=106, showcase=0, deprecated=0`
+- 单控件 runtime：PASS，输出 `8` 帧截图
+- navigation 分类 compile/runtime 回归：PASS，分类内 `13` 个控件全部通过
+- wasm 构建：PASS，输出 `web/demos/HelloCustomWidgets_navigation_pivot`
+- web smoke：`PASS status=Running canvas=480x480 ratio=0.1581 colors=171`
 
-- 主 `Pivot` 与底部两个 preview 必须完整可见，不能裁切或发虚。
-- header 选中态必须稳定可辨识，但不能回到高噪音 tab shell。
-- body 内容卡片必须跟随当前索引切换，不允许出现空白页或残留页。
-- same-target release 语义必须通过，只有回到原 header 才提交。
-- `read_only` 与静态 preview 必须吞掉输入并清掉残留 pressed。
+## 11. Runtime 复核结论
+复核目录：`runtime_check_output/HelloCustomWidgets_navigation_pivot/default`
 
-## 11. 已知限制与后续方向
+- 总帧数：`8`
+- 主区 RGB 差分边界：`(54, 121) - (425, 264)`
+- 遮罩主区变化边界后，主区外唯一哈希数：`1`
+- 按主区边界裁切后，主区唯一状态数：`3`
+- 按 `y >= 265` 裁切底部 preview 区域后，preview 区唯一哈希数：`1`
 
-- 当前只覆盖少量固定 item，不引入数据源、滚动和溢出折叠。
-- 当前 header 宽度仍使用轻量估算，不接入真实文本测量。
-- 当前 body 只做摘要卡，不引入复杂内容模板和分页容器。
-- 当前先作为 `HelloCustomWidgets` reference widget 维护，是否下沉 SDK 层后续再评估。
+结论：
+- 变化只发生在主区 `Overview / Activity / History` 三态轨道里。
+- 主区外页面 chrome 全程静态，没有黑屏、白屏、错位或 preview 污染。
+- 底部 `compact / read only` preview 在整条录制轨道中保持静态一致。
 
-## 12. 与现有控件的边界
+## 12. 已知限制
+- 当前只覆盖固定 item 集合，不引入数据源、溢出折叠或滚动联动。
+- header 宽度仍采用轻量估算，不接入真实文本测量。
+- body 只展示摘要卡，不扩展为复杂分页容器。
+- 底部 preview 只承担 reference 对照，不承担交互职责。
 
+## 13. 与现有控件的边界
 - 相比 `tab_strip`：这里补齐 body 区域，不只是 header 切换条。
-- 相比 `selector_bar`：这里表达单页内容切换，而不只是选择入口。
+- 相比 `selector_bar`：这里表达页内 section 切换，而不只是选择入口。
 - 相比 `flip_view`：这里保留顶部 header 导航，不强调翻页手势。
-- 相比 `tab_view`：这里不绑定页签壳层，也不处理 close / add。
+- 相比 `tab_view`：这里不绑定页签壳层，也不处理 `close / add`。
 
-## 13. 参考设计系统与开源母本
-
-- 参考设计系统：`Fluent 2`
-- 平台语义参考：`WinUI 3 Pivot`
-- 次级补充参考：`WPF UI`、`ModernWpf`
-
-## 14. 对应组件名与本次保留的核心状态
-
-- 对应组件名：`Pivot`
-- 本次保留核心状态：
-  - `standard`
-  - `compact`
-  - `read only`
-  - `same-target release`
-  - `keyboard navigation`
-  - `static preview`
-
-## 15. 相比参考原型删除的效果或装饰
-
-- 删除手势翻页动画与惰性加载
-- 删除自定义 header 模板、复杂容器嵌套和滚动联动
-- 删除额外页面 chrome、guide 文案和场景化叙事层
-- 删除与 `Pivot` 主线语义无关的重交互页签管理能力
-
-## 16. EGUI 适配时的简化点与约束
-
-- 自绘 header 与 body，不额外引入重型容器。
-- `compact` 与 `read only` 直接复用同一控件实现，不增加额外页面壳层。
-- setter 与 guard 都通过统一的 pressed-state 清理逻辑收口。
+## 14. EGUI 适配说明
+- 继续在 custom 层维护轻量 `hcw_pivot`，不修改 `sdk/EmbeddedGUI`。
+- 主区、`compact`、`read only` 复用同一套控件实现，只通过 palette 和 mode 切换表现。
+- setter、guard 和 static preview 都统一走 pressed-state 清理逻辑。
 - `HCW_PIVOT_MAX_ITEMS` 当前固定为 `6`，超出部分会被截断。

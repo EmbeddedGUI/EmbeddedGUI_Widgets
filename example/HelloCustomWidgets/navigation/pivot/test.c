@@ -11,40 +11,30 @@
 #define PIVOT_ROOT_HEIGHT       206
 #define PIVOT_PRIMARY_WIDTH     196
 #define PIVOT_PRIMARY_HEIGHT    108
-#define PIVOT_PREVIEW_WIDTH     84
-#define PIVOT_PREVIEW_HEIGHT    46
-#define PIVOT_PREVIEW_PANEL_W   104
-#define PIVOT_PREVIEW_PANEL_H   72
+#define PIVOT_PREVIEW_WIDTH     104
+#define PIVOT_PREVIEW_HEIGHT    72
 #define PIVOT_BOTTOM_ROW_WIDTH  216
 #define PIVOT_BOTTOM_ROW_HEIGHT 72
 #define PIVOT_RECORD_WAIT       90
 #define PIVOT_RECORD_FRAME_WAIT 170
-#define PIVOT_RECORD_FINAL_WAIT 520
+#define PIVOT_RECORD_FINAL_WAIT 280
+#define PIVOT_DEFAULT_INDEX     0
+
+#define PRIMARY_ITEM_COUNT ((uint8_t)EGUI_ARRAY_SIZE(primary_items))
 
 static egui_view_linearlayout_t root_layout;
 static egui_view_label_t title_label;
 static hcw_pivot_t primary_pivot;
 static egui_view_linearlayout_t bottom_row;
-static egui_view_linearlayout_t compact_panel;
-static egui_view_label_t compact_heading_label;
 static hcw_pivot_t compact_pivot;
-static egui_view_linearlayout_t read_only_panel;
-static egui_view_label_t read_only_heading_label;
 static hcw_pivot_t read_only_pivot;
 static egui_view_api_t compact_pivot_api;
 static egui_view_api_t read_only_pivot_api;
+static uint8_t ui_ready;
 
 EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
 EGUI_BACKGROUND_PARAM_INIT(bg_page_panel_params, &bg_page_panel_param, NULL, NULL);
 EGUI_BACKGROUND_COLOR_STATIC_CONST_INIT(bg_page_panel, &bg_page_panel_params);
-
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_surface_panel_param, EGUI_COLOR_HEX(0xFFFFFF), EGUI_ALPHA_100, 12);
-EGUI_BACKGROUND_PARAM_INIT(bg_surface_panel_params, &bg_surface_panel_param, NULL, NULL);
-EGUI_BACKGROUND_COLOR_STATIC_CONST_INIT(bg_surface_panel, &bg_surface_panel_params);
-
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_muted_panel_param, EGUI_COLOR_HEX(0xFBFCFD), EGUI_ALPHA_100, 12);
-EGUI_BACKGROUND_PARAM_INIT(bg_muted_panel_params, &bg_muted_panel_param, NULL, NULL);
-EGUI_BACKGROUND_COLOR_STATIC_CONST_INIT(bg_muted_panel, &bg_muted_panel_params);
 
 static const char *title_text = "Pivot";
 
@@ -64,6 +54,8 @@ static const hcw_pivot_item_t read_only_items[] = {
         {"Audit", "Static", "Audit", "Read only", "Locked", HCW_PIVOT_TONE_WARM},
 };
 
+static void layout_page(void);
+
 static void init_text_label(egui_view_label_t *label, egui_dim_t width, egui_dim_t height, const char *text, const egui_font_t *font, egui_color_t color,
                             uint8_t align_type)
 {
@@ -75,31 +67,56 @@ static void init_text_label(egui_view_label_t *label, egui_dim_t width, egui_dim
     egui_view_label_set_font_color(EGUI_VIEW_OF(label), color, EGUI_ALPHA_100);
 }
 
-static void init_panel(egui_view_linearlayout_t *panel, egui_dim_t width, egui_dim_t height, egui_background_t *background, uint8_t align_type)
-{
-    egui_view_linearlayout_init(EGUI_VIEW_OF(panel));
-    egui_view_set_size(EGUI_VIEW_OF(panel), width, height);
-    egui_view_linearlayout_set_orientation(EGUI_VIEW_OF(panel), 0);
-    egui_view_linearlayout_set_align_type(EGUI_VIEW_OF(panel), align_type);
-    egui_view_set_background(EGUI_VIEW_OF(panel), background);
-    egui_view_set_padding(EGUI_VIEW_OF(panel), 8, 8, 8, 8);
-}
-
 static void apply_primary_index(uint8_t index)
 {
-    hcw_pivot_set_current_index(EGUI_VIEW_OF(&primary_pivot), index % EGUI_ARRAY_SIZE(primary_items));
+    hcw_pivot_set_current_index(EGUI_VIEW_OF(&primary_pivot), index % PRIMARY_ITEM_COUNT);
+    if (ui_ready)
+    {
+        layout_page();
+    }
 }
 
-static void apply_compact_index(uint8_t index)
+static void apply_primary_default_state(void)
 {
-    hcw_pivot_set_current_index(EGUI_VIEW_OF(&compact_pivot), index % EGUI_ARRAY_SIZE(compact_items));
+    apply_primary_index(PIVOT_DEFAULT_INDEX);
 }
 
-static void apply_read_only_state(void)
+static void apply_preview_states(void)
 {
+    hcw_pivot_set_current_index(EGUI_VIEW_OF(&compact_pivot), 0);
+    hcw_pivot_set_compact_mode(EGUI_VIEW_OF(&compact_pivot), 1);
+    hcw_pivot_set_read_only_mode(EGUI_VIEW_OF(&compact_pivot), 0);
+
     hcw_pivot_set_current_index(EGUI_VIEW_OF(&read_only_pivot), 1);
+    hcw_pivot_set_compact_mode(EGUI_VIEW_OF(&read_only_pivot), 1);
     hcw_pivot_set_read_only_mode(EGUI_VIEW_OF(&read_only_pivot), 1);
+
+    if (ui_ready)
+    {
+        layout_page();
+    }
 }
+
+static void layout_local_views(void)
+{
+    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&bottom_row));
+    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&root_layout));
+}
+
+static void layout_page(void)
+{
+    layout_local_views();
+    egui_core_layout_childs_user_root_view(EGUI_LAYOUT_VERTICAL, EGUI_ALIGN_HCENTER | EGUI_ALIGN_VCENTER);
+}
+
+#if EGUI_CONFIG_RECORDING_TEST
+static void request_page_snapshot(void)
+{
+    layout_page();
+    egui_view_invalidate(EGUI_VIEW_OF(&root_layout));
+    recording_request_snapshot();
+}
+#endif
 
 void test_init_ui(void)
 {
@@ -116,7 +133,7 @@ void test_init_ui(void)
 
     hcw_pivot_init(EGUI_VIEW_OF(&primary_pivot));
     egui_view_set_size(EGUI_VIEW_OF(&primary_pivot), PIVOT_PRIMARY_WIDTH, PIVOT_PRIMARY_HEIGHT);
-    hcw_pivot_set_items(EGUI_VIEW_OF(&primary_pivot), primary_items, EGUI_ARRAY_SIZE(primary_items));
+    hcw_pivot_set_items(EGUI_VIEW_OF(&primary_pivot), primary_items, PRIMARY_ITEM_COUNT);
     hcw_pivot_set_font(EGUI_VIEW_OF(&primary_pivot), (const egui_font_t *)&egui_res_font_montserrat_10_4);
     hcw_pivot_set_meta_font(EGUI_VIEW_OF(&primary_pivot), (const egui_font_t *)&egui_res_font_montserrat_8_4);
     hcw_pivot_set_palette(EGUI_VIEW_OF(&primary_pivot), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD4DCE4), EGUI_COLOR_HEX(0x17212C),
@@ -130,13 +147,6 @@ void test_init_ui(void)
     egui_view_linearlayout_set_align_type(EGUI_VIEW_OF(&bottom_row), EGUI_ALIGN_VCENTER);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&bottom_row));
 
-    init_panel(&compact_panel, PIVOT_PREVIEW_PANEL_W, PIVOT_PREVIEW_PANEL_H, EGUI_BG_OF(&bg_muted_panel), EGUI_ALIGN_HCENTER);
-    egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&compact_panel));
-
-    init_text_label(&compact_heading_label, 84, 12, "Compact", (const egui_font_t *)&egui_res_font_montserrat_8_4, EGUI_COLOR_HEX(0x233241), EGUI_ALIGN_CENTER);
-    egui_view_set_margin(EGUI_VIEW_OF(&compact_heading_label), 0, 0, 0, 4);
-    egui_view_group_add_child(EGUI_VIEW_OF(&compact_panel), EGUI_VIEW_OF(&compact_heading_label));
-
     hcw_pivot_init(EGUI_VIEW_OF(&compact_pivot));
     egui_view_set_size(EGUI_VIEW_OF(&compact_pivot), PIVOT_PREVIEW_WIDTH, PIVOT_PREVIEW_HEIGHT);
     hcw_pivot_set_items(EGUI_VIEW_OF(&compact_pivot), compact_items, EGUI_ARRAY_SIZE(compact_items));
@@ -149,19 +159,11 @@ void test_init_ui(void)
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&compact_pivot), 0);
 #endif
-    egui_view_group_add_child(EGUI_VIEW_OF(&compact_panel), EGUI_VIEW_OF(&compact_pivot));
-
-    init_panel(&read_only_panel, PIVOT_PREVIEW_PANEL_W, PIVOT_PREVIEW_PANEL_H, EGUI_BG_OF(&bg_surface_panel), EGUI_ALIGN_HCENTER);
-    egui_view_set_margin(EGUI_VIEW_OF(&read_only_panel), 8, 0, 0, 0);
-    egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&read_only_panel));
-
-    init_text_label(&read_only_heading_label, 84, 12, "Read only", (const egui_font_t *)&egui_res_font_montserrat_8_4, EGUI_COLOR_HEX(0x233241),
-                    EGUI_ALIGN_CENTER);
-    egui_view_set_margin(EGUI_VIEW_OF(&read_only_heading_label), 0, 0, 0, 4);
-    egui_view_group_add_child(EGUI_VIEW_OF(&read_only_panel), EGUI_VIEW_OF(&read_only_heading_label));
+    egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&compact_pivot));
 
     hcw_pivot_init(EGUI_VIEW_OF(&read_only_pivot));
     egui_view_set_size(EGUI_VIEW_OF(&read_only_pivot), PIVOT_PREVIEW_WIDTH, PIVOT_PREVIEW_HEIGHT);
+    egui_view_set_margin(EGUI_VIEW_OF(&read_only_pivot), 8, 0, 0, 0);
     hcw_pivot_set_items(EGUI_VIEW_OF(&read_only_pivot), read_only_items, EGUI_ARRAY_SIZE(read_only_items));
     hcw_pivot_set_font(EGUI_VIEW_OF(&read_only_pivot), (const egui_font_t *)&egui_res_font_montserrat_8_4);
     hcw_pivot_set_meta_font(EGUI_VIEW_OF(&read_only_pivot), (const egui_font_t *)&egui_res_font_montserrat_8_4);
@@ -173,21 +175,18 @@ void test_init_ui(void)
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&read_only_pivot), 0);
 #endif
-    egui_view_group_add_child(EGUI_VIEW_OF(&read_only_panel), EGUI_VIEW_OF(&read_only_pivot));
+    egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&read_only_pivot));
 
-    apply_primary_index(0);
-    apply_compact_index(0);
-    apply_read_only_state();
+    apply_primary_default_state();
+    apply_preview_states();
 
     hello_custom_widgets_demo_apply_title_only_scaffold(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label), NULL, 0);
 
-    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&compact_panel));
-    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&read_only_panel));
-    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&bottom_row));
-    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&root_layout));
-
+    layout_local_views();
     egui_core_add_user_root_view(EGUI_VIEW_OF(&root_layout));
-    egui_core_layout_childs_user_root_view(EGUI_LAYOUT_VERTICAL, EGUI_ALIGN_HCENTER | EGUI_ALIGN_VCENTER);
+    ui_ready = 1;
+    apply_primary_default_state();
+    apply_preview_states();
 }
 
 #if EGUI_CONFIG_RECORDING_TEST
@@ -203,58 +202,44 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     case 0:
         if (first_call)
         {
-            apply_primary_index(0);
-            apply_compact_index(0);
-            apply_read_only_state();
-        }
-        EGUI_SIM_SET_WAIT(p_action, PIVOT_RECORD_WAIT);
-        return true;
-    case 1:
-        if (first_call)
-        {
-            recording_request_snapshot();
+            apply_primary_default_state();
+            apply_preview_states();
+            request_page_snapshot();
         }
         EGUI_SIM_SET_WAIT(p_action, PIVOT_RECORD_FRAME_WAIT);
         return true;
-    case 2:
+    case 1:
         if (first_call)
         {
             apply_primary_index(1);
         }
         EGUI_SIM_SET_WAIT(p_action, PIVOT_RECORD_WAIT);
         return true;
-    case 3:
+    case 2:
         if (first_call)
         {
-            recording_request_snapshot();
+            request_page_snapshot();
         }
         EGUI_SIM_SET_WAIT(p_action, PIVOT_RECORD_FRAME_WAIT);
         return true;
-    case 4:
+    case 3:
         if (first_call)
         {
             apply_primary_index(2);
         }
         EGUI_SIM_SET_WAIT(p_action, PIVOT_RECORD_WAIT);
         return true;
-    case 5:
+    case 4:
         if (first_call)
         {
-            recording_request_snapshot();
+            request_page_snapshot();
         }
         EGUI_SIM_SET_WAIT(p_action, PIVOT_RECORD_FRAME_WAIT);
         return true;
-    case 6:
+    case 5:
         if (first_call)
         {
-            apply_compact_index(1);
-        }
-        EGUI_SIM_SET_WAIT(p_action, PIVOT_RECORD_WAIT);
-        return true;
-    case 7:
-        if (first_call)
-        {
-            recording_request_snapshot();
+            request_page_snapshot();
         }
         EGUI_SIM_SET_WAIT(p_action, PIVOT_RECORD_FINAL_WAIT);
         return true;

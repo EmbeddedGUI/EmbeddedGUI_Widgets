@@ -7,6 +7,37 @@
 #include "../../HelloCustomWidgets/navigation/pivot/egui_view_pivot.h"
 #include "../../HelloCustomWidgets/navigation/pivot/egui_view_pivot.c"
 
+typedef struct pivot_preview_snapshot pivot_preview_snapshot_t;
+struct pivot_preview_snapshot
+{
+    egui_region_t region_screen;
+    egui_background_t *background;
+    const hcw_pivot_item_t *items;
+    const egui_font_t *font;
+    const egui_font_t *meta_font;
+    hcw_pivot_on_changed_listener_t on_changed;
+    const egui_view_api_t *api;
+    egui_color_t surface_color;
+    egui_color_t border_color;
+    egui_color_t text_color;
+    egui_color_t muted_text_color;
+    egui_color_t accent_color;
+    egui_color_t card_surface_color;
+    uint8_t item_count;
+    uint8_t current_index;
+    uint8_t compact_mode;
+    uint8_t read_only_mode;
+    uint8_t pressed_index;
+    egui_alpha_t alpha;
+    uint8_t enable;
+    uint8_t is_focused;
+    uint8_t is_pressed;
+    egui_dim_t padding_left;
+    egui_dim_t padding_right;
+    egui_dim_t padding_top;
+    egui_dim_t padding_bottom;
+};
+
 static hcw_pivot_t test_pivot;
 static hcw_pivot_t preview_pivot;
 static egui_view_api_t preview_api;
@@ -20,8 +51,8 @@ static const hcw_pivot_item_t g_primary_items[] = {
 };
 
 static const hcw_pivot_item_t g_preview_items[] = {
-        {"Home", "Quick", "Home", "Pinned", "1 / 2", HCW_PIVOT_TONE_ACCENT},
-        {"Logs", "Quick", "Logs", "Recent", "2 / 2", HCW_PIVOT_TONE_NEUTRAL},
+        {"Home", "Quick", "Home", "Pinned work", "2 tabs", HCW_PIVOT_TONE_ACCENT},
+        {"Queue", "Next", "Queue", "Ready items", "2 tabs", HCW_PIVOT_TONE_NEUTRAL},
 };
 
 static const hcw_pivot_item_t g_overflow_items[] = {
@@ -33,6 +64,14 @@ static const hcw_pivot_item_t g_overflow_items[] = {
         {"Six", "M", "Six", "Six", "6", HCW_PIVOT_TONE_NEUTRAL},
         {"Seven", "M", "Seven", "Seven", "7", HCW_PIVOT_TONE_NEUTRAL},
 };
+
+static void assert_region_equal(const egui_region_t *expected, const egui_region_t *actual)
+{
+    EGUI_TEST_ASSERT_EQUAL_INT(expected->location.x, actual->location.x);
+    EGUI_TEST_ASSERT_EQUAL_INT(expected->location.y, actual->location.y);
+    EGUI_TEST_ASSERT_EQUAL_INT(expected->size.width, actual->size.width);
+    EGUI_TEST_ASSERT_EQUAL_INT(expected->size.height, actual->size.height);
+}
 
 static void on_pivot_changed(egui_view_t *self, uint8_t index)
 {
@@ -59,10 +98,14 @@ static void setup_widget(void)
 static void setup_preview_widget(void)
 {
     hcw_pivot_init(EGUI_VIEW_OF(&preview_pivot));
-    egui_view_set_size(EGUI_VIEW_OF(&preview_pivot), 104, 56);
+    egui_view_set_size(EGUI_VIEW_OF(&preview_pivot), 104, 72);
     hcw_pivot_set_items(EGUI_VIEW_OF(&preview_pivot), g_preview_items, EGUI_ARRAY_SIZE(g_preview_items));
+    hcw_pivot_set_font(EGUI_VIEW_OF(&preview_pivot), (const egui_font_t *)&egui_res_font_montserrat_8_4);
+    hcw_pivot_set_meta_font(EGUI_VIEW_OF(&preview_pivot), (const egui_font_t *)&egui_res_font_montserrat_8_4);
     hcw_pivot_apply_compact_style(EGUI_VIEW_OF(&preview_pivot));
-    hcw_pivot_set_current_index(EGUI_VIEW_OF(&preview_pivot), 1);
+    hcw_pivot_set_palette(EGUI_VIEW_OF(&preview_pivot), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD6DEE6), EGUI_COLOR_HEX(0x22303C),
+                          EGUI_COLOR_HEX(0x73808C), EGUI_COLOR_HEX(0x0F6CBD), EGUI_COLOR_HEX(0xF7F9FB));
+    hcw_pivot_set_current_index(EGUI_VIEW_OF(&preview_pivot), 0);
     hcw_pivot_set_on_changed_listener(EGUI_VIEW_OF(&preview_pivot), on_pivot_changed);
     hcw_pivot_override_static_preview_api(EGUI_VIEW_OF(&preview_pivot), &preview_api);
     reset_listener_state();
@@ -88,20 +131,25 @@ static int send_touch_to_view(egui_view_t *view, uint8_t type, egui_dim_t x, egu
     event.type = type;
     event.location.x = x;
     event.location.y = y;
-    return view->api->on_touch_event(view, &event);
+    return view->api->dispatch_touch_event(view, &event);
+}
+
+static int dispatch_key_event_to_view(egui_view_t *view, uint8_t type, uint8_t key_code)
+{
+    egui_key_event_t event;
+
+    memset(&event, 0, sizeof(event));
+    event.type = type;
+    event.key_code = key_code;
+    return view->api->dispatch_key_event(view, &event);
 }
 
 static int send_key_to_view(egui_view_t *view, uint8_t key_code)
 {
-    egui_key_event_t event;
     int handled = 0;
 
-    memset(&event, 0, sizeof(event));
-    event.type = EGUI_KEY_EVENT_ACTION_DOWN;
-    event.key_code = key_code;
-    handled |= view->api->on_key_event(view, &event);
-    event.type = EGUI_KEY_EVENT_ACTION_UP;
-    handled |= view->api->on_key_event(view, &event);
+    handled |= dispatch_key_event_to_view(view, EGUI_KEY_EVENT_ACTION_DOWN, key_code);
+    handled |= dispatch_key_event_to_view(view, EGUI_KEY_EVENT_ACTION_UP, key_code);
     return handled;
 }
 
@@ -132,6 +180,66 @@ static uint8_t get_header_center(hcw_pivot_t *pivot, uint8_t index, egui_dim_t *
     *x = region.location.x + region.size.width / 2;
     *y = region.location.y + region.size.height / 2;
     return 1;
+}
+
+static void capture_preview_snapshot(pivot_preview_snapshot_t *snapshot)
+{
+    snapshot->region_screen = EGUI_VIEW_OF(&preview_pivot)->region_screen;
+    snapshot->background = EGUI_VIEW_OF(&preview_pivot)->background;
+    snapshot->items = preview_pivot.items;
+    snapshot->font = preview_pivot.font;
+    snapshot->meta_font = preview_pivot.meta_font;
+    snapshot->on_changed = preview_pivot.on_changed;
+    snapshot->api = EGUI_VIEW_OF(&preview_pivot)->api;
+    snapshot->surface_color = preview_pivot.surface_color;
+    snapshot->border_color = preview_pivot.border_color;
+    snapshot->text_color = preview_pivot.text_color;
+    snapshot->muted_text_color = preview_pivot.muted_text_color;
+    snapshot->accent_color = preview_pivot.accent_color;
+    snapshot->card_surface_color = preview_pivot.card_surface_color;
+    snapshot->item_count = preview_pivot.item_count;
+    snapshot->current_index = preview_pivot.current_index;
+    snapshot->compact_mode = preview_pivot.compact_mode;
+    snapshot->read_only_mode = preview_pivot.read_only_mode;
+    snapshot->pressed_index = preview_pivot.pressed_index;
+    snapshot->alpha = EGUI_VIEW_OF(&preview_pivot)->alpha;
+    snapshot->enable = (uint8_t)egui_view_get_enable(EGUI_VIEW_OF(&preview_pivot));
+    snapshot->is_focused = EGUI_VIEW_OF(&preview_pivot)->is_focused;
+    snapshot->is_pressed = EGUI_VIEW_OF(&preview_pivot)->is_pressed;
+    snapshot->padding_left = EGUI_VIEW_OF(&preview_pivot)->padding.left;
+    snapshot->padding_right = EGUI_VIEW_OF(&preview_pivot)->padding.right;
+    snapshot->padding_top = EGUI_VIEW_OF(&preview_pivot)->padding.top;
+    snapshot->padding_bottom = EGUI_VIEW_OF(&preview_pivot)->padding.bottom;
+}
+
+static void assert_preview_state_unchanged(const pivot_preview_snapshot_t *snapshot)
+{
+    assert_region_equal(&snapshot->region_screen, &EGUI_VIEW_OF(&preview_pivot)->region_screen);
+    EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&preview_pivot)->background == snapshot->background);
+    EGUI_TEST_ASSERT_TRUE(preview_pivot.items == snapshot->items);
+    EGUI_TEST_ASSERT_TRUE(preview_pivot.font == snapshot->font);
+    EGUI_TEST_ASSERT_TRUE(preview_pivot.meta_font == snapshot->meta_font);
+    EGUI_TEST_ASSERT_TRUE(preview_pivot.on_changed == snapshot->on_changed);
+    EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&preview_pivot)->api == snapshot->api);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->surface_color.full, preview_pivot.surface_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->border_color.full, preview_pivot.border_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->text_color.full, preview_pivot.text_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->muted_text_color.full, preview_pivot.muted_text_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->accent_color.full, preview_pivot.accent_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->card_surface_color.full, preview_pivot.card_surface_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->item_count, preview_pivot.item_count);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->current_index, preview_pivot.current_index);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->compact_mode, preview_pivot.compact_mode);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->read_only_mode, preview_pivot.read_only_mode);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->pressed_index, preview_pivot.pressed_index);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->alpha, EGUI_VIEW_OF(&preview_pivot)->alpha);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->enable, egui_view_get_enable(EGUI_VIEW_OF(&preview_pivot)));
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->is_focused, EGUI_VIEW_OF(&preview_pivot)->is_focused);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->is_pressed, EGUI_VIEW_OF(&preview_pivot)->is_pressed);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->padding_left, EGUI_VIEW_OF(&preview_pivot)->padding.left);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->padding_right, EGUI_VIEW_OF(&preview_pivot)->padding.right);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->padding_top, EGUI_VIEW_OF(&preview_pivot)->padding.top);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->padding_bottom, EGUI_VIEW_OF(&preview_pivot)->padding.bottom);
 }
 
 static void test_pivot_style_helpers_and_setters_clear_pressed_state(void)
@@ -273,25 +381,25 @@ static void test_pivot_keyboard_navigation_and_guards(void)
     EGUI_TEST_ASSERT_EQUAL_INT(2, hcw_pivot_get_current_index(EGUI_VIEW_OF(&test_pivot)));
 }
 
-static void test_pivot_static_preview_consumes_input(void)
+static void test_pivot_static_preview_consumes_input_and_keeps_state(void)
 {
+    pivot_preview_snapshot_t initial_snapshot;
     egui_dim_t x;
     egui_dim_t y;
 
     setup_preview_widget();
-    layout_view(EGUI_VIEW_OF(&preview_pivot), 12, 20, 104, 56);
+    layout_view(EGUI_VIEW_OF(&preview_pivot), 12, 20, 104, 72);
     EGUI_TEST_ASSERT_TRUE(get_header_center(&preview_pivot, 1, &x, &y));
+    capture_preview_snapshot(&initial_snapshot);
 
     seed_pressed_state(&preview_pivot, 1, 1);
     EGUI_TEST_ASSERT_TRUE(send_touch_to_view(EGUI_VIEW_OF(&preview_pivot), EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
-    assert_pressed_cleared(&preview_pivot);
-    EGUI_TEST_ASSERT_EQUAL_INT(1, hcw_pivot_get_current_index(EGUI_VIEW_OF(&preview_pivot)));
+    assert_preview_state_unchanged(&initial_snapshot);
     EGUI_TEST_ASSERT_EQUAL_INT(0, g_listener_count);
 
-    seed_pressed_state(&preview_pivot, 1, 0);
+    seed_pressed_state(&preview_pivot, 1, 1);
     EGUI_TEST_ASSERT_TRUE(send_key_to_view(EGUI_VIEW_OF(&preview_pivot), EGUI_KEY_CODE_END));
-    assert_pressed_cleared(&preview_pivot);
-    EGUI_TEST_ASSERT_EQUAL_INT(1, hcw_pivot_get_current_index(EGUI_VIEW_OF(&preview_pivot)));
+    assert_preview_state_unchanged(&initial_snapshot);
     EGUI_TEST_ASSERT_EQUAL_INT(0, g_listener_count);
 }
 
@@ -301,6 +409,6 @@ void test_pivot_run(void)
     EGUI_TEST_RUN(test_pivot_style_helpers_and_setters_clear_pressed_state);
     EGUI_TEST_RUN(test_pivot_touch_same_target_release_and_cancel_behavior);
     EGUI_TEST_RUN(test_pivot_keyboard_navigation_and_guards);
-    EGUI_TEST_RUN(test_pivot_static_preview_consumes_input);
+    EGUI_TEST_RUN(test_pivot_static_preview_consumes_input_and_keeps_state);
     EGUI_TEST_SUITE_END();
 }
