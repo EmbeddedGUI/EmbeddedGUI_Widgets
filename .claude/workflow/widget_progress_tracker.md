@@ -74,7 +74,7 @@
 - `toggle_split_button` -> `ToggleSplitButton`
 - `token_input` -> `TokenInput`
 
-### Layout（28）
+### Layout（29）
 
 - `canvas` -> `Canvas`
 - `card_action` -> `CardAction`
@@ -161,6 +161,11 @@
 
 ## 最近完成的收口动作
 
+- `2026-04-17`
+  - 收口 `layout/list` reference 控件：在不修改 `sdk/EmbeddedGUI` 的前提下，对齐当前 `canvas / dock_panel / drawer / expander / data_grid / data_list_panel / split_view / parallax_view` 已采用的 `ui_ready + layout_page + request_page_snapshot` 页面模板，确保主区 `Inbox / Review / Archive` 三组 `List` reference 状态在录制前后都显式完成布局，而底部 `compact / read only` preview 继续保持静态 reference 对照；回到默认态与最终稳定帧都不再依赖旧的隐式布局时序。
+  - `example/HelloCustomWidgets/layout/list/test.c` 新增 `LIST_DEFAULT_SNAPSHOT`、`ui_ready`、`apply_compact_state()`、`apply_read_only_state()`、`layout_local_views()`、`layout_page()` 与统一的 `request_page_snapshot()`，把 `apply_primary_snapshot()` / `apply_preview_states()` 接到显式重布局路径，并在 `test_init_ui()` 中于 `egui_core_add_user_root_view()` 前后重放主区默认态与底部 preview 状态，统一所有录制快照的布局口径。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=layout/list PORT=pc`、在 `X:\` 执行的 `make clean APP=HelloUnitTest PORT=pc_test`、`make all APP=HelloUnitTest PORT=pc_test`、`X:\output\main.exe`（总计 `845 / 845`，`list` suite `8 / 8`）、`python scripts/sync_widget_catalog.py`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category layout`、`python scripts/checks/check_docs_encoding.py`、`python scripts/checks/check_widget_catalog.py`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub layout/list --track reference --timeout 10 --keep-screenshots`、`python scripts/code_compile_check.py --custom-widgets --category layout --bits64`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --category layout --track reference --bits64`、`python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub layout/list` 与对应 `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_layout_list`（`PASS status=Running canvas=480x480 ratio=0.1708 colors=206`）。
+  - 复核 `runtime_check_output/HelloCustomWidgets_layout_list/default` 的 `9` 帧截图：按 `RGB` 差分得到主区变化边界位于 `(52, 142) - (428, 225)`；按该边界裁剪后共出现 `3` 组唯一状态，对应 `Inbox`、`Review` 与 `Archive` 三态主区轨道；按 `y >= 225` 裁切底部 preview 区域后 `9` 帧保持单哈希，确认底部 `compact / read only` preview 在整条录制轨道中保持静态一致。
 - `2026-04-17`
   - 收口 `display/card_panel` reference 控件：在不修改 `sdk/EmbeddedGUI` 的前提下，对齐当前 `badge / badge_group / counter_badge / presence_badge / info_badge / progress_bar` 已采用的 `ui_ready + layout_page + request_page_snapshot` 页面模板，确保主区 `OVERVIEW / SYNC / DEPLOY / ARCHIVE` 四组 `Card` reference 状态在录制前后都显式完成布局，而底部 `compact / read only` preview 继续保持静态 reference 对照；回到默认态与最终稳定帧都不再依赖旧的隐式布局时序。
   - `example/HelloCustomWidgets/display/card_panel/test.c` 新增 `CARD_PANEL_DEFAULT_SNAPSHOT`、`PRIMARY_SNAPSHOT_COUNT`、`ui_ready`、`apply_primary_default_state()`、`apply_compact_state()`、`apply_read_only_state()`、`layout_local_views()`、`layout_page()` 与统一的 `request_page_snapshot()`，并在 `test_init_ui()` 中于 `egui_core_add_user_root_view()` 前后显式重放主区默认态与底部 preview 状态，统一所有录制快照的布局口径。
