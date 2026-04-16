@@ -34,7 +34,7 @@
 
 | 状态 | 控件名 | 分类 | 开始日期 | 当前阶段 | 目标 |
 | --- | --- | --- | --- | --- | --- |
-| 进行中 | `scroll_bar` | `input` | `2026-04-16` | static preview 收口 | 复核当前 `scroll_bar` reference 页面是否仍停留在旧版 preview 焦点桥接、点击驱动录制与不完整静态 preview 单测口径，评估并收口到主区 reference snapshots、真正静态 preview、README、单测与 web 验收链一致的主线实现 |
+| 进行中 | `search_box` | `input` | `2026-04-16` | static preview 收口 | 复核当前 `search_box` reference 页面是否仍停留在旧版 preview 交互桥接、额外录制语义或 README / 单测 / web 口径不一致，评估并收口到主区 reference snapshots、真正静态 preview 与完整验收链一致的主线实现 |
 
 ## 当前保留的 Reference 主线控件
 
@@ -161,6 +161,11 @@
 
 ## 最近完成的收口动作
 
+- `2026-04-16`
+  - 收口 `input/scroll_bar` reference 控件：在不修改 SDK 的前提下，对齐当前主线已采用的 static preview workflow，把页面统一收口为标题、主 `scroll_bar` 与底部 `compact / read only` 双静态 preview，移除旧录制轨道里残留的 preview 焦点桥接、preview 点击驱动录制与第二组 compact preview 切换语义。
+  - `example/HelloCustomWidgets/input/scroll_bar/test.c` 新增 `ui_ready`、`layout_local_views()`、`layout_page()` 与统一的 `request_page_snapshot()`，把录制轨道收口为默认 `Document rail`、`Down`、`+`、`End`、`Timeline rail` 与最终回到默认帧；`example/HelloUnitTest/test/test_scroll_bar.c` 新增 `scroll_bar_preview_snapshot_t`、`assert_region_equal()`、`capture_preview_snapshot()` 与 `assert_preview_state_unchanged()`，把静态 preview 用例升级为 `consumes input and keeps state`，并统一事件分发到 `dispatch_touch_event()` / `dispatch_key_event()`；`example/HelloCustomWidgets/input/scroll_bar/readme.md` 重写为与当前页面结构、录制轨道、单测口径和完整验收链一致的 UTF-8 说明，并回填 runtime 复核数字与 web 验收结果。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=input/scroll_bar PORT=pc`、在 `X:\` 执行的 `make clean APP=HelloUnitTest PORT=pc_test`、`make all APP=HelloUnitTest PORT=pc_test`、`X:\output\main.exe`（总计 `845 / 845`，其中 `scroll_bar` suite `14 / 14`）、`python scripts/sync_widget_catalog.py`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category input`、`python scripts/checks/check_docs_encoding.py`、`python scripts/checks/check_widget_catalog.py`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/scroll_bar --track reference --timeout 10 --keep-screenshots`、`python scripts/code_compile_check.py --custom-widgets --category input --bits64`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --category input --track reference --bits64`、`python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub input/scroll_bar` 与对应 `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_input_scroll_bar`（`PASS status=Running canvas=480x480 ratio=0.1815 colors=157`）。
+  - 复核 `runtime_check_output/HelloCustomWidgets_input_scroll_bar/default` 的 `13` 帧截图：按 RGB 差分得到主区变化边界位于 `(54, 98) - (289, 298)`；遮罩该边界后主区外区域保持单哈希，确认主区外页面 chrome 全程静态；按主区差分边界裁剪后共出现 `5` 组唯一状态，对应默认 `Document rail`、`Down`、`+`、`End` 与 `Timeline rail`，最终稳定帧回到默认 `Document rail`；按 `y >= 299` 裁切底部 preview 区域后全帧保持单哈希，确认底部 `compact / read only` preview 在整条录制轨道中保持静态一致。
 - `2026-04-16`
   - 收口 `feedback/teaching_tip` reference 控件：在不修改 SDK 的前提下，对齐当前主线已经采用的 static preview 工作流，把页面统一收口为标题、主 `teaching_tip` 与底部 `compact / read only` 双静态 preview，移除旧录制轨道里残留的点击驱动切换、preview 焦点桥接与不一致的 README / 单测口径。
   - `example/HelloCustomWidgets/feedback/teaching_tip/test.c` 新增 `ui_ready`、`layout_local_views()`、`layout_page()` 与统一的 `request_page_snapshot()`，把录制轨道收口为 `Quick filters / bottom open`、`Cmd palette / top open`、`Sync draft / warning open`、`Tip hidden / closed` 与最终回到默认 `Quick filters / bottom open`；`example/HelloUnitTest/test/test_teaching_tip.c` 新增 `teaching_tip_preview_snapshot_t`、`assert_region_equal()`、`capture_preview_snapshot()` 与 `assert_preview_state_unchanged()`，把静态 preview 用例收口为 “consumes input and keeps state”，并完整校验 `region / background / snapshots / font / current_snapshot / current_part / compact_mode / read_only_mode / pressed_part / padding` 等状态不变；`example/HelloCustomWidgets/feedback/teaching_tip/readme.md` 重写为与当前页面结构、录制轨道、单测口径和完整验收链一致的 UTF-8 说明，并回填 runtime 复核数字与 web 验收结果。

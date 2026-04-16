@@ -1,50 +1,61 @@
-# scroll_bar 自定义控件设计说明
+# ScrollBar 设计说明
 
 ## 参考来源
-- 参考设计系统：`Fluent 2`
+- 参考设计体系：`Fluent 2`
 - 参考开源库：`WPF UI`
-- 次级补充参考：`WinUI ScrollBar`
+- 平台语义参考：`WinUI ScrollBar`
 - 对应组件名：`ScrollBar`
-- 本次保留状态：`standard`、`compact`、`read only`
-- 删除效果：页面级 `guide`、状态回显、`section divider`、外部 `preview` 标签、标签点击切换、场景化 demo 壳、复杂 hover 动效、auto-hide 滚动条、容器级惯性滚动
-- EGUI 适配说明：保留“独立滚动条 + viewport 比例 + decrease / track / thumb / increase”核心语义，在 `480 x 480` 画布中优先保证主控件层级、底部 `compact / read only` 双预览和键盘 / 触摸闭环稳定
+- 当前保留状态：`standard`、`compact`、`read only`
+- 当前移除内容：旧版 preview 焦点桥接、preview 点击驱动录制、第二组 compact preview 切换、额外 guide / section divider / preview 标签
+- EGUI 适配说明：保留独立滚动条的 `decrease / track / thumb / increase` 语义、viewport 比例和键盘闭环；页面结构收口为标题、主控件和底部双静态 preview
 
-## 1. 为什么需要这个控件？
-`scroll_bar` 用来表达“长内容窗口在整段内容中的位置与可视比例”。它适合文档浏览、日志查看、时间线、属性面板和列表侧边轨道等场景，强调 thumb 尺寸与位置都受 `content_length / viewport_length / offset` 驱动，而不是单纯数值选择。
+## 1. 为什么需要这个控件
+`scroll_bar` 用来表达长内容窗口在整段内容中的位置和可视比例，适合文档轨道、日志浏览、时间轴和属性面板等场景。它不是抽象数值选择器，而是围绕 `content_length / viewport_length / offset` 表达“当前位置 + 可视窗口比例”。
 
 ## 2. 为什么现有控件不够用
-- `slider` 更偏数值选择，thumb 大小固定，不表达 viewport 尺寸
-- `scroll` 是容器行为，不是独立标准控件
-- `progress_bar` 只有展示语义，没有按钮、track page 和 thumb drag
-- `number_box` / `stepper` 偏离散数值编辑，不适合连续内容浏览位置
+- `slider` 更偏数值选择，thumb 大小固定，不能表达 viewport 比例。
+- `progress_bar` 只有展示语义，没有按钮、track 分页和 thumb drag。
+- `scroll` 是容器行为，不是独立的标准控件。
+- `number_box` / `stepper` 偏离散值编辑，不适合连续内容定位。
 
-因此这里继续保留 `scroll_bar`，但示例页面必须收口到统一的 `Fluent 2 / WPF UI` reference 结构。
+因此这里继续保留 `scroll_bar`，但页面和验收口径统一收口到当前 `reference` workflow。
 
-## 3. 目标场景与示例概览
-- 主区域展示标准 `scroll_bar`，覆盖 `Document rail`、`Timeline rail`、`Audit rail` 三组 snapshot
-- 左下 `compact` 预览展示紧凑比例摘要
-- 右下 `read only` 预览展示可见但不可交互的锁定对照
-- 底部两个 preview 统一通过 `egui_view_scroll_bar_override_static_preview_api()` 固定为静态 reference，对预览的点击只负责清掉主控件 focus，不再触发 offset 变化
-- 主控件保留真实键盘 `Tab / Up / Down / Home / End / +/- / Enter / Space / Esc` 闭环
-- 主控件底层仍支持真实 touch：减按钮、轨道分页、thumb 拖拽
-- 页面只保留标题、主 `scroll_bar` 和底部 `compact / read only` 双预览，不再保留旧版 `guide`、状态文本、分隔线和 label-click 场景切换
+## 3. 当前页面结构
+- 标题：`Scroll Bar`
+- 主区：一个标准 `scroll_bar`
+- 底部：两个静态 preview
+- 左侧 preview：`compact`
+- 右侧 preview：`read only`
 
-目录：
-- `example/HelloCustomWidgets/input/scroll_bar/`
+页面目录：
+`example/HelloCustomWidgets/input/scroll_bar/`
+
+主区数据集中保留三组 reference 数据：
+- `Document rail`
+- `Timeline rail`
+- `Audit rail`
+
+当前 runtime 录制轨道只使用：
+- 默认 `Document rail`
+- `Document rail` 上的 `Down / + / End` 键盘语义
+- `Timeline rail`
+- 最终回到默认 `Document rail`
+
+底部 `compact / read only` preview 全程固定为静态 reference，对录制轨道不再承担状态切换职责。
 
 ## 4. 视觉与布局规格
 - 画布：`480 x 480`
 - 根布局：`224 x 238`
-- 页面结构：标题 -> 主 `scroll_bar` -> `compact / read only` 双预览
 - 主控件：`196 x 146`
-- 底部双预览容器：`216 x 52`
-- `compact` 预览：`104 x 52`
-- `read only` 预览：`104 x 52`
-- 视觉规则：
-  - 使用浅灰白 `page panel` 和低噪音白色滚动条卡片，避免旧版 demo chrome
-  - 主控件保留 `label + helper + viewport preview + scroll rail` 四段层级
-  - `compact` 预览收敛为静态比例摘要，不再承担标签切换职责
-  - `read only` 预览通过只读调色板和输入屏蔽表达锁定态，而不是额外装饰
+- 底部容器：`216 x 52`
+- 单个 preview：`104 x 52`
+- 页面结构：标题 -> 主 `scroll_bar` -> 底部 `compact / read only`
+
+视觉规则：
+- 使用浅灰 `page panel` 和低噪音白色 surface，避免旧版 demo chrome。
+- 主控件保留 `label + helper + viewport preview + rail` 四段层级。
+- `compact` preview 仅保留静态比例摘要，不再承担额外交互。
+- `read only` preview 用只读调色板表达锁定态，不再引入额外场景化装饰。
 
 ## 5. 控件清单
 
@@ -53,98 +64,136 @@
 | `root_layout` | `egui_view_linearlayout_t` | `224 x 238` | enabled | 页面根布局 |
 | `title_label` | `egui_view_label_t` | `224 x 18` | `Scroll Bar` | 页面标题 |
 | `scroll_bar_primary` | `egui_view_scroll_bar_t` | `196 x 146` | `Document rail` | 标准主控件 |
-| `scroll_bar_compact` | `egui_view_scroll_bar_t` | `104 x 52` | compact | 紧凑静态预览 |
-| `scroll_bar_read_only` | `egui_view_scroll_bar_t` | `104 x 52` | compact + read only | 只读静态预览 |
+| `scroll_bar_compact` | `egui_view_scroll_bar_t` | `104 x 52` | compact | 静态 compact preview |
+| `scroll_bar_read_only` | `egui_view_scroll_bar_t` | `104 x 52` | compact + read only | 静态只读 preview |
 
-## 6. 状态覆盖矩阵
+## 6. 状态矩阵
 
-| 状态 / 区域 | 主控件 | Compact | Read only |
+| 状态 / 区域 | 主 `scroll_bar` | Compact preview | Read only preview |
 | --- | --- | --- | --- |
-| 默认 `Document rail` | 是 | 是 | 否 |
-| 切换到 `Timeline rail` | 是 | 否 | 否 |
-| 切换到 `Audit rail` | 是 | 否 | 否 |
-| 切换到第二组 `compact` 对照 | 否 | 是 | 否 |
+| 默认 `Document rail` | 是 | 是 | 是 |
+| `Timeline rail` | 是 | 否 | 否 |
+| `Audit rail` 数据保留 | 是 | 否 | 否 |
 | 键盘 `Down / + / End` | 是 | 否 | 否 |
-| 触摸减按钮 / track / thumb | 是 | 否 | 否 |
-| 紧凑摘要 | 否 | 是 | 是 |
-| 只读锁定 | 否 | 否 | 是 |
+| 触摸 `decrease / track / thumb` | 是 | 否 | 否 |
+| `compact_mode` | 否 | 是 | 是 |
+| `read_only_mode` | 否 | 否 | 是 |
+| 静态 preview 吞掉 `touch / key` 且状态不变 | 否 | 是 | 是 |
 
-## 7. `egui_port_get_recording_action()` 录制动作设计
-1. 应用默认主控件和 `compact` 预览状态
-2. 抓取首帧 `Document rail` reference
-3. 通过 `Down` 展示 line step
-4. 抓取第二帧步进结果
-5. 通过 `+` 展示 page step
-6. 抓取第三帧分页结果
-7. 通过 `End` 跳到尾部
-8. 抓取第四帧收尾位置
-9. 程序化把主控件切到 `Timeline rail`
-10. 抓取第五帧第二组主状态
-11. 程序化把 `compact` 预览切到第二组比例摘要，并把焦点重新请求到主控件
-12. 点击 `compact` preview，验证静态 preview 吞掉 touch 且只清主控件 focus
-13. 抓取最终收尾截图并保留静态 `read only` 对照
+## 7. 交互语义
+- 主 `scroll_bar` 保留真实键盘闭环：`Tab / Up / Down / Home / End / +/- / Enter / Space / Escape`。
+- 主 `scroll_bar` 保留真实触摸语义：`decrease` 按钮、`track` 分页和 `thumb` 拖拽。
+- setter、模式切换、禁用、`touch cancel` 和失焦后都必须清理残留 pressed 状态。
+- `compact / read only` preview 统一通过 `egui_view_scroll_bar_override_static_preview_api()` 吞掉 `touch / key`。
+- preview 不再清主控件 focus，不再承担 preview 点击驱动状态切换，不再参与录制语义。
+- 静态 preview 的验收口径升级为“输入被消费，但完整状态保持不变”。
 
-## 8. 编译、runtime、截图验收标准
+## 8. 录制动作设计
+`egui_port_get_recording_action()` 当前轨道固定为六个主区语义帧：
+
+1. 还原默认 `Document rail`，同步底部双静态 preview，并抓取首帧。
+2. 派发 `Down`，抓取 line step 结果。
+3. 派发 `+`，抓取 page step 结果。
+4. 派发 `End`，抓取跳到末尾后的结果。
+5. 程序化切到 `Timeline rail`，抓取第二组 reference。
+6. 回到默认 `Document rail`，抓取最终稳定帧。
+
+说明：
+- 所有截图请求统一走 `request_page_snapshot()`，先重排，再失效，再请求录制。
+- 底部 `compact / read only` preview 在整条轨道中保持静态不变。
+- 主区变化只来自主控件 reference 数据切换和键盘语义。
+
+## 9. 本轮收口内容
+- `example/HelloCustomWidgets/input/scroll_bar/test.c`
+  新增 `ui_ready`、`layout_local_views()`、`layout_page()` 和统一的 `request_page_snapshot()`；移除 preview 焦点桥接、preview 点击录制和第二组 compact preview 切换，把页面收口为主区 reference + 底部双静态 preview。
+- `example/HelloUnitTest/test/test_scroll_bar.c`
+  新增 `scroll_bar_preview_snapshot_t`、`assert_region_equal()`、`capture_preview_snapshot()` 和 `assert_preview_state_unchanged()`；统一事件分发到 `dispatch_touch_event()` / `dispatch_key_event()`；把静态 preview 用例收口为 `consumes input and keeps state`。
+- `example/HelloCustomWidgets/input/scroll_bar/readme.md`
+  按当前 workflow 重写，与 demo、单测、runtime 和 web 口径保持一致。
+
+## 10. 单元测试口径
+`example/HelloUnitTest/test/test_scroll_bar.c` 当前覆盖：
+
+1. `content_metrics / step_size / offset / current_part` setter 的 clamp 与 pressed 清理。
+2. `Tab` 循环、`Up / Down / Home / End / +/-` 键盘闭环。
+3. `decrease` 点击、`track` 分页、`thumb` 拖拽。
+4. `touch cancel` 清理 pressed。
+5. `compact_mode / read_only_mode / !enable` 的输入抑制和恢复。
+6. 静态 preview 吞掉输入后保持完整状态不变。
+
+静态 preview 快照当前固定校验：
+`region_screen / background / on_changed / font / meta_font / label / helper / api / palette / content_length / viewport_length / offset / line_step / page_step / compact_mode / read_only_mode / current_part / pressed_part / pressed_track_direction / thumb_dragging / alpha / enable / is_focused / is_pressed / padding`
+
+## 11. 验收命令
 ```bash
 make all APP=HelloCustomWidgets APP_SUB=input/scroll_bar PORT=pc
-python scripts/checks/check_touch_release_semantics.py --scope custom --category input
-python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/scroll_bar --track reference --timeout 10 --keep-screenshots
+
+make clean APP=HelloUnitTest PORT=pc_test
 make all APP=HelloUnitTest PORT=pc_test
-output\main.exe
+X:\output\main.exe
+
+python scripts/sync_widget_catalog.py
+python scripts/checks/check_touch_release_semantics.py --scope custom --category input
 python scripts/checks/check_docs_encoding.py
+python scripts/checks/check_widget_catalog.py
+python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/scroll_bar --track reference --timeout 10 --keep-screenshots
+python scripts/code_compile_check.py --custom-widgets --category input --bits64
+python scripts/code_runtime_check.py --app HelloCustomWidgets --category input --track reference --bits64
+python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub input/scroll_bar
+python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_input_scroll_bar
 ```
 
-验收重点：
-- 主控件和底部双预览必须完整可见，不能被裁切
-- 主滚动条必须清楚表达 viewport 大小与位置，不能退化成普通 `slider`
-- 键盘 `Down / + / End` 结果必须清晰可辨
-- 页面中不再出现旧版 `guide`、状态回显、分隔线和外部 `preview` 标签
-- `compact` 与 `read only` 必须保持 Fluent / WPF UI 风格的低噪音浅色 reference
-- `compact / read only` preview 必须统一走 `egui_view_scroll_bar_override_static_preview_api()`，吞掉 touch / key 且不改变 `offset / current_part`
-- 点击 preview 后只能清掉 `scroll_bar_primary` 的 focus，不能让 preview 抢占焦点，也不能残留主控件 focus ring
-- `content metrics / step size / offset / current part / compact / read only / view disabled` 切换链路需要共用同一套 `pressed` 清理语义
-- setter 更新、模式切换或焦点丢失后，不能残留 `decrease / track / thumb / increase` 的 `pressed` 高亮、下压位移或拖拽态渲染
-- `compact / read_only_mode / !enable` 收到新的 touch 或 key 输入时，必须先清理残留 pressed，再拒绝后续交互
-- 触摸释放语义必须继续满足“按下与抬起命中同一目标才提交”
-- unit test 中已有的键盘步进、按钮点击、track page、thumb drag、`touch cancel` 与 `compact / read only / !enable` 输入抑制语义不能回归
+## 12. 当前结果
+- `HelloCustomWidgets` 单控件编译：`PASS`
+  `make all APP=HelloCustomWidgets APP_SUB=input/scroll_bar PORT=pc`
+- `HelloUnitTest`：`PASS`
+  在 `X:\` 执行 `make clean APP=HelloUnitTest PORT=pc_test`、`make all APP=HelloUnitTest PORT=pc_test` 和 `X:\output\main.exe`，总计 `845 / 845`，其中 `scroll_bar` suite `14 / 14`
+- `sync_widget_catalog.py`：`PASS`
+  同步后保持 `106` 个 widgets
+- `touch release semantics`：`PASS`
+  `custom_audited=28 custom_skipped_allowlist=5`
+- `docs encoding`：`PASS`
+  `134` 个文档文件编码检查通过
+- `widget catalog check`：`PASS`
+  `106 widgets: reference=106, showcase=0, deprecated=0`
+- 单控件 runtime：`PASS`
+  `13 frames captured -> runtime_check_output/HelloCustomWidgets_input_scroll_bar/default`
+- input 分类 compile/runtime 回归：`PASS`
+  compile `33` 个 input widgets 全部通过；runtime `33 / 33`
+- wasm 构建：`PASS`
+  `web/demos/HelloCustomWidgets_input_scroll_bar`，并刷新 `web/demos/demos.json` 到 `106` demos
+- web smoke：`PASS`
+  `status=Running canvas=480x480 ratio=0.1815 colors=157`
 
-## 9. 已知限制与后续方向
-- 当前先做纵向 `ScrollBar` reference，不覆盖横向方向
-- 当前不实现 auto-hide、overlay scrollbar 和 hover-only 扩宽
-- 当前不直接驱动真实容器内容滚动，只表达标准滚动条语义
-- 若后续下沉到框架层，再评估横向支持、容器绑定接口和更细的 accessibility 语义
+## 13. Runtime 复核结论
+复核目录：
+`runtime_check_output/HelloCustomWidgets_input_scroll_bar/default`
 
-## 10. 与现有控件的重叠分析与差异化边界
-- 相比 `slider`：这里的 thumb 尺寸由 viewport 决定，目标是定位内容窗口，不是选择抽象数值
-- 相比 `scroll`：这里是独立标准控件，不负责 child layout、惯性或内容实际滚动
-- 相比 `progress_bar`：这里有按钮、track page、thumb drag 与 focus part 语义
-- 相比 `number_box` / `stepper`：这里强调连续内容浏览，不是离散数值编辑
+- 总帧数：`13`
+- 主区 RGB 差分边界：`(54, 98) - (289, 298)`
+- 遮罩主区后主区外唯一哈希数：`1`
+- 主区唯一状态数：`5`
+- 底部 preview 区唯一哈希数：`1`
 
-## 11. 参考设计系统与开源母本
-- 参考设计系统：`Fluent 2`
-- 开源母本：`WPF UI`
-- 次级补充参考：`WinUI ScrollBar`
+结论：
+- 主区变化严格收敛在 `scroll_bar` 主控件区域；遮罩 `(54, 98) - (289, 298)` 后，主区外页面 chrome 在整条录制轨道中保持静态。
+- `13` 帧中主区共出现 `5` 组唯一状态，对应默认 `Document rail`、`Down`、`+`、`End` 和 `Timeline rail`；最终稳定帧回到默认 `Document rail`。
+- 按 `y >= 299` 裁切底部 preview 区域后保持单哈希，确认 `compact / read only` preview 在整条录制轨道中始终静态一致。
 
-## 12. 对应组件名，以及本次保留的核心状态
-- 对应组件名：`ScrollBar`
-- 本次保留状态：
-  - `standard`
-  - `compact`
-  - `read only`
-  - `decrease`
-  - `track`
-  - `thumb`
-  - `increase`
+## 14. 已知限制
+- 当前先做纵向 `ScrollBar` reference，不覆盖横向版本。
+- 当前不实现 auto-hide、overlay scrollbar 和 hover-only 扩宽。
+- 当前不直接驱动真实容器内容滚动，只表达标准滚动条语义。
+- 若后续下沉到框架层，再评估横向支持、容器绑定接口和更细的 accessibility 语义。
 
-## 13. 相比参考原型删掉了哪些效果或装饰
-- 不做页面级 `guide`、状态文本、分隔线和外部 `preview` 标签
-- 不做 auto-hide、overlay scrollbar、hover-only 扩宽和复杂阴影
-- 不做容器级惯性滚动、跨轴联动和 overscroll 回弹
-- 不做系统级 tooltip、辅助提示浮层和额外场景化演示文案
+## 15. 与现有控件的边界
+- 相比 `slider`：这里的 thumb 尺寸由 viewport 决定，目标是定位内容窗口，不是选择抽象数值。
+- 相比 `scroll`：这里是独立标准控件，不负责 child layout、惯性或内容实际滚动。
+- 相比 `progress_bar`：这里有按钮、track page、thumb drag 和 focus part 语义。
+- 相比 `number_box` / `stepper`：这里强调连续内容定位，不是离散数值编辑。
 
-## 14. EGUI 适配时的简化点与约束
-- 使用固定 snapshot 驱动 reference，优先保证 `480 x 480` 下的稳定审阅
-- 主控件保留 `label + helper + viewport preview + rail` 四段结构
-- `compact` 预览通过 `compact_mode + egui_view_scroll_bar_override_static_preview_api()` 固定为静态对照
-- `read only` 预览通过 `read_only_mode + compact_mode + egui_view_scroll_bar_override_static_preview_api()` 固定为静态锁定态
-- 交互收口阶段统一要求 setter、模式切换、禁用 guard、`touch cancel` 和 focus lost 都能清理残留 `pressed`，确保交互后的渲染稳定
+## 16. EGUI 适配说明
+- `scroll_bar` custom 实现继续保留在 widgets 仓库，不下沉到 SDK。
+- 主区通过固定 snapshot 数据保证 `reference` 录制稳定。
+- 底部 preview 统一复用 static preview API，只承担静态对照，不承担额外交互职责。
+- README、demo、单测、runtime 验收和 web 发布口径已经对齐到当前 `reference` workflow。
