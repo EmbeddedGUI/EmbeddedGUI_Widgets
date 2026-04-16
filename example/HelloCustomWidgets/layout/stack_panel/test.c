@@ -78,6 +78,7 @@ static egui_view_label_t compact_card_titles[STACK_PANEL_COMPACT_ITEMS];
 static egui_view_label_t compact_note_label;
 static egui_view_api_t horizontal_preview_api;
 static egui_view_api_t compact_preview_api;
+static uint8_t ui_ready;
 
 EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
 EGUI_BACKGROUND_PARAM_INIT(bg_page_panel_params, &bg_page_panel_param, NULL, NULL);
@@ -298,6 +299,10 @@ static void apply_primary_state(uint8_t index)
     egui_view_label_set_text(EGUI_VIEW_OF(&primary_heading_label), snapshot->heading);
     egui_view_label_set_text(EGUI_VIEW_OF(&primary_note_label), snapshot->note);
     apply_snapshot_to_stack_panel(EGUI_VIEW_OF(&primary_stack_panel), primary_cards, primary_card_titles, STACK_PANEL_ITEM_CAPACITY, snapshot);
+    if (ui_ready)
+    {
+        layout_page();
+    }
 }
 
 static void apply_primary_default_state(void)
@@ -311,6 +316,10 @@ static void apply_preview_states(void)
                                   &horizontal_preview_snapshot);
     apply_snapshot_to_stack_panel(EGUI_VIEW_OF(&compact_preview_stack), compact_cards, compact_card_titles, STACK_PANEL_COMPACT_ITEMS,
                                   &compact_preview_snapshot);
+    if (ui_ready)
+    {
+        layout_page();
+    }
 }
 
 #if EGUI_CONFIG_RECORDING_TEST
@@ -325,6 +334,8 @@ static void request_page_snapshot(void)
 void test_init_ui(void)
 {
     uint8_t index;
+
+    ui_ready = 0;
 
     egui_view_linearlayout_init(EGUI_VIEW_OF(&root_layout));
     egui_view_set_size(EGUI_VIEW_OF(&root_layout), STACK_PANEL_ROOT_WIDTH, STACK_PANEL_ROOT_HEIGHT);
@@ -430,7 +441,9 @@ void test_init_ui(void)
 
     layout_local_views();
     egui_core_add_user_root_view(EGUI_VIEW_OF(&root_layout));
-    layout_page();
+    ui_ready = 1;
+    apply_primary_default_state();
+    apply_preview_states();
 }
 
 #if EGUI_CONFIG_RECORDING_TEST
@@ -484,6 +497,7 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
         if (first_call)
         {
             apply_primary_default_state();
+            apply_preview_states();
         }
         EGUI_SIM_SET_WAIT(p_action, STACK_PANEL_RECORD_WAIT);
         return true;
