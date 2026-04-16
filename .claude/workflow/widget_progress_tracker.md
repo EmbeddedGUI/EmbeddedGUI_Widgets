@@ -34,7 +34,7 @@
 
 | 状态 | 控件名 | 分类 | 开始日期 | 当前阶段 | 目标 |
 | --- | --- | --- | --- | --- | --- |
-| 进行中 | `card_panel` | `display` | `2026-04-16` | 初始化复位路径复核 | 复核当前 `card_panel` reference 页面在 `test_init_ui()` 初始化路径、录制默认态与静态 preview 状态恢复上的一致性，并在不改动既有 static preview / README / 单测 / web 口径的前提下补齐最小修补与完整验收链 |
+| 进行中 | `progress_bar` | `feedback` | `2026-04-16` | `ui_ready` 显式复位复核 | 复核当前 `progress_bar` reference 页面是否仍存在 `test_init_ui()` 初始化路径未显式清零 `ui_ready` 的不一致，并在不改动既有 static preview / README / 单测 / web 口径的前提下补齐复位与完整验收链 |
 
 ## 当前保留的 Reference 主线控件
 
@@ -199,6 +199,7 @@
 - `2026-04-16`
   - 收口 `feedback/message_bar` reference 控件：在不修改 SDK 的前提下，对齐当前主线已经采用的 static preview 工作流，保留主区 `Updates ready / Settings saved / Storage almost full / Connection lost` 四组 `MessageBar / InfoBar` reference snapshots，把页面统一收口为标题、主 `message_bar` 和底部 `compact / read only` 双静态 preview，并移除旧 preview snapshot 切换、焦点桥接与未统一的 README / 单测口径。
   - `example/HelloCustomWidgets/feedback/message_bar/test.c` 新增 `ui_ready`、`layout_local_views()`、`layout_page()` 与 `request_page_snapshot()`，把录制轨道统一为主区 `info / success / warning / error` 四态加最终稳定帧，并固定底部 `compact / read only` preview；`example/HelloUnitTest/test/test_message_bar.c` 新增 `message_bar_preview_snapshot_t`、`assert_region_equal()`、`capture_preview_snapshot()` 与 `assert_preview_state_unchanged()`，把静态 preview 用例收口为 “consumes input and keeps state”，同时把事件分发统一改到 `dispatch_touch_event()` / `dispatch_key_event()`；`example/HelloCustomWidgets/feedback/message_bar/readme.md` 重写为与当前页面结构、录制轨道、单测口径和完整验收链一致的 UTF-8 说明，并回填 runtime 复核数字与 web 验收结果。
+  - 本轮进一步在 `test_init_ui()` 开头显式补上 `ui_ready = 0;`，补齐初始化复位路径的一致性。
   - 已通过 `make all APP=HelloCustomWidgets APP_SUB=feedback/message_bar PORT=pc`、在 `X:\` 短路径执行的 `make clean APP=HelloUnitTest PORT=pc_test`、`make all APP=HelloUnitTest PORT=pc_test`、`X:\output\main.exe`（总计 `845 / 845`，`message_bar` suite `8 / 8`）、`python scripts/sync_widget_catalog.py`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category feedback`、`python scripts/checks/check_docs_encoding.py`、`python scripts/checks/check_widget_catalog.py`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub feedback/message_bar --track reference --timeout 10 --keep-screenshots`、`python scripts/code_compile_check.py --custom-widgets --category feedback --bits64`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --category feedback --track reference --bits64`、`python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub feedback/message_bar` 与对应 `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_feedback_message_bar`（`PASS status=Running canvas=480x480 ratio=0.1678 colors=133`）。
   - 复核 `runtime_check_output/HelloCustomWidgets_feedback_message_bar/default` 的 `11` 帧截图：按 RGB 差分得到主区变化边界位于 `(45, 103) - (231, 244)`；遮罩该边界后主区外区域保持单哈希，确认主区外页面 chrome 全程静态；按主区差分边界裁剪后共出现 `4` 组唯一状态，对应 `Updates ready / Settings saved / Storage almost full / Connection lost` 四组 reference snapshots，最终稳定帧回到默认 `Updates ready`；按 `y >= 245` 裁剪底部 preview 区域后全部帧保持单哈希，确认底部 `compact / read only` preview 在整条录制轨道中保持静态一致。
 
