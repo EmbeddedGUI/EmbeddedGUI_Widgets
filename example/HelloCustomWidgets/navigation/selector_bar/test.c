@@ -22,6 +22,7 @@
 #define SELECTOR_BAR_BOTTOM_ROW_HEIGHT     72
 #define SELECTOR_BAR_RECORD_WAIT           90
 #define SELECTOR_BAR_RECORD_FRAME_WAIT     170
+#define SELECTOR_BAR_RECORD_FINAL_WAIT     520
 
 typedef struct
 {
@@ -46,6 +47,7 @@ static egui_view_label_t icon_only_heading_label;
 static egui_view_selector_bar_t icon_only_bar;
 static egui_view_api_t compact_bar_api;
 static egui_view_api_t icon_only_bar_api;
+static uint8_t ui_ready;
 
 EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
 EGUI_BACKGROUND_PARAM_INIT(bg_page_panel_params, &bg_page_panel_param, NULL, NULL);
@@ -87,6 +89,8 @@ static const selector_bar_snapshot_t primary_snapshots[] = {
         },
 };
 
+static void layout_page(void);
+
 static void init_text_label(egui_view_label_t *label, egui_dim_t width, egui_dim_t height, const char *text, const egui_font_t *font, egui_color_t color,
                             uint8_t align)
 {
@@ -117,33 +121,66 @@ static void apply_primary_snapshot(uint8_t index)
     egui_view_selector_bar_set_palette(EGUI_VIEW_OF(&primary_bar), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD3DBE3), EGUI_COLOR_HEX(0x17212C),
                                        EGUI_COLOR_HEX(0x6C7A88), snapshot->accent_color);
     egui_view_selector_bar_set_current_index(EGUI_VIEW_OF(&primary_bar), snapshot->selected_index);
+    if (ui_ready)
+    {
+        layout_page();
+    }
 }
 
-static void apply_compact_index(uint8_t index)
-{
-    egui_view_selector_bar_set_current_index(EGUI_VIEW_OF(&compact_bar), index % 2);
-}
-
-static void apply_icon_only_index(uint8_t index)
-{
-    egui_view_selector_bar_set_current_index(EGUI_VIEW_OF(&icon_only_bar), index % 3);
-}
-
-static void apply_preview_states(void)
+static void apply_compact_state(void)
 {
     egui_view_selector_bar_set_palette(EGUI_VIEW_OF(&compact_bar), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD8E0E8), EGUI_COLOR_HEX(0x22303C),
                                        EGUI_COLOR_HEX(0x6E7C89), EGUI_COLOR_HEX(0x0F6CBD));
     egui_view_selector_bar_set_compact_mode(EGUI_VIEW_OF(&compact_bar), 1);
-    apply_compact_index(0);
+    egui_view_selector_bar_set_current_index(EGUI_VIEW_OF(&compact_bar), 0);
+}
 
+static void apply_icon_only_state(void)
+{
     egui_view_selector_bar_set_palette(EGUI_VIEW_OF(&icon_only_bar), EGUI_COLOR_HEX(0xFBFCFD), EGUI_COLOR_HEX(0xDCE3EA), EGUI_COLOR_HEX(0x21303D),
                                        EGUI_COLOR_HEX(0x7A8895), EGUI_COLOR_HEX(0x0F7B45));
     egui_view_selector_bar_set_compact_mode(EGUI_VIEW_OF(&icon_only_bar), 1);
-    apply_icon_only_index(1);
+    egui_view_selector_bar_set_current_index(EGUI_VIEW_OF(&icon_only_bar), 1);
 }
+
+static void apply_preview_states(void)
+{
+    apply_compact_state();
+    apply_icon_only_state();
+    if (ui_ready)
+    {
+        layout_page();
+    }
+}
+
+static void layout_local_views(void)
+{
+    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&primary_panel));
+    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&compact_panel));
+    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&icon_only_panel));
+    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&bottom_row));
+    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&root_layout));
+}
+
+static void layout_page(void)
+{
+    layout_local_views();
+    egui_core_layout_childs_user_root_view(EGUI_LAYOUT_VERTICAL, EGUI_ALIGN_HCENTER | EGUI_ALIGN_VCENTER);
+}
+
+#if EGUI_CONFIG_RECORDING_TEST
+static void request_page_snapshot(void)
+{
+    layout_page();
+    egui_view_invalidate(EGUI_VIEW_OF(&root_layout));
+    recording_request_snapshot();
+}
+#endif
 
 void test_init_ui(void)
 {
+    ui_ready = 0;
+
     egui_view_linearlayout_init(EGUI_VIEW_OF(&root_layout));
     egui_view_set_size(EGUI_VIEW_OF(&root_layout), SELECTOR_BAR_ROOT_WIDTH, SELECTOR_BAR_ROOT_HEIGHT);
     egui_view_linearlayout_set_orientation(EGUI_VIEW_OF(&root_layout), 0);
@@ -225,14 +262,11 @@ void test_init_ui(void)
 
     hello_custom_widgets_demo_apply_title_only_scaffold(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label), NULL, 0);
 
-    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&primary_panel));
-    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&compact_panel));
-    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&icon_only_panel));
-    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&bottom_row));
-    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&root_layout));
-
+    layout_local_views();
     egui_core_add_user_root_view(EGUI_VIEW_OF(&root_layout));
-    egui_core_layout_childs_user_root_view(EGUI_LAYOUT_VERTICAL, EGUI_ALIGN_HCENTER | EGUI_ALIGN_VCENTER);
+    ui_ready = 1;
+    apply_primary_snapshot(0);
+    apply_preview_states();
 }
 
 #if EGUI_CONFIG_RECORDING_TEST
@@ -250,71 +284,52 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
         {
             apply_primary_snapshot(0);
             apply_preview_states();
-        }
-        EGUI_SIM_SET_WAIT(p_action, SELECTOR_BAR_RECORD_WAIT);
-        return true;
-    case 1:
-        if (first_call)
-        {
-            recording_request_snapshot();
+            request_page_snapshot();
         }
         EGUI_SIM_SET_WAIT(p_action, SELECTOR_BAR_RECORD_FRAME_WAIT);
         return true;
-    case 2:
+    case 1:
         if (first_call)
         {
             apply_primary_snapshot(1);
         }
         EGUI_SIM_SET_WAIT(p_action, SELECTOR_BAR_RECORD_WAIT);
         return true;
-    case 3:
+    case 2:
         if (first_call)
         {
-            recording_request_snapshot();
+            request_page_snapshot();
         }
         EGUI_SIM_SET_WAIT(p_action, SELECTOR_BAR_RECORD_FRAME_WAIT);
         return true;
-    case 4:
+    case 3:
         if (first_call)
         {
             apply_primary_snapshot(2);
         }
         EGUI_SIM_SET_WAIT(p_action, SELECTOR_BAR_RECORD_WAIT);
         return true;
+    case 4:
+        if (first_call)
+        {
+            request_page_snapshot();
+        }
+        EGUI_SIM_SET_WAIT(p_action, SELECTOR_BAR_RECORD_FRAME_WAIT);
+        return true;
     case 5:
         if (first_call)
         {
-            recording_request_snapshot();
+            apply_primary_snapshot(0);
+            apply_preview_states();
         }
-        EGUI_SIM_SET_WAIT(p_action, SELECTOR_BAR_RECORD_FRAME_WAIT);
+        EGUI_SIM_SET_WAIT(p_action, SELECTOR_BAR_RECORD_WAIT);
         return true;
     case 6:
         if (first_call)
         {
-            apply_compact_index(1);
+            request_page_snapshot();
         }
-        EGUI_SIM_SET_WAIT(p_action, SELECTOR_BAR_RECORD_WAIT);
-        return true;
-    case 7:
-        if (first_call)
-        {
-            recording_request_snapshot();
-        }
-        EGUI_SIM_SET_WAIT(p_action, SELECTOR_BAR_RECORD_FRAME_WAIT);
-        return true;
-    case 8:
-        if (first_call)
-        {
-            apply_icon_only_index(2);
-        }
-        EGUI_SIM_SET_WAIT(p_action, SELECTOR_BAR_RECORD_WAIT);
-        return true;
-    case 9:
-        if (first_call)
-        {
-            recording_request_snapshot();
-        }
-        EGUI_SIM_SET_WAIT(p_action, 520);
+        EGUI_SIM_SET_WAIT(p_action, SELECTOR_BAR_RECORD_FINAL_WAIT);
         return true;
     default:
         return false;

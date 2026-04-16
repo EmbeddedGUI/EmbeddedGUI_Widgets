@@ -63,10 +63,8 @@
 | 主控件 | `Recent` | 默认状态，验证标准 SelectorBar 视觉 |
 | 主控件 | `Search` | 程序化切换第二项 |
 | 主控件 | `Saved` | 程序化切换第三项 |
-| `compact` | `Home` | 默认 compact 对照 |
-| `compact` | `Find` | 窄宽度下的第二项状态 |
-| `icon only` | `Search` | 默认 icon only 对照 |
-| `icon only` | `Settings` | icon only 的第二次录制状态 |
+| `compact` | `Home` | 固定静态 compact 对照 |
+| `icon only` | `Search` | 固定静态 icon only 对照 |
 
 - 主控件保留真实 `touch / key` 切换闭环：
   - `DOWN(A) -> MOVE(B) -> UP(B)` 不提交
@@ -86,25 +84,25 @@
 4. 输出第二张截图
 5. 切换主控件到 `Saved`
 6. 输出第三张截图
-7. 切换 `compact` 到第二项
-8. 输出第四张截图
-9. 切换 `icon only` 到 `Settings`
-10. 输出最终稳定帧
+7. 恢复主控件默认 `Recent`，同时重新应用底部两个静态 preview
+8. 输出最终稳定帧
 
 ## 8. 编译、单测、touch、runtime 与 web 验收路径
 
 ```bash
 make all APP=HelloCustomWidgets APP_SUB=navigation/selector_bar PORT=pc
 
+make clean APP=HelloUnitTest PORT=pc_test
 make all APP=HelloUnitTest PORT=pc_test
-output\main.exe
+X:\output\main.exe
 
+python scripts/sync_widget_catalog.py
 python scripts/checks/check_touch_release_semantics.py --scope custom --category navigation
-python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub navigation/selector_bar --track reference --timeout 10 --keep-screenshots
-python scripts/code_runtime_check.py --app HelloCustomWidgets --category navigation --track reference --bits64
-
 python scripts/checks/check_docs_encoding.py
 python scripts/checks/check_widget_catalog.py
+python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub navigation/selector_bar --track reference --timeout 10 --keep-screenshots
+python scripts/code_compile_check.py --custom-widgets --category navigation --bits64
+python scripts/code_runtime_check.py --app HelloCustomWidgets --category navigation --track reference --bits64
 
 python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub navigation/selector_bar
 python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_navigation_selector_bar
@@ -116,7 +114,7 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
 - 主控件选中态必须稳定可辨识，但不能回到高噪音 tab shell。
 - `compact` 与 `icon only` 必须在同一套控件语义下成立，而不是额外拼装页面壳。
 - same-target release 语义必须通过：只有回到原 item 才提交。
-- 静态 preview 必须吞掉输入并清掉残留 pressed。
+- 静态 preview 必须在整条录制轨道中保持固定状态，同时吞掉输入并清掉残留 pressed。
 
 ## 9. 已知限制与后续方向
 
