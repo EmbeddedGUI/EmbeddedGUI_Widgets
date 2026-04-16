@@ -34,7 +34,7 @@
 
 | 状态 | 控件名 | 分类 | 开始日期 | 当前阶段 | 目标 |
 | --- | --- | --- | --- | --- | --- |
-| 进行中 | `tool_tip` | `feedback` | `2026-04-16` | static preview 收口 | 复核当前 `tool_tip` reference 页面是否仍停留在旧版录制 / preview / README / 单测口径，评估并收口到主区 reference snapshots、静态 preview、README、单测与 web 验收链一致的主线实现 |
+| 进行中 | `teaching_tip` | `feedback` | `2026-04-16` | static preview 收口 | 复核当前 `teaching_tip` reference 页面是否仍停留在旧版录制 / preview / README / 单测口径，评估并收口到主区 reference snapshots、静态 preview、README、单测与 web 验收链一致的主线实现 |
 
 ## 当前保留的 Reference 主线控件
 
@@ -160,6 +160,12 @@
 - `toast_stack` -> `Toast`
 
 ## 最近完成的收口动作
+
+- `2026-04-16`
+  - 收口 `feedback/tool_tip` reference 控件：在不修改 SDK 的前提下，对齐当前主线已经采用的 static preview 工作流，把页面统一收口为标题、主 `tool_tip` 与底部 `compact / read only` 双静态 preview，移除旧录制口径里残留的 preview 桥接、旧 README 模板和不完整的静态 preview 单测表达。
+  - `example/HelloCustomWidgets/feedback/tool_tip/test.c` 新增 `ui_ready`、`layout_local_views()`、`layout_page()` 与统一的 `request_page_snapshot()`，把录制轨道收口为 `Save / closed`、`Save / delayed open`、`Search / top placement`、`Publish / warning open`、`Publish / Esc close` 与最终稳定帧；`example/HelloUnitTest/test/test_tool_tip.c` 新增 `tool_tip_preview_snapshot_t`、`assert_region_equal()`、`capture_preview_snapshot()` 与 `assert_preview_state_unchanged()`，把静态 preview 用例收口为 “consumes input and keeps state”，并完整校验 `snapshot / open / current_part / timer / pending / pressed` 等状态不变；`example/HelloCustomWidgets/feedback/tool_tip/readme.md` 重写为与当前页面结构、录制轨道、单测口径和完整验收链一致的 UTF-8 说明，并回填 runtime 复核数字与 web 验收结果。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=feedback/tool_tip PORT=pc`、在 `X:\` 短路径执行的 `make clean APP=HelloUnitTest PORT=pc_test`、`make all APP=HelloUnitTest PORT=pc_test`、`X:\output\main.exe`（总计 `845 / 845`，`tool_tip` suite `9 / 9`）、`python scripts/sync_widget_catalog.py`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category feedback`、`python scripts/checks/check_docs_encoding.py`、`python scripts/checks/check_widget_catalog.py`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub feedback/tool_tip --track reference --timeout 10 --keep-screenshots`、`python scripts/code_compile_check.py --custom-widgets --category feedback --bits64`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --category feedback --track reference --bits64`、`python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub feedback/tool_tip` 与对应 `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_feedback_tool_tip`（`PASS status=Running canvas=480x480 ratio=0.1815 colors=127`）。
+  - 复核 `runtime_check_output/HelloCustomWidgets_feedback_tool_tip/default` 的 `12` 帧截图：按 RGB 差分得到主区变化边界位于 `(54, 97) - (426, 202)`；遮罩该边界后主区外区域保持单哈希，确认主区外页面 chrome 全程静态；按主区差分边界裁剪后共出现 `5` 组唯一状态，对应 `Save / closed`、`Save / delayed open`、`Search / top placement`、`Publish / warning open` 与 `Publish / Esc close` 五组主区语义，最终稳定帧回到默认 `Save / closed`；按 `y >= 203` 裁剪底部 preview 区域后全部帧保持单哈希，确认底部 `compact / read only` preview 在整条录制轨道中保持静态一致。
 
 - `2026-04-16`
   - 收口 `feedback/toast_stack` reference 控件：在不修改 SDK 的前提下，对齐当前主线已经采用的 static preview 工作流，保留主区 `Backup ready / Draft / Storage low / Upload failed` 四组 `Toast / Snackbar` reference snapshots，把页面统一收口为标题、主 `toast_stack` 与底部 `compact / read only` 双静态 preview，并移除旧录制口径里残留的直接截图请求与未统一的 README / 单测表达。

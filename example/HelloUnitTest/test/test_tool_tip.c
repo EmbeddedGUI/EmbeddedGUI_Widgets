@@ -7,6 +7,49 @@
 #include "../../HelloCustomWidgets/feedback/tool_tip/egui_view_tool_tip.h"
 #include "../../HelloCustomWidgets/feedback/tool_tip/egui_view_tool_tip.c"
 
+typedef struct tool_tip_preview_snapshot tool_tip_preview_snapshot_t;
+struct tool_tip_preview_snapshot
+{
+    egui_region_t region_screen;
+    egui_background_t *background;
+    const egui_view_tool_tip_snapshot_t *snapshots;
+    const egui_font_t *font;
+    const egui_font_t *meta_font;
+    egui_view_on_click_listener_t on_click_listener;
+    const egui_view_api_t *api;
+    egui_color_t surface_color;
+    egui_color_t border_color;
+    egui_color_t text_color;
+    egui_color_t muted_text_color;
+    egui_color_t accent_color;
+    egui_color_t warning_color;
+    egui_color_t neutral_color;
+    egui_color_t shadow_color;
+    egui_color_t target_fill_color;
+    egui_color_t target_border_color;
+    uint16_t show_delay_ms;
+    uint8_t snapshot_count;
+    uint8_t current_snapshot;
+    uint8_t current_part;
+    uint8_t compact_mode;
+    uint8_t read_only_mode;
+    uint8_t open;
+    uint8_t timer_started;
+    uint8_t timer_running;
+    uint8_t pending_show;
+    uint8_t touch_active;
+    uint8_t key_active;
+    uint8_t toggle_on_release;
+    egui_alpha_t alpha;
+    uint8_t enable;
+    uint8_t is_focused;
+    uint8_t is_pressed;
+    egui_dim_t padding_left;
+    egui_dim_t padding_right;
+    egui_dim_t padding_top;
+    egui_dim_t padding_bottom;
+};
+
 static egui_view_tool_tip_t test_widget;
 static egui_view_tool_tip_t preview_widget;
 static egui_view_api_t preview_api;
@@ -21,10 +64,23 @@ static const egui_view_tool_tip_snapshot_t preview_snapshots[] = {
         {"Preview", "Read only", "Review only", "Static comparison.", EGUI_VIEW_TOOL_TIP_TONE_NEUTRAL, EGUI_VIEW_TOOL_TIP_PLACEMENT_BOTTOM, 0},
 };
 
+static void assert_region_equal(const egui_region_t *expected, const egui_region_t *actual)
+{
+    EGUI_TEST_ASSERT_EQUAL_INT(expected->location.x, actual->location.x);
+    EGUI_TEST_ASSERT_EQUAL_INT(expected->location.y, actual->location.y);
+    EGUI_TEST_ASSERT_EQUAL_INT(expected->size.width, actual->size.width);
+    EGUI_TEST_ASSERT_EQUAL_INT(expected->size.height, actual->size.height);
+}
+
 static void on_tool_tip_click(egui_view_t *self)
 {
     EGUI_UNUSED(self);
     g_click_count++;
+}
+
+static void reset_click_count(void)
+{
+    g_click_count = 0;
 }
 
 static void setup_widget(void)
@@ -39,7 +95,7 @@ static void setup_widget(void)
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&test_widget), 1);
 #endif
-    g_click_count = 0;
+    reset_click_count();
 }
 
 static void setup_preview_widget(void)
@@ -48,13 +104,17 @@ static void setup_preview_widget(void)
     egui_view_tool_tip_init(EGUI_VIEW_OF(&preview_widget));
     egui_view_set_size(EGUI_VIEW_OF(&preview_widget), 104, 82);
     egui_view_tool_tip_set_snapshots(EGUI_VIEW_OF(&preview_widget), preview_snapshots, 1);
+    egui_view_tool_tip_set_current_snapshot(EGUI_VIEW_OF(&preview_widget), 0);
     egui_view_tool_tip_set_font(EGUI_VIEW_OF(&preview_widget), (const egui_font_t *)&egui_res_font_montserrat_8_4);
     egui_view_tool_tip_set_meta_font(EGUI_VIEW_OF(&preview_widget), (const egui_font_t *)&egui_res_font_montserrat_8_4);
     egui_view_tool_tip_set_compact_mode(EGUI_VIEW_OF(&preview_widget), 1);
     egui_view_tool_tip_set_open(EGUI_VIEW_OF(&preview_widget), 1);
     egui_view_set_on_click_listener(EGUI_VIEW_OF(&preview_widget), on_tool_tip_click);
     egui_view_tool_tip_override_static_preview_api(EGUI_VIEW_OF(&preview_widget), &preview_api);
-    g_click_count = 0;
+#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
+    egui_view_set_focusable(EGUI_VIEW_OF(&preview_widget), 0);
+#endif
+    reset_click_count();
 }
 
 static void layout_view(egui_view_t *view, egui_dim_t x, egui_dim_t y, egui_dim_t width, egui_dim_t height)
@@ -89,7 +149,7 @@ static void detach_view(egui_view_t *view)
     egui_view_dispatch_detach_from_window(view);
 }
 
-static int send_touch_action(egui_view_t *view, uint8_t type, egui_dim_t x, egui_dim_t y)
+static int dispatch_touch_event_to_view(egui_view_t *view, uint8_t type, egui_dim_t x, egui_dim_t y)
 {
     egui_motion_event_t event;
 
@@ -100,7 +160,7 @@ static int send_touch_action(egui_view_t *view, uint8_t type, egui_dim_t x, egui
     return view->api->dispatch_touch_event(view, &event);
 }
 
-static int send_key_action(egui_view_t *view, uint8_t type, uint8_t key_code)
+static int dispatch_key_event_to_view(egui_view_t *view, uint8_t type, uint8_t key_code)
 {
     egui_key_event_t event;
 
@@ -108,6 +168,90 @@ static int send_key_action(egui_view_t *view, uint8_t type, uint8_t key_code)
     event.type = type;
     event.key_code = key_code;
     return view->api->dispatch_key_event(view, &event);
+}
+
+static void capture_preview_snapshot(tool_tip_preview_snapshot_t *snapshot)
+{
+    snapshot->region_screen = EGUI_VIEW_OF(&preview_widget)->region_screen;
+    snapshot->background = EGUI_VIEW_OF(&preview_widget)->background;
+    snapshot->snapshots = preview_widget.snapshots;
+    snapshot->font = preview_widget.font;
+    snapshot->meta_font = preview_widget.meta_font;
+    snapshot->on_click_listener = EGUI_VIEW_OF(&preview_widget)->on_click_listener;
+    snapshot->api = EGUI_VIEW_OF(&preview_widget)->api;
+    snapshot->surface_color = preview_widget.surface_color;
+    snapshot->border_color = preview_widget.border_color;
+    snapshot->text_color = preview_widget.text_color;
+    snapshot->muted_text_color = preview_widget.muted_text_color;
+    snapshot->accent_color = preview_widget.accent_color;
+    snapshot->warning_color = preview_widget.warning_color;
+    snapshot->neutral_color = preview_widget.neutral_color;
+    snapshot->shadow_color = preview_widget.shadow_color;
+    snapshot->target_fill_color = preview_widget.target_fill_color;
+    snapshot->target_border_color = preview_widget.target_border_color;
+    snapshot->show_delay_ms = preview_widget.show_delay_ms;
+    snapshot->snapshot_count = preview_widget.snapshot_count;
+    snapshot->current_snapshot = preview_widget.current_snapshot;
+    snapshot->current_part = preview_widget.current_part;
+    snapshot->compact_mode = preview_widget.compact_mode;
+    snapshot->read_only_mode = preview_widget.read_only_mode;
+    snapshot->open = preview_widget.open;
+    snapshot->timer_started = preview_widget.timer_started;
+    snapshot->timer_running = (uint8_t)egui_timer_check_timer_start(&preview_widget.show_timer);
+    snapshot->pending_show = preview_widget.pending_show;
+    snapshot->touch_active = preview_widget.touch_active;
+    snapshot->key_active = preview_widget.key_active;
+    snapshot->toggle_on_release = preview_widget.toggle_on_release;
+    snapshot->alpha = EGUI_VIEW_OF(&preview_widget)->alpha;
+    snapshot->enable = (uint8_t)egui_view_get_enable(EGUI_VIEW_OF(&preview_widget));
+    snapshot->is_focused = EGUI_VIEW_OF(&preview_widget)->is_focused;
+    snapshot->is_pressed = EGUI_VIEW_OF(&preview_widget)->is_pressed;
+    snapshot->padding_left = EGUI_VIEW_OF(&preview_widget)->padding.left;
+    snapshot->padding_right = EGUI_VIEW_OF(&preview_widget)->padding.right;
+    snapshot->padding_top = EGUI_VIEW_OF(&preview_widget)->padding.top;
+    snapshot->padding_bottom = EGUI_VIEW_OF(&preview_widget)->padding.bottom;
+}
+
+static void assert_preview_state_unchanged(const tool_tip_preview_snapshot_t *snapshot)
+{
+    assert_region_equal(&snapshot->region_screen, &EGUI_VIEW_OF(&preview_widget)->region_screen);
+    EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&preview_widget)->background == snapshot->background);
+    EGUI_TEST_ASSERT_TRUE(preview_widget.snapshots == snapshot->snapshots);
+    EGUI_TEST_ASSERT_TRUE(preview_widget.font == snapshot->font);
+    EGUI_TEST_ASSERT_TRUE(preview_widget.meta_font == snapshot->meta_font);
+    EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&preview_widget)->on_click_listener == snapshot->on_click_listener);
+    EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&preview_widget)->api == snapshot->api);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->surface_color.full, preview_widget.surface_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->border_color.full, preview_widget.border_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->text_color.full, preview_widget.text_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->muted_text_color.full, preview_widget.muted_text_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->accent_color.full, preview_widget.accent_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->warning_color.full, preview_widget.warning_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->neutral_color.full, preview_widget.neutral_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->shadow_color.full, preview_widget.shadow_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->target_fill_color.full, preview_widget.target_fill_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->target_border_color.full, preview_widget.target_border_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->show_delay_ms, preview_widget.show_delay_ms);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->snapshot_count, preview_widget.snapshot_count);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->current_snapshot, preview_widget.current_snapshot);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->current_part, preview_widget.current_part);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->compact_mode, preview_widget.compact_mode);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->read_only_mode, preview_widget.read_only_mode);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->open, preview_widget.open);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->timer_started, preview_widget.timer_started);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->timer_running, egui_timer_check_timer_start(&preview_widget.show_timer));
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->pending_show, preview_widget.pending_show);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->touch_active, preview_widget.touch_active);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->key_active, preview_widget.key_active);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->toggle_on_release, preview_widget.toggle_on_release);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->alpha, EGUI_VIEW_OF(&preview_widget)->alpha);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->enable, egui_view_get_enable(EGUI_VIEW_OF(&preview_widget)));
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->is_focused, EGUI_VIEW_OF(&preview_widget)->is_focused);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->is_pressed, EGUI_VIEW_OF(&preview_widget)->is_pressed);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->padding_left, EGUI_VIEW_OF(&preview_widget)->padding.left);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->padding_right, EGUI_VIEW_OF(&preview_widget)->padding.right);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->padding_top, EGUI_VIEW_OF(&preview_widget)->padding.top);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->padding_bottom, EGUI_VIEW_OF(&preview_widget)->padding.bottom);
 }
 
 static void get_target_center(egui_view_t *view, egui_dim_t *x, egui_dim_t *y)
@@ -152,9 +296,9 @@ static void seed_pending_state(egui_view_tool_tip_t *widget)
 static void click_target_to_begin_delay(egui_view_tool_tip_t *widget, egui_dim_t *center_x, egui_dim_t *center_y)
 {
     get_target_center(EGUI_VIEW_OF(widget), center_x, center_y);
-    EGUI_TEST_ASSERT_TRUE(send_touch_action(EGUI_VIEW_OF(widget), EGUI_MOTION_EVENT_ACTION_DOWN, *center_x, *center_y));
+    EGUI_TEST_ASSERT_TRUE(dispatch_touch_event_to_view(EGUI_VIEW_OF(widget), EGUI_MOTION_EVENT_ACTION_DOWN, *center_x, *center_y));
     EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(widget)->is_pressed);
-    EGUI_TEST_ASSERT_TRUE(send_touch_action(EGUI_VIEW_OF(widget), EGUI_MOTION_EVENT_ACTION_UP, *center_x, *center_y));
+    EGUI_TEST_ASSERT_TRUE(dispatch_touch_event_to_view(EGUI_VIEW_OF(widget), EGUI_MOTION_EVENT_ACTION_UP, *center_x, *center_y));
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(widget)->is_pressed);
     EGUI_TEST_ASSERT_TRUE(widget->pending_show);
     EGUI_TEST_ASSERT_TRUE(widget->timer_started);
@@ -241,10 +385,10 @@ static void test_tool_tip_touch_click_arms_delay_and_second_click_closes(void)
     EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_tool_tip_get_open(EGUI_VIEW_OF(&test_widget)));
     assert_timer_stopped(&test_widget);
 
-    EGUI_TEST_ASSERT_TRUE(send_touch_action(EGUI_VIEW_OF(&test_widget), EGUI_MOTION_EVENT_ACTION_DOWN, center_x, center_y));
+    EGUI_TEST_ASSERT_TRUE(dispatch_touch_event_to_view(EGUI_VIEW_OF(&test_widget), EGUI_MOTION_EVENT_ACTION_DOWN, center_x, center_y));
     EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&test_widget)->is_pressed);
     EGUI_TEST_ASSERT_TRUE(test_widget.toggle_on_release);
-    EGUI_TEST_ASSERT_TRUE(send_touch_action(EGUI_VIEW_OF(&test_widget), EGUI_MOTION_EVENT_ACTION_UP, center_x, center_y));
+    EGUI_TEST_ASSERT_TRUE(dispatch_touch_event_to_view(EGUI_VIEW_OF(&test_widget), EGUI_MOTION_EVENT_ACTION_UP, center_x, center_y));
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_tool_tip_get_open(EGUI_VIEW_OF(&test_widget)));
     assert_interaction_cleared(&test_widget);
 }
@@ -261,10 +405,10 @@ static void test_tool_tip_touch_move_outside_cancels_delay(void)
     get_target_center(EGUI_VIEW_OF(&test_widget), &center_x, &center_y);
     outside_x = EGUI_VIEW_OF(&test_widget)->region_screen.location.x + EGUI_VIEW_OF(&test_widget)->region_screen.size.width + 12;
 
-    EGUI_TEST_ASSERT_TRUE(send_touch_action(EGUI_VIEW_OF(&test_widget), EGUI_MOTION_EVENT_ACTION_DOWN, center_x, center_y));
-    EGUI_TEST_ASSERT_TRUE(send_touch_action(EGUI_VIEW_OF(&test_widget), EGUI_MOTION_EVENT_ACTION_MOVE, outside_x, center_y));
+    EGUI_TEST_ASSERT_TRUE(dispatch_touch_event_to_view(EGUI_VIEW_OF(&test_widget), EGUI_MOTION_EVENT_ACTION_DOWN, center_x, center_y));
+    EGUI_TEST_ASSERT_TRUE(dispatch_touch_event_to_view(EGUI_VIEW_OF(&test_widget), EGUI_MOTION_EVENT_ACTION_MOVE, outside_x, center_y));
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_widget)->is_pressed);
-    EGUI_TEST_ASSERT_TRUE(send_touch_action(EGUI_VIEW_OF(&test_widget), EGUI_MOTION_EVENT_ACTION_UP, outside_x, center_y));
+    EGUI_TEST_ASSERT_TRUE(dispatch_touch_event_to_view(EGUI_VIEW_OF(&test_widget), EGUI_MOTION_EVENT_ACTION_UP, outside_x, center_y));
 
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_tool_tip_get_open(EGUI_VIEW_OF(&test_widget)));
     assert_interaction_cleared(&test_widget);
@@ -276,17 +420,17 @@ static void test_tool_tip_key_delay_and_escape_close(void)
     layout_widget();
     attach_view(EGUI_VIEW_OF(&test_widget));
 
-    EGUI_TEST_ASSERT_TRUE(send_key_action(EGUI_VIEW_OF(&test_widget), EGUI_KEY_EVENT_ACTION_DOWN, EGUI_KEY_CODE_ENTER));
+    EGUI_TEST_ASSERT_TRUE(dispatch_key_event_to_view(EGUI_VIEW_OF(&test_widget), EGUI_KEY_EVENT_ACTION_DOWN, EGUI_KEY_CODE_ENTER));
     EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&test_widget)->is_pressed);
     EGUI_TEST_ASSERT_TRUE(test_widget.key_active);
-    EGUI_TEST_ASSERT_TRUE(send_key_action(EGUI_VIEW_OF(&test_widget), EGUI_KEY_EVENT_ACTION_UP, EGUI_KEY_CODE_ENTER));
+    EGUI_TEST_ASSERT_TRUE(dispatch_key_event_to_view(EGUI_VIEW_OF(&test_widget), EGUI_KEY_EVENT_ACTION_UP, EGUI_KEY_CODE_ENTER));
     EGUI_TEST_ASSERT_FALSE(test_widget.key_active);
     EGUI_TEST_ASSERT_TRUE(test_widget.pending_show);
     EGUI_TEST_ASSERT_TRUE(test_widget.timer_started);
 
     egui_view_tool_tip_tick(&test_widget.show_timer);
     EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_tool_tip_get_open(EGUI_VIEW_OF(&test_widget)));
-    EGUI_TEST_ASSERT_TRUE(send_key_action(EGUI_VIEW_OF(&test_widget), EGUI_KEY_EVENT_ACTION_DOWN, EGUI_KEY_CODE_ESCAPE));
+    EGUI_TEST_ASSERT_TRUE(dispatch_key_event_to_view(EGUI_VIEW_OF(&test_widget), EGUI_KEY_EVENT_ACTION_DOWN, EGUI_KEY_CODE_ESCAPE));
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_tool_tip_get_open(EGUI_VIEW_OF(&test_widget)));
     assert_interaction_cleared(&test_widget);
 }
@@ -296,10 +440,10 @@ static void test_tool_tip_unhandled_key_clears_pressed_state(void)
     setup_widget();
     attach_view(EGUI_VIEW_OF(&test_widget));
 
-    EGUI_TEST_ASSERT_TRUE(send_key_action(EGUI_VIEW_OF(&test_widget), EGUI_KEY_EVENT_ACTION_DOWN, EGUI_KEY_CODE_SPACE));
+    EGUI_TEST_ASSERT_TRUE(dispatch_key_event_to_view(EGUI_VIEW_OF(&test_widget), EGUI_KEY_EVENT_ACTION_DOWN, EGUI_KEY_CODE_SPACE));
     EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&test_widget)->is_pressed);
     EGUI_TEST_ASSERT_TRUE(test_widget.key_active);
-    EGUI_TEST_ASSERT_FALSE(send_key_action(EGUI_VIEW_OF(&test_widget), EGUI_KEY_EVENT_ACTION_DOWN, EGUI_KEY_CODE_TAB));
+    EGUI_TEST_ASSERT_FALSE(dispatch_key_event_to_view(EGUI_VIEW_OF(&test_widget), EGUI_KEY_EVENT_ACTION_DOWN, EGUI_KEY_CODE_TAB));
     assert_interaction_cleared(&test_widget);
 }
 
@@ -314,20 +458,21 @@ static void test_tool_tip_disabled_and_read_only_guard_prevent_open(void)
     get_target_center(EGUI_VIEW_OF(&test_widget), &center_x, &center_y);
 
     egui_view_set_enable(EGUI_VIEW_OF(&test_widget), 0);
-    EGUI_TEST_ASSERT_TRUE(send_touch_action(EGUI_VIEW_OF(&test_widget), EGUI_MOTION_EVENT_ACTION_DOWN, center_x, center_y));
-    EGUI_TEST_ASSERT_TRUE(send_touch_action(EGUI_VIEW_OF(&test_widget), EGUI_MOTION_EVENT_ACTION_UP, center_x, center_y));
+    EGUI_TEST_ASSERT_TRUE(dispatch_touch_event_to_view(EGUI_VIEW_OF(&test_widget), EGUI_MOTION_EVENT_ACTION_DOWN, center_x, center_y));
+    EGUI_TEST_ASSERT_TRUE(dispatch_touch_event_to_view(EGUI_VIEW_OF(&test_widget), EGUI_MOTION_EVENT_ACTION_UP, center_x, center_y));
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_tool_tip_get_open(EGUI_VIEW_OF(&test_widget)));
     assert_interaction_cleared(&test_widget);
 
     egui_view_set_enable(EGUI_VIEW_OF(&test_widget), 1);
     egui_view_tool_tip_set_read_only_mode(EGUI_VIEW_OF(&test_widget), 1);
-    EGUI_TEST_ASSERT_FALSE(send_key_action(EGUI_VIEW_OF(&test_widget), EGUI_KEY_EVENT_ACTION_DOWN, EGUI_KEY_CODE_ENTER));
+    EGUI_TEST_ASSERT_FALSE(dispatch_key_event_to_view(EGUI_VIEW_OF(&test_widget), EGUI_KEY_EVENT_ACTION_DOWN, EGUI_KEY_CODE_ENTER));
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_tool_tip_get_open(EGUI_VIEW_OF(&test_widget)));
     assert_interaction_cleared(&test_widget);
 }
 
-static void test_tool_tip_static_preview_consumes_input_and_keeps_snapshot_and_open_state(void)
+static void test_tool_tip_static_preview_consumes_input_and_keeps_state(void)
 {
+    tool_tip_preview_snapshot_t initial_snapshot;
     egui_dim_t center_x;
     egui_dim_t center_y;
 
@@ -335,25 +480,20 @@ static void test_tool_tip_static_preview_consumes_input_and_keeps_snapshot_and_o
     layout_preview_widget();
     attach_view(EGUI_VIEW_OF(&preview_widget));
     get_target_center(EGUI_VIEW_OF(&preview_widget), &center_x, &center_y);
-    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_tool_tip_get_current_snapshot(EGUI_VIEW_OF(&preview_widget)));
-    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_tool_tip_get_open(EGUI_VIEW_OF(&preview_widget)));
+    capture_preview_snapshot(&initial_snapshot);
 
     seed_pending_state(&preview_widget);
-    preview_widget.open = 1;
-    EGUI_TEST_ASSERT_TRUE(send_touch_action(EGUI_VIEW_OF(&preview_widget), EGUI_MOTION_EVENT_ACTION_DOWN, center_x, center_y));
-    EGUI_TEST_ASSERT_TRUE(send_touch_action(EGUI_VIEW_OF(&preview_widget), EGUI_MOTION_EVENT_ACTION_UP, center_x, center_y));
-    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_tool_tip_get_current_snapshot(EGUI_VIEW_OF(&preview_widget)));
-    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_tool_tip_get_open(EGUI_VIEW_OF(&preview_widget)));
-    assert_interaction_cleared(&preview_widget);
+    preview_widget.open = initial_snapshot.open;
+    EGUI_TEST_ASSERT_TRUE(dispatch_touch_event_to_view(EGUI_VIEW_OF(&preview_widget), EGUI_MOTION_EVENT_ACTION_DOWN, center_x, center_y));
+    EGUI_TEST_ASSERT_TRUE(dispatch_touch_event_to_view(EGUI_VIEW_OF(&preview_widget), EGUI_MOTION_EVENT_ACTION_UP, center_x, center_y));
+    assert_preview_state_unchanged(&initial_snapshot);
     EGUI_TEST_ASSERT_EQUAL_INT(0, g_click_count);
 
     seed_pending_state(&preview_widget);
-    preview_widget.open = 1;
-    EGUI_TEST_ASSERT_TRUE(send_key_action(EGUI_VIEW_OF(&preview_widget), EGUI_KEY_EVENT_ACTION_DOWN, EGUI_KEY_CODE_ENTER));
-    EGUI_TEST_ASSERT_TRUE(send_key_action(EGUI_VIEW_OF(&preview_widget), EGUI_KEY_EVENT_ACTION_UP, EGUI_KEY_CODE_ENTER));
-    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_tool_tip_get_current_snapshot(EGUI_VIEW_OF(&preview_widget)));
-    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_tool_tip_get_open(EGUI_VIEW_OF(&preview_widget)));
-    assert_interaction_cleared(&preview_widget);
+    preview_widget.open = initial_snapshot.open;
+    EGUI_TEST_ASSERT_TRUE(dispatch_key_event_to_view(EGUI_VIEW_OF(&preview_widget), EGUI_KEY_EVENT_ACTION_DOWN, EGUI_KEY_CODE_ENTER));
+    EGUI_TEST_ASSERT_TRUE(dispatch_key_event_to_view(EGUI_VIEW_OF(&preview_widget), EGUI_KEY_EVENT_ACTION_UP, EGUI_KEY_CODE_ENTER));
+    assert_preview_state_unchanged(&initial_snapshot);
     EGUI_TEST_ASSERT_EQUAL_INT(0, g_click_count);
 }
 
@@ -388,7 +528,7 @@ void test_tool_tip_run(void)
     EGUI_TEST_RUN(test_tool_tip_key_delay_and_escape_close);
     EGUI_TEST_RUN(test_tool_tip_unhandled_key_clears_pressed_state);
     EGUI_TEST_RUN(test_tool_tip_disabled_and_read_only_guard_prevent_open);
-    EGUI_TEST_RUN(test_tool_tip_static_preview_consumes_input_and_keeps_snapshot_and_open_state);
+    EGUI_TEST_RUN(test_tool_tip_static_preview_consumes_input_and_keeps_state);
     EGUI_TEST_RUN(test_tool_tip_attach_and_detach_restore_pending_timer);
     EGUI_TEST_SUITE_END();
 }
