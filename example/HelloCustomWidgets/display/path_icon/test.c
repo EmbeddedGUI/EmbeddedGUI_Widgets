@@ -139,6 +139,7 @@ static void request_page_snapshot(void)
 
 void test_init_ui(void)
 {
+    ui_ready = 0;
     init_primary_snapshots();
 
     egui_view_linearlayout_init(EGUI_VIEW_OF(&root_layout));
