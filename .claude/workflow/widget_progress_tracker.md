@@ -34,7 +34,7 @@
 
 | 状态 | 控件名 | 分类 | 开始日期 | 当前阶段 | 目标 |
 | --- | --- | --- | --- | --- | --- |
-| 进行中 | `symbol_icon` | `display` | `2026-04-16` | `ui_ready` 显式复位复核 | 复核当前 `symbol_icon` reference 页面是否仍存在 `test_init_ui()` 初始化路径未显式清零 `ui_ready` 的不一致，并在不改动既有 static preview / README / 单测 / web 口径的前提下补齐复位与完整验收链 |
+| 进行中 | `tag` | `display` | `2026-04-16` | `ui_ready` 显式复位复核 | 复核当前 `tag` reference 页面是否仍存在 `test_init_ui()` 初始化路径未显式清零 `ui_ready` 的不一致，并在不改动既有 static preview / README / 单测 / web 口径的前提下补齐复位与完整验收链 |
 
 ## 当前保留的 Reference 主线控件
 
@@ -256,6 +256,7 @@
 - `2026-04-16`
   - 收口 `display/symbol_icon` reference 控件：在不修改 SDK 的前提下，对齐当前主线已经采用的 static preview 工作流，把页面收口为标题、主 `symbol_icon`、主状态 label 和底部 `subtle / accent` 双静态 preview，保留主区 `Home / standard`、`Notifications / accent`、`Settings / success` 三组 reference 快照，并移除旧 `primary_panel`、`heading / note`、底部 preview 标题与说明文案，以及录制末尾回切默认态恢复帧。
   - `example/HelloCustomWidgets/display/symbol_icon/test.c` 新增 `SYMBOL_ICON_RECORD_FINAL_WAIT`、`SYMBOL_ICON_DEFAULT_SNAPSHOT`、`PRIMARY_SNAPSHOT_COUNT`、`ui_ready`、`apply_primary_default_state()`、`layout_local_views()`、`layout_page()` 与 `request_page_snapshot()`，把录制轨道改为只导出主区 `Home / standard`、`Notifications / accent`、`Settings / success` 三态与最终稳定帧，并确保底部 `subtle / accent` preview 全程静态；`example/HelloUnitTest/test/test_symbol_icon.c` 新增 `symbol_icon_preview_snapshot_t`、`assert_region_equal()`、`assert_optional_string_equal()`、`capture_preview_snapshot()`、`assert_preview_state_unchanged()` 与 `dispatch_key_event_to_view()`，将静态 preview 用例收口为 “consumes input and keeps state”，补齐 `region_screen / background / symbol / icon_font / icon_color / on_click_listener / api / alpha / enable / is_focused / is_pressed / padding` 固定断言；`example/HelloCustomWidgets/display/symbol_icon/readme.md` 重写为与当前 static preview 页面结构、录制轨道、单测口径和完整验收链一致的 UTF-8 说明，并回填 runtime 复核数字。
+  - 本轮进一步在 `test_init_ui()` 开头显式补上 `ui_ready = 0;`，补齐初始化复位路径的一致性。
   - 已通过 `make all APP=HelloCustomWidgets APP_SUB=display/symbol_icon PORT=pc`、在 `X:\` 短路径执行的 `make clean APP=HelloUnitTest PORT=pc_test`、`make all APP=HelloUnitTest PORT=pc_test`、`X:\output\main.exe`（总计 `845 / 845`，`symbol_icon` suite `3 / 3`）、`python scripts/sync_widget_catalog.py`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category display`、`python scripts/checks/check_docs_encoding.py`、`python scripts/checks/check_widget_catalog.py`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub display/symbol_icon --track reference --timeout 10 --keep-screenshots`、`python scripts/code_compile_check.py --custom-widgets --category display --bits64`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --category display --track reference --bits64`、`python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub display/symbol_icon` 与对应 `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_display_symbol_icon`（`PASS status=Running canvas=480x480 ratio=0.1284 colors=83`）。
   - 复核 `runtime_check_output/HelloCustomWidgets_display_symbol_icon/default` 的 `8` 帧截图：按 RGB 差分得到主区变化边界位于 `(183, 182) - (297, 268)`；遮罩该边界后边界外区域保持单哈希，确认主区外全程静态；按主区裁剪后共出现 `3` 组唯一状态，符合 `Home / standard`、`Notifications / accent` 与 `Settings / success` 三态轨道；按 `y >= 268` 裁剪底部 preview 区域后全部帧保持单哈希，确认底部 `subtle / accent` preview 在整条录制轨道中保持静态一致。
 
