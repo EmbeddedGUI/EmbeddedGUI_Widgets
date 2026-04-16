@@ -1,153 +1,206 @@
 # persona_group 设计说明
-
 ## 参考来源
-- 参考设计系统：`Fluent 2`
+- 参考设计体系：`Fluent 2`
 - 参考开源库：`WPF UI`
 - 平台语义参考：`WinUI AvatarGroup`
 - 补充对照实现：`ModernWpf`
-- 对应组件名：`AvatarGroup`
-- 本次保留状态：`standard`、`compact`、`read only`、`accent`、`success`、`warning`、`neutral`、`live`、`busy`、`away`、`idle`
-- 本次删除效果：页面级 `guide`、状态说明、外部 preview 标签、旧双列容器壳、过重 avatar ring、过亮 overflow bubble、过强 footer summary chrome
-- EGUI 适配说明：沿用仓库内 `persona_group` 基础实现，本轮只收口 `reference` 页面结构、静态对照预览和视觉强度，不修改 `sdk/EmbeddedGUI`
+- 对应组件：`AvatarGroup`
+- 当前保留语义：`standard`、`compact`、`read only`、`accent`、`success`、`warning`、`neutral`、`live`、`busy`、`away`、`idle`
+- 当前保留交互：主区保留程序化 snapshot 切换，底部 `compact / read only` 统一收口为静态 preview
+- 当前移除内容：旧 `preview` 轮换、preview 点击桥接清主区焦点、额外收尾帧、页面级 `guide / status` 文案、旧双列预览包裹层
+- EGUI 适配说明：继续复用当前目录下的 `egui_view_persona_group` custom view，在不修改 `sdk/EmbeddedGUI` 的前提下，把 `reference` 页面统一收口到主区三态 snapshots 加底部双静态 preview
 
-## 1. 为什么需要这个控件？
-`persona_group` 用来展示一组协作成员，并让当前焦点成员驱动整张卡片的阅读重心。它适合出现在审阅链、责任人概览、团队面板和归档页摘要里，表达“这一组成员属于同一条工作流”。
+## 1. 为什么需要这个控件
+`persona_group` 用来表达一组协作成员及其当前关注对象。它适合出现在审阅链、责任人概览、交接班摘要和归档面板中，用一张轻量卡片同时传达成员身份、presence 和当前焦点成员。
 
-## 2. 为什么现有控件不够用？
-- `badge_group` 表达的是状态标签，不承载成员身份和 presence。
-- `card_panel` 更偏结构化信息卡，不适合作为轻量成员群组。
-- `teaching_tip` 和 `dialog_sheet` 都是反馈层，不适合常驻团队摘要。
-- 当前 `reference` 主线仍需要一版贴近 Fluent / WPF UI 的 `AvatarGroup` 示例。
+## 2. 为什么现有控件不够用
+- `persona` 只覆盖单人信息，不表达成员组关系和重叠头像结构。
+- `person_picture` 只表达头像本身，不承担标题、摘要和焦点成员语义。
+- `badge_group` 表达的是状态标签集合，不承载成员身份和 presence。
+- 当前 `reference` 主线仍需要一版与 `Fluent / WPF UI AvatarGroup` 语义对齐的轻量成员组控件。
 
-## 3. 目标场景与示例概览
-- 主控件展示标准 `persona_group`，通过录制动作覆盖 `accent / success / neutral` 焦点成员组合。
-- 底部左侧展示 `compact` 静态对照，验证小尺寸下的成员重叠和单行摘要。
-- 底部右侧展示 `read only` 静态对照，验证只读态下的灰蓝弱化结果。
-- 页面结构统一收口为：标题 -> 主 `persona_group` -> `compact / read only`。
-- 底部两个 preview 统一挂载 static preview API，吞掉 `touch / key` 输入，不切换 snapshot，也不驱动焦点成员变化。
-- runtime 录制会补一次 `compact preview` 点击，用来验证 preview touch 之后主控件 focus、pressed 和最终稳定帧的收尾都正常。
+## 3. 当前页面结构
+- 标题：`Persona Group`
+- 主区：一个标准 `persona_group`
+- 底部：一行并排的两个静态 preview
+- 左侧 preview：`compact`
+- 右侧 preview：`read only`
 
-目标目录：`example/HelloCustomWidgets/display/persona_group/`
+目录：
+- `example/HelloCustomWidgets/display/persona_group/`
 
-## 4. 视觉与布局规格
-- 根容器尺寸：`224 x 230`
-- 主控件尺寸：`196 x 114`
-- 底部对照行尺寸：`216 x 76`
-- `compact` 预览：`104 x 76`
-- `read only` 预览：`104 x 76`
-- 页面结构：标题 + 主控件 + 底部双预览
-- 样式约束：
-  - 使用浅灰 page panel、白底卡片和低噪音浅边框。
-  - avatar overlap、presence dot、eyebrow、title 和 footer summary 都保留，但强调度要比旧版更轻。
-- `compact` 直接通过控件模式表达，不再依赖外部标签说明。
-- `read only` 保留完整成员结构，但 ring、presence 和 footer tone 都需要明显弱化。
-- `snapshot / compact / read only` 切换后不能残留 avatar pressed 高亮，避免成员焦点和 footer summary 停留在旧态。
+## 4. 主区 reference snapshots
+主区录制轨道只保留 `3` 组 reference snapshots：
 
-## 5. 控件清单
+1. 默认态
+   - eyebrow：`DESIGN`
+   - title：`Design review`
+   - summary：`Design team`
+   - 焦点成员：`LM Lena Design`
+2. 快照 2
+   - eyebrow：`OPS`
+   - title：`Ops handoff`
+   - summary：`Shift lead`
+   - 焦点成员：`IV Ivy PM`
+3. 快照 3
+   - eyebrow：`ARCHIVE`
+   - title：`Archive sweep`
+   - summary：`Restore desk`
+   - 焦点成员：`MB Mina Archive`
 
-| 变量名 | 类型 | 尺寸 (W x H) | 初始状态 | 用途 |
-| --- | --- | ---: | --- | --- |
-| `root_layout` | `egui_view_linearlayout_t` | `224 x 230` | enabled | 页面根布局 |
-| `title_label` | `egui_view_label_t` | `224 x 18` | `Persona Group` | 页面标题 |
-| `group_primary` | `egui_view_persona_group_t` | `196 x 114` | `Design squad` | 标准主控件 |
-| `group_compact` | `egui_view_persona_group_t` | `104 x 76` | `Team` | `compact` 静态对照 |
-| `group_read_only` | `egui_view_persona_group_t` | `104 x 76` | `Archive` | `read only` 静态对照 |
-| `primary_snapshots` | `egui_view_persona_group_snapshot_t[3]` | - | `Design / Ops / Archive` | 主控件录制轨道 |
-| `compact_snapshots` | `egui_view_persona_group_snapshot_t[2]` | - | `Team / Ops` | `compact` 程序化切换 |
-| `read_only_snapshots` | `egui_view_persona_group_snapshot_t[1]` | - | `Archive` | `read only` 固定对照数据 |
+底部 preview 在整条录制轨道中始终固定：
 
-## 6. 状态覆盖矩阵
+1. `compact`
+   - title：`Compact`
+   - summary：`Short roster`
+   - 成员：`LM Lena Lead`、`AR Arun Ops`、`MY Maya QA`
+2. `read only`
+   - title：`Read only`
+   - summary：`Muted roster`
+   - 成员：`MB Mina Archive owner`、`KO Kora Retention QA`、`YU Yuri Restore desk`
 
-| 区域 / 轨道 | 状态 | 说明 |
-| --- | --- | --- |
-| 主控件 | `Design squad` | 默认 `accent` 焦点成员 |
-| 主控件 | `Design squad / Maya` | 同一 snapshot 内切到 `warning` 焦点成员 |
-| 主控件 | `Ops desk` | `success` 焦点成员 |
-| 主控件 | `Archive` | `neutral` 焦点成员 |
-| `compact` | `Team` | 默认紧凑对照 |
-| `compact` | `Ops` | 第二组紧凑对照 |
-| `read only` | `Archive` | 固定只读对照，禁用 touch / focus |
+## 5. 视觉与布局规格
+- 画布：`480 x 480`
+- 根布局：`224 x 230`
+- 标题：`224 x 18`
+- 主 `persona_group`：`196 x 114`
+- 底部 preview 行：`216 x 76`
+- 单个 preview：`104 x 76`
+- 页面结构：标题 -> 主 `persona_group` -> 底部 `compact / read only`
+- 风格约束：浅色 page panel、低噪音边框、保留头像重叠与 presence dot，但不回退到旧 showcase 风格的高对比说明页
 
-## 7. `egui_port_get_recording_action()` 录制动作设计
-1. 重置主控件、`compact` 和 `read only` 到默认状态。
-2. 请求默认截图。
-3. 程序化切换主控件焦点到 `warning` 成员。
-4. 请求第二张截图。
-5. 程序化切换主控件到 `Ops desk`。
-6. 请求第三张截图。
-7. 程序化切换主控件到 `Archive`。
-8. 请求第四张截图。
-9. 程序化切换 `compact` 到第二组 snapshot，并重新请求主控件 focus。
-10. 请求 `compact` 第二快照截图。
-11. 点击一次 `compact preview`，验证 preview touch 只负责清主控件 focus，不触发 preview 内部状态切换。
-12. 请求 preview 点击后的收尾帧。
-13. 再请求一次最终稳定帧，确认页面没有残留 `pressed`、整屏污染或黑白屏。
+## 6. 状态矩阵
+| 状态 / 区域 | 主控件 | Compact preview | Read only preview |
+| --- | --- | --- | --- |
+| 默认显示 | `DESIGN / Design review / Design team` | `Compact / Short roster` | `Read only / Muted roster` |
+| 快照 2 | `OPS / Ops handoff / Shift lead` | 保持不变 | 保持不变 |
+| 快照 3 | `ARCHIVE / Archive sweep / Restore desk` | 保持不变 | 保持不变 |
+| 录制最终稳定帧 | `ARCHIVE / Archive sweep / Restore desk` | 保持不变 | 保持不变 |
+| 静态 preview 吞掉 `touch / key` 且不改状态 | 否 | 是 | 是 |
 
-## 8. 编译、touch、runtime、单测与文档检查
+## 7. 录制动作设计
+`egui_port_get_recording_action()` 已收口为 static preview 工作流：
+
+1. 应用主区默认 snapshot 和底部 preview 固定状态
+2. 抓取首帧
+3. 切到 `OPS / Ops handoff / Shift lead`
+4. 抓取第二组主区快照
+5. 切到 `ARCHIVE / Archive sweep / Restore desk`
+6. 抓取第三组主区快照
+7. 继续等待并抓取最终稳定帧
+
+说明：
+- 录制阶段不再轮换 `compact` preview。
+- 不再通过 preview 点击桥接去清主区焦点。
+- 不再保留额外 preview 点击后的收尾帧。
+- `request_page_snapshot()` 会统一做 `layout + invalidate + recording_request_snapshot()`，保证 3 组主区快照和最终稳定帧口径一致。
+
+## 8. 单元测试口径
+`example/HelloUnitTest/test/test_persona_group.c` 当前覆盖 `7` 个用例：
+
+1. `set_snapshots` 钳制与 `pressed` 清理
+2. snapshot 与 setter 更新后的 `pressed` 清理
+3. metrics、命中测试与 helper
+4. `same-target release`、`ACTION_CANCEL` 与 touch 行为
+5. `read only / disabled` guard 清理残留 `pressed`
+6. 键盘导航与边界守卫
+7. 静态 preview `consumes input and keeps state`
+
+静态 preview 用例通过 `persona_group_preview_snapshot_t`、`capture_preview_snapshot()` 和 `assert_preview_state_unchanged()` 固定校验以下字段：
+
+- `region_screen`
+- `background`
+- `snapshots`
+- `font`
+- `meta_font`
+- `on_focus_changed`
+- `api`
+- `surface_color`
+- `border_color`
+- `section_color`
+- `text_color`
+- `muted_text_color`
+- `accent_color`
+- `success_color`
+- `warning_color`
+- `neutral_color`
+- `snapshot_count`
+- `current_snapshot`
+- `current_index`
+- `compact_mode`
+- `read_only_mode`
+- `pressed_index`
+- `alpha`
+- `enable`
+- `is_focused`
+- `is_pressed`
+- `padding`
+
+补充说明：
+- preview 事件分发已统一走 `dispatch_touch_event()` 与 `dispatch_key_event()`。
+- 静态 preview 只负责吞掉输入并恢复到原始静态状态，不触发 `focus changed`，也不改 `current_snapshot / current_index`。
+
+## 9. 验收命令
 ```bash
+make all APP=HelloCustomWidgets APP_SUB=display/persona_group PORT=pc
+
 make clean APP=HelloUnitTest PORT=pc_test
 make all APP=HelloUnitTest PORT=pc_test
-output\main.exe
-make clean APP=HelloCustomWidgets APP_SUB=display/persona_group PORT=pc
-make all APP=HelloCustomWidgets APP_SUB=display/persona_group PORT=pc
+X:\output\main.exe
+
+python scripts/sync_widget_catalog.py
 python scripts/checks/check_touch_release_semantics.py --scope custom --category display
-python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub display/persona_group --track reference --timeout 10 --keep-screenshots
 python scripts/checks/check_docs_encoding.py
+python scripts/checks/check_widget_catalog.py
+python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub display/persona_group --track reference --timeout 10 --keep-screenshots
+python scripts/code_compile_check.py --custom-widgets --category display --bits64
+python scripts/code_runtime_check.py --app HelloCustomWidgets --category display --track reference --bits64
+python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub display/persona_group
+python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_display_persona_group
 ```
 
-验收重点：
-- 主控件和底部 `compact / read only` 预览都必须完整可见。
-- avatar overlap、presence dot、标题、角色和 footer summary 之间要保留清晰留白。
-- `accent / success / neutral` 焦点切换需要可辨认，但整体不能回到高对比 showcase 风格。
-- 交互语义必须满足 `same-target release`：`DOWN(A) -> MOVE(B) -> UP(B)` 不提交，只有回到 A 后 `UP(A)` 才提交。
-- `read only / disabled` 不仅要忽略后续 `touch / key` 输入，还要在新输入或模式切换时清掉残留 `pressed` 渲染。
-- preview 必须统一吞掉 `touch / key`，preview 点击后只能清主控件 focus，不能误改 `current_snapshot / current_index`，也不能污染最终稳定帧。
-- 页面中不再出现 `guide`、状态说明、外部 preview 标签和旧双列包裹壳层。
+## 10. 当前结果
+- `HelloCustomWidgets` 单控件编译：已通过 `make all APP=HelloCustomWidgets APP_SUB=display/persona_group PORT=pc`
+- `HelloUnitTest`：已在 `X:\` 短路径通过 `make clean APP=HelloUnitTest PORT=pc_test`、`make all APP=HelloUnitTest PORT=pc_test` 和 `X:\output\main.exe`，总计 `845 / 845`，其中 `persona_group` suite `7 / 7`
+- `sync_widget_catalog.py`：已通过，本轮无额外目录变化
+- `touch release semantics`：已通过，结果 `custom_audited=21 custom_skipped_allowlist=0`
+- `docs encoding`：已通过，结果 `134 files`
+- `widget catalog check`：已通过，结果 `106 widgets: reference=106, showcase=0, deprecated=0`
+- 单控件 runtime：已通过 `python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub display/persona_group --track reference --timeout 10 --keep-screenshots`，输出 `8` 帧截图
+- display 分类 compile/runtime 回归：已通过 `python scripts/code_compile_check.py --custom-widgets --category display --bits64` 和 `python scripts/code_runtime_check.py --app HelloCustomWidgets --category display --track reference --bits64`，分类内 `21` 个控件全部通过
+- wasm 构建：已通过 `python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub display/persona_group`，输出 `web/demos/HelloCustomWidgets_display_persona_group`
+- web smoke：已通过 `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_display_persona_group`，结果 `PASS status=Running canvas=480x480 ratio=0.1754 colors=400`
 
-## 9. 已知限制与后续方向
-- 当前版本仍使用固定 snapshot 数据，不接真实头像资源和团队模型。
-- 当前不做 hover、focus ring、更多成员面板和上下文菜单。
-- 当前 overflow 只保留简化的 `+n` 气泡，不接真实更多成员弹层。
-- 当前优先验证 `reference` 语义、布局稳定性和视觉收口，不下沉到通用框架层。
+## 11. Runtime 复核结论
+复核目录：
+- `runtime_check_output/HelloCustomWidgets_display_persona_group/default`
 
-## 10. 与现有控件的边界
-- 相比 `badge_group`：这里表达的是成员关系，不是状态标签组合。
-- 相比 `card_panel`：这里更轻、更扁平，重点在成员焦点与 presence。
-- 相比 `dialog_sheet`：这里是常驻团队摘要，不是确认层。
-- 相比旧版 showcase 页面：这里回到统一的 Fluent `reference` 结构，不保留叙事式页面壳层。
+复核结果：
+- 总帧数：`8`
+- 主区 RGB 差分边界：`(198, 103) - (282, 258)`
+- 遮罩主区差分边界后，主区外唯一哈希数：`1`
+- 按主区差分边界裁剪后，主区唯一状态数：`3`
+- 按 `y >= 258` 裁剪底部 preview 区域后，preview 区唯一哈希数：`1`
 
-## 11. 参考设计系统与开源母本
-- 参考设计系统：`Fluent 2`
-- 参考开源库：`WPF UI`
-- 平台语义参考：`WinUI AvatarGroup`
-- 补充对照实现：`ModernWpf`
+目标：
+- 主区唯一状态数 = `3`
+- 主区外唯一哈希数 = `1`
+- 底部 preview 区唯一哈希数 = `1`
 
-## 12. 对应组件名与本次保留的核心状态
-- 对应组件名：`AvatarGroup`
-- 本次保留核心状态：
-  - `standard`
-  - `compact`
-  - `read only`
-  - `accent`
-  - `success`
-  - `warning`
-  - `neutral`
-  - `live`
-  - `busy`
-  - `away`
-  - `idle`
+## 12. 已知限制
+- 当前仍使用固定 `snapshot + item` 数据，不接真实头像资源和外部团队数据模型。
+- 当前不扩展 hover、focus ring、成员详情弹层和真实 overflow 展开面板。
+- `+n` overflow 仍是静态摘要气泡，不承接更多成员列表弹出层。
+- 底部 `compact / read only` preview 只承担静态 reference 对照，不承载额外交互职责。
 
-## 13. 相比参考原型删除的效果或装饰
-- 删除页面级 `guide`、状态说明、preview 标签和旧双列预览容器壳。
-- 删除 preview 参与点击切换、页面桥接和焦点承接的职责。
-- 删除过重 avatar ring、过亮 overflow bubble、过强 footer summary chrome。
-- 删除真实头像图片、复杂阴影、hover / focus ring 和成员详情弹层。
+## 13. 与现有控件的边界
+- 相比 `persona`：这里表达的是成员组关系，不是单人卡片。
+- 相比 `person_picture`：这里保留标题、摘要和焦点成员，不只是头像占位。
+- 相比 `badge_group`：这里表达的是成员身份和 presence，不是状态标签集合。
+- 相比旧 showcase 页面：这里回到统一的 `reference` 页面结构，不再保留叙事式说明壳层。
 
-## 14. EGUI 适配时的简化点与约束
-- 使用固定 `snapshot + item` 数据保证录制稳定。
-- `compact / read only` 直接复用同一控件模式，减少额外页面壳层。
-- 底部 preview 统一通过 static preview API 吞掉 `touch / key`，不承担交互切换职责。
-- 通过程序化切换 snapshot 和 focus index 保证 runtime 稳定抓取状态变化。
-- `snapshot / compact / read only / disabled` 共用同一套 `pressed` 清理语义，确保 avatar 焦点、presence tone 和 footer summary 在交互收尾后不残留旧高亮。
-- `persona_group` 的 touch 交互按 non-dragging 控件收口到 `same-target release`，同时补齐 preview 点击后的 focus 收尾和最终稳定帧复核。
-- 当前先作为 `HelloCustomWidgets` 的 `reference widget` 维护，后续是否下沉框架层再单独评估。
+## 14. EGUI 适配说明
+- 继续复用当前目录下的 `egui_view_persona_group` custom view，不修改 SDK。
+- 主区保留 `DESIGN`、`OPS`、`ARCHIVE` 三组 reference snapshots。
+- 底部 preview 通过 `egui_view_persona_group_override_static_preview_api()` 明确收口为静态 reference。
+- 当前优先保证主区 `3` 组 reference snapshots、底部 preview 全程静态，以及真实 touch / key 语义由单测闭环而不是由 runtime 录制承担。

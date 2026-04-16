@@ -17,6 +17,10 @@
 #define PERSONA_GROUP_BOTTOM_ROW_HEIGHT 76
 #define PERSONA_GROUP_RECORD_WAIT       90
 #define PERSONA_GROUP_RECORD_FRAME_WAIT 170
+#define PERSONA_GROUP_RECORD_FINAL_WAIT 280
+#define PERSONA_GROUP_DEFAULT_SNAPSHOT  0
+
+#define PRIMARY_SNAPSHOT_COUNT ((uint8_t)EGUI_ARRAY_SIZE(primary_snapshots))
 
 static egui_view_linearlayout_t root_layout;
 static egui_view_label_t title_label;
@@ -26,6 +30,7 @@ static egui_view_persona_group_t group_compact;
 static egui_view_persona_group_t group_read_only;
 static egui_view_api_t group_compact_api;
 static egui_view_api_t group_read_only_api;
+static uint8_t ui_ready;
 
 EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
 EGUI_BACKGROUND_PARAM_INIT(bg_page_panel_params, &bg_page_panel_param, NULL, NULL);
@@ -41,8 +46,8 @@ static const egui_view_persona_group_item_t primary_items_0[] = {
 };
 
 static const egui_view_persona_group_item_t primary_items_1[] = {
-        {"SO", "Sora", "Lead", EGUI_VIEW_PERSONA_GROUP_TONE_SUCCESS, EGUI_VIEW_PERSONA_GROUP_PRESENCE_LIVE, 1},
-        {"IV", "Ivy", "PM", EGUI_VIEW_PERSONA_GROUP_TONE_ACCENT, EGUI_VIEW_PERSONA_GROUP_PRESENCE_BUSY, 0},
+        {"SO", "Sora", "Lead", EGUI_VIEW_PERSONA_GROUP_TONE_SUCCESS, EGUI_VIEW_PERSONA_GROUP_PRESENCE_LIVE, 0},
+        {"IV", "Ivy", "PM", EGUI_VIEW_PERSONA_GROUP_TONE_ACCENT, EGUI_VIEW_PERSONA_GROUP_PRESENCE_BUSY, 1},
         {"TE", "Teo", "QA", EGUI_VIEW_PERSONA_GROUP_TONE_WARNING, EGUI_VIEW_PERSONA_GROUP_PRESENCE_AWAY, 0},
         {"AL", "Ali", "Docs", EGUI_VIEW_PERSONA_GROUP_TONE_NEUTRAL, EGUI_VIEW_PERSONA_GROUP_PRESENCE_IDLE, 0},
 };
@@ -55,99 +60,90 @@ static const egui_view_persona_group_item_t primary_items_2[] = {
 };
 
 static const egui_view_persona_group_snapshot_t primary_snapshots[] = {
-        {"Design squad", "Design review", "Design team", primary_items_0, 4, 0, 2},
-        {"Ops desk", "Ops handoff", "Ops desk", primary_items_1, 4, 0, 1},
-        {"Archive", "Archive sweep", "Archive", primary_items_2, 4, 0, 1},
+        {"DESIGN", "Design review", "Design team", primary_items_0, 4, 0, 2},
+        {"OPS", "Ops handoff", "Shift lead", primary_items_1, 4, 1, 1},
+        {"ARCHIVE", "Archive sweep", "Restore desk", primary_items_2, 4, 0, 1},
 };
 
-static const egui_view_persona_group_item_t compact_items_0[] = {
+static const egui_view_persona_group_item_t compact_items[] = {
         {"LM", "Lena", "Lead", EGUI_VIEW_PERSONA_GROUP_TONE_ACCENT, EGUI_VIEW_PERSONA_GROUP_PRESENCE_LIVE, 1},
         {"AR", "Arun", "Ops", EGUI_VIEW_PERSONA_GROUP_TONE_SUCCESS, EGUI_VIEW_PERSONA_GROUP_PRESENCE_BUSY, 0},
         {"MY", "Maya", "QA", EGUI_VIEW_PERSONA_GROUP_TONE_WARNING, EGUI_VIEW_PERSONA_GROUP_PRESENCE_LIVE, 0},
 };
 
-static const egui_view_persona_group_item_t compact_items_1[] = {
-        {"SO", "Sora", "Lead", EGUI_VIEW_PERSONA_GROUP_TONE_SUCCESS, EGUI_VIEW_PERSONA_GROUP_PRESENCE_LIVE, 1},
-        {"IV", "Ivy", "PM", EGUI_VIEW_PERSONA_GROUP_TONE_ACCENT, EGUI_VIEW_PERSONA_GROUP_PRESENCE_BUSY, 0},
-        {"TE", "Teo", "QA", EGUI_VIEW_PERSONA_GROUP_TONE_WARNING, EGUI_VIEW_PERSONA_GROUP_PRESENCE_AWAY, 0},
-};
-
 static const egui_view_persona_group_snapshot_t compact_snapshots[] = {
-        {"", "Team", "Team", compact_items_0, 3, 0, 1},
-        {"", "Ops", "Ops", compact_items_1, 3, 0, 2},
+        {"", "Compact", "Short roster", compact_items, 3, 0, 1},
 };
 
-static const egui_view_persona_group_item_t read_only_items_0[] = {
+static const egui_view_persona_group_item_t read_only_items[] = {
         {"MB", "Mina", "Archive owner", EGUI_VIEW_PERSONA_GROUP_TONE_NEUTRAL, EGUI_VIEW_PERSONA_GROUP_PRESENCE_IDLE, 1},
         {"KO", "Kora", "Retention QA", EGUI_VIEW_PERSONA_GROUP_TONE_WARNING, EGUI_VIEW_PERSONA_GROUP_PRESENCE_AWAY, 0},
         {"YU", "Yuri", "Restore desk", EGUI_VIEW_PERSONA_GROUP_TONE_ACCENT, EGUI_VIEW_PERSONA_GROUP_PRESENCE_LIVE, 0},
 };
 
 static const egui_view_persona_group_snapshot_t read_only_snapshots[] = {
-        {"", "Archive", "Muted", read_only_items_0, 3, 1, 2},
+        {"", "Read only", "Muted roster", read_only_items, 3, 0, 1},
 };
 
-static void apply_primary_state(uint8_t snapshot_index, uint8_t item_index)
-{
-    const egui_view_persona_group_snapshot_t *snapshot;
-    uint8_t safe_snapshot_index;
-    uint8_t safe_item_index;
+static void layout_page(void);
 
-    safe_snapshot_index = (uint8_t)(snapshot_index % (sizeof(primary_snapshots) / sizeof(primary_snapshots[0])));
-    snapshot = &primary_snapshots[safe_snapshot_index];
-    safe_item_index = snapshot->item_count == 0 ? 0 : (uint8_t)(item_index % snapshot->item_count);
-    egui_view_persona_group_set_current_snapshot(EGUI_VIEW_OF(&group_primary), safe_snapshot_index);
-    egui_view_persona_group_set_current_index(EGUI_VIEW_OF(&group_primary), safe_item_index);
+static void apply_primary_snapshot(uint8_t index)
+{
+    egui_view_persona_group_set_current_snapshot(EGUI_VIEW_OF(&group_primary), index % PRIMARY_SNAPSHOT_COUNT);
+    if (ui_ready)
+    {
+        layout_page();
+    }
 }
 
-static void apply_compact_state(uint8_t snapshot_index, uint8_t item_index)
+static void apply_primary_default_state(void)
 {
-    const egui_view_persona_group_snapshot_t *snapshot;
-    uint8_t safe_snapshot_index;
-    uint8_t safe_item_index;
+    apply_primary_snapshot(PERSONA_GROUP_DEFAULT_SNAPSHOT);
+}
 
-    safe_snapshot_index = (uint8_t)(snapshot_index % (sizeof(compact_snapshots) / sizeof(compact_snapshots[0])));
-    snapshot = &compact_snapshots[safe_snapshot_index];
-    safe_item_index = snapshot->item_count == 0 ? 0 : (uint8_t)(item_index % snapshot->item_count);
-    egui_view_persona_group_set_current_snapshot(EGUI_VIEW_OF(&group_compact), safe_snapshot_index);
-    egui_view_persona_group_set_current_index(EGUI_VIEW_OF(&group_compact), safe_item_index);
+static void apply_compact_state(void)
+{
+    egui_view_persona_group_set_current_snapshot(EGUI_VIEW_OF(&group_compact), 0);
+    egui_view_persona_group_set_compact_mode(EGUI_VIEW_OF(&group_compact), 1);
+    egui_view_persona_group_set_read_only_mode(EGUI_VIEW_OF(&group_compact), 0);
 }
 
 static void apply_read_only_state(void)
 {
     egui_view_persona_group_set_current_snapshot(EGUI_VIEW_OF(&group_read_only), 0);
-    egui_view_persona_group_set_current_index(EGUI_VIEW_OF(&group_read_only), 1);
+    egui_view_persona_group_set_compact_mode(EGUI_VIEW_OF(&group_read_only), 1);
     egui_view_persona_group_set_read_only_mode(EGUI_VIEW_OF(&group_read_only), 1);
 }
 
-static void dismiss_primary_persona_group_focus(void)
+static void apply_preview_states(void)
 {
-#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
-    egui_view_clear_focus(EGUI_VIEW_OF(&group_primary));
-#endif
+    apply_compact_state();
+    apply_read_only_state();
+
+    if (ui_ready)
+    {
+        layout_page();
+    }
 }
 
-static int dismiss_primary_focus_on_preview_touch(egui_view_t *self, egui_motion_event_t *event)
+static void layout_local_views(void)
 {
-    EGUI_UNUSED(self);
+    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&bottom_row));
+    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&root_layout));
+}
 
-    if (event->type == EGUI_MOTION_EVENT_ACTION_DOWN)
-    {
-        dismiss_primary_persona_group_focus();
-    }
-    return 1;
+static void layout_page(void)
+{
+    layout_local_views();
+    egui_core_layout_childs_user_root_view(EGUI_LAYOUT_VERTICAL, EGUI_ALIGN_HCENTER | EGUI_ALIGN_VCENTER);
 }
 
 #if EGUI_CONFIG_RECORDING_TEST
-static void set_click_view_center(egui_sim_action_t *p_action, egui_view_t *view, int interval_ms)
+static void request_page_snapshot(void)
 {
-    p_action->type = EGUI_SIM_ACTION_CLICK;
-    p_action->x1 = view->region_screen.location.x + view->region_screen.size.width / 2;
-    p_action->y1 = view->region_screen.location.y + view->region_screen.size.height / 2;
-    p_action->x2 = 0;
-    p_action->y2 = 0;
-    p_action->steps = 0;
-    p_action->interval_ms = interval_ms;
+    layout_page();
+    egui_view_invalidate(EGUI_VIEW_OF(&root_layout));
+    recording_request_snapshot();
 }
 #endif
 
@@ -170,8 +166,7 @@ void test_init_ui(void)
 
     egui_view_persona_group_init(EGUI_VIEW_OF(&group_primary));
     egui_view_set_size(EGUI_VIEW_OF(&group_primary), PERSONA_GROUP_PRIMARY_WIDTH, PERSONA_GROUP_PRIMARY_HEIGHT);
-    egui_view_persona_group_set_snapshots(EGUI_VIEW_OF(&group_primary), primary_snapshots,
-                                          (uint8_t)(sizeof(primary_snapshots) / sizeof(primary_snapshots[0])));
+    egui_view_persona_group_set_snapshots(EGUI_VIEW_OF(&group_primary), primary_snapshots, PRIMARY_SNAPSHOT_COUNT);
     egui_view_persona_group_set_font(EGUI_VIEW_OF(&group_primary), (const egui_font_t *)&egui_res_font_montserrat_10_4);
     egui_view_persona_group_set_meta_font(EGUI_VIEW_OF(&group_primary), (const egui_font_t *)&egui_res_font_montserrat_8_4);
     egui_view_persona_group_set_palette(EGUI_VIEW_OF(&group_primary), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD2DBE3), EGUI_COLOR_HEX(0xEEF3F7),
@@ -188,8 +183,7 @@ void test_init_ui(void)
 
     egui_view_persona_group_init(EGUI_VIEW_OF(&group_compact));
     egui_view_set_size(EGUI_VIEW_OF(&group_compact), PERSONA_GROUP_PREVIEW_WIDTH, PERSONA_GROUP_PREVIEW_HEIGHT);
-    egui_view_persona_group_set_snapshots(EGUI_VIEW_OF(&group_compact), compact_snapshots,
-                                          (uint8_t)(sizeof(compact_snapshots) / sizeof(compact_snapshots[0])));
+    egui_view_persona_group_set_snapshots(EGUI_VIEW_OF(&group_compact), compact_snapshots, EGUI_ARRAY_SIZE(compact_snapshots));
     egui_view_persona_group_set_compact_mode(EGUI_VIEW_OF(&group_compact), 1);
     egui_view_persona_group_set_font(EGUI_VIEW_OF(&group_compact), (const egui_font_t *)&egui_res_font_montserrat_8_4);
     egui_view_persona_group_set_meta_font(EGUI_VIEW_OF(&group_compact), (const egui_font_t *)&egui_res_font_montserrat_8_4);
@@ -197,9 +191,6 @@ void test_init_ui(void)
                                         EGUI_COLOR_HEX(0x1A2734), EGUI_COLOR_HEX(0x6B7A89), EGUI_COLOR_HEX(0x0F6CBD), EGUI_COLOR_HEX(0x0F7B45),
                                         EGUI_COLOR_HEX(0x9D5D00), EGUI_COLOR_HEX(0x7A8796));
     egui_view_persona_group_override_static_preview_api(EGUI_VIEW_OF(&group_compact), &group_compact_api);
-#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
-    group_compact_api.on_touch = dismiss_primary_focus_on_preview_touch;
-#endif
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&group_compact), false);
 #endif
@@ -208,8 +199,7 @@ void test_init_ui(void)
     egui_view_persona_group_init(EGUI_VIEW_OF(&group_read_only));
     egui_view_set_size(EGUI_VIEW_OF(&group_read_only), PERSONA_GROUP_PREVIEW_WIDTH, PERSONA_GROUP_PREVIEW_HEIGHT);
     egui_view_set_margin(EGUI_VIEW_OF(&group_read_only), 8, 0, 0, 0);
-    egui_view_persona_group_set_snapshots(EGUI_VIEW_OF(&group_read_only), read_only_snapshots,
-                                          (uint8_t)(sizeof(read_only_snapshots) / sizeof(read_only_snapshots[0])));
+    egui_view_persona_group_set_snapshots(EGUI_VIEW_OF(&group_read_only), read_only_snapshots, EGUI_ARRAY_SIZE(read_only_snapshots));
     egui_view_persona_group_set_compact_mode(EGUI_VIEW_OF(&group_read_only), 1);
     egui_view_persona_group_set_read_only_mode(EGUI_VIEW_OF(&group_read_only), 1);
     egui_view_persona_group_set_font(EGUI_VIEW_OF(&group_read_only), (const egui_font_t *)&egui_res_font_montserrat_8_4);
@@ -218,27 +208,21 @@ void test_init_ui(void)
                                         EGUI_COLOR_HEX(0x6B7A89), EGUI_COLOR_HEX(0x99A6B2), EGUI_COLOR_HEX(0xA7B4C1), EGUI_COLOR_HEX(0xB2C4BA),
                                         EGUI_COLOR_HEX(0xC4B8A4), EGUI_COLOR_HEX(0xB4BDC8));
     egui_view_persona_group_override_static_preview_api(EGUI_VIEW_OF(&group_read_only), &group_read_only_api);
-#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
-    group_read_only_api.on_touch = dismiss_primary_focus_on_preview_touch;
-#endif
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&group_read_only), false);
 #endif
     egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&group_read_only));
 
-    apply_primary_state(0, 0);
-    apply_compact_state(0, 0);
-    apply_read_only_state();
+    apply_primary_default_state();
+    apply_preview_states();
 
-    {
-        hello_custom_widgets_demo_apply_title_only_scaffold(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label), NULL, 0);
-    }
+    hello_custom_widgets_demo_apply_title_only_scaffold(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label), NULL, 0);
 
-    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&bottom_row));
-    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&root_layout));
-
+    layout_local_views();
     egui_core_add_user_root_view(EGUI_VIEW_OF(&root_layout));
-    egui_core_layout_childs_user_root_view(EGUI_LAYOUT_VERTICAL, EGUI_ALIGN_HCENTER | EGUI_ALIGN_VCENTER);
+    ui_ready = 1;
+    apply_primary_default_state();
+    apply_preview_states();
 }
 
 #if EGUI_CONFIG_RECORDING_TEST
@@ -254,97 +238,46 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     case 0:
         if (first_call)
         {
-            apply_primary_state(0, 0);
-            apply_compact_state(0, 0);
-            apply_read_only_state();
+            apply_primary_default_state();
+            apply_preview_states();
+            request_page_snapshot();
         }
-        EGUI_SIM_SET_WAIT(p_action, PERSONA_GROUP_RECORD_WAIT);
+        EGUI_SIM_SET_WAIT(p_action, PERSONA_GROUP_RECORD_FRAME_WAIT);
         return true;
     case 1:
         if (first_call)
         {
-            recording_request_snapshot();
+            apply_primary_snapshot(1);
         }
-        EGUI_SIM_SET_WAIT(p_action, PERSONA_GROUP_RECORD_FRAME_WAIT);
+        EGUI_SIM_SET_WAIT(p_action, PERSONA_GROUP_RECORD_WAIT);
         return true;
     case 2:
         if (first_call)
         {
-            apply_primary_state(0, 2);
+            request_page_snapshot();
         }
-        EGUI_SIM_SET_WAIT(p_action, PERSONA_GROUP_RECORD_WAIT);
+        EGUI_SIM_SET_WAIT(p_action, PERSONA_GROUP_RECORD_FRAME_WAIT);
         return true;
     case 3:
         if (first_call)
         {
-            recording_request_snapshot();
+            apply_primary_snapshot(2);
         }
-        EGUI_SIM_SET_WAIT(p_action, PERSONA_GROUP_RECORD_FRAME_WAIT);
+        EGUI_SIM_SET_WAIT(p_action, PERSONA_GROUP_RECORD_WAIT);
         return true;
     case 4:
         if (first_call)
         {
-            apply_primary_state(1, 0);
+            request_page_snapshot();
         }
-        EGUI_SIM_SET_WAIT(p_action, PERSONA_GROUP_RECORD_WAIT);
+        EGUI_SIM_SET_WAIT(p_action, PERSONA_GROUP_RECORD_FRAME_WAIT);
         return true;
     case 5:
         if (first_call)
         {
-            recording_request_snapshot();
+            request_page_snapshot();
         }
-        EGUI_SIM_SET_WAIT(p_action, PERSONA_GROUP_RECORD_FRAME_WAIT);
-        return true;
-    case 6:
-        if (first_call)
-        {
-            apply_primary_state(2, 0);
-        }
-        EGUI_SIM_SET_WAIT(p_action, PERSONA_GROUP_RECORD_WAIT);
-        return true;
-    case 7:
-        if (first_call)
-        {
-            recording_request_snapshot();
-        }
-        EGUI_SIM_SET_WAIT(p_action, PERSONA_GROUP_RECORD_FRAME_WAIT);
-        return true;
-    case 8:
-        if (first_call)
-        {
-            apply_compact_state(1, 0);
-#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
-            egui_view_request_focus(EGUI_VIEW_OF(&group_primary));
-#endif
-        }
-        EGUI_SIM_SET_WAIT(p_action, PERSONA_GROUP_RECORD_WAIT);
-        return true;
-    case 9:
-        if (first_call)
-        {
-            recording_request_snapshot();
-        }
-        EGUI_SIM_SET_WAIT(p_action, PERSONA_GROUP_RECORD_FRAME_WAIT);
-        return true;
-    case 10:
-        if (first_call)
-        {
-            set_click_view_center(p_action, EGUI_VIEW_OF(&group_compact), PERSONA_GROUP_RECORD_WAIT);
-        }
-        return true;
-    case 11:
-        if (first_call)
-        {
-            recording_request_snapshot();
-        }
-        EGUI_SIM_SET_WAIT(p_action, PERSONA_GROUP_RECORD_FRAME_WAIT);
-        return true;
-    case 12:
-        if (first_call)
-        {
-            recording_request_snapshot();
-        }
-        EGUI_SIM_SET_WAIT(p_action, 520);
+        EGUI_SIM_SET_WAIT(p_action, PERSONA_GROUP_RECORD_FINAL_WAIT);
         return true;
     default:
         return false;
