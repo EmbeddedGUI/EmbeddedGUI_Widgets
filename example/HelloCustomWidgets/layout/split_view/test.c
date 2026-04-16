@@ -38,6 +38,9 @@ static egui_view_linearlayout_t read_only_column;
 static egui_view_split_view_t panel_read_only;
 static egui_view_api_t panel_compact_api;
 static egui_view_api_t panel_read_only_api;
+static uint8_t ui_ready;
+
+static void layout_page(void);
 
 EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
 EGUI_BACKGROUND_PARAM_INIT(bg_page_panel_params, &bg_page_panel_param, NULL, NULL);
@@ -87,6 +90,10 @@ static void apply_primary_state(uint8_t index)
 
     egui_view_split_view_set_current_index(EGUI_VIEW_OF(&panel_primary), state->item_index);
     egui_view_split_view_set_pane_expanded(EGUI_VIEW_OF(&panel_primary), state->pane_expanded);
+    if (ui_ready)
+    {
+        layout_page();
+    }
 }
 
 static void apply_primary_default_state(void)
@@ -100,6 +107,10 @@ static void apply_preview_states(void)
     egui_view_split_view_set_pane_expanded(EGUI_VIEW_OF(&panel_compact), 0);
     egui_view_split_view_set_current_index(EGUI_VIEW_OF(&panel_read_only), 0);
     egui_view_split_view_set_pane_expanded(EGUI_VIEW_OF(&panel_read_only), 0);
+    if (ui_ready)
+    {
+        layout_page();
+    }
 }
 
 static void layout_local_views(void)
@@ -127,6 +138,8 @@ static void request_page_snapshot(void)
 
 void test_init_ui(void)
 {
+    ui_ready = 0;
+
     egui_view_linearlayout_init(EGUI_VIEW_OF(&root_layout));
     egui_view_set_size(EGUI_VIEW_OF(&root_layout), SPLIT_VIEW_ROOT_W, SPLIT_VIEW_ROOT_H);
     egui_view_linearlayout_set_orientation(EGUI_VIEW_OF(&root_layout), 0);
@@ -213,7 +226,9 @@ void test_init_ui(void)
 
     layout_local_views();
     egui_core_add_user_root_view(EGUI_VIEW_OF(&root_layout));
-    layout_page();
+    ui_ready = 1;
+    apply_primary_default_state();
+    apply_preview_states();
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_request_focus(EGUI_VIEW_OF(&panel_primary));
 #endif
