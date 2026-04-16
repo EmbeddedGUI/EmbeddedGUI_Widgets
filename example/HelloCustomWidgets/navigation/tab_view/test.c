@@ -18,6 +18,7 @@
 #define TAB_VIEW_RECORD_WAIT       110
 #define TAB_VIEW_RECORD_FRAME_WAIT 150
 #define TAB_VIEW_RECORD_FINAL_WAIT 520
+#define PRIMARY_SNAPSHOT_COUNT     ((uint8_t)(sizeof(primary_snapshots) / sizeof(primary_snapshots[0])))
 
 static egui_view_linearlayout_t root_layout;
 static egui_view_label_t title_label;
@@ -27,6 +28,7 @@ static egui_view_tab_view_t tab_view_compact;
 static egui_view_tab_view_t tab_view_read_only;
 static egui_view_api_t tab_view_compact_api;
 static egui_view_api_t tab_view_read_only_api;
+static uint8_t ui_ready;
 
 EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
 EGUI_BACKGROUND_PARAM_INIT(bg_page_panel_params, &bg_page_panel_param, NULL, NULL);
@@ -77,25 +79,68 @@ static const egui_view_tab_view_snapshot_t read_only_snapshots[] = {
         {"Read only", "Static reference preview", read_only_tabs, 2, 0, 0},
 };
 
+static void layout_page(void);
+
+static void apply_primary_snapshot(uint8_t index)
+{
+    egui_view_tab_view_set_current_snapshot(EGUI_VIEW_OF(&tab_view_primary), (uint8_t)(index % PRIMARY_SNAPSHOT_COUNT));
+    if (ui_ready)
+    {
+        layout_page();
+    }
+}
+
 static void apply_primary_default_state(void)
 {
-    egui_view_tab_view_set_current_snapshot(EGUI_VIEW_OF(&tab_view_primary), 0);
+    apply_primary_snapshot(0);
     egui_view_tab_view_restore_tabs(EGUI_VIEW_OF(&tab_view_primary));
     egui_view_tab_view_set_current_tab(EGUI_VIEW_OF(&tab_view_primary), 0);
     egui_view_tab_view_set_current_part(EGUI_VIEW_OF(&tab_view_primary), EGUI_VIEW_TAB_VIEW_PART_TAB);
+    if (ui_ready)
+    {
+        layout_page();
+    }
 }
 
-static void apply_preview_states(void)
+static void apply_compact_state(void)
 {
     egui_view_tab_view_set_current_snapshot(EGUI_VIEW_OF(&tab_view_compact), 0);
     egui_view_tab_view_set_compact_mode(EGUI_VIEW_OF(&tab_view_compact), 1);
+}
+
+static void apply_read_only_state(void)
+{
     egui_view_tab_view_set_current_snapshot(EGUI_VIEW_OF(&tab_view_read_only), 0);
     egui_view_tab_view_set_compact_mode(EGUI_VIEW_OF(&tab_view_read_only), 1);
     egui_view_tab_view_set_read_only_mode(EGUI_VIEW_OF(&tab_view_read_only), 1);
 }
 
+static void apply_preview_states(void)
+{
+    apply_compact_state();
+    apply_read_only_state();
+    if (ui_ready)
+    {
+        layout_page();
+    }
+}
+
+static void layout_local_views(void)
+{
+    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&bottom_row));
+    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&root_layout));
+}
+
+static void layout_page(void)
+{
+    layout_local_views();
+    egui_core_layout_childs_user_root_view(EGUI_LAYOUT_VERTICAL, EGUI_ALIGN_HCENTER | EGUI_ALIGN_VCENTER);
+}
+
 void test_init_ui(void)
 {
+    ui_ready = 0;
+
     egui_view_linearlayout_init(EGUI_VIEW_OF(&root_layout));
     egui_view_set_size(EGUI_VIEW_OF(&root_layout), TAB_VIEW_ROOT_WIDTH, TAB_VIEW_ROOT_HEIGHT);
     egui_view_linearlayout_set_orientation(EGUI_VIEW_OF(&root_layout), 0);
@@ -115,7 +160,7 @@ void test_init_ui(void)
     egui_view_set_size(EGUI_VIEW_OF(&tab_view_primary), TAB_VIEW_PRIMARY_WIDTH, TAB_VIEW_PRIMARY_HEIGHT);
     egui_view_tab_view_set_font(EGUI_VIEW_OF(&tab_view_primary), (const egui_font_t *)&egui_res_font_montserrat_10_4);
     egui_view_tab_view_set_meta_font(EGUI_VIEW_OF(&tab_view_primary), (const egui_font_t *)&egui_res_font_montserrat_8_4);
-    egui_view_tab_view_set_snapshots(EGUI_VIEW_OF(&tab_view_primary), primary_snapshots, 2);
+    egui_view_tab_view_set_snapshots(EGUI_VIEW_OF(&tab_view_primary), primary_snapshots, PRIMARY_SNAPSHOT_COUNT);
     egui_view_tab_view_set_palette(EGUI_VIEW_OF(&tab_view_primary), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD5DCE4), EGUI_COLOR_HEX(0xF4F7F9),
                                    EGUI_COLOR_HEX(0x1A2734), EGUI_COLOR_HEX(0x6B7A89), EGUI_COLOR_HEX(0x0F6CBD), EGUI_COLOR_HEX(0x0F7B45),
                                    EGUI_COLOR_HEX(0x9D5D00), EGUI_COLOR_HEX(0x6B7A89));
@@ -166,14 +211,21 @@ void test_init_ui(void)
     {
         hello_custom_widgets_demo_apply_title_only_scaffold(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label), NULL, 0);
     }
-    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&bottom_row));
-    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&root_layout));
-
+    layout_local_views();
     egui_core_add_user_root_view(EGUI_VIEW_OF(&root_layout));
-    egui_core_layout_childs_user_root_view(EGUI_LAYOUT_VERTICAL, EGUI_ALIGN_HCENTER | EGUI_ALIGN_VCENTER);
+    ui_ready = 1;
+    apply_primary_default_state();
+    apply_preview_states();
 }
 
 #if EGUI_CONFIG_RECORDING_TEST
+static void request_page_snapshot(void)
+{
+    layout_page();
+    egui_view_invalidate(EGUI_VIEW_OF(&root_layout));
+    recording_request_snapshot();
+}
+
 bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_action)
 {
     static int last_action = -1;
@@ -188,7 +240,7 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
         {
             apply_primary_default_state();
             apply_preview_states();
-            recording_request_snapshot();
+            request_page_snapshot();
         }
         EGUI_SIM_SET_WAIT(p_action, TAB_VIEW_RECORD_FRAME_WAIT);
         return true;
@@ -202,7 +254,7 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     case 2:
         if (first_call)
         {
-            recording_request_snapshot();
+            request_page_snapshot();
         }
         EGUI_SIM_SET_WAIT(p_action, TAB_VIEW_RECORD_FRAME_WAIT);
         return true;
@@ -216,7 +268,7 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     case 4:
         if (first_call)
         {
-            recording_request_snapshot();
+            request_page_snapshot();
         }
         EGUI_SIM_SET_WAIT(p_action, TAB_VIEW_RECORD_FRAME_WAIT);
         return true;
@@ -230,21 +282,21 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     case 6:
         if (first_call)
         {
-            recording_request_snapshot();
+            request_page_snapshot();
         }
         EGUI_SIM_SET_WAIT(p_action, TAB_VIEW_RECORD_FRAME_WAIT);
         return true;
     case 7:
         if (first_call)
         {
-            egui_view_tab_view_set_current_snapshot(EGUI_VIEW_OF(&tab_view_primary), 1);
+            apply_primary_snapshot(1);
         }
         EGUI_SIM_SET_WAIT(p_action, TAB_VIEW_RECORD_WAIT);
         return true;
     case 8:
         if (first_call)
         {
-            recording_request_snapshot();
+            request_page_snapshot();
         }
         EGUI_SIM_SET_WAIT(p_action, TAB_VIEW_RECORD_FRAME_WAIT);
         return true;
@@ -259,7 +311,7 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     case 10:
         if (first_call)
         {
-            recording_request_snapshot();
+            request_page_snapshot();
         }
         EGUI_SIM_SET_WAIT(p_action, TAB_VIEW_RECORD_FINAL_WAIT);
         return true;
