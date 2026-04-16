@@ -7,55 +7,44 @@
 #include "core/egui_input_simulator.h"
 #endif
 
-#define SPINNER_ROOT_WIDTH           224
-#define SPINNER_ROOT_HEIGHT          156
-#define SPINNER_PRIMARY_SIZE         44
-#define SPINNER_STATUS_WIDTH         196
-#define SPINNER_STATUS_HEIGHT        14
-#define SPINNER_BOTTOM_ROW_WIDTH     200
-#define SPINNER_BOTTOM_ROW_HEIGHT    56
-#define SPINNER_PREVIEW_PANEL_WIDTH  96
-#define SPINNER_PREVIEW_PANEL_HEIGHT 56
-#define SPINNER_PREVIEW_SIZE         24
-#define SPINNER_RECORD_WAIT          90
-#define SPINNER_RECORD_FRAME_WAIT    170
-#define SPINNER_RECORD_FINAL_WAIT    520
+#define SPINNER_ROOT_WIDTH        224
+#define SPINNER_ROOT_HEIGHT       152
+#define SPINNER_PRIMARY_SIZE      44
+#define SPINNER_STATUS_WIDTH      196
+#define SPINNER_STATUS_HEIGHT     14
+#define SPINNER_BOTTOM_ROW_WIDTH  88
+#define SPINNER_BOTTOM_ROW_HEIGHT 40
+#define SPINNER_PREVIEW_SIZE      40
+#define SPINNER_RECORD_WAIT       90
+#define SPINNER_RECORD_FRAME_WAIT 170
+#define SPINNER_RECORD_FINAL_WAIT 520
 
-typedef struct
+typedef struct spinner_snapshot spinner_snapshot_t;
+struct spinner_snapshot
 {
     const char *status;
     egui_color_t color;
     egui_dim_t stroke_width;
     int16_t arc_length;
-} spinner_snapshot_t;
+};
 
 static egui_view_linearlayout_t root_layout;
 static egui_view_label_t title_label;
 static egui_view_spinner_t primary_spinner;
 static egui_view_label_t primary_status_label;
 static egui_view_linearlayout_t bottom_row;
-static egui_view_linearlayout_t compact_panel;
-static egui_view_label_t compact_heading_label;
 static egui_view_spinner_t compact_spinner;
-static egui_view_linearlayout_t muted_panel;
-static egui_view_label_t muted_heading_label;
 static egui_view_spinner_t muted_spinner;
 static egui_view_api_t compact_api;
 static egui_view_api_t muted_api;
+static uint8_t ui_ready;
 
 EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
 EGUI_BACKGROUND_PARAM_INIT(bg_page_panel_params, &bg_page_panel_param, NULL, NULL);
 EGUI_BACKGROUND_COLOR_STATIC_CONST_INIT(bg_page_panel, &bg_page_panel_params);
 
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_surface_panel_param, EGUI_COLOR_HEX(0xFFFFFF), EGUI_ALPHA_100, 12);
-EGUI_BACKGROUND_PARAM_INIT(bg_surface_panel_params, &bg_surface_panel_param, NULL, NULL);
-EGUI_BACKGROUND_COLOR_STATIC_CONST_INIT(bg_surface_panel, &bg_surface_panel_params);
-
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_muted_panel_param, EGUI_COLOR_HEX(0xFBFCFD), EGUI_ALPHA_100, 12);
-EGUI_BACKGROUND_PARAM_INIT(bg_muted_panel_params, &bg_muted_panel_param, NULL, NULL);
-EGUI_BACKGROUND_COLOR_STATIC_CONST_INIT(bg_muted_panel, &bg_muted_panel_params);
-
 static const char *title_text = "Spinner";
+static void layout_page(void);
 
 static const spinner_snapshot_t primary_snapshots[] = {
         {"Syncing files", EGUI_COLOR_HEX(0x0F6CBD), 4, 104},
@@ -74,16 +63,6 @@ static void init_text_label(egui_view_label_t *label, egui_dim_t width, egui_dim
     egui_view_label_set_font_color(EGUI_VIEW_OF(label), color, EGUI_ALPHA_100);
 }
 
-static void init_panel(egui_view_linearlayout_t *panel, egui_dim_t width, egui_dim_t height, egui_background_t *background)
-{
-    egui_view_linearlayout_init(EGUI_VIEW_OF(panel));
-    egui_view_set_size(EGUI_VIEW_OF(panel), width, height);
-    egui_view_linearlayout_set_orientation(EGUI_VIEW_OF(panel), 0);
-    egui_view_linearlayout_set_align_type(EGUI_VIEW_OF(panel), EGUI_ALIGN_HCENTER);
-    egui_view_set_background(EGUI_VIEW_OF(panel), background);
-    egui_view_set_padding(EGUI_VIEW_OF(panel), 8, 8, 8, 8);
-}
-
 static void apply_primary_snapshot(uint8_t index)
 {
     const spinner_snapshot_t *snapshot = &primary_snapshots[index % EGUI_ARRAY_SIZE(primary_snapshots)];
@@ -94,6 +73,10 @@ static void apply_primary_snapshot(uint8_t index)
     hcw_spinner_set_arc_length(EGUI_VIEW_OF(&primary_spinner), snapshot->arc_length);
     hcw_spinner_set_spinning(EGUI_VIEW_OF(&primary_spinner), 1);
     egui_view_label_set_text(EGUI_VIEW_OF(&primary_status_label), snapshot->status);
+    if (ui_ready)
+    {
+        layout_page();
+    }
 }
 
 static void apply_preview_states(void)
@@ -105,7 +88,32 @@ static void apply_preview_states(void)
     hcw_spinner_apply_muted_style(EGUI_VIEW_OF(&muted_spinner));
     hcw_spinner_set_spinning(EGUI_VIEW_OF(&muted_spinner), 0);
     hcw_spinner_set_rotation_angle(EGUI_VIEW_OF(&muted_spinner), 24);
+    if (ui_ready)
+    {
+        layout_page();
+    }
 }
+
+static void layout_local_views(void)
+{
+    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&bottom_row));
+    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&root_layout));
+}
+
+static void layout_page(void)
+{
+    layout_local_views();
+    egui_core_layout_childs_user_root_view(EGUI_LAYOUT_VERTICAL, EGUI_ALIGN_HCENTER | EGUI_ALIGN_VCENTER);
+}
+
+#if EGUI_CONFIG_RECORDING_TEST
+static void request_page_snapshot(void)
+{
+    layout_page();
+    egui_view_invalidate(EGUI_VIEW_OF(&root_layout));
+    recording_request_snapshot();
+}
+#endif
 
 void test_init_ui(void)
 {
@@ -117,17 +125,17 @@ void test_init_ui(void)
 
     init_text_label(&title_label, SPINNER_ROOT_WIDTH, 18, title_text, (const egui_font_t *)&egui_res_font_montserrat_12_4, EGUI_COLOR_HEX(0x21303F),
                     EGUI_ALIGN_CENTER);
-    egui_view_set_margin(EGUI_VIEW_OF(&title_label), 0, 8, 0, 10);
+    egui_view_set_margin(EGUI_VIEW_OF(&title_label), 0, 6, 0, 6);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label));
 
     egui_view_spinner_init(EGUI_VIEW_OF(&primary_spinner));
     egui_view_set_size(EGUI_VIEW_OF(&primary_spinner), SPINNER_PRIMARY_SIZE, SPINNER_PRIMARY_SIZE);
-    egui_view_set_margin(EGUI_VIEW_OF(&primary_spinner), 0, 0, 0, 10);
+    egui_view_set_margin(EGUI_VIEW_OF(&primary_spinner), 0, 0, 0, 8);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&primary_spinner));
 
     init_text_label(&primary_status_label, SPINNER_STATUS_WIDTH, SPINNER_STATUS_HEIGHT, "Syncing files",
                     (const egui_font_t *)&egui_res_font_montserrat_10_4, EGUI_COLOR_HEX(0x233241), EGUI_ALIGN_CENTER);
-    egui_view_set_margin(EGUI_VIEW_OF(&primary_status_label), 0, 0, 0, 12);
+    egui_view_set_margin(EGUI_VIEW_OF(&primary_status_label), 0, 0, 0, 10);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&primary_status_label));
 
     egui_view_linearlayout_init(EGUI_VIEW_OF(&bottom_row));
@@ -136,44 +144,33 @@ void test_init_ui(void)
     egui_view_linearlayout_set_align_type(EGUI_VIEW_OF(&bottom_row), EGUI_ALIGN_VCENTER);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&bottom_row));
 
-    init_panel(&compact_panel, SPINNER_PREVIEW_PANEL_WIDTH, SPINNER_PREVIEW_PANEL_HEIGHT, EGUI_BG_OF(&bg_muted_panel));
-    egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&compact_panel));
-
-    init_text_label(&compact_heading_label, 80, 12, "Compact", (const egui_font_t *)&egui_res_font_montserrat_8_4, EGUI_COLOR_HEX(0x233241),
-                    EGUI_ALIGN_CENTER);
-    egui_view_set_margin(EGUI_VIEW_OF(&compact_heading_label), 0, 0, 0, 4);
-    egui_view_group_add_child(EGUI_VIEW_OF(&compact_panel), EGUI_VIEW_OF(&compact_heading_label));
-
     egui_view_spinner_init(EGUI_VIEW_OF(&compact_spinner));
     egui_view_set_size(EGUI_VIEW_OF(&compact_spinner), SPINNER_PREVIEW_SIZE, SPINNER_PREVIEW_SIZE);
     hcw_spinner_override_static_preview_api(EGUI_VIEW_OF(&compact_spinner), &compact_api);
-    egui_view_group_add_child(EGUI_VIEW_OF(&compact_panel), EGUI_VIEW_OF(&compact_spinner));
-
-    init_panel(&muted_panel, SPINNER_PREVIEW_PANEL_WIDTH, SPINNER_PREVIEW_PANEL_HEIGHT, EGUI_BG_OF(&bg_surface_panel));
-    egui_view_set_margin(EGUI_VIEW_OF(&muted_panel), 8, 0, 0, 0);
-    egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&muted_panel));
-
-    init_text_label(&muted_heading_label, 80, 12, "Muted", (const egui_font_t *)&egui_res_font_montserrat_8_4, EGUI_COLOR_HEX(0x233241), EGUI_ALIGN_CENTER);
-    egui_view_set_margin(EGUI_VIEW_OF(&muted_heading_label), 0, 0, 0, 4);
-    egui_view_group_add_child(EGUI_VIEW_OF(&muted_panel), EGUI_VIEW_OF(&muted_heading_label));
+#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
+    egui_view_set_focusable(EGUI_VIEW_OF(&compact_spinner), false);
+#endif
+    egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&compact_spinner));
 
     egui_view_spinner_init(EGUI_VIEW_OF(&muted_spinner));
     egui_view_set_size(EGUI_VIEW_OF(&muted_spinner), SPINNER_PREVIEW_SIZE, SPINNER_PREVIEW_SIZE);
+    egui_view_set_margin(EGUI_VIEW_OF(&muted_spinner), 8, 0, 0, 0);
     hcw_spinner_override_static_preview_api(EGUI_VIEW_OF(&muted_spinner), &muted_api);
-    egui_view_group_add_child(EGUI_VIEW_OF(&muted_panel), EGUI_VIEW_OF(&muted_spinner));
+#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
+    egui_view_set_focusable(EGUI_VIEW_OF(&muted_spinner), false);
+#endif
+    egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&muted_spinner));
 
     apply_primary_snapshot(0);
     apply_preview_states();
 
     hello_custom_widgets_demo_apply_title_only_scaffold(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label), NULL, 0);
 
-    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&compact_panel));
-    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&muted_panel));
-    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&bottom_row));
-    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&root_layout));
-
+    layout_local_views();
     egui_core_add_user_root_view(EGUI_VIEW_OF(&root_layout));
-    egui_core_layout_childs_user_root_view(EGUI_LAYOUT_VERTICAL, EGUI_ALIGN_HCENTER | EGUI_ALIGN_VCENTER);
+    ui_ready = 1;
+    apply_primary_snapshot(0);
+    apply_preview_states();
 }
 
 #if EGUI_CONFIG_RECORDING_TEST
@@ -191,7 +188,7 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
         {
             apply_primary_snapshot(0);
             apply_preview_states();
-            recording_request_snapshot();
+            request_page_snapshot();
         }
         EGUI_SIM_SET_WAIT(p_action, SPINNER_RECORD_FRAME_WAIT);
         return true;
@@ -205,7 +202,7 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     case 2:
         if (first_call)
         {
-            recording_request_snapshot();
+            request_page_snapshot();
         }
         EGUI_SIM_SET_WAIT(p_action, SPINNER_RECORD_FRAME_WAIT);
         return true;
@@ -219,7 +216,7 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     case 4:
         if (first_call)
         {
-            recording_request_snapshot();
+            request_page_snapshot();
         }
         EGUI_SIM_SET_WAIT(p_action, SPINNER_RECORD_FRAME_WAIT);
         return true;
@@ -233,7 +230,7 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     case 6:
         if (first_call)
         {
-            recording_request_snapshot();
+            request_page_snapshot();
         }
         EGUI_SIM_SET_WAIT(p_action, SPINNER_RECORD_FINAL_WAIT);
         return true;
