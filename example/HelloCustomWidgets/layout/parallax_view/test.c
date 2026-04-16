@@ -32,6 +32,9 @@ static egui_view_parallax_view_t parallax_compact;
 static egui_view_parallax_view_t parallax_read_only;
 static egui_view_api_t parallax_compact_api;
 static egui_view_api_t parallax_read_only_api;
+static uint8_t ui_ready;
+
+static void layout_page(void);
 
 EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
 EGUI_BACKGROUND_PARAM_INIT(bg_page_panel_params, &bg_page_panel_param, NULL, NULL);
@@ -77,6 +80,10 @@ static void apply_primary_state(uint8_t index)
     }
 
     egui_view_parallax_view_set_offset(EGUI_VIEW_OF(&parallax_primary), row->anchor_offset);
+    if (ui_ready)
+    {
+        layout_page();
+    }
 }
 
 static void apply_primary_default_state(void)
@@ -96,6 +103,10 @@ static void apply_preview_states(void)
     if (read_only_row != NULL)
     {
         egui_view_parallax_view_set_offset(EGUI_VIEW_OF(&parallax_read_only), read_only_row->anchor_offset);
+    }
+    if (ui_ready)
+    {
+        layout_page();
     }
 }
 
@@ -122,6 +133,8 @@ static void request_page_snapshot(void)
 
 void test_init_ui(void)
 {
+    ui_ready = 0;
+
     egui_view_linearlayout_init(EGUI_VIEW_OF(&root_layout));
     egui_view_set_size(EGUI_VIEW_OF(&root_layout), PARALLAX_ROOT_WIDTH, PARALLAX_ROOT_HEIGHT);
     egui_view_linearlayout_set_orientation(EGUI_VIEW_OF(&root_layout), 0);
@@ -196,7 +209,9 @@ void test_init_ui(void)
 
     layout_local_views();
     egui_core_add_user_root_view(EGUI_VIEW_OF(&root_layout));
-    layout_page();
+    ui_ready = 1;
+    apply_primary_default_state();
+    apply_preview_states();
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_request_focus(EGUI_VIEW_OF(&parallax_primary));
 #endif
@@ -270,6 +285,7 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
         if (first_call)
         {
             apply_primary_default_state();
+            apply_preview_states();
         }
         EGUI_SIM_SET_WAIT(p_action, PARALLAX_RECORD_WAIT);
         return true;
