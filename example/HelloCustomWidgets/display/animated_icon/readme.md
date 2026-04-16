@@ -134,7 +134,7 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
 - 单控件 runtime：已通过 `python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub display/animated_icon --track reference --timeout 10 --keep-screenshots`，输出 `8` 帧截图
 - display 分类 compile/runtime 回归：已通过 `python scripts/code_compile_check.py --custom-widgets --category display --bits64` 与 `python scripts/code_runtime_check.py --app HelloCustomWidgets --category display --track reference --bits64`，分类内 `21` 个控件全部通过
 - wasm 构建：已通过 `python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub display/animated_icon`，输出 `web/demos/HelloCustomWidgets_display_animated_icon`
-- web smoke：已通过 `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_display_animated_icon`，结果 `PASS status=Running canvas=480x480 ratio=0.1678 colors=129`
+- web smoke：已通过 `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_display_animated_icon`，结果 `PASS status=Running canvas=480x480 ratio=0.1253 colors=93`
 
 ## 11. Runtime 复核结论
 复核目录：
