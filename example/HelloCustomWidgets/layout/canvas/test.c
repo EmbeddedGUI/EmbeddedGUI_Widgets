@@ -78,6 +78,7 @@ static egui_view_label_t compact_card_titles[CANVAS_COMPACT_ITEM_COUNT];
 static egui_view_label_t compact_note_label;
 static egui_view_api_t pinned_preview_api;
 static egui_view_api_t compact_preview_api;
+static uint8_t ui_ready;
 
 EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
 EGUI_BACKGROUND_PARAM_INIT(bg_page_panel_params, &bg_page_panel_param, NULL, NULL);
@@ -304,6 +305,10 @@ static void apply_primary_state(uint8_t index)
     egui_view_label_set_text(EGUI_VIEW_OF(&primary_heading_label), snapshot->heading);
     egui_view_label_set_text(EGUI_VIEW_OF(&primary_note_label), snapshot->note);
     apply_snapshot_to_canvas(EGUI_VIEW_OF(&primary_canvas), primary_cards, primary_card_titles, CANVAS_ITEM_CAPACITY, snapshot);
+    if (ui_ready)
+    {
+        layout_page();
+    }
 }
 
 static void apply_primary_default_state(void)
@@ -315,6 +320,10 @@ static void apply_preview_states(void)
 {
     apply_snapshot_to_canvas(EGUI_VIEW_OF(&pinned_preview_canvas), pinned_cards, pinned_card_titles, CANVAS_PINNED_ITEM_COUNT, &pinned_preview_snapshot);
     apply_snapshot_to_canvas(EGUI_VIEW_OF(&compact_preview_canvas), compact_cards, compact_card_titles, CANVAS_COMPACT_ITEM_COUNT, &compact_preview_snapshot);
+    if (ui_ready)
+    {
+        layout_page();
+    }
 }
 
 #if EGUI_CONFIG_RECORDING_TEST
@@ -329,6 +338,8 @@ static void request_page_snapshot(void)
 void test_init_ui(void)
 {
     uint8_t index;
+
+    ui_ready = 0;
 
     egui_view_linearlayout_init(EGUI_VIEW_OF(&root_layout));
     egui_view_set_size(EGUI_VIEW_OF(&root_layout), CANVAS_ROOT_WIDTH, CANVAS_ROOT_HEIGHT);
@@ -433,7 +444,9 @@ void test_init_ui(void)
 
     layout_local_views();
     egui_core_add_user_root_view(EGUI_VIEW_OF(&root_layout));
-    layout_page();
+    ui_ready = 1;
+    apply_primary_default_state();
+    apply_preview_states();
 }
 
 #if EGUI_CONFIG_RECORDING_TEST
@@ -449,8 +462,8 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     case 0:
         if (first_call)
         {
-            apply_preview_states();
             apply_primary_default_state();
+            apply_preview_states();
             request_page_snapshot();
         }
         EGUI_SIM_SET_WAIT(p_action, CANVAS_RECORD_FRAME_WAIT);
@@ -487,6 +500,7 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
         if (first_call)
         {
             apply_primary_default_state();
+            apply_preview_states();
         }
         EGUI_SIM_SET_WAIT(p_action, CANVAS_RECORD_WAIT);
         return true;
