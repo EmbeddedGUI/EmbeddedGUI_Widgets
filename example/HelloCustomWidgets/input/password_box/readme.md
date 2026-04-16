@@ -121,7 +121,7 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
 
 ## 10. 当前结果
 - `HelloCustomWidgets` 单控件编译：PASS
-- `HelloUnitTest`：`845 / 845` 通过，其中 `password_box` suite `7 / 7`
+- `HelloUnitTest`：`845 / 845` 通过，其中 `password_box` suite `10 / 10`
 - `sync_widget_catalog.py`：PASS（`106` entries）
 - `touch release semantics`：PASS（`custom_audited=28`，`custom_skipped_allowlist=5`）
 - `docs encoding`：PASS（`134 files`）
