@@ -7,6 +7,40 @@
 #include "../../HelloCustomWidgets/feedback/skeleton/egui_view_skeleton.h"
 #include "../../HelloCustomWidgets/feedback/skeleton/egui_view_skeleton.c"
 
+typedef struct skeleton_preview_snapshot skeleton_preview_snapshot_t;
+struct skeleton_preview_snapshot
+{
+    egui_region_t region_screen;
+    egui_background_t *background;
+    const egui_view_skeleton_snapshot_t *snapshots;
+    const egui_font_t *font;
+    egui_view_on_click_listener_t on_click_listener;
+    const egui_view_api_t *api;
+    egui_color_t surface_color;
+    egui_color_t border_color;
+    egui_color_t block_color;
+    egui_color_t text_color;
+    egui_color_t muted_text_color;
+    egui_color_t accent_color;
+    uint8_t snapshot_count;
+    uint8_t current_snapshot;
+    uint8_t emphasis_block;
+    uint8_t show_footer;
+    uint8_t compact_mode;
+    uint8_t read_only_mode;
+    uint8_t animation_mode;
+    uint8_t anim_phase;
+    uint8_t timer_started;
+    egui_alpha_t alpha;
+    uint8_t enable;
+    uint8_t is_focused;
+    uint8_t is_pressed;
+    egui_dim_t padding_left;
+    egui_dim_t padding_right;
+    egui_dim_t padding_top;
+    egui_dim_t padding_bottom;
+};
+
 static egui_view_skeleton_t test_skeleton;
 static egui_view_skeleton_t preview_skeleton;
 static egui_view_api_t preview_api;
@@ -40,6 +74,18 @@ static const egui_view_skeleton_snapshot_t g_overflow_snapshots[] = {
         {"E", "E", g_blocks_a, 4, 0},
 };
 
+static const egui_view_skeleton_snapshot_t g_preview_snapshots[] = {
+        {"Compact row", NULL, g_blocks_a, 4, 2},
+};
+
+static void assert_region_equal(const egui_region_t *expected, const egui_region_t *actual)
+{
+    EGUI_TEST_ASSERT_EQUAL_INT(expected->location.x, actual->location.x);
+    EGUI_TEST_ASSERT_EQUAL_INT(expected->location.y, actual->location.y);
+    EGUI_TEST_ASSERT_EQUAL_INT(expected->size.width, actual->size.width);
+    EGUI_TEST_ASSERT_EQUAL_INT(expected->size.height, actual->size.height);
+}
+
 static void on_skeleton_click(egui_view_t *self)
 {
     EGUI_UNUSED(self);
@@ -66,14 +112,18 @@ static void setup_preview_skeleton(void)
     egui_timer_init();
     egui_view_skeleton_init(EGUI_VIEW_OF(&preview_skeleton));
     egui_view_set_size(EGUI_VIEW_OF(&preview_skeleton), 104, 60);
-    egui_view_skeleton_set_snapshots(EGUI_VIEW_OF(&preview_skeleton), g_snapshots, 2);
+    egui_view_skeleton_set_snapshots(EGUI_VIEW_OF(&preview_skeleton), g_preview_snapshots, 1);
     egui_view_skeleton_set_current_snapshot(EGUI_VIEW_OF(&preview_skeleton), 0);
+    egui_view_skeleton_set_font(EGUI_VIEW_OF(&preview_skeleton), (const egui_font_t *)&egui_res_font_montserrat_8_4);
     egui_view_skeleton_set_show_footer(EGUI_VIEW_OF(&preview_skeleton), 0);
     egui_view_skeleton_set_compact_mode(EGUI_VIEW_OF(&preview_skeleton), 1);
     egui_view_skeleton_set_animation_mode(EGUI_VIEW_OF(&preview_skeleton), EGUI_VIEW_SKELETON_ANIM_NONE);
     egui_view_skeleton_set_emphasis_block(EGUI_VIEW_OF(&preview_skeleton), 2);
     egui_view_set_on_click_listener(EGUI_VIEW_OF(&preview_skeleton), on_skeleton_click);
     egui_view_skeleton_override_static_preview_api(EGUI_VIEW_OF(&preview_skeleton), &preview_api);
+#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
+    egui_view_set_focusable(EGUI_VIEW_OF(&preview_skeleton), 0);
+#endif
     reset_click_count();
 }
 
@@ -117,20 +167,25 @@ static int send_touch_to_view(egui_view_t *view, uint8_t type, egui_dim_t x, egu
     event.type = type;
     event.location.x = x;
     event.location.y = y;
-    return view->api->on_touch_event(view, &event);
+    return view->api->dispatch_touch_event(view, &event);
+}
+
+static int dispatch_key_event_to_view(egui_view_t *view, uint8_t type, uint8_t key_code)
+{
+    egui_key_event_t event;
+
+    memset(&event, 0, sizeof(event));
+    event.type = type;
+    event.key_code = key_code;
+    return view->api->dispatch_key_event(view, &event);
 }
 
 static int send_key_to_view(egui_view_t *view, uint8_t key_code)
 {
-    egui_key_event_t event;
     int handled = 0;
 
-    memset(&event, 0, sizeof(event));
-    event.type = EGUI_KEY_EVENT_ACTION_DOWN;
-    event.key_code = key_code;
-    handled |= view->api->on_key_event(view, &event);
-    event.type = EGUI_KEY_EVENT_ACTION_UP;
-    handled |= view->api->on_key_event(view, &event);
+    handled |= dispatch_key_event_to_view(view, EGUI_KEY_EVENT_ACTION_DOWN, key_code);
+    handled |= dispatch_key_event_to_view(view, EGUI_KEY_EVENT_ACTION_UP, key_code);
     return handled;
 }
 
@@ -158,6 +213,72 @@ static void get_view_center(egui_view_t *view, egui_dim_t *x, egui_dim_t *y)
 {
     *x = view->region_screen.location.x + view->region_screen.size.width / 2;
     *y = view->region_screen.location.y + view->region_screen.size.height / 2;
+}
+
+static void capture_preview_snapshot(skeleton_preview_snapshot_t *snapshot)
+{
+    snapshot->region_screen = EGUI_VIEW_OF(&preview_skeleton)->region_screen;
+    snapshot->background = EGUI_VIEW_OF(&preview_skeleton)->background;
+    snapshot->snapshots = preview_skeleton.snapshots;
+    snapshot->font = preview_skeleton.font;
+    snapshot->on_click_listener = EGUI_VIEW_OF(&preview_skeleton)->on_click_listener;
+    snapshot->api = EGUI_VIEW_OF(&preview_skeleton)->api;
+    snapshot->surface_color = preview_skeleton.surface_color;
+    snapshot->border_color = preview_skeleton.border_color;
+    snapshot->block_color = preview_skeleton.block_color;
+    snapshot->text_color = preview_skeleton.text_color;
+    snapshot->muted_text_color = preview_skeleton.muted_text_color;
+    snapshot->accent_color = preview_skeleton.accent_color;
+    snapshot->snapshot_count = preview_skeleton.snapshot_count;
+    snapshot->current_snapshot = preview_skeleton.current_snapshot;
+    snapshot->emphasis_block = preview_skeleton.emphasis_block;
+    snapshot->show_footer = preview_skeleton.show_footer;
+    snapshot->compact_mode = preview_skeleton.compact_mode;
+    snapshot->read_only_mode = preview_skeleton.read_only_mode;
+    snapshot->animation_mode = preview_skeleton.animation_mode;
+    snapshot->anim_phase = preview_skeleton.anim_phase;
+    snapshot->timer_started = preview_skeleton.timer_started;
+    snapshot->alpha = EGUI_VIEW_OF(&preview_skeleton)->alpha;
+    snapshot->enable = (uint8_t)egui_view_get_enable(EGUI_VIEW_OF(&preview_skeleton));
+    snapshot->is_focused = EGUI_VIEW_OF(&preview_skeleton)->is_focused;
+    snapshot->is_pressed = EGUI_VIEW_OF(&preview_skeleton)->is_pressed;
+    snapshot->padding_left = EGUI_VIEW_OF(&preview_skeleton)->padding.left;
+    snapshot->padding_right = EGUI_VIEW_OF(&preview_skeleton)->padding.right;
+    snapshot->padding_top = EGUI_VIEW_OF(&preview_skeleton)->padding.top;
+    snapshot->padding_bottom = EGUI_VIEW_OF(&preview_skeleton)->padding.bottom;
+}
+
+static void assert_preview_state_unchanged(const skeleton_preview_snapshot_t *snapshot)
+{
+    assert_region_equal(&snapshot->region_screen, &EGUI_VIEW_OF(&preview_skeleton)->region_screen);
+    EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&preview_skeleton)->background == snapshot->background);
+    EGUI_TEST_ASSERT_TRUE(preview_skeleton.snapshots == snapshot->snapshots);
+    EGUI_TEST_ASSERT_TRUE(preview_skeleton.font == snapshot->font);
+    EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&preview_skeleton)->on_click_listener == snapshot->on_click_listener);
+    EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&preview_skeleton)->api == snapshot->api);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->surface_color.full, preview_skeleton.surface_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->border_color.full, preview_skeleton.border_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->block_color.full, preview_skeleton.block_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->text_color.full, preview_skeleton.text_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->muted_text_color.full, preview_skeleton.muted_text_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->accent_color.full, preview_skeleton.accent_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->snapshot_count, preview_skeleton.snapshot_count);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->current_snapshot, preview_skeleton.current_snapshot);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->emphasis_block, preview_skeleton.emphasis_block);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->show_footer, preview_skeleton.show_footer);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->compact_mode, preview_skeleton.compact_mode);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->read_only_mode, preview_skeleton.read_only_mode);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->animation_mode, preview_skeleton.animation_mode);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->anim_phase, preview_skeleton.anim_phase);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->timer_started, preview_skeleton.timer_started);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->alpha, EGUI_VIEW_OF(&preview_skeleton)->alpha);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->enable, egui_view_get_enable(EGUI_VIEW_OF(&preview_skeleton)));
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->is_focused, EGUI_VIEW_OF(&preview_skeleton)->is_focused);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->is_pressed, EGUI_VIEW_OF(&preview_skeleton)->is_pressed);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->padding_left, EGUI_VIEW_OF(&preview_skeleton)->padding.left);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->padding_right, EGUI_VIEW_OF(&preview_skeleton)->padding.right);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->padding_top, EGUI_VIEW_OF(&preview_skeleton)->padding.top);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->padding_bottom, EGUI_VIEW_OF(&preview_skeleton)->padding.bottom);
 }
 
 static void get_view_outside_point(egui_view_t *view, egui_dim_t *x, egui_dim_t *y)
@@ -439,37 +560,27 @@ static void test_skeleton_read_only_and_disabled_guards_clear_pressed_and_timer(
     stop_timer_if_started(&test_skeleton);
 }
 
-static void test_skeleton_static_preview_consumes_input_and_keeps_static_state(void)
+static void test_skeleton_static_preview_consumes_input_and_keeps_state(void)
 {
+    skeleton_preview_snapshot_t initial_snapshot;
     egui_dim_t x;
     egui_dim_t y;
 
     setup_preview_skeleton();
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_SKELETON_ANIM_NONE, preview_skeleton.animation_mode);
-    EGUI_TEST_ASSERT_EQUAL_INT(0, preview_skeleton.timer_started);
-    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_skeleton_get_current_snapshot(EGUI_VIEW_OF(&preview_skeleton)));
-    EGUI_TEST_ASSERT_EQUAL_INT(2, preview_skeleton.emphasis_block);
-
     attach_view(EGUI_VIEW_OF(&preview_skeleton));
-    EGUI_TEST_ASSERT_EQUAL_INT(0, preview_skeleton.timer_started);
-
     layout_preview_skeleton();
     get_view_center(EGUI_VIEW_OF(&preview_skeleton), &x, &y);
+    capture_preview_snapshot(&initial_snapshot);
 
     seed_pressed_state(EGUI_VIEW_OF(&preview_skeleton), 1);
     EGUI_TEST_ASSERT_TRUE(send_preview_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
-    assert_pressed_cleared(EGUI_VIEW_OF(&preview_skeleton));
-    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_skeleton_get_current_snapshot(EGUI_VIEW_OF(&preview_skeleton)));
-    EGUI_TEST_ASSERT_EQUAL_INT(2, preview_skeleton.emphasis_block);
-    EGUI_TEST_ASSERT_EQUAL_INT(0, preview_skeleton.timer_started);
+    EGUI_TEST_ASSERT_TRUE(send_preview_touch(EGUI_MOTION_EVENT_ACTION_UP, x, y));
+    assert_preview_state_unchanged(&initial_snapshot);
     EGUI_TEST_ASSERT_EQUAL_INT(0, click_count);
 
     seed_pressed_state(EGUI_VIEW_OF(&preview_skeleton), 1);
     EGUI_TEST_ASSERT_TRUE(send_preview_key(EGUI_KEY_CODE_ENTER));
-    assert_pressed_cleared(EGUI_VIEW_OF(&preview_skeleton));
-    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_skeleton_get_current_snapshot(EGUI_VIEW_OF(&preview_skeleton)));
-    EGUI_TEST_ASSERT_EQUAL_INT(2, preview_skeleton.emphasis_block);
-    EGUI_TEST_ASSERT_EQUAL_INT(0, preview_skeleton.timer_started);
+    assert_preview_state_unchanged(&initial_snapshot);
     EGUI_TEST_ASSERT_EQUAL_INT(0, click_count);
 
     detach_view(EGUI_VIEW_OF(&preview_skeleton));
@@ -486,6 +597,6 @@ void test_skeleton_run(void)
     EGUI_TEST_RUN(test_skeleton_keyboard_click_listener);
     EGUI_TEST_RUN(test_skeleton_compact_mode_clears_pressed_and_keeps_click_behavior);
     EGUI_TEST_RUN(test_skeleton_read_only_and_disabled_guards_clear_pressed_and_timer);
-    EGUI_TEST_RUN(test_skeleton_static_preview_consumes_input_and_keeps_static_state);
+    EGUI_TEST_RUN(test_skeleton_static_preview_consumes_input_and_keeps_state);
     EGUI_TEST_SUITE_END();
 }
