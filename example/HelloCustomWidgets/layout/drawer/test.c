@@ -43,6 +43,7 @@ static egui_view_drawer_t compact_drawer;
 static egui_view_drawer_t read_only_drawer;
 static egui_view_api_t compact_api;
 static egui_view_api_t read_only_api;
+static uint8_t ui_ready;
 
 EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
 EGUI_BACKGROUND_PARAM_INIT(bg_page_panel_params, &bg_page_panel_param, NULL, NULL);
@@ -97,6 +98,10 @@ static void layout_page(void)
 static void apply_primary_state(uint8_t index)
 {
     apply_snapshot(EGUI_VIEW_OF(&primary_drawer), &primary_snapshots[index % PRIMARY_SNAPSHOT_COUNT]);
+    if (ui_ready)
+    {
+        layout_page();
+    }
 }
 
 static void apply_primary_default_state(void)
@@ -119,6 +124,10 @@ static void apply_preview_states(void)
     apply_snapshot(EGUI_VIEW_OF(&read_only_drawer), &read_only_snapshot);
     egui_view_drawer_set_compact_mode(EGUI_VIEW_OF(&read_only_drawer), 1);
     egui_view_drawer_set_read_only_mode(EGUI_VIEW_OF(&read_only_drawer), 1);
+    if (ui_ready)
+    {
+        layout_page();
+    }
 }
 
 #if EGUI_CONFIG_RECORDING_TEST
@@ -132,6 +141,8 @@ static void request_page_snapshot(void)
 
 void test_init_ui(void)
 {
+    ui_ready = 0;
+
     egui_view_linearlayout_init(EGUI_VIEW_OF(&root_layout));
     egui_view_set_size(EGUI_VIEW_OF(&root_layout), DRAWER_ROOT_W, DRAWER_ROOT_H);
     egui_view_linearlayout_set_orientation(EGUI_VIEW_OF(&root_layout), 0);
@@ -181,8 +192,11 @@ void test_init_ui(void)
     apply_preview_states();
 
     hello_custom_widgets_demo_apply_title_only_scaffold(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label), NULL, 0);
+    layout_local_views();
     egui_core_add_user_root_view(EGUI_VIEW_OF(&root_layout));
-    layout_page();
+    ui_ready = 1;
+    apply_primary_default_state();
+    apply_preview_states();
 }
 
 #if EGUI_CONFIG_RECORDING_TEST
@@ -214,7 +228,7 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     case 2:
         if (first_call)
         {
-            recording_request_snapshot();
+            request_page_snapshot();
         }
         EGUI_SIM_SET_WAIT(p_action, DRAWER_RECORD_FRAME_WAIT);
         return true;
@@ -228,7 +242,7 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     case 4:
         if (first_call)
         {
-            recording_request_snapshot();
+            request_page_snapshot();
         }
         EGUI_SIM_SET_WAIT(p_action, DRAWER_RECORD_FRAME_WAIT);
         return true;
@@ -236,6 +250,7 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
         if (first_call)
         {
             apply_primary_default_state();
+            apply_preview_states();
         }
         EGUI_SIM_SET_WAIT(p_action, DRAWER_RECORD_WAIT);
         return true;
