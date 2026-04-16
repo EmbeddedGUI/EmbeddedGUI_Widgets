@@ -20,6 +20,7 @@
 #define FLIP_VIEW_RECORD_WAIT         110
 #define FLIP_VIEW_RECORD_FRAME_WAIT   150
 #define FLIP_VIEW_RECORD_FINAL_WAIT   520
+#define PRIMARY_TRACK_COUNT           ((uint8_t)(sizeof(primary_tracks) / sizeof(primary_tracks[0])))
 
 typedef struct flip_view_track flip_view_track_t;
 struct flip_view_track
@@ -39,6 +40,7 @@ static egui_view_flip_view_t flip_view_compact;
 static egui_view_flip_view_t flip_view_read_only;
 static egui_view_api_t flip_view_compact_api;
 static egui_view_api_t flip_view_read_only_api;
+static uint8_t ui_ready;
 
 EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
 EGUI_BACKGROUND_PARAM_INIT(bg_page_panel_params, &bg_page_panel_param, NULL, NULL);
@@ -94,6 +96,8 @@ static const flip_view_track_t primary_tracks[] = {
 static const flip_view_track_t compact_track = {"Compact", "", compact_overview_items, 3, 0};
 static const flip_view_track_t read_only_track = {"Read only", "", read_only_items, 3, 1};
 
+static void layout_page(void);
+
 static void apply_track(egui_view_t *view, const flip_view_track_t *track)
 {
     egui_view_flip_view_set_title(view, track->title);
@@ -104,20 +108,59 @@ static void apply_track(egui_view_t *view, const flip_view_track_t *track)
 
 static void apply_primary_track(uint8_t index)
 {
-    const flip_view_track_t *track = &primary_tracks[index % (sizeof(primary_tracks) / sizeof(primary_tracks[0]))];
+    const flip_view_track_t *track = &primary_tracks[index % PRIMARY_TRACK_COUNT];
 
     apply_track(EGUI_VIEW_OF(&flip_view_primary), track);
+    if (ui_ready)
+    {
+        layout_page();
+    }
+}
+
+static void apply_primary_default_state(void)
+{
+    apply_primary_track(0);
+}
+
+static void apply_compact_state(void)
+{
+    apply_track(EGUI_VIEW_OF(&flip_view_compact), &compact_track);
+    egui_view_flip_view_set_compact_mode(EGUI_VIEW_OF(&flip_view_compact), 1);
+}
+
+static void apply_read_only_state(void)
+{
+    apply_track(EGUI_VIEW_OF(&flip_view_read_only), &read_only_track);
+    egui_view_flip_view_set_compact_mode(EGUI_VIEW_OF(&flip_view_read_only), 1);
+    egui_view_flip_view_set_read_only_mode(EGUI_VIEW_OF(&flip_view_read_only), 1);
 }
 
 static void apply_preview_states(void)
 {
-    apply_track(EGUI_VIEW_OF(&flip_view_compact), &compact_track);
-    apply_track(EGUI_VIEW_OF(&flip_view_read_only), &read_only_track);
-    egui_view_flip_view_set_read_only_mode(EGUI_VIEW_OF(&flip_view_read_only), 1);
+    apply_compact_state();
+    apply_read_only_state();
+    if (ui_ready)
+    {
+        layout_page();
+    }
+}
+
+static void layout_local_views(void)
+{
+    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&bottom_row));
+    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&root_layout));
+}
+
+static void layout_page(void)
+{
+    layout_local_views();
+    egui_core_layout_childs_user_root_view(EGUI_LAYOUT_VERTICAL, EGUI_ALIGN_HCENTER | EGUI_ALIGN_VCENTER);
 }
 
 void test_init_ui(void)
 {
+    ui_ready = 0;
+
     egui_view_linearlayout_init(EGUI_VIEW_OF(&root_layout));
     egui_view_set_size(EGUI_VIEW_OF(&root_layout), FLIP_VIEW_ROOT_WIDTH, FLIP_VIEW_ROOT_HEIGHT);
     egui_view_linearlayout_set_orientation(EGUI_VIEW_OF(&root_layout), 0);
@@ -176,21 +219,28 @@ void test_init_ui(void)
 #endif
     egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&flip_view_read_only));
 
-    apply_primary_track(0);
+    apply_primary_default_state();
     apply_preview_states();
 
     {
         hello_custom_widgets_demo_apply_title_only_scaffold(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label), NULL, 0);
     }
 
-    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&bottom_row));
-    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&root_layout));
-
+    layout_local_views();
     egui_core_add_user_root_view(EGUI_VIEW_OF(&root_layout));
-    egui_core_layout_childs_user_root_view(EGUI_LAYOUT_VERTICAL, EGUI_ALIGN_HCENTER | EGUI_ALIGN_VCENTER);
+    ui_ready = 1;
+    apply_primary_default_state();
+    apply_preview_states();
 }
 
 #if EGUI_CONFIG_RECORDING_TEST
+static void request_page_snapshot(void)
+{
+    layout_page();
+    egui_view_invalidate(EGUI_VIEW_OF(&root_layout));
+    recording_request_snapshot();
+}
+
 static void apply_primary_key(uint8_t key_code)
 {
     egui_key_event_t event = {0};
@@ -213,9 +263,9 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     case 0:
         if (first_call)
         {
-            apply_primary_track(0);
+            apply_primary_default_state();
             apply_preview_states();
-            recording_request_snapshot();
+            request_page_snapshot();
         }
         EGUI_SIM_SET_WAIT(p_action, FLIP_VIEW_RECORD_FRAME_WAIT);
         return true;
@@ -229,7 +279,7 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     case 2:
         if (first_call)
         {
-            recording_request_snapshot();
+            request_page_snapshot();
         }
         EGUI_SIM_SET_WAIT(p_action, FLIP_VIEW_RECORD_FRAME_WAIT);
         return true;
@@ -243,7 +293,7 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     case 4:
         if (first_call)
         {
-            recording_request_snapshot();
+            request_page_snapshot();
         }
         EGUI_SIM_SET_WAIT(p_action, FLIP_VIEW_RECORD_FRAME_WAIT);
         return true;
@@ -257,14 +307,14 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     case 6:
         if (first_call)
         {
-            recording_request_snapshot();
+            request_page_snapshot();
         }
         EGUI_SIM_SET_WAIT(p_action, FLIP_VIEW_RECORD_FRAME_WAIT);
         return true;
     case 7:
         if (first_call)
         {
-            apply_primary_track(0);
+            apply_primary_default_state();
             apply_preview_states();
         }
         EGUI_SIM_SET_WAIT(p_action, FLIP_VIEW_RECORD_WAIT);
@@ -272,7 +322,7 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     case 8:
         if (first_call)
         {
-            recording_request_snapshot();
+            request_page_snapshot();
         }
         EGUI_SIM_SET_WAIT(p_action, FLIP_VIEW_RECORD_FINAL_WAIT);
         return true;
