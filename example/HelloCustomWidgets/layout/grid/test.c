@@ -80,6 +80,7 @@ static egui_view_label_t dense_card_titles[GRID_DENSE_PREVIEW_CARDS];
 static egui_view_label_t dense_note_label;
 static egui_view_api_t stack_preview_api;
 static egui_view_api_t dense_preview_api;
+static uint8_t ui_ready;
 
 EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
 EGUI_BACKGROUND_PARAM_INIT(bg_page_panel_params, &bg_page_panel_param, NULL, NULL);
@@ -307,6 +308,10 @@ static void apply_primary_state(uint8_t index)
     egui_view_label_set_text(EGUI_VIEW_OF(&primary_heading_label), snapshot->heading);
     egui_view_label_set_text(EGUI_VIEW_OF(&primary_note_label), snapshot->note);
     apply_snapshot_to_grid(EGUI_VIEW_OF(&primary_grid), primary_cards, primary_card_eyebrows, primary_card_titles, GRID_CARD_CAPACITY, snapshot);
+    if (ui_ready)
+    {
+        layout_page();
+    }
 }
 
 static void apply_primary_default_state(void)
@@ -320,6 +325,10 @@ static void apply_preview_states(void)
                            &stack_preview_snapshot);
     apply_snapshot_to_grid(EGUI_VIEW_OF(&dense_preview_grid), dense_cards, dense_card_eyebrows, dense_card_titles, GRID_DENSE_PREVIEW_CARDS,
                            &dense_preview_snapshot);
+    if (ui_ready)
+    {
+        layout_page();
+    }
 }
 
 #if EGUI_CONFIG_RECORDING_TEST
@@ -334,6 +343,8 @@ static void request_page_snapshot(void)
 void test_init_ui(void)
 {
     uint8_t index;
+
+    ui_ready = 0;
 
     egui_view_linearlayout_init(EGUI_VIEW_OF(&root_layout));
     egui_view_set_size(EGUI_VIEW_OF(&root_layout), GRID_ROOT_WIDTH, GRID_ROOT_HEIGHT);
@@ -436,7 +447,9 @@ void test_init_ui(void)
 
     layout_local_views();
     egui_core_add_user_root_view(EGUI_VIEW_OF(&root_layout));
-    layout_page();
+    ui_ready = 1;
+    apply_primary_default_state();
+    apply_preview_states();
 }
 
 #if EGUI_CONFIG_RECORDING_TEST
@@ -490,6 +503,7 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
         if (first_call)
         {
             apply_primary_default_state();
+            apply_preview_states();
         }
         EGUI_SIM_SET_WAIT(p_action, GRID_RECORD_WAIT);
         return true;
