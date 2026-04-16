@@ -29,6 +29,9 @@ static egui_view_scroll_presenter_t scroll_presenter_compact;
 static egui_view_scroll_presenter_t scroll_presenter_read_only;
 static egui_view_api_t scroll_presenter_compact_api;
 static egui_view_api_t scroll_presenter_read_only_api;
+static uint8_t ui_ready;
+
+static void layout_page(void);
 
 EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
 EGUI_BACKGROUND_PARAM_INIT(bg_page_panel_params, &bg_page_panel_param, NULL, NULL);
@@ -74,6 +77,10 @@ static const egui_view_scroll_presenter_snapshot_t read_only_snapshot = {
 static void apply_primary_snapshot(uint8_t index)
 {
     egui_view_scroll_presenter_set_current_snapshot(EGUI_VIEW_OF(&scroll_presenter_primary), index % PRIMARY_SNAPSHOT_COUNT);
+    if (ui_ready)
+    {
+        layout_page();
+    }
 }
 
 static void apply_primary_default_state(void)
@@ -85,11 +92,28 @@ static void apply_preview_states(void)
 {
     egui_view_scroll_presenter_set_current_snapshot(EGUI_VIEW_OF(&scroll_presenter_compact), 0);
     egui_view_scroll_presenter_set_current_snapshot(EGUI_VIEW_OF(&scroll_presenter_read_only), 0);
+    if (ui_ready)
+    {
+        layout_page();
+    }
+}
+
+static void layout_local_views(void)
+{
+    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&bottom_row));
+    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&root_layout));
+}
+
+static void layout_page(void)
+{
+    layout_local_views();
+    egui_core_layout_childs_user_root_view(EGUI_LAYOUT_VERTICAL, EGUI_ALIGN_HCENTER | EGUI_ALIGN_VCENTER);
 }
 
 #if EGUI_CONFIG_RECORDING_TEST
 static void request_page_snapshot(void)
 {
+    layout_page();
     egui_view_invalidate(EGUI_VIEW_OF(&root_layout));
     recording_request_snapshot();
 }
@@ -97,6 +121,8 @@ static void request_page_snapshot(void)
 
 void test_init_ui(void)
 {
+    ui_ready = 0;
+
     egui_view_linearlayout_init(EGUI_VIEW_OF(&root_layout));
     egui_view_set_size(EGUI_VIEW_OF(&root_layout), SCROLL_PRESENTER_ROOT_WIDTH, SCROLL_PRESENTER_ROOT_HEIGHT);
     egui_view_linearlayout_set_orientation(EGUI_VIEW_OF(&root_layout), 0);
@@ -166,11 +192,11 @@ void test_init_ui(void)
 
     hello_custom_widgets_demo_apply_title_only_scaffold(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label), NULL, 0);
 
-    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&bottom_row));
-    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&root_layout));
-
+    layout_local_views();
     egui_core_add_user_root_view(EGUI_VIEW_OF(&root_layout));
-    egui_core_layout_childs_user_root_view(EGUI_LAYOUT_VERTICAL, EGUI_ALIGN_HCENTER | EGUI_ALIGN_VCENTER);
+    ui_ready = 1;
+    apply_primary_default_state();
+    apply_preview_states();
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_request_focus(EGUI_VIEW_OF(&scroll_presenter_primary));
 #endif
