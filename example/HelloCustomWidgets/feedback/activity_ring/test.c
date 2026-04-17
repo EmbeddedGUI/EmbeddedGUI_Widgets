@@ -21,6 +21,7 @@
 #define ACTIVITY_RING_RECORD_ANIM_WAIT  230
 #define ACTIVITY_RING_RECORD_FRAME_WAIT 190
 #define ACTIVITY_RING_RECORD_FINAL_WAIT 520
+#define ACTIVITY_RING_DEFAULT_SNAPSHOT  0
 
 static egui_view_linearlayout_t root_layout;
 static egui_view_label_t title_label;
@@ -75,6 +76,17 @@ static void apply_primary_indeterminate(void)
 {
     hcw_activity_ring_apply_indeterminate_style(EGUI_VIEW_OF(&activity_ring_primary));
     update_primary_status_text("Syncing...");
+}
+
+static void apply_primary_snapshot(uint8_t index)
+{
+    EGUI_UNUSED(index);
+    apply_primary_indeterminate();
+}
+
+static void apply_primary_default_state(void)
+{
+    apply_primary_snapshot(ACTIVITY_RING_DEFAULT_SNAPSHOT);
 }
 
 static void apply_preview_values(void)
@@ -165,7 +177,7 @@ void test_init_ui(void)
 #endif
     egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&activity_ring_paused));
 
-    apply_primary_indeterminate();
+    apply_primary_default_state();
     apply_preview_values();
 
     hello_custom_widgets_demo_apply_title_only_scaffold(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label), NULL, 0);
@@ -173,7 +185,7 @@ void test_init_ui(void)
     layout_local_views();
     egui_core_add_user_root_view(EGUI_VIEW_OF(&root_layout));
     ui_ready = 1;
-    apply_primary_indeterminate();
+    apply_primary_default_state();
     apply_preview_values();
 }
 
@@ -190,7 +202,7 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     case 0:
         if (first_call)
         {
-            apply_primary_indeterminate();
+            apply_primary_default_state();
             apply_preview_values();
             request_page_snapshot();
         }
@@ -221,6 +233,13 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
         EGUI_SIM_SET_WAIT(p_action, ACTIVITY_RING_RECORD_FRAME_WAIT);
         return true;
     case 5:
+        if (first_call)
+        {
+            apply_primary_default_state();
+        }
+        EGUI_SIM_SET_WAIT(p_action, ACTIVITY_RING_RECORD_WAIT);
+        return true;
+    case 6:
         if (first_call)
         {
             request_page_snapshot();
