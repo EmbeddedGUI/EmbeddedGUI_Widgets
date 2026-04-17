@@ -97,6 +97,8 @@
 - 底部 preview 在整条轨道中不发生任何视觉变化。
 - 主区变化只来自四组 severity snapshot 以及最终回落到默认帧。
 
+当前 `test.c` 已对齐统一的 `ui_ready + layout_page + request_page_snapshot` 收口模板：新增 `MESSAGE_BAR_DEFAULT_SNAPSHOT` 与 `apply_primary_default_state()`，初始化阶段在 root view 挂载前后各重放一次默认态与 preview，`case 0` 和回到默认态的稳定收尾都统一走显式布局路径。
+
 ## 9. 单元测试口径
 `example/HelloUnitTest/test/test_message_bar.c` 当前覆盖八部分：
 
@@ -135,7 +137,7 @@ python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub feedba
 python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_feedback_message_bar
 ```
 
-## 11. 当前结果
+## 11. 当前验收结果（2026-04-18）
 - `HelloCustomWidgets` 单控件编译：`PASS`，`make all APP=HelloCustomWidgets APP_SUB=feedback/message_bar PORT=pc`
 - `HelloUnitTest`：`PASS`，在 `X:\` 执行 `make clean APP=HelloUnitTest PORT=pc_test`、`make all APP=HelloUnitTest PORT=pc_test` 与 `X:\output\main.exe`，总计 `845 / 845`，其中 `message_bar` suite `8 / 8`
 - `sync_widget_catalog.py`：`PASS`，同步后保持 `106` 个 widgets
@@ -144,6 +146,7 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
 - `widget catalog check`：`PASS`，`106 widgets: reference=106, showcase=0, deprecated=0`
 - 单控件 runtime：`PASS`，`11 frames captured -> runtime_check_output/HelloCustomWidgets_feedback_message_bar/default`
 - feedback 分类 compile/runtime 回归：`PASS`
+  compile `10 / 10`，runtime `10 / 10`
 - wasm 构建：`PASS`，`web/demos/HelloCustomWidgets_feedback_message_bar`
 - web smoke：`PASS status=Running canvas=480x480 ratio=0.1678 colors=133`
 
