@@ -27,7 +27,7 @@
 当前目录：`example/HelloCustomWidgets/navigation/pivot/`
 
 ## 4. 主区 reference 快照
-主控件录制轨道已经收口为 3 组 reference 快照：
+主控件录制轨道已经收口为 3 组 reference 快照和最终稳定帧：
 
 1. `Overview`
    `Core view / Project overview / Goals, owner and next step.`
@@ -35,6 +35,8 @@
    `Daily feed / Recent activity / Ship notes and open reviews.`
 3. `History`
    `Past work / Change history / Milestones and archived updates.`
+4. `Overview`
+   回到默认 `Core view / Project overview / Goals, owner and next step.`
 
 底部 preview 在整条轨道中保持固定：
 
@@ -78,12 +80,15 @@
 4. 抓取第二组主区快照
 5. 切到 `History`
 6. 抓取第三组主区快照
-7. 继续等待并抓取最终稳定帧
+7. 回到默认 `Overview`
+8. 抓取最终稳定帧
 
 说明：
-- 录制阶段不再切换 `compact` preview，也不再补录恢复默认态的额外收尾帧。
+- 录制阶段不再切换 `compact` preview，但最终稳定帧前会显式恢复主区默认态。
 - 底部 preview 统一通过 `hcw_pivot_override_static_preview_api()` 吞掉 `touch / key`，只承担静态 reference 对照。
 - 主区真实 touch 和 keyboard 语义仍然保留在控件实现与单测里闭环。
+
+当前 `test.c` 已对齐统一的 `ui_ready + layout_page + request_page_snapshot` 收口模板：保留既有 `PIVOT_DEFAULT_INDEX` 与 `apply_primary_default_state()`，初始化阶段在 root view 挂载前后各重放一次默认态与 preview，`case 0` 和最终稳定帧前的默认态恢复统一走显式布局路径。
 
 ## 8. 单元测试口径
 `example/HelloUnitTest/test/test_pivot.c` 当前覆盖四部分：
@@ -117,30 +122,31 @@ python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub naviga
 python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_navigation_pivot
 ```
 
-## 10. 当前结果
-- `HelloCustomWidgets` 单控件编译：已通过 `make all APP=HelloCustomWidgets APP_SUB=navigation/pivot PORT=pc`
-- `HelloUnitTest`：已在 `X:\` 短路径通过 `make clean APP=HelloUnitTest PORT=pc_test`、`make all APP=HelloUnitTest PORT=pc_test` 和 `X:\output\main.exe`，总计 `845 / 845`，其中 `pivot` suite `4 / 4`
-- `sync_widget_catalog.py`：PASS，重新同步 `widget_catalog.json` 与 `web/catalog-policy.json`
-- `touch release semantics`：PASS，结果 `custom_audited=12 custom_skipped_allowlist=1`
-- `docs encoding`：PASS，结果 `134 files`
-- `widget catalog check`：PASS，结果 `106 widgets: reference=106, showcase=0, deprecated=0`
-- 单控件 runtime：PASS，输出 `8` 帧截图
-- navigation 分类 compile/runtime 回归：PASS，分类内 `13` 个控件全部通过
-- wasm 构建：PASS，输出 `web/demos/HelloCustomWidgets_navigation_pivot`
+## 10. 当前验收结果（2026-04-18）
+- `HelloCustomWidgets` 单控件编译：`PASS`，`make all APP=HelloCustomWidgets APP_SUB=navigation/pivot PORT=pc`
+- `HelloUnitTest`：`PASS`，已在 `X:\` 短路径通过 `make clean APP=HelloUnitTest PORT=pc_test`、`make all APP=HelloUnitTest PORT=pc_test` 和 `X:\output\main.exe`，总计 `845 / 845`，其中 `pivot` suite `4 / 4`
+- `sync_widget_catalog.py`：`PASS`，同步后保持 `106` 个 widgets
+- `touch release semantics`：`PASS`，`custom_audited=12 custom_skipped_allowlist=1`
+- `docs encoding`：`PASS`，`134` 个文档文件编码检查通过
+- `widget catalog check`：`PASS`，`106 widgets: reference=106, showcase=0, deprecated=0`
+- 单控件 runtime：`PASS`，`9 frames captured -> runtime_check_output/HelloCustomWidgets_navigation_pivot/default`
+- navigation 分类 compile/runtime 回归：`PASS`
+  compile `13 / 13`，runtime `13 / 13`
+- wasm 构建：`PASS`，`web/demos/HelloCustomWidgets_navigation_pivot`
 - web smoke：`PASS status=Running canvas=480x480 ratio=0.1581 colors=171`
 
 ## 11. Runtime 复核结论
 复核目录：`runtime_check_output/HelloCustomWidgets_navigation_pivot/default`
 
-- 总帧数：`8`
+- 总帧数：`9`
 - 主区 RGB 差分边界：`(54, 121) - (425, 264)`
 - 遮罩主区变化边界后，主区外唯一哈希数：`1`
 - 按主区边界裁切后，主区唯一状态数：`3`
 - 按 `y >= 265` 裁切底部 preview 区域后，preview 区唯一哈希数：`1`
 
 结论：
-- 变化只发生在主区 `Overview / Activity / History` 三态轨道里。
-- 主区外页面 chrome 全程静态，没有黑屏、白屏、错位或 preview 污染。
+- 主区变化严格收敛在 `pivot` reference 主体，主区外页面 chrome 在整条轨道中保持静态。
+- `9` 帧里主区保持 `3` 组唯一状态，对应 `Overview / Activity / History` 三组主区快照；最终稳定帧已显式回到默认 `Overview`。
 - 底部 `compact / read only` preview 在整条录制轨道中保持静态一致。
 
 ## 12. 已知限制
