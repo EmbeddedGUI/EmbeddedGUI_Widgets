@@ -162,6 +162,13 @@
 ## 最近完成的收口动作
 
 - `2026-04-18`
+  - 收口 `input/rich_edit_box` reference 控件：在不修改 `sdk/EmbeddedGUI` 的前提下，把既有 `rich_edit_box` 示例页补齐到统一的 `ui_ready + layout_page + request_page_snapshot` 布局重放路径，确保默认 `Shift briefing / Body`、中间态 `Bug scrub / Callout`、高值态 `Launch checklist / Checklist` 与最终稳定帧都通过同一条显式布局链路稳定落帧，而底部 `compact / read only` preview 继续保持静态 reference 对照。
+  - `example/HelloCustomWidgets/input/rich_edit_box/test.c` 已保持统一 finalize 模板：保留既有 `RICH_EDIT_BOX_DEFAULT_SNAPSHOT` 与 `apply_primary_default_state()`，初始化阶段在 root view 挂载前后各重放一次默认态与 preview，最终稳定帧前的默认态恢复继续走显式布局重放路径。
+  - `example/HelloCustomWidgets/input/rich_edit_box/readme.md` 已改写为统一模板，并回填本轮真实 compile / unit / runtime / web / 截图复核数据。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=input/rich_edit_box PORT=pc`、在 `X:\` 执行的 `make clean APP=HelloUnitTest PORT=pc_test`、`make all APP=HelloUnitTest PORT=pc_test`、`X:\output\main.exe`（总计 `845 / 845`，`rich_edit_box` suite `7 / 7`）、`python scripts/sync_widget_catalog.py`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category input`、`python scripts/checks/check_docs_encoding.py`、`python scripts/checks/check_widget_catalog.py`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/rich_edit_box --track reference --timeout 10 --keep-screenshots`、`python scripts/code_compile_check.py --custom-widgets --category input --bits64`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --category input --track reference --bits64`、`python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub input/rich_edit_box` 与对应 `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_input_rich_edit_box`（`PASS status=Running canvas=480x480 ratio=0.2059 colors=238`）。
+  - 复核 `runtime_check_output/HelloCustomWidgets_input_rich_edit_box/default` 的 `9` 帧截图：全帧共出现 `3` 组唯一状态，对应默认 `Shift briefing / Body`、中间态 `Bug scrub / Callout` 与高值态 `Launch checklist / Checklist` 三组主区快照，最终稳定帧已回到默认态；按 RGB 差分得到主区变化边界位于 `(54, 73) - (426, 275)`，遮罩该边界后边界外区域保持单哈希；按 `y >= 275` 裁切底部 preview 区域后全部帧保持单哈希，主区哈希分组为 `[0,1,6,7,8] / [2,3] / [4,5]`，确认底部 `compact / read only` preview 在整条录制轨道中保持静态一致。
+
+- `2026-04-18`
   - 收口 `input/slider` reference 控件：在不修改 `sdk/EmbeddedGUI` 的前提下，把既有 `slider` 示例页补齐到统一的 `ui_ready + layout_page + request_page_snapshot` 布局重放路径，确保默认 `18%`、中间态 `52%`、高值态 `86%` 与最终稳定帧都通过同一条显式布局链路稳定落帧，而底部 `compact / read only` preview 继续保持静态 reference 对照。
   - `example/HelloCustomWidgets/input/slider/test.c` 已保持统一 finalize 模板：保留既有 `SLIDER_DEFAULT_SNAPSHOT` 与 `apply_primary_default_state()`，初始化阶段在 root view 挂载前后各重放一次默认态与 preview，最终稳定帧前的默认态恢复继续走显式布局重放路径。
   - `example/HelloCustomWidgets/input/slider/readme.md` 已改写为统一模板，并回填本轮真实 compile / unit / runtime / web / 截图复核数据。

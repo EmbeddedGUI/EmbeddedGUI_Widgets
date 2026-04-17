@@ -193,8 +193,8 @@ void test_init_ui(void)
     layout_local_views();
     egui_core_add_user_root_view(EGUI_VIEW_OF(&root_layout));
     ui_ready = 1;
-    layout_page();
-    focus_primary_widget();
+    apply_primary_default_state();
+    apply_preview_states();
 }
 
 #if EGUI_CONFIG_RECORDING_TEST
@@ -246,6 +246,10 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
         EGUI_SIM_SET_WAIT(p_action, RICH_EDIT_BOX_RECORD_FRAME_WAIT);
         return true;
     case 5:
+        if (first_call)
+        {
+            apply_primary_default_state();
+        }
         EGUI_SIM_SET_WAIT(p_action, RICH_EDIT_BOX_RECORD_FINAL_WAIT);
         return true;
     case 6:
