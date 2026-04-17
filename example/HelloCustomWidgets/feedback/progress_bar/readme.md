@@ -29,7 +29,7 @@
 当前目录：`example/HelloCustomWidgets/feedback/progress_bar/`
 
 ## 4. 主区 reference 轨道
-主控件录制轨道保持 `indeterminate -> determinate` 的主线语义：
+主控件录制轨道保持 `indeterminate -> determinate -> indeterminate` 的主线语义：
 
 1. `Syncing...`
    主条为 `indeterminate`，用来表达后台同步中的 loading。
@@ -37,6 +37,8 @@
    继续保留 `indeterminate`，但让流动条前移，确保录制能看出动画推进。
 3. `92% complete`
    程序化退出 `indeterminate`，回落到 determinate 百分比完成态。
+4. `Syncing...`
+   回到默认 loading 态，作为最终稳定帧。
 
 底部 preview 在整条轨道中保持固定：
 
@@ -78,12 +80,15 @@
 4. 抓取第二张 loading 帧
 5. 程序化切到 `92% complete`
 6. 抓取 determinate 完成态
-7. 再抓取一张最终稳定帧
+7. 回到默认 `Syncing...`
+8. 再抓取一张最终稳定帧
 
 说明：
 - 录制阶段不再让底部 preview 承担任何状态切换或桥接职责。
 - 主区动画继续保留，但底部 preview 通过 `hcw_progress_bar_override_static_preview_api()` 完全收口为静态 reference。
 - 状态文案与主条一起作为主区变化的一部分参与 runtime 复核。
+
+当前 `test.c` 已对齐统一的 `ui_ready + layout_page + request_page_snapshot` 收口模板：新增 `PROGRESS_BAR_DEFAULT_SNAPSHOT` 与 `apply_primary_default_state()`，初始化阶段在 root view 挂载前后各重放一次默认态与 preview，`case 0`、默认态恢复和最终稳定帧都统一走显式布局路径。
 
 ## 8. 单元测试口径
 `example/HelloUnitTest/test/test_progress_bar.c` 当前覆盖五部分：
@@ -123,31 +128,32 @@ python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub feedba
 python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_feedback_progress_bar
 ```
 
-## 10. 当前结果
-- `HelloCustomWidgets` 单控件编译：已通过 `make all APP=HelloCustomWidgets APP_SUB=feedback/progress_bar PORT=pc`
-- `HelloUnitTest`：已在 `X:\` 短路径通过 `make clean APP=HelloUnitTest PORT=pc_test`、`make all APP=HelloUnitTest PORT=pc_test` 和 `X:\output\main.exe`，总计 `845 / 845`，其中 `progress_bar` suite `5 / 5`
-- `sync_widget_catalog.py`：PASS，重新同步 `widget_catalog.json` 与 `web/catalog-policy.json`
-- `touch release semantics`：PASS，结果 `custom_audited=10 custom_skipped_allowlist=0`
-- `docs encoding`：PASS，结果 `134 files`
-- `widget catalog check`：PASS，结果 `106 widgets: reference=106, showcase=0, deprecated=0`
-- 单控件 runtime：PASS，输出 `8` 帧截图
-- feedback 分类 compile/runtime 回归：PASS，分类内 `10` 个控件全部通过
-- wasm 构建：PASS，输出 `web/demos/HelloCustomWidgets_feedback_progress_bar`
+## 10. 当前验收结果（2026-04-18）
+- `HelloCustomWidgets` 单控件编译：`PASS`，`make all APP=HelloCustomWidgets APP_SUB=feedback/progress_bar PORT=pc`
+- `HelloUnitTest`：`PASS`，已在 `X:\` 短路径通过 `make clean APP=HelloUnitTest PORT=pc_test`、`make all APP=HelloUnitTest PORT=pc_test` 和 `X:\output\main.exe`，总计 `845 / 845`，其中 `progress_bar` suite `5 / 5`
+- `sync_widget_catalog.py`：`PASS`，同步后保持 `106` 个 widgets
+- `touch release semantics`：`PASS`，`custom_audited=10 custom_skipped_allowlist=0`
+- `docs encoding`：`PASS`，`134` 个文档文件编码检查通过
+- `widget catalog check`：`PASS`，`106 widgets: reference=106, showcase=0, deprecated=0`
+- 单控件 runtime：`PASS`，`9 frames captured -> runtime_check_output/HelloCustomWidgets_feedback_progress_bar/default`
+- feedback 分类 compile/runtime 回归：`PASS`
+  compile `10 / 10`，runtime `10 / 10`
+- wasm 构建：`PASS`，`web/demos/HelloCustomWidgets_feedback_progress_bar`
 - web smoke：`PASS status=Running canvas=480x480 ratio=0.0885 colors=79`
 
 ## 11. Runtime 复核结论
 复核目录：`runtime_check_output/HelloCustomWidgets_feedback_progress_bar/default`
 
-- 总帧数：`8`
+- 总帧数：`9`
 - 主区 RGB 差分边界：`(44, 190) - (403, 236)`
 - 遮罩主区变化边界后，主区外唯一哈希数：`1`
-- 按主区边界裁切后，主区唯一状态数：`5`
+- 按主区边界裁切后，主区唯一状态数：`6`
 - 按 `y >= 237` 裁切底部 preview 区域后，preview 区唯一哈希数：`1`
 
 结论：
-- 主区变化来自 `indeterminate` 条带推进和最终回落到 `92% complete` 的 determinate 完成态。
-- 主区外页面 chrome 全程静态，没有黑屏、白屏、错位或 preview 污染。
-- 底部 `paused / error` preview 在整条录制轨道中保持静态一致。
+- 主区变化严格收敛在 `progress_bar` reference 主体，主区外页面 chrome 在整条轨道中保持静态。
+- `9` 帧里主区出现 `6` 组唯一状态，对应 `indeterminate` 条带推进、`92% complete` 的 determinate 完成态，以及最终回到默认 `Syncing...` loading 轨道后的稳定帧。
+- 按 `y >= 237` 裁切底部 preview 区域后保持单哈希，确认 `paused / error` preview 在整条录制轨道中始终静态一致。
 
 ## 12. 已知限制
 - 当前不叠加剩余时间、步骤说明或任务图标。
