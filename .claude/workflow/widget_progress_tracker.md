@@ -162,6 +162,13 @@
 ## 最近完成的收口动作
 
 - `2026-04-18`
+  - 收口 `display/info_badge` reference 控件：在不修改 `sdk/EmbeddedGUI` 的前提下，把既有 `info_badge` 示例页补齐到统一的 `ui_ready + layout_page + request_page_snapshot` 布局重放路径，确保默认态、`Build blockers / QA warning / Deployment paused`、`Finished checks / Published / Watch list` 与最终稳定帧都通过同一条显式布局链路稳定落帧，而底部 `overflow / attention` preview 继续保持静态 reference 对照。
+  - `example/HelloCustomWidgets/display/info_badge/test.c` 保留既有 `INFO_BADGE_DEFAULT_SNAPSHOT` 与 `apply_primary_default_state()`，并把最终稳定帧前的默认态恢复统一收口到显式布局重放路径。
+  - `example/HelloCustomWidgets/display/info_badge/readme.md` 同步补充统一模板说明，并把“当前结果”更新为“当前验收结果（2026-04-18）”，回填本轮真实 compile / unit / runtime / web / 截图复核数据。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=display/info_badge PORT=pc`、在 `X:\` 执行的 `make clean APP=HelloUnitTest PORT=pc_test`、`make all APP=HelloUnitTest PORT=pc_test`、`X:\output\main.exe`（总计 `845 / 845`，`info_badge` suite `3 / 3`）、`python scripts/sync_widget_catalog.py`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category display`、`python scripts/checks/check_docs_encoding.py`、`python scripts/checks/check_widget_catalog.py`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub display/info_badge --track reference --timeout 10 --keep-screenshots`、`python scripts/code_compile_check.py --custom-widgets --category display --bits64`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --category display --track reference --bits64`、`python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub display/info_badge` 与对应 `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_display_info_badge`（`PASS status=Running canvas=480x480 ratio=0.1099 colors=95`）。
+  - 复核 `runtime_check_output/HelloCustomWidgets_display_info_badge/default` 的 `9` 帧截图：全帧共出现 `3` 组唯一状态，对应默认态、`Build blockers / QA warning / Deployment paused` 与 `Finished checks / Published / Watch list` 三组主区快照，最终稳定帧已回到默认态；按 RGB 差分得到主区变化边界位于 `(64, 163) - (366, 271)`，遮罩该边界后边界外区域保持单哈希；按 `y >= 272` 裁切底部 preview 区域后全部帧保持单哈希，确认底部 `overflow / attention` preview 在整条录制轨道中保持静态一致。
+
+- `2026-04-18`
   - 收口 `display/image_icon` reference 控件：在不修改 `sdk/EmbeddedGUI` 的前提下，把既有 `image_icon` 示例页补齐到统一的 `ui_ready + layout_page + request_page_snapshot` 布局重放路径，确保 `Thumbnail`、`Warm tone`、`Fresh tone` 与最终稳定帧都通过同一条显式布局链路稳定落帧，而底部 `warm / fresh` preview 继续保持静态 reference 对照。
   - `example/HelloCustomWidgets/display/image_icon/test.c` 保留既有 `IMAGE_ICON_DEFAULT_SNAPSHOT` 与 `apply_primary_default_state()`，并把最终稳定帧前的默认态恢复统一收口到显式布局重放路径。
   - `example/HelloCustomWidgets/display/image_icon/readme.md` 同步补充统一模板说明，并把“当前结果”更新为“当前验收结果（2026-04-18）”，回填本轮真实 compile / unit / runtime / web / 截图复核数据。
