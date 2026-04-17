@@ -51,6 +51,8 @@ static egui_view_api_t calendar_compact_api;
 static egui_view_api_t calendar_read_only_api;
 static uint8_t ui_ready;
 
+static void layout_page(void);
+
 EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
 EGUI_BACKGROUND_PARAM_INIT(bg_page_panel_params, &bg_page_panel_param, NULL, NULL);
 EGUI_BACKGROUND_COLOR_STATIC_CONST_INIT(bg_page_panel, &bg_page_panel_params);
@@ -123,9 +125,7 @@ static void apply_primary_snapshot(uint8_t index)
     apply_snapshot(EGUI_VIEW_OF(&calendar_primary), &primary_snapshots[index % PRIMARY_SNAPSHOT_COUNT]);
     if (ui_ready)
     {
-        egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&bottom_row));
-        egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&root_layout));
-        egui_core_layout_childs_user_root_view(EGUI_LAYOUT_VERTICAL, EGUI_ALIGN_HCENTER | EGUI_ALIGN_VCENTER);
+        layout_page();
     }
 }
 
@@ -140,9 +140,7 @@ static void apply_preview_states(void)
     apply_snapshot(EGUI_VIEW_OF(&calendar_read_only), &read_only_snapshot);
     if (ui_ready)
     {
-        egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&bottom_row));
-        egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&root_layout));
-        egui_core_layout_childs_user_root_view(EGUI_LAYOUT_VERTICAL, EGUI_ALIGN_HCENTER | EGUI_ALIGN_VCENTER);
+        layout_page();
     }
 }
 
@@ -158,6 +156,13 @@ static void layout_page(void)
     egui_core_layout_childs_user_root_view(EGUI_LAYOUT_VERTICAL, EGUI_ALIGN_HCENTER | EGUI_ALIGN_VCENTER);
 }
 
+static void focus_primary_calendar_view(void)
+{
+#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
+    egui_view_request_focus(EGUI_VIEW_OF(&calendar_primary));
+#endif
+}
+
 #if EGUI_CONFIG_RECORDING_TEST
 static void request_page_snapshot(void)
 {
@@ -170,6 +175,7 @@ static void apply_primary_key(uint8_t key_code)
 {
     egui_key_event_t event = {0};
 
+    focus_primary_calendar_view();
     event.type = EGUI_KEY_EVENT_ACTION_DOWN;
     event.key_code = key_code;
     EGUI_VIEW_OF(&calendar_primary)->api->dispatch_key_event(EGUI_VIEW_OF(&calendar_primary), &event);
@@ -256,10 +262,9 @@ void test_init_ui(void)
     layout_local_views();
     egui_core_add_user_root_view(EGUI_VIEW_OF(&root_layout));
     ui_ready = 1;
-    layout_page();
-#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
-    egui_view_request_focus(EGUI_VIEW_OF(&calendar_primary));
-#endif
+    apply_primary_default_state();
+    apply_preview_states();
+    focus_primary_calendar_view();
 }
 
 #if EGUI_CONFIG_RECORDING_TEST
@@ -277,9 +282,7 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
         {
             apply_primary_default_state();
             apply_preview_states();
-#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
-            egui_view_request_focus(EGUI_VIEW_OF(&calendar_primary));
-#endif
+            focus_primary_calendar_view();
             request_page_snapshot();
         }
         EGUI_SIM_SET_WAIT(p_action, CALENDAR_VIEW_RECORD_FRAME_WAIT);
@@ -319,9 +322,7 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
         if (first_call)
         {
             apply_primary_snapshot(1);
-#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
-            egui_view_request_focus(EGUI_VIEW_OF(&calendar_primary));
-#endif
+            focus_primary_calendar_view();
         }
         EGUI_SIM_SET_WAIT(p_action, CALENDAR_VIEW_RECORD_WAIT);
         return true;

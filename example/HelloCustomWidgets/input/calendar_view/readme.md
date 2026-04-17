@@ -99,6 +99,8 @@
 
 录制只允许主区发生状态变化。底部 `compact / read only` preview 在整条 reference 轨道里必须保持静态一致。
 
+当前 `test.c` 已对齐统一的 `ui_ready + layout_page + request_page_snapshot` 收口模板：初始化阶段在 root view 挂载前后各重放一次默认态与 preview，录制键盘入口先通过 `focus_primary_calendar_view()` 收敛焦点，再进入显式布局后的稳定抓帧路径。
+
 ## 9. 编译、单测、运行时与文档检查
 
 ```bash
@@ -154,3 +156,30 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
 - 用统一浅色 palette 收口到 `Fluent 2 / WPF UI` reference 方向。
 - 主控件保留最小必要的真实触摸和键盘闭环，preview 不再承担切换或清焦职责。
 - 先完成 reference 级 `CalendarView` 收口，再决定是否继续补跨月范围、年份跳转或更多选择模式。
+- 本轮额外补齐 `focus_primary_calendar_view()`，让键盘录制入口与显式布局后的稳定抓帧路径保持一致。
+
+## 15. 当前验收结果（2026-04-18）
+
+- 单控件编译：`PASS`
+  - `make all APP=HelloCustomWidgets APP_SUB=input/calendar_view PORT=pc`
+- `HelloUnitTest`：`PASS`（总计 `845 / 845`，`calendar_view` suite `10 / 10`）
+  - `make clean APP=HelloUnitTest PORT=pc_test`
+  - `make all APP=HelloUnitTest PORT=pc_test`
+  - `X:\output\main.exe`
+- catalog / 触摸语义 / 文档编码：`PASS`
+  - `python scripts/sync_widget_catalog.py`
+  - `python scripts/checks/check_touch_release_semantics.py --scope custom --category input`
+  - `python scripts/checks/check_docs_encoding.py`
+  - `python scripts/checks/check_widget_catalog.py`
+- 单控件 runtime：`PASS`（`10` 帧）
+  - `python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/calendar_view --track reference --timeout 10 --keep-screenshots`
+- input 分类 compile/runtime 回归：`PASS`（compile `33 / 33`，runtime `33 / 33`）
+  - `python scripts/code_compile_check.py --custom-widgets --category input --bits64`
+  - `python scripts/code_runtime_check.py --app HelloCustomWidgets --category input --track reference --bits64`
+- web 链路：`PASS`（`status=Running canvas=480x480 ratio=0.1769 colors=178`）
+  - `python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub input/calendar_view`
+  - `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_input_calendar_view`
+- 截图复核结论：
+  - 复核 `runtime_check_output/HelloCustomWidgets_input_calendar_view/default` 的 `10` 帧截图：全帧共出现 `4` 组唯一状态，对应默认 `Booking window`、`09-15` 区间预览、`Apr 2026` 月份浏览和 `Release freeze` 主快照。
+  - 按 RGB 差分得到主区变化边界位于 `(44, 93) - (436, 309)`；遮罩该边界后边界外区域保持单哈希，确认页面 chrome 与主区外布局全程稳定。
+  - 按 `y >= 309` 裁切底部 preview 区域后全部帧保持单哈希，确认底部 `compact / read only` preview 在整条录制轨道中保持静态一致。
