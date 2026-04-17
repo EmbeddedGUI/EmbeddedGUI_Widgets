@@ -18,6 +18,7 @@
 #define TEACHING_TIP_RECORD_WAIT       120
 #define TEACHING_TIP_RECORD_FRAME_WAIT 180
 #define TEACHING_TIP_RECORD_FINAL_WAIT 520
+#define TEACHING_TIP_DEFAULT_SNAPSHOT  0
 #define PRIMARY_SNAPSHOT_COUNT         ((uint8_t)(sizeof(primary_snapshots_template) / sizeof(primary_snapshots_template[0])))
 
 static egui_view_linearlayout_t root_layout;
@@ -103,6 +104,11 @@ static void reset_primary_state(uint8_t index)
     {
         layout_page();
     }
+}
+
+static void apply_primary_default_state(void)
+{
+    reset_primary_state(TEACHING_TIP_DEFAULT_SNAPSHOT);
 }
 
 static void apply_preview_states(void)
@@ -234,7 +240,7 @@ void test_init_ui(void)
     layout_local_views();
     egui_core_add_user_root_view(EGUI_VIEW_OF(&root_layout));
     ui_ready = 1;
-    reset_primary_state(0);
+    apply_primary_default_state();
     apply_preview_states();
 }
 
@@ -251,7 +257,7 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     case 0:
         if (first_call)
         {
-            reset_primary_state(0);
+            apply_primary_default_state();
             apply_preview_states();
             request_page_snapshot();
         }
@@ -303,7 +309,7 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     case 7:
         if (first_call)
         {
-            reset_primary_state(0);
+            apply_primary_default_state();
             apply_preview_states();
             request_page_snapshot();
         }
