@@ -161,6 +161,13 @@
 
 ## 最近完成的收口动作
 
+- `2026-04-18`
+  - 收口 `input/auto_suggest_box` reference 控件：在不修改 `sdk/EmbeddedGUI` 的前提下，把既有 `auto_suggest_box` 示例页补齐到统一的 `ui_ready + layout_page + request_page_snapshot` 布局重放路径，确保主区 `默认 / 展开 / 高亮导航 / Deploy Worker 提交结果` 四组 reference 状态都通过同一条显式布局链路稳定落帧，而底部 `compact / read only` preview 继续保持静态 reference 对照。
+  - `example/HelloCustomWidgets/input/auto_suggest_box/test.c` 调整为 `static uint8_t ui_ready;`，新增 `focus_primary_box()`，初始化阶段在 root view 挂载前后各重放一次默认态与 preview，并把录制键盘入口统一切到显式布局与焦点收口后的稳定路径。
+  - `example/HelloCustomWidgets/input/auto_suggest_box/readme.md` 同步补充统一模板说明、完整验收命令以及“当前验收结果（2026-04-18）”。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=input/auto_suggest_box PORT=pc`、在 `X:\` 执行的 `make clean APP=HelloUnitTest PORT=pc_test`、`make all APP=HelloUnitTest PORT=pc_test`、`X:\output\main.exe`（总计 `845 / 845`，`auto_suggest_box` suite `7 / 7`）、`python scripts/sync_widget_catalog.py`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category input`、`python scripts/checks/check_docs_encoding.py`、`python scripts/checks/check_widget_catalog.py`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/auto_suggest_box --track reference --timeout 10 --keep-screenshots`、`python scripts/code_compile_check.py --custom-widgets --category input --bits64`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --category input --track reference --bits64`、`python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub input/auto_suggest_box` 与对应 `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_input_auto_suggest_box`（`PASS status=Running canvas=480x480 ratio=0.1571 colors=100`）。
+  - 复核 `runtime_check_output/HelloCustomWidgets_input_auto_suggest_box/default` 的 `10` 帧截图：全帧共出现 `4` 组唯一状态，对应 `默认 / 展开 / 高亮导航 / Deploy Worker 提交结果`；按 RGB 差分得到主区变化边界位于 `(22, 124) - (457, 283)`，遮罩该边界后边界外区域保持单哈希；按主区裁切后共出现 `4` 组唯一状态，而按 `y >= 284` 裁切底部 preview 区域后全部帧保持单哈希，确认底部 `compact / read only` preview 在整条录制轨道中保持静态一致。
+
 - `2026-04-17`
   - 收口 `input/swipe_control` reference 控件：在不修改 `sdk/EmbeddedGUI` 的前提下，把既有 `swipe_control` 示例页切到统一的 `ui_ready + layout_page + request_page_snapshot` 布局重放路径，确保默认 surface、start reveal、end reveal、`Planner` 主状态与最终 `compact` 对照都通过同一条显式布局链路稳定落帧，而底部 `read only` preview 继续保持静态 reference 对照。
   - `example/HelloCustomWidgets/input/swipe_control/test.c` 新增 `static uint8_t ui_ready;`、`layout_page()` 前置声明、`apply_primary_default_state()`、`apply_read_only_preview_state()`、`apply_preview_states()`、`layout_local_views()`、`layout_page()`、`focus_primary_swipe_control()` 与 `request_page_snapshot()`；初始化阶段在 root view 挂载前后各重放一次默认态与 preview，`dismiss_primary_swipe_control()`、键盘录制入口与 `compact` 对照切换统一改到显式布局后的稳定路径。

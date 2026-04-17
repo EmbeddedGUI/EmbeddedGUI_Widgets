@@ -43,7 +43,7 @@ static egui_view_linearlayout_t read_only_column;
 static egui_view_autocomplete_t control_read_only;
 static egui_view_api_t control_compact_api;
 static egui_view_api_t control_read_only_api;
-static uint8_t ui_ready = 0;
+static uint8_t ui_ready;
 
 EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
 EGUI_BACKGROUND_PARAM_INIT(bg_page_panel_params, &bg_page_panel_param, NULL, NULL);
@@ -120,6 +120,13 @@ static void layout_page(void)
     egui_core_layout_childs_user_root_view(EGUI_LAYOUT_VERTICAL, EGUI_ALIGN_HCENTER | EGUI_ALIGN_VCENTER);
 }
 
+static void focus_primary_box(void)
+{
+#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
+    egui_view_request_focus(EGUI_VIEW_OF(&control_primary));
+#endif
+}
+
 #if EGUI_CONFIG_RECORDING_TEST
 static void request_page_snapshot(void)
 {
@@ -131,6 +138,8 @@ static void request_page_snapshot(void)
 
 void test_init_ui(void)
 {
+    ui_ready = 0;
+
     egui_view_linearlayout_init(EGUI_VIEW_OF(&root_layout));
     egui_view_set_size(EGUI_VIEW_OF(&root_layout), AUTO_SUGGEST_BOX_ROOT_WIDTH, AUTO_SUGGEST_BOX_ROOT_HEIGHT);
     egui_view_linearlayout_set_orientation(EGUI_VIEW_OF(&root_layout), 0);
@@ -203,18 +212,17 @@ void test_init_ui(void)
     layout_local_views();
     egui_core_add_user_root_view(EGUI_VIEW_OF(&root_layout));
     ui_ready = 1;
-    layout_page();
-#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
-    egui_view_request_focus(EGUI_VIEW_OF(&control_primary));
-#endif
+    apply_primary_default_state();
+    apply_preview_states();
+    focus_primary_box();
 }
 
 #if EGUI_CONFIG_RECORDING_TEST
 static void apply_primary_key(uint8_t key_code)
 {
-    egui_key_event_t event;
+    egui_key_event_t event = {0};
 
-    memset(&event, 0, sizeof(event));
+    focus_primary_box();
     event.type = EGUI_KEY_EVENT_ACTION_DOWN;
     event.key_code = key_code;
     egui_view_dispatch_key_event(EGUI_VIEW_OF(&control_primary), &event);
@@ -241,9 +249,7 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
         {
             apply_primary_default_state();
             apply_preview_states();
-#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
-            egui_view_request_focus(EGUI_VIEW_OF(&control_primary));
-#endif
+            focus_primary_box();
             request_page_snapshot();
         }
         EGUI_SIM_SET_WAIT(p_action, AUTO_SUGGEST_BOX_RECORD_FRAME_WAIT);
@@ -280,9 +286,7 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
         if (first_call)
         {
             apply_primary_snapshot(1);
-#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
-            egui_view_request_focus(EGUI_VIEW_OF(&control_primary));
-#endif
+            focus_primary_box();
             apply_primary_key(EGUI_KEY_CODE_ENTER);
             apply_primary_key(EGUI_KEY_CODE_END);
             apply_primary_key(EGUI_KEY_CODE_SPACE);

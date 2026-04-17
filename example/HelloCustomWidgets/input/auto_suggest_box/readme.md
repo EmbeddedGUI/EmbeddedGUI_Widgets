@@ -102,6 +102,8 @@
 
 录制只允许主区发生状态变化。底部 `compact / read only` preview 在整条 reference 轨道里必须保持静态一致。
 
+当前 `test.c` 已对齐统一的 `ui_ready + layout_page + request_page_snapshot` 收口模板：初始化阶段在 root view 挂载前后各重放一次默认态与 preview，录制入口和键盘动作先通过 `focus_primary_box()` 收敛焦点，再进入显式布局后的稳定抓帧路径。
+
 ## 9. 编译、单测、运行时与文档检查
 
 ```bash
@@ -157,3 +159,37 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
 - 通过 wrapper 统一收口尺寸、palette、状态清理与静态 preview 语义。
 - 主区录制保留最小必要键盘闭环，preview 不再承担轨道切换或点击桥接职责。
 - 先完成 reference 级 `AutoSuggestBox` 收口，再决定是否继续补 placeholder、leading icon 或更复杂过滤逻辑。
+
+## 15. 当前验收结果（2026-04-18）
+
+- 单控件编译：`PASS`
+  - `make all APP=HelloCustomWidgets APP_SUB=input/auto_suggest_box PORT=pc`
+- `HelloUnitTest`：`PASS`
+  - `make clean APP=HelloUnitTest PORT=pc_test`
+  - `make all APP=HelloUnitTest PORT=pc_test`
+  - `X:\output\main.exe`
+  - 总计 `845 / 845`，其中 `auto_suggest_box` suite `7 / 7`
+- catalog / 触摸语义 / 文档编码：`PASS`
+  - `python scripts/sync_widget_catalog.py`
+  - `python scripts/checks/check_touch_release_semantics.py --scope custom --category input`
+  - `python scripts/checks/check_docs_encoding.py`
+  - `python scripts/checks/check_widget_catalog.py`
+  - 触摸语义结果：`custom_audited=28 custom_skipped_allowlist=5`
+  - 文档编码结果：`134 files`
+  - widget catalog 结果：`106 widgets`
+- 单控件 runtime：`PASS`
+  - `python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/auto_suggest_box --track reference --timeout 10 --keep-screenshots`
+  - `10` 帧输出到 `runtime_check_output/HelloCustomWidgets_input_auto_suggest_box/default`
+- input 分类 compile/runtime 回归：`PASS`
+  - `python scripts/code_compile_check.py --custom-widgets --category input --bits64`
+  - `python scripts/code_runtime_check.py --app HelloCustomWidgets --category input --track reference --bits64`
+  - input `33 / 33` 全部通过
+- web 链路：`PASS`
+  - `python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub input/auto_suggest_box`
+  - `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_input_auto_suggest_box`
+  - smoke 结果：`status=Running canvas=480x480 ratio=0.1571 colors=100`
+- 截图复核结论：
+  - 全帧 `10` 帧共出现 `4` 组唯一状态，对应 `默认 / 展开 / 高亮导航 / Deploy Worker 提交结果`
+  - 按 RGB 差分得到主区变化边界位于 `(22, 124) - (457, 283)`；遮罩该边界后边界外区域保持单哈希
+  - 按主区裁切后共出现 `4` 组唯一状态，说明主 `auto_suggest_box` 的四组 reference 状态都已通过显式布局路径稳定落帧
+  - 按 `y >= 284` 裁切底部 preview 区域后全部帧保持单哈希，确认底部 `compact / read only` preview 在整条录制轨道中保持静态一致
