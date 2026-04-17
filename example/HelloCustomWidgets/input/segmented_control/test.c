@@ -35,6 +35,7 @@ static egui_view_segmented_control_t control_read_only;
 static egui_view_api_t control_primary_api;
 static egui_view_api_t control_compact_api;
 static egui_view_api_t control_read_only_api;
+static uint8_t ui_ready;
 
 EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
 EGUI_BACKGROUND_PARAM_INIT(bg_page_panel_params, &bg_page_panel_param, NULL, NULL);
@@ -62,6 +63,8 @@ static const segmented_demo_snapshot_t compact_snapshots[] = {
 
 static const char *read_only_segments[] = {"Off", "Auto", "Lock"};
 
+static void layout_page(void);
+
 static int dismiss_primary_focus_on_preview_touch(egui_view_t *self, egui_motion_event_t *event)
 {
     EGUI_UNUSED(self);
@@ -77,23 +80,70 @@ static int dismiss_primary_focus_on_preview_touch(egui_view_t *self, egui_motion
     return 1;
 }
 
+static void apply_snapshot_to_control(egui_view_t *view, const segmented_demo_snapshot_t *snapshot)
+{
+    hcw_segmented_control_set_segments(view, snapshot->segments, snapshot->segment_count);
+    hcw_segmented_control_set_current_index(view, snapshot->selected_index);
+}
+
 static void apply_primary_snapshot(uint8_t index)
 {
     const segmented_demo_snapshot_t *snapshot = &primary_snapshots[index % EGUI_ARRAY_SIZE(primary_snapshots)];
 
-    hcw_segmented_control_set_segments(EGUI_VIEW_OF(&control_primary), snapshot->segments, snapshot->segment_count);
-    hcw_segmented_control_set_current_index(EGUI_VIEW_OF(&control_primary), snapshot->selected_index);
+    apply_snapshot_to_control(EGUI_VIEW_OF(&control_primary), snapshot);
+    if (ui_ready)
+    {
+        layout_page();
+    }
 }
 
+static void apply_primary_default_state(void)
+{
+    apply_primary_snapshot(0);
+}
+
+static void apply_preview_states(void)
+{
+    apply_snapshot_to_control(EGUI_VIEW_OF(&control_compact), &compact_snapshots[0]);
+    hcw_segmented_control_set_segments(EGUI_VIEW_OF(&control_read_only), read_only_segments, EGUI_ARRAY_SIZE(read_only_segments));
+    hcw_segmented_control_set_current_index(EGUI_VIEW_OF(&control_read_only), 1);
+    if (ui_ready)
+    {
+        layout_page();
+    }
+}
+
+static void layout_local_views(void)
+{
+    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&bottom_row));
+    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&root_layout));
+}
+
+static void layout_page(void)
+{
+    layout_local_views();
+    egui_core_layout_childs_user_root_view(EGUI_LAYOUT_VERTICAL, EGUI_ALIGN_HCENTER | EGUI_ALIGN_VCENTER);
+}
+
+static void focus_primary_control(void)
+{
+#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
+    egui_view_request_focus(EGUI_VIEW_OF(&control_primary));
+#endif
+}
+
+#if EGUI_CONFIG_RECORDING_TEST
 static void apply_compact_snapshot(uint8_t index)
 {
     const segmented_demo_snapshot_t *snapshot = &compact_snapshots[index % EGUI_ARRAY_SIZE(compact_snapshots)];
 
-    hcw_segmented_control_set_segments(EGUI_VIEW_OF(&control_compact), snapshot->segments, snapshot->segment_count);
-    hcw_segmented_control_set_current_index(EGUI_VIEW_OF(&control_compact), snapshot->selected_index);
+    apply_snapshot_to_control(EGUI_VIEW_OF(&control_compact), snapshot);
+    if (ui_ready)
+    {
+        layout_page();
+    }
 }
 
-#if EGUI_CONFIG_RECORDING_TEST
 static void apply_primary_key(uint8_t key_code)
 {
     egui_key_event_t event = {0};
@@ -103,6 +153,10 @@ static void apply_primary_key(uint8_t key_code)
     EGUI_VIEW_OF(&control_primary)->api->dispatch_key_event(EGUI_VIEW_OF(&control_primary), &event);
     event.type = EGUI_KEY_EVENT_ACTION_UP;
     EGUI_VIEW_OF(&control_primary)->api->dispatch_key_event(EGUI_VIEW_OF(&control_primary), &event);
+    if (ui_ready)
+    {
+        layout_page();
+    }
 }
 
 static int resolve_segment_gap(int content_width, uint8_t count, int gap)
@@ -193,10 +247,19 @@ static void get_segment_center(egui_view_t *view, uint8_t count, uint8_t index, 
     *x = view->region_screen.location.x + width / 2;
     *y = view->region_screen.location.y + height / 2;
 }
+
+static void request_page_snapshot(void)
+{
+    layout_page();
+    egui_view_invalidate(EGUI_VIEW_OF(&root_layout));
+    recording_request_snapshot();
+}
 #endif
 
 void test_init_ui(void)
 {
+    ui_ready = 0;
+
     egui_view_linearlayout_init(EGUI_VIEW_OF(&root_layout));
     egui_view_set_size(EGUI_VIEW_OF(&root_layout), SEGMENTED_CONTROL_ROOT_WIDTH, SEGMENTED_CONTROL_ROOT_HEIGHT);
     egui_view_linearlayout_set_orientation(EGUI_VIEW_OF(&root_layout), 0);
@@ -245,8 +308,6 @@ void test_init_ui(void)
     egui_view_set_margin(EGUI_VIEW_OF(&control_read_only), 8, 0, 0, 0);
     egui_view_segmented_control_set_font(EGUI_VIEW_OF(&control_read_only), (const egui_font_t *)&egui_res_font_montserrat_10_4);
     hcw_segmented_control_apply_read_only_style(EGUI_VIEW_OF(&control_read_only));
-    hcw_segmented_control_set_segments(EGUI_VIEW_OF(&control_read_only), read_only_segments, EGUI_ARRAY_SIZE(read_only_segments));
-    hcw_segmented_control_set_current_index(EGUI_VIEW_OF(&control_read_only), 1);
     hcw_segmented_control_override_static_preview_api(EGUI_VIEW_OF(&control_read_only), &control_read_only_api);
     control_read_only_api.on_touch = dismiss_primary_focus_on_preview_touch;
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
@@ -254,19 +315,18 @@ void test_init_ui(void)
 #endif
     egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&control_read_only));
 
-    apply_primary_snapshot(0);
-    apply_compact_snapshot(0);
+    apply_primary_default_state();
+    apply_preview_states();
 
     hello_custom_widgets_demo_apply_title_only_scaffold(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label), NULL, 0);
 
-    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&bottom_row));
-    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&root_layout));
+    layout_local_views();
 
     egui_core_add_user_root_view(EGUI_VIEW_OF(&root_layout));
-    egui_core_layout_childs_user_root_view(EGUI_LAYOUT_VERTICAL, EGUI_ALIGN_HCENTER | EGUI_ALIGN_VCENTER);
-#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
-    egui_view_request_focus(EGUI_VIEW_OF(&control_primary));
-#endif
+    ui_ready = 1;
+    apply_primary_default_state();
+    apply_preview_states();
+    focus_primary_control();
 }
 
 #if EGUI_CONFIG_RECORDING_TEST
@@ -284,92 +344,78 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     case 0:
         if (first_call)
         {
-            apply_primary_snapshot(0);
-            apply_compact_snapshot(0);
-#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
-            egui_view_request_focus(EGUI_VIEW_OF(&control_primary));
-#endif
-        }
-        EGUI_SIM_SET_WAIT(p_action, SEGMENTED_CONTROL_RECORD_WAIT);
-        return true;
-    case 1:
-        if (first_call)
-        {
-            recording_request_snapshot();
+            apply_primary_default_state();
+            apply_preview_states();
+            focus_primary_control();
+            request_page_snapshot();
         }
         EGUI_SIM_SET_WAIT(p_action, SEGMENTED_CONTROL_RECORD_FRAME_WAIT);
         return true;
-    case 2:
+    case 1:
         get_segment_center(EGUI_VIEW_OF(&control_primary), 4, 2, 2, 2, &x, &y);
         p_action->type = EGUI_SIM_ACTION_CLICK;
         p_action->x1 = x;
         p_action->y1 = y;
         p_action->interval_ms = 240;
         return true;
-    case 3:
+    case 2:
         if (first_call)
         {
-            recording_request_snapshot();
+            request_page_snapshot();
         }
         EGUI_SIM_SET_WAIT(p_action, SEGMENTED_CONTROL_RECORD_FRAME_WAIT);
         return true;
-    case 4:
+    case 3:
         if (first_call)
         {
             apply_primary_snapshot(1);
-#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
-            egui_view_request_focus(EGUI_VIEW_OF(&control_primary));
-#endif
+            focus_primary_control();
             apply_primary_key(EGUI_KEY_CODE_END);
         }
         EGUI_SIM_SET_WAIT(p_action, SEGMENTED_CONTROL_RECORD_WAIT);
         return true;
-    case 5:
+    case 4:
         if (first_call)
         {
-            recording_request_snapshot();
+            request_page_snapshot();
         }
         EGUI_SIM_SET_WAIT(p_action, SEGMENTED_CONTROL_RECORD_FRAME_WAIT);
         return true;
-    case 6:
+    case 5:
         if (first_call)
         {
             apply_primary_snapshot(2);
             apply_compact_snapshot(1);
-#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
-            egui_view_request_focus(EGUI_VIEW_OF(&control_primary));
-#endif
+            focus_primary_control();
             apply_primary_key(EGUI_KEY_CODE_HOME);
         }
         EGUI_SIM_SET_WAIT(p_action, SEGMENTED_CONTROL_RECORD_WAIT);
         return true;
-    case 7:
+    case 6:
         if (first_call)
         {
-            recording_request_snapshot();
+            request_page_snapshot();
         }
         EGUI_SIM_SET_WAIT(p_action, SEGMENTED_CONTROL_RECORD_FRAME_WAIT);
         return true;
-    case 8:
+    case 7:
         if (first_call)
         {
-#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
-            egui_view_request_focus(EGUI_VIEW_OF(&control_primary));
-#endif
+            focus_primary_control();
         }
         EGUI_SIM_SET_WAIT(p_action, SEGMENTED_CONTROL_RECORD_WAIT);
         return true;
-    case 9:
+    case 8:
         get_segment_center(EGUI_VIEW_OF(&control_compact), 3, 1, 1, 1, &x, &y);
         p_action->type = EGUI_SIM_ACTION_CLICK;
         p_action->x1 = x;
         p_action->y1 = y;
         p_action->interval_ms = 220;
         return true;
-    case 10:
+    case 9:
         if (first_call)
         {
-            recording_request_snapshot();
+            request_page_snapshot();
         }
         EGUI_SIM_SET_WAIT(p_action, 520);
         return true;

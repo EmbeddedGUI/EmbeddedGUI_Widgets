@@ -73,26 +73,33 @@
 
 ## 7. `egui_port_get_recording_action()` 录制动作设计
 
-1. 应用默认主控件与 `compact` 预览状态，并请求主控件焦点
-2. 请求第一页截图
-3. 触摸主控件第三段，验证真实切换反馈
-4. 请求第二页截图
-5. 程序化切换主控件到 `Live / Pending / History` 组，并通过 `End` 跳到最后一项
-6. 请求第三页截图
-7. 程序化切换主控件到 `Day / Week / Month / Year`，同时把 `compact` 预览切到第二组静态对照，再通过 `Home` 回到首项
-8. 请求第四页截图
-9. 重新请求主控件 focus 后点击 `compact` preview，验证 preview 点击只清主控件 focus
-10. 请求最终截图并保留收尾等待
+1. 重放默认主控件与底部 `compact / read only` preview，显式请求主控件 focus，并立即抓取默认态截图
+2. 触摸主控件第三段，验证真实切换反馈后抓取第二帧
+3. 程序化切换主控件到 `Live / Pending / History` 组，并通过 `End` 跳到最后一项，再抓取第三帧
+4. 程序化切换主控件到 `Day / Week / Month / Year`，同时把 `compact` preview 切到第二组静态对照，再通过 `Home` 回到首项并抓取第四帧
+5. 重新请求主控件 focus 后点击 `compact` preview，验证 preview 点击只清主控件 focus，最后抓取收尾稳定帧
+
+当前 `test.c` 已对齐统一的 `ui_ready + layout_page + request_page_snapshot` 模板：初始化阶段在 root view 挂载前后各重放一次默认态与 preview，对 `set_segments / set_current_index / key dispatch / snapshot request` 全部切到显式布局路径，不再依赖旧的隐式 `focus/request` 时序。
 
 ## 8. 编译、runtime、截图验收标准
 
 ```bash
 make all APP=HelloCustomWidgets APP_SUB=input/segmented_control PORT=pc
-python scripts/checks/check_touch_release_semantics.py --scope custom --category input
-python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/segmented_control --track reference --timeout 10 --keep-screenshots
+
+# 在 X:\ 短路径下执行，修改 .inc 后建议先 clean 再重建
+make clean APP=HelloUnitTest PORT=pc_test
 make all APP=HelloUnitTest PORT=pc_test
-output\main.exe
+X:\output\main.exe
+
+python scripts/sync_widget_catalog.py
+python scripts/checks/check_touch_release_semantics.py --scope custom --category input
 python scripts/checks/check_docs_encoding.py
+python scripts/checks/check_widget_catalog.py
+python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/segmented_control --track reference --timeout 10 --keep-screenshots
+python scripts/code_compile_check.py --custom-widgets --category input --bits64
+python scripts/code_runtime_check.py --app HelloCustomWidgets --category input --track reference --bits64
+python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub input/segmented_control
+python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_input_segmented_control
 ```
 
 验收重点：
@@ -152,3 +159,37 @@ python scripts/checks/check_docs_encoding.py
 - 底部 `compact` 与 `read only` 固定为静态对照，并通过 `hcw_segmented_control_override_static_preview_api()` 统一吞掉 touch / key；点击 preview 时只清主控件 focus
 - 本轮在示例层额外补了一层 touch / key 包装与 setter 包装，用来统一清理 `pressed`、收口 `same-target release / touch cancel / !enable / key guard`，并确保静态 preview 不会误切换
 - 先完成示例级审阅稳定性，再决定是否抽象到框架公共层
+
+## 15. 当前验收结果（2026-04-17）
+
+- 单控件编译：`PASS`
+  - `make all APP=HelloCustomWidgets APP_SUB=input/segmented_control PORT=pc`
+- `HelloUnitTest`：`PASS`
+  - `make clean APP=HelloUnitTest PORT=pc_test`
+  - `make all APP=HelloUnitTest PORT=pc_test`
+  - `X:\output\main.exe`
+  - 总计 `845 / 845`，其中 `segmented_control` suite `8 / 8`
+- catalog / 文档 / 触摸语义：`PASS`
+  - `python scripts/sync_widget_catalog.py`
+  - `python scripts/checks/check_touch_release_semantics.py --scope custom --category input`
+  - `python scripts/checks/check_docs_encoding.py`
+  - `python scripts/checks/check_widget_catalog.py`
+  - 触摸语义结果：`custom_audited=28 custom_skipped_allowlist=5`
+  - 文档编码结果：`134 files`
+  - widget catalog 结果：`106 widgets`
+- 单控件 runtime：`PASS`
+  - `python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/segmented_control --track reference --timeout 10 --keep-screenshots`
+  - `11` 帧输出到 `runtime_check_output/HelloCustomWidgets_input_segmented_control/default`
+- input 分类 compile/runtime 回归：`PASS`
+  - `python scripts/code_compile_check.py --custom-widgets --category input --bits64`
+  - `python scripts/code_runtime_check.py --app HelloCustomWidgets --category input --track reference --bits64`
+  - input `33 / 33` 全部通过
+- web 链路：`PASS`
+  - `python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub input/segmented_control`
+  - `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_input_segmented_control`
+  - smoke 结果：`status=Running canvas=480x480 ratio=0.0855 colors=159`
+- 截图复核结论：
+  - 主区差分边界收敛到 `(25, 183) - (436, 258)`，覆盖默认态、触摸切换、键盘 `End / Home` 跳转与最终 focus 收尾
+  - 主区共 `6` 组唯一状态，说明录制中的状态切换都已通过显式布局路径稳定落帧
+  - `compact` preview 在 `frame_0000` 到 `frame_0005` 与 `frame_0006` 到 `frame_0010` 之间分成 `2` 组哈希，对应两组静态对照
+  - `read only` preview `11` 帧单一哈希，确认整条录制轨道中保持静态一致
