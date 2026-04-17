@@ -162,6 +162,13 @@
 ## 最近完成的收口动作
 
 - `2026-04-18`
+  - 收口 `feedback/dialog_sheet` reference 控件：在不修改 `sdk/EmbeddedGUI` 的前提下，把既有 `dialog_sheet` 示例页补齐到统一的 `ui_ready + layout_page + request_page_snapshot` 布局重放路径，并补上默认态 helper，确保 `Sync issue`、`Delete draft`、`Template`、`Publishing` 与最终稳定帧都通过同一条显式布局链路稳定落帧，而底部 `compact / read only` preview 继续保持静态 reference 对照。
+  - `example/HelloCustomWidgets/feedback/dialog_sheet/test.c` 新增 `DIALOG_SHEET_DEFAULT_SNAPSHOT` 与 `apply_primary_default_state()`，并把 root view 挂载前后的默认态恢复、录制首帧入口和最终稳定帧恢复统一收口到显式布局重放路径。
+  - `example/HelloCustomWidgets/feedback/dialog_sheet/readme.md` 同步补充统一模板说明，并把“当前结果”更新为“当前验收结果（2026-04-18）”，回填本轮真实 compile / unit / runtime / web / 截图复核数据。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=feedback/dialog_sheet PORT=pc`、在 `X:\` 执行的 `make clean APP=HelloUnitTest PORT=pc_test`、`make all APP=HelloUnitTest PORT=pc_test`、`X:\output\main.exe`（总计 `845 / 845`，`dialog_sheet` suite `11 / 11`）、`python scripts/sync_widget_catalog.py`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category feedback`、`python scripts/checks/check_docs_encoding.py`、`python scripts/checks/check_widget_catalog.py`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub feedback/dialog_sheet --track reference --timeout 10 --keep-screenshots`、`python scripts/code_compile_check.py --custom-widgets --category feedback --bits64`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --category feedback --track reference --bits64`、`python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub feedback/dialog_sheet` 与对应 `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_feedback_dialog_sheet`（`PASS status=Running canvas=480x480 ratio=0.1967 colors=167`）。
+  - 复核 `runtime_check_output/HelloCustomWidgets_feedback_dialog_sheet/default` 的 `11` 帧截图：全帧共出现 `4` 组唯一状态，对应 `Sync issue`、`Delete draft`、`Template` 与 `Publishing`，最终稳定帧回到默认 `Sync issue`；按 RGB 差分得到主区变化边界位于 `(48, 87) - (431, 266)`，遮罩该边界后边界外区域保持单哈希；按 `y >= 267` 裁切底部 preview 区域后全部帧保持单哈希，确认底部 `compact / read only` preview 在整条录制轨道中保持静态一致。
+
+- `2026-04-18`
   - 收口 `feedback/flyout` reference 控件：在不修改 `sdk/EmbeddedGUI` 的前提下，把既有 `flyout` 示例页补齐到统一的 `ui_ready + layout_page + request_page_snapshot` 布局重放路径，并补上默认态 helper，确保 `Review`、`Search`、`Sync`、`Pinned` 与最终稳定帧都通过同一条显式布局链路稳定落帧，而底部 `compact / disabled` preview 继续保持静态 reference 对照。
   - `example/HelloCustomWidgets/feedback/flyout/test.c` 新增 `FLYOUT_DEFAULT_SNAPSHOT` 与 `apply_primary_default_state()`，并把 root view 挂载前后的默认态恢复、录制首帧入口和最终稳定帧恢复统一收口到显式布局重放路径。
   - `example/HelloCustomWidgets/feedback/flyout/readme.md` 同步补充统一模板说明，并把“当前结果”更新为“当前验收结果（2026-04-18）”，回填本轮真实 compile / unit / runtime / web / 截图复核数据。
