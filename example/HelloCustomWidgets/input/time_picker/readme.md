@@ -86,15 +86,27 @@
 9. 切换 `compact` 预览到 `18:00`
 10. 输出最终对照帧
 
+当前 `test.c` 已对齐统一的 `ui_ready + layout_page + request_page_snapshot` 模板：初始化阶段在 root view 挂载前后各重放一次默认态与 preview，`opened` 切换、preview dismiss 与 snapshot request 都先走显式布局路径，再进入录制与抓帧。
+
 ## 8. 编译、runtime、截图验收标准
 
 ```bash
 make all APP=HelloCustomWidgets APP_SUB=input/time_picker PORT=pc
-python scripts/checks/check_touch_release_semantics.py --scope custom --category input
-python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/time_picker --track reference --timeout 10 --keep-screenshots
+
+# 在 X:\ 短路径下执行，修改 .inc 后建议先 clean 再重建
+make clean APP=HelloUnitTest PORT=pc_test
 make all APP=HelloUnitTest PORT=pc_test
-output\main.exe
+X:\output\main.exe
+
+python scripts/sync_widget_catalog.py
+python scripts/checks/check_touch_release_semantics.py --scope custom --category input
 python scripts/checks/check_docs_encoding.py
+python scripts/checks/check_widget_catalog.py
+python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/time_picker --track reference --timeout 10 --keep-screenshots
+python scripts/code_compile_check.py --custom-widgets --category input --bits64
+python scripts/code_runtime_check.py --app HelloCustomWidgets --category input --track reference --bits64
+python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub input/time_picker
+python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_input_time_picker
 ```
 
 验收重点：
@@ -149,3 +161,36 @@ python scripts/checks/check_docs_encoding.py
 - 用统一浅色 palette 收口到 `Fluent 2 / WPF UI` reference 方向
 - 通过示例页高度同步保留主控件展开 / 收起时的合理留白
 - 页面空白区和底部双预览只负责 dismiss，并通过统一 static preview API 吞掉 touch / key 输入，不再承担演示逻辑
+
+## 15. 当前验收结果（2026-04-17）
+
+- 单控件编译：`PASS`
+  - `make all APP=HelloCustomWidgets APP_SUB=input/time_picker PORT=pc`
+- `HelloUnitTest`：`PASS`
+  - `make clean APP=HelloUnitTest PORT=pc_test`
+  - `make all APP=HelloUnitTest PORT=pc_test`
+  - `X:\output\main.exe`
+  - 总计 `845 / 845`，其中 `time_picker` suite `8 / 8`
+- catalog / 文档 / 触摸语义：`PASS`
+  - `python scripts/sync_widget_catalog.py`
+  - `python scripts/checks/check_touch_release_semantics.py --scope custom --category input`
+  - `python scripts/checks/check_docs_encoding.py`
+  - `python scripts/checks/check_widget_catalog.py`
+  - 触摸语义结果：`custom_audited=28 custom_skipped_allowlist=5`
+  - 文档编码结果：`134 files`
+  - widget catalog 结果：`106 widgets`
+- 单控件 runtime：`PASS`
+  - `python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/time_picker --track reference --timeout 10 --keep-screenshots`
+  - `11` 帧输出到 `runtime_check_output/HelloCustomWidgets_input_time_picker/default`
+- input 分类 compile/runtime 回归：`PASS`
+  - `python scripts/code_compile_check.py --custom-widgets --category input --bits64`
+  - `python scripts/code_runtime_check.py --app HelloCustomWidgets --category input --track reference --bits64`
+  - input `33 / 33` 全部通过
+- web 链路：`PASS`
+  - `python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub input/time_picker`
+  - `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_input_time_picker`
+  - smoke 结果：`status=Running canvas=480x480 ratio=0.1678 colors=133`
+- 截图复核结论：
+  - 全帧 `11` 帧共出现 `5` 组唯一状态，对应默认展开、浏览展开、收起、夜间展开与最终 `compact` 对照
+  - 将底部预览区剔除后，主区裁切结果共 `4` 组唯一状态，覆盖主 `TimePicker` 的四组 reference 状态
+  - 从夜间态切到最终对照帧时，差分仅收敛在 `(37, 341) - (215, 355)`，说明最后一步只切换了 `compact` 预览，`read only` 预览未参与变化

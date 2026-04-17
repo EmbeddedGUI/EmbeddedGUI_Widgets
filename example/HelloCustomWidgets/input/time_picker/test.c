@@ -39,8 +39,7 @@ static egui_view_linearlayout_t read_only_column;
 static egui_view_time_picker_t picker_read_only;
 static egui_view_api_t picker_compact_api;
 static egui_view_api_t picker_read_only_api;
-
-static uint8_t page_attached = 0;
+static uint8_t ui_ready;
 
 EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
 EGUI_BACKGROUND_PARAM_INIT(bg_page_panel_params, &bg_page_panel_param, NULL, NULL);
@@ -61,6 +60,7 @@ static const time_picker_snapshot_t compact_snapshots[] = {
 };
 
 static const time_picker_snapshot_t read_only_snapshot = {7, 15, 0, EGUI_VIEW_TIME_PICKER_SEGMENT_HOUR};
+static void layout_page(void);
 
 static egui_dim_t scale_width(egui_dim_t value)
 {
@@ -87,6 +87,10 @@ static void dismiss_primary_picker(void)
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_clear_focus(EGUI_VIEW_OF(&picker_primary));
 #endif
+    if (ui_ready)
+    {
+        layout_page();
+    }
 }
 
 static int dismiss_primary_focus_on_preview_touch(egui_view_t *self, egui_motion_event_t *event)
@@ -122,20 +126,18 @@ static int dismiss_primary_on_down(egui_view_t *self, egui_motion_event_t *event
     return 1;
 }
 
-static void layout_page(void)
+static void layout_local_views(void)
 {
     egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&compact_column));
     egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&read_only_column));
     egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&bottom_row));
     egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&root_layout));
+}
 
-    if (!page_attached)
-    {
-        return;
-    }
-
+static void layout_page(void)
+{
+    layout_local_views();
     egui_core_layout_childs_user_root_view(EGUI_LAYOUT_VERTICAL, EGUI_ALIGN_HCENTER | EGUI_ALIGN_VCENTER);
-    egui_view_invalidate(EGUI_VIEW_OF(&root_layout));
 }
 
 static void sync_primary_layout(void)
@@ -146,7 +148,10 @@ static void sync_primary_layout(void)
     egui_view_set_size(EGUI_VIEW_OF(&picker_primary), scale_width(TIME_PICKER_PRIMARY_WIDTH),
                        scale_height(opened ? TIME_PICKER_PRIMARY_OPEN_HEIGHT : TIME_PICKER_PRIMARY_CLOSED_HEIGHT));
     egui_view_set_margin(EGUI_VIEW_OF(&picker_primary), 0, 0, 0, scale_height(6));
-    layout_page();
+    if (ui_ready)
+    {
+        layout_page();
+    }
 }
 
 static void apply_snapshot_to_picker(egui_view_t *view, const time_picker_snapshot_t *snapshot)
@@ -162,14 +167,26 @@ static void apply_primary_snapshot(uint8_t index)
     sync_primary_layout();
 }
 
-static void apply_compact_snapshot(uint8_t index)
+static void apply_primary_default_state(void)
 {
-    apply_snapshot_to_picker(EGUI_VIEW_OF(&picker_compact), &compact_snapshots[index % EGUI_ARRAY_SIZE(compact_snapshots)]);
+    apply_primary_snapshot(0);
 }
 
-static void apply_read_only_snapshot(void)
+static void apply_preview_states(void)
 {
+    apply_snapshot_to_picker(EGUI_VIEW_OF(&picker_compact), &compact_snapshots[0]);
     apply_snapshot_to_picker(EGUI_VIEW_OF(&picker_read_only), &read_only_snapshot);
+    if (ui_ready)
+    {
+        layout_page();
+    }
+}
+
+static void focus_primary_picker(void)
+{
+#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
+    egui_view_request_focus(EGUI_VIEW_OF(&picker_primary));
+#endif
 }
 
 static void on_primary_open_changed(egui_view_t *self, uint8_t opened)
@@ -180,8 +197,18 @@ static void on_primary_open_changed(egui_view_t *self, uint8_t opened)
 }
 
 #if EGUI_CONFIG_RECORDING_TEST
+static void apply_compact_snapshot(uint8_t index)
+{
+    apply_snapshot_to_picker(EGUI_VIEW_OF(&picker_compact), &compact_snapshots[index % EGUI_ARRAY_SIZE(compact_snapshots)]);
+    if (ui_ready)
+    {
+        layout_page();
+    }
+}
+
 static void request_page_snapshot(void)
 {
+    layout_page();
     egui_view_invalidate(EGUI_VIEW_OF(&root_layout));
     recording_request_snapshot();
 }
@@ -189,6 +216,8 @@ static void request_page_snapshot(void)
 
 void test_init_ui(void)
 {
+    ui_ready = 0;
+
     egui_view_linearlayout_init(EGUI_VIEW_OF(&root_layout));
     egui_view_set_size(EGUI_VIEW_OF(&root_layout), TIME_PICKER_ROOT_WIDTH, TIME_PICKER_ROOT_HEIGHT);
     egui_view_linearlayout_set_orientation(EGUI_VIEW_OF(&root_layout), 0);
@@ -276,18 +305,15 @@ void test_init_ui(void)
 
     hello_custom_widgets_demo_apply_title_only_scaffold(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label), NULL, 0);
 
-    apply_primary_snapshot(0);
-    apply_compact_snapshot(0);
-    apply_read_only_snapshot();
-    layout_page();
+    apply_primary_default_state();
+    apply_preview_states();
+    layout_local_views();
 
     egui_core_add_user_root_view(EGUI_VIEW_OF(&root_layout));
-    page_attached = 1;
-    layout_page();
-
-#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
-    egui_view_request_focus(EGUI_VIEW_OF(&picker_primary));
-#endif
+    ui_ready = 1;
+    apply_primary_default_state();
+    apply_preview_states();
+    focus_primary_picker();
 }
 
 #if EGUI_CONFIG_RECORDING_TEST
@@ -303,69 +329,63 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     case 0:
         if (first_call)
         {
-            apply_primary_snapshot(0);
-            apply_compact_snapshot(0);
-            apply_read_only_snapshot();
-        }
-        EGUI_SIM_SET_WAIT(p_action, TIME_PICKER_RECORD_WAIT);
-        return true;
-    case 1:
-        if (first_call)
-        {
+            apply_primary_default_state();
+            apply_preview_states();
+            focus_primary_picker();
             request_page_snapshot();
         }
         EGUI_SIM_SET_WAIT(p_action, TIME_PICKER_RECORD_FRAME_WAIT);
         return true;
-    case 2:
+    case 1:
         if (first_call)
         {
             apply_primary_snapshot(1);
         }
         EGUI_SIM_SET_WAIT(p_action, TIME_PICKER_RECORD_WAIT);
         return true;
-    case 3:
+    case 2:
         if (first_call)
         {
             request_page_snapshot();
         }
         EGUI_SIM_SET_WAIT(p_action, TIME_PICKER_RECORD_FRAME_WAIT);
         return true;
-    case 4:
+    case 3:
         if (first_call)
         {
             apply_primary_snapshot(2);
         }
         EGUI_SIM_SET_WAIT(p_action, TIME_PICKER_RECORD_WAIT);
         return true;
-    case 5:
+    case 4:
         if (first_call)
         {
             request_page_snapshot();
         }
         EGUI_SIM_SET_WAIT(p_action, TIME_PICKER_RECORD_FRAME_WAIT);
         return true;
-    case 6:
+    case 5:
         if (first_call)
         {
             apply_primary_snapshot(3);
         }
         EGUI_SIM_SET_WAIT(p_action, TIME_PICKER_RECORD_WAIT);
         return true;
-    case 7:
+    case 6:
         if (first_call)
         {
             request_page_snapshot();
         }
         EGUI_SIM_SET_WAIT(p_action, TIME_PICKER_RECORD_FRAME_WAIT);
         return true;
-    case 8:
+    case 7:
         if (first_call)
         {
             apply_compact_snapshot(1);
         }
         EGUI_SIM_SET_WAIT(p_action, TIME_PICKER_RECORD_WAIT);
         return true;
-    case 9:
+    case 8:
         if (first_call)
         {
             request_page_snapshot();
