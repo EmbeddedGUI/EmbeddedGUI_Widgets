@@ -18,6 +18,7 @@
 #define FLYOUT_RECORD_WAIT       100
 #define FLYOUT_RECORD_FRAME_WAIT 180
 #define FLYOUT_RECORD_FINAL_WAIT 520
+#define FLYOUT_DEFAULT_SNAPSHOT  0
 
 #define PRIMARY_SNAPSHOT_COUNT ((uint8_t)(sizeof(primary_snapshots) / sizeof(primary_snapshots[0])))
 
@@ -65,6 +66,11 @@ static void apply_primary_snapshot(uint8_t index)
     {
         layout_page();
     }
+}
+
+static void apply_primary_default_state(void)
+{
+    apply_primary_snapshot(FLYOUT_DEFAULT_SNAPSHOT);
 }
 
 static void apply_preview_states(void)
@@ -160,7 +166,7 @@ void test_init_ui(void)
 #endif
     egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&flyout_disabled));
 
-    apply_primary_snapshot(0);
+    apply_primary_default_state();
     apply_preview_states();
 
     hello_custom_widgets_demo_apply_title_only_scaffold(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label), NULL, 0);
@@ -168,7 +174,7 @@ void test_init_ui(void)
     layout_local_views();
     egui_core_add_user_root_view(EGUI_VIEW_OF(&root_layout));
     ui_ready = 1;
-    apply_primary_snapshot(0);
+    apply_primary_default_state();
     apply_preview_states();
 }
 
@@ -185,7 +191,7 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     case 0:
         if (first_call)
         {
-            apply_primary_snapshot(0);
+            apply_primary_default_state();
             apply_preview_states();
             request_page_snapshot();
         }
@@ -236,7 +242,7 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     case 7:
         if (first_call)
         {
-            apply_primary_snapshot(0);
+            apply_primary_default_state();
             apply_preview_states();
         }
         EGUI_SIM_SET_WAIT(p_action, FLYOUT_RECORD_WAIT);
