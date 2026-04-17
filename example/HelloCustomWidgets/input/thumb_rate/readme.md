@@ -90,11 +90,16 @@
 7. 再次按 `Space` 清空当前 `Dislike`。
 8. 抓取最终 `none` 收尾帧。
 
+当前 `test.c` 已对齐统一的 `ui_ready + layout_page + request_page_snapshot` 模板：初始化阶段在 root view 挂载前后各重放一次默认态与 preview，`set_state / set_current_part / key dispatch / touch dispatch / snapshot request` 都先走显式布局路径，再进入录制与抓帧。
+
 ## 10. 编译、测试与 runtime 验收
 ```bash
 make all APP=HelloCustomWidgets APP_SUB=input/thumb_rate PORT=pc
+
+# 在 X:\ 短路径下执行，修改 .inc 后建议先 clean 再重建
+make clean APP=HelloUnitTest PORT=pc_test
 make all APP=HelloUnitTest PORT=pc_test
-output\main.exe
+X:\output\main.exe
 
 python scripts/sync_widget_catalog.py
 python scripts/checks/check_touch_release_semantics.py --scope custom --category input
@@ -117,3 +122,37 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
 - 当前只覆盖最小 `ThumbRate` 语义，不扩展 tooltip、hover 动画或外链式反馈入口。
 - 仓库没有官方 thumb 图标资源，因此使用 custom 自绘图形近似 Fluent 语义。
 - `compact` / `read only` preview 仅用于 reference 对照，不承担真实交互职责。
+
+## 12. 当前验收结果（2026-04-17）
+
+- 单控件编译：`PASS`
+  - `make all APP=HelloCustomWidgets APP_SUB=input/thumb_rate PORT=pc`
+- `HelloUnitTest`：`PASS`
+  - `make clean APP=HelloUnitTest PORT=pc_test`
+  - `make all APP=HelloUnitTest PORT=pc_test`
+  - `X:\output\main.exe`
+  - 总计 `845 / 845`，其中 `thumb_rate` suite `8 / 8`
+- catalog / 文档 / 触摸语义：`PASS`
+  - `python scripts/sync_widget_catalog.py`
+  - `python scripts/checks/check_touch_release_semantics.py --scope custom --category input`
+  - `python scripts/checks/check_docs_encoding.py`
+  - `python scripts/checks/check_widget_catalog.py`
+  - 触摸语义结果：`custom_audited=28 custom_skipped_allowlist=5`
+  - 文档编码结果：`134 files`
+  - widget catalog 结果：`106 widgets`
+- 单控件 runtime：`PASS`
+  - `python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/thumb_rate --track reference --timeout 10 --keep-screenshots`
+  - `9` 帧输出到 `runtime_check_output/HelloCustomWidgets_input_thumb_rate/default`
+- input 分类 compile/runtime 回归：`PASS`
+  - `python scripts/code_compile_check.py --custom-widgets --category input --bits64`
+  - `python scripts/code_runtime_check.py --app HelloCustomWidgets --category input --track reference --bits64`
+  - input `33 / 33` 全部通过
+- web 链路：`PASS`
+  - `python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub input/thumb_rate`
+  - `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_input_thumb_rate`
+  - smoke 结果：`status=Running canvas=480x480 ratio=0.1342 colors=179`
+- 截图复核结论：
+  - 主区差分边界收敛到 `(44, 139) - (381, 246)`，覆盖 `none / liked / disliked / none` 四组主状态
+  - 主区共 `4` 组唯一状态，录制中的三态切换与最终回到 `none` 都已通过显式布局路径稳定落帧
+  - `compact` preview `9` 帧单一哈希，说明整条录制轨道中保持静态一致
+  - `read only` preview `9` 帧单一哈希，说明只读对照在录制中持续稳定

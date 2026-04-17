@@ -162,6 +162,13 @@
 ## 最近完成的收口动作
 
 - `2026-04-17`
+  - 收口 `input/thumb_rate` reference 控件：在不修改 `sdk/EmbeddedGUI` 的前提下，把既有 `ThumbRate` 示例页切到统一的 `ui_ready + layout_page + request_page_snapshot` 布局重放路径，确保默认 `none`、触摸 `liked`、键盘 `disliked` 与最终回到 `none` 的录制状态都通过同一条显式布局链路稳定落帧，而底部 `compact / read only` preview 继续保持静态 reference 对照。
+  - `example/HelloCustomWidgets/input/thumb_rate/test.c` 新增 `static uint8_t ui_ready;`、`apply_primary_default_state()`、`layout_local_views()`、`layout_page()`、`focus_primary_rate()` 与 `request_page_snapshot()`；初始化阶段在 root view 挂载前后各重放一次默认态与 preview，`thumb_rate` 的触摸、键盘与抓帧入口统一切到显式布局后的稳定路径。
+  - `example/HelloCustomWidgets/input/thumb_rate/readme.md` 同步补充统一模板说明、修正验收命令，并新增“当前验收结果（2026-04-17）”。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=input/thumb_rate PORT=pc`、在 `X:\` 执行的 `make clean APP=HelloUnitTest PORT=pc_test`、`make all APP=HelloUnitTest PORT=pc_test`、`X:\output\main.exe`（总计 `845 / 845`，`thumb_rate` suite `8 / 8`）、`python scripts/sync_widget_catalog.py`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category input`、`python scripts/checks/check_docs_encoding.py`、`python scripts/checks/check_widget_catalog.py`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/thumb_rate --track reference --timeout 10 --keep-screenshots`、`python scripts/code_compile_check.py --custom-widgets --category input --bits64`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --category input --track reference --bits64`、`python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub input/thumb_rate` 与对应 `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_input_thumb_rate`（`PASS status=Running canvas=480x480 ratio=0.1342 colors=179`）。
+  - 复核 `runtime_check_output/HelloCustomWidgets_input_thumb_rate/default` 的 `9` 帧截图：主区差分边界收敛到 `(44, 139) - (381, 246)`，共出现 `4` 组唯一状态，对应 `none / liked / disliked / none` 三态闭环与收尾稳定帧；`compact` preview `9` 帧单一哈希，`read only` preview 也保持单一哈希，确认底部双 preview 在整条录制轨道中持续静态一致。
+
+- `2026-04-17`
   - 收口 `input/segmented_control` reference 控件：在不修改 `sdk/EmbeddedGUI` 的前提下，把既有 `SegmentedControl` 示例页切到统一的 `ui_ready + layout_page + request_page_snapshot` 布局重放路径，确保默认态、触摸切换、`End / Home` 键盘跳转、`compact` preview 静态对照切换与最终 focus 收尾都走同一条显式布局链路，不再依赖旧的隐式 `focus/request` 时序。
   - `example/HelloCustomWidgets/input/segmented_control/test.c` 新增 `static uint8_t ui_ready;`、`apply_snapshot_to_control()`、`apply_primary_default_state()`、`apply_preview_states()`、`layout_local_views()`、`layout_page()` 与 `request_page_snapshot()`；初始化阶段在 root view 挂载前后各重放一次默认态与 preview，`recording_action` 入口也统一切到显式布局后的抓帧入口。
   - `example/HelloCustomWidgets/input/segmented_control/readme.md` 同步补充统一模板说明、完整验收命令以及“当前验收结果（2026-04-17）”。
