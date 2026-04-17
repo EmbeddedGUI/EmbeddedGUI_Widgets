@@ -103,9 +103,11 @@
 - 底部 `compact / read only` preview 在整条轨道中保持静态不变。
 - 主区变化只来自主控件 reference 数据切换和键盘语义。
 
+当前 `test.c` 已对齐统一的 `ui_ready + layout_page + request_page_snapshot` 收口模板：初始化阶段在 root view 挂载前后各重放一次默认态与 preview，录制键盘入口先通过 `focus_primary_scroll_bar()` 收敛焦点，再进入显式布局后的稳定抓帧路径。
+
 ## 9. 本轮收口内容
 - `example/HelloCustomWidgets/input/scroll_bar/test.c`
-  新增 `ui_ready`、`layout_local_views()`、`layout_page()` 和统一的 `request_page_snapshot()`；移除 preview 焦点桥接、preview 点击录制和第二组 compact preview 切换，把页面收口为主区 reference + 底部双静态 preview。
+  新增 `ui_ready`、`layout_local_views()`、`layout_page()`、`focus_primary_scroll_bar()` 和统一的 `request_page_snapshot()`；移除 preview 焦点桥接、preview 点击录制和第二组 compact preview 切换，把页面收口为主区 reference + 底部双静态 preview。
 - `example/HelloUnitTest/test/test_scroll_bar.c`
   新增 `scroll_bar_preview_snapshot_t`、`assert_region_equal()`、`capture_preview_snapshot()` 和 `assert_preview_state_unchanged()`；统一事件分发到 `dispatch_touch_event()` / `dispatch_key_event()`；把静态 preview 用例收口为 `consumes input and keeps state`。
 - `example/HelloCustomWidgets/input/scroll_bar/readme.md`
@@ -143,7 +145,7 @@ python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub input/
 python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_input_scroll_bar
 ```
 
-## 12. 当前结果
+## 12. 当前验收结果（2026-04-18）
 - `HelloCustomWidgets` 单控件编译：`PASS`
   `make all APP=HelloCustomWidgets APP_SUB=input/scroll_bar PORT=pc`
 - `HelloUnitTest`：`PASS`
@@ -196,4 +198,5 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
 - `scroll_bar` custom 实现继续保留在 widgets 仓库，不下沉到 SDK。
 - 主区通过固定 snapshot 数据保证 `reference` 录制稳定。
 - 底部 preview 统一复用 static preview API，只承担静态对照，不承担额外交互职责。
+- 本轮额外补齐 `focus_primary_scroll_bar()`，让键盘录制入口与显式布局后的稳定抓帧路径保持一致。
 - README、demo、单测、runtime 验收和 web 发布口径已经对齐到当前 `reference` workflow。

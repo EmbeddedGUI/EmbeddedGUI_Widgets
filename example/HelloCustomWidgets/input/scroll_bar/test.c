@@ -113,6 +113,13 @@ static void layout_page(void)
     egui_core_layout_childs_user_root_view(EGUI_LAYOUT_VERTICAL, EGUI_ALIGN_HCENTER | EGUI_ALIGN_VCENTER);
 }
 
+static void focus_primary_scroll_bar(void)
+{
+#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
+    egui_view_request_focus(EGUI_VIEW_OF(&scroll_bar_primary));
+#endif
+}
+
 #if EGUI_CONFIG_RECORDING_TEST
 static void apply_primary_key(uint8_t key_code)
 {
@@ -209,6 +216,7 @@ void test_init_ui(void)
     ui_ready = 1;
     apply_primary_default_state();
     apply_preview_states();
+    focus_primary_scroll_bar();
 }
 
 #if EGUI_CONFIG_RECORDING_TEST
@@ -226,6 +234,7 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
         {
             apply_primary_default_state();
             apply_preview_states();
+            focus_primary_scroll_bar();
             request_page_snapshot();
         }
         EGUI_SIM_SET_WAIT(p_action, SCROLL_BAR_RECORD_FRAME_WAIT);
