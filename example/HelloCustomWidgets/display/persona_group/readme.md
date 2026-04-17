@@ -75,7 +75,7 @@
 | 默认显示 | `DESIGN / Design review / Design team` | `Compact / Short roster` | `Read only / Muted roster` |
 | 快照 2 | `OPS / Ops handoff / Shift lead` | 保持不变 | 保持不变 |
 | 快照 3 | `ARCHIVE / Archive sweep / Restore desk` | 保持不变 | 保持不变 |
-| 录制最终稳定帧 | `ARCHIVE / Archive sweep / Restore desk` | 保持不变 | 保持不变 |
+| 录制最终稳定帧 | `DESIGN / Design review / Design team` | 保持不变 | 保持不变 |
 | 静态 preview 吞掉 `touch / key` 且不改状态 | 否 | 是 | 是 |
 
 ## 7. 录制动作设计
@@ -87,13 +87,16 @@
 4. 抓取第二组主区快照
 5. 切到 `ARCHIVE / Archive sweep / Restore desk`
 6. 抓取第三组主区快照
-7. 继续等待并抓取最终稳定帧
+7. 回到默认 `DESIGN / Design review / Design team`
+8. 抓取最终稳定帧
 
 说明：
 - 录制阶段不再轮换 `compact` preview。
 - 不再通过 preview 点击桥接去清主区焦点。
-- 不再保留额外 preview 点击后的收尾帧。
+- 录制阶段最终会显式恢复主区默认态，并走统一布局重放路径。
 - `request_page_snapshot()` 会统一做 `layout + invalidate + recording_request_snapshot()`，保证 3 组主区快照和最终稳定帧口径一致。
+
+当前 `test.c` 已对齐统一的 `ui_ready + layout_page + request_page_snapshot` 收口模板：保留既有 `PERSONA_GROUP_DEFAULT_SNAPSHOT` 与 `apply_primary_default_state()`，初始化阶段在 root view 挂载前后各重放一次默认态与 preview，`case 0` 和最终稳定帧前的默认态恢复统一走显式布局路径。
 
 ## 8. 单元测试口径
 `example/HelloUnitTest/test/test_persona_group.c` 当前覆盖 `7` 个用例：
@@ -159,15 +162,17 @@ python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub displa
 python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_display_persona_group
 ```
 
-## 10. 当前结果
+## 10. 当前验收结果（2026-04-18）
 - `HelloCustomWidgets` 单控件编译：已通过 `make all APP=HelloCustomWidgets APP_SUB=display/persona_group PORT=pc`
 - `HelloUnitTest`：已在 `X:\` 短路径通过 `make clean APP=HelloUnitTest PORT=pc_test`、`make all APP=HelloUnitTest PORT=pc_test` 和 `X:\output\main.exe`，总计 `845 / 845`，其中 `persona_group` suite `7 / 7`
 - `sync_widget_catalog.py`：已通过，本轮无额外目录变化
 - `touch release semantics`：已通过，结果 `custom_audited=21 custom_skipped_allowlist=0`
 - `docs encoding`：已通过，结果 `134 files`
 - `widget catalog check`：已通过，结果 `106 widgets: reference=106, showcase=0, deprecated=0`
-- 单控件 runtime：已通过 `python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub display/persona_group --track reference --timeout 10 --keep-screenshots`，输出 `8` 帧截图
-- display 分类 compile/runtime 回归：已通过 `python scripts/code_compile_check.py --custom-widgets --category display --bits64` 和 `python scripts/code_runtime_check.py --app HelloCustomWidgets --category display --track reference --bits64`，分类内 `21` 个控件全部通过
+- 单控件 runtime：已通过 `python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub display/persona_group --track reference --timeout 10 --keep-screenshots`，输出 `9 frames captured -> D:\workspace\gitee\EmbeddedGUI_Widgets\runtime_check_output\HelloCustomWidgets_display_persona_group\default`
+- display 分类 compile/runtime 回归：已通过
+  compile `21 / 21`
+  runtime `21 / 21`
 - wasm 构建：已通过 `python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub display/persona_group`，输出 `web/demos/HelloCustomWidgets_display_persona_group`
 - web smoke：已通过 `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_display_persona_group`，结果 `PASS status=Running canvas=480x480 ratio=0.1754 colors=400`
 
@@ -176,16 +181,21 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
 - `runtime_check_output/HelloCustomWidgets_display_persona_group/default`
 
 复核结果：
-- 总帧数：`8`
+- 总帧数：`9`
 - 主区 RGB 差分边界：`(198, 103) - (282, 258)`
 - 遮罩主区差分边界后，主区外唯一哈希数：`1`
-- 按主区差分边界裁剪后，主区唯一状态数：`3`
+- 按主区裁剪后，主区唯一状态数：`3`
 - 按 `y >= 258` 裁剪底部 preview 区域后，preview 区唯一哈希数：`1`
 
 目标：
 - 主区唯一状态数 = `3`
 - 主区外唯一哈希数 = `1`
 - 底部 preview 区唯一哈希数 = `1`
+
+结论：
+- 主区变化严格收敛在 `persona_group` 主体，主区外页面 chrome 在整条轨道中保持静态。
+- `9` 帧里主区保持 `3` 组唯一状态：`[0,1,6,7,8]` 对应默认 `DESIGN / Design review / Design team`，`[2,3]` 对应 `OPS / Ops handoff / Shift lead`，`[4,5]` 对应 `ARCHIVE / Archive sweep / Restore desk`；最终稳定帧已显式回到默认态。
+- 按 `y >= 258` 裁剪底部 preview 区域后保持单哈希，确认 `compact / read only` preview 在整条录制轨道中始终静态一致。
 
 ## 12. 已知限制
 - 当前仍使用固定 `snapshot + item` 数据，不接真实头像资源和外部团队数据模型。
