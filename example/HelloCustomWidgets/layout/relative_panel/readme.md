@@ -78,6 +78,7 @@
 4. 恢复主控件默认状态，输出最终稳定帧。
 
 录制只导出主控件的状态变化。底部两个 preview 在整条 reference 轨道中保持静态一致，不再承担 preview dismiss 或焦点清理职责。
+当前 `test.c` 已对齐统一的 `ui_ready + layout_page + request_page_snapshot` 模板：初始化、主区切换、preview 重放和最终抓帧都走同一条显式布局路径，不再依赖旧的隐式布局时序。
 
 ## 9. 编译、运行时、单测与文档检查
 ```bash
@@ -127,3 +128,35 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
   - preview 点击清主控件焦点
   - 第二条 `compact` preview 轨道
   - 录制里的 preview dismiss 收尾动作
+
+## 13. 当前验收结果（2026-04-17）
+- 单控件编译：`PASS`
+  - `make all APP=HelloCustomWidgets APP_SUB=layout/relative_panel PORT=pc`
+- `HelloUnitTest`：`PASS`
+  - `make clean APP=HelloUnitTest PORT=pc_test`
+  - `make all APP=HelloUnitTest PORT=pc_test`
+  - `X:\output\main.exe`
+  - 总计 `845 / 845`，其中 `relative_panel` suite `7 / 7`
+- catalog / 文档 / 触摸语义：`PASS`
+  - `python scripts/sync_widget_catalog.py`
+  - `python scripts/checks/check_touch_release_semantics.py --scope custom --category layout`
+  - `python scripts/checks/check_docs_encoding.py`
+  - `python scripts/checks/check_widget_catalog.py`
+  - 触摸语义结果：`custom_audited=28 custom_skipped_allowlist=1`
+  - 文档编码结果：`134 files`
+  - widget catalog 结果：`106 widgets`
+- 单控件 runtime：`PASS`
+  - `python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub layout/relative_panel --track reference --timeout 10 --keep-screenshots`
+  - `9` 帧输出到 `runtime_check_output/HelloCustomWidgets_layout_relative_panel/default`
+- layout 分类 compile/runtime 回归：`PASS`
+  - `python scripts/code_compile_check.py --custom-widgets --category layout --bits64`
+  - `python scripts/code_runtime_check.py --app HelloCustomWidgets --category layout --track reference --bits64`
+  - layout `29 / 29` 全部通过
+- web 链路：`PASS`
+  - `python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub layout/relative_panel`
+  - `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_layout_relative_panel`
+  - smoke 结果：`status=Running canvas=480x480 ratio=0.2165 colors=463`
+- 截图复核结论：
+  - 主区变化边界收敛到 `(59, 68) - (436, 281)`
+  - 主区共 `3` 组唯一状态，对应 `Anchored summary / Status rail / Dense detail`
+  - 按 `y >= 281` 裁切底部 preview 后保持单一哈希，确认 `compact / read only` preview 全程静态
