@@ -20,6 +20,7 @@
 #define TOOL_TIP_RECORD_WAIT       100
 #define TOOL_TIP_RECORD_FRAME_WAIT 180
 #define TOOL_TIP_RECORD_FINAL_WAIT 520
+#define TOOL_TIP_DEFAULT_SNAPSHOT  0
 
 #define PRIMARY_SNAPSHOT_COUNT ((uint8_t)(sizeof(primary_snapshots) / sizeof(primary_snapshots[0])))
 
@@ -76,6 +77,11 @@ static void reset_primary_state(uint8_t index)
     }
 }
 
+static void apply_primary_default_state(void)
+{
+    reset_primary_state(TOOL_TIP_DEFAULT_SNAPSHOT);
+}
+
 static void apply_preview_states(void)
 {
     egui_view_tool_tip_set_current_snapshot(EGUI_VIEW_OF(&tool_tip_compact), 0);
@@ -101,17 +107,29 @@ static void layout_page(void)
     egui_core_layout_childs_user_root_view(EGUI_LAYOUT_VERTICAL, EGUI_ALIGN_HCENTER | EGUI_ALIGN_VCENTER);
 }
 
+static void focus_primary_tool_tip(void)
+{
+#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
+    egui_view_request_focus(EGUI_VIEW_OF(&tool_tip_primary));
+#endif
+}
+
 #if EGUI_CONFIG_RECORDING_TEST
 static void dispatch_primary_key(uint8_t key_code)
 {
     egui_key_event_t event;
 
     memset(&event, 0, sizeof(event));
+    focus_primary_tool_tip();
     event.type = EGUI_KEY_EVENT_ACTION_DOWN;
     event.key_code = key_code;
     EGUI_VIEW_OF(&tool_tip_primary)->api->dispatch_key_event(EGUI_VIEW_OF(&tool_tip_primary), &event);
     event.type = EGUI_KEY_EVENT_ACTION_UP;
     EGUI_VIEW_OF(&tool_tip_primary)->api->dispatch_key_event(EGUI_VIEW_OF(&tool_tip_primary), &event);
+    if (ui_ready)
+    {
+        layout_page();
+    }
 }
 
 static void request_page_snapshot(void)
@@ -198,8 +216,9 @@ void test_init_ui(void)
     layout_local_views();
     egui_core_add_user_root_view(EGUI_VIEW_OF(&root_layout));
     ui_ready = 1;
-    reset_primary_state(0);
+    apply_primary_default_state();
     apply_preview_states();
+    focus_primary_tool_tip();
 }
 
 #if EGUI_CONFIG_RECORDING_TEST
@@ -215,8 +234,9 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     case 0:
         if (first_call)
         {
-            reset_primary_state(0);
+            apply_primary_default_state();
             apply_preview_states();
+            focus_primary_tool_tip();
             request_page_snapshot();
         }
         EGUI_SIM_SET_WAIT(p_action, TOOL_TIP_RECORD_FRAME_WAIT);
@@ -240,6 +260,7 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
         {
             apply_primary_snapshot(1);
             egui_view_tool_tip_set_open(EGUI_VIEW_OF(&tool_tip_primary), 1);
+            focus_primary_tool_tip();
         }
         EGUI_SIM_SET_WAIT(p_action, TOOL_TIP_RECORD_WAIT);
         return true;
@@ -255,6 +276,7 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
         {
             apply_primary_snapshot(2);
             egui_view_tool_tip_set_open(EGUI_VIEW_OF(&tool_tip_primary), 1);
+            focus_primary_tool_tip();
         }
         EGUI_SIM_SET_WAIT(p_action, TOOL_TIP_RECORD_WAIT);
         return true;
@@ -282,8 +304,9 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     case 9:
         if (first_call)
         {
-            reset_primary_state(0);
+            apply_primary_default_state();
             apply_preview_states();
+            focus_primary_tool_tip();
             request_page_snapshot();
         }
         EGUI_SIM_SET_WAIT(p_action, TOOL_TIP_RECORD_FINAL_WAIT);

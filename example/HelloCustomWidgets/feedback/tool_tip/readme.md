@@ -80,7 +80,7 @@
 
 ## 8. 本轮收口内容
 - `example/HelloCustomWidgets/feedback/tool_tip/test.c`
-  新增 `ui_ready`、`layout_local_views()`、`layout_page()` 和统一 `request_page_snapshot()`，把录制轨道收口为主区 reference 状态与最终稳定帧；底部 preview 全程保持真正静态。
+  新增 `ui_ready`、`apply_primary_default_state()`、`layout_local_views()`、`layout_page()`、`focus_primary_tool_tip()` 和统一 `request_page_snapshot()`，把录制轨道收口为主区 reference 状态与最终稳定帧；底部 preview 全程保持真正静态。
 - `example/HelloUnitTest/test/test_tool_tip.c`
   新增 `tool_tip_preview_snapshot_t`、`assert_region_equal()`、`capture_preview_snapshot()`、`assert_preview_state_unchanged()`，把静态 preview 用例收口为完整状态不变断言。
 - `example/HelloCustomWidgets/feedback/tool_tip/readme.md`
@@ -100,6 +100,8 @@
 - 所有截图请求统一走 `request_page_snapshot()`，在请求前统一布局和刷新。
 - 底部 preview 在整条轨道中不承接任何状态切换职责。
 - 主区变化只来自 reference snapshot 切换、delay 打开和 `Esc` 关闭。
+
+当前 `test.c` 已对齐统一的 `ui_ready + layout_page + request_page_snapshot` 收口模板：初始化阶段在 root view 挂载前后各重放一次默认态与 preview，`Esc` 键录制入口先通过 `focus_primary_tool_tip()` 收敛焦点，再进入显式布局后的稳定抓帧路径。
 
 ## 10. 单元测试口径
 `example/HelloUnitTest/test/test_tool_tip.c` 当前覆盖九部分：
@@ -136,7 +138,7 @@ python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub feedba
 python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_feedback_tool_tip
 ```
 
-## 12. 当前结果
+## 12. 当前验收结果（2026-04-18）
 - `HelloCustomWidgets` 单控件编译：`PASS`
   `make all APP=HelloCustomWidgets APP_SUB=feedback/tool_tip PORT=pc`
 - `HelloUnitTest`：`PASS`
@@ -152,16 +154,17 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
 - 单控件 runtime：`PASS`
   `12 frames captured -> runtime_check_output/HelloCustomWidgets_feedback_tool_tip/default`
 - feedback 分类 compile/runtime 回归：`PASS`
+  compile `10 / 10`，runtime `10 / 10`
 - wasm 构建：`PASS`
   `web/demos/HelloCustomWidgets_feedback_tool_tip`
 - web smoke：`PASS`
-  `status=Running canvas=480x480 ratio=0.1815 colors=127`
+  `status=Running canvas=480x480 ratio=0.1815 colors=132`
 
 ## 13. Runtime 复核结论
 复核目录：`runtime_check_output/HelloCustomWidgets_feedback_tool_tip/default`
 
 - 总帧数：`12`
-- 主区 RGB 差分边界：`(54, 97) - (426, 202)`
+- 主区 RGB 差分边界：`(54, 97) - (427, 203)`
 - 遮罩主区后主区外唯一哈希数：`1`
 - 主区唯一状态数：`5`
 - 底部 preview 区唯一哈希数：`1`
