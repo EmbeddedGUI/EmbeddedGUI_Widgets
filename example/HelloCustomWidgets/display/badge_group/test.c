@@ -294,7 +294,11 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
         EGUI_SIM_SET_WAIT(p_action, BADGE_GROUP_RECORD_FRAME_WAIT);
         return true;
     case 7:
-        EGUI_SIM_SET_WAIT(p_action, BADGE_GROUP_RECORD_FINAL_WAIT);
+        if (first_call)
+        {
+            apply_primary_default_state();
+        }
+        EGUI_SIM_SET_WAIT(p_action, BADGE_GROUP_RECORD_WAIT);
         return true;
     case 8:
         if (first_call)
