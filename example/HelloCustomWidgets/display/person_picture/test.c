@@ -293,6 +293,13 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     case 5:
         if (first_call)
         {
+            apply_primary_default_state();
+        }
+        EGUI_SIM_SET_WAIT(p_action, PERSON_PICTURE_RECORD_WAIT);
+        return true;
+    case 6:
+        if (first_call)
+        {
             request_page_snapshot();
         }
         EGUI_SIM_SET_WAIT(p_action, PERSON_PICTURE_RECORD_FINAL_WAIT);
