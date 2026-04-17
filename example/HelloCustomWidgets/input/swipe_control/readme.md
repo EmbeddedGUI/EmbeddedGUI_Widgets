@@ -60,9 +60,10 @@
 | 默认 surface | 是 | 是 | 是 |
 | start action reveal | 是 | 否 | 否 |
 | end action reveal | 是 | 否 | 否 |
-| surface tap close | 是 | 否 | 否 |
-| action click | 是 | 否 | 否 |
-| 静态 preview 对照 | 否 | 是 | 是 |
+| `Planner` surface | 是 | 否 | 否 |
+| `Review` surface | 是 | 否 | 否 |
+| 录制最终稳定帧回到默认 `Inbox` surface | 是 | 否 | 否 |
+| 静态 preview 吞掉 `touch / key` 且不改状态 | 否 | 是 | 是 |
 | 键盘 focus / navigation | 是 | 否 | 否 |
 
 ## 7. 交互语义
@@ -85,7 +86,7 @@
 ### 7.3 静态 preview
 - `compact` 与 `read only` preview 通过 `egui_view_swipe_control_override_static_preview_api()` 统一覆盖为静态 API。
 - preview 吞掉 touch / key 输入，并在入口先清理残留 `pressed_part / dragging / is_pressed`。
-- 点击 preview 只负责清掉主控件 focus，不再承担任何 reveal 或 action 行为。
+- preview 不再承担清焦、reveal 或 action 桥接职责。
 
 ## 8. 本轮收口内容
 - 为 setter 链路补齐 pressed 清理：
@@ -107,6 +108,7 @@
 - 把 `ACTION_UP / ACTION_CANCEL` 收口到统一清理逻辑，避免交互结束后残留 pressed 高亮。
 - 非拖拽 surface release 现在要求同目标 `UP(surface)` 才 close / notify，修正了 `DOWN(surface) -> UP(outside)` 也提交的旧问题。
 - 主控件 focus ring 只在真实 focus 下绘制，避免 preview 误显示焦点。
+- 录制链路移除 `compact` preview 切换与 preview touch 清焦桥接，底部 preview 回到全程静态 reference。
 
 ## 9. 交互测试覆盖
 `example/HelloUnitTest/test/test_swipe_control.c` 本轮覆盖了以下回归：
@@ -129,11 +131,19 @@
 5. 通过 `Left` 切到 `end action`。
 6. 抓取 reveal end 帧。
 7. 程序化切到 `Planner` track。
-8. 抓取第二组主状态。
-9. 程序化切换 `compact` track。
-10. 抓取最终收尾帧并保留 `read only` 对照。
+8. 抓取 `Planner` 主状态。
+9. 程序化切到 `Review` track。
+10. 抓取 `Review` 主状态。
+11. 回到默认 `Inbox` track。
+12. 抓取最终稳定帧。
 
-当前 `test.c` 已对齐统一的 `ui_ready + layout_page + request_page_snapshot` 收口模板：初始化阶段在 root view 挂载前后各重放一次默认态与 preview，`dismiss_primary_swipe_control()`、键盘录制入口、`compact` 对照切换与 `request_page_snapshot()` 都先走显式布局路径，再进入稳定抓帧。
+说明：
+- 录制阶段保留主区 `Right / Left` 键盘 reveal，以覆盖 `SwipeControl` 的核心标准语义。
+- `Planner / Review` 两组 row snapshot 改为只在主区程序化切换，不再让 `compact` preview 参与轨道。
+- 底部 preview 统一通过 `egui_view_swipe_control_override_static_preview_api()` 吞掉 `touch / key` 且不改状态。
+- `request_page_snapshot()` 会统一做 `layout + invalidate + recording_request_snapshot()`，保证 reveal、row snapshot 和最终稳定帧口径一致。
+
+当前 `test.c` 已对齐统一的 `ui_ready + layout_page + request_page_snapshot` 收口模板：初始化阶段在 root view 挂载前后各重放一次默认态与 preview，键盘录制入口、主区 track 切换与 `request_page_snapshot()` 都先走显式布局路径，最终稳定帧前显式回到默认 `Inbox` track。
 
 ## 11. 编译、检查与验收命令
 ```bash
@@ -176,36 +186,22 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
 - `compact` 与 `read only` preview 通过静态 API 收口，避免把对照控件做成第二套可交互实现。
 - 交互实现优先保证状态清理、release 语义和 runtime 渲染稳定性，再保留 `SwipeControl` 必需的连续 reveal 例外。
 
-## 15. 当前验收结果（2026-04-17）
+## 15. 当前验收结果（2026-04-18）
 
-- 单控件编译：`PASS`
-  - `make all APP=HelloCustomWidgets APP_SUB=input/swipe_control PORT=pc`
-- `HelloUnitTest`：`PASS`
-  - `make clean APP=HelloUnitTest PORT=pc_test`
-  - `make all APP=HelloUnitTest PORT=pc_test`
-  - `X:\output\main.exe`
-  - 总计 `845 / 845`，其中 `swipe_control` suite `11 / 11`
-- catalog / 触摸语义 / 文档编码：`PASS`
-  - `python scripts/sync_widget_catalog.py`
-  - `python scripts/checks/check_touch_release_semantics.py --scope custom --category input`
-  - `python scripts/checks/check_docs_encoding.py`
-  - `python scripts/checks/check_widget_catalog.py`
-  - 触摸语义结果：`custom_audited=28 custom_skipped_allowlist=5`
-  - 文档编码结果：`134 files`
-  - widget catalog 结果：`106 widgets`
-- 单控件 runtime：`PASS`
-  - `python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/swipe_control --track reference --timeout 10 --keep-screenshots`
-  - `12` 帧输出到 `runtime_check_output/HelloCustomWidgets_input_swipe_control/default`
-- input 分类 compile/runtime 回归：`PASS`
-  - `python scripts/code_compile_check.py --custom-widgets --category input --bits64`
-  - `python scripts/code_runtime_check.py --app HelloCustomWidgets --category input --track reference --bits64`
-  - input `33 / 33` 全部通过
-- web 链路：`PASS`
-  - `python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub input/swipe_control`
-  - `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_input_swipe_control`
-  - smoke 结果：`status=Running canvas=480x480 ratio=0.1693 colors=234`
+- `HelloCustomWidgets` 单控件编译：已通过 `make all APP=HelloCustomWidgets APP_SUB=input/swipe_control PORT=pc`
+- `HelloUnitTest`：已在 `X:\` 短路径通过 `make clean APP=HelloUnitTest PORT=pc_test`、`make all APP=HelloUnitTest PORT=pc_test` 和 `X:\output\main.exe`，总计 `845 / 845`，其中 `swipe_control` suite `11 / 11`
+- `sync_widget_catalog.py`：已通过，本轮仍同步为 `106` 个控件目录
+- `touch release semantics`：已通过，结果 `custom_audited=28 custom_skipped_allowlist=5`
+- `docs encoding`：已通过，结果 `134 files`
+- `widget catalog check`：已通过，结果 `106 widgets: reference=106, showcase=0, deprecated=0`
+- 单控件 runtime：已通过 `python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/swipe_control --track reference --timeout 10 --keep-screenshots`，输出 `13 frames captured -> D:\workspace\gitee\EmbeddedGUI_Widgets\runtime_check_output\HelloCustomWidgets_input_swipe_control\default`
+- input 分类 compile/runtime 回归：已通过
+  compile `33 / 33`
+  runtime `33 / 33`
+- wasm 构建：已通过 `python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub input/swipe_control`，输出 `web/demos/HelloCustomWidgets_input_swipe_control`
+- web smoke：已通过 `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_input_swipe_control`，结果 `PASS status=Running canvas=480x480 ratio=0.1693 colors=234`
 - 截图复核结论：
-  - 全帧 `12` 帧共出现 `5` 组唯一状态，对应默认 surface、start reveal、end reveal、`Planner` 主状态与最终 `compact` 对照
-  - 按主区裁切后共出现 `4` 组唯一状态，覆盖主 `SwipeControl` 的四组 reference 状态
-  - `compact` preview 在前 `8` 帧与后 `4` 帧分成 `2` 组哈希，对应默认对照与最终对照
-  - `read only` preview `12` 帧保持单一哈希；从 `Planner` 主状态切到最终对照帧时，差分只落在 `compact` 预览的 `(29, 297) - (223, 381)`，确认 `read only` 对照未参与变化
+  - 全帧 `13` 帧共出现 `5` 组唯一状态，对应默认 `Inbox` surface、`start action reveal`、`end action reveal`、`Planner` surface 与 `Review` surface；最终稳定帧已回到默认 `Inbox` track
+  - 按 RGB 差分得到主区变化边界位于 `(53, 110) - (428, 268)`，遮罩该边界后边界外区域保持单哈希
+  - 按主区裁切后共出现 `5` 组唯一状态，主区哈希分组为 `[0,1,10,11,12] / [2,3] / [4,5] / [6,7] / [8,9]`
+  - 按 `y >= 268` 裁切底部 preview 区域后全部帧保持单哈希，确认 `compact / read only` preview 在整条录制轨道中保持静态一致

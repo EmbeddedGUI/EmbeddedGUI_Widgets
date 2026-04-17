@@ -19,6 +19,7 @@
 #define SWIPE_CONTROL_BOTTOM_ROW_HEIGHT 64
 #define SWIPE_CONTROL_RECORD_WAIT       110
 #define SWIPE_CONTROL_RECORD_FRAME_WAIT 150
+#define SWIPE_CONTROL_RECORD_FINAL_WAIT 280
 
 typedef struct swipe_control_track swipe_control_track_t;
 struct swipe_control_track
@@ -87,28 +88,6 @@ static const swipe_control_track_t compact_tracks[] = {
 static const swipe_control_track_t read_only_track = {"", "", &read_only_item, &read_only_start_action, &read_only_end_action};
 
 static void layout_page(void);
-
-static void dismiss_primary_swipe_control(void)
-{
-#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
-    egui_view_clear_focus(EGUI_VIEW_OF(&swipe_control_primary));
-#endif
-    if (ui_ready)
-    {
-        layout_page();
-    }
-}
-
-static int dismiss_primary_focus_on_preview_touch(egui_view_t *self, egui_motion_event_t *event)
-{
-    EGUI_UNUSED(self);
-
-    if (event->type == EGUI_MOTION_EVENT_ACTION_DOWN)
-    {
-        dismiss_primary_swipe_control();
-    }
-    return 1;
-}
 
 static void apply_track(egui_view_t *view, const swipe_control_track_t *track)
 {
@@ -247,9 +226,6 @@ void test_init_ui(void)
     egui_view_swipe_control_set_palette(EGUI_VIEW_OF(&swipe_control_compact), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD2DDDA), EGUI_COLOR_HEX(0x17302A),
                                         EGUI_COLOR_HEX(0x57756C), EGUI_COLOR_HEX(0x8FB9B1));
     egui_view_swipe_control_override_static_preview_api(EGUI_VIEW_OF(&swipe_control_compact), &swipe_control_compact_api);
-#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
-    swipe_control_compact_api.on_touch = dismiss_primary_focus_on_preview_touch;
-#endif
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&swipe_control_compact), 0);
 #endif
@@ -265,9 +241,6 @@ void test_init_ui(void)
     egui_view_swipe_control_set_palette(EGUI_VIEW_OF(&swipe_control_read_only), EGUI_COLOR_HEX(0xFBFCFD), EGUI_COLOR_HEX(0xDBE2E8), EGUI_COLOR_HEX(0x536474),
                                         EGUI_COLOR_HEX(0x8896A4), EGUI_COLOR_HEX(0xB3BFCA));
     egui_view_swipe_control_override_static_preview_api(EGUI_VIEW_OF(&swipe_control_read_only), &swipe_control_read_only_api);
-#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
-    swipe_control_read_only_api.on_touch = dismiss_primary_focus_on_preview_touch;
-#endif
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&swipe_control_read_only), 0);
 #endif
@@ -353,7 +326,8 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     case 7:
         if (first_call)
         {
-            apply_compact_track(1);
+            apply_primary_track(2);
+            focus_primary_swipe_control();
         }
         EGUI_SIM_SET_WAIT(p_action, SWIPE_CONTROL_RECORD_WAIT);
         return true;
@@ -367,9 +341,17 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     case 9:
         if (first_call)
         {
+            apply_primary_default_state();
+            focus_primary_swipe_control();
+        }
+        EGUI_SIM_SET_WAIT(p_action, SWIPE_CONTROL_RECORD_FINAL_WAIT);
+        return true;
+    case 10:
+        if (first_call)
+        {
             request_page_snapshot();
         }
-        EGUI_SIM_SET_WAIT(p_action, 520);
+        EGUI_SIM_SET_WAIT(p_action, SWIPE_CONTROL_RECORD_FINAL_WAIT);
         return true;
     default:
         return false;
