@@ -58,27 +58,33 @@
 ## 6. 状态矩阵
 | 状态 | 主链接 | Inline preview | Disabled preview |
 | --- | --- | --- | --- |
-| 默认显示 | 是 | 是 | 是 |
-| same-target release 提交 | 是 | 否 | 否 |
+| 默认显示 | `Project updates / Open release notes` | `Inline article` | `Archived link` |
+| `same-target release` 提交 | 是 | 否 | 否 |
 | `Space / Enter` 提交 | 是 | 否 | 否 |
-| 静态 reference 对照 | 否 | 是 | 是 |
-| 录制阶段程序化切换 | 是 | 否 | 否 |
+| 快照 2 | `Policy changes / Review change summary` | 保持不变 | 保持不变 |
+| 快照 3 | `Deployment checklist / Browse final checklist` | 保持不变 | 保持不变 |
+| 录制最终稳定帧 | 回到默认 `Project updates / Open release notes` | 保持不变 | 保持不变 |
+| 静态 preview 吞掉 `touch / key` 且不改状态 | 否 | 是 | 是 |
 
 ## 7. 录制动作设计
 `egui_port_get_recording_action()` 现在收口为静态 preview 工作流：
 
 1. 应用主区默认快照和底部 preview 固定状态
 2. 抓取首帧
-3. 切到 `Policy changes`
+3. 切到 `Policy changes / Review change summary`
 4. 抓取第二组主区快照
-5. 切到 `Deployment checklist`
+5. 切到 `Deployment checklist / Browse final checklist`
 6. 抓取第三组主区快照
-7. 等待并抓取最终稳定帧
+7. 回到默认 `Project updates / Open release notes`
+8. 抓取最终稳定帧
 
 说明：
 - 录制阶段不再调用真实 `touch click`、`Space`、`Enter`
 - 底部 preview 统一通过 `hcw_hyperlink_button_override_static_preview_api()` 吞掉 `touch / key`
 - preview 只负责静态对照，不再承担清焦或额外页面状态切换职责
+- `request_page_snapshot()` 会统一做 `layout + invalidate + recording_request_snapshot()`，保证 `3` 组主区快照和最终稳定帧口径一致。
+
+当前 `test.c` 已对齐统一的 `ui_ready + layout_page + request_page_snapshot` 收口模板：保留既有 `HYPERLINK_DEFAULT_SNAPSHOT` 与 `apply_primary_default_state()`，初始化阶段在 root view 挂载前后各重放一次默认态与 preview，`case 0` 和最终稳定帧前的默认态恢复统一走显式布局路径。
 
 ## 8. 单元测试口径
 `example/HelloUnitTest/test/test_hyperlink_button.c` 当前覆盖两部分：
@@ -112,33 +118,40 @@ python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub input/
 python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_input_hyperlink_button
 ```
 
-## 10. 当前结果
-- `HelloCustomWidgets` 单控件编译：PASS
-- `HelloUnitTest`：`845 / 845` 通过，其中 `hyperlink_button` suite `7 / 7`
-- `sync_widget_catalog.py`：PASS（`106` entries）
-- `touch release semantics`：PASS（`custom_audited=28`，`custom_skipped_allowlist=5`）
-- `docs encoding`：PASS（`134 files`）
-- `widget catalog check`：PASS（`106 widgets: reference=106, showcase=0, deprecated=0`）
-- 单控件 runtime：PASS
-- input 分类 compile/runtime 回归：PASS
-- wasm 构建：PASS
-- web smoke：`PASS status=Running canvas=480x480 ratio=0.1297 colors=132`
+## 10. 当前验收结果（2026-04-18）
+- `HelloCustomWidgets` 单控件编译：已通过 `make all APP=HelloCustomWidgets APP_SUB=input/hyperlink_button PORT=pc`
+- `HelloUnitTest`：已在 `X:\` 短路径通过 `make clean APP=HelloUnitTest PORT=pc_test`、`make all APP=HelloUnitTest PORT=pc_test` 和 `X:\output\main.exe`，总计 `845 / 845`，其中 `hyperlink_button` suite `7 / 7`
+- `sync_widget_catalog.py`：已通过，本轮无额外目录变化
+- `touch release semantics`：已通过，结果 `custom_audited=28 custom_skipped_allowlist=5`
+- `docs encoding`：已通过，结果 `134 files`
+- `widget catalog check`：已通过，结果 `106 widgets: reference=106, showcase=0, deprecated=0`
+- 单控件 runtime：已通过 `python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/hyperlink_button --track reference --timeout 10 --keep-screenshots`，输出 `9 frames captured -> D:\workspace\gitee\EmbeddedGUI_Widgets\runtime_check_output\HelloCustomWidgets_input_hyperlink_button\default`
+- input 分类 compile/runtime 回归：已通过
+  compile `33 / 33`
+  runtime `33 / 33`
+- wasm 构建：已通过 `python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub input/hyperlink_button`，输出 `web/demos/HelloCustomWidgets_input_hyperlink_button`
+- web smoke：已通过 `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_input_hyperlink_button`，结果 `PASS status=Running canvas=480x480 ratio=0.1297 colors=132`
 
 ## 11. Runtime 复核结论
 复核目录：
 - `runtime_check_output/HelloCustomWidgets_input_hyperlink_button/default`
 
 复核结果：
-- 总帧数：`8`
-- 主区 RGB 差分边界：`(44, 143) - (287, 211)`
+- 总帧数：`9`
+- 主区 RGB 差分边界：`(44, 143) - (288, 212)`
 - 遮罩主区差分边界后，主区外唯一哈希数：`1`
-- 按主区差分边界裁切后，主区唯一状态数：`3`
-- 按 `y >= 289` 裁切底部 preview 区域后，preview 区唯一哈希数：`1`
+- 按主区裁剪后，主区唯一状态数：`3`
+- 按 `y >= 212` 裁切底部 preview 区域后，preview 区唯一哈希数：`1`
+
+目标：
+- 主区唯一状态数 = `3`
+- 主区外唯一哈希数 = `1`
+- 底部 preview 区唯一哈希数 = `1`
 
 结论：
-- 变化只发生在主面板内的标题、链接文本和说明文案，符合 3 组 reference 快照轨道。
-- 主区外区域全程静态，没有 preview 污染、黑屏、白屏或布局抖动。
-- 底部 `inline / disabled` preview 在整条录制链路中保持静态一致。
+- 主区变化严格收敛在 `hyperlink_button` 主面板，主区外页面 chrome 在整条轨道中保持静态。
+- `9` 帧里主区保持 `3` 组唯一状态：`[0,1,6,7,8]` 对应默认 `Project updates / Open release notes`，`[2,3]` 对应 `Policy changes / Review change summary`，`[4,5]` 对应 `Deployment checklist / Browse final checklist`；最终稳定帧已显式回到默认态。
+- 按 `y >= 212` 裁切底部 preview 区域后保持单哈希，确认 `inline / disabled` preview 在整条录制轨道中始终静态一致。
 
 ## 12. 已知限制
 - 当前只覆盖最小 `HyperlinkButton` reference，不扩展 visited 态、外链图标或 hover 动画。
