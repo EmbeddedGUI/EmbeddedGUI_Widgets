@@ -133,18 +133,26 @@
 9. 程序化切换 `compact` track。
 10. 抓取最终收尾帧并保留 `read only` 对照。
 
+当前 `test.c` 已对齐统一的 `ui_ready + layout_page + request_page_snapshot` 收口模板：初始化阶段在 root view 挂载前后各重放一次默认态与 preview，`dismiss_primary_swipe_control()`、键盘录制入口、`compact` 对照切换与 `request_page_snapshot()` 都先走显式布局路径，再进入稳定抓帧。
+
 ## 11. 编译、检查与验收命令
 ```bash
-make clean APP=HelloUnitTest PORT=pc_test
-make all APP=HelloUnitTest PORT=pc_test
-output\main.exe
-
-make clean APP=HelloCustomWidgets APP_SUB=input/swipe_control PORT=pc
 make all APP=HelloCustomWidgets APP_SUB=input/swipe_control PORT=pc
 
+# 在 X:\ 短路径下执行，修改 .inc 后建议先 clean 再重建
+make clean APP=HelloUnitTest PORT=pc_test
+make all APP=HelloUnitTest PORT=pc_test
+X:\output\main.exe
+
+python scripts/sync_widget_catalog.py
 python scripts/checks/check_touch_release_semantics.py --scope custom --category input
-python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/swipe_control --track reference --timeout 10 --keep-screenshots
 python scripts/checks/check_docs_encoding.py
+python scripts/checks/check_widget_catalog.py
+python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/swipe_control --track reference --timeout 10 --keep-screenshots
+python scripts/code_compile_check.py --custom-widgets --category input --bits64
+python scripts/code_runtime_check.py --app HelloCustomWidgets --category input --track reference --bits64
+python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub input/swipe_control
+python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_input_swipe_control
 ```
 
 验收重点：
@@ -167,3 +175,37 @@ python scripts/checks/check_docs_encoding.py
 - 通过固定 row snapshot 驱动 reference，优先保证 `480 x 480` 下的稳定审阅。
 - `compact` 与 `read only` preview 通过静态 API 收口，避免把对照控件做成第二套可交互实现。
 - 交互实现优先保证状态清理、release 语义和 runtime 渲染稳定性，再保留 `SwipeControl` 必需的连续 reveal 例外。
+
+## 15. 当前验收结果（2026-04-17）
+
+- 单控件编译：`PASS`
+  - `make all APP=HelloCustomWidgets APP_SUB=input/swipe_control PORT=pc`
+- `HelloUnitTest`：`PASS`
+  - `make clean APP=HelloUnitTest PORT=pc_test`
+  - `make all APP=HelloUnitTest PORT=pc_test`
+  - `X:\output\main.exe`
+  - 总计 `845 / 845`，其中 `swipe_control` suite `11 / 11`
+- catalog / 触摸语义 / 文档编码：`PASS`
+  - `python scripts/sync_widget_catalog.py`
+  - `python scripts/checks/check_touch_release_semantics.py --scope custom --category input`
+  - `python scripts/checks/check_docs_encoding.py`
+  - `python scripts/checks/check_widget_catalog.py`
+  - 触摸语义结果：`custom_audited=28 custom_skipped_allowlist=5`
+  - 文档编码结果：`134 files`
+  - widget catalog 结果：`106 widgets`
+- 单控件 runtime：`PASS`
+  - `python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/swipe_control --track reference --timeout 10 --keep-screenshots`
+  - `12` 帧输出到 `runtime_check_output/HelloCustomWidgets_input_swipe_control/default`
+- input 分类 compile/runtime 回归：`PASS`
+  - `python scripts/code_compile_check.py --custom-widgets --category input --bits64`
+  - `python scripts/code_runtime_check.py --app HelloCustomWidgets --category input --track reference --bits64`
+  - input `33 / 33` 全部通过
+- web 链路：`PASS`
+  - `python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub input/swipe_control`
+  - `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_input_swipe_control`
+  - smoke 结果：`status=Running canvas=480x480 ratio=0.1693 colors=234`
+- 截图复核结论：
+  - 全帧 `12` 帧共出现 `5` 组唯一状态，对应默认 surface、start reveal、end reveal、`Planner` 主状态与最终 `compact` 对照
+  - 按主区裁切后共出现 `4` 组唯一状态，覆盖主 `SwipeControl` 的四组 reference 状态
+  - `compact` preview 在前 `8` 帧与后 `4` 帧分成 `2` 组哈希，对应默认对照与最终对照
+  - `read only` preview `12` 帧保持单一哈希；从 `Planner` 主状态切到最终对照帧时，差分只落在 `compact` 预览的 `(29, 297) - (223, 381)`，确认 `read only` 对照未参与变化
