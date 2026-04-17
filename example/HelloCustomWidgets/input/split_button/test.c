@@ -29,7 +29,7 @@ static egui_view_split_button_t button_compact;
 static egui_view_split_button_t button_disabled;
 static egui_view_api_t button_compact_api;
 static egui_view_api_t button_disabled_api;
-static bool ui_ready;
+static uint8_t ui_ready;
 
 EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
 EGUI_BACKGROUND_PARAM_INIT(bg_page_panel_params, &bg_page_panel_param, NULL, NULL);
@@ -108,6 +108,8 @@ static void request_page_snapshot(void)
 
 void test_init_ui(void)
 {
+    ui_ready = 0;
+
     egui_view_linearlayout_init(EGUI_VIEW_OF(&root_layout));
     egui_view_set_size(EGUI_VIEW_OF(&root_layout), SPLIT_BUTTON_ROOT_WIDTH, SPLIT_BUTTON_ROOT_HEIGHT);
     egui_view_linearlayout_set_orientation(EGUI_VIEW_OF(&root_layout), 0);
@@ -178,8 +180,9 @@ void test_init_ui(void)
 
     egui_core_add_user_root_view(EGUI_VIEW_OF(&root_layout));
 
-    ui_ready = true;
-    layout_page();
+    ui_ready = 1;
+    apply_primary_default_state();
+    apply_preview_states();
     focus_primary_button();
 }
 
