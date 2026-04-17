@@ -58,9 +58,10 @@
 | 状态 | 主控件 | Compact preview | Read only preview |
 | --- | --- | --- | --- |
 | 默认展开态 | `2026-03-18`，`Mar 2026` | `Mar 18` | `Apr 05` |
-| 浏览态 | 字段不变，面板切到 `Apr 2026` | 不响应输入 | 不响应输入 |
-| 提交态 | 字段提交为 `2026-04-02` | 不响应输入 | 不响应输入 |
-| 静态 reference 对照 | 否 | 是 | 是 |
+| 浏览态 | 字段不变，面板切到 `Apr 2026` | 保持不变 | 保持不变 |
+| 提交态 | 字段提交为 `2026-04-02` | 保持不变 | 保持不变 |
+| 录制最终稳定帧 | 回到默认 `2026-03-18`，`Mar 2026` | 保持不变 | 保持不变 |
+| 静态 preview 吞掉 `touch / key` 且不改状态 | 否 | 是 | 是 |
 
 ## 7. 录制动作设计
 录制轨道已经收口到 static preview 工作流：
@@ -71,12 +72,16 @@
 4. 抓取第二组主区快照
 5. 切到提交态，字段改为 `2026-04-02`
 6. 抓取第三组主区快照
-7. 等待并抓取最终稳定帧
+7. 回到默认 `2026-03-18`，`Mar 2026`
+8. 抓取最终稳定帧
 
 说明：
 - runtime 录制阶段不再轮换 `compact` preview。
 - 底部 preview 统一通过 `egui_view_date_picker_override_static_preview_api()` 吞掉 touch / key。
-- 页面空白区仍保留最小失焦逻辑，但 preview 不再承担额外交互职责。
+- preview 只负责静态 reference 对照，不再承担清焦或额外页面状态桥接职责。
+- `request_page_snapshot()` 会统一做 `layout + invalidate + recording_request_snapshot()`，保证 `3` 组主区快照和最终稳定帧口径一致。
+
+当前 `test.c` 已对齐统一的 `ui_ready + layout_page + request_page_snapshot` 收口模板：保留既有 `DATE_PICKER_DEFAULT_SNAPSHOT` 与 `apply_primary_default_state()`，初始化阶段在 root view 挂载前后各重放一次默认态与 preview，`case 0` 和最终稳定帧前的默认态恢复统一走显式布局路径。
 
 ## 8. 单元测试口径
 `example/HelloUnitTest/test/test_date_picker.c` 当前覆盖两部分：
@@ -112,31 +117,40 @@ python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub input/
 python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_input_date_picker
 ```
 
-## 10. 当前结果
-- `HelloUnitTest`：`845 / 845` 通过，`date_picker` suite `8 / 8`
-- widget 编译：PASS
-- widget catalog 同步：PASS（`106` entries）
-- `touch release semantics`：PASS（`custom_audited=28`，`custom_skipped_allowlist=5`）
-- `docs encoding`：PASS（`134 files`）
-- `widget catalog check`：PASS（`106 widgets: reference=106, showcase=0, deprecated=0`）
-- widget 级 runtime：PASS
-- input 分类 compile/runtime 回归：PASS
-- wasm 构建：PASS
-- web smoke：`PASS status=Running canvas=480x480 ratio=0.2013 colors=146`
+## 10. 当前验收结果（2026-04-18）
+- `HelloCustomWidgets` 单控件编译：已通过 `make all APP=HelloCustomWidgets APP_SUB=input/date_picker PORT=pc`
+- `HelloUnitTest`：已在 `X:\` 短路径通过 `make clean APP=HelloUnitTest PORT=pc_test`、`make all APP=HelloUnitTest PORT=pc_test` 和 `X:\output\main.exe`，总计 `845 / 845`，其中 `date_picker` suite `8 / 8`
+- `sync_widget_catalog.py`：已通过，本轮无额外目录变化
+- `touch release semantics`：已通过，结果 `custom_audited=28 custom_skipped_allowlist=5`
+- `docs encoding`：已通过，结果 `134 files`
+- `widget catalog check`：已通过，结果 `106 widgets: reference=106, showcase=0, deprecated=0`
+- 单控件 runtime：已通过 `python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/date_picker --track reference --timeout 10 --keep-screenshots`，输出 `9 frames captured -> D:\workspace\gitee\EmbeddedGUI_Widgets\runtime_check_output\HelloCustomWidgets_input_date_picker\default`
+- input 分类 compile/runtime 回归：已通过
+  compile `33 / 33`
+  runtime `33 / 33`
+- wasm 构建：已通过 `python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub input/date_picker`，输出 `web/demos/HelloCustomWidgets_input_date_picker`
+- web smoke：已通过 `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_input_date_picker`，结果 `PASS status=Running canvas=480x480 ratio=0.2013 colors=146`
 
 ## 11. Runtime 复核结论
-复核目录：`runtime_check_output/HelloCustomWidgets_input_date_picker/default`
+复核目录：
+- `runtime_check_output/HelloCustomWidgets_input_date_picker/default`
 
-- 总帧数：`8`
+复核结果：
+- 总帧数：`9`
 - 主区 RGB 差分边界：`(164, 99) - (317, 212)`
-- 遮罩主区差分边界后，边界外唯一哈希数：`1`
-- 按主区差分边界裁剪后，主区唯一状态数：`3`
-- 按 `y >= 300` 裁剪底部 preview 区域后，preview 区唯一哈希数：`1`
+- 遮罩主区差分边界后，主区外唯一哈希数：`1`
+- 按主区裁剪后，主区唯一状态数：`3`
+- 按 `y >= 212` 裁切底部 preview 区域后，preview 区唯一哈希数：`1`
+
+目标：
+- 主区唯一状态数 = `3`
+- 主区外唯一哈希数 = `1`
+- 底部 preview 区唯一哈希数 = `1`
 
 结论：
-- 变化只发生在主区月份标题、日期网格与字段文本，符合 `Mar 18` 默认态、`Apr 2026` 浏览态和 `2026-04-02` 提交态三组 reference 轨道。
-- 主区差分边界外全程静态，没有黑屏、白屏、错位或 preview 污染。
-- 底部 `compact / read only` preview 在整条录制轨道中保持静态一致。
+- 主区变化严格收敛在 `date_picker` 主体，主区外页面 chrome 在整条轨道中保持静态。
+- `9` 帧里主区保持 `3` 组唯一状态：`[0,1,6,7,8]` 对应默认 `2026-03-18 / Mar 2026`，`[2,3]` 对应浏览态 `2026-03-18 / Apr 2026`，`[4,5]` 对应提交态 `2026-04-02 / Apr 2026`；最终稳定帧已显式回到默认态。
+- 按 `y >= 212` 裁切底部 preview 区域后保持单哈希，确认 `compact / read only` preview 在整条录制轨道中始终静态一致。
 
 ## 12. 已知限制
 - 当前仍是页面内 inline panel，不是浮层式日期面板。
