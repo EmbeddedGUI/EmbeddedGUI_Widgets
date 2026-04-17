@@ -87,6 +87,7 @@
 4. 恢复默认主状态并输出最终稳定帧
 
 录制只导出主控件的状态变化。底部两个 preview 在整条 `reference` 轨道里保持静态一致，不再承担第二条 `compact` 轨道、preview dismiss 或清焦点职责。
+当前 `test.c` 已对齐统一的 `ui_ready + layout_page + request_page_snapshot` 模板：初始化、主区切换、preview 重放和最终抓帧都走同一条显式布局路径，不再依赖旧的隐式布局时序。
 
 ## 9. 编译、单测、运行时与文档检查
 ```bash
@@ -141,3 +142,35 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
   - preview 点击清主控件焦点
   - 第二条 `compact` preview 轨道
   - 录制里的 `preview dismiss` 收尾动作
+
+## 13. 当前验收结果（2026-04-17）
+- 单控件编译：`PASS`
+  - `make all APP=HelloCustomWidgets APP_SUB=layout/grid_view PORT=pc`
+- `HelloUnitTest`：`PASS`
+  - `make clean APP=HelloUnitTest PORT=pc_test`
+  - `make all APP=HelloUnitTest PORT=pc_test`
+  - `X:\output\main.exe`
+  - 总计 `845 / 845`，其中 `grid_view` suite `7 / 7`
+- catalog / 文档 / 触摸语义：`PASS`
+  - `python scripts/sync_widget_catalog.py`
+  - `python scripts/checks/check_touch_release_semantics.py --scope custom --category layout`
+  - `python scripts/checks/check_docs_encoding.py`
+  - `python scripts/checks/check_widget_catalog.py`
+  - 触摸语义结果：`custom_audited=28 custom_skipped_allowlist=1`
+  - 文档编码结果：`134 files`
+  - widget catalog 结果：`106 widgets`
+- 单控件 runtime：`PASS`
+  - `python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub layout/grid_view --track reference --timeout 10 --keep-screenshots`
+  - `9` 帧输出到 `runtime_check_output/HelloCustomWidgets_layout_grid_view/default`
+- layout 分类 compile/runtime 回归：`PASS`
+  - `python scripts/code_compile_check.py --custom-widgets --category layout --bits64`
+  - `python scripts/code_runtime_check.py --app HelloCustomWidgets --category layout --track reference --bits64`
+  - layout `29 / 29` 全部通过
+- web 链路：`PASS`
+  - `python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub layout/grid_view`
+  - `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_layout_grid_view`
+  - smoke 结果：`status=Running canvas=480x480 ratio=0.2196 colors=316`
+- 截图复核结论：
+  - 主区变化边界收敛到 `(56, 62) - (403, 264)`
+  - 主区共 `3` 组唯一状态，对应 `Assets gallery / Template board / Team board`
+  - 按 `y >= 265` 裁切底部 preview 后保持单一哈希，确认 `compact / read only` preview 全程静态
