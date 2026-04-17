@@ -129,18 +129,26 @@
 11. 点击 `compact` preview，验证静态 preview 只清主控件 focus。
 12. 抓取最终截图。
 
+当前 `test.c` 已对齐统一的 `ui_ready + layout_page + request_page_snapshot` 收口模板：初始化阶段在 root view 挂载前后各重放一次默认态与 preview，`dismiss_primary_shortcut_recorder()`、键盘录制入口、`compact` 对照切换与 `request_page_snapshot()` 都先走显式布局路径，再进入稳定抓帧。
+
 ## 11. 编译、检查与验收命令
 ```bash
-make clean APP=HelloUnitTest PORT=pc_test
-make all APP=HelloUnitTest PORT=pc_test
-output\main.exe
-
-make clean APP=HelloCustomWidgets APP_SUB=input/shortcut_recorder PORT=pc
 make all APP=HelloCustomWidgets APP_SUB=input/shortcut_recorder PORT=pc
 
+# 在 X:\ 短路径下执行，修改 .inc 后建议先 clean 再重建
+make clean APP=HelloUnitTest PORT=pc_test
+make all APP=HelloUnitTest PORT=pc_test
+X:\output\main.exe
+
+python scripts/sync_widget_catalog.py
 python scripts/checks/check_touch_release_semantics.py --scope custom --category input
-python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/shortcut_recorder --track reference --timeout 10 --keep-screenshots
 python scripts/checks/check_docs_encoding.py
+python scripts/checks/check_widget_catalog.py
+python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/shortcut_recorder --track reference --timeout 10 --keep-screenshots
+python scripts/code_compile_check.py --custom-widgets --category input --bits64
+python scripts/code_runtime_check.py --app HelloCustomWidgets --category input --track reference --bits64
+python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub input/shortcut_recorder
+python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_input_shortcut_recorder
 ```
 
 验收重点：
@@ -163,3 +171,37 @@ python scripts/checks/check_docs_encoding.py
 - 通过固定 preset 和固定录制脚本保证 `480 x 480` 下的稳定审阅。
 - 底部 preview 统一走静态 API，避免为了对照控件再维护第二套可交互实现。
 - 当前优先保证状态清理、release 语义和 runtime 渲染稳定，再考虑是否上升为公共框架控件。
+
+## 15. 当前验收结果（2026-04-17）
+
+- 单控件编译：`PASS`
+  - `make all APP=HelloCustomWidgets APP_SUB=input/shortcut_recorder PORT=pc`
+- `HelloUnitTest`：`PASS`
+  - `make clean APP=HelloUnitTest PORT=pc_test`
+  - `make all APP=HelloUnitTest PORT=pc_test`
+  - `X:\output\main.exe`
+  - 总计 `845 / 845`，其中 `shortcut_recorder` suite `11 / 11`
+- catalog / 触摸语义 / 文档编码：`PASS`
+  - `python scripts/sync_widget_catalog.py`
+  - `python scripts/checks/check_touch_release_semantics.py --scope custom --category input`
+  - `python scripts/checks/check_docs_encoding.py`
+  - `python scripts/checks/check_widget_catalog.py`
+  - 触摸语义结果：`custom_audited=28 custom_skipped_allowlist=5`
+  - 文档编码结果：`134 files`
+  - widget catalog 结果：`106 widgets`
+- 单控件 runtime：`PASS`
+  - `python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/shortcut_recorder --track reference --timeout 10 --keep-screenshots`
+  - `12` 帧输出到 `runtime_check_output/HelloCustomWidgets_input_shortcut_recorder/default`
+- input 分类 compile/runtime 回归：`PASS`
+  - `python scripts/code_compile_check.py --custom-widgets --category input --bits64`
+  - `python scripts/code_runtime_check.py --app HelloCustomWidgets --category input --track reference --bits64`
+  - input `33 / 33` 全部通过
+- web 链路：`PASS`
+  - `python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub input/shortcut_recorder`
+  - `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_input_shortcut_recorder`
+  - smoke 结果：`status=Running canvas=480x480 ratio=0.2049 colors=156`
+- 截图复核结论：
+  - 全帧 `12` 帧共出现 `5` 组唯一状态，对应默认绑定、listening、捕获新绑定、preset 应用与 clear binding 收尾
+  - 按主区裁切后共出现 `5` 组唯一状态，说明主 `shortcut_recorder` 的五组 reference 状态都已通过显式布局路径稳定落帧
+  - `compact` preview 在前 `8` 帧与后 `4` 帧分成 `2` 组哈希，对应默认对照与清空绑定后的最终对照
+  - `read only` preview `12` 帧保持单一哈希；从 preset 应用帧切到 clear/最终帧时，底部差分只落在 `compact` 预览的 `(120, 325) - (223, 339)`，确认 `read only` 对照未参与变化
