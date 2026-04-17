@@ -238,7 +238,11 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
         EGUI_SIM_SET_WAIT(p_action, ANIMATED_ICON_RECORD_FRAME_WAIT);
         return true;
     case 5:
-        EGUI_SIM_SET_WAIT(p_action, ANIMATED_ICON_RECORD_FINAL_WAIT);
+        if (first_call)
+        {
+            apply_primary_default_state();
+        }
+        EGUI_SIM_SET_WAIT(p_action, ANIMATED_ICON_RECORD_ANIM_WAIT);
         return true;
     case 6:
         if (first_call)
