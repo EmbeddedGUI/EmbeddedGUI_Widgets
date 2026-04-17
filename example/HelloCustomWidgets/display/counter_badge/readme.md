@@ -5,7 +5,7 @@
 - 参考开源库：`Fluent UI React`
 - 对应组件：`CounterBadge`
 - 当前保留语义：`count / overflow / dot`、`compact / read_only` 静态 preview、静态 preview 输入抑制
-- 当前移除内容：旧主 `panel / heading / summary / note`、底部 preview 包装和说明文案、录制末尾回切默认态恢复帧
+- 当前移除内容：旧主 `panel / heading / summary / note`、底部 preview 包装和说明文案
 - EGUI 适配说明：复用 SDK `notification_badge` 的计数格式化与基础背景绘制，在 custom 层补齐 `CounterBadge` 的 palette、`compact / read_only / dot` 语义和静态 preview API，不修改 `sdk/EmbeddedGUI`
 
 ## 1. 为什么需要这个控件
@@ -27,7 +27,7 @@
 - `example/HelloCustomWidgets/display/counter_badge/`
 
 ## 4. 主区 reference 快照
-主区录制轨道只保留 3 组 reference 快照：
+主区录制轨道只保留 3 组 reference 快照和最终稳定帧：
 
 1. 默认态
    文案：`Inbox queue / 7`
@@ -38,6 +38,9 @@
 3. 快照 3
    文案：`Quiet watch / dot`
    表现：dot mode
+4. 最终稳定帧
+   文案：`Inbox queue / 7`
+   表现：恢复默认计数状态
 
 底部 preview 在整条轨道中始终固定：
 
@@ -64,13 +67,11 @@
 ## 6. 状态矩阵
 | 状态 / 区域 | 主控件 | Compact preview | Read-only preview |
 | --- | --- | --- | --- |
-| `count` | 是 | 是 | 是 |
-| `overflow (99+)` | 是 | API 保留 | API 保留 |
-| `dot` | 是 | API 保留 | API 保留 |
-| `compact_mode` | 否 | 是 | 是 |
-| `read_only_mode` | 否 | 否 | 是 |
-| 接收焦点 / 交互 | 否 | 否 | 否 |
-| 静态 preview 吞掉 `touch / key` | 否 | 是 | 是 |
+| 默认显示 | `Inbox queue / 7` | `count=4` | `count=12` |
+| 快照 2 | `Escalation queue / 99+` | 保持不变 | 保持不变 |
+| 快照 3 | `Quiet watch / dot` | 保持不变 | 保持不变 |
+| 录制最终稳定帧 | `Inbox queue / 7` | 保持不变 | 保持不变 |
+| 静态 preview 对照 | 否 | 是 | 是 |
 
 ## 7. 录制动作设计
 `egui_port_get_recording_action()` 已收口为 static preview 工作流：
@@ -81,12 +82,15 @@
 4. 抓取第二组主区快照
 5. 切到 `Quiet watch / dot`
 6. 抓取第三组主区快照
-7. 等待并抓取最终稳定帧
+7. 回到默认 `Inbox queue / 7`
+8. 抓取最终稳定帧
 
 说明：
-- 录制阶段不再回切 `Inbox queue / 7` 后额外补一帧。
+- 录制阶段最终会显式恢复主区默认态，并走统一布局重放路径。
 - 页面层不再保留旧 `primary_panel`、`heading / summary / note` 与底部 preview 包装文案。
 - 底部 preview 统一通过 `egui_view_counter_badge_override_static_preview_api()` 吞掉 `touch / key`，只负责静态 reference 对照。
+
+当前 `test.c` 已对齐统一的 `ui_ready + layout_page + request_page_snapshot` 收口模板：保留既有 `COUNTER_BADGE_DEFAULT_SNAPSHOT` 与 `apply_primary_default_state()`，初始化阶段在 root view 挂载前后各重放一次默认态与 preview，`case 0` 和最终稳定帧前的默认态恢复统一走显式布局路径。
 
 ## 8. 单元测试口径
 `example/HelloUnitTest/test/test_counter_badge.c` 当前覆盖四部分：
@@ -124,24 +128,25 @@ python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub displa
 python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_display_counter_badge
 ```
 
-## 10. 当前结果
-- `HelloCustomWidgets` 单控件编译：已通过 `make all APP=HelloCustomWidgets APP_SUB=display/counter_badge PORT=pc`
-- `HelloUnitTest`：已在 `X:\` 短路径通过 `make clean APP=HelloUnitTest PORT=pc_test`、`make all APP=HelloUnitTest PORT=pc_test` 和 `X:\output\main.exe`，总计 `845 / 845`，其中 `counter_badge` suite `4 / 4`
-- `sync_widget_catalog.py`：已通过，重新同步 `example/HelloCustomWidgets/widget_catalog.json` 与 `web/catalog-policy.json`，本轮无额外变更
-- `touch release semantics`：已通过，结果 `custom_audited=21 custom_skipped_allowlist=0`
-- `docs encoding`：已通过，结果 `134 files`
-- `widget catalog check`：已通过，结果 `106 widgets: reference=106, showcase=0, deprecated=0`
-- 单控件 runtime：已通过 `python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub display/counter_badge --track reference --timeout 10 --keep-screenshots`，输出 `8` 帧截图
-- display 分类 compile/runtime 回归：已通过 `python scripts/code_compile_check.py --custom-widgets --category display --bits64` 与 `python scripts/code_runtime_check.py --app HelloCustomWidgets --category display --track reference --bits64`，分类内 `21` 个控件全部通过
-- wasm 构建：已通过 `python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub display/counter_badge`，输出 `web/demos/HelloCustomWidgets_display_counter_badge`
-- web smoke：已通过 `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_display_counter_badge`，结果 `PASS status=Running canvas=480x480 ratio=0.1159 colors=114`
+## 10. 当前验收结果（2026-04-18）
+- `HelloCustomWidgets` 单控件编译：`PASS`，`make all APP=HelloCustomWidgets APP_SUB=display/counter_badge PORT=pc`
+- `HelloUnitTest`：`PASS`，已通过 `make clean APP=HelloUnitTest PORT=pc_test`、`make all APP=HelloUnitTest PORT=pc_test` 与 `X:\output\main.exe`，总计 `845 / 845`，其中 `counter_badge` suite `4 / 4`
+- `sync_widget_catalog.py`：`PASS`，同步后保持 `106` 个 widgets
+- `touch release semantics`：`PASS`，`custom_audited=21 custom_skipped_allowlist=0`
+- `docs encoding`：`PASS`，`134` 个文档文件编码检查通过
+- `widget catalog check`：`PASS`，`106 widgets: reference=106, showcase=0, deprecated=0`
+- 单控件 runtime：`PASS`，`9 frames captured -> runtime_check_output/HelloCustomWidgets_display_counter_badge/default`
+- display 分类 compile/runtime 回归：`PASS`
+  compile `21 / 21`，runtime `21 / 21`
+- wasm 构建：`PASS`，`web/demos/HelloCustomWidgets_display_counter_badge`
+- web smoke：`PASS status=Running canvas=480x480 ratio=0.1159 colors=114`
 
 ## 11. Runtime 复核结论
 复核目录：
 - `runtime_check_output/HelloCustomWidgets_display_counter_badge/default`
 
 复核结果：
-- 总帧数：`8`
+- 总帧数：`9`
 - 主区 RGB 差分边界：`(179, 161) - (301, 219)`
 - 遮罩主区差分边界后，主区外唯一哈希数：`1`
 - 按主区裁剪后，主区唯一状态数：`3`
@@ -151,6 +156,11 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
 - 主区唯一状态数 = `3`
 - 主区外唯一哈希数 = `1`
 - 底部 preview 区唯一哈希数 = `1`
+
+结论：
+- 主区变化严格收敛在 `counter_badge` 主体，主区外页面 chrome 在整条轨道中保持静态。
+- `9` 帧里主区保持 `3` 组唯一状态，对应默认、`Escalation queue / 99+` 与 `Quiet watch / dot` 三组主区快照；最终稳定帧已显式回到默认 `Inbox queue / 7`。
+- 按 `y >= 220` 裁剪底部 preview 区域后保持单哈希，确认 `compact / read_only` preview 在整条录制轨道中始终静态一致。
 
 ## 12. 已知限制
 - 当前只覆盖独立 `CounterBadge`，不负责与头像、卡片或命令入口做宿主绑定。
