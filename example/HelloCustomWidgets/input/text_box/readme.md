@@ -100,11 +100,11 @@
 - `submit_count == 0`
 - `submitted_text == ""`
 
-## 9. 验收命令
+验收命令：
 ```bash
 make all APP=HelloCustomWidgets APP_SUB=input/text_box PORT=pc
 
-make clean APP=HelloUnitTest PORT=pc_test
+# 在 X:\ 短路径下执行
 make all APP=HelloUnitTest PORT=pc_test
 X:\output\main.exe
 
@@ -119,52 +119,69 @@ python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub input/
 python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_input_text_box
 ```
 
-## 10. 当前验收结果（2026-04-18）
-- `HelloCustomWidgets` 单控件编译：已通过 `make all APP=HelloCustomWidgets APP_SUB=input/text_box PORT=pc`
-- `HelloUnitTest`：已在 `X:\` 短路径通过 `make clean APP=HelloUnitTest PORT=pc_test`、`make all APP=HelloUnitTest PORT=pc_test` 和 `X:\output\main.exe`，总计 `845 / 845`，其中 `text_box` suite `6 / 6`
-- `sync_widget_catalog.py`：已通过，本轮无额外目录变化
-- `touch release semantics`：已通过，结果 `custom_audited=28 custom_skipped_allowlist=5`
-- `docs encoding`：已通过，结果 `134 files`
-- `widget catalog check`：已通过，结果 `106 widgets: reference=106, showcase=0, deprecated=0`
-- 单控件 runtime：已通过 `python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/text_box --track reference --timeout 10 --keep-screenshots`，输出 `9 frames captured -> D:\workspace\gitee\EmbeddedGUI_Widgets\runtime_check_output\HelloCustomWidgets_input_text_box\default`
-- input 分类 compile/runtime 回归：已通过
-  compile `33 / 33`
-  runtime `33 / 33`
-- wasm 构建：已通过 `python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub input/text_box`，输出 `web/demos/HelloCustomWidgets_input_text_box`
-- web smoke：已通过 `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_input_text_box`，结果 `PASS status=Running canvas=480x480 ratio=0.0977 colors=103`
+## 10. 验收重点
+- 主控件和底部 preview 必须完整可见，不能黑屏、白屏或裁切。
+- 主区 `Node 01`、`Node 02` 与空文本 placeholder 三组 reference 快照必须能从截图中稳定区分。
+- 主区文本编辑、光标移动和提交链路收口后不能残留 `pressed` 污染或旧清焦桥接。
+- 底部 `compact / read only` preview 必须保持静态 reference，对输入只吞不改状态。
 
-## 11. Runtime 复核结论
-复核目录：
-- `runtime_check_output/HelloCustomWidgets_input_text_box/default`
+## 11. 截图复核口径
+- 检查目录：`runtime_check_output/HelloCustomWidgets_input_text_box/default`
+- 本轮复核结果：
+  - 共捕获 `7` 帧
+  - 全帧共出现 `3` 组唯一状态，主区哈希分组为 `[0,1,4,5,6] / [2] / [3]`
+  - 主区 RGB 差分边界收敛到 `(45, 196) - (117, 205)`
+  - 遮罩主区变化边界后，主区外区域唯一哈希数为 `1`
+  - 按 `y >= 206` 裁切底部 preview 后，preview 区唯一哈希数为 `1`
 
-复核结果：
-- 总帧数：`9`
-- 主区 RGB 差分边界：`(45, 196) - (118, 206)`
-- 遮罩主区差分边界后，主区外唯一哈希数：`1`
-- 按主区裁切后，主区唯一状态数：`3`
-- 按 `y >= 258` 裁切底部 preview 区域后，preview 区唯一哈希数：`1`
-
-目标：
-- 主区唯一状态数 = `3`
-- 主区外唯一哈希数 = `1`
-- 底部 preview 区唯一哈希数 = `1`
-
-结论：
-- 主区变化严格收敛在 `text_box` 文本区，主区外页面 chrome 在整条轨道中保持静态。
-- `9` 帧里主区保持 `3` 组唯一状态：`[0,1,6,7,8]` 对应默认 `Node 01`，`[2,3]` 对应 `Node 02`，`[4,5]` 对应空文本态；最终稳定帧已显式回到默认 `Node 01`。
-- 按 `y >= 258` 裁切底部 preview 区域后保持单哈希，确认 `compact / read only` preview 在整条录制轨道中始终静态一致。
-
-## 12. 已知限制
-- 当前只覆盖单行 `TextBox` reference，不扩展多行编辑器或搜索框派生能力。
-- 当前不接入系统 IME、虚拟键盘联动或表单级验证。
-- 底部 preview 仅作为静态 reference，不承载额外交互职责。
-
-## 13. 与现有控件的边界
+## 12. 与现有控件的边界
 - 相比 `password_box`：这里展示明文文本输入，不承担 reveal / hide。
 - 相比 `number_box`：这里不做数值范围、步进和后缀约束。
 - 相比 `search_box`：这里不包含搜索图标、clear affordance 和搜索入口语义。
 
-## 14. EGUI 适配说明
-- 继续复用 SDK `textinput` 的文本编辑、光标与提交逻辑，不修改 SDK。
-- Fluent 风格外观与静态 preview 语义都收口在 custom 层。
-- 当前优先保证主区 3 组 reference 快照、底部 preview 全程静态，以及 runtime 录制无污染，再评估是否扩展更多文本输入派生控件。
+## 13. 本次保留的核心状态与删减项
+- 本次保留状态：
+  - `Node 01`
+  - `Node 02`
+  - 空文本 placeholder
+  - `compact`
+  - `read only`
+- 删减的装饰或桥接：
+  - 页面级 guide
+  - preview 清焦桥接
+  - 录制阶段真实键盘轨道
+  - preview 文本同步与 showcase 式场景化装饰
+
+## 14. 当前验收结果（2026-04-19）
+- 单控件编译：`PASS`
+  - `make all APP=HelloCustomWidgets APP_SUB=input/text_box PORT=pc`
+- `HelloUnitTest`：`PASS`
+  - 在 `X:\` 短路径下执行 `make all APP=HelloUnitTest PORT=pc_test`
+  - `X:\output\main.exe`
+  - 总计 `845 / 845`，其中 `text_box` suite `6 / 6`
+- catalog / 文档 / 触摸语义：`PASS`
+  - `python scripts/sync_widget_catalog.py`
+  - `python scripts/checks/check_touch_release_semantics.py --scope custom --category input`
+  - `python scripts/checks/check_docs_encoding.py`
+  - `python scripts/checks/check_widget_catalog.py`
+  - 触摸语义结果：`custom_audited=28 custom_skipped_allowlist=5`
+  - 文档编码结果：`134 files`
+  - widget catalog 结果：`106 widgets`
+- 单控件 runtime：`PASS`
+  - `python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/text_box --track reference --timeout 10 --keep-screenshots`
+  - 输出目录：`runtime_check_output/HelloCustomWidgets_input_text_box/default`
+- input 分类 compile/runtime 回归：`PASS`
+  - `python scripts/code_compile_check.py --custom-widgets --category input --bits64`
+  - `python scripts/code_runtime_check.py --app HelloCustomWidgets --category input --track reference --bits64`
+  - input `33 / 33` 全部通过
+- web 链路：`PASS`
+  - `python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub input/text_box`
+  - `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_input_text_box`
+  - smoke 结果：`status=Running canvas=480x480 ratio=0.0977 colors=103`
+- 截图复核结论：
+  - 共捕获 `7` 帧
+  - 全帧共出现 `3` 组唯一状态，主区哈希分组为 `[0,1,4,5,6] / [2] / [3]`
+  - 主区 RGB 差分边界为 `(45, 196) - (117, 205)`
+  - 遮罩主区边界后，主区外唯一哈希数为 `1`
+  - 以 `y >= 206` 裁切底部 preview 后，preview 区唯一哈希数为 `1`
+  - 结论：主区覆盖默认 `Node 01`、`Node 02` 与空文本 placeholder 三组 reference 快照，最终稳定帧已显式回到默认 `Node 01`，底部 `compact / read only` preview 全程静态
