@@ -94,11 +94,11 @@
 - `changed_count == 0`
 - `changed_value == 0xFF`
 
-## 9. 验收命令
+验收命令：
 ```bash
 make all APP=HelloCustomWidgets APP_SUB=input/slider PORT=pc
 
-make clean APP=HelloUnitTest PORT=pc_test
+# 在 X:\ 短路径下执行
 make all APP=HelloUnitTest PORT=pc_test
 X:\output\main.exe
 
@@ -113,53 +113,69 @@ python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub input/
 python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_input_slider
 ```
 
-## 10. 当前验收结果（2026-04-18）
-- `HelloCustomWidgets` 单控件编译：已通过 `make all APP=HelloCustomWidgets APP_SUB=input/slider PORT=pc`
-- `HelloUnitTest`：已在 `X:\` 短路径通过 `make clean APP=HelloUnitTest PORT=pc_test`、`make all APP=HelloUnitTest PORT=pc_test` 和 `X:\output\main.exe`，总计 `845 / 845`，其中 `slider` suite `7 / 7`
-- `sync_widget_catalog.py`：已通过，本轮仍同步为 `106` 个控件目录
-- `touch release semantics`：已通过，结果 `custom_audited=28 custom_skipped_allowlist=5`
-- `docs encoding`：已通过，结果 `134 files`
-- `widget catalog check`：已通过，结果 `106 widgets: reference=106, showcase=0, deprecated=0`
-- 单控件 runtime：已通过 `python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/slider --track reference --timeout 10 --keep-screenshots`，输出 `9 frames captured -> D:\workspace\gitee\EmbeddedGUI_Widgets\runtime_check_output\HelloCustomWidgets_input_slider\default`
-- input 分类 compile/runtime 回归：已通过
-  compile `33 / 33`
-  runtime `33 / 33`
-- wasm 构建：已通过 `python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub input/slider`，输出 `web/demos/HelloCustomWidgets_input_slider`
-- web smoke：已通过 `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_input_slider`，结果 `PASS status=Running canvas=480x480 ratio=0.0977 colors=84`
+## 10. 验收重点
+- 主控件和底部 preview 必须完整可见，不能黑屏、白屏或裁切。
+- 主区 `18% / 52% / 86%` 三组 reference 快照必须能从截图中稳定区分。
+- 主区继续保留标准 `touch drag` 和键盘步进语义，但录制轨道不再引入额外交互噪音。
+- 底部 `compact / read only` preview 必须保持静态 reference，对输入只吞不改状态。
 
-## 11. Runtime 复核结论
-复核目录：
-- `runtime_check_output/HelloCustomWidgets_input_slider/default`
+## 11. 截图复核口径
+- 检查目录：`runtime_check_output/HelloCustomWidgets_input_slider/default`
+- 本轮复核结果：
+  - 共捕获 `9` 帧
+  - 全帧共出现 `3` 组唯一状态，主区哈希分组为 `[0,1,6,7,8] / [2,3] / [4,5]`
+  - 主区 RGB 差分边界收敛到 `(110, 185) - (384, 213)`
+  - 遮罩主区变化边界后，主区外区域唯一哈希数为 `1`
+  - 按 `y >= 214` 裁切底部 preview 后，preview 区唯一哈希数为 `1`
 
-复核结果：
-- 总帧数：`9`
-- 主区 RGB 差分边界：`(110, 185) - (385, 214)`
-- 遮罩主区差分边界后，主区外唯一哈希数：`1`
-- 按主区裁剪后，主区唯一状态数：`3`
-- 按 `y >= 214` 裁切底部 preview 区域后，preview 区唯一哈希数：`1`
-
-目标：
-- 主区唯一状态数 = `3`
-- 主区外唯一哈希数 = `1`
-- 底部 preview 区唯一哈希数 = `1`
-
-结论：
-- 主区变化严格收敛在 `slider` 主体，主区外页面 chrome 在整条轨道中保持静态。
-- `9` 帧里主区保持 `3` 组唯一状态：`[0,1,6,7,8]` 对应默认 `18%`，`[2,3]` 对应 `52%`，`[4,5]` 对应 `86%`；最终稳定帧已显式回到默认 `18%`。
-- 按 `y >= 214` 裁切底部 preview 区域后保持单哈希，确认 `compact / read only` preview 在整条录制轨道中始终静态一致。
-
-## 12. 已知限制
-- 当前只覆盖单轴水平 `Slider`，不扩展垂直方向。
-- 当前不做刻度、标签提示、tooltip 或 range slider。
-- 底部 `compact / read only` preview 只承担静态 reference 对照，不承载额外交互职责。
-
-## 13. 与现有控件的边界
+## 12. 与现有控件的边界
 - 相比 `number_box`：这里表达连续数值调节，不是离散步进输入。
 - 相比 `rating_control`：这里不是离散等级评分。
 - 相比 `scroll_bar`：这里的 thumb 尺寸固定，目标是选择值，而不是表达 viewport 比例。
 
-## 14. EGUI 适配说明
-- 继续复用当前目录下的 `egui_view_slider` custom view，不修改 SDK。
-- 主区保留标准 `touch drag` 和键盘步进语义。
-- 底部 preview 通过 `hcw_slider_override_static_preview_api()` 明确收口为静态 reference。
-- 当前优先保证主区 3 组 reference 快照、底部 preview 全程静态，以及 runtime 录制无多余交互噪音，再评估是否需要扩展到更多 slider 变体。
+## 13. 本次保留的核心状态与删减项
+- 本次保留状态：
+  - `18%`
+  - `52%`
+  - `86%`
+  - `compact`
+  - `read only`
+- 删减的装饰或桥接：
+  - 录制阶段真实 `Right / Plus / End` 键盘轨道
+  - 页面层 `compact` preview 值轮换
+  - 让 preview 承担页面桥接职责的旧链路
+  - 垂直方向、刻度、tooltip 和 range slider 扩展
+
+## 14. 当前验收结果（2026-04-19）
+- 单控件编译：`PASS`
+  - `make all APP=HelloCustomWidgets APP_SUB=input/slider PORT=pc`
+- `HelloUnitTest`：`日志复核 PASS`
+  - `make all APP=HelloUnitTest PORT=pc_test`
+  - `X:\output\main.exe`
+  - 本轮按本地 unit 日志复核总计 `845 / 845`，其中 `slider` suite `7 / 7`
+- catalog / 文档 / 触摸语义：`PASS`
+  - `python scripts/sync_widget_catalog.py`
+  - `python scripts/checks/check_touch_release_semantics.py --scope custom --category input`
+  - `python scripts/checks/check_docs_encoding.py`
+  - `python scripts/checks/check_widget_catalog.py`
+  - 触摸语义结果：`custom_audited=28 custom_skipped_allowlist=5`
+  - 文档编码结果：`134 files`
+  - widget catalog 结果：`106 widgets`
+- 单控件 runtime：`PASS`
+  - `python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/slider --track reference --timeout 10 --keep-screenshots`
+  - `9 frames captured -> runtime_check_output/HelloCustomWidgets_input_slider/default`
+- input 分类 compile/runtime 回归：`PASS`
+  - `python scripts/code_compile_check.py --custom-widgets --category input --bits64`
+  - `python scripts/code_runtime_check.py --app HelloCustomWidgets --category input --track reference --bits64`
+  - input `33 / 33` 全部通过
+- web 链路：`PASS`
+  - `python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub input/slider`
+  - `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_input_slider`
+  - smoke 结果：`status=Running canvas=480x480 ratio=0.0977 colors=84`
+- 截图复核结论：
+  - 共捕获 `9` 帧
+  - 全帧共出现 `3` 组唯一状态，主区哈希分组为 `[0,1,6,7,8] / [2,3] / [4,5]`
+  - 主区 RGB 差分边界为 `(110, 185) - (384, 213)`
+  - 遮罩主区边界后，主区外唯一哈希数为 `1`
+  - 以 `y >= 214` 裁切底部 preview 后，preview 区唯一哈希数为 `1`
+  - 结论：主区覆盖默认 `18%`、`52%` 与 `86%` 三组 reference 快照，最终稳定帧已显式回到默认 `18%`，底部 `compact / read only` preview 全程静态
