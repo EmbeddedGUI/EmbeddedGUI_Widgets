@@ -93,8 +93,7 @@
 ```bash
 make all APP=HelloCustomWidgets APP_SUB=layout/uniform_grid PORT=pc
 
-# 在 X:\ 短路径下执行，修改 .inc 后建议先 clean 再重建
-make clean APP=HelloUnitTest PORT=pc_test
+# 在 X:\ 短路径下执行
 make all APP=HelloUnitTest PORT=pc_test
 X:\output\main.exe
 
@@ -109,24 +108,26 @@ python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub layout
 python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_layout_uniform_grid
 ```
 
-验收重点：
+## 10. 验收重点
 - 主控件必须能直接看出 `UniformGrid` 在三组 snapshot 下保持等宽等高 tile 的页面结构变化。
 - `same-target release / keyboard navigation / read only / !enable / static preview` 全部通过单测。
 - 两个 preview 必须完整可见、无黑白屏，并且在全部 runtime 帧里保持静态一致。
+- README、demo 录制轨道、单测入口和验收命令链必须保持一致。
 
-## 10. 已知限制与后续方向
+## 11. 截图复核口径
+- 检查目录：`runtime_check_output/HelloCustomWidgets_layout_uniform_grid/default`
+- 复核目标：
+  - 主区裁剪后只出现 `3` 组唯一状态
+  - 遮掉主区变化边界后，边界外区域保持单哈希
+  - 按底部 preview 区域裁剪后，所有帧保持单哈希
 
-- 当前只收口单容器 `UniformGrid` reference，不覆盖自适应换列和真实子控件容器行为。
-- 单元内容继续用 snapshot 驱动的静态信息块表示，不接完整嵌套布局树。
-- 若后续确认复用价值稳定，再评估是否抽象成更通用的 SDK 栅格容器。
-
-## 11. 与现有控件的边界
+## 12. 与现有控件的边界
 
 - 相比 `items_repeater`：这里强调等宽等高网格，而不是模板重复布局。
 - 相比 `wrap_panel`：这里不允许单元因内容或宽度权重改变外框大小。
 - 相比 `data_grid`：这里是 tile matrix，而不是表格列语义。
 
-## 12. 本次保留的核心状态与删减项
+## 13. 本次保留的核心状态与删减项
 
 - 保留的核心状态：
   - `operations wall`
@@ -142,7 +143,7 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
   - 第二条 `compact` preview 轨道
   - 录制里的 preview dismiss 收尾动作
 
-## 13. 当前验收结果（2026-04-18）
+## 14. 当前验收结果（2026-04-18）
 - 单控件编译：`PASS`
   - `make all APP=HelloCustomWidgets APP_SUB=layout/uniform_grid PORT=pc`
 - `HelloUnitTest`：`PASS`
