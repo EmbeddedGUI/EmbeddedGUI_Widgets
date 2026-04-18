@@ -86,15 +86,14 @@
 4. 恢复主控件默认状态，输出最终稳定帧。
 
 录制只导出主控件的状态变化。底部两个 preview 在整条 reference 轨道中保持静态一致，不再承担 preview dismiss 或焦点清理职责。
-当前 `test.c` 已对齐统一的 `ui_ready + layout_page + request_page_snapshot` 模板：初始化、主区切换、preview 重放和最终抓帧都走同一条显式布局路径，不再依赖旧的隐式布局时序。
+当前 `test.c` 已对齐统一的 `ui_ready + layout_page + request_page_snapshot` 模板：初始化、主区切换、preview 重放和最终抓帧都走同一条显式布局路径；主区首轮切换与最终稳定抓帧统一使用 `WRAP_PANEL_RECORD_FINAL_WAIT`，中间状态切换继续保留 `WRAP_PANEL_RECORD_WAIT / WRAP_PANEL_RECORD_FRAME_WAIT`。
 
 ## 9. 编译、运行时、单测与文档检查
 
 ```bash
 make all APP=HelloCustomWidgets APP_SUB=layout/wrap_panel PORT=pc
 
-# 在 X:\ 短路径下执行，修改 .inc 后建议先 clean 再重建
-make clean APP=HelloUnitTest PORT=pc_test
+# 在 X:\ 短路径下执行
 make all APP=HelloUnitTest PORT=pc_test
 X:\output\main.exe
 
@@ -109,23 +108,25 @@ python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub layout
 python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_layout_wrap_panel
 ```
 
-验收重点：
+## 10. 验收重点
 - 主控件三组 snapshot 必须能直接看出条目换行和当前项变化。
 - `same-target release / key navigation / read only / !enable / static preview` 全部通过单测。
 - 两个 preview 必须完整可见、无黑白屏，并且在全部 runtime 帧里保持静态一致。
+- README、demo 录制轨道、单测入口和验收命令链必须保持一致。
 
-## 10. 已知限制与后续方向
+## 11. 截图复核口径
+- 检查目录：`runtime_check_output/HelloCustomWidgets_layout_wrap_panel/default`
+- 复核目标：
+  - 主区裁剪后只出现 `3` 组唯一状态
+  - 遮掉主区变化边界后，边界外区域保持单哈希
+  - 按 `y >= 164` 裁切底部 preview 区域后，所有帧保持单哈希
 
-- 当前只收口单容器 `WrapPanel` reference，不实现真实子控件容器。
-- 继续使用 snapshot 描述条目与换行布局，不下沉到 SDK 通用布局层。
-- 若后续复用价值稳定，再评估是否抽象为更通用的 flow layout 基础控件。
-
-## 11. 与现有控件的边界
+## 12. 与现有控件的边界
 - 相比 `uniform_grid`：这里强调不同宽度条目与自动换行，不是等宽矩阵。
 - 相比 `data_list_panel`：这里强调流式排布，而不是单轴列表。
 - 相比 `settings_panel`：这里负责轻量标签和条目流，不负责设置页信息结构。
 
-## 12. 本次保留的核心状态与删减项
+## 13. 本次保留的核心状态与删减项
 - 保留的核心状态：
   - `flow layout`
   - `current item`
@@ -139,7 +140,7 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
   - 第二条 `compact` preview 轨道
   - 录制里的 preview dismiss 收尾动作
 
-## 13. 当前验收结果（2026-04-18）
+## 14. 当前验收结果（2026-04-18）
 - 单控件编译：`PASS`
   - `make all APP=HelloCustomWidgets APP_SUB=layout/wrap_panel PORT=pc`
 - `HelloUnitTest`：`PASS`
