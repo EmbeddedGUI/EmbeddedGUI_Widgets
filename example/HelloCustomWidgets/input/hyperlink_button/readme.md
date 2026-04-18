@@ -102,6 +102,7 @@
 make all APP=HelloCustomWidgets APP_SUB=input/hyperlink_button PORT=pc
 
 # 在 X:\ 短路径下执行
+make clean APP=HelloUnitTest PORT=pc_test
 make all APP=HelloUnitTest PORT=pc_test
 X:\output\main.exe
 
@@ -153,6 +154,7 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
 - 单控件编译：`PASS`
   - `make all APP=HelloCustomWidgets APP_SUB=input/hyperlink_button PORT=pc`
 - `HelloUnitTest`：`PASS`
+  - 在 `X:\` 短路径下执行 `make clean APP=HelloUnitTest PORT=pc_test`
   - 在 `X:\` 短路径下执行 `make all APP=HelloUnitTest PORT=pc_test`
   - `X:\output\main.exe`
   - 总计 `845 / 845`，其中 `hyperlink_button` suite `7 / 7`
