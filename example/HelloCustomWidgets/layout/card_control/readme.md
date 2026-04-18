@@ -81,8 +81,7 @@
 ```bash
 make all APP=HelloCustomWidgets APP_SUB=layout/card_control PORT=pc
 
-# 在 X:\ 短路径下执行，修改单测后建议先 clean 再重建
-make clean APP=HelloUnitTest PORT=pc_test
+# 在 X:\ 短路径下执行
 make all APP=HelloUnitTest PORT=pc_test
 X:\output\main.exe
 
@@ -97,22 +96,25 @@ python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub layout
 python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_layout_card_control
 ```
 
-验收重点：
+## 10. 验收重点
 - 主控件必须直接看出 `CardControl` 在三组 snapshot 下保持稳定卡片结构。
 - `same-target release / keyboard activation / read only / !enable / static preview` 全部通过单测。
 - 两个 preview 必须完整可见、无黑白屏，并且在全部 runtime 帧里保持静态一致。
+- README、demo 录制轨道、单测入口和验收命令链必须保持一致。
 
-## 10. 已知限制与后续方向
-- 当前只收口单卡 `CardControl` reference，不覆盖真实业务状态同步或复杂右侧 control。
-- 当前仍使用 snapshot 驱动的固定文本数据，不承接完整图标资源或复杂 hover 动效。
-- 若后续确认复用价值稳定，再评估是否抽象为更通用的 SDK 卡片控件。
+## 11. 截图复核口径
+- 检查目录：`runtime_check_output/HelloCustomWidgets_layout_card_control/default`
+- 复核目标：
+  - 主区裁剪后只出现 `3` 组唯一状态
+  - 遮掉主区变化边界后，边界外区域保持单哈希
+  - 按底部 preview 区域裁剪后，所有帧保持单哈希
 
-## 11. 与现有控件的边界
+## 12. 与现有控件的边界
 - 相比 `settings_card`：这里强调通用内容卡片，而不是设置项。
 - 相比 `card_panel`：这里强调整卡交互与右侧 control affordance，而不是信息摘要。
 - 相比 `expander / settings_expander`：这里不承担展开折叠和嵌套行语义。
 
-## 12. 本次保留的核心状态与删减项
+## 13. 本次保留的核心状态与删减项
 - 保留的核心状态：
   - `workspace flow`
   - `identity checks`
@@ -127,7 +129,7 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
   - 第二条 `compact` preview 轨道
   - 录制里的 preview dismiss 收尾动作
 
-## 13. 当前验收结果（2026-04-18）
+## 14. 当前验收结果（2026-04-18）
 - 单控件编译：`PASS`
   - `make all APP=HelloCustomWidgets APP_SUB=layout/card_control PORT=pc`
 - `HelloUnitTest`：`PASS`
