@@ -8,7 +8,7 @@
 - 对应组件名：`SegmentedControl`
 - 本次保留状态：`standard`、`compact`、`read only`、`focused`
 - 删除效果：页面级 guide、状态回显、section divider、外部 preview 标签、场景化轮播入口、复杂 hover 动画、Acrylic 和图标化装饰段
-- EGUI 适配说明：复用仓库已有 `segmented_control` 核心交互，在 `480 x 480` 页面里优先保证选中胶囊、焦点 ring 和底部双预览对照稳定；底部 `compact / read only` 统一通过 `hcw_segmented_control_override_static_preview_api()` 固定为静态 preview，点击 preview 时只清主控件 focus
+- EGUI 适配说明：复用仓库已有 `segmented_control` 核心交互，在 `480 x 480` 页面里优先保证选中胶囊、焦点 ring 和底部双预览对照稳定；底部 `compact / read only` 统一通过 `hcw_segmented_control_override_static_preview_api()` 固定为静态 preview，不再承担 preview dismiss 桥接
 
 ## 1. 为什么需要这个控件
 
@@ -29,7 +29,7 @@
 - 左下 `compact` 预览展示紧凑尺寸下的轻量 reference
 - 右下 `read only` 预览展示静态只读对照
 - 主控件保留 `Left / Right / Up / Down / Home / End / Tab` 键盘闭环
-- 底部 `compact / read only` 预览统一通过 `hcw_segmented_control_override_static_preview_api()` 吞掉 touch / key；点击 preview 时只清主控件 focus，不切换当前分段
+- 底部 `compact / read only` 预览统一通过 `hcw_segmented_control_override_static_preview_api()` 吞掉 touch / key，全程保持静态 reference，不再承担 preview dismiss 桥接
 - 示例页只保留标题、主 `segmented_control` 和底部 `compact / read only` 双预览，不再保留 guide、状态回显和外部标签
 
 目录：
@@ -65,21 +65,25 @@
 
 | 状态 / 区域 | 主控件 | Compact | Read only |
 | --- | --- | --- | --- |
-| 真实触摸切换 | 是 | 否 | 否 |
-| 键盘切换 | 是 | 否 | 否 |
-| focus ring | 是 | 否 | 否 |
-| snapshot 轮换 | 是 | 否 | 否 |
-| 静态对照 | 否 | 是 | 是 |
+| 默认态 | `Overview / Team / Usage / Access`，选中 `Team` | `Day / Week`，选中 `Day` | `Off / Auto / Lock`，选中 `Auto` |
+| 触摸切换 | 切到第三段 `Usage` | 静态不变 | 静态不变 |
+| 键盘末项态 | 切到 `Live / Pending / History`，按 `End` 后选中 `History` | 静态不变 | 静态不变 |
+| 键盘首项态 | 切到 `Day / Week / Month / Year`，按 `Home` 后选中 `Day` | 静态不变 | 静态不变 |
+| 最终稳定帧 | 回到默认 `Overview / Team / Usage / Access`，选中 `Team` | `Day / Week`，选中 `Day` | `Off / Auto / Lock`，选中 `Auto` |
 
 ## 7. `egui_port_get_recording_action()` 录制动作设计
 
-1. 重放默认主控件与底部 `compact / read only` preview，显式请求主控件 focus，并立即抓取默认态截图
+1. 重放默认主控件与底部 `compact / read only` preview，显式请求主控件 focus，并抓取默认态截图
 2. 触摸主控件第三段，验证真实切换反馈后抓取第二帧
 3. 程序化切换主控件到 `Live / Pending / History` 组，并通过 `End` 跳到最后一项，再抓取第三帧
-4. 程序化切换主控件到 `Day / Week / Month / Year`，同时把 `compact` preview 切到第二组静态对照，再通过 `Home` 回到首项并抓取第四帧
-5. 重新请求主控件 focus 后点击 `compact` preview，验证 preview 点击只清主控件 focus，最后抓取收尾稳定帧
+4. 程序化切换主控件到 `Day / Week / Month / Year` 组，并通过 `Home` 回到首项，再抓取第四帧
+5. 显式恢复默认 `Overview / Team / Usage / Access` 组和主控件 focus，最后抓取最终稳定帧
 
-当前 `test.c` 已对齐统一的 `ui_ready + layout_page + request_page_snapshot` 模板：初始化阶段在 root view 挂载前后各重放一次默认态与 preview，对 `set_segments / set_current_index / key dispatch / snapshot request` 全部切到显式布局路径，不再依赖旧的隐式 `focus/request` 时序。
+说明：
+
+- 录制阶段不再切换 `compact` preview
+- 底部双 preview 全程通过 `hcw_segmented_control_override_static_preview_api()` 吞掉 touch / key 且不改状态
+- `request_page_snapshot()` 统一走 `layout_page() + egui_view_invalidate() + recording_request_snapshot()` 显式布局路径
 
 ## 8. 编译、runtime、截图验收标准
 
@@ -112,7 +116,7 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
 - `compact` 与 `read only` 必须保持 Fluent / WPF UI 的低噪音浅色 reference
 - 主控件的 `set_segments / current index / style helper / touch cancel / !enable / key guard` 链路都不能残留 `pressed` 覆盖层
 - `Left / Right / Up / Down / Home / End / Tab` 只允许驱动主控件切换；无关按键不能留下残留 `pressed`
-- 底部 `compact / read only` 预览必须通过 `hcw_segmented_control_override_static_preview_api()` 吞掉 touch / key 输入，并在收到输入后立即清理残留 `pressed`；点击 preview 时只允许清主控件 focus，不能改当前分段
+- 底部 `compact / read only` 预览必须通过 `hcw_segmented_control_override_static_preview_api()` 吞掉 touch / key 输入，并在收到输入后立即清理残留 `pressed`；录制阶段不再依赖 preview 做状态桥接
 
 ## 9. 已知限制与后续方向
 
@@ -156,16 +160,15 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
 
 - 直接复用核心层已有 `segmented_control`，避免与 `src/widget` 同名实现冲突
 - 用固定 snapshot 驱动，优先保证 `480 x 480` 页面里的稳定 reference
-- 底部 `compact` 与 `read only` 固定为静态对照，并通过 `hcw_segmented_control_override_static_preview_api()` 统一吞掉 touch / key；点击 preview 时只清主控件 focus
+- 底部 `compact` 与 `read only` 固定为静态对照，并通过 `hcw_segmented_control_override_static_preview_api()` 统一吞掉 touch / key，不再承担 preview dismiss 桥接
 - 本轮在示例层额外补了一层 touch / key 包装与 setter 包装，用来统一清理 `pressed`、收口 `same-target release / touch cancel / !enable / key guard`，并确保静态 preview 不会误切换
 - 先完成示例级审阅稳定性，再决定是否抽象到框架公共层
 
-## 15. 当前验收结果（2026-04-17）
+## 15. 当前验收结果（2026-04-18）
 
 - 单控件编译：`PASS`
   - `make all APP=HelloCustomWidgets APP_SUB=input/segmented_control PORT=pc`
 - `HelloUnitTest`：`PASS`
-  - `make clean APP=HelloUnitTest PORT=pc_test`
   - `make all APP=HelloUnitTest PORT=pc_test`
   - `X:\output\main.exe`
   - 总计 `845 / 845`，其中 `segmented_control` suite `8 / 8`
@@ -179,7 +182,7 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
   - widget catalog 结果：`106 widgets`
 - 单控件 runtime：`PASS`
   - `python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/segmented_control --track reference --timeout 10 --keep-screenshots`
-  - `11` 帧输出到 `runtime_check_output/HelloCustomWidgets_input_segmented_control/default`
+  - `11 frames captured -> runtime_check_output/HelloCustomWidgets_input_segmented_control/default`
 - input 分类 compile/runtime 回归：`PASS`
   - `python scripts/code_compile_check.py --custom-widgets --category input --bits64`
   - `python scripts/code_runtime_check.py --app HelloCustomWidgets --category input --track reference --bits64`
@@ -189,7 +192,9 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
   - `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_input_segmented_control`
   - smoke 结果：`status=Running canvas=480x480 ratio=0.0855 colors=159`
 - 截图复核结论：
-  - 主区差分边界收敛到 `(25, 183) - (436, 258)`，覆盖默认态、触摸切换、键盘 `End / Home` 跳转与最终 focus 收尾
-  - 主区共 `6` 组唯一状态，说明录制中的状态切换都已通过显式布局路径稳定落帧
-  - `compact` preview 在 `frame_0000` 到 `frame_0005` 与 `frame_0006` 到 `frame_0010` 之间分成 `2` 组哈希，对应两组静态对照
-  - `read only` preview `11` 帧单一哈希，确认整条录制轨道中保持静态一致
+  - 共捕获 `11` 帧
+  - 全帧共出现 `5` 组唯一状态，主区哈希分组为 `[0,1,8,9,10]`、`[2]`、`[3]`、`[4,5]`、`[6,7]`
+  - 主区 RGB 差分边界为 `(46, 185) - (434, 238)`
+  - 遮罩主区边界后，主区外唯一哈希数为 `1`
+  - 以 `y >= 238` 裁切底部 preview 后，preview 区唯一哈希数为 `1`
+  - 结论：主区覆盖默认态、触摸切换路径、键盘 `End` 末项态与 `Home` 首项态，最终稳定帧已显式回到默认快照；底部 `compact / read only` preview 全程静态

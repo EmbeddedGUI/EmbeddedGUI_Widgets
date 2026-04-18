@@ -162,6 +162,13 @@
 ## 最近完成的收口动作
 
 - `2026-04-18`
+  - 收口 `input/segmented_control` reference 控件：在不修改 `sdk/EmbeddedGUI` 的前提下，把既有 `segmented_control` 示例页补齐到统一的 `ui_ready + layout_page + request_page_snapshot` 布局重放路径，去掉 preview dismiss 桥接与 `compact` preview 录制切换，保留主区默认态、触摸切换路径、键盘 `End` 末项态与 `Home` 首项态，并让最终稳定帧显式回到默认快照；底部 `compact / read only` preview 继续保持静态 reference 对照。
+  - `example/HelloCustomWidgets/input/segmented_control/test.c` 已保持统一 finalize 模板：新增 `SEGMENTED_CONTROL_RECORD_FINAL_WAIT`，移除 preview 清焦桥接与 `compact` 轨道切换，录制阶段不再依赖 preview 做页面桥接，并在最终稳定帧前显式恢复默认快照和主控件 focus。
+  - `example/HelloCustomWidgets/input/segmented_control/readme.md` 已改写为统一模板，并回填本轮真实 compile / unit / runtime / web / 截图复核数据。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=input/segmented_control PORT=pc`、在 `X:\` 执行的 `make all APP=HelloUnitTest PORT=pc_test`、`X:\output\main.exe`（总计 `845 / 845`，`segmented_control` suite `8 / 8`）、`python scripts/sync_widget_catalog.py`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category input`、`python scripts/checks/check_docs_encoding.py`、`python scripts/checks/check_widget_catalog.py`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/segmented_control --track reference --timeout 10 --keep-screenshots`、`python scripts/code_compile_check.py --custom-widgets --category input --bits64`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --category input --track reference --bits64`、`python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub input/segmented_control` 与对应 `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_input_segmented_control`（`PASS status=Running canvas=480x480 ratio=0.0855 colors=159`）。
+  - 复核 `runtime_check_output/HelloCustomWidgets_input_segmented_control/default` 的 `11` 帧截图：全帧共出现 `5` 组唯一状态，主区哈希分组为 `[0,1,8,9,10] / [2] / [3] / [4,5] / [6,7]`，对应默认态、触摸切换路径、键盘 `End` 末项态与 `Home` 首项态，最终稳定帧已回到默认态；按 RGB 差分得到主区变化边界位于 `(46, 185) - (434, 238)`，遮罩该边界后边界外区域保持单哈希；按 `y >= 238` 裁切底部 preview 区域后全部帧保持单哈希，确认底部 `compact / read only` preview 在整条录制轨道中保持静态一致。
+
+- `2026-04-18`
   - 收口 `input/time_picker` reference 控件：在不修改 `sdk/EmbeddedGUI` 的前提下，把既有 `time_picker` 示例页补齐到统一的 `ui_ready + layout_page + request_page_snapshot` 布局重放路径，去掉 preview dismiss 桥接，只保留主区默认展开、浏览展开、收起、夜间展开四组 reference 状态，并让最终稳定帧显式回到默认快照；底部 `compact / read only` preview 继续保持静态 reference 对照。
   - `example/HelloCustomWidgets/input/time_picker/test.c` 已保持统一 finalize 模板：移除 preview 清焦桥接与 `compact` 录制切换，只保留页面空白区 dismiss；录制阶段不再依赖 preview 做页面桥接，并在最终稳定帧前显式恢复默认快照和主控件 focus。
   - `example/HelloCustomWidgets/input/time_picker/readme.md` 已改写为统一模板，并回填本轮真实 compile / unit / runtime / web / 截图复核数据。
