@@ -160,6 +160,11 @@
 ## 最近完成的收口动作
 
 - `2026-04-18`
+  - 清理 `layout/scroll_viewer` finalize 文档残留：`example/HelloCustomWidgets/layout/scroll_viewer/readme.md` 删除了 `## 10. 验收重点` 前重复保留的一段旧模板“验收重点”块，避免同一验收要求在 README 中重复出现。
+  - 本轮不改 `example/HelloCustomWidgets/layout/scroll_viewer/test.c` 与验收数据口径，仅做 README 去重收口；既有 compile / unit / runtime / web 结论继续沿用前一轮 `2026-04-18` finalize 记录。
+  - 已重新通过 `python scripts/checks/check_docs_encoding.py`，确认文档去重后 UTF-8 与结构保持正常。
+
+- `2026-04-18`
   - 清理 `layout/scroll_presenter` finalize 文档残留：`example/HelloCustomWidgets/layout/scroll_presenter/readme.md` 删除了 `## 10. 验收重点` 前重复保留的一段旧模板“验收重点”块，避免同一验收要求在 README 中重复出现。
   - 本轮不改 `example/HelloCustomWidgets/layout/scroll_presenter/test.c` 与验收数据口径，仅做 README 去重收口；既有 compile / unit / runtime / web 结论继续沿用前一轮 `2026-04-18` finalize 记录。
   - 已重新通过 `python scripts/checks/check_docs_encoding.py`，确认文档去重后 UTF-8 与结构保持正常。
