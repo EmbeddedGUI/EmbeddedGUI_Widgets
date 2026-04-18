@@ -162,6 +162,13 @@
 ## 最近完成的收口动作
 
 - `2026-04-18`
+  - 收口 `layout/viewbox` reference 控件：在不修改 `sdk/EmbeddedGUI` 的前提下，把既有静态 preview 页面模板补齐到统一的 finalize 等待口径，保留主区 `Device preview / Cover preview / Inspector thumb` 三组 reference 状态和一次 `Right` preset 切换态，并让最终稳定帧前恢复默认态的等待与最终抓帧统一走 `VIEWBOX_RECORD_FINAL_WAIT`；底部 `compact / read only` preview 继续保持静态 reference 对照。
+  - `example/HelloCustomWidgets/layout/viewbox/test.c` 已保持统一 finalize 模板：仅把恢复默认态后的等待从 `VIEWBOX_RECORD_WAIT` 收口到 `VIEWBOX_RECORD_FINAL_WAIT`，保证最终稳定帧前的默认态回落和最终抓帧使用同一套稳定等待口径。
+  - `example/HelloCustomWidgets/layout/viewbox/readme.md` 已回填本轮真实 compile / unit / runtime / web / 截图复核数据，并更新为 `2026-04-18` 口径。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=layout/viewbox PORT=pc`、在 `X:\` 执行的 `make all APP=HelloUnitTest PORT=pc_test`、`X:\output\main.exe`（总计 `845 / 845`，`viewbox` suite `7 / 7`）、`python scripts/sync_widget_catalog.py`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category layout`、`python scripts/checks/check_docs_encoding.py`、`python scripts/checks/check_widget_catalog.py`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub layout/viewbox --track reference --timeout 10 --keep-screenshots`、`python scripts/code_compile_check.py --custom-widgets --category layout --bits64`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --category layout --track reference --bits64`、`python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub layout/viewbox` 与对应 `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_layout_viewbox`（`PASS status=Running canvas=480x480 ratio=0.183 colors=237`）。
+  - 复核 `runtime_check_output/HelloCustomWidgets_layout_viewbox/default` 的 `11` 帧截图：全帧共出现 `4` 组唯一状态，主区哈希分组为 `[0,1,8,9,10] / [2,3] / [4,5] / [6,7]`，对应默认态、`Right` preset 切换态、`Cover preview` 与 `Inspector thumb`，最终稳定帧已回到默认态；按 RGB 差分得到主区变化边界位于 `(57, 100) - (436, 255)`，遮罩该边界后边界外区域保持单哈希；按 `y >= 255` 裁切底部 preview 区域后全部帧保持单哈希，确认底部 `compact / read only` preview 在整条录制轨道中保持静态一致。
+
+- `2026-04-18`
   - 收口 `layout/wrap_panel` reference 控件：在不修改 `sdk/EmbeddedGUI` 的前提下，把既有静态 preview 页面模板补齐到统一的 finalize 等待口径，保留主区 `Operations queue / Release review / Density preview` 三组 reference 状态，并让最终稳定帧前恢复默认态的等待与最终抓帧统一走 `WRAP_PANEL_RECORD_FINAL_WAIT`；底部 `compact / read only` preview 继续保持静态 reference 对照。
   - `example/HelloCustomWidgets/layout/wrap_panel/test.c` 已保持统一 finalize 模板：仅把恢复默认态后的等待从 `WRAP_PANEL_RECORD_WAIT` 收口到 `WRAP_PANEL_RECORD_FINAL_WAIT`，保证最终稳定帧前的默认态回落和最终抓帧使用同一套稳定等待口径。
   - `example/HelloCustomWidgets/layout/wrap_panel/readme.md` 已回填本轮真实 compile / unit / runtime / web / 截图复核数据，并更新为 `2026-04-18` 口径。
