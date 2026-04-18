@@ -139,11 +139,10 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
   - 第二条 `compact` preview 轨道
   - 录制里的 preview dismiss 收尾动作
 
-## 13. 当前验收结果（2026-04-17）
+## 13. 当前验收结果（2026-04-18）
 - 单控件编译：`PASS`
   - `make all APP=HelloCustomWidgets APP_SUB=layout/wrap_panel PORT=pc`
 - `HelloUnitTest`：`PASS`
-  - `make clean APP=HelloUnitTest PORT=pc_test`
   - `make all APP=HelloUnitTest PORT=pc_test`
   - `X:\output\main.exe`
   - 总计 `845 / 845`，其中 `wrap_panel` suite `7 / 7`
@@ -157,7 +156,7 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
   - widget catalog 结果：`106 widgets`
 - 单控件 runtime：`PASS`
   - `python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub layout/wrap_panel --track reference --timeout 10 --keep-screenshots`
-  - `9` 帧输出到 `runtime_check_output/HelloCustomWidgets_layout_wrap_panel/default`
+  - `9 frames captured -> runtime_check_output/HelloCustomWidgets_layout_wrap_panel/default`
 - layout 分类 compile/runtime 回归：`PASS`
   - `python scripts/code_compile_check.py --custom-widgets --category layout --bits64`
   - `python scripts/code_runtime_check.py --app HelloCustomWidgets --category layout --track reference --bits64`
@@ -167,6 +166,9 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
   - `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_layout_wrap_panel`
   - smoke 结果：`status=Running canvas=480x480 ratio=0.186 colors=319`
 - 截图复核结论：
-  - 主区变化边界收敛到 `(56, 96) - (400, 164)`
-  - 主区共 `3` 组唯一状态，对应 `Operations queue / Release review / Density preview`
-  - 按 `y >= 164` 裁切底部 preview 后保持单一哈希，确认 `compact / read only` preview 全程静态
+  - 共捕获 `9` 帧
+  - 全帧共出现 `3` 组唯一状态，主区哈希分组为 `[0,1,6,7,8]`、`[2,3]`、`[4,5]`
+  - 主区 RGB 差分边界为 `(56, 96) - (400, 164)`
+  - 遮罩主区边界后，主区外唯一哈希数为 `1`
+  - 以 `y >= 164` 裁切底部 preview 后，preview 区唯一哈希数为 `1`
+  - 结论：主区覆盖 `Operations queue / Release review / Density preview` 三组 reference 状态，最终稳定帧已显式回到默认快照，底部 `compact / read only` preview 全程静态
