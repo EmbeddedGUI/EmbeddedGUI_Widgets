@@ -32,9 +32,7 @@
 
 ## 当前进行中
 
-| 状态 | 控件名 | 分类 | 开始日期 | 当前阶段 | 目标 |
-| --- | --- | --- | --- | --- | --- |
-| 暂无 | - | - | - | - | - |
+- 暂无
 
 ## 当前保留的 Reference 主线控件
 
@@ -160,6 +158,12 @@
 - `toast_stack` -> `Toast`
 
 ## 最近完成的收口动作
+
+- `2026-04-18`
+  - 再次收口 `layout/card_expander` reference 控件：在不修改 `sdk/EmbeddedGUI` 的前提下，把既有 README 补齐到最新 finalize 工作流模板，继续保留主区 `Workspace policy / Identity review / Release approval` 三组 reference 状态；底部 `compact / read only` preview 继续保持静态 reference 对照。
+  - `example/HelloCustomWidgets/layout/card_expander/test.c` 已保持统一 finalize 模板，无需再改录制轨道；`example/HelloCustomWidgets/layout/card_expander/readme.md` 已补齐 `## 10` ~ `## 14` 结构、删除 `make clean APP=HelloUnitTest PORT=pc_test`，并回填本轮真实 compile / unit / runtime / web / 截图复核数据。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=layout/card_expander PORT=pc`、在 `X:\` 执行的 `make all APP=HelloUnitTest PORT=pc_test`、`X:\output\main.exe`（总计 `845 / 845`，`card_expander` suite `7 / 7`）、`python scripts/sync_widget_catalog.py`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category layout`、`python scripts/checks/check_docs_encoding.py`、`python scripts/checks/check_widget_catalog.py`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub layout/card_expander --track reference --timeout 10 --keep-screenshots`、`python scripts/code_compile_check.py --custom-widgets --category layout --bits64`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --category layout --track reference --bits64`、`python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub layout/card_expander` 与对应 `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_layout_card_expander`（`PASS status=Running canvas=480x480 ratio=0.186 colors=167`）。
+  - 复核 `runtime_check_output/HelloCustomWidgets_layout_card_expander/default` 的 `9` 帧截图：全帧共出现 `3` 组唯一状态，主区哈希分组为 `[0,1,6,7,8] / [2,3] / [4,5]`，对应默认 `Workspace policy`、`Identity review` 与 `Release approval`，最终稳定帧已回到默认态；主区变化边界位于 `(52, 92) - (427, 261)`；按 `y >= 262` 裁切底部 preview 区域后全部帧保持单哈希，确认底部 `compact / read only` preview 在整条录制轨道中保持静态一致。
 
 - `2026-04-18`
   - 再次收口 `layout/card_control` reference 控件：在不修改 `sdk/EmbeddedGUI` 的前提下，把既有 README 补齐到最新 finalize 工作流模板，继续保留主区 `Workspace flow / Identity checks / Release approval` 三组 reference 状态；底部 `compact / read only` preview 继续保持静态 reference 对照。
