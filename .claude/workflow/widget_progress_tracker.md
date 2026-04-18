@@ -162,6 +162,13 @@
 ## 最近完成的收口动作
 
 - `2026-04-18`
+  - 收口 `layout/card_control` reference 控件：在不修改 `sdk/EmbeddedGUI` 的前提下，把既有静态 preview 页面模板补齐到统一的 finalize 等待口径，保留主区 `Workspace flow / Identity checks / Release approval` 三组 reference 状态，并让最终稳定帧前恢复默认态的等待与最终抓帧统一走 `CARD_CONTROL_RECORD_FINAL_WAIT`；底部 `compact / read only` preview 继续保持静态 reference 对照。
+  - `example/HelloCustomWidgets/layout/card_control/test.c` 已保持统一 finalize 模板：仅把恢复默认态后的等待从 `CARD_CONTROL_RECORD_WAIT` 收口到 `CARD_CONTROL_RECORD_FINAL_WAIT`，保证最终稳定帧前的默认态回落和最终抓帧使用同一套稳定等待口径。
+  - `example/HelloCustomWidgets/layout/card_control/readme.md` 已回填本轮真实 compile / unit / runtime / web / 截图复核数据，并更新为 `2026-04-18` 口径。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=layout/card_control PORT=pc`、在 `X:\` 执行的 `make all APP=HelloUnitTest PORT=pc_test`、`X:\output\main.exe`（总计 `845 / 845`，`card_control` suite `9 / 9`）、`python scripts/sync_widget_catalog.py`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category layout`、`python scripts/checks/check_docs_encoding.py`、`python scripts/checks/check_widget_catalog.py`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub layout/card_control --track reference --timeout 10 --keep-screenshots`、`python scripts/code_compile_check.py --custom-widgets --category layout --bits64`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --category layout --track reference --bits64`、`python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub layout/card_control` 与对应 `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_layout_card_control`（`PASS status=Running canvas=480x480 ratio=0.1799 colors=173`）。
+  - 复核 `runtime_check_output/HelloCustomWidgets_layout_card_control/default` 的 `9` 帧截图：全帧共出现 `3` 组唯一状态，主区哈希分组为 `[0,1,6,7,8] / [2,3] / [4,5]`，对应默认 `Workspace flow`、`Identity checks` 与 `Release approval`，最终稳定帧已回到默认态；主区变化边界位于 `(52, 98) - (427, 234)`；按 `y >= 235` 裁切底部 preview 区域后全部帧保持单哈希，确认底部 `compact / read only` preview 在整条录制轨道中保持静态一致。
+
+- `2026-04-18`
   - 收口 `layout/card_action` reference 控件：在不修改 `sdk/EmbeddedGUI` 的前提下，把既有静态 preview 页面模板补齐到统一的 finalize 等待口径，保留主区 `Workspace entry / Identity review / Release approval` 三组 reference 状态，并让最终稳定帧前恢复默认态的等待与最终抓帧统一走 `CARD_ACTION_RECORD_FINAL_WAIT`；底部 `compact / read only` preview 继续保持静态 reference 对照。
   - `example/HelloCustomWidgets/layout/card_action/test.c` 已保持统一 finalize 模板：仅把恢复默认态后的等待从 `CARD_ACTION_RECORD_WAIT` 收口到 `CARD_ACTION_RECORD_FINAL_WAIT`，保证最终稳定帧前的默认态回落和最终抓帧使用同一套稳定等待口径。
   - `example/HelloCustomWidgets/layout/card_action/readme.md` 已回填本轮真实 compile / unit / runtime / web / 截图复核数据，并更新为 `2026-04-18` 口径。
