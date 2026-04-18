@@ -162,6 +162,13 @@
 ## 最近完成的收口动作
 
 - `2026-04-18`
+  - 收口 `input/time_picker` reference 控件：在不修改 `sdk/EmbeddedGUI` 的前提下，把既有 `time_picker` 示例页补齐到统一的 `ui_ready + layout_page + request_page_snapshot` 布局重放路径，去掉 preview dismiss 桥接，只保留主区默认展开、浏览展开、收起、夜间展开四组 reference 状态，并让最终稳定帧显式回到默认快照；底部 `compact / read only` preview 继续保持静态 reference 对照。
+  - `example/HelloCustomWidgets/input/time_picker/test.c` 已保持统一 finalize 模板：移除 preview 清焦桥接与 `compact` 录制切换，只保留页面空白区 dismiss；录制阶段不再依赖 preview 做页面桥接，并在最终稳定帧前显式恢复默认快照和主控件 focus。
+  - `example/HelloCustomWidgets/input/time_picker/readme.md` 已改写为统一模板，并回填本轮真实 compile / unit / runtime / web / 截图复核数据。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=input/time_picker PORT=pc`、在 `X:\` 执行的 `make all APP=HelloUnitTest PORT=pc_test`、`X:\output\main.exe`（总计 `845 / 845`，`time_picker` suite `8 / 8`）、`python scripts/sync_widget_catalog.py`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category input`、`python scripts/checks/check_docs_encoding.py`、`python scripts/checks/check_widget_catalog.py`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/time_picker --track reference --timeout 10 --keep-screenshots`、`python scripts/code_compile_check.py --custom-widgets --category input --bits64`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --category input --track reference --bits64`、`python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub input/time_picker` 与对应 `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_input_time_picker`（`PASS status=Running canvas=480x480 ratio=0.1678 colors=133`）。
+  - 复核 `runtime_check_output/HelloCustomWidgets_input_time_picker/default` 的 `11` 帧截图：全帧共出现 `4` 组唯一状态，主区哈希分组为 `[0,1,8,9,10] / [2,3] / [4,5] / [6,7]`，对应默认展开、浏览展开、收起与夜间展开，最终稳定帧已回到默认态；按 RGB 差分得到主区变化边界位于 `(22, 82) - (458, 392)`，遮罩该边界后边界外区域保持单哈希；按 `y >= 392` 裁切底部 preview 区域后全部帧保持单哈希，确认底部 `compact / read only` preview 在整条录制轨道中保持静态一致。
+
+- `2026-04-18`
   - 收口 `input/thumb_rate` reference 控件：在不修改 `sdk/EmbeddedGUI` 的前提下，把既有 `thumb_rate` 示例页补齐到统一的 `ui_ready + layout_page + request_page_snapshot` 布局重放路径，保留主区默认 `none`、`liked`、`disliked` 与清空后的 `none` 四组 reference 状态，并让最终稳定帧显式回到默认快照；底部 `compact / read only` preview 继续保持静态 reference 对照。
   - `example/HelloCustomWidgets/input/thumb_rate/test.c` 已保持统一 finalize 模板：新增 `THUMB_RATE_RECORD_FINAL_WAIT`，移除 preview 清焦桥接，录制阶段不再依赖 preview 做页面桥接，并在最终稳定帧前显式恢复默认快照。
   - `example/HelloCustomWidgets/input/thumb_rate/readme.md` 已改写为统一模板，并回填本轮真实 compile / unit / runtime / web / 截图复核数据。

@@ -93,17 +93,6 @@ static void dismiss_primary_picker(void)
     }
 }
 
-static int dismiss_primary_focus_on_preview_touch(egui_view_t *self, egui_motion_event_t *event)
-{
-    EGUI_UNUSED(self);
-
-    if (event->type == EGUI_MOTION_EVENT_ACTION_DOWN)
-    {
-        dismiss_primary_picker();
-    }
-    return 1;
-}
-
 static uint8_t point_in_view_work_region(egui_view_t *view, egui_dim_t x, egui_dim_t y)
 {
     egui_region_t region;
@@ -197,15 +186,6 @@ static void on_primary_open_changed(egui_view_t *self, uint8_t opened)
 }
 
 #if EGUI_CONFIG_RECORDING_TEST
-static void apply_compact_snapshot(uint8_t index)
-{
-    apply_snapshot_to_picker(EGUI_VIEW_OF(&picker_compact), &compact_snapshots[index % EGUI_ARRAY_SIZE(compact_snapshots)]);
-    if (ui_ready)
-    {
-        layout_page();
-    }
-}
-
 static void request_page_snapshot(void)
 {
     layout_page();
@@ -270,9 +250,6 @@ void test_init_ui(void)
     egui_view_time_picker_set_palette(EGUI_VIEW_OF(&picker_compact), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD5DCE4), EGUI_COLOR_HEX(0x1A2734),
                                       EGUI_COLOR_HEX(0x6B7A89), EGUI_COLOR_HEX(0x0F6CBD));
     egui_view_time_picker_override_static_preview_api(EGUI_VIEW_OF(&picker_compact), &picker_compact_api);
-#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
-    picker_compact_api.on_touch = dismiss_primary_focus_on_preview_touch;
-#endif
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&picker_compact), false);
 #endif
@@ -295,9 +272,6 @@ void test_init_ui(void)
     egui_view_time_picker_set_palette(EGUI_VIEW_OF(&picker_read_only), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD5DCE4), EGUI_COLOR_HEX(0x6B7A89),
                                       EGUI_COLOR_HEX(0x7A8796), EGUI_COLOR_HEX(0x7A8796));
     egui_view_time_picker_override_static_preview_api(EGUI_VIEW_OF(&picker_read_only), &picker_read_only_api);
-#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
-    picker_read_only_api.on_touch = dismiss_primary_focus_on_preview_touch;
-#endif
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&picker_read_only), false);
 #endif
@@ -381,9 +355,10 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     case 7:
         if (first_call)
         {
-            apply_compact_snapshot(1);
+            apply_primary_default_state();
+            focus_primary_picker();
         }
-        EGUI_SIM_SET_WAIT(p_action, TIME_PICKER_RECORD_WAIT);
+        EGUI_SIM_SET_WAIT(p_action, TIME_PICKER_RECORD_FINAL_WAIT);
         return true;
     case 8:
         if (first_call)
