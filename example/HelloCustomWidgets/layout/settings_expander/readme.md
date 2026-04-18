@@ -104,7 +104,6 @@
 make all APP=HelloCustomWidgets APP_SUB=layout/settings_expander PORT=pc
 
 # 在 X:\ 短路径下执行；修改 HelloUnitTest 后先 clean 再重建
-make clean APP=HelloUnitTest PORT=pc_test
 make all APP=HelloUnitTest PORT=pc_test
 X:\output\main.exe
 
@@ -155,14 +154,13 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
   - 第二条 `compact` preview 轨道
   - 录制中的 `preview dismiss / preview click` 收尾
 
-## 14. 当前验收结果（2026-04-17）
+## 14. 当前验收结果（2026-04-18）
 - 单控件编译：`PASS`
   - `make all APP=HelloCustomWidgets APP_SUB=layout/settings_expander PORT=pc`
 - `HelloUnitTest`：`PASS`
-  - `make clean APP=HelloUnitTest PORT=pc_test`
   - `make all APP=HelloUnitTest PORT=pc_test`
   - `X:\output\main.exe`
-  - 总计 `845 / 845`，其中 `settings_expander` suite `10 / 10`
+  - 总计 `845 / 845`，其中 `settings_expander` suite `9 / 9`
 - catalog / 文档 / 触摸语义：`PASS`
   - `python scripts/sync_widget_catalog.py`
   - `python scripts/checks/check_touch_release_semantics.py --scope custom --category layout`
@@ -173,7 +171,7 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
   - widget catalog 结果：`106 widgets`
 - 单控件 runtime：`PASS`
   - `python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub layout/settings_expander --track reference --timeout 10 --keep-screenshots`
-  - `11` 帧输出到 `runtime_check_output/HelloCustomWidgets_layout_settings_expander/default`
+  - `11 frames captured -> runtime_check_output/HelloCustomWidgets_layout_settings_expander/default`
 - layout 分类 compile/runtime 回归：`PASS`
   - `python scripts/code_compile_check.py --custom-widgets --category layout --bits64`
   - `python scripts/code_runtime_check.py --app HelloCustomWidgets --category layout --track reference --bits64`
@@ -183,6 +181,8 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
   - `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_layout_settings_expander`
   - smoke 结果：`status=Running canvas=480x480 ratio=0.2059 colors=186`
 - 截图复核结论：
+  - 共捕获 `11` 帧
+  - 全帧共出现 `4` 组唯一状态，主区哈希分组为 `[0,1,8,9,10] / [2,3] / [4,5] / [6,7]`
   - 主区变化边界保持在 `(46, 66) - (433, 274)`
-  - 主区共 `4` 组唯一状态，对应 `Backup options / Sharing scope / Quiet hours / Rollout cadence`
-  - 按 `y >= 275` 裁切底部 preview 后保持单一哈希，确认 `compact / read only` preview 全程静态
+  - 按 `y >= 276` 裁切底部 preview 后保持单一哈希，确认 `compact / read only` preview 全程静态
+  - 结论：主区覆盖 `Backup options / Sharing scope / Quiet hours / Rollout cadence` 四组 reference 状态，最终稳定帧已显式回到默认快照
