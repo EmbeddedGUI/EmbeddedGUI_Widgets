@@ -75,7 +75,7 @@
 3. 切到 `Backlog feed`，输出第三组主状态。
 4. 恢复主控件默认状态，输出最终稳定帧。
 
-录制只导出主控件的状态变化。底部两个 preview 在整条 reference 轨道中保持静态一致，不再承担 preview dismiss 或焦点清理职责。
+录制只导出主控件的状态变化。底部两个 preview 在整条 reference 轨道中保持静态一致，不再承担 preview dismiss 或焦点清理职责。当前 `test.c` 已把恢复默认态后的等待与最终抓帧统一收口到 `SCROLL_VIEWER_RECORD_FINAL_WAIT`，中间状态切换继续保留 `SCROLL_VIEWER_RECORD_WAIT / SCROLL_VIEWER_RECORD_FRAME_WAIT`。
 
 ## 9. 编译、运行时、单测与文档检查
 ```bash
@@ -101,17 +101,25 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
 - `same-target release / thumb drag / key navigation / read only / !enable / static preview` 全部通过单测。
 - 两个 preview 必须完整可见、无黑白屏，并且在全部 runtime 帧里保持静态一致。
 
-## 10. 已知限制与后续方向
-- 当前只收口单容器 `ScrollViewer` reference，不接入嵌套滚动链、惯性或系统级输入桥接。
-- 继续使用 snapshot 数组描述滚动内容、viewport 和 offset，不下沉到 SDK 通用容器层。
-- 若后续复用价值稳定，再评估是否与 `scroll_presenter`、`scroll_bar` 抽共享的 offset metrics 或 thumb helper。
+## 10. 验收重点
+- 主控件三组 snapshot 必须清晰体现滚动条、thumb、内容块和 `offset` 的差异。
+- `same-target release / thumb drag / key navigation / read only / !enable / static preview` 全部通过单测。
+- 两个 preview 必须完整可见、无黑白屏，并且在全部 runtime 帧里保持静态一致。
+- README、demo 录制轨道、单测入口和验收命令链必须保持一致。
 
-## 11. 与现有控件的边界
+## 11. 截图复核口径
+- 检查目录：`runtime_check_output/HelloCustomWidgets_layout_scroll_viewer/default`
+- 复核目标：
+  - 主区裁剪后只出现 `3` 组唯一状态
+  - 遮掉主区变化边界后，边界外区域保持单哈希
+  - 按底部 preview 区域裁剪后，所有帧保持单哈希
+
+## 12. 与现有控件的边界
 - 相比 `scroll_presenter`：这里保留显式 `scrollbar / thumb` chrome，而不是强调内容 surface 自身的平移。
 - 相比 `scroll_bar`：这里负责完整 `viewport / surface / scrollbar / offset`，而不只是滚动条本体。
 - 相比 `data_list_panel`：这里承载任意内容块，不绑定列表数据结构。
 
-## 12. 本次保留的核心状态与删减项
+## 13. 本次保留的核心状态与删减项
 - 保留的核心状态：
   - `surface / viewport / scrollbar`
   - `vertical / horizontal offset`
@@ -125,7 +133,7 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
   - `compact` 第二条 preview 轨道
   - 录制里的 `preview dismiss` 收尾动作
 
-## 13. 当前验收结果（2026-04-18）
+## 14. 当前验收结果（2026-04-18）
 - 单控件编译：`PASS`
   - `make all APP=HelloCustomWidgets APP_SUB=layout/scroll_viewer PORT=pc`
 - `HelloUnitTest`：`PASS`
@@ -155,5 +163,5 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
   - 共捕获 `9` 帧
   - 全帧共出现 `3` 组唯一状态，主区哈希分组为 `[0,1,6,7,8] / [2,3] / [4,5]`
   - 主区变化边界保持在 `(49, 63) - (430, 285)`
-  - 按 `y >= 287` 裁切底部 preview 后保持单一哈希，确认 `compact / read only` preview 全程静态
+- 按 `y >= 286` 裁切底部 preview 后保持单一哈希，确认 `compact / read only` preview 全程静态
   - 结论：主区覆盖默认 `Release pane`、`Diagnostics lane` 与 `Backlog feed` 三组 reference 状态，最终稳定帧已显式回到默认快照
