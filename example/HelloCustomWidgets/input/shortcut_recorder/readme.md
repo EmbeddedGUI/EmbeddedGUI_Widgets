@@ -102,7 +102,7 @@
 - 主控件的 focus ring 改为只在真实 focus 下绘制。
 - 录制链路移除 preview 清焦桥接与 `compact` 轨道切换，最终稳定帧前显式恢复默认绑定。
 
-## 9. 交互测试覆盖
+### 交互测试覆盖
 `example/HelloUnitTest/test/test_shortcut_recorder.c` 本轮覆盖了以下回归：
 - 进入监听态并捕获新绑定
 - 键盘切换 preset 并应用
@@ -115,7 +115,7 @@
 - static preview 吞输入且不改动 `binding / listening / current part`
 - region 暴露随状态变化
 
-## 10. 录制动作设计
+## 9. 录制动作设计
 `egui_port_get_recording_action()` 当前录制链路：
 1. 应用主控件默认绑定和底部 preview 固定状态。
 2. 抓取首帧默认态。
@@ -137,12 +137,11 @@
 
 当前 `test.c` 已对齐统一的 `ui_ready + layout_page + request_page_snapshot` 收口模板：新增 `SHORTCUT_RECORD_FINAL_WAIT`，初始化阶段在 root view 挂载前后各重放一次默认态与 preview，键盘录制入口与 `request_page_snapshot()` 都先走显式布局路径，最终稳定帧前显式恢复默认绑定。
 
-## 11. 编译、检查与验收命令
+验收命令：
 ```bash
 make all APP=HelloCustomWidgets APP_SUB=input/shortcut_recorder PORT=pc
 
-# 在 X:\ 短路径下执行，修改 .inc 后建议先 clean 再重建
-make clean APP=HelloUnitTest PORT=pc_test
+# 在 X:\ 短路径下执行
 make all APP=HelloUnitTest PORT=pc_test
 X:\output\main.exe
 
@@ -157,43 +156,72 @@ python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub input/
 python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_input_shortcut_recorder
 ```
 
-验收重点：
+## 10. 验收重点
 - 主控件和底部 preview 必须完整可见，不能黑屏、白屏或裁切。
 - 主控件交互结束后不能残留 pressed 污染。
 - listening pill、快捷键 token、preset 行和 clear 行为都要保持 Fluent / WPF UI 的低噪音层级。
 - 底部 preview 必须保持静态 reference，对输入只吞不改状态。
 
-## 12. 已知限制
-- 当前只覆盖 `Ctrl` 与 `Shift` 两种修饰键，不扩展到 `Alt / Win`。
-- 当前不做系统级快捷键冲突检测、保留键校验和真实持久化写入。
-- preset 仍是固定数组，示例不接真实用户配置源。
+## 11. 截图复核口径
+- 检查目录：`runtime_check_output/HelloCustomWidgets_input_shortcut_recorder/default`
+- 本轮复核结果：
+  - 共捕获 `13` 帧
+  - 全帧共出现 `5` 组唯一状态，主区哈希分组为 `[0,1,10,11,12] / [2,3] / [4,5] / [6,7] / [8,9]`
+  - 主区 RGB 差分边界收敛到 `(55, 104) - (424, 267)`
+  - 遮罩主区变化边界后，主区外区域唯一哈希数为 `1`
+  - 按 `y >= 268` 裁切底部 preview 后，preview 区唯一哈希数为 `1`
 
-## 13. 与现有控件的差异边界
+## 12. 与现有控件的边界
 - 相比 `textinput`：这里表达的是组合键捕获，不是自由文本编辑。
 - 相比 `token_input`：这里只处理单个快捷键绑定，不做多 token 管理。
 - 相比 `command_bar`：这里负责录入和保存快捷键，不负责触发命令。
 
-## 14. EGUI 适配说明
-- 通过固定 preset 和固定录制脚本保证 `480 x 480` 下的稳定审阅。
-- 底部 preview 统一走静态 API，避免为了对照控件再维护第二套可交互实现。
-- 当前优先保证状态清理、release 语义和 runtime 渲染稳定，再考虑是否上升为公共框架控件。
+## 13. 本次保留的核心状态与删减项
+- 本次保留状态：
+  - `default binding`
+  - `listening`
+  - `capture`
+  - `preset apply`
+  - `clear binding`
+  - `compact`
+  - `read only`
+- 删减的装饰或桥接：
+  - preview 清焦桥接与 preview click 录制轨道
+  - `compact` preview 状态切换
+  - 旧版 guide、状态回显和外部 preview 标签
+  - 系统级快捷键冲突检测、保留键校验和真实持久化写入
 
-## 15. 当前验收结果（2026-04-18）
+## 14. 当前验收结果（2026-04-19）
 
-- `HelloCustomWidgets` 单控件编译：已通过 `make all APP=HelloCustomWidgets APP_SUB=input/shortcut_recorder PORT=pc`
-- `HelloUnitTest`：已在 `X:\` 短路径通过 `make clean APP=HelloUnitTest PORT=pc_test`、`make all APP=HelloUnitTest PORT=pc_test` 和 `X:\output\main.exe`，总计 `845 / 845`，其中 `shortcut_recorder` suite `10 / 10`
-- `sync_widget_catalog.py`：已通过，本轮仍同步为 `106` 个控件目录
-- `touch release semantics`：已通过，结果 `custom_audited=28 custom_skipped_allowlist=5`
-- `docs encoding`：已通过，结果 `134 files`
-- `widget catalog check`：已通过，结果 `106 widgets: reference=106, showcase=0, deprecated=0`
-- 单控件 runtime：已通过 `python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/shortcut_recorder --track reference --timeout 10 --keep-screenshots`，输出 `13 frames captured -> D:\workspace\gitee\EmbeddedGUI_Widgets\runtime_check_output\HelloCustomWidgets_input_shortcut_recorder\default`
-- input 分类 compile/runtime 回归：已通过
-  compile `33 / 33`
-  runtime `33 / 33`
-- wasm 构建：已通过 `python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub input/shortcut_recorder`，输出 `web/demos/HelloCustomWidgets_input_shortcut_recorder`
-- web smoke：已通过 `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_input_shortcut_recorder`，结果 `PASS status=Running canvas=480x480 ratio=0.2049 colors=156`
+- 单控件编译：`PASS`
+  - `make all APP=HelloCustomWidgets APP_SUB=input/shortcut_recorder PORT=pc`
+- `HelloUnitTest`：`日志复核 PASS`
+  - `make all APP=HelloUnitTest PORT=pc_test`
+  - `X:\output\main.exe`
+  - 本轮按本地 unit 日志复核总计 `845 / 845`，其中 `shortcut_recorder` suite `10 / 10`
+- catalog / 文档 / 触摸语义：`PASS`
+  - `python scripts/sync_widget_catalog.py`
+  - `python scripts/checks/check_touch_release_semantics.py --scope custom --category input`
+  - `python scripts/checks/check_docs_encoding.py`
+  - `python scripts/checks/check_widget_catalog.py`
+  - 触摸语义结果：`custom_audited=28 custom_skipped_allowlist=5`
+  - 文档编码结果：`134 files`
+  - widget catalog 结果：`106 widgets`
+- 单控件 runtime：`PASS`
+  - `python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/shortcut_recorder --track reference --timeout 10 --keep-screenshots`
+  - `13 frames captured -> runtime_check_output/HelloCustomWidgets_input_shortcut_recorder/default`
+- input 分类 compile/runtime 回归：`PASS`
+  - `python scripts/code_compile_check.py --custom-widgets --category input --bits64`
+  - `python scripts/code_runtime_check.py --app HelloCustomWidgets --category input --track reference --bits64`
+  - input `33 / 33` 全部通过
+- web 链路：`PASS`
+  - `python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub input/shortcut_recorder`
+  - `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_input_shortcut_recorder`
+  - smoke 结果：`status=Running canvas=480x480 ratio=0.2049 colors=156`
 - 截图复核结论：
-  - 全帧 `13` 帧共出现 `5` 组唯一状态，对应默认 `Ctrl + K`、listening、`Ctrl + Shift + P` 捕获、新 preset 应用与 clear binding；最终稳定帧已显式回到默认 `Ctrl + K` 绑定
-  - 按 RGB 差分得到主区变化边界位于 `(55, 104) - (425, 268)`，遮罩该边界后主区外区域保持单哈希
-  - 按 `y >= 268` 裁切底部 preview 区域后全部帧保持单哈希，确认 `compact / read only` preview 在整条录制轨道中保持静态一致
-  - 主区哈希分组为 `[0,1,10,11,12] / [2,3] / [4,5] / [6,7] / [8,9]`，对应默认、listening、capture、新 preset 与 clear 五组主区状态
+  - 共捕获 `13` 帧
+  - 全帧共出现 `5` 组唯一状态，主区哈希分组为 `[0,1,10,11,12] / [2,3] / [4,5] / [6,7] / [8,9]`
+  - 主区 RGB 差分边界为 `(55, 104) - (424, 267)`
+  - 遮罩主区边界后，主区外唯一哈希数为 `1`
+  - 以 `y >= 268` 裁切底部 preview 后，preview 区唯一哈希数为 `1`
+  - 结论：主区覆盖默认 `Ctrl + K`、listening、`Ctrl + Shift + P` capture、新 preset 应用与 clear binding 五组 reference 状态，最终稳定帧已显式回到默认 `Ctrl + K` 绑定，底部 `compact / read only` preview 全程静态

@@ -159,6 +159,12 @@
 
 ## 最近完成的收口动作
 
+- `2026-04-19`
+  - 再次收口 `input/shortcut_recorder` reference 控件：在不修改 `sdk/EmbeddedGUI` 的前提下，把既有 README 从旧版 finalize 章节结构收口到最新模板，继续保留主区默认 `Ctrl + K`、listening、`Ctrl + Shift + P` capture、新 preset 应用与 clear binding 五组 reference 状态；底部 `compact / read only` preview 继续保持静态 reference 对照。
+  - `example/HelloCustomWidgets/input/shortcut_recorder/test.c` 已保持统一 finalize 模板，无需再改录制轨道；`example/HelloCustomWidgets/input/shortcut_recorder/readme.md` 已补齐 `## 10` ~ `## 14` 结构，并按本轮真实 compile / unit / runtime / web / 截图复核结果刷新说明；`HelloUnitTest` 本轮按本地 unit 日志复核，web smoke 已在 `2026-04-19` 重新通过。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=input/shortcut_recorder PORT=pc`、`python scripts/sync_widget_catalog.py`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category input`、`python scripts/checks/check_docs_encoding.py`、`python scripts/checks/check_widget_catalog.py`、在 `X:\` 执行的 `make all APP=HelloUnitTest PORT=pc_test`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/shortcut_recorder --track reference --timeout 10 --keep-screenshots`、`python scripts/code_compile_check.py --custom-widgets --category input --bits64`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --category input --track reference --bits64`、`python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub input/shortcut_recorder` 与 `2026-04-19` 重新执行的对应 `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_input_shortcut_recorder`（`PASS status=Running canvas=480x480 ratio=0.2049 colors=156`）。
+  - 复核 `runtime_check_output/HelloCustomWidgets_input_shortcut_recorder/default` 的 `13` 帧截图：全帧共出现 `5` 组唯一状态，主区哈希分组为 `[0,1,10,11,12] / [2,3] / [4,5] / [6,7] / [8,9]`，对应默认 `Ctrl + K`、listening、`Ctrl + Shift + P` capture、新 preset 应用与 clear binding，最终稳定帧已回到默认态；主区变化边界位于 `(55, 104) - (424, 267)`；按 `y >= 268` 裁切底部 preview 区域后全部帧保持单哈希，确认底部 `compact / read only` preview 在整条录制轨道中保持静态一致。另按本地 unit 日志复核，`shortcut_recorder` suite `10 / 10`、总计 `845 / 845` 保持通过。
+
 - `2026-04-18`
   - 再次收口 `input/thumb_rate` reference 控件：在不修改 `sdk/EmbeddedGUI` 的前提下，把既有 README 从旧版 finalize 章节结构收口到最新模板，继续保留主区默认 `none`、`liked`、`disliked` 与清空后的 `none` 四组 reference 状态；底部 `compact / read only` preview 继续保持静态 reference 对照。
   - `example/HelloCustomWidgets/input/thumb_rate/test.c` 已保持统一 finalize 模板，无需再改录制轨道；`example/HelloCustomWidgets/input/thumb_rate/readme.md` 已补齐 `## 10` ~ `## 14` 结构，并按本轮真实 compile / runtime / web / 截图复核结果刷新说明；`HelloUnitTest` 本轮按本地 unit 日志复核。
