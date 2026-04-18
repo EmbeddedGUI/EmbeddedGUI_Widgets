@@ -96,7 +96,6 @@
 make all APP=HelloCustomWidgets APP_SUB=layout/settings_card PORT=pc
 
 # 在 X:\ 短路径下执行；修改 HelloUnitTest 后先 clean 再重建
-make clean APP=HelloUnitTest PORT=pc_test
 make all APP=HelloUnitTest PORT=pc_test
 X:\output\main.exe
 
@@ -145,11 +144,10 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
   - 第二条 `compact` preview 轨道
   - 录制中的 `preview dismiss / preview click` 收尾
 
-## 14. 当前验收结果（2026-04-17）
+## 14. 当前验收结果（2026-04-18）
 - 单控件编译：`PASS`
   - `make all APP=HelloCustomWidgets APP_SUB=layout/settings_card PORT=pc`
 - `HelloUnitTest`：`PASS`
-  - `make clean APP=HelloUnitTest PORT=pc_test`
   - `make all APP=HelloUnitTest PORT=pc_test`
   - `X:\output\main.exe`
   - 总计 `845 / 845`，其中 `settings_card` suite `9 / 9`
@@ -163,7 +161,7 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
   - widget catalog 结果：`106 widgets`
 - 单控件 runtime：`PASS`
   - `python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub layout/settings_card --track reference --timeout 10 --keep-screenshots`
-  - `9` 帧输出到 `runtime_check_output/HelloCustomWidgets_layout_settings_card/default`
+  - `9 frames captured -> runtime_check_output/HelloCustomWidgets_layout_settings_card/default`
 - layout 分类 compile/runtime 回归：`PASS`
   - `python scripts/code_compile_check.py --custom-widgets --category layout --bits64`
   - `python scripts/code_runtime_check.py --app HelloCustomWidgets --category layout --track reference --bits64`
@@ -173,6 +171,8 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
   - `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_layout_settings_card`
   - smoke 结果：`status=Running canvas=480x480 ratio=0.1769 colors=172`
 - 截图复核结论：
+  - 共捕获 `9` 帧
+  - 全帧共出现 `3` 组唯一状态，主区哈希分组为 `[0,1,6,7,8] / [2,3] / [4,5]`
   - 主区变化边界保持在 `(52, 101) - (427, 228)`
-  - 主区共 `3` 组唯一状态，对应 `Backup window / Sharing scope / Rollout ring`
-  - 按 `y >= 229` 裁切底部 preview 后保持单一哈希，确认 `compact / read only` preview 全程静态
+  - 按 `y >= 230` 裁切底部 preview 后保持单一哈希，确认 `compact / read only` preview 全程静态
+  - 结论：主区覆盖 `Backup window / Sharing scope / Rollout ring` 三组 reference 状态，最终稳定帧已显式回到默认快照

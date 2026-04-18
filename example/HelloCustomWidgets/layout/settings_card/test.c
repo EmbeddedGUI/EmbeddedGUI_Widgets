@@ -237,7 +237,7 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
             egui_view_request_focus(EGUI_VIEW_OF(&card_primary));
 #endif
         }
-        EGUI_SIM_SET_WAIT(p_action, SETTINGS_CARD_RECORD_WAIT);
+        EGUI_SIM_SET_WAIT(p_action, SETTINGS_CARD_RECORD_FINAL_WAIT);
         return true;
     case 6:
         if (first_call)
