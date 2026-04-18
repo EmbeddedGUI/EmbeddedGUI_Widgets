@@ -109,24 +109,26 @@ python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub layout
 python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_layout_virtualizing_wrap_panel
 ```
 
-验收重点：
+## 10. 验收重点
 - 主控件必须能直接看出窗口化 wrap、`window_anchor` 跳转和 snapshot 切换。
 - `same-target release / page jump / read only / !enable / static preview` 全部通过单测。
 - 两个 preview 必须完整可见、无黑白屏，并且在全部 runtime 帧里保持静态一致。
+- README、demo 录制轨道、单测入口和验收命令链必须保持一致。
 
-## 10. 已知限制与后续方向
+## 11. 截图复核口径
+- 检查目录：`runtime_check_output/HelloCustomWidgets_layout_virtualizing_wrap_panel/default`
+- 复核目标：
+  - 主区裁剪后只出现 `3` 组唯一状态
+  - 遮掉主区变化边界后，边界外区域保持单哈希
+  - 按底部 preview 区域裁剪后，所有帧保持单哈希
 
-- 当前只收口单容器 `VirtualizingWrapPanel` reference，不实现真实数据源虚拟化容器。
-- 继续使用 snapshot 描述总项数、当前项与窗口锚点，不下沉到 SDK 通用布局层。
-- 若后续复用价值稳定，再评估是否抽象出与 `wrap_panel` 共享的 flow metrics / window helper。
-
-## 11. 与现有控件的边界
+## 12. 与现有控件的边界
 
 - 相比 `wrap_panel`：这里强调窗口化渲染和 `window_anchor`，不是完整全量渲染。
 - 相比 `virtualizing_stack_panel`：这里强调 wrap rows，而不是单列窗口。
 - 相比 `uniform_grid`：这里负责 variable-width 条目和流式换行，不是等宽矩阵。
 
-## 12. 本次保留的核心状态与删减项
+## 13. 本次保留的核心状态与删减项
 
 - 保留的核心状态：
   - `windowed wrap`
@@ -141,14 +143,14 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
   - 第二条 `compact` preview 轨道
   - 录制里的 preview dismiss 收尾动作
 
-## 13. 当前验收结果（2026-04-18）
+## 14. 当前验收结果（2026-04-18）
 
 - 单控件编译：`PASS`
   - `make all APP=HelloCustomWidgets APP_SUB=layout/virtualizing_wrap_panel PORT=pc`
-- `HelloUnitTest`：`PASS`
+- `HelloUnitTest`：`日志复核 PASS`
   - `make all APP=HelloUnitTest PORT=pc_test`
   - `X:\output\main.exe`
-  - 总计 `845 / 845`，其中 `virtualizing_wrap_panel` suite `7 / 7`
+  - 当前环境下直接执行超时且重定向日志为空，本轮按本地 unit 日志复核总计 `845 / 845`，其中 `virtualizing_wrap_panel` suite `7 / 7`
 - catalog / 文档 / 触摸语义：`PASS`
   - `python scripts/sync_widget_catalog.py`
   - `python scripts/checks/check_touch_release_semantics.py --scope custom --category layout`
