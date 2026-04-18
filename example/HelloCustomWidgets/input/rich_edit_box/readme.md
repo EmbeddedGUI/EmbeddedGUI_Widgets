@@ -114,11 +114,11 @@
 - `rich_edit_box_action_style == 0xFF`
 - `rich_edit_box_action_text_length == 0xFF`
 
-## 9. 验收命令
+验收命令：
 ```bash
 make all APP=HelloCustomWidgets APP_SUB=input/rich_edit_box PORT=pc
 
-make clean APP=HelloUnitTest PORT=pc_test
+# 在 X:\ 短路径下执行
 make all APP=HelloUnitTest PORT=pc_test
 X:\output\main.exe
 
@@ -133,52 +133,69 @@ python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub input/
 python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_input_rich_edit_box
 ```
 
-## 10. 当前验收结果（2026-04-18）
-- `HelloCustomWidgets` 单控件编译：已通过 `make all APP=HelloCustomWidgets APP_SUB=input/rich_edit_box PORT=pc`
-- `HelloUnitTest`：已在 `X:\` 短路径通过 `make clean APP=HelloUnitTest PORT=pc_test`、`make all APP=HelloUnitTest PORT=pc_test` 和 `X:\output\main.exe`，总计 `845 / 845`，其中 `rich_edit_box` suite `7 / 7`
-- `sync_widget_catalog.py`：已通过，本轮仍同步为 `106` 个控件目录
-- `touch release semantics`：已通过，结果 `custom_audited=28 custom_skipped_allowlist=5`
-- `docs encoding`：已通过，结果 `134 files`
-- `widget catalog check`：已通过，结果 `106 widgets: reference=106, showcase=0, deprecated=0`
-- 单控件 runtime：已通过 `python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/rich_edit_box --track reference --timeout 10 --keep-screenshots`，输出 `9 frames captured -> D:\workspace\gitee\EmbeddedGUI_Widgets\runtime_check_output\HelloCustomWidgets_input_rich_edit_box\default`
-- input 分类 compile/runtime 回归：已通过
-  compile `33 / 33`
-  runtime `33 / 33`
-- wasm 构建：已通过 `python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub input/rich_edit_box`，输出 `web/demos/HelloCustomWidgets_input_rich_edit_box`
-- web smoke：已通过 `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_input_rich_edit_box`，结果 `PASS status=Running canvas=480x480 ratio=0.2059 colors=238`
+## 10. 验收重点
+- 主控件和底部 preview 必须完整可见，不能黑屏、白屏或裁切。
+- 主区 `Shift briefing / Bug scrub / Launch checklist` 三组 reference 快照必须能从截图中稳定区分。
+- 主控件的 document / preset / 编辑链路收口后不能残留 `pressed` 污染。
+- 底部 `compact / read only` preview 必须保持静态 reference，对输入只吞不改状态。
 
-## 11. Runtime 复核结论
-复核目录：
-- `runtime_check_output/HelloCustomWidgets_input_rich_edit_box/default`
+## 11. 截图复核口径
+- 检查目录：`runtime_check_output/HelloCustomWidgets_input_rich_edit_box/default`
+- 本轮复核结果：
+  - 共捕获 `9` 帧
+  - 全帧共出现 `3` 组唯一状态，主区哈希分组为 `[0,1,6,7,8] / [2,3] / [4,5]`
+  - 主区 RGB 差分边界收敛到 `(54, 73) - (425, 274)`
+  - 遮罩主区变化边界后，主区外区域唯一哈希数为 `1`
+  - 按 `y >= 275` 裁切底部 preview 后，preview 区唯一哈希数为 `1`
 
-复核结果：
-- 总帧数：`9`
-- 主区 RGB 差分边界：`(54, 73) - (426, 275)`
-- 遮罩主区差分边界后，主区外唯一哈希数：`1`
-- 按主区差分边界裁切后，主区唯一状态数：`3`
-- 按 `y >= 275` 裁切底部 preview 区域后，preview 区唯一哈希数：`1`
-
-目标：
-- 主区唯一状态数 = `3`
-- 主区外唯一哈希数 = `1`
-- 底部 preview 区唯一哈希数 = `1`
-
-结论：
-- 主区变化严格收敛在 `rich_edit_box` 主体，主区外页面 chrome 在整条轨道中保持静态。
-- `9` 帧里主区保持 `3` 组唯一状态：`[0,1,6,7,8]` 对应默认 `Shift briefing / Body`，`[2,3]` 对应 `Bug scrub / Callout`，`[4,5]` 对应 `Launch checklist / Checklist`；最终稳定帧已显式回到默认态。
-- 按 `y >= 275` 裁切底部 preview 区域后保持单哈希，确认 `compact / read only` preview 在整条录制轨道中始终静态一致。
-
-## 12. 已知限制
-- 当前只覆盖轻量 `RichEditBox` reference，不扩展 inline object、图片嵌入或复杂 IME 组合输入。
-- 当前以 document snapshot 数组描述标题、正文和 preset，不下沉为 SDK 级通用富文本编辑器。
-- 底部 preview 只作为静态 reference，不承载额外交互职责。
-
-## 13. 与现有控件的边界
+## 12. 与现有控件的边界
 - 相比 `text_box`：这里保留多段落样式和 preset 语义，而不是最小文本输入。
 - 相比 `rich_text_block`：这里保留真实编辑、焦点和键盘链路，而不只是展示。
 - 相比 `field`：这里聚焦富文本编辑面板本身，不承载标签、必填标记和帮助信息容器。
 
-## 14. EGUI 适配说明
-- 继续使用当前目录下的 `egui_view_rich_edit_box` custom view，不修改 SDK。
-- document snapshot、preset 视觉和 static preview 语义都收口在 custom 层。
-- 当前优先保证主区 3 组 reference 快照、底部 preview 全程静态，以及 runtime 录制无污染，再评估是否扩展更复杂的富文本编辑能力。
+## 13. 本次保留的核心状态与删减项
+- 本次保留状态：
+  - `Shift briefing / Body`
+  - `Bug scrub / Callout`
+  - `Launch checklist / Checklist`
+  - `compact`
+  - `read only`
+- 删减的装饰或桥接：
+  - 录制阶段 `R / E / V / I / E / W` 键盘输入
+  - 录制阶段 `Tab / Right / Enter` 真实导航链
+  - 点击底部 `compact` preview 的旧轨道
+  - 让 preview 承担清焦或页面状态桥接职责的旧链路
+
+## 14. 当前验收结果（2026-04-19）
+- 单控件编译：`PASS`
+  - `make all APP=HelloCustomWidgets APP_SUB=input/rich_edit_box PORT=pc`
+- `HelloUnitTest`：`日志复核 PASS`
+  - `make all APP=HelloUnitTest PORT=pc_test`
+  - `X:\output\main.exe`
+  - 本轮按本地 unit 日志复核总计 `845 / 845`，其中 `rich_edit_box` suite `7 / 7`
+- catalog / 文档 / 触摸语义：`PASS`
+  - `python scripts/sync_widget_catalog.py`
+  - `python scripts/checks/check_touch_release_semantics.py --scope custom --category input`
+  - `python scripts/checks/check_docs_encoding.py`
+  - `python scripts/checks/check_widget_catalog.py`
+  - 触摸语义结果：`custom_audited=28 custom_skipped_allowlist=5`
+  - 文档编码结果：`134 files`
+  - widget catalog 结果：`106 widgets`
+- 单控件 runtime：`PASS`
+  - `python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/rich_edit_box --track reference --timeout 10 --keep-screenshots`
+  - `9 frames captured -> runtime_check_output/HelloCustomWidgets_input_rich_edit_box/default`
+- input 分类 compile/runtime 回归：`PASS`
+  - `python scripts/code_compile_check.py --custom-widgets --category input --bits64`
+  - `python scripts/code_runtime_check.py --app HelloCustomWidgets --category input --track reference --bits64`
+  - input `33 / 33` 全部通过
+- web 链路：`PASS`
+  - `python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub input/rich_edit_box`
+  - `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_input_rich_edit_box`
+  - smoke 结果：`status=Running canvas=480x480 ratio=0.2059 colors=238`
+- 截图复核结论：
+  - 共捕获 `9` 帧
+  - 全帧共出现 `3` 组唯一状态，主区哈希分组为 `[0,1,6,7,8] / [2,3] / [4,5]`
+  - 主区 RGB 差分边界为 `(54, 73) - (425, 274)`
+  - 遮罩主区边界后，主区外唯一哈希数为 `1`
+  - 以 `y >= 275` 裁切底部 preview 后，preview 区唯一哈希数为 `1`
+  - 结论：主区覆盖默认 `Shift briefing / Body`、`Bug scrub / Callout` 与 `Launch checklist / Checklist` 三组 reference 快照，最终稳定帧已显式回到默认态，底部 `compact / read only` preview 全程静态
