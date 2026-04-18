@@ -1,12 +1,12 @@
 # list 设计说明
 
 ## 参考来源
-- 参考设计体系：`Fluent 2`
+- 参考设计系统：`Fluent 2`
 - 官方语义参考：`Fluent UI React List`
 - 对应组件语义：`List`
 - 本次保留语义：`Inbox / Review / Archive / compact / read only / selection focus`
-- 本次删除内容：旧录制末尾额外选中第 3 行的收尾态、旧单测 `on_key_event` 注入路径、与当前 static preview 工作流不一致的旧 README 结构
-- EGUI 适配说明：目录和 demo 继续使用 `layout/list`，公开 C API 保持 `egui_view_reference_list_*`，本轮只收口 `reference` 页面结构、录制轨道、单测入口和静态 preview 语义，不修改 `sdk/EmbeddedGUI`
+- 本次删除内容：旧录制末尾额外选中第 3 行的收尾态、旧单测 `on_key_event` 注入路径，以及与当前 static preview 工作流不一致的旧 README 结构
+- EGUI 适配说明：目录和 demo 继续使用 `layout/list`，公开 C API 保持 `egui_view_reference_list_*`；本轮只收口 `reference` 页面结构、录制轨道、单测入口和静态 preview 语义，不修改 `sdk/EmbeddedGUI`
 
 ## 1. 为什么需要这个控件
 `list` 用来表达“同一组轻量条目按单列顺序排列，并保留当前项焦点与选择语义”的标准列表结构。它适合消息队列、审核清单、归档入口、资源面板侧栏和小规模任务摘要这类需要快速浏览与切换当前项的场景。
@@ -39,7 +39,7 @@
 - 底部对照行：`216 x 72`
 - `compact` preview：`104 x 72`
 - `read only` preview：`104 x 72`
-- 页面结构：标题 + 主区 + 底部双 preview
+- 页面结构：标题 -> 主区 -> 底部 `compact / read only`
 - 风格约束：
   - 保持浅色 Fluent 容器、低噪音分隔线和轻量 tone 差异。
   - 主区保留 `title / meta / badge` 三层信息，不叠加额外 snapshot header/footer。
@@ -90,17 +90,20 @@
 `egui_port_get_recording_action()` 的录制顺序如下：
 1. 重置主控件和底部双 preview，输出默认 `Inbox`
 2. 切到 `Review`
-3. 切到 `Archive`
-4. 恢复默认主状态并输出最终稳定帧
+3. 输出第二组主区状态
+4. 切到 `Archive`
+5. 输出第三组主区状态
+6. 恢复默认主状态
+7. 输出最终稳定帧
 
 录制只导出主区状态变化。底部 `compact / read only` preview 在整条 reference 轨道里保持静态一致，不再包含额外 preview 状态切换，也不再保留旧的收尾尾帧。
+当前 `test.c` 已对齐统一的 `ui_ready + layout_page + request_page_snapshot` 布局重放路径，主区首轮切换和最终稳定抓帧使用 `LIST_RECORD_FINAL_WAIT`，中间状态切换仍保留 `LIST_RECORD_WAIT / LIST_RECORD_FRAME_WAIT`。
 
 ## 9. 编译、单测、运行时与文档检查
 ```bash
 make all APP=HelloCustomWidgets APP_SUB=layout/list PORT=pc
 
-# 在 X:\ 短路径下执行；修改 HelloUnitTest 后先 clean 再重建
-make clean APP=HelloUnitTest PORT=pc_test
+# 在 X:\ 短路径下执行
 make all APP=HelloUnitTest PORT=pc_test
 X:\output\main.exe
 
@@ -133,3 +136,52 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
 - 相比 `items_repeater`：这里保留当前项和输入语义，不只是模板重复器。
 - 相比 `settings_panel`：这里不承担设置行布局，只保留列表本体。
 - 相比 SDK 原生 `List`：这里是当前仓库维护的 Fluent 2 reference 页面与验收闭环。
+
+## 13. 本次保留的核心状态与删减项
+- 保留的核心状态：
+  - `Inbox`
+  - `Review`
+  - `Archive`
+  - `compact`
+  - `read only`
+  - `selection focus`
+- 保留的交互：
+  - same-target touch release
+  - 键盘 `Up / Left / Down / Right / Home / End / Tab / Enter / Space`
+- 删减的旧桥接与旧口径：
+  - 旧录制末尾额外选中第 3 行的收尾态
+  - 旧单测 `on_key_event` 注入路径
+  - 与当前 static preview 工作流不一致的旧 README 结构
+
+## 14. 当前验收结果（2026-04-18）
+- 单控件编译：`PASS`
+  - `make all APP=HelloCustomWidgets APP_SUB=layout/list PORT=pc`
+- `HelloUnitTest`：`PASS`
+  - `make all APP=HelloUnitTest PORT=pc_test`
+  - `X:\output\main.exe`
+  - 总计 `845 / 845`，其中 `list` suite `8 / 8`
+- catalog / 文档 / 触摸语义：`PASS`
+  - `python scripts/sync_widget_catalog.py`
+  - `python scripts/checks/check_touch_release_semantics.py --scope custom --category layout`
+  - `python scripts/checks/check_docs_encoding.py`
+  - `python scripts/checks/check_widget_catalog.py`
+  - 触摸语义结果：`custom_audited=28 custom_skipped_allowlist=1`
+  - 文档编码结果：`134 files`
+  - widget catalog 结果：`106 widgets`
+- 单控件 runtime：`PASS`
+  - `python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub layout/list --track reference --timeout 10 --keep-screenshots`
+  - `9 frames captured -> runtime_check_output/HelloCustomWidgets_layout_list/default`
+- layout 分类 compile/runtime 回归：`PASS`
+  - `python scripts/code_compile_check.py --custom-widgets --category layout --bits64`
+  - `python scripts/code_runtime_check.py --app HelloCustomWidgets --category layout --track reference --bits64`
+  - layout `29 / 29` 全部通过
+- web 链路：`PASS`
+  - `python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub layout/list`
+  - `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_layout_list`
+  - smoke 结果：`status=Running canvas=480x480 ratio=0.1708 colors=206`
+- 截图复核结论：
+  - 共捕获 `9` 帧
+  - 全帧共出现 `3` 组唯一状态，主区哈希分组为 `[0,1,6,7,8] / [2,3] / [4,5]`
+  - 主区差分边界集中在 `(52, 142) - (428, 225)`
+  - 按 `y >= 225` 裁切底部 preview 区域后保持单一哈希，确认 `compact / read only` preview 全程静态
+  - 结论：主区覆盖默认 `Inbox`、`Review` 与 `Archive` 三组 reference 状态，最终稳定帧已显式回到默认快照
