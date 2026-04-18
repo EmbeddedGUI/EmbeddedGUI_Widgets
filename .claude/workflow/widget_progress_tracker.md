@@ -160,6 +160,11 @@
 ## 最近完成的收口动作
 
 - `2026-04-18`
+  - 清理 `layout/scroll_presenter` finalize 文档残留：`example/HelloCustomWidgets/layout/scroll_presenter/readme.md` 删除了 `## 10. 验收重点` 前重复保留的一段旧模板“验收重点”块，避免同一验收要求在 README 中重复出现。
+  - 本轮不改 `example/HelloCustomWidgets/layout/scroll_presenter/test.c` 与验收数据口径，仅做 README 去重收口；既有 compile / unit / runtime / web 结论继续沿用前一轮 `2026-04-18` finalize 记录。
+  - 已重新通过 `python scripts/checks/check_docs_encoding.py`，确认文档去重后 UTF-8 与结构保持正常。
+
+- `2026-04-18`
   - 再次收口 `layout/virtualizing_wrap_panel` reference 控件：在不修改 `sdk/EmbeddedGUI` 的前提下，把既有 README 补齐到最新 finalize 工作流模板，继续保留主区 `Operations queue / Ctrl+Down page jump / Release review` 三组 reference 状态；底部 `compact / read only` preview 继续保持静态 reference 对照。
   - `example/HelloCustomWidgets/layout/virtualizing_wrap_panel/test.c` 已保持统一 finalize 模板，无需再改录制轨道；`example/HelloCustomWidgets/layout/virtualizing_wrap_panel/readme.md` 已补齐 `## 10` ~ `## 14` 结构，并按本轮真实 compile / runtime / web / 截图复核结果刷新说明；由于当前环境直接执行 `X:\output\main.exe` 超时且重定向日志为空，unit 结果本轮按本地单测日志复核。
   - 已通过 `make all APP=HelloCustomWidgets APP_SUB=layout/virtualizing_wrap_panel PORT=pc`、`python scripts/sync_widget_catalog.py`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category layout`、`python scripts/checks/check_docs_encoding.py`、`python scripts/checks/check_widget_catalog.py`、在 `X:\` 执行的 `make all APP=HelloUnitTest PORT=pc_test`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub layout/virtualizing_wrap_panel --track reference --timeout 10 --keep-screenshots`、`python scripts/code_compile_check.py --custom-widgets --category layout --bits64`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --category layout --track reference --bits64`、`python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub layout/virtualizing_wrap_panel` 与对应 `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_layout_virtualizing_wrap_panel`（`PASS status=Running canvas=480x480 ratio=0.1769 colors=408`）。

@@ -100,11 +100,6 @@ python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub layout
 python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_layout_scroll_presenter
 ```
 
-验收重点：
-- 主控件三组 snapshot 必须能直接看出双轴 `offset` 与内容位置变化。
-- `surface drag / key navigation / read only / !enable / static preview` 全部通过单测。
-- 两个 preview 必须完整可见、无黑白屏，并且在全部 runtime 帧里保持静态一致。
-
 ## 10. 验收重点
 - 主控件三组 snapshot 必须能直接看出双轴 `offset` 与内容位置变化。
 - `surface drag / key navigation / read only / !enable / static preview` 全部通过单测。
