@@ -118,11 +118,11 @@
 - 静态 preview 用例已收口为 “consumes input and keeps state”。
 - 为兼容当前 `HelloUnitTest` harness，preview 用例继续直接调用 `on_touch_event()` / `on_key_event()`。
 
-## 9. 验收命令
+验收命令：
 ```bash
 make all APP=HelloCustomWidgets APP_SUB=display/text_block PORT=pc
 
-make clean APP=HelloUnitTest PORT=pc_test
+# 在 X:\ 短路径下执行
 make all APP=HelloUnitTest PORT=pc_test
 X:\output\main.exe
 
@@ -137,54 +137,69 @@ python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub displa
 python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_display_text_block
 ```
 
-## 10. 当前验收结果（2026-04-18）
-- `HelloCustomWidgets` 单控件编译：`PASS`，`make all APP=HelloCustomWidgets APP_SUB=display/text_block PORT=pc`
-- `HelloUnitTest`：`PASS`，已通过 `make clean APP=HelloUnitTest PORT=pc_test`、`make all APP=HelloUnitTest PORT=pc_test` 与 `X:\output\main.exe`，总计 `845 / 845`，其中 `text_block` suite `4 / 4`
-- `sync_widget_catalog.py`：`PASS`，同步后保持 `106` 个 widgets
-- `touch release semantics`：`PASS`，`custom_audited=21 custom_skipped_allowlist=0`
-- `docs encoding`：`PASS`，`134` 个文档文件编码检查通过
-- `widget catalog check`：`PASS`，`106 widgets: reference=106, showcase=0, deprecated=0`
-- 单控件 runtime：`PASS`，`9 frames captured -> runtime_check_output/HelloCustomWidgets_display_text_block/default`
-- display 分类 compile/runtime 回归：`PASS`
-  compile `21 / 21`
-  runtime `21 / 21`
-- wasm 构建：`PASS`，`web/demos/HelloCustomWidgets_display_text_block`
-- web smoke：`PASS status=Running canvas=480x480 ratio=0.1159 colors=83`
+## 10. 验收重点
+- 主控件和底部 preview 必须完整可见，不能黑屏、白屏或裁切。
+- 主区 `Standard / body`、`Subtle / note`、`Accent / emphasis` 三组 reference 快照必须能从截图中稳定区分。
+- 主区只能保留 display-only 文本层级，不得回退到滚动、编辑或边框容器语义。
+- 底部 `compact / read_only` preview 必须保持静态 reference，对输入只吞不改状态。
 
-## 11. Runtime 复核结论
-复核目录：
-- `runtime_check_output/HelloCustomWidgets_display_text_block/default`
+## 11. 截图复核口径
+- 检查目录：`runtime_check_output/HelloCustomWidgets_display_text_block/default`
+- 本轮复核结果：
+  - 共捕获 `9` 帧
+  - 全帧共出现 `3` 组唯一状态，主区哈希分组为 `[0,1,6,7,8] / [2,3] / [4,5]`
+  - 主区 RGB 差分边界收敛到 `(64, 158) - (298, 234)`
+  - 遮罩主区变化边界后，主区外区域唯一哈希数为 `1`
+  - 按 `y >= 235` 裁切底部 preview 后，preview 区唯一哈希数为 `1`
 
-复核结果：
-- 总帧数：`9`
-- 主区 RGB 差分边界：`(64, 158) - (298, 234)`
-- 遮罩主区差分边界后，主区外唯一哈希数：`1`
-- 按主区裁剪后，主区唯一状态数：`3`
-- 按 `y >= 235` 裁剪底部 preview 区域后，preview 区唯一哈希数：`1`
-
-目标：
-- 主区唯一状态数 = `3`
-- 主区外唯一哈希数 = `1`
-- 底部 preview 区唯一哈希数 = `1`
-
-结论：
-- 主区变化严格收敛在 `text_block` 主体，主区外页面 chrome 在整条轨道中保持静态。
-- `9` 帧里主区保持 `3` 组唯一状态，对应默认 `Standard / body`、`Subtle / note` 与 `Accent / emphasis` 三组主区快照；最终稳定帧已显式回到默认态。
-- 按 `y >= 235` 裁剪底部 preview 区域后保持单哈希，确认 `compact / read_only` preview 在整条录制轨道中始终静态一致。
-
-## 12. 已知限制
-- 当前只覆盖单段 `TextBlock` 显示语义，不实现多段层级；多段场景由 `rich_text_block` 承接。
-- 当前不支持滚动、编辑、文本选择和超链接点击。
-- 当前 wrapper 只收口 Fluent reference 方向的 display-only 样式，不扩展为通用阅读器控件。
-- 底部 `compact / read_only` preview 只承担静态 reference 对照，不承载额外交互职责。
-
-## 13. 与现有控件的边界
+## 12. 与现有控件的边界
 - 相比 `label`：这里承载的是稳定的单段换行文本，而不是短标题或短标签。
 - 相比 SDK `textblock`：这里收口的是 display-only `TextBlock` 语义，不保留滚动、编辑和边框扩展。
 - 相比 `rich_text_block`：这里不承担多段层级文本，只聚焦单段正文。
 
-## 14. EGUI 适配说明
-- 继续复用当前目录下的 `egui_view_text_block` custom view，不修改 SDK。
-- 主区保留 `Standard / body`、`Subtle / note`、`Accent / emphasis` 三组 reference 快照。
-- 底部 preview 通过 `egui_view_text_block_override_static_preview_api()` 明确收口为静态 reference。
-- 当前优先保证主区 3 组 reference 快照、底部 preview 全程静态，以及 runtime 录制不再保留旧 panel 级说明 chrome。
+## 13. 本次保留的核心状态与删减项
+- 本次保留状态：
+  - `Standard / body`
+  - `Subtle / note`
+  - `Accent / emphasis`
+  - `compact`
+  - `read_only`
+- 删减的装饰或桥接：
+  - 旧 `primary_panel`
+  - `heading / summary / note` 组合式页面说明块
+  - 底部 `compact_panel / read_only_panel` 包装容器与额外说明文案
+  - 让底部 preview 承担 reference 对照之外职责的旧页面 chrome
+
+## 14. 当前验收结果（2026-04-19）
+- 单控件编译：`PASS`
+  - `make all APP=HelloCustomWidgets APP_SUB=display/text_block PORT=pc`
+- `HelloUnitTest`：`日志复核 PASS`
+  - `make all APP=HelloUnitTest PORT=pc_test`
+  - `X:\output\main.exe`
+  - 本轮按本地 unit 日志复核总计 `845 / 845`，其中 `text_block` suite `4 / 4`
+- catalog / 文档 / 触摸语义：`PASS`
+  - `python scripts/sync_widget_catalog.py`
+  - `python scripts/checks/check_touch_release_semantics.py --scope custom --category display`
+  - `python scripts/checks/check_docs_encoding.py`
+  - `python scripts/checks/check_widget_catalog.py`
+  - 触摸语义结果：`custom_audited=21 custom_skipped_allowlist=0`
+  - 文档编码结果：`134 files`
+  - widget catalog 结果：`106 widgets`
+- 单控件 runtime：`PASS`
+  - `python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub display/text_block --track reference --timeout 10 --keep-screenshots`
+  - `9 frames captured -> runtime_check_output/HelloCustomWidgets_display_text_block/default`
+- display 分类 compile/runtime 回归：`PASS`
+  - `python scripts/code_compile_check.py --custom-widgets --category display --bits64`
+  - `python scripts/code_runtime_check.py --app HelloCustomWidgets --category display --track reference --bits64`
+  - display `21 / 21` 全部通过
+- web 链路：`PASS`
+  - `python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub display/text_block`
+  - `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_display_text_block`
+  - smoke 结果：`status=Running canvas=480x480 ratio=0.1159 colors=83`
+- 截图复核结论：
+  - 共捕获 `9` 帧
+  - 全帧共出现 `3` 组唯一状态，主区哈希分组为 `[0,1,6,7,8] / [2,3] / [4,5]`
+  - 主区 RGB 差分边界为 `(64, 158) - (298, 234)`
+  - 遮罩主区边界后，主区外唯一哈希数为 `1`
+  - 以 `y >= 235` 裁切底部 preview 后，preview 区唯一哈希数为 `1`
+  - 结论：主区覆盖默认 `Standard / body`、`Subtle / note` 与 `Accent / emphasis` 三组 reference 快照，最终稳定帧已显式回到默认态，底部 `compact / read_only` preview 全程静态
