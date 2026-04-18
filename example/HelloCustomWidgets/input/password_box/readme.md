@@ -104,11 +104,12 @@
 - `changed_part == EGUI_VIEW_PASSWORD_BOX_PART_NONE`
 - `changed_text == ""`
 
-验收命令：
+## 9. 验收命令
 ```bash
 make all APP=HelloCustomWidgets APP_SUB=input/password_box PORT=pc
 
 # 在 X:\ 短路径下执行
+make clean APP=HelloUnitTest PORT=pc_test
 make all APP=HelloUnitTest PORT=pc_test
 X:\output\main.exe
 
@@ -160,6 +161,7 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
 - 单控件编译：`PASS`
   - `make all APP=HelloCustomWidgets APP_SUB=input/password_box PORT=pc`
 - `HelloUnitTest`：`PASS`
+  - 在 `X:\` 短路径下执行 `make clean APP=HelloUnitTest PORT=pc_test`
   - 在 `X:\` 短路径下执行 `make all APP=HelloUnitTest PORT=pc_test`
   - `X:\output\main.exe`
   - 总计 `845 / 845`，其中 `password_box` suite `10 / 10`
