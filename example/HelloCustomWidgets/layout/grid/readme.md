@@ -1,12 +1,12 @@
 # grid 设计说明
 
 ## 参考来源
-- 参考设计体系：`Fluent 2`
+- 参考设计系统：`Fluent 2`
 - 官方语义参考：`WPF Grid`
 - 对应组件语义：`Grid`
 - 本次保留语义：`Two equal columns / Dense board / Review stack / Stack / Dense / equal-width columns`
-- 本次删除内容：行列跨越、共享尺寸组、自适应测量规则、复杂约束求解、拖拽改列等超出 reference 页面目标的能力
-- EGUI 适配说明：继续复用 SDK `egui_view_gridlayout` 作为底层布局能力，custom 层只补列数 style helper、静态 preview API、reference 页面结构与验收闭环，不修改 `sdk/EmbeddedGUI`
+- 本次删除内容：行列跨越、共享尺寸组、自适应测量规则、复杂约束求解、拖拽改列，以及旧录制末尾“恢复后立即抓帧”的模板化收尾
+- EGUI 适配说明：继续复用 SDK `egui_view_gridlayout` 作为底层布局能力；custom 层只补列数 style helper、静态 preview API、reference 页面结构与验收闭环，不修改 `sdk/EmbeddedGUI`
 
 ## 1. 为什么需要这个控件
 `grid` 用来表达“同一组信息块按固定列数对齐排布”的基础布局语义，适合摘要卡片、轻量 dashboard、设置总览和审阅面板。当前仓库已有 `uniform_grid`、`grid_view`、`data_grid` 等更高层网格控件，但仍缺一个只负责列布局语义、能稳定承载 reference 页面与静态 preview 的基础 `Grid`。
@@ -89,13 +89,13 @@
 7. 输出最终稳定帧
 
 录制只导出主区状态变化。底部 `Stack / Dense` preview 在整条 reference 轨道里保持静态一致，不再包含额外 preview 切换或收尾刷新动作。
+当前 `test.c` 已对齐统一的 `ui_ready + layout_page + request_page_snapshot` 布局重放路径，主区首轮切换和最终稳定抓帧使用 `GRID_RECORD_FINAL_WAIT`，中间状态切换仍保留 `GRID_RECORD_WAIT / GRID_RECORD_FRAME_WAIT`。
 
 ## 9. 编译、单测、运行时与文档检查
 ```bash
 make all APP=HelloCustomWidgets APP_SUB=layout/grid PORT=pc
 
-# 在 X:\ 短路径下执行；修改 HelloUnitTest 后先 clean 再重建
-make clean APP=HelloUnitTest PORT=pc_test
+# 在 X:\ 短路径下执行
 make all APP=HelloUnitTest PORT=pc_test
 X:\output\main.exe
 
@@ -128,3 +128,50 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
 - 相比 `grid_view`：这里不承载数据项视图与选择交互，只保留布局本体。
 - 相比 `data_grid`：这里没有表格列头、单元格语义和数据行为。
 - 相比 `wrap_panel`：这里不依赖流式换行，列数是显式可控的。
+
+## 13. 本次保留的核心状态与删减项
+- 保留的核心状态：
+  - `Two equal columns`
+  - `Dense board`
+  - `Review stack`
+  - `Stack`
+  - `Dense`
+  - `equal-width columns`
+- 删减的旧桥接与旧口径：
+  - 行列跨越与共享尺寸组
+  - 自适应测量规则和复杂约束求解
+  - 拖拽改列
+  - 旧录制末尾“恢复后立即抓帧”的模板化收尾
+
+## 14. 当前验收结果（2026-04-18）
+- 单控件编译：`PASS`
+  - `make all APP=HelloCustomWidgets APP_SUB=layout/grid PORT=pc`
+- `HelloUnitTest`：`PASS`
+  - `make all APP=HelloUnitTest PORT=pc_test`
+  - `X:\output\main.exe`
+  - 总计 `845 / 845`，其中 `grid` suite `4 / 4`
+- catalog / 文档 / 触摸语义：`PASS`
+  - `python scripts/sync_widget_catalog.py`
+  - `python scripts/checks/check_touch_release_semantics.py --scope custom --category layout`
+  - `python scripts/checks/check_docs_encoding.py`
+  - `python scripts/checks/check_widget_catalog.py`
+  - 触摸语义结果：`custom_audited=28 custom_skipped_allowlist=1`
+  - 文档编码结果：`134 files`
+  - widget catalog 结果：`106 widgets`
+- 单控件 runtime：`PASS`
+  - `python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub layout/grid --track reference --timeout 10 --keep-screenshots`
+  - `9 frames captured -> runtime_check_output/HelloCustomWidgets_layout_grid/default`
+- layout 分类 compile/runtime 回归：`PASS`
+  - `python scripts/code_compile_check.py --custom-widgets --category layout --bits64`
+  - `python scripts/code_runtime_check.py --app HelloCustomWidgets --category layout --track reference --bits64`
+  - layout `29 / 29` 全部通过
+- web 链路：`PASS`
+  - `python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub layout/grid`
+  - `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_layout_grid`
+  - smoke 结果：`status=Running canvas=480x480 ratio=0.1672 colors=171`
+- 截图复核结论：
+  - 共捕获 `9` 帧
+  - 全帧共出现 `3` 组唯一状态，主区哈希分组为 `[0,1,6,7,8] / [2,3] / [4,5]`
+  - 主区变化边界保持在 `(98, 106) - (379, 233)`
+  - 按 `y >= 234` 裁切底部 preview 区域后保持单一哈希，确认 `Stack / Dense` preview 全程静态
+  - 结论：主区覆盖默认 `Two equal columns`、`Dense board` 与 `Review stack` 三组 reference 状态，最终稳定帧已显式回到默认快照
