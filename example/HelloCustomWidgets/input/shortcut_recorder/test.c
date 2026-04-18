@@ -17,6 +17,7 @@
 #define SHORTCUT_BOTTOM_HEIGHT  82
 #define SHORTCUT_RECORD_WAIT    120
 #define SHORTCUT_RECORD_FRAME   150
+#define SHORTCUT_RECORD_FINAL_WAIT 280
 
 typedef struct shortcut_scene shortcut_scene_t;
 struct shortcut_scene
@@ -71,28 +72,6 @@ static const shortcut_scene_t compact_scenes[] = {
 };
 
 static void layout_page(void);
-
-static void dismiss_primary_shortcut_recorder(void)
-{
-#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
-    egui_view_clear_focus(EGUI_VIEW_OF(&recorder_primary));
-#endif
-    if (ui_ready)
-    {
-        layout_page();
-    }
-}
-
-static int dismiss_primary_focus_on_preview_touch(egui_view_t *self, egui_motion_event_t *event)
-{
-    EGUI_UNUSED(self);
-
-    if (event->type == EGUI_MOTION_EVENT_ACTION_DOWN)
-    {
-        dismiss_primary_shortcut_recorder();
-    }
-    return 1;
-}
 
 static void apply_scene_to_recorder(egui_view_shortcut_recorder_t *recorder, const shortcut_scene_t *scene)
 {
@@ -160,15 +139,6 @@ static void focus_primary_recorder(void)
 }
 
 #if EGUI_CONFIG_RECORDING_TEST
-static void apply_compact_scene(uint8_t index)
-{
-    apply_scene_to_recorder(&recorder_compact, &compact_scenes[index % EGUI_ARRAY_SIZE(compact_scenes)]);
-    if (ui_ready)
-    {
-        layout_page();
-    }
-}
-
 static void apply_primary_key(uint8_t key_code, uint8_t is_shift, uint8_t is_ctrl)
 {
     egui_key_event_t event = {0};
@@ -185,21 +155,6 @@ static void apply_primary_key(uint8_t key_code, uint8_t is_shift, uint8_t is_ctr
     {
         layout_page();
     }
-}
-
-static void get_part_center(egui_view_t *view, uint8_t part, uint8_t preset_index, int *x, int *y)
-{
-    egui_region_t region = {0};
-
-    if (!egui_view_shortcut_recorder_get_part_region(view, part, preset_index, &region))
-    {
-        *x = view->region_screen.location.x + view->region_screen.size.width / 2;
-        *y = view->region_screen.location.y + view->region_screen.size.height / 2;
-        return;
-    }
-
-    *x = region.location.x + region.size.width / 2;
-    *y = region.location.y + region.size.height / 2;
 }
 
 static void request_page_snapshot(void)
@@ -258,9 +213,6 @@ void test_init_ui(void)
                                             EGUI_COLOR_HEX(0x5B7D77), EGUI_COLOR_HEX(0x0F766E), EGUI_COLOR_HEX(0xD97706), EGUI_COLOR_HEX(0x0F766E),
                                             EGUI_COLOR_HEX(0xBE5168));
     egui_view_shortcut_recorder_override_static_preview_api(EGUI_VIEW_OF(&recorder_compact), &recorder_compact_api);
-#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
-    recorder_compact_api.on_touch = dismiss_primary_focus_on_preview_touch;
-#endif
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&recorder_compact), 0);
 #endif
@@ -279,9 +231,6 @@ void test_init_ui(void)
                                             EGUI_COLOR_HEX(0x8A97A3), EGUI_COLOR_HEX(0x93A3B4), EGUI_COLOR_HEX(0xD97706), EGUI_COLOR_HEX(0x93A3B4),
                                             EGUI_COLOR_HEX(0xBE5168));
     egui_view_shortcut_recorder_override_static_preview_api(EGUI_VIEW_OF(&recorder_read_only), &recorder_read_only_api);
-#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
-    recorder_read_only_api.on_touch = dismiss_primary_focus_on_preview_touch;
-#endif
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&recorder_read_only), 0);
 #endif
@@ -306,8 +255,6 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
 {
     static int last_action = -1;
     int first_call = action_index != last_action;
-    int x = 0;
-    int y = 0;
 
     last_action = action_index;
 
@@ -372,7 +319,6 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
         {
             apply_primary_key(EGUI_KEY_CODE_TAB, 0, 0);
             apply_primary_key(EGUI_KEY_CODE_ENTER, 0, 0);
-            apply_compact_scene(1);
         }
         EGUI_SIM_SET_WAIT(p_action, SHORTCUT_RECORD_WAIT);
         return true;
@@ -384,18 +330,19 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
         EGUI_SIM_SET_WAIT(p_action, SHORTCUT_RECORD_FRAME);
         return true;
     case 9:
-        get_part_center(EGUI_VIEW_OF(&recorder_compact), EGUI_VIEW_SHORTCUT_RECORDER_PART_FIELD, 0, &x, &y);
-        p_action->type = EGUI_SIM_ACTION_CLICK;
-        p_action->x1 = x;
-        p_action->y1 = y;
-        p_action->interval_ms = 240;
+        if (first_call)
+        {
+            apply_primary_default_state();
+            focus_primary_recorder();
+        }
+        EGUI_SIM_SET_WAIT(p_action, SHORTCUT_RECORD_FINAL_WAIT);
         return true;
     case 10:
         if (first_call)
         {
             request_page_snapshot();
         }
-        EGUI_SIM_SET_WAIT(p_action, 520);
+        EGUI_SIM_SET_WAIT(p_action, SHORTCUT_RECORD_FINAL_WAIT);
         return true;
     default:
         return false;
