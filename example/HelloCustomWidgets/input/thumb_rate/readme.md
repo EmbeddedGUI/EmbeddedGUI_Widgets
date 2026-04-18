@@ -100,12 +100,11 @@
 
 当前 `test.c` 已对齐统一的 `ui_ready + layout_page + request_page_snapshot` 模板：新增 `THUMB_RATE_RECORD_FINAL_WAIT`，初始化阶段在 root view 挂载前后各重放一次默认态与 preview，`set_state / set_current_part / key dispatch / touch dispatch / snapshot request` 都先走显式布局路径，最终稳定帧前显式恢复默认快照。
 
-## 10. 编译、测试与 runtime 验收
+验收命令：
 ```bash
 make all APP=HelloCustomWidgets APP_SUB=input/thumb_rate PORT=pc
 
-# 在 X:\ 短路径下执行，修改 .inc 后建议先 clean 再重建
-make clean APP=HelloUnitTest PORT=pc_test
+# 在 X:\ 短路径下执行
 make all APP=HelloUnitTest PORT=pc_test
 X:\output\main.exe
 
@@ -120,33 +119,70 @@ python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub input/
 python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_input_thumb_rate
 ```
 
-验收重点：
+## 10. 验收重点
 - 主控件和底部 preview 必须完整可见，不黑屏、不白屏、不裁切。
 - `none / liked / disliked` 三态必须能从截图中稳定区分。
 - 触摸跨目标移动时不得错误提交。
 - `compact` 与 `read only` preview 必须保持静态 reference，不响应真实输入。
 
-## 11. 已知限制
-- 当前只覆盖最小 `ThumbRate` 语义，不扩展 tooltip、hover 动画或外链式反馈入口。
-- 仓库没有官方 thumb 图标资源，因此使用 custom 自绘图形近似 Fluent 语义。
-- `compact` / `read only` preview 仅用于 reference 对照，不承担真实交互职责。
+## 11. 截图复核口径
+- 检查目录：`runtime_check_output/HelloCustomWidgets_input_thumb_rate/default`
+- 本轮复核结果：
+  - 共捕获 `11` 帧
+  - 全帧共出现 `4` 组唯一状态，主区哈希分组为 `[0,1,8,9,10] / [2,3] / [4,5] / [6,7]`
+  - 主区 RGB 差分边界收敛到 `(44, 139) - (380, 245)`
+  - 遮罩主区变化边界后，主区外区域唯一哈希数为 `1`
+  - 按 `y >= 246` 裁切底部 preview 后，preview 区唯一哈希数为 `1`
 
-## 12. 当前验收结果（2026-04-18）
+## 12. 与现有控件的边界
+- 相比 `button` / `hyperlink_button`：这里表达的是双分支反馈值，不是命令触发。
+- 相比 `toggle_button`：这里保留 `like / dislike / none` 三态闭环，而不是单一开关。
+- 相比 `rating_control`：这里是轻量正负反馈，不是多档等级评分。
 
-- `HelloCustomWidgets` 单控件编译：已通过 `make all APP=HelloCustomWidgets APP_SUB=input/thumb_rate PORT=pc`
-- `HelloUnitTest`：已在 `X:\` 短路径通过 `make clean APP=HelloUnitTest PORT=pc_test`、`make all APP=HelloUnitTest PORT=pc_test` 和 `X:\output\main.exe`，总计 `845 / 845`，其中 `thumb_rate` suite `8 / 8`
-- `sync_widget_catalog.py`：已通过，本轮仍同步为 `106` 个控件目录
-- `touch release semantics`：已通过，结果 `custom_audited=28 custom_skipped_allowlist=5`
-- `docs encoding`：已通过，结果 `134 files`
-- `widget catalog check`：已通过，结果 `106 widgets: reference=106, showcase=0, deprecated=0`
-- 单控件 runtime：已通过 `python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/thumb_rate --track reference --timeout 10 --keep-screenshots`，输出 `11 frames captured -> D:\workspace\gitee\EmbeddedGUI_Widgets\runtime_check_output\HelloCustomWidgets_input_thumb_rate\default`
-- input 分类 compile/runtime 回归：已通过
-  compile `33 / 33`
-  runtime `33 / 33`
-- wasm 构建：已通过 `python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub input/thumb_rate`，输出 `web/demos/HelloCustomWidgets_input_thumb_rate`
-- web smoke：已通过 `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_input_thumb_rate`，结果 `PASS status=Running canvas=480x480 ratio=0.1342 colors=179`
+## 13. 本次保留的核心状态与删减项
+- 本次保留状态：
+  - `none`
+  - `liked`
+  - `disliked`
+  - `compact`
+  - `read only`
+- 删减的装饰或桥接：
+  - hover 动画和 visited 态
+  - 额外文案区块与场景化 showcase 装饰
+  - 系统 thumb 图标资源依赖
+  - 让 preview 承担清焦或状态桥接的旧链路
+
+## 14. 当前验收结果（2026-04-18）
+
+- 单控件编译：`PASS`
+  - `make all APP=HelloCustomWidgets APP_SUB=input/thumb_rate PORT=pc`
+- `HelloUnitTest`：`日志复核 PASS`
+  - `make all APP=HelloUnitTest PORT=pc_test`
+  - `X:\output\main.exe`
+  - 本轮按本地 unit 日志复核总计 `845 / 845`，其中 `thumb_rate` suite `8 / 8`
+- catalog / 文档 / 触摸语义：`PASS`
+  - `python scripts/sync_widget_catalog.py`
+  - `python scripts/checks/check_touch_release_semantics.py --scope custom --category input`
+  - `python scripts/checks/check_docs_encoding.py`
+  - `python scripts/checks/check_widget_catalog.py`
+  - 触摸语义结果：`custom_audited=28 custom_skipped_allowlist=5`
+  - 文档编码结果：`134 files`
+  - widget catalog 结果：`106 widgets`
+- 单控件 runtime：`PASS`
+  - `python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/thumb_rate --track reference --timeout 10 --keep-screenshots`
+  - `11 frames captured -> runtime_check_output/HelloCustomWidgets_input_thumb_rate/default`
+- input 分类 compile/runtime 回归：`PASS`
+  - `python scripts/code_compile_check.py --custom-widgets --category input --bits64`
+  - `python scripts/code_runtime_check.py --app HelloCustomWidgets --category input --track reference --bits64`
+  - input `33 / 33` 全部通过
+- web 链路：`PASS`
+  - `python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub input/thumb_rate`
+  - `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_input_thumb_rate`
+  - smoke 结果：`status=Running canvas=480x480 ratio=0.1342 colors=179`
 - 截图复核结论：
-  - 全帧 `11` 帧共出现 `4` 组唯一状态，对应默认 `none`、`liked`、`disliked` 与清空后的 `none`；最终稳定帧已显式回到默认快照
-  - 按 RGB 差分得到主区变化边界位于 `(44, 139) - (381, 246)`，遮罩该边界后主区外区域保持单哈希
-  - 按 `y >= 246` 裁切底部 preview 区域后全部帧保持单哈希，确认 `compact / read only` preview 在整条录制轨道中保持静态一致
-  - 主区哈希分组为 `[0,1,8,9,10] / [2,3] / [4,5] / [6,7]`，对应默认、`liked`、`disliked` 与清空后的 `none` 四组主区状态
+  - 共捕获 `11` 帧
+  - 全帧共出现 `4` 组唯一状态，主区哈希分组为 `[0,1,8,9,10] / [2,3] / [4,5] / [6,7]`
+  - 主区 RGB 差分边界为 `(44, 139) - (380, 245)`
+  - 遮罩主区边界后，主区外唯一哈希数为 `1`
+  - 以 `y >= 246` 裁切底部 preview 后，preview 区唯一哈希数为 `1`
+  - 结论：主区覆盖默认 `none`、`liked`、`disliked` 与清空后的 `none` 四组 reference 状态，最终稳定帧已显式回到默认快照，底部 `compact / read only` preview 全程静态
