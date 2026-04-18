@@ -1,110 +1,102 @@
-# button 设计说明
+# Button 自定义控件设计说明
 
 ## 参考来源
-
-- 参考设计系统：`Fluent 2`
-- 官方语义参考：`WinUI 3 Button`
-- 开源母本：`WPF UI`
-- 对应组件名：`Button`
-- 本轮保留语义：`standard / compact / disabled / focused`
-- 本轮移除内容：页面级 guide、状态说明文案、preview 清焦桥接、旧录制轨道里的 `compact` preview 快照切换
-- EGUI 适配说明：继续复用 SDK `button` 的基础点击语义，本轮只收口 `reference` 页面结构、键盘闭环、静态 preview 语义、README 口径与验收链，不修改 `sdk/EmbeddedGUI`
+- 参考设计体系：`Fluent 2`
+- 参考开源库：`WPF UI`
+- 对应组件：`Button`
+- 当前保留形态：`standard`、`compact`、`disabled`
+- 当前保留交互：主区保留真实 `touch` 与 `Space / Enter` 提交；底部 `compact / disabled` preview 统一收口为静态 reference 对照
+- 当前移除内容：页面级 guide、状态说明文案、preview 清焦桥接、录制阶段 `compact` preview 快照轮换与额外 showcase 化装饰
 
 ## 1. 为什么需要这个控件
-
-`button` 是最基本的命令触发控件，用来表达一次性动作，例如部署、同步、确认和派发。`HelloCustomWidgets` 需要一个与 `Fluent 2 / WPF UI` 主线一致的 `Button` reference 页面，作为其它输入控件的最小语义基准。
+`button` 是最基础的命令触发控件，用来表达一次性动作，例如部署、同步、确认和派发。`HelloCustomWidgets` 需要一个与 `Fluent 2 / WPF UI` 主线一致的 `Button` reference 页面，作为其它输入控件的最小语义基准。
 
 ## 2. 为什么现有控件不够用
-
 - `toggle_button` 表达的是状态切换，不是一次性命令提交。
 - `split_button` 与 `drop_down_button` 带有分裂动作或菜单，不是最小 `Button` 语义。
-- SDK 虽然已有基础 `button`，但仓库内当前 `input/button` 的 demo 轨道、静态 preview 单测和 README 仍停留在旧 workflow，没有真正收口到当前 static preview 模板。
+- SDK 虽然已有基础 `button`，但仓库内当前 `input/button` 的 README 仍停留在旧版 finalize 章节结构，没有完整收口到当前 static preview 模板。
 
-## 3. 目标场景与页面结构
+## 3. 当前页面结构
+- 标题：`Button`
+- 主区：一个保留真实提交链路的主 `button`
+- 底部：一行并排的两个静态 preview
+- 左侧 preview：`compact`，固定显示 `Open`
+- 右侧 preview：`disabled`，固定显示 `Queued`
 
-- 页面结构统一为：标题 -> 主 `button` -> 底部 `compact / disabled` 双静态 preview。
-- 主区只保留真实 `Button` 的点击、`Space` 和 `Enter` 键盘触发。
-- 底部 `compact` preview 固定显示紧凑次级动作 `Open`，不再承担切换轨道或清焦职责。
-- 底部 `disabled` preview 固定显示禁用态 `Queued`，作为纯静态对照。
-- 两个 preview 都通过 `hcw_button_override_static_preview_api()` 收口：
-  - 吞掉新增 `touch / dispatch_key_event()`
-  - 收到输入时立即清理残留 `pressed`
-  - 不改 `text / icon / icon_font / icon_text_gap / region_screen / background / color`
+目录：
+- `example/HelloCustomWidgets/input/button/`
 
-目标目录：`example/HelloCustomWidgets/input/button/`
+## 4. 主区 reference 快照
+主区录制轨道保留 `4` 组 reference 状态，底部 preview 在整条轨道中保持不变：
 
-## 4. 视觉与布局规格
+1. 默认态
+   `Deploy`
+2. 触摸提交后
+   `Sync`
+3. `Space` 键盘提交后
+   `Confirm`
+4. `Enter` 键盘提交后
+   `Dispatch`
 
+底部 preview 在整条轨道中始终固定：
+
+1. `compact`
+   `Open`
+2. `disabled`
+   `Queued`
+
+## 5. 视觉与布局规格
 - 画布：`480 x 480`
 - 根布局：`224 x 128`
 - 主按钮：`140 x 40`
-- 底部对照行：`200 x 32`
-- `compact` preview：`96 x 32`
-- `disabled` preview：`96 x 32`
+- 底部 preview 行：`200 x 32`
+- 单个 preview：`96 x 32`
+- 页面结构：标题 -> 主 `button` -> 底部 `compact / disabled`
+- 风格约束：主按钮使用 Fluent 风格蓝色主动作视觉；`compact` preview 只压缩尺寸与间距；`disabled` preview 使用浅灰低对比视觉；焦点态只保留轻量 ring，不引入厚阴影或额外帮助文案
 
-视觉约束：
+## 6. 状态矩阵
+| 状态 | 主按钮 | Compact preview | Disabled preview |
+| --- | --- | --- | --- |
+| 默认显示 | `Deploy` | `Open` | `Queued` |
+| 快照 2 | `Sync` | 保持不变 | 保持不变 |
+| 快照 3 | `Confirm` | 保持不变 | 保持不变 |
+| 快照 4 / 最终稳定帧 | `Dispatch` | 保持不变 | 保持不变 |
+| 静态 preview 吞掉 `touch / key` 且不改状态 | 否 | 是 | 是 |
 
-- 主按钮使用 Fluent 风格的蓝色主动作视觉，不叠加 showcase 式装饰容器。
-- `compact` preview 只压缩尺寸和间距，保留按钮语义。
-- `disabled` preview 使用浅灰低对比视觉，并明确处于禁用态。
-- 焦点态只保留轻量 ring，不引入厚阴影、说明标签或额外帮助文案。
+## 7. 录制动作设计
+`egui_port_get_recording_action()` 保留真实主按钮交互，但底部 preview 已收口为静态 reference 工作流：
 
-## 5. 控件清单
+1. 恢复主按钮默认 `Deploy`，同时恢复底部 `compact / disabled` 固定状态
+2. 抓取首帧
+3. 触摸点击主按钮，切到 `Sync`
+4. 抓取第二组主区快照
+5. 发送 `Space`，切到 `Confirm`
+6. 抓取第三组主区快照
+7. 发送 `Enter`，切到 `Dispatch`
+8. 抓取第四组主区快照
+9. 保持 `Dispatch` 不变并抓取最终稳定帧
 
-| 变量名 | 类型 | 尺寸 (W x H) | 初始状态 | 用途 |
-| --- | --- | ---: | --- | --- |
-| `root_layout` | `egui_view_linearlayout_t` | `224 x 128` | enabled | 页面根容器 |
-| `title_label` | `egui_view_label_t` | `224 x 18` | `Button` | 页面标题 |
-| `button_primary` | `egui_view_button_t` | `140 x 40` | `Deploy` | 主按钮 |
-| `button_compact` | `egui_view_button_t` | `96 x 32` | `Open` | 紧凑静态 preview |
-| `button_disabled` | `egui_view_button_t` | `96 x 32` | `Queued` | 禁用态静态 preview |
+说明：
+- 录制阶段只有主区状态会变化
+- 底部 preview 统一通过 `hcw_button_override_static_preview_api()` 吞掉 `touch / dispatch_key_event()`
+- 静态 preview 收到输入时立即清理残留 `pressed`
+- preview 不改 `text / icon / icon_font / icon_text_gap / region_screen / background / color`
 
-## 6. 状态覆盖矩阵
+当前 `test.c` 已保持统一 finalize 模板：保留既有 `BUTTON_RECORD_FINAL_WAIT`、`BUTTON_DEFAULT_SNAPSHOT`、`PRIMARY_SNAPSHOT_COUNT`、`apply_primary_default_state()`、`apply_preview_states()`、`layout_local_views()`、`layout_page()` 与 `request_page_snapshot()`，初始化阶段在 root view 挂载前后各重放一次默认态与 preview，确保主区 `Deploy / Sync / Confirm / Dispatch` 与最终稳定帧都走同一条布局重放路径。
 
-| 区域 | 状态 | 说明 |
-| --- | --- | --- |
-| 主按钮 | `Deploy` | 默认态 |
-| 主按钮 | `Sync` | 触摸点击后 |
-| 主按钮 | `Confirm` | `Space` 触发后 |
-| 主按钮 | `Dispatch` | `Enter` 触发后与最终稳定帧 |
-| `compact` preview | `Open` | 全程静态对照 |
-| `disabled` preview | `Queued` | 全程静态对照 |
+## 8. 单元测试口径
+`example/HelloUnitTest/test/test_button.c` 当前覆盖两部分：
 
-## 7. 交互语义与单测口径
+1. 主控件交互与状态清理
+   覆盖 `touch` same-target release、`Space / Enter` 提交、`set_text()`、`set_icon()`、`set_icon_font()`、`set_icon_text_gap()` 与样式 helper 的 `pressed` 清理。
+2. 静态 preview 不变性断言
+   通过统一的 `dispatch_key_event()` 入口把 preview 用例收口为 “consumes input and keeps state”，固定校验 `text`、`icon`、`icon_font`、`icon_text_gap`、`region_screen`、`background`、`color`、`alpha` 不变，并要求 `g_click_count == 0` 且 `is_pressed == false`。
 
-- 主按钮继续保留真实 `touch` same-target release、`Space` 和 `Enter` 键盘 click 闭环。
-- `set_text()`、`set_icon()`、`set_icon_font()`、`set_icon_text_gap()` 与样式 helper 必须在切换时清理残留 `pressed`。
-- 静态 preview 用例统一收口为 “consumes input and keeps state”。
-- preview 键盘入口统一走 `dispatch_key_event()`，不再直接调用旧的 `on_key_event()`。
-- 静态 preview 用例必须验证：
-  - `text / icon / icon_font / icon_text_gap` 不变
-  - `region_screen / background / color / alpha` 不变
-  - `g_click_count == 0`
-  - `is_pressed` 被清理
-
-## 8. 录制动作设计
-
-`egui_port_get_recording_action()` 的 reference 轨道顺序如下：
-
-1. 恢复主按钮默认 `Deploy`，同时恢复底部 `compact / disabled` 静态 preview，并输出首帧。
-2. 触摸点击主按钮，切到 `Sync`。
-3. 输出触摸后的主区截图。
-4. 发送 `Space`，切到 `Confirm`。
-5. 输出键盘 `Space` 后截图。
-6. 发送 `Enter`，切到 `Dispatch`。
-7. 输出键盘 `Enter` 后截图。
-8. 保持 `Dispatch` 不变，作为尾帧稳定等待。
-9. 输出最终稳定帧。
-
-录制只允许主区发生状态变化。底部 `compact / disabled` preview 在整条 reference 轨道里必须保持静态一致。
-
-## 9. 编译、单测、运行时与文档检查
-
+## 9. 验收命令
 ```bash
 make all APP=HelloCustomWidgets APP_SUB=input/button PORT=pc
 
-# 修改 HelloUnitTest 后优先在 X:\ 短路径下 clean + rebuild
-make clean APP=HelloUnitTest PORT=pc_test
+# 在 X:\ 短路径下执行
 make all APP=HelloUnitTest PORT=pc_test
 X:\output\main.exe
 
@@ -120,36 +112,69 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
 ```
 
 ## 10. 验收重点
+- 主按钮和底部 `compact / disabled` preview 必须完整可见，不能黑屏、白屏或裁切。
+- 主区 `Deploy`、`Sync`、`Confirm`、`Dispatch` 四组 reference 状态必须能从截图中稳定区分。
+- 主控件 `touch`、`Space / Enter` 与 setter / 样式 helper 的状态清理链路收口后不能残留 `pressed` 污染。
+- 底部 `compact / disabled` preview 必须保持静态 reference，对输入只吞不改状态。
 
-- 主区与底部双 preview 必须完整可见，不能黑屏、白屏或被裁切。
-- 主区录制只允许出现 `Deploy / Sync / Confirm / Dispatch` 四组可识别状态。
-- 底部 `compact / disabled` preview 必须在全部 runtime 帧里保持单一静态对照。
-- 静态 preview 收到输入后，不能改 `text / icon / icon_font / icon_text_gap / region_screen / background / color`。
-- README、demo 录制轨道、单测断言与验收命令链必须保持一致。
-
-## 11. runtime 截图复核口径
-
+## 11. 截图复核口径
 - 检查目录：`runtime_check_output/HelloCustomWidgets_input_button/default`
-- 复核目标：
-  - 主区裁剪后只出现 `4` 组唯一状态
-  - 遮罩主区变化边界后，边界外区域保持单哈希
-  - 按底部 preview 区域裁剪后，所有帧保持单哈希
+- 本轮复核结果：
+  - 共捕获 `10` 帧
+  - 全帧共出现 `4` 组唯一状态，主区哈希分组为 `[0,1] / [2,3] / [4,5] / [6,7,8,9]`
+  - 主区 RGB 差分边界为 `(206, 195) - (276, 207)`
+  - 遮罩主区变化边界后，主区外区域唯一哈希数为 `1`
+  - 按 `y >= 208` 裁切底部 preview 后，preview 区唯一哈希数为 `1`
 
-## 12. 已知限制
-
-- 当前只覆盖单个命令按钮，不扩展按钮组、图文复合工具栏或菜单按钮。
-- 当前不做 hover 动画、主题切换或强调态阴影。
-- 页面保持最小 reference 结构，不额外承载说明性标签。
-
-## 13. 与现有控件的边界
-
-- 相比 `toggle_button`：这里是一次性命令触发，不是状态开关。
+## 12. 与现有控件的边界
+- 相比 `toggle_button`：这里强调一次性命令触发，不是状态开关。
 - 相比 `split_button`：这里没有主次动作分裂。
 - 相比 `drop_down_button`：这里没有展开菜单语义。
 
-## 14. EGUI 适配时的简化点与约束
+## 13. 本次保留的核心状态与删减项
+- 本次保留状态：
+  - `Deploy`
+  - `Sync`
+  - `Confirm`
+  - `Dispatch`
+  - `compact`
+  - `disabled`
+- 删减的装饰或桥接：
+  - 页面级 guide 与状态说明
+  - preview 清焦桥接
+  - 录制阶段 `compact` preview 快照轮换
+  - showcase 化容器、额外说明标签与非必要页面 chrome
 
-- 继续复用 SDK `button` 的图标文本排版和 same-target release 触摸语义。
-- Fluent 风格样式、键盘闭环和静态 preview 语义全部收口在 custom 层，不改 `sdk/EmbeddedGUI`。
-- 主按钮保留最小必要的真实触摸和键盘闭环，preview 不再承担清焦、切换或收尾职责。
-- 先完成 reference 级 `Button` 收口，再决定是否补充按钮组、强调按钮或工具栏场景。
+## 14. 当前验收结果（2026-04-19）
+- 单控件编译：`PASS`
+  - `make all APP=HelloCustomWidgets APP_SUB=input/button PORT=pc`
+- `HelloUnitTest`：`PASS`
+  - 在 `X:\` 短路径下执行 `make all APP=HelloUnitTest PORT=pc_test`
+  - `X:\output\main.exe`
+  - 总计 `845 / 845`，其中 `button` suite `7 / 7`
+- catalog / 文档 / 触摸语义：`PASS`
+  - `python scripts/sync_widget_catalog.py`
+  - `python scripts/checks/check_touch_release_semantics.py --scope custom --category input`
+  - `python scripts/checks/check_docs_encoding.py`
+  - `python scripts/checks/check_widget_catalog.py`
+  - 触摸语义结果：`custom_audited=28 custom_skipped_allowlist=5`
+  - 文档编码结果：`134 files`
+  - widget catalog 结果：`106 widgets`
+- 单控件 runtime：`PASS`
+  - `python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/button --track reference --timeout 10 --keep-screenshots`
+  - 输出目录：`runtime_check_output/HelloCustomWidgets_input_button/default`
+- input 分类 compile/runtime 回归：`PASS`
+  - `python scripts/code_compile_check.py --custom-widgets --category input --bits64`
+  - `python scripts/code_runtime_check.py --app HelloCustomWidgets --category input --track reference --bits64`
+  - input `33 / 33` 全部通过
+- web 链路：`PASS`
+  - `python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub input/button`
+  - `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_input_button`
+  - smoke 结果：`status=Running canvas=480x480 ratio=0.0977 colors=140`
+- 截图复核结论：
+  - 共捕获 `10` 帧
+  - 全帧共出现 `4` 组唯一状态，主区哈希分组为 `[0,1] / [2,3] / [4,5] / [6,7,8,9]`
+  - 主区 RGB 差分边界为 `(206, 195) - (276, 207)`
+  - 遮罩主区边界后，主区外唯一哈希数为 `1`
+  - 以 `y >= 208` 裁切底部 preview 后，preview 区唯一哈希数为 `1`
+  - 结论：主区覆盖默认 `Deploy`、`Sync`、`Confirm` 与 `Dispatch` 四组 reference 状态，最终稳定帧保持 `Dispatch`，底部 `compact / disabled` preview 全程静态
