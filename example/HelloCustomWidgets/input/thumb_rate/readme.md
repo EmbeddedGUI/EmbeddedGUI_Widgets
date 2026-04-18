@@ -79,18 +79,26 @@
 - 补齐 `set_state()`、`set_current_part()`、`set_labels()`、`set_palette()`、静态 preview API 和键盘导航入口。
 - demo 页面保留一个主控件与两个静态 preview，录制路径直接覆盖三态闭环。
 - 单测覆盖样式 helper、setter 清理 pressed、same-target release、键盘导航、只读/禁用 guard 与静态 preview。
+- 录制链路移除 preview 清焦桥接，最终稳定帧前显式恢复默认快照。
 
 ## 9. 录制动作设计
-1. 还原默认 `none` 状态。
+1. 应用主控件默认快照和底部 preview 固定状态。
 2. 抓取初始帧。
 3. 触摸点击 `Like`。
 4. 抓取 `liked` 帧。
 5. 切到第二组文案并通过键盘切到 `Dislike` 后提交。
 6. 抓取 `disliked` 帧。
 7. 再次按 `Space` 清空当前 `Dislike`。
-8. 抓取最终 `none` 收尾帧。
+8. 抓取清空后的 `none` 帧。
+9. 显式恢复默认快照并恢复主控件 focus。
+10. 抓取最终稳定帧。
 
-当前 `test.c` 已对齐统一的 `ui_ready + layout_page + request_page_snapshot` 模板：初始化阶段在 root view 挂载前后各重放一次默认态与 preview，`set_state / set_current_part / key dispatch / touch dispatch / snapshot request` 都先走显式布局路径，再进入录制与抓帧。
+说明：
+- 录制阶段只保留主区真实 `touch / key` 轨道，不再通过 preview 触发清焦或额外页面桥接。
+- 底部 preview 统一通过 `egui_view_thumb_rate_override_static_preview_api()` 吞掉 `touch / key` 且不改状态。
+- `request_page_snapshot()` 会统一做 `layout + invalidate + recording_request_snapshot()`，保证四组主区状态和最终稳定帧口径一致。
+
+当前 `test.c` 已对齐统一的 `ui_ready + layout_page + request_page_snapshot` 模板：新增 `THUMB_RATE_RECORD_FINAL_WAIT`，初始化阶段在 root view 挂载前后各重放一次默认态与 preview，`set_state / set_current_part / key dispatch / touch dispatch / snapshot request` 都先走显式布局路径，最终稳定帧前显式恢复默认快照。
 
 ## 10. 编译、测试与 runtime 验收
 ```bash
@@ -123,36 +131,22 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
 - 仓库没有官方 thumb 图标资源，因此使用 custom 自绘图形近似 Fluent 语义。
 - `compact` / `read only` preview 仅用于 reference 对照，不承担真实交互职责。
 
-## 12. 当前验收结果（2026-04-17）
+## 12. 当前验收结果（2026-04-18）
 
-- 单控件编译：`PASS`
-  - `make all APP=HelloCustomWidgets APP_SUB=input/thumb_rate PORT=pc`
-- `HelloUnitTest`：`PASS`
-  - `make clean APP=HelloUnitTest PORT=pc_test`
-  - `make all APP=HelloUnitTest PORT=pc_test`
-  - `X:\output\main.exe`
-  - 总计 `845 / 845`，其中 `thumb_rate` suite `8 / 8`
-- catalog / 文档 / 触摸语义：`PASS`
-  - `python scripts/sync_widget_catalog.py`
-  - `python scripts/checks/check_touch_release_semantics.py --scope custom --category input`
-  - `python scripts/checks/check_docs_encoding.py`
-  - `python scripts/checks/check_widget_catalog.py`
-  - 触摸语义结果：`custom_audited=28 custom_skipped_allowlist=5`
-  - 文档编码结果：`134 files`
-  - widget catalog 结果：`106 widgets`
-- 单控件 runtime：`PASS`
-  - `python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/thumb_rate --track reference --timeout 10 --keep-screenshots`
-  - `9` 帧输出到 `runtime_check_output/HelloCustomWidgets_input_thumb_rate/default`
-- input 分类 compile/runtime 回归：`PASS`
-  - `python scripts/code_compile_check.py --custom-widgets --category input --bits64`
-  - `python scripts/code_runtime_check.py --app HelloCustomWidgets --category input --track reference --bits64`
-  - input `33 / 33` 全部通过
-- web 链路：`PASS`
-  - `python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub input/thumb_rate`
-  - `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_input_thumb_rate`
-  - smoke 结果：`status=Running canvas=480x480 ratio=0.1342 colors=179`
+- `HelloCustomWidgets` 单控件编译：已通过 `make all APP=HelloCustomWidgets APP_SUB=input/thumb_rate PORT=pc`
+- `HelloUnitTest`：已在 `X:\` 短路径通过 `make clean APP=HelloUnitTest PORT=pc_test`、`make all APP=HelloUnitTest PORT=pc_test` 和 `X:\output\main.exe`，总计 `845 / 845`，其中 `thumb_rate` suite `8 / 8`
+- `sync_widget_catalog.py`：已通过，本轮仍同步为 `106` 个控件目录
+- `touch release semantics`：已通过，结果 `custom_audited=28 custom_skipped_allowlist=5`
+- `docs encoding`：已通过，结果 `134 files`
+- `widget catalog check`：已通过，结果 `106 widgets: reference=106, showcase=0, deprecated=0`
+- 单控件 runtime：已通过 `python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/thumb_rate --track reference --timeout 10 --keep-screenshots`，输出 `11 frames captured -> D:\workspace\gitee\EmbeddedGUI_Widgets\runtime_check_output\HelloCustomWidgets_input_thumb_rate\default`
+- input 分类 compile/runtime 回归：已通过
+  compile `33 / 33`
+  runtime `33 / 33`
+- wasm 构建：已通过 `python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub input/thumb_rate`，输出 `web/demos/HelloCustomWidgets_input_thumb_rate`
+- web smoke：已通过 `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_input_thumb_rate`，结果 `PASS status=Running canvas=480x480 ratio=0.1342 colors=179`
 - 截图复核结论：
-  - 主区差分边界收敛到 `(44, 139) - (381, 246)`，覆盖 `none / liked / disliked / none` 四组主状态
-  - 主区共 `4` 组唯一状态，录制中的三态切换与最终回到 `none` 都已通过显式布局路径稳定落帧
-  - `compact` preview `9` 帧单一哈希，说明整条录制轨道中保持静态一致
-  - `read only` preview `9` 帧单一哈希，说明只读对照在录制中持续稳定
+  - 全帧 `11` 帧共出现 `4` 组唯一状态，对应默认 `none`、`liked`、`disliked` 与清空后的 `none`；最终稳定帧已显式回到默认快照
+  - 按 RGB 差分得到主区变化边界位于 `(44, 139) - (381, 246)`，遮罩该边界后主区外区域保持单哈希
+  - 按 `y >= 246` 裁切底部 preview 区域后全部帧保持单哈希，确认 `compact / read only` preview 在整条录制轨道中保持静态一致
+  - 主区哈希分组为 `[0,1,8,9,10] / [2,3] / [4,5] / [6,7]`，对应默认、`liked`、`disliked` 与清空后的 `none` 四组主区状态

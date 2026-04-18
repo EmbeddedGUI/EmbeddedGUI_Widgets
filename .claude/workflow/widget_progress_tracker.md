@@ -162,6 +162,13 @@
 ## 最近完成的收口动作
 
 - `2026-04-18`
+  - 收口 `input/thumb_rate` reference 控件：在不修改 `sdk/EmbeddedGUI` 的前提下，把既有 `thumb_rate` 示例页补齐到统一的 `ui_ready + layout_page + request_page_snapshot` 布局重放路径，保留主区默认 `none`、`liked`、`disliked` 与清空后的 `none` 四组 reference 状态，并让最终稳定帧显式回到默认快照；底部 `compact / read only` preview 继续保持静态 reference 对照。
+  - `example/HelloCustomWidgets/input/thumb_rate/test.c` 已保持统一 finalize 模板：新增 `THUMB_RATE_RECORD_FINAL_WAIT`，移除 preview 清焦桥接，录制阶段不再依赖 preview 做页面桥接，并在最终稳定帧前显式恢复默认快照。
+  - `example/HelloCustomWidgets/input/thumb_rate/readme.md` 已改写为统一模板，并回填本轮真实 compile / unit / runtime / web / 截图复核数据。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=input/thumb_rate PORT=pc`、在 `X:\` 执行的 `make clean APP=HelloUnitTest PORT=pc_test`、`make all APP=HelloUnitTest PORT=pc_test`、`X:\output\main.exe`（总计 `845 / 845`，`thumb_rate` suite `8 / 8`）、`python scripts/sync_widget_catalog.py`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category input`、`python scripts/checks/check_docs_encoding.py`、`python scripts/checks/check_widget_catalog.py`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/thumb_rate --track reference --timeout 10 --keep-screenshots`、`python scripts/code_compile_check.py --custom-widgets --category input --bits64`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --category input --track reference --bits64`、`python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub input/thumb_rate` 与对应 `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_input_thumb_rate`（`PASS status=Running canvas=480x480 ratio=0.1342 colors=179`）。
+  - 复核 `runtime_check_output/HelloCustomWidgets_input_thumb_rate/default` 的 `11` 帧截图：全帧共出现 `4` 组唯一状态，对应默认 `none`、`liked`、`disliked` 与清空后的 `none`，最终稳定帧已回到默认态；按 RGB 差分得到主区变化边界位于 `(44, 139) - (381, 246)`，遮罩该边界后边界外区域保持单哈希；按 `y >= 246` 裁切底部 preview 区域后全部帧保持单哈希，主区哈希分组为 `[0,1,8,9,10] / [2,3] / [4,5] / [6,7]`，确认底部 `compact / read only` preview 在整条录制轨道中保持静态一致。
+
+- `2026-04-18`
   - 收口 `input/shortcut_recorder` reference 控件：在不修改 `sdk/EmbeddedGUI` 的前提下，把既有 `shortcut_recorder` 示例页补齐到统一的 `ui_ready + layout_page + request_page_snapshot` 布局重放路径，保留主区默认 `Ctrl + K`、listening、`Ctrl + Shift + P` capture、新 preset 应用与 clear binding 五组 reference 状态，并让最终稳定帧显式回到默认 `Ctrl + K` 绑定；底部 `compact / read only` preview 继续保持静态 reference 对照。
   - `example/HelloCustomWidgets/input/shortcut_recorder/test.c` 已保持统一 finalize 模板：新增 `SHORTCUT_RECORD_FINAL_WAIT`，移除 preview 清焦桥接、preview click 轨道与 `compact` 状态切换，录制阶段只保留主区真实键盘轨道，并在最终稳定帧前显式恢复默认绑定。
   - `example/HelloCustomWidgets/input/shortcut_recorder/readme.md` 已改写为统一模板，并回填本轮真实 compile / unit / runtime / web / 截图复核数据。

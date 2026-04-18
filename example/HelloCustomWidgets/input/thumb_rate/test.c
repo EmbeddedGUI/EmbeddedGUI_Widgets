@@ -21,6 +21,7 @@
 #define THUMB_RATE_BOTTOM_ROW_HEIGHT 36
 #define THUMB_RATE_RECORD_WAIT       90
 #define THUMB_RATE_RECORD_FRAME_WAIT 170
+#define THUMB_RATE_RECORD_FINAL_WAIT 280
 
 typedef struct thumb_rate_snapshot thumb_rate_snapshot_t;
 struct thumb_rate_snapshot
@@ -81,24 +82,6 @@ static void init_text_label(egui_view_label_t *label, egui_dim_t width, egui_dim
     egui_view_label_set_align_type(EGUI_VIEW_OF(label), align);
     egui_view_label_set_font(EGUI_VIEW_OF(label), font);
     egui_view_label_set_font_color(EGUI_VIEW_OF(label), color, EGUI_ALPHA_100);
-}
-
-static void clear_primary_focus(void)
-{
-#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
-    egui_view_clear_focus(EGUI_VIEW_OF(&primary_rate));
-#endif
-}
-
-static int dismiss_primary_focus_on_preview_touch(egui_view_t *self, egui_motion_event_t *event)
-{
-    EGUI_UNUSED(self);
-
-    if (event->type == EGUI_MOTION_EVENT_ACTION_DOWN)
-    {
-        clear_primary_focus();
-    }
-    return 1;
 }
 
 static void sync_primary_note(void)
@@ -234,9 +217,6 @@ void test_init_ui(void)
     egui_view_thumb_rate_set_font(EGUI_VIEW_OF(&compact_preview), (const egui_font_t *)&egui_res_font_montserrat_8_4);
     egui_view_thumb_rate_set_labels(EGUI_VIEW_OF(&compact_preview), "Like", "Dislike");
     egui_view_thumb_rate_override_static_preview_api(EGUI_VIEW_OF(&compact_preview), &compact_preview_api);
-#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
-    compact_preview_api.on_touch = dismiss_primary_focus_on_preview_touch;
-#endif
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&compact_preview), 0);
 #endif
@@ -249,9 +229,6 @@ void test_init_ui(void)
     egui_view_thumb_rate_set_font(EGUI_VIEW_OF(&read_only_preview), (const egui_font_t *)&egui_res_font_montserrat_8_4);
     egui_view_thumb_rate_set_labels(EGUI_VIEW_OF(&read_only_preview), "Like", "Dislike");
     egui_view_thumb_rate_override_static_preview_api(EGUI_VIEW_OF(&read_only_preview), &read_only_preview_api);
-#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
-    read_only_preview_api.on_touch = dismiss_primary_focus_on_preview_touch;
-#endif
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&read_only_preview), 0);
 #endif
@@ -380,7 +357,22 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
         {
             request_page_snapshot();
         }
-        EGUI_SIM_SET_WAIT(p_action, 520);
+        EGUI_SIM_SET_WAIT(p_action, THUMB_RATE_RECORD_FRAME_WAIT);
+        return true;
+    case 7:
+        if (first_call)
+        {
+            apply_primary_default_state();
+            focus_primary_rate();
+        }
+        EGUI_SIM_SET_WAIT(p_action, THUMB_RATE_RECORD_FINAL_WAIT);
+        return true;
+    case 8:
+        if (first_call)
+        {
+            request_page_snapshot();
+        }
+        EGUI_SIM_SET_WAIT(p_action, THUMB_RATE_RECORD_FINAL_WAIT);
         return true;
     default:
         return false;
