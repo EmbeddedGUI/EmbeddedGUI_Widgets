@@ -226,7 +226,7 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
         {
             apply_primary_snapshot(1);
         }
-        EGUI_SIM_SET_WAIT(p_action, SCROLL_VIEWER_RECORD_WAIT);
+        EGUI_SIM_SET_WAIT(p_action, SCROLL_VIEWER_RECORD_FINAL_WAIT);
         return true;
     case 2:
         if (first_call)

@@ -5,7 +5,7 @@
 - 参考开源库：`WinUI 3`、`WPF UI`
 - 对应组件名：`ScrollViewer`
 - 本次保留语义：`surface / viewport / scrollbar`、`vertical / horizontal offset`、`compact`、`read only`
-- 本次删除内容：preview 点击清主控件焦点、`compact` 第二条 preview 轨道、录制里的 preview dismiss 收尾
+- 本次删减内容：preview 点击清主控件焦点、`compact` 第二条 preview 轨道、录制里的 `preview dismiss` 收尾
 - EGUI 适配说明：继续复用仓库内 `scroll_viewer` 基础实现，本轮只收口 `reference` 页面结构、主控件录制轨道和静态 preview 语义，不修改 `sdk/EmbeddedGUI`
 
 ## 1. 为什么需要这个控件
@@ -14,17 +14,17 @@
 ## 2. 为什么现有控件不够用
 - `scroll_bar` 只覆盖滚动条本身，不承担 viewport、内容裁切与滚动 surface 的完整语义。
 - `data_list_panel` 更偏向列表数据容器，不适合表达任意内容块的通用滚动区域。
-- `split_view`、`card_panel` 这类控件能承载内容，但不直接提供 Fluent / WinUI `ScrollViewer` 的 reference 验证闭环。
+- `split_view`、`card_panel` 这类控件能承载内容，但不直接提供 Fluent / WinUI `ScrollViewer` 的 `reference` 验证闭环。
 
 ## 3. 目标场景与示例概览
-- 主控件：保留真实 `ScrollViewer` 语义，展示 `Release pane`、`Diagnostics lane`、`Backlog feed` 三组 `viewport / offset / scrollbar` 状态。
-- `compact` 预览：压缩为小尺寸滚动容器，只作为静态 reference 对照。
-- `read only` 预览：保留冻结态滚动容器和弱化 palette，只作为静态 reference 对照。
-- 页面只保留标题、主 `scroll_viewer` 和底部 `compact / read only` 双 preview，不再保留 preview 焦点桥接与额外收尾动作。
-- 底部两个 preview 统一通过 `egui_view_scroll_viewer_override_static_preview_api()` 收口：
+- 主控件保留真实 `ScrollViewer` 语义，展示 `Release pane`、`Diagnostics lane`、`Backlog feed` 三组 reference 状态。
+- 底部左侧是 `compact` 静态 preview，用于对照窄尺寸滚动容器与滚动条密度。
+- 底部右侧是 `read only` 静态 preview，用于对照只读弱化效果与输入屏蔽语义。
+- 页面只保留标题、一个主 `scroll_viewer` 和底部两个静态 preview，不再承担 preview 清焦点或收尾交互。
+- 两个 preview 统一通过 `egui_view_scroll_viewer_override_static_preview_api()` 收口：
   - 吞掉 `touch / key`
-  - 只负责清理残留 `pressed / drag / track`
-  - 不修改 `current_snapshot / vertical_offset / horizontal_offset / scrollbar_visibility`
+  - 只清理残留 `pressed / pressed_part / dragging_thumb`
+  - 不改写 `current_snapshot / vertical_offset / horizontal_offset`
   - 不触发 `on_view_changed`
 
 目标目录：`example/HelloCustomWidgets/layout/scroll_viewer/`
@@ -33,14 +33,13 @@
 - 根布局：`224 x 284`
 - 主控件：`196 x 160`
 - 底部对照行：`216 x 88`
-- `compact` 预览：`104 x 88`
-- `read only` 预览：`104 x 88`
+- `compact` preview：`104 x 88`
+- `read only` preview：`104 x 88`
 - 页面结构：标题 -> 主 `scroll_viewer` -> `compact / read only`
 - 样式约束：
-  - 继续保持浅色 Fluent 卡片容器、低噪音边框和可读的 viewport 层级。
-  - 保留顶部标题/摘要、中央滚动 surface、右侧 scrollbar 与底部横向指示条。
-  - 主控件继续显示 snapshot 名称、offset 和 extent 等低噪音指标。
-  - 底部两个 preview 固定为静态 reference 对照，不再承担点击桥接、焦点收尾或额外轨道切换职责。
+  - 保留可见的滚动条 chrome、thumb 和 viewport 裁切。
+  - 主控件继续显示 snapshot 标题、helper、offset 与内容块分布。
+  - 底部两个 preview 固定为静态 reference 对照，不再承担焦点桥接或额外轨道切换职责。
 
 ## 5. 控件清单
 
@@ -55,26 +54,19 @@
 
 | 区域 / 轨道 | 状态 | 说明 |
 | --- | --- | --- |
-| 主控件 | `Release pane` | 默认状态，展示基础 viewport 与滚动指标 |
-| 主控件 | `Diagnostics lane` | 展示第二组内容与滚动偏移 |
-| 主控件 | `Backlog feed` | 展示紧凑内容堆叠与水平偏移 |
-| `compact` | `Compact pane` | 固定静态对照，验证紧凑滚动容器 |
-| `read only` | `Read only pane` | 固定静态对照，验证只读渲染与输入屏蔽 |
+| 主控件 | `Release pane` | 默认状态，展示发布清单与主滚动轨道 |
+| 主控件 | `Diagnostics lane` | 展示第二组诊断内容与滚动位置变化 |
+| 主控件 | `Backlog feed` | 展示紧凑卡片流与水平偏移语义 |
+| `compact` | `Compact pane` | 固定静态对照，验证窄尺寸滚动容器 |
+| `read only` | `Read only pane` | 固定静态对照，验证只读弱化与输入屏蔽 |
 
 ## 7. 交互语义与 preview 收口
-- 主控件保留真实 `ScrollViewer` 键盘与触摸语义：
-  - `Up / Down`：按行滚动
-  - `Home / End`：跳到顶部 / 底部
-  - `Left / Right`：调整水平 offset
-  - `+ / -`：按页滚动
-  - `Tab`：在 surface 与 thumb 之间移动
-  - `Enter / Space`：thumb 聚焦时向下翻页
-- 触摸语义继续区分两类：
-  - 滚动轨道点击遵循 same-target release
-  - thumb 拖拽按连续交互更新 vertical offset
-- 脱靶移动时只允许保留提交目标，不允许继续显示错误的 pressed 视觉。
-- `set_snapshots()`、`set_current_snapshot()`、`set_vertical_offset()`、`set_horizontal_offset()`、`set_font()`、`set_meta_font()`、`set_palette()`、`set_compact_mode()`、`set_read_only_mode()`、`set_scrollbar_visibility()` 都必须先清理残留 `pressed / drag / track`。
-- 底部 `compact / read only` preview 固定为静态 reference 对照，不再承担焦点桥接或额外页面交互职责。
+- 主控件保留真实 `ScrollViewer` 触摸与键盘语义：
+  - 触摸轨道点击与 thumb 连续拖拽
+  - 键盘 `Tab / Up / Down / Left / Right / Home / End / + / - / Enter / Space`
+- `set_snapshots()`、`set_current_snapshot()`、`set_vertical_offset()`、`set_horizontal_offset()`、`set_font()`、`set_meta_font()`、`set_palette()`、`set_compact_mode()`、`set_read_only_mode()` 都必须先清理残留 `pressed / pressed_part / dragging_thumb` 状态。
+- `read only / !enable` 期间，触摸与键盘输入都不能改写当前 snapshot 或滚动位置。
+- 底部 `compact / read only` preview 固定为静态 reference，对输入只做吞吐和状态清理，不再参与主页面叙事。
 
 ## 8. 录制动作设计
 `egui_port_get_recording_action()` 的录制顺序如下：
@@ -83,7 +75,7 @@
 3. 切到 `Backlog feed`，输出第三组主状态。
 4. 恢复主控件默认状态，输出最终稳定帧。
 
-录制只导出主控件的状态变化。底部 `compact / read only` preview 在整条 reference 轨道中保持静态，不承担点击桥接、焦点 dismiss 或收尾职责。
+录制只导出主控件的状态变化。底部两个 preview 在整条 reference 轨道中保持静态一致，不再承担 preview dismiss 或焦点清理职责。
 
 ## 9. 编译、运行时、单测与文档检查
 ```bash
@@ -105,20 +97,19 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
 ```
 
 验收重点：
-- 主控件三组 snapshot 必须能直接看出内容区与 offset 变化。
-- scrollbar / thumb / track 在脱靶移动后不能残留错误的 pressed 视觉。
-- `same-target release / read only / !enable / static preview` 必须全部通过单测。
-- 两个 preview 必须完整可见，不能裁切、黑屏或白屏，并且在所有 runtime 帧里保持静态一致。
+- 主控件三组 snapshot 必须清楚体现滚动条、thumb、内容块与 `offset` 的差异。
+- `same-target release / thumb drag / key navigation / read only / !enable / static preview` 全部通过单测。
+- 两个 preview 必须完整可见、无黑白屏，并且在全部 runtime 帧里保持静态一致。
 
 ## 10. 已知限制与后续方向
-- 当前只收口单容器 `ScrollViewer` reference，不接入真实虚拟化、大文档分块、嵌套惯性滚动或系统级滚轮桥接。
-- 仍用 snapshot 数组描述内容块、viewport 和 offset，不下沉为 SDK 级通用滚动容器。
-- 当前不下沉到 `src/widget/`，先维持在 `HelloCustomWidgets` 的 reference 维护范围内。
+- 当前只收口单容器 `ScrollViewer` reference，不接入嵌套滚动链、惯性或系统级输入桥接。
+- 继续使用 snapshot 数组描述滚动内容、viewport 和 offset，不下沉到 SDK 通用容器层。
+- 若后续复用价值稳定，再评估是否与 `scroll_presenter`、`scroll_bar` 抽共享的 offset metrics 或 thumb helper。
 
 ## 11. 与现有控件的边界
-- 相比 `scroll_bar`：这里强调完整 viewport 与内容 surface，而不只是滚动条本体。
-- 相比 `data_list_panel`：这里承载任意内容块，不绑定列表数据容器。
-- 相比 `card_control`：这里强调滚动与 viewport，而不是卡片选择动作。
+- 相比 `scroll_presenter`：这里保留显式 `scrollbar / thumb` chrome，而不是强调内容 surface 自身的平移。
+- 相比 `scroll_bar`：这里负责完整 `viewport / surface / scrollbar / offset`，而不只是滚动条本体。
+- 相比 `data_list_panel`：这里承载任意内容块，不绑定列表数据结构。
 
 ## 12. 本次保留的核心状态与删减项
 - 保留的核心状态：
@@ -129,7 +120,40 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
 - 保留的交互：
   - 触摸轨道点击与 thumb 拖拽
   - 键盘 `Tab / Up / Down / Left / Right / Home / End / + / - / Enter / Space`
-- 删除的装饰或桥接：
+- 删减的装饰或桥接：
   - preview 点击清主控件焦点
   - `compact` 第二条 preview 轨道
-  - 录制里的 preview dismiss 收尾动作
+  - 录制里的 `preview dismiss` 收尾动作
+
+## 13. 当前验收结果（2026-04-18）
+- 单控件编译：`PASS`
+  - `make all APP=HelloCustomWidgets APP_SUB=layout/scroll_viewer PORT=pc`
+- `HelloUnitTest`：`PASS`
+  - `make all APP=HelloUnitTest PORT=pc_test`
+  - `X:\output\main.exe`
+  - 总计 `845 / 845`，其中 `scroll_viewer` suite `7 / 7`
+- catalog / 文档 / 触摸语义：`PASS`
+  - `python scripts/sync_widget_catalog.py`
+  - `python scripts/checks/check_touch_release_semantics.py --scope custom --category layout`
+  - `python scripts/checks/check_docs_encoding.py`
+  - `python scripts/checks/check_widget_catalog.py`
+  - 触摸语义结果：`custom_audited=28 custom_skipped_allowlist=1`
+  - 文档编码结果：`134 files`
+  - widget catalog 结果：`106 widgets`
+- 单控件 runtime：`PASS`
+  - `python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub layout/scroll_viewer --track reference --timeout 10 --keep-screenshots`
+  - `9 frames captured -> runtime_check_output/HelloCustomWidgets_layout_scroll_viewer/default`
+- layout 分类 compile/runtime 回归：`PASS`
+  - `python scripts/code_compile_check.py --custom-widgets --category layout --bits64`
+  - `python scripts/code_runtime_check.py --app HelloCustomWidgets --category layout --track reference --bits64`
+  - layout `29 / 29` 全部通过
+- web 链路：`PASS`
+  - `python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub layout/scroll_viewer`
+  - `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_layout_scroll_viewer`
+  - smoke 结果：`status=Running canvas=480x480 ratio=0.2165 colors=374`
+- 截图复核结论：
+  - 共捕获 `9` 帧
+  - 全帧共出现 `3` 组唯一状态，主区哈希分组为 `[0,1,6,7,8] / [2,3] / [4,5]`
+  - 主区变化边界保持在 `(49, 63) - (430, 285)`
+  - 按 `y >= 287` 裁切底部 preview 后保持单一哈希，确认 `compact / read only` preview 全程静态
+  - 结论：主区覆盖默认 `Release pane`、`Diagnostics lane` 与 `Backlog feed` 三组 reference 状态，最终稳定帧已显式回到默认快照
