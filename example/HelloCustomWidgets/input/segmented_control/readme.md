@@ -90,8 +90,7 @@
 ```bash
 make all APP=HelloCustomWidgets APP_SUB=input/segmented_control PORT=pc
 
-# 在 X:\ 短路径下执行，修改 .inc 后建议先 clean 再重建
-make clean APP=HelloUnitTest PORT=pc_test
+# 在 X:\ 短路径下执行
 make all APP=HelloUnitTest PORT=pc_test
 X:\output\main.exe
 
@@ -106,8 +105,7 @@ python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub input/
 python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_input_segmented_control
 ```
 
-验收重点：
-
+## 10. 验收重点
 - 主控件和底部双预览必须完整可见，不能被裁切
 - 选中胶囊、边框、文字和 focus ring 必须清晰可辨
 - 主控件触摸与键盘切换必须都能工作，且不再依赖外部 guide / label 点击
@@ -118,29 +116,23 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
 - `Left / Right / Up / Down / Home / End / Tab` 只允许驱动主控件切换；无关按键不能留下残留 `pressed`
 - 底部 `compact / read only` 预览必须通过 `hcw_segmented_control_override_static_preview_api()` 吞掉 touch / key 输入，并在收到输入后立即清理残留 `pressed`；录制阶段不再依赖 preview 做状态桥接
 
-## 9. 已知限制与后续方向
+## 11. 截图复核口径
+- 检查目录：`runtime_check_output/HelloCustomWidgets_input_segmented_control/default`
+- 本轮复核结果：
+  - 共捕获 `11` 帧
+  - 全帧共出现 `5` 组唯一状态，主区哈希分组为 `[0,1,8,9,10] / [2] / [3] / [4,5] / [6,7]`
+  - 主区 RGB 差分边界收敛到 `(46, 185) - (433, 237)`
+  - 遮罩主区变化边界后，主区外区域唯一哈希数为 `1`
+  - 按 `y >= 238` 裁切底部 preview 后，preview 区唯一哈希数为 `1`
 
-- 当前只保留纯文本分段，不接图标、badge 和计数器
-- 当前 `compact` 与 `read only` 仅作为静态对照，不承担交互职责
-- 当前只覆盖单行水平布局，不扩展到多行折行场景
-- 若后续要沉入框架层，再单独评估与 `tab_strip`、`button group` 等语义边界
-
-## 10. 与现有控件的重叠分析与差异化边界
+## 12. 与现有控件的边界
 
 - 相比 `tab_strip`：本控件用于局部状态切换，不承担整页导航
 - 相比 `radio_button`：本控件是横向胶囊分段，不是表单单选列
 - 相比 `toggle_button`：本控件表达互斥分组，不是单一 on/off 动作
 - 相比核心层 `src/widget/egui_view_segmented_control`：本目录负责 reference 页面与样式落地，不重复造核心控件
 
-## 11. 参考设计系统与开源母本
-
-- 参考设计系统：`Fluent 2`
-- 开源母本：`WPF UI`
-- 次级补充参考：`ModernWpf`
-
-## 12. 对应组件名，以及本次保留的核心状态
-
-- 对应组件名：`SegmentedControl`
+## 13. 本次保留的核心状态与删减项
 - 本次保留状态：
   - `standard`
   - `compact`
@@ -148,30 +140,20 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
   - `focused`
   - `touch switch`
   - `keyboard switch`
+- 删减的装饰或桥接：
+  - 页面级 guide、状态回显、section divider 和外部 preview 标签
+  - 图标段、badge、计数器和桌面级 hover reveal
+  - Acrylic、复杂阴影和多层装饰描边
+  - 拖拽重排、溢出折叠和复杂自适应动画
 
-## 13. 相比参考原型删除了哪些效果或装饰
-
-- 不做页面级 guide、状态回显、section divider 和外部 preview 标签
-- 不做图标段、badge、计数器和桌面级 hover reveal
-- 不做 Acrylic、复杂阴影和多层装饰描边
-- 不做拖拽重排、溢出折叠和复杂自适应动画
-
-## 14. EGUI 适配时的简化点与约束
-
-- 直接复用核心层已有 `segmented_control`，避免与 `src/widget` 同名实现冲突
-- 用固定 snapshot 驱动，优先保证 `480 x 480` 页面里的稳定 reference
-- 底部 `compact` 与 `read only` 固定为静态对照，并通过 `hcw_segmented_control_override_static_preview_api()` 统一吞掉 touch / key，不再承担 preview dismiss 桥接
-- 本轮在示例层额外补了一层 touch / key 包装与 setter 包装，用来统一清理 `pressed`、收口 `same-target release / touch cancel / !enable / key guard`，并确保静态 preview 不会误切换
-- 先完成示例级审阅稳定性，再决定是否抽象到框架公共层
-
-## 15. 当前验收结果（2026-04-18）
+## 14. 当前验收结果（2026-04-18）
 
 - 单控件编译：`PASS`
   - `make all APP=HelloCustomWidgets APP_SUB=input/segmented_control PORT=pc`
-- `HelloUnitTest`：`PASS`
+- `HelloUnitTest`：`日志复核 PASS`
   - `make all APP=HelloUnitTest PORT=pc_test`
   - `X:\output\main.exe`
-  - 总计 `845 / 845`，其中 `segmented_control` suite `8 / 8`
+  - 本轮按本地 unit 日志复核总计 `845 / 845`，其中 `segmented_control` suite `8 / 8`
 - catalog / 文档 / 触摸语义：`PASS`
   - `python scripts/sync_widget_catalog.py`
   - `python scripts/checks/check_touch_release_semantics.py --scope custom --category input`
@@ -193,8 +175,8 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
   - smoke 结果：`status=Running canvas=480x480 ratio=0.0855 colors=159`
 - 截图复核结论：
   - 共捕获 `11` 帧
-  - 全帧共出现 `5` 组唯一状态，主区哈希分组为 `[0,1,8,9,10]`、`[2]`、`[3]`、`[4,5]`、`[6,7]`
-  - 主区 RGB 差分边界为 `(46, 185) - (434, 238)`
+  - 全帧共出现 `5` 组唯一状态，主区哈希分组为 `[0,1,8,9,10] / [2] / [3] / [4,5] / [6,7]`
+  - 主区 RGB 差分边界为 `(46, 185) - (433, 237)`
   - 遮罩主区边界后，主区外唯一哈希数为 `1`
   - 以 `y >= 238` 裁切底部 preview 后，preview 区唯一哈希数为 `1`
   - 结论：主区覆盖默认态、触摸切换路径、键盘 `End` 末项态与 `Home` 首项态，最终稳定帧已显式回到默认快照；底部 `compact / read only` preview 全程静态
