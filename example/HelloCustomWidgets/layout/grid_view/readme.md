@@ -93,8 +93,7 @@
 ```bash
 make all APP=HelloCustomWidgets APP_SUB=layout/grid_view PORT=pc
 
-# 在 X:\ 短路径下执行，修改 HelloUnitTest 后先 clean 再重建
-make clean APP=HelloUnitTest PORT=pc_test
+# 在 X:\ 短路径下执行
 make all APP=HelloUnitTest PORT=pc_test
 X:\output\main.exe
 
@@ -109,25 +108,26 @@ python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub layout
 python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_layout_grid_view
 ```
 
-验收重点：
+## 10. 验收重点
 - 主控件必须能直接看出三组 `GridView` 主状态变化。
 - `same-target release / keyboard activation / read only / !enable / static preview` 全部通过单测。
 - runtime 截图里底部 preview 必须在全程保持静态一致。
+- README、demo 录制轨道、单测入口和验收命令链必须保持一致。
 
-## 10. 截图复核口径
+## 11. 截图复核口径
 - 检查目录：`runtime_check_output/HelloCustomWidgets_layout_grid_view/default`
 - 复核目标：
   - 主区存在 3 组可辨识唯一状态
   - 底部 preview 区域在全程保持单一静态哈希
   - 变化边界只出现在主区，不扩散到 preview 区
 
-## 11. 与现有控件的边界
+## 12. 与现有控件的边界
 - 相比 `items_repeater`：这里保留集合导航和激活语义，不只是模板重复器。
 - 相比 `uniform_grid`：这里保留不等宽磁贴节奏和 snapshot 切换，不是固定网格容器。
 - 相比 `data_list_panel`：这里强调多列磁贴浏览，不是单列摘要列表。
 - 相比 `wrap_panel / virtualizing_wrap_panel`：这里是 reference 级集合控件，不是纯布局器。
 
-## 12. 本次保留的核心状态与删减项
+## 13. 本次保留的核心状态与删减项
 - 保留的核心状态：
   - `assets gallery`
   - `template board`
@@ -143,7 +143,7 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
   - 第二条 `compact` preview 轨道
   - 录制里的 `preview dismiss` 收尾动作
 
-## 13. 当前验收结果（2026-04-18）
+## 14. 当前验收结果（2026-04-18）
 - 单控件编译：`PASS`
   - `make all APP=HelloCustomWidgets APP_SUB=layout/grid_view PORT=pc`
 - `HelloUnitTest`：`PASS`
