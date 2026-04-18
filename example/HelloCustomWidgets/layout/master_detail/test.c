@@ -242,7 +242,7 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
         {
             apply_primary_state(1);
         }
-        EGUI_SIM_SET_WAIT(p_action, MASTER_DETAIL_RECORD_WAIT);
+        EGUI_SIM_SET_WAIT(p_action, MASTER_DETAIL_RECORD_FINAL_WAIT);
         return true;
     case 2:
         if (first_call)
@@ -271,7 +271,7 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
             apply_primary_default_state();
             apply_preview_states();
         }
-        EGUI_SIM_SET_WAIT(p_action, MASTER_DETAIL_RECORD_WAIT);
+        EGUI_SIM_SET_WAIT(p_action, MASTER_DETAIL_RECORD_FINAL_WAIT);
         return true;
     case 6:
         if (first_call)
