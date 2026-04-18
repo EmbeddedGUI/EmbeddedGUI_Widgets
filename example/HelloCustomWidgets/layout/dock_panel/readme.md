@@ -89,13 +89,13 @@
 4. 恢复默认主状态并输出最终稳定帧
 
 录制只导出主区状态变化。底部 `Rail / Footer` preview 在整条 reference 轨道里保持静态一致，不再包含额外 preview 状态切换，也不再保留旧的中间恢复抓帧。
+当前 `test.c` 已对齐统一的 `ui_ready + layout_page + request_page_snapshot` 布局重放路径，主区首轮切换与最终稳定抓帧使用 `DOCK_PANEL_RECORD_FINAL_WAIT`，中间状态切换仍保留 `DOCK_PANEL_RECORD_WAIT / DOCK_PANEL_RECORD_FRAME_WAIT`。
 
 ## 9. 编译、单测、运行时与文档检查
 ```bash
 make all APP=HelloCustomWidgets APP_SUB=layout/dock_panel PORT=pc
 
-# 在 X:\ 短路径下执行；修改 HelloUnitTest 后先 clean 再重建
-make clean APP=HelloUnitTest PORT=pc_test
+# 在 X:\ 短路径下执行
 make all APP=HelloUnitTest PORT=pc_test
 X:\output\main.exe
 
@@ -128,3 +128,52 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
 - 相比 `canvas`：这里不依赖手写绝对坐标，而是表达布局语义。
 - 相比 `grid`：这里不需要显式行列定义，只依赖顺序停靠。
 - 相比 `split_view`：这里不承担导航抽屉行为，只保留容器布局本体。
+
+## 13. 本次保留的核心状态与删减项
+- 保留的核心状态：
+  - `inspector shell`
+  - `reading pane`
+  - `compact tools`
+  - `rail`
+  - `footer`
+  - `last child fill`
+- 保留的交互：
+  - static preview consumes input
+  - `dispatch_key_event()` 预览守卫
+- 删减的旧桥接与旧口径：
+  - 旧录制末尾多余的恢复抓帧
+  - 旧单测 `on_key_event` 注入路径
+  - 与当前 static preview 工作流不一致的旧 README 结构
+
+## 14. 当前验收结果（2026-04-18）
+- 单控件编译：`PASS`
+  - `make all APP=HelloCustomWidgets APP_SUB=layout/dock_panel PORT=pc`
+- `HelloUnitTest`：`PASS`
+  - `make all APP=HelloUnitTest PORT=pc_test`
+  - `X:\output\main.exe`
+  - 总计 `845 / 845`，其中 `dock_panel` suite `4 / 4`
+- catalog / 文档 / 触摸语义：`PASS`
+  - `python scripts/sync_widget_catalog.py`
+  - `python scripts/checks/check_touch_release_semantics.py --scope custom --category layout`
+  - `python scripts/checks/check_docs_encoding.py`
+  - `python scripts/checks/check_widget_catalog.py`
+  - 触摸语义结果：`custom_audited=28 custom_skipped_allowlist=1`
+  - 文档编码结果：`134 files`
+  - widget catalog 结果：`106 widgets`
+- 单控件 runtime：`PASS`
+  - `python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub layout/dock_panel --track reference --timeout 10 --keep-screenshots`
+  - `9 frames captured -> runtime_check_output/HelloCustomWidgets_layout_dock_panel/default`
+- layout 分类 compile/runtime 回归：`PASS`
+  - `python scripts/code_compile_check.py --custom-widgets --category layout --bits64`
+  - `python scripts/code_runtime_check.py --app HelloCustomWidgets --category layout --track reference --bits64`
+  - layout `29 / 29` 全部通过
+- web 链路：`PASS`
+  - `python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub layout/dock_panel`
+  - `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_layout_dock_panel`
+  - smoke 结果：`status=Running canvas=480x480 ratio=0.1799 colors=116`
+- 截图复核结论：
+  - 共捕获 `9` 帧
+  - 全帧共出现 `3` 组唯一状态，主区哈希分组为 `[0,1,6,7,8] / [2,3] / [4,5]`
+  - 主区变化边界保持在 `(64, 94) - (416, 216)`
+  - 按 `y >= 216` 裁切底部 preview 区域后保持单一哈希，确认 `Rail / Footer` preview 全程静态
+  - 结论：主区覆盖默认 `Inspector shell`、`Reading pane` 与 `Compact tools` 三组 reference 状态，最终稳定帧已显式回到默认快照
