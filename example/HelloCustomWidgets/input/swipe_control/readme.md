@@ -110,7 +110,7 @@
 - 主控件 focus ring 只在真实 focus 下绘制，避免 preview 误显示焦点。
 - 录制链路移除 `compact` preview 切换与 preview touch 清焦桥接，底部 preview 回到全程静态 reference。
 
-## 9. 交互测试覆盖
+### 交互测试覆盖
 `example/HelloUnitTest/test/test_swipe_control.c` 本轮覆盖了以下回归：
 - 默认状态与键盘 reveal 切换
 - `Tab` part 循环
@@ -122,7 +122,7 @@
 - `compact / read only / disabled` guard 清理残留 pressed
 - static preview 吞输入且不改变 reveal / current part
 
-## 10. 录制动作设计
+## 9. 录制动作设计
 `egui_port_get_recording_action()` 的录制链路：
 1. 应用主控件和 `compact` 默认 snapshot。
 2. 抓首帧默认 surface。
@@ -145,12 +145,11 @@
 
 当前 `test.c` 已对齐统一的 `ui_ready + layout_page + request_page_snapshot` 收口模板：初始化阶段在 root view 挂载前后各重放一次默认态与 preview，键盘录制入口、主区 track 切换与 `request_page_snapshot()` 都先走显式布局路径，最终稳定帧前显式回到默认 `Inbox` track。
 
-## 11. 编译、检查与验收命令
+验收命令：
 ```bash
 make all APP=HelloCustomWidgets APP_SUB=input/swipe_control PORT=pc
 
-# 在 X:\ 短路径下执行，修改 .inc 后建议先 clean 再重建
-make clean APP=HelloUnitTest PORT=pc_test
+# 在 X:\ 短路径下执行
 make all APP=HelloUnitTest PORT=pc_test
 X:\output\main.exe
 
@@ -165,43 +164,72 @@ python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub input/
 python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_input_swipe_control
 ```
 
-验收重点：
+## 10. 验收重点
 - 主控件和底部 preview 必须完整可见，不能黑屏、白屏或裁切。
 - reveal 前后 surface 与 action rail 层级必须清晰。
 - 主控件交互结束后不能残留 pressed 污染。
 - 底部 preview 必须保持静态 reference，不出现误触发 reveal、误焦点 ring 或残留高亮。
 
-## 12. 已知限制
-- 当前只做单行 `SwipeControl` reference，不接入真实列表容器。
-- 不实现连续 easing 动画、多 action stack、真实图标资源和批量操作工具栏。
-- action rail 仍以文本为主，不引入额外图标资源系统。
+## 11. 截图复核口径
+- 检查目录：`runtime_check_output/HelloCustomWidgets_input_swipe_control/default`
+- 本轮复核结果：
+  - 共捕获 `13` 帧
+  - 全帧共出现 `5` 组唯一状态，主区哈希分组为 `[0,1,10,11,12] / [2,3] / [4,5] / [6,7] / [8,9]`
+  - 主区 RGB 差分边界收敛到 `(53, 110) - (427, 267)`
+  - 遮罩主区变化边界后，主区外区域唯一哈希数为 `1`
+  - 按 `y >= 268` 裁切底部 preview 后，preview 区唯一哈希数为 `1`
 
-## 13. 与现有控件的差异边界
+## 12. 与现有控件的边界
 - 相比 `settings_panel` / `data_list_panel`：这里的核心是 reveal action，不是静态信息行。
 - 相比 `split_button` / `toggle_split_button`：这里的入口是整行 surface，不是按钮本体。
 - 相比普通 `card`：这里明确保留 `surface / start action / end action` 三段状态语义。
 
-## 14. EGUI 适配说明
-- 通过固定 row snapshot 驱动 reference，优先保证 `480 x 480` 下的稳定审阅。
-- `compact` 与 `read only` preview 通过静态 API 收口，避免把对照控件做成第二套可交互实现。
-- 交互实现优先保证状态清理、release 语义和 runtime 渲染稳定性，再保留 `SwipeControl` 必需的连续 reveal 例外。
+## 13. 本次保留的核心状态与删减项
+- 本次保留状态：
+  - `surface`
+  - `start action reveal`
+  - `end action reveal`
+  - `Planner`
+  - `Review`
+  - `compact`
+  - `read only`
+- 删减的装饰或桥接：
+  - `compact` preview 状态切换
+  - preview touch 清焦桥接
+  - 旧版 guide、状态回显、section divider 和外部 preview 标签
+  - 多 action stack、真实图标资源和批量操作工具栏
 
-## 15. 当前验收结果（2026-04-18）
+## 14. 当前验收结果（2026-04-19）
 
-- `HelloCustomWidgets` 单控件编译：已通过 `make all APP=HelloCustomWidgets APP_SUB=input/swipe_control PORT=pc`
-- `HelloUnitTest`：已在 `X:\` 短路径通过 `make clean APP=HelloUnitTest PORT=pc_test`、`make all APP=HelloUnitTest PORT=pc_test` 和 `X:\output\main.exe`，总计 `845 / 845`，其中 `swipe_control` suite `11 / 11`
-- `sync_widget_catalog.py`：已通过，本轮仍同步为 `106` 个控件目录
-- `touch release semantics`：已通过，结果 `custom_audited=28 custom_skipped_allowlist=5`
-- `docs encoding`：已通过，结果 `134 files`
-- `widget catalog check`：已通过，结果 `106 widgets: reference=106, showcase=0, deprecated=0`
-- 单控件 runtime：已通过 `python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/swipe_control --track reference --timeout 10 --keep-screenshots`，输出 `13 frames captured -> D:\workspace\gitee\EmbeddedGUI_Widgets\runtime_check_output\HelloCustomWidgets_input_swipe_control\default`
-- input 分类 compile/runtime 回归：已通过
-  compile `33 / 33`
-  runtime `33 / 33`
-- wasm 构建：已通过 `python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub input/swipe_control`，输出 `web/demos/HelloCustomWidgets_input_swipe_control`
-- web smoke：已通过 `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_input_swipe_control`，结果 `PASS status=Running canvas=480x480 ratio=0.1693 colors=234`
+- 单控件编译：`PASS`
+  - `make all APP=HelloCustomWidgets APP_SUB=input/swipe_control PORT=pc`
+- `HelloUnitTest`：`日志复核 PASS`
+  - `make all APP=HelloUnitTest PORT=pc_test`
+  - `X:\output\main.exe`
+  - 本轮按本地 unit 日志复核总计 `845 / 845`，其中 `swipe_control` suite `11 / 11`
+- catalog / 文档 / 触摸语义：`PASS`
+  - `python scripts/sync_widget_catalog.py`
+  - `python scripts/checks/check_touch_release_semantics.py --scope custom --category input`
+  - `python scripts/checks/check_docs_encoding.py`
+  - `python scripts/checks/check_widget_catalog.py`
+  - 触摸语义结果：`custom_audited=28 custom_skipped_allowlist=5`
+  - 文档编码结果：`134 files`
+  - widget catalog 结果：`106 widgets`
+- 单控件 runtime：`PASS`
+  - `python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/swipe_control --track reference --timeout 10 --keep-screenshots`
+  - `13 frames captured -> runtime_check_output/HelloCustomWidgets_input_swipe_control/default`
+- input 分类 compile/runtime 回归：`PASS`
+  - `python scripts/code_compile_check.py --custom-widgets --category input --bits64`
+  - `python scripts/code_runtime_check.py --app HelloCustomWidgets --category input --track reference --bits64`
+  - input `33 / 33` 全部通过
+- web 链路：`PASS`
+  - `python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub input/swipe_control`
+  - `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_input_swipe_control`
+  - smoke 结果：`status=Running canvas=480x480 ratio=0.1693 colors=234`
 - 截图复核结论：
-  - 全帧 `13` 帧共出现 `5` 组唯一状态，对应默认 `Inbox` surface、`start action reveal`、`end action reveal`、`Planner` surface 与 `Review` surface；最终稳定帧已回到默认 `Inbox` track
-  - 按 RGB 差分得到主区变化边界位于 `(53, 110) - (428, 268)`，遮罩该边界后边界外区域保持单哈希
-  - 按主区裁切后共出现 `5` 组唯一状态，主区哈希分组为 `[0,1,10,11,12] / [2,3] / [4,5] / [6,7] / [8,9]`
-  - 按 `y >= 268` 裁切底部 preview 区域后全部帧保持单哈希，确认 `compact / read only` preview 在整条录制轨道中保持静态一致
+  - 共捕获 `13` 帧
+  - 全帧共出现 `5` 组唯一状态，主区哈希分组为 `[0,1,10,11,12] / [2,3] / [4,5] / [6,7] / [8,9]`
+  - 主区 RGB 差分边界为 `(53, 110) - (427, 267)`
+  - 遮罩主区边界后，主区外唯一哈希数为 `1`
+  - 以 `y >= 268` 裁切底部 preview 后，preview 区唯一哈希数为 `1`
+  - 结论：主区覆盖默认 `Inbox` surface、`start action reveal`、`end action reveal`、`Planner` surface 与 `Review` surface 五组 reference 状态，最终稳定帧已显式回到默认 `Inbox` track，底部 `compact / read only` preview 全程静态
