@@ -160,6 +160,12 @@
 ## 最近完成的收口动作
 
 - `2026-04-18`
+  - 再次收口 `input/time_picker` reference 控件：在不修改 `sdk/EmbeddedGUI` 的前提下，把既有 README 从旧版 finalize 章节结构收口到最新模板，继续保留主区默认展开、浏览展开、收起、夜间展开四组 reference 状态；底部 `compact / read only` preview 继续保持静态 reference 对照。
+  - `example/HelloCustomWidgets/input/time_picker/test.c` 已保持统一 finalize 模板，无需再改录制轨道；`example/HelloCustomWidgets/input/time_picker/readme.md` 已补齐 `## 10` ~ `## 14` 结构，并按本轮真实 compile / runtime / web / 截图复核结果刷新说明；由于当前环境直接执行 `X:\output\main.exe` 超时且重定向日志为空，unit 结果本轮按本地单测日志复核。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=input/time_picker PORT=pc`、`python scripts/sync_widget_catalog.py`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category input`、`python scripts/checks/check_docs_encoding.py`、`python scripts/checks/check_widget_catalog.py`、在 `X:\` 执行的 `make all APP=HelloUnitTest PORT=pc_test`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/time_picker --track reference --timeout 10 --keep-screenshots`、`python scripts/code_compile_check.py --custom-widgets --category input --bits64`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --category input --track reference --bits64`、`python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub input/time_picker` 与对应 `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_input_time_picker`（`PASS status=Running canvas=480x480 ratio=0.1678 colors=133`）。
+  - 复核 `runtime_check_output/HelloCustomWidgets_input_time_picker/default` 的 `11` 帧截图：全帧共出现 `4` 组唯一状态，主区哈希分组为 `[0,1,8,9,10] / [2,3] / [4,5] / [6,7]`，对应默认展开、浏览展开、收起与夜间展开，最终稳定帧已回到默认态；主区变化边界位于 `(22, 82) - (457, 391)`；按 `y >= 392` 裁切底部 preview 区域后全部帧保持单哈希，确认底部 `compact / read only` preview 在整条录制轨道中保持静态一致。另按本地单测日志复核，`time_picker` suite `8 / 8`、总计 `845 / 845` 保持通过。
+
+- `2026-04-18`
   - 清理 `layout/scroll_viewer` finalize 文档残留：`example/HelloCustomWidgets/layout/scroll_viewer/readme.md` 删除了 `## 10. 验收重点` 前重复保留的一段旧模板“验收重点”块，避免同一验收要求在 README 中重复出现。
   - 本轮不改 `example/HelloCustomWidgets/layout/scroll_viewer/test.c` 与验收数据口径，仅做 README 去重收口；既有 compile / unit / runtime / web 结论继续沿用前一轮 `2026-04-18` finalize 记录。
   - 已重新通过 `python scripts/checks/check_docs_encoding.py`，确认文档去重后 UTF-8 与结构保持正常。
