@@ -103,11 +103,11 @@
 - `submit_count == 0`
 - `submitted_text == ""`
 
-## 9. 验收命令
+验收命令：
 ```bash
 make all APP=HelloCustomWidgets APP_SUB=input/search_box PORT=pc
 
-make clean APP=HelloUnitTest PORT=pc_test
+# 在 X:\ 短路径下执行
 make all APP=HelloUnitTest PORT=pc_test
 X:\output\main.exe
 
@@ -122,52 +122,69 @@ python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub input/
 python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_input_search_box
 ```
 
-## 10. 当前验收结果（2026-04-18）
-- `HelloCustomWidgets` 单控件编译：已通过 `make all APP=HelloCustomWidgets APP_SUB=input/search_box PORT=pc`
-- `HelloUnitTest`：已在 `X:\` 短路径通过 `make clean APP=HelloUnitTest PORT=pc_test`、`make all APP=HelloUnitTest PORT=pc_test` 和 `X:\output\main.exe`，总计 `845 / 845`，其中 `search_box` suite `5 / 5`
-- `sync_widget_catalog.py`：已通过，本轮无额外目录变化
-- `touch release semantics`：已通过，结果 `custom_audited=28 custom_skipped_allowlist=5`
-- `docs encoding`：已通过，结果 `134 files`
-- `widget catalog check`：已通过，结果 `106 widgets: reference=106, showcase=0, deprecated=0`
-- 单控件 runtime：已通过 `python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/search_box --track reference --timeout 10 --keep-screenshots`，输出 `9 frames captured -> D:\workspace\gitee\EmbeddedGUI_Widgets\runtime_check_output\HelloCustomWidgets_input_search_box\default`
-- input 分类 compile/runtime 回归：已通过
-  compile `33 / 33`
-  runtime `33 / 33`
-- wasm 构建：已通过 `python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub input/search_box`，输出 `web/demos/HelloCustomWidgets_input_search_box`
-- web smoke：已通过 `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_input_search_box`，结果 `PASS status=Running canvas=480x480 ratio=0.1038 colors=99`
+## 10. 验收重点
+- 主控件和底部 preview 必须完整可见，不能黑屏、白屏或裁切。
+- 主区 `Roadmap`、`Asset audit` 与 `cleared` 三组 reference 快照必须能从截图中稳定区分。
+- 搜索图标、clear 按钮和文本输入链路收口后不能残留 `pressed` 污染或旧录制桥接。
+- 底部 `compact / read only` preview 必须保持静态 reference，对输入只吞不改状态。
 
-## 11. Runtime 复核结论
-复核目录：
-- `runtime_check_output/HelloCustomWidgets_input_search_box/default`
+## 11. 截图复核口径
+- 检查目录：`runtime_check_output/HelloCustomWidgets_input_search_box/default`
+- 本轮复核结果：
+  - 共捕获 `9` 帧
+  - 全帧共出现 `3` 组唯一状态，主区哈希分组为 `[0,1,6,7,8] / [2,3] / [4,5]`
+  - 主区 RGB 差分边界收敛到 `(44, 190) - (434, 200)`
+  - 遮罩主区变化边界后，主区外区域唯一哈希数为 `1`
+  - 按 `y >= 201` 裁切底部 preview 后，preview 区唯一哈希数为 `1`
 
-复核结果：
-- 总帧数：`9`
-- 主区 RGB 差分边界：`(44, 190) - (434, 200)`
-- 遮罩主区差分边界后，主区外唯一哈希数：`1`
-- 按主区差分边界裁切后，主区唯一状态数：`3`
-- 按 `y >= 201` 裁切底部 preview 区域后，preview 区唯一哈希数：`1`
-
-目标：
-- 主区唯一状态数 = `3`
-- 主区外唯一哈希数 = `1`
-- 底部 preview 区唯一哈希数 = `1`
-
-结论：
-- 主区变化严格收敛在 `search_box` 主体，主区外页面 chrome 在整条轨道中保持静态。
-- `9` 帧里主区保持 `3` 组唯一状态：`[0,1,6,7,8]` 对应默认 `Roadmap`，`[2,3]` 对应 `Asset audit`，`[4,5]` 对应清空态；最终稳定帧已显式回到默认态。
-- 按 `y >= 201` 裁切底部 preview 区域后保持单哈希，确认 `compact / read only` preview 在整条录制轨道中始终静态一致。
-
-## 12. 已知限制
-- 当前只覆盖单行 `Searchbox` reference，不扩展筛选器、建议列表或异步结果面板。
-- 当前只验证搜索入口本身，不接入真实搜索数据源。
-- 底部 preview 只作为静态 reference，对外不承担交互职责。
-
-## 13. 与现有控件的边界
+## 12. 与现有控件的边界
 - 相比 `text_box`：这里强调搜索图标、clear 按钮和搜索入口语义。
 - 相比 `auto_suggest_box`：这里不做展开候选列表和建议项选择。
 - 相比 `command_bar`：这里是轻量搜索输入，不是命令触发入口。
 
-## 14. EGUI 适配说明
-- 继续复用 SDK `textinput` 的文本编辑、光标和提交逻辑，不修改 SDK。
-- 搜索图标、clear 按钮与 static preview 语义都收口在 custom 层。
-- 当前优先保证主区 3 组 reference 快照、底部 preview 全程静态，以及 runtime 录制无污染，再评估是否继续补充更复杂的搜索衍生能力。
+## 13. 本次保留的核心状态与删减项
+- 本次保留状态：
+  - `Roadmap`
+  - `Asset audit`
+  - `cleared`
+  - `compact`
+  - `read only`
+- 删减的装饰或桥接：
+  - 页面级 guide 与搜索结果面板
+  - 候选建议列表与异步数据源
+  - preview 清焦桥接
+  - 录制阶段真实键盘编辑、`Enter` 同步 preview 与 clear 按钮实录
+
+## 14. 当前验收结果（2026-04-19）
+- 单控件编译：`PASS`
+  - `make all APP=HelloCustomWidgets APP_SUB=input/search_box PORT=pc`
+- `HelloUnitTest`：`PASS`
+  - 在 `X:\` 短路径下执行 `make all APP=HelloUnitTest PORT=pc_test`
+  - `X:\output\main.exe`
+  - 总计 `845 / 845`，其中 `search_box` suite `5 / 5`
+- catalog / 文档 / 触摸语义：`PASS`
+  - `python scripts/sync_widget_catalog.py`
+  - `python scripts/checks/check_touch_release_semantics.py --scope custom --category input`
+  - `python scripts/checks/check_docs_encoding.py`
+  - `python scripts/checks/check_widget_catalog.py`
+  - 触摸语义结果：`custom_audited=28 custom_skipped_allowlist=5`
+  - 文档编码结果：`134 files`
+  - widget catalog 结果：`106 widgets`
+- 单控件 runtime：`PASS`
+  - `python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/search_box --track reference --timeout 10 --keep-screenshots`
+  - 输出目录：`runtime_check_output/HelloCustomWidgets_input_search_box/default`
+- input 分类 compile/runtime 回归：`PASS`
+  - `python scripts/code_compile_check.py --custom-widgets --category input --bits64`
+  - `python scripts/code_runtime_check.py --app HelloCustomWidgets --category input --track reference --bits64`
+  - input `33 / 33` 全部通过
+- web 链路：`PASS`
+  - `python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub input/search_box`
+  - `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_input_search_box`
+  - smoke 结果：`status=Running canvas=480x480 ratio=0.1038 colors=99`
+- 截图复核结论：
+  - 共捕获 `9` 帧
+  - 全帧共出现 `3` 组唯一状态，主区哈希分组为 `[0,1,6,7,8] / [2,3] / [4,5]`
+  - 主区 RGB 差分边界为 `(44, 190) - (434, 200)`
+  - 遮罩主区边界后，主区外唯一哈希数为 `1`
+  - 以 `y >= 201` 裁切底部 preview 后，preview 区唯一哈希数为 `1`
+  - 结论：主区覆盖默认 `Roadmap`、`Asset audit` 与 `cleared` 三组 reference 快照，最终稳定帧已显式回到默认 `Roadmap`，底部 `compact / read only` preview 全程静态
