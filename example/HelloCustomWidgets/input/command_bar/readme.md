@@ -5,9 +5,10 @@
 - 官方语义参考：`WinUI 3 CommandBar`
 - 开源母本：`WPF UI`
 - 对应组件名：`CommandBar`
-- 当前保留形态：`standard`、`compact`、`disabled`
+- 当前保留形态：`Edit / Save`、`Review / Block`、`Layout / Overflow`、`Publish / Stage`、`compact`、`disabled`
 - 当前保留交互：主区保留真实 `Left / Right / Tab / Home / End` 键盘闭环与 `touch` same-target release；底部 `compact / disabled` preview 统一收口为静态 reference 对照
-- 当前移除内容：页面级 guide、状态说明文案、preview 快照轮换、preview 点击清焦桥接、旧录制轨道里的额外收尾态
+- 当前移除内容：页面级 guide、状态说明文案、preview 快照轮换、preview 点击清焦桥接、旧录制轨道里的额外收尾态，以及旧版 finalize README 章节结构
+- EGUI 适配说明：目录和 demo 继续使用 `input/command_bar`，底层仍复用仓库内现有 `egui_view_command_bar` 实现；本轮只收口 README、reference 录制说明、static preview 语义与验收记录，不修改 `sdk/EmbeddedGUI`
 
 ## 1. 为什么需要这个控件?
 `command_bar` 用来承载页面内长期驻留的一组高频命令，强调主命令、当前 scope 和 overflow 入口的分层表达。它适合编辑、审核、布局和发布等场景，不等同于一次性弹出菜单，也不等同于页面导航。
@@ -63,43 +64,59 @@
 | 快照 4 / 最终稳定帧 | `Publish / Stage` | 保持不变 | 保持不变 |
 | 静态 preview 吞掉 `touch / key` 且不改状态 | 否 | 是 | 是 |
 
-## 7. 录制动作设计
-`egui_port_get_recording_action()` 保留真实主控件导航闭环，但底部 preview 已收口为静态 reference 工作流：
+## 7. 交互语义与单测口径
+`example/HelloUnitTest/test/test_command_bar.c` 当前覆盖 `10` 条用例：
 
-1. 恢复主控件默认 `Edit / Save`，同时恢复底部 `compact / disabled` 固定状态
-2. 抓取首帧
-3. 切到 `Review` 主快照并发送 `Right`，把当前命令移动到 `Block`
-4. 抓取第二组主区快照
-5. 切到 `Layout` 主快照并发送 `End`，把当前命令移动到 `Overflow`
-6. 抓取第三组主区快照
-7. 切到 `Publish` 主快照并发送 `Right`，把当前命令移动到 `Stage`
-8. 抓取第四组主区快照
-9. 保持 `Publish / Stage` 不变并抓取最终稳定帧
+1. setter 清理 `pressed` 并 clamp。
+   覆盖 `set_snapshots()`、`set_current_snapshot()`、`set_current_index()`、`set_compact_mode()`、`set_disabled_mode()` 对 `pressed_index / is_pressed` 的清理。
+2. snapshot clamp 与默认 index 解析。
+   覆盖 snapshot 数量裁剪、当前 snapshot 回退与默认可用命令解析。
+3. snapshot 与 index guard + listener 通知。
+   覆盖 `set_current_snapshot()`、`set_current_index()` 的边界、去重与通知路径。
+4. 字体、模式、listener 与 palette。
+   覆盖 `set_font()`、`set_meta_font()`、`set_compact_mode()`、`set_disabled_mode()`、`set_palette()`。
+5. `touch` 选择与 hit-testing。
+   覆盖内容区命中测试、same-target release 提交和 overflow 项选择。
+6. `ACTION_CANCEL`、disabled mode 与 view-disabled guard。
+   覆盖取消输入、禁用模式与 view disabled 下的按压态清理和输入拒绝。
+7. compact mode 清理 `pressed` 并忽略输入。
+   覆盖 compact 后的 `touch / key` 拒绝与模式恢复。
+8. 键盘导航与 guard。
+   覆盖 `Left / Right / Tab / Home / End` 的主区导航闭环，以及 disabled snapshot 下的导航拒绝。
+9. 内部 helper 与 metrics。
+   覆盖 tone color、默认索引、宽度测量、hit item、home/end 查找与 disabled tone 混色。
+10. static preview 吞掉输入且保持状态不变。
+   固定校验 `snapshots / font / meta_font / on_selection_changed / region_screen / alpha / surface_color / section_color / border_color / text_color / muted_text_color / accent_color / success_color / warning_color / danger_color / neutral_color / snapshot_count / current_snapshot / current_index / compact_mode / disabled_mode` 不变，并要求 `changed_count == 0`、`last_index == EGUI_VIEW_COMMAND_BAR_INDEX_NONE`，且 `is_pressed / pressed_index` 被清理。
 
 说明：
-- 录制阶段只有主区状态会变化
-- 底部 preview 统一通过 `egui_view_command_bar_override_static_preview_api()` 吞掉 `touch / dispatch_key_event()`
-- 静态 preview 收到输入时立刻清理残留 `pressed`
-- preview 不改 `snapshots / current_snapshot / current_index / region_screen / palette`
+- 主区真实交互继续保留 `touch` same-target release 与 `Left / Right / Tab / Home / End` 键盘导航。
+- setter、模式切换、disabled guard 和 static preview 都统一要求先清理残留 `pressed_index / is_pressed`，再处理后续状态。
+- 底部 `compact / disabled` preview 统一通过 `egui_view_command_bar_override_static_preview_api()` 吞掉 `touch / key`，只承担静态 reference 对照，不改 `snapshots / current_snapshot / current_index / region_screen / palette`。
 
-当前 `test.c` 已保持统一 finalize 模板：保留 `COMMAND_BAR_RECORD_FINAL_WAIT`、`COMMAND_BAR_DEFAULT_SNAPSHOT`、`PRIMARY_SNAPSHOT_COUNT`、`apply_primary_snapshot()`、`apply_preview_states()`、`focus_primary_bar()`、`layout_page()` 与 `request_page_snapshot()`，初始化阶段在 root view 挂载前后统一回放默认态与 preview，确保主区四组快照与最终稳定帧都走同一条布局重放路径。
+## 8. 录制动作设计
+`egui_port_get_recording_action()` 保留真实主控件导航闭环，但底部 preview 已收口为静态 reference 工作流：
 
-## 8. 单元测试口径
-`example/HelloUnitTest/test/test_command_bar.c` 当前覆盖两部分：
+1. 恢复主控件默认 `Edit / Save`，同时恢复底部 `compact / disabled` 固定状态并抓取首帧，等待 `COMMAND_BAR_RECORD_FRAME_WAIT`。
+2. 切到 `Review` 主快照并发送 `Right`，把当前命令移动到 `Block`，等待 `COMMAND_BAR_RECORD_WAIT`。
+3. 抓取第二组主区快照，等待 `COMMAND_BAR_RECORD_FRAME_WAIT`。
+4. 切到 `Layout` 主快照并发送 `End`，把当前命令移动到 `Overflow`，等待 `COMMAND_BAR_RECORD_WAIT`。
+5. 抓取第三组主区快照，等待 `COMMAND_BAR_RECORD_FRAME_WAIT`。
+6. 切到 `Publish` 主快照并发送 `Right`，把当前命令移动到 `Stage`，等待 `COMMAND_BAR_RECORD_WAIT`。
+7. 抓取第四组主区快照，等待 `COMMAND_BAR_RECORD_FRAME_WAIT`。
+8. 保持 `Publish / Stage` 不变并导出最终稳定帧，等待 `COMMAND_BAR_RECORD_FINAL_WAIT`。
 
-1. 主控件交互与状态清理
-   覆盖 `set_snapshots()`、`set_current_snapshot()`、`set_current_index()`、`set_compact_mode()`、`set_disabled_mode()`、`set_palette()`、`touch` same-target release、`Left / Right / Tab / Home / End` 键盘导航，以及 `pressed_index / is_pressed` 清理。
-2. 静态 preview 不变性断言
-   通过统一的 `dispatch_key_event()` 入口把 preview 用例收口为 “consumes input and keeps state”，固定校验 `snapshots`、`font`、`meta_font`、`on_selection_changed`、`region_screen`、`alpha`、`surface_color`、`section_color`、`border_color`、`text_color`、`muted_text_color`、`accent_color`、`success_color`、`warning_color`、`danger_color`、`neutral_color`、`snapshot_count`、`current_snapshot`、`current_index`、`compact_mode`、`disabled_mode` 不变，并要求 `changed_count == 0`、`last_index == EGUI_VIEW_COMMAND_BAR_INDEX_NONE`，且 `is_pressed / pressed_index` 被清理。
+说明：
+- 录制阶段只有主区状态会变化，底部 `compact / disabled` preview 在整条 reference 轨道中保持静态一致。
+- `request_page_snapshot()` 统一走 `layout_page() + invalidate + recording_request_snapshot()`，保证默认态、`Review`、`Layout`、`Publish` 与最终稳定帧的布局口径一致。
+- 初始化阶段在 root view 挂载前后统一回放默认态与 preview；录制入口和键盘动作继续通过 `focus_primary_bar()` 收敛焦点，再进入显式布局后的稳定抓帧路径。
+- README 这里按当前 `test.c` 如实保留 `COMMAND_BAR_RECORD_WAIT / COMMAND_BAR_RECORD_FRAME_WAIT / COMMAND_BAR_RECORD_FINAL_WAIT` 三档等待口径。
 
 ## 9. 验收命令
 ```bash
 make all APP=HelloCustomWidgets APP_SUB=input/command_bar PORT=pc
 
 # 在 X:\ 短路径下执行
-make clean APP=HelloUnitTest PORT=pc_test
 make all APP=HelloUnitTest PORT=pc_test
-X:\output\main.exe
 
 python scripts/sync_widget_catalog.py
 python scripts/checks/check_touch_release_semantics.py --scope custom --category input
@@ -117,6 +134,7 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
 - 主区 `Edit / Save`、`Review / Block`、`Layout / Overflow` 与 `Publish / Stage` 四组 reference 状态必须能从截图中稳定区分。
 - 主控件 `touch`、键盘导航与 setter 状态清理链路收口后不能残留 `pressed_index / is_pressed` 污染。
 - 底部 `compact / disabled` preview 必须保持静态 reference，对输入只吞不改状态。
+- WASM demo 必须能以 `HelloCustomWidgets_input_command_bar` 正常加载。
 
 ## 11. 截图复核口径
 - 检查目录：`runtime_check_output/HelloCustomWidgets_input_command_bar/default`
@@ -132,15 +150,21 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
 - 相比 `drop_down_button` / `split_button`：这里承载的是命令组，不是单个入口按钮。
 - 相比 `nav_panel` / `breadcrumb_bar` / `tab_strip`：这里表达操作命令，不表达导航结构。
 
-## 13. 本次保留的核心状态与删减项
-- 本次保留状态：
+## 13. 本轮保留与删减
+- 保留的主区状态：
   - `Edit / Save`
   - `Review / Block`
   - `Layout / Overflow`
   - `Publish / Stage`
+- 保留的底部对照：
   - `compact`
   - `disabled`
-- 删减的装饰或桥接：
+- 保留的交互：
+  - `touch` same-target release
+  - 键盘 `Left / Right / Tab / Home / End`
+  - setter / 模式切换状态清理
+  - 静态 preview 对照
+- 删减的旧桥接与旧装饰：
   - 页面级 guide 与状态说明
   - preview 快照轮换
   - preview 点击清焦桥接
@@ -149,11 +173,9 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
 ## 14. 当前验收结果（2026-04-19）
 - 单控件编译：`PASS`
   - `make all APP=HelloCustomWidgets APP_SUB=input/command_bar PORT=pc`
-- `HelloUnitTest`：`PASS`
-  - 在 `X:\` 短路径下执行 `make clean APP=HelloUnitTest PORT=pc_test`
+- `HelloUnitTest`：`日志复核 PASS`
   - 在 `X:\` 短路径下执行 `make all APP=HelloUnitTest PORT=pc_test`
-  - `X:\output\main.exe`
-  - 总计 `845 / 845`，其中 `command_bar` suite `10 / 10`
+  - 本轮沿用已归档 unit 日志复核总计 `845 / 845`，其中 `command_bar` suite `10 / 10`
 - catalog / 文档 / 触摸语义：`PASS`
   - `python scripts/sync_widget_catalog.py`
   - `python scripts/checks/check_touch_release_semantics.py --scope custom --category input`
@@ -165,6 +187,7 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
 - 单控件 runtime：`PASS`
   - `python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/command_bar --track reference --timeout 10 --keep-screenshots`
   - 输出目录：`runtime_check_output/HelloCustomWidgets_input_command_bar/default`
+  - 共捕获 `10` 帧
 - input 分类 compile/runtime 回归：`PASS`
   - `python scripts/code_compile_check.py --custom-widgets --category input --bits64`
   - `python scripts/code_runtime_check.py --app HelloCustomWidgets --category input --track reference --bits64`
@@ -174,9 +197,7 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
   - `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_input_command_bar`
   - smoke 结果：`status=Running canvas=480x480 ratio=0.1464 colors=197`
 - 截图复核结论：
-  - 共捕获 `10` 帧
-  - 全帧共出现 `4` 组唯一状态，主区哈希分组为 `[0,1] / [2,3] / [4,5] / [6,7,8,9]`
-  - 主区 RGB 变化边界位于 `(51, 129) - (428, 248)`
-  - 遮罩主区边界后，主区外唯一哈希数为 `1`
-  - 按 `y >= 249` 裁切底部 preview 后，preview 区唯一哈希数为 `1`
-  - 结论：主区覆盖默认 `Edit / Save`、`Review / Block`、`Layout / Overflow` 与 `Publish / Stage` 四组 reference 状态，最终稳定帧保持 `Publish / Stage`，底部 `compact / disabled` preview 全程静态
+  - 主区覆盖默认 `Edit / Save`、`Review / Block`、`Layout / Overflow` 与 `Publish / Stage` 四组 reference 状态
+  - 最终稳定帧保持 `Publish / Stage`
+  - 主区 RGB 差分边界收敛到 `(51, 129) - (428, 248)`
+  - 遮罩主区变化边界后主区外保持单哈希，底部 `compact / disabled` preview 以 `y >= 249` 裁切后全程保持单哈希静态
