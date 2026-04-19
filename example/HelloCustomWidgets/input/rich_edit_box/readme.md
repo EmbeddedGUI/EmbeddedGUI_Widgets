@@ -114,11 +114,12 @@
 - `rich_edit_box_action_style == 0xFF`
 - `rich_edit_box_action_text_length == 0xFF`
 
-验收命令：
+## 9. 验收命令
 ```bash
 make all APP=HelloCustomWidgets APP_SUB=input/rich_edit_box PORT=pc
 
 # 在 X:\ 短路径下执行
+make clean APP=HelloUnitTest PORT=pc_test
 make all APP=HelloUnitTest PORT=pc_test
 X:\output\main.exe
 
@@ -169,10 +170,11 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
 ## 14. 当前验收结果（2026-04-19）
 - 单控件编译：`PASS`
   - `make all APP=HelloCustomWidgets APP_SUB=input/rich_edit_box PORT=pc`
-- `HelloUnitTest`：`日志复核 PASS`
-  - `make all APP=HelloUnitTest PORT=pc_test`
+- `HelloUnitTest`：`PASS`
+  - 在 `X:\` 短路径下执行 `make clean APP=HelloUnitTest PORT=pc_test`
+  - 在 `X:\` 短路径下执行 `make all APP=HelloUnitTest PORT=pc_test`
   - `X:\output\main.exe`
-  - 本轮按本地 unit 日志复核总计 `845 / 845`，其中 `rich_edit_box` suite `7 / 7`
+  - 总计 `845 / 845`，其中 `rich_edit_box` suite `7 / 7`
 - catalog / 文档 / 触摸语义：`PASS`
   - `python scripts/sync_widget_catalog.py`
   - `python scripts/checks/check_touch_release_semantics.py --scope custom --category input`
@@ -183,7 +185,7 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
   - widget catalog 结果：`106 widgets`
 - 单控件 runtime：`PASS`
   - `python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/rich_edit_box --track reference --timeout 10 --keep-screenshots`
-  - `9 frames captured -> runtime_check_output/HelloCustomWidgets_input_rich_edit_box/default`
+  - 输出目录：`runtime_check_output/HelloCustomWidgets_input_rich_edit_box/default`
 - input 分类 compile/runtime 回归：`PASS`
   - `python scripts/code_compile_check.py --custom-widgets --category input --bits64`
   - `python scripts/code_runtime_check.py --app HelloCustomWidgets --category input --track reference --bits64`
