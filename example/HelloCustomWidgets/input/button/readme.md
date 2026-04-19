@@ -111,7 +111,6 @@ make all APP=HelloCustomWidgets APP_SUB=input/button PORT=pc
 
 # 在 X:\ 短路径下执行
 make all APP=HelloUnitTest PORT=pc_test
-X:\output\main.exe
 
 python scripts/sync_widget_catalog.py
 python scripts/checks/check_touch_release_semantics.py --scope custom --category input
@@ -158,6 +157,8 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
   - 主按钮 `touch` 提交
   - 键盘 `Space / Enter`
   - 点击回调驱动的快照切换
+  - setter / 样式 helper 状态清理
+  - 静态 preview 对照
 - 删减的旧桥接与旧装饰：
   - 页面级 guide 与状态说明
   - preview 清焦桥接
