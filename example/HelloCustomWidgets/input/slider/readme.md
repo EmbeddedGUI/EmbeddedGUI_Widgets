@@ -1,11 +1,13 @@
 # slider 自定义控件设计说明
+
 ## 参考来源
 - 参考设计体系：`Fluent 2`
 - 参考开源库：`WPF UI`
 - 对应组件：`Slider`
-- 当前保留形态：`standard`、`compact`、`read only`
+- 当前保留形态：`18%`、`52%`、`86%`、`compact`、`read only`
 - 当前保留交互：主区保留真实 `touch drag` 与 `Left / Right / Up / Down / Home / End / +/-` 键盘步进；底部 `compact / read only` 统一收口为静态 preview
-- 当前移除内容：页面级 guide、状态说明文案、录制阶段真实键盘轨道、preview 值轮换与额外收尾帧
+- 当前移除内容：页面级 guide、状态说明文案、录制阶段真实键盘轨道、preview 值轮换与额外收尾帧，以及旧版 finalize README 章节结构
+- EGUI 适配说明：目录和 demo 继续使用 `input/slider`，底层仍复用仓库内现有 `hcw_slider` 实现；本轮只收口 README、reference 录制说明、static preview 语义与验收记录，不修改 `sdk/EmbeddedGUI`
 
 ## 1. 为什么需要这个控件
 `slider` 用来表达“在连续数值范围中拖动选择当前值”的标准输入语义，适合音量、亮度、透明度、缩放比例、灵敏度和阈值调节。仓库虽然已经有 `number_box`、`rating_control` 和 `scroll_bar`，但还缺少一颗与 `Fluent 2 / WPF UI Slider` 语义对齐的 reference。
@@ -14,7 +16,7 @@
 - `number_box` 更偏精确离散步进输入，不是连续拖动。
 - `rating_control` 是离散等级评分，不适合一般数值范围。
 - `scroll_bar` 表达 viewport 位置，不表达抽象数值。
-- SDK 自带 `slider` 更偏基础控件验证，仓库仍需要完整的 `input/slider` 页面、单测和 web 验收闭环。
+- 仓库里当前 `input/slider` 的 README 仍停留在旧版 finalize 章节结构，没有完整收口到当前 static preview 模板。
 
 ## 3. 当前页面结构
 - 标题：`Slider`
@@ -60,47 +62,53 @@
 | 录制最终稳定帧 | 回到默认 `18%` | 保持不变 | 保持不变 |
 | 静态 preview 吞掉 `touch / key` 且不改状态 | 否 | 是 | 是 |
 
-## 7. 录制动作设计
-`egui_port_get_recording_action()` 已收口为静态 preview 工作流：
+## 7. 交互语义与单测口径
+`example/HelloUnitTest/test/test_slider.c` 当前覆盖 `7` 条用例：
 
-1. 应用主区默认快照和底部 preview 固定状态
-2. 抓取首帧
-3. 切到 `52%`
-4. 抓取第二组主区快照
-5. 切到 `86%`
-6. 抓取第三组主区快照
-7. 回到默认 `18%`
-8. 抓取最终稳定帧
+1. 样式 helper 更新调色并清理拖动态。
+   覆盖 `apply_compact_style()` 与 `apply_read_only_style()` 对 `track_color / active_color` 的更新，以及 `is_dragging / is_pressed` 清理。
+2. `set_value()` clamp 并清理拖动态。
+   覆盖超界值收敛到 `100`，并要求清理残留 `is_dragging / is_pressed`。
+3. 键盘步进。
+   覆盖 `Right / Plus / Home / End / Left` 对数值的步进、跳转与回退。
+4. `touch drag` 更新值。
+   覆盖按下、拖动到高值区、抬起提交后的数值变化。
+5. `ACTION_CANCEL` 清理按压态。
+   覆盖拖动态中断后的 `is_dragging / is_pressed` 清理。
+6. `!enable` guard。
+   覆盖 disabled 后的键盘与触摸输入拒绝。
+7. static preview 吞掉输入且保持状态不变。
+   固定校验 `region_screen / background / on_value_changed / value / is_dragging / track_color / active_color / thumb_color / alpha / enable / is_focused / is_pressed / padding` 不变，并要求 `changed_count == 0`、`changed_value == 0xFF`。
 
 说明：
-- 录制阶段不再真实发送 `Right / Plus / End`
-- 页面层不再切换 `compact` preview 到第二组值
-- 底部 preview 统一通过 `hcw_slider_override_static_preview_api()` 吞掉 `touch / key` 且不改状态
-- preview 只负责静态 reference 对照，不再承担页面桥接职责
-- `request_page_snapshot()` 会统一做 `layout + invalidate + recording_request_snapshot()`，保证 `3` 组主区快照和最终稳定帧口径一致。
+- 主区真实交互继续保留 `touch drag`、键盘步进与数值 clamp。
+- 样式 helper、`set_value()`、`!enable` guard 和 static preview 都统一要求先清理残留 `is_dragging / is_pressed`，再处理后续状态。
+- 底部 `compact / read only` preview 统一通过 `hcw_slider_override_static_preview_api()` 吞掉 `touch / key`，只承担静态 reference 对照，不改 `region_screen / background / on_value_changed / value / is_dragging / track_color / active_color / thumb_color / alpha / enable / is_focused / is_pressed / padding`。
 
-当前 `test.c` 已对齐统一的 `ui_ready + layout_page + request_page_snapshot` 收口模板：保留既有 `SLIDER_DEFAULT_SNAPSHOT` 与 `apply_primary_default_state()`，初始化阶段在 root view 挂载前后各重放一次默认态与 preview，`case 0` 和最终稳定帧前的默认态恢复统一走显式布局路径。
+## 8. 录制动作设计
+`egui_port_get_recording_action()` 已收口为静态 preview 工作流：
 
-## 8. 单元测试口径
-`example/HelloUnitTest/test/test_slider.c` 当前覆盖两部分：
+1. 应用主区默认快照和底部 preview 固定状态并抓取首帧，等待 `SLIDER_RECORD_FRAME_WAIT`。
+2. 切到 `52%`，等待 `SLIDER_RECORD_WAIT`。
+3. 抓取第二组主区快照，等待 `SLIDER_RECORD_FRAME_WAIT`。
+4. 切到 `86%`，等待 `SLIDER_RECORD_WAIT`。
+5. 抓取第三组主区快照，等待 `SLIDER_RECORD_FRAME_WAIT`。
+6. 回到默认 `18%`，等待 `SLIDER_RECORD_FINAL_WAIT`。
+7. 导出最终稳定帧，等待 `SLIDER_RECORD_FINAL_WAIT`。
 
-1. 主控件交互与状态守卫
-   覆盖样式 helper、`set_value()` clamp 与清理拖动态、键盘步进、touch drag、touch cancel、`!enable` guard
-2. 静态 preview 不变性断言
-   通过 `slider_preview_snapshot_t`、`capture_preview_snapshot()` 与 `assert_preview_state_unchanged()` 固定校验以下字段：
-   `region_screen`、`background`、`on_value_changed`、`value`、`is_dragging`、`track_color`、`active_color`、`thumb_color`、`alpha`、`enable`、`is_focused`、`is_pressed`、`padding`
+说明：
+- 录制阶段不再真实发送 `Right / Plus / End`，主区只保留 `18%`、`52%`、`86%` 三组程序化快照与最终回到默认态的稳定帧。
+- 页面层不再切换 `compact` preview 到第二组值，底部 `compact / read only` preview 在整条 reference 轨道中保持静态一致。
+- `request_page_snapshot()` 统一走 `layout_page() + invalidate + recording_request_snapshot()`，保证 `3` 组主区快照和最终稳定帧口径一致。
+- 初始化阶段在 root view 挂载前后各重放一次默认态与 preview；`case 0` 和最终稳定帧前的默认态恢复统一走显式布局路径。
+- README 这里按当前 `test.c` 如实保留 `SLIDER_RECORD_WAIT / SLIDER_RECORD_FRAME_WAIT / SLIDER_RECORD_FINAL_WAIT` 三档等待口径。
 
-同时要求：
-- `changed_count == 0`
-- `changed_value == 0xFF`
-
-验收命令：
+## 9. 验收命令
 ```bash
 make all APP=HelloCustomWidgets APP_SUB=input/slider PORT=pc
 
 # 在 X:\ 短路径下执行
 make all APP=HelloUnitTest PORT=pc_test
-X:\output\main.exe
 
 python scripts/sync_widget_catalog.py
 python scripts/checks/check_touch_release_semantics.py --scope custom --category input
@@ -118,6 +126,7 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
 - 主区 `18% / 52% / 86%` 三组 reference 快照必须能从截图中稳定区分。
 - 主区继续保留标准 `touch drag` 和键盘步进语义，但录制轨道不再引入额外交互噪音。
 - 底部 `compact / read only` preview 必须保持静态 reference，对输入只吞不改状态。
+- WASM demo 必须能以 `HelloCustomWidgets_input_slider` 正常加载。
 
 ## 11. 截图复核口径
 - 检查目录：`runtime_check_output/HelloCustomWidgets_input_slider/default`
@@ -133,14 +142,20 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
 - 相比 `rating_control`：这里不是离散等级评分。
 - 相比 `scroll_bar`：这里的 thumb 尺寸固定，目标是选择值，而不是表达 viewport 比例。
 
-## 13. 本次保留的核心状态与删减项
-- 本次保留状态：
+## 13. 本轮保留与删减
+- 保留的主区状态：
   - `18%`
   - `52%`
   - `86%`
+- 保留的底部对照：
   - `compact`
   - `read only`
-- 删减的装饰或桥接：
+- 保留的交互：
+  - `touch drag`
+  - 键盘步进
+  - 数值 clamp
+  - 静态 preview 对照
+- 删减的旧桥接与旧装饰：
   - 录制阶段真实 `Right / Plus / End` 键盘轨道
   - 页面层 `compact` preview 值轮换
   - 让 preview 承担页面桥接职责的旧链路
@@ -150,8 +165,7 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
 - 单控件编译：`PASS`
   - `make all APP=HelloCustomWidgets APP_SUB=input/slider PORT=pc`
 - `HelloUnitTest`：`日志复核 PASS`
-  - `make all APP=HelloUnitTest PORT=pc_test`
-  - `X:\output\main.exe`
+  - 在 `X:\` 短路径下执行 `make all APP=HelloUnitTest PORT=pc_test`
   - 本轮按本地 unit 日志复核总计 `845 / 845`，其中 `slider` suite `7 / 7`
 - catalog / 文档 / 触摸语义：`PASS`
   - `python scripts/sync_widget_catalog.py`
@@ -163,7 +177,8 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
   - widget catalog 结果：`106 widgets`
 - 单控件 runtime：`PASS`
   - `python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/slider --track reference --timeout 10 --keep-screenshots`
-  - `9 frames captured -> runtime_check_output/HelloCustomWidgets_input_slider/default`
+  - 输出目录：`runtime_check_output/HelloCustomWidgets_input_slider/default`
+  - 共捕获 `9` 帧
 - input 分类 compile/runtime 回归：`PASS`
   - `python scripts/code_compile_check.py --custom-widgets --category input --bits64`
   - `python scripts/code_runtime_check.py --app HelloCustomWidgets --category input --track reference --bits64`
@@ -173,9 +188,7 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
   - `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_input_slider`
   - smoke 结果：`status=Running canvas=480x480 ratio=0.0977 colors=84`
 - 截图复核结论：
-  - 共捕获 `9` 帧
-  - 全帧共出现 `3` 组唯一状态，主区哈希分组为 `[0,1,6,7,8] / [2,3] / [4,5]`
-  - 主区 RGB 差分边界为 `(110, 185) - (384, 213)`
-  - 遮罩主区边界后，主区外唯一哈希数为 `1`
-  - 以 `y >= 214` 裁切底部 preview 后，preview 区唯一哈希数为 `1`
-  - 结论：主区覆盖默认 `18%`、`52%` 与 `86%` 三组 reference 快照，最终稳定帧已显式回到默认 `18%`，底部 `compact / read only` preview 全程静态
+  - 主区覆盖默认 `18%`、`52%` 与 `86%` 三组 reference 快照
+  - 最终稳定帧已显式回到默认 `18%`
+  - 主区 RGB 差分边界收敛到 `(110, 185) - (384, 213)`
+  - 遮罩主区变化边界后主区外保持单哈希，底部 `compact / read only` preview 以 `y >= 214` 裁切后全程保持单哈希静态
