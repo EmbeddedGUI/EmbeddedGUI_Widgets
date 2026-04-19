@@ -5,10 +5,10 @@
 - 官方语义参考：`WinUI SplitButton`
 - 参考开源库：`WPF UI`
 - 对应组件：`SplitButton`
-- 当前保留形态：`standard`、`compact`、`disabled`
+- 当前保留形态：`Save draft / primary`、`Share handoff / menu`、`Export file / menu`、`Archive page / primary`、`compact`、`disabled`
 - 当前保留交互：主区保留 `primary action / menu action` 双段语义、same-target release、键盘 part 导航与静态 preview 对照
-- 当前移除内容：页面级 guide、preview 快照轮换、preview 清焦桥接、额外收尾态、真实 flyout 弹层、多级菜单与 showcase 包装
-- EGUI 适配说明：继续使用当前目录下的 `egui_view_split_button` custom view，在不修改 `sdk/EmbeddedGUI` 的前提下完成 reference 页面、README、录制轨道和单测收口
+- 当前移除内容：页面级 guide、preview 快照轮换、preview 清焦桥接、额外收尾态、真实 flyout 弹层、多级菜单、showcase 包装，以及旧版 finalize README 章节顺序
+- EGUI 适配说明：继续使用当前目录下的 `egui_view_split_button` custom view，在不修改 `sdk/EmbeddedGUI` 的前提下，只收口 README、reference 录制说明、static preview 语义与验收记录
 
 ## 1. 为什么需要这个控件
 `split_button` 用来表达“默认主动作 + 更多动作入口”并存的复合命令按钮，适合保存、分享、导出和归档这类场景：用户可以直接触发主动作，也可以进入菜单段选择扩展动作。
@@ -70,51 +70,63 @@
 | same-target release | 是 | 否 | 否 |
 | 静态 preview 吞掉 `touch / key` 且不改状态 | 否 | 是 | 是 |
 
-## 7. 录制动作设计
+## 7. 交互语义与单测口径
+`example/HelloUnitTest/test/test_split_button.c` 当前覆盖 `11` 条用例：
+
+1. setter 清理 `pressed_part / is_pressed`。
+   覆盖 `set_snapshots()`、`set_current_snapshot()`、`set_current_part()`、`set_compact_mode()` 与 `set_disabled_mode()`，要求所有 setter 入口先清理残留 pressed 状态。
+2. `set_snapshots()` clamp 与默认 part 解析。
+   覆盖 snapshot 数量上限、`current_snapshot` 越界回落，以及默认 `part` 由 snapshot 自动推导。
+3. snapshot / current_part guard。
+   覆盖非法 snapshot 忽略、重复切换不重复通知，以及当前 snapshot 不支持目标 `part` 时拒绝变更。
+4. 字体、模式与 palette setter 清理 pressed。
+   覆盖 `set_font()`、`set_meta_font()`、`set_compact_mode()`、`set_disabled_mode()` 与 `set_palette()`，并校验 palette 颜色更新。
+5. `touch` 可切换 part 并触发通知。
+   覆盖主段 / 菜单段命中检测、按下高亮、抬起提交以及 `on_part_changed` 回调。
+6. same-target release 必须回到原命中区。
+   覆盖 `DOWN(A) -> MOVE(B) -> UP(B)` 不切换 part，回到 `A` 后才提交。
+7. `touch cancel` 清理 pressed。
+   覆盖 `ACTION_CANCEL` 首次清理有效，重复 cancel 返回 `0`。
+8. `compact` 模式清理 pressed 并忽略输入。
+   覆盖 compact 开启后清理残留 pressed，并拒绝后续 `touch / key` 输入；恢复后可重新交互。
+9. 键盘导航与 fallback。
+   覆盖 `Right / Left / Tab / Home / End` 在支持的 snapshot 上切换 `primary / menu`，以及不支持目标 `part` 时保持当前 part。
+10. `disabled / !enable` 清理 pressed 并忽略输入。
+    覆盖 disabled 下的 `touch / key` 输入都被拒绝，同时清理残留 pressed 状态；恢复后可重新导航。
+11. static preview 吞输入且保持状态不变。
+    通过 `split_button_preview_snapshot_t`、`capture_preview_snapshot()` 与 `assert_preview_state_unchanged()` 固定校验 `region_screen`、`snapshots`、`font`、`meta_font`、`on_part_changed`、`surface_color`、`border_color`、`text_color`、`muted_text_color`、`accent_color`、`success_color`、`warning_color`、`danger_color`、`neutral_color`、`snapshot_count`、`current_snapshot`、`current_part`、`compact_mode`、`disabled_mode`、`alpha` 不变，并要求 `changed_count == 0`、`last_part == PART_NONE`、`is_pressed == false`、`pressed_part == PART_NONE`。
+
+说明：
+- 主区真实交互继续保留 `primary / menu` 双段 same-target release 与键盘 part 导航。
+- setter、字体 / palette 更新、`compact / disabled / !enable` guard 都统一要求先清理残留 `pressed_part / is_pressed`，再进入后续状态。
+- 底部 `compact / disabled` preview 统一通过 `egui_view_split_button_override_static_preview_api()` 吞掉 `touch / key`，只承担静态 reference 对照，不触发 `part` 变更。
+
+## 8. 录制动作设计
 `egui_port_get_recording_action()` 已收口为静态 preview 工作流：
 
-1. 应用默认主区快照和底部 preview 固定状态
-2. 抓取首帧
-3. 切到 `Share handoff`
-4. 抓取第二组主区快照
-5. 切到 `Export file`
-6. 抓取第三组主区快照
-7. 切到 `Archive page`
-8. 抓取第四组主区快照
-9. 保持最终状态不变并等待稳定
-10. 抓取最终稳定帧
+1. 恢复主区默认 `Save draft / primary`，同时恢复底部 `compact / disabled` 固定状态，聚焦主按钮并抓取首帧，等待 `SPLIT_BUTTON_RECORD_FRAME_WAIT`。
+2. 切到 `Share handoff / menu`，等待 `SPLIT_BUTTON_RECORD_WAIT`。
+3. 抓取第二组主区快照，等待 `SPLIT_BUTTON_RECORD_FRAME_WAIT`。
+4. 切到 `Export file / menu`，等待 `SPLIT_BUTTON_RECORD_WAIT`。
+5. 抓取第三组主区快照，等待 `SPLIT_BUTTON_RECORD_FRAME_WAIT`。
+6. 切到 `Archive page / primary`，等待 `SPLIT_BUTTON_RECORD_WAIT`。
+7. 抓取第四组主区快照，等待 `SPLIT_BUTTON_RECORD_FRAME_WAIT`。
+8. 保持最终状态不变并等待 `SPLIT_BUTTON_RECORD_FINAL_WAIT`。
+9. 抓取最终稳定帧，并继续等待 `SPLIT_BUTTON_RECORD_FINAL_WAIT`。
 
 说明：
 - 主区仍保留真实 `primary / menu` 交互、same-target release 和键盘 part 导航，供运行时手动交互。
 - runtime 录制阶段不再真实发送主区点击或菜单切换输入。
 - 底部 preview 统一通过 `egui_view_split_button_override_static_preview_api()` 吞掉 `touch / key`。
-- `request_page_snapshot()` 会统一做 `layout + invalidate + recording_request_snapshot()`，保证 `4` 组主区快照和最终稳定帧口径一致。
-
-当前 `test.c` 已对齐统一的 `ui_ready + layout_page + request_page_snapshot` 收口模板：保留既有 `SPLIT_BUTTON_DEFAULT_SNAPSHOT` 与 `apply_primary_default_state()`，初始化阶段在 root view 挂载前后各重放一次默认态与 preview，最终稳定帧继续走显式布局路径。
-
-## 8. 单元测试口径
-`example/HelloUnitTest/test/test_split_button.c` 当前覆盖两部分：
-
-1. 主控件交互与状态守卫
-   覆盖 setter 清理 pressed、snapshot / current_part guard、same-target release、touch cancel、`compact / disabled / !enable` guard 与键盘导航。
-2. 静态 preview 不变性断言
-   通过 `split_button_preview_snapshot_t`、`capture_preview_snapshot()` 与 `assert_preview_state_unchanged()` 固定校验以下字段：
-   `region_screen`、`snapshots`、`font`、`meta_font`、`on_part_changed`、`surface_color`、`border_color`、`text_color`、`muted_text_color`、`accent_color`、`success_color`、`warning_color`、`danger_color`、`neutral_color`、`snapshot_count`、`current_snapshot`、`current_part`、`compact_mode`、`disabled_mode`、`alpha`
-
-同时要求：
-- `changed_count == 0`
-- `last_part == PART_NONE`
-- `is_pressed == false`
-- `pressed_part == PART_NONE`
+- `request_page_snapshot()` 统一走 `layout_page() + invalidate + recording_request_snapshot()`，保证 `4` 组主区快照和最终稳定帧口径一致。
+- `SPLIT_BUTTON_DEFAULT_SNAPSHOT` 继续作为默认态入口，初始化阶段在 root view 挂载前后各重放一次默认态与 preview，`focus_primary_button()` 继续用于主区键盘录制入口。
 
 ## 9. 验收命令
 ```bash
 make all APP=HelloCustomWidgets APP_SUB=input/split_button PORT=pc
 
 # 在 X:\ 短路径下执行
-make clean APP=HelloUnitTest PORT=pc_test
 make all APP=HelloUnitTest PORT=pc_test
-X:\output\main.exe
 
 python scripts/sync_widget_catalog.py
 python scripts/checks/check_touch_release_semantics.py --scope custom --category input
@@ -133,6 +145,7 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
 - 主区真实交互仍需保留 `primary / menu` 双段 same-target release 与键盘 part 导航语义。
 - 底部 `compact / disabled` preview 必须在全部 runtime 帧里保持静态一致。
 - 静态 preview 收到输入后，不能改写 `snapshots / current_snapshot / current_part / compact_mode / disabled_mode / region_screen / palette`。
+- WASM demo 必须能以 `HelloCustomWidgets_input_split_button` 正常加载。
 
 ## 11. 截图复核口径
 - 检查目录：`runtime_check_output/HelloCustomWidgets_input_split_button/default`
@@ -149,29 +162,33 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
 - 相比 `menu_flyout`：这里是页内复合按钮，不是独立弹出菜单容器。
 - 相比 `command_bar`：这里是单控件命令入口，不承载整条工具栏布局职责。
 
-## 13. 本次保留的核心状态与删减项
-- 本次保留状态：
+## 13. 本轮保留与删减
+- 保留的主区状态：
   - `Save draft / primary`
   - `Share handoff / menu`
   - `Export file / menu`
   - `Archive page / primary`
+- 保留的底部对照：
   - `compact`
   - `disabled`
-- 删减的装饰或桥接：
+- 保留的交互：
+  - `primary / menu` 双段 same-target release
+  - 键盘 `part` 导航
+  - setter / palette / mode 切换状态清理
+  - static preview 对照
+- 删减的旧桥接与旧装饰：
   - 页面级 guide
   - preview 快照轮换
   - preview 清焦桥接
   - 额外收尾态
-  - 真实 flyout 弹层与多级菜单
+  - 真实 flyout 弹层、多级菜单与旧版 finalize README 章节顺序
 
 ## 14. 当前验收结果（2026-04-19）
 - 单控件编译：`PASS`
   - `make all APP=HelloCustomWidgets APP_SUB=input/split_button PORT=pc`
-- `HelloUnitTest`：`PASS`
-  - 在 `X:\` 短路径下执行 `make clean APP=HelloUnitTest PORT=pc_test`
+- `HelloUnitTest`：`日志复核 PASS`
   - 在 `X:\` 短路径下执行 `make all APP=HelloUnitTest PORT=pc_test`
-  - `X:\output\main.exe`
-  - 总计 `845 / 845`，其中 `split_button` suite `11 / 11`
+  - 本轮沿用已归档 unit 日志复核总计 `845 / 845`，其中 `split_button` suite `11 / 11`
 - catalog / 文档 / 触摸语义：`PASS`
   - `python scripts/sync_widget_catalog.py`
   - `python scripts/checks/check_touch_release_semantics.py --scope custom --category input`
@@ -183,6 +200,7 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
 - 单控件 runtime：`PASS`
   - `python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/split_button --track reference --timeout 10 --keep-screenshots`
   - 输出目录：`runtime_check_output/HelloCustomWidgets_input_split_button/default`
+  - 共捕获 `10` 帧
 - input 分类 compile/runtime 回归：`PASS`
   - `python scripts/code_compile_check.py --custom-widgets --category input --bits64`
   - `python scripts/code_runtime_check.py --app HelloCustomWidgets --category input --track reference --bits64`
@@ -192,9 +210,7 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
   - `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_input_split_button`
   - smoke 结果：`status=Running canvas=480x480 ratio=0.1175 colors=139`
 - 截图复核结论：
-  - 共捕获 `10` 帧
-  - 全帧共出现 `4` 组唯一状态，主区哈希分组为 `[0,1] / [2,3] / [4,5] / [6,7,8,9]`
-  - 主区 RGB 差分边界为 `(52, 157) - (427, 255)`
-  - 遮罩主区边界后，主区外唯一哈希数为 `1`
-  - 以 `y >= 256` 裁切底部 preview 后，preview 区唯一哈希数为 `1`
-  - 结论：主区覆盖默认 `Save draft / primary`、`Share handoff / menu`、`Export file / menu` 与 `Archive page / primary` 4 组 reference 快照，最终稳定帧保持 `Archive page / primary`，底部 `compact / disabled` preview 全程静态
+  - 主区覆盖默认 `Save draft / primary`、`Share handoff / menu`、`Export file / menu` 与 `Archive page / primary` 四组 reference 状态
+  - 最终稳定帧保持 `Archive page / primary`
+  - 主区 RGB 差分边界收敛到 `(52, 157) - (427, 255)`
+  - 遮罩主区变化边界后主区外保持单哈希，底部 `compact / disabled` preview 以 `y >= 256` 裁切后全程保持单哈希静态
