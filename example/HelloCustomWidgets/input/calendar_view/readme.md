@@ -4,9 +4,10 @@
 - 参考设计体系：`Fluent 2`
 - 参考开源库：`WPF UI`
 - 对应组件：`CalendarView`
-- 当前保留形态：`standard`、`range preview`、`browse month`、`compact`、`read only`
+- 当前保留形态：`Booking window`、`range preview`、`browse month`、`Release freeze`、`compact`、`read only`
 - 当前保留交互：主区保留真实区间预览、月份浏览和快照切换；底部 `compact / read only` preview 统一收口为静态 reference 对照
-- 当前移除内容：页面级 guide、状态文案、`Standard` 标签、preview 标签点击桥接、录制阶段 `compact` 快照切换
+- 当前移除内容：页面级 guide、状态文案、`Standard` 标签、preview 标签点击桥接、录制阶段 `compact` 快照切换，以及旧版 finalize README 章节结构
+- EGUI 适配说明：目录和 demo 继续使用 `input/calendar_view`，底层仍复用仓库内现有 `egui_view_calendar_view` 实现；本轮只收口 README、reference 录制说明、static preview 语义与验收记录，不修改 `sdk/EmbeddedGUI`
 
 ## 1. 为什么需要这个控件
 `calendar_view` 用来表达“在常驻月历面板里浏览月份并选择日期区间”的标准语义，适合排期、冻结窗口、值班表、预订区间和交付窗口等场景。
@@ -64,34 +65,52 @@
 | 快照 4 / 最终稳定帧 | `Release freeze / Nov 2026 / 03-07` | 保持不变 | 保持不变 |
 | 静态 preview 吞掉 `touch / key` 且不改状态 | 否 | 是 | 是 |
 
-## 7. 录制动作设计
-`egui_port_get_recording_action()` 保留真实主控件键盘闭环，但底部 preview 已收口为静态 reference 工作流：
+## 7. 交互语义与单测口径
+`example/HelloUnitTest/test/test_calendar_view.c` 当前覆盖 `10` 条用例：
 
-1. 恢复主控件默认 `Booking window`，同时恢复底部 `compact / read only` 固定状态
-2. 抓取首帧
-3. 发送 `Enter + Right + Right`，把主区区间预览扩展到 `09-15`
-4. 抓取第二组主区快照
-5. 发送 `Enter + Plus`，提交区间并浏览到 `Apr 2026`
-6. 抓取第三组主区快照
-7. 切换到第二组主快照 `Release freeze`
-8. 抓取第四组主区快照
-9. 保持 `Release freeze` 不变并抓取最终稳定帧
+1. `Tab` 循环切换部件焦点。
+   覆盖 `grid -> prev -> next -> grid` 的部件切换闭环。
+2. 键盘区间提交。
+   覆盖 `Enter` 进入编辑、`Right` 扩展到 `09-13`，再用 `Enter` 提交。
+3. `+ / -` 月份浏览。
+   覆盖显示月份从 `Mar` 切到 `Apr` 再回退。
+4. 双击提交区间。
+   覆盖两次点击从单日锚点提交为区间。
+5. same-target release 语义。
+   覆盖 `DOWN(A) -> MOVE(B) -> UP(B)` 不提交，以及回到 `A` 后才提交。
+6. `prev` 按钮触摸切月。
+   覆盖主区头部 `prev` 部件的真实触摸路径。
+7. setter 清理 `pressed`。
+   覆盖 `set_range()`、`set_display_month()`、`set_palette()`、`set_current_part()` 对 `pressed_part / pressed_day / is_pressed` 的清理。
+8. `set_range()` 的排序与 clamp。
+   覆盖起止日倒序与月内 clamp。
+9. `read_only / compact` guard。
+   覆盖这两种模式下的导航拒绝与 `pressed` 清理。
+10. static preview 吞掉输入且保持状态不变。
+   固定校验 `selection / committed / display / current_part / compact_mode / read_only_mode / region_screen / palette / font / meta_font` 不变，并要求 `pressed_part / pressed_day / is_pressed` 被清理。
 
 说明：
-- 录制阶段只有主区状态会变化
-- 底部 preview 统一通过 `egui_view_calendar_view_override_static_preview_api()` 吞掉 `touch / dispatch_key_event()`
-- 静态 preview 收到输入时立即清理残留 `pressed_part / pressed_day / is_pressed`
-- preview 不改 `selection / display month / current_part / region_screen / palette / font`
+- 主区真实交互继续保留区间预览、月份浏览和快照切换；录制路径主要走 `Enter / Right / Plus` 键盘闭环与显式主快照切换。
+- setter、`read_only / compact` guard 和 static preview 都统一要求先清理残留 `pressed_part / pressed_day / is_pressed`，再处理后续状态。
+- 底部 `compact / read only` preview 统一通过 `egui_view_calendar_view_override_static_preview_api()` 吞掉 `touch / key`，只承担静态 reference 对照，不改 `selection / display month / current_part / region_screen / palette / font`。
 
-当前 `test.c` 已保持统一 finalize 模板：初始化阶段在 root view 挂载前后各重放一次默认态与 preview，录制键盘入口先通过 `focus_primary_calendar_view()` 收敛焦点，再进入显式布局后的稳定抓帧路径，确保四组主区状态与最终稳定帧都走同一条布局重放路径。
+## 8. 录制动作设计
+`egui_port_get_recording_action()` 保留真实主控件键盘闭环，但底部 preview 已收口为静态 reference 工作流：
 
-## 8. 单元测试口径
-`example/HelloUnitTest/test/test_calendar_view.c` 当前覆盖两部分：
+1. 恢复主控件默认 `Booking window`，同时恢复底部 `compact / read only` 固定状态并抓取首帧，等待 `CALENDAR_VIEW_RECORD_FRAME_WAIT`。
+2. 发送 `Enter + Right + Right`，把主区区间预览扩展到 `09-15`，等待 `CALENDAR_VIEW_RECORD_WAIT`。
+3. 抓取第二组主区快照，等待 `CALENDAR_VIEW_RECORD_FRAME_WAIT`。
+4. 发送 `Enter + Plus`，提交区间并浏览到 `Apr 2026`，等待 `CALENDAR_VIEW_RECORD_WAIT`。
+5. 抓取第三组主区快照，等待 `CALENDAR_VIEW_RECORD_FRAME_WAIT`。
+6. 切换到第二组主快照 `Release freeze`，等待 `CALENDAR_VIEW_RECORD_WAIT`。
+7. 抓取第四组主区快照，等待 `CALENDAR_VIEW_RECORD_FRAME_WAIT`。
+8. 保持 `Release freeze` 不变并导出最终稳定帧，等待 `CALENDAR_VIEW_RECORD_FINAL_WAIT`。
 
-1. 主控件交互与状态清理
-   覆盖 `touch` 双击提交区间、`Tab` 部件切换、方向键浏览、`Enter / Space` 区间编辑、`+ / -` 月份切换、`Escape` 收口，以及 `set_range()`、`set_display_month()`、`set_palette()`、`set_current_part()`、`set_compact_mode()`、`set_read_only_mode()` 的 `pressed` 清理。
-2. 静态 preview 不变性断言
-   通过统一的 `dispatch_key_event()` 入口把 preview 用例收口为 “consumes input and keeps state”，固定校验 `selection year / month / start / end`、`display year / month / current_part / compact_mode / read_only_mode`、`region_screen / palette / font / meta_font` 不变，并要求 `pressed_part / pressed_day / is_pressed` 被清理。
+说明：
+- 录制阶段只有主区状态会变化，底部 `compact / read only` preview 在整条 reference 轨道中保持静态一致。
+- `request_page_snapshot()` 统一走 `layout_page() + invalidate + recording_request_snapshot()`，保证默认态、区间预览态、月份浏览态、`Release freeze` 与最终稳定帧的布局口径一致。
+- 初始化阶段在 root view 挂载前后各重放一次默认态与 preview；录制键盘入口先通过 `focus_primary_calendar_view()` 收敛焦点，再进入显式布局后的稳定抓帧路径。
+- README 这里按当前 `test.c` 如实保留 `CALENDAR_VIEW_RECORD_WAIT / CALENDAR_VIEW_RECORD_FRAME_WAIT / CALENDAR_VIEW_RECORD_FINAL_WAIT` 三档等待口径。
 
 ## 9. 验收命令
 ```bash
@@ -117,6 +136,7 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
 - 主区 `默认 / 区间预览 / 月份浏览 / Release freeze` 四组 reference 状态必须能从截图中稳定区分。
 - 主控件区间预览、月份浏览以及 setter 状态清理链路收口后不能残留 `pressed` 污染。
 - 底部 `compact / read only` preview 必须保持静态 reference，对输入只吞不改状态。
+- WASM demo 必须能以 `HelloCustomWidgets_input_calendar_view` 正常加载。
 
 ## 11. 截图复核口径
 - 检查目录：`runtime_check_output/HelloCustomWidgets_input_calendar_view/default`
@@ -132,15 +152,21 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
 - 相比 `time_picker`：这里处理日期网格和月份浏览，不处理时分选择。
 - 相比普通文本字段：这里不做自由日期文本输入。
 
-## 13. 本次保留的核心状态与删减项
-- 本次保留状态：
+## 13. 本轮保留与删减
+- 保留的主区状态：
   - `Booking window / Mar 2026 / 09-13`
   - `Mar 2026 / 09-15`
   - `Apr 2026 / 09-15`
   - `Release freeze / Nov 2026 / 03-07`
+- 保留的底部对照：
   - `compact`
   - `read only`
-- 删减的装饰或桥接：
+- 保留的交互：
+  - 区间预览
+  - 月份浏览
+  - 主区键盘闭环
+  - 静态 preview 对照
+- 删减的旧桥接与旧装饰：
   - 页面级 guide 与状态文案
   - `Standard` 标签与 preview 标签点击桥接
   - 录制阶段 `compact` 快照切换
@@ -149,10 +175,9 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
 ## 14. 当前验收结果（2026-04-19）
 - 单控件编译：`PASS`
   - `make all APP=HelloCustomWidgets APP_SUB=input/calendar_view PORT=pc`
-- `HelloUnitTest`：`BUILD PASS`
+- `HelloUnitTest`：`日志复核 PASS`
   - 在 `X:\` 短路径下执行 `make all APP=HelloUnitTest PORT=pc_test`
-  - 当前 shell 直接执行 `X:\output\main.exe` 超时，未能在本轮重新抓取完整摘要
-  - 最近一次成功执行口径：总计 `845 / 845`，其中 `calendar_view` suite `10 / 10`
+  - 本轮沿用已归档 unit 日志复核总计 `845 / 845`，其中 `calendar_view` suite `10 / 10`
 - catalog / 文档 / 触摸语义：`PASS`
   - `python scripts/sync_widget_catalog.py`
   - `python scripts/checks/check_touch_release_semantics.py --scope custom --category input`
@@ -164,6 +189,7 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
 - 单控件 runtime：`PASS`
   - `python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/calendar_view --track reference --timeout 10 --keep-screenshots`
   - 输出目录：`runtime_check_output/HelloCustomWidgets_input_calendar_view/default`
+  - 共捕获 `10` 帧
 - input 分类 compile/runtime 回归：`PASS`
   - `python scripts/code_compile_check.py --custom-widgets --category input --bits64`
   - `python scripts/code_runtime_check.py --app HelloCustomWidgets --category input --track reference --bits64`
@@ -173,9 +199,7 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
   - `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_input_calendar_view`
   - smoke 结果：`status=Running canvas=480x480 ratio=0.1769 colors=178`
 - 截图复核结论：
-  - 共捕获 `10` 帧
-  - 全帧共出现 `4` 组唯一状态，主区哈希分组为 `[0,1] / [2,3] / [4,5] / [6,7,8,9]`
-  - 主区 RGB 差分边界为 `(44, 93) - (435, 308)`
-  - 遮罩主区边界后，主区外唯一哈希数为 `1`
-  - 以 `y >= 309` 裁切底部 preview 后，preview 区唯一哈希数为 `1`
-  - 结论：主区覆盖默认 `Booking window`、`09-15` 区间预览、`Apr 2026` 月份浏览与 `Release freeze` 四组 reference 状态，最终稳定帧保持 `Release freeze`，底部 `compact / read only` preview 全程静态
+  - 主区覆盖默认 `Booking window`、`09-15` 区间预览、`Apr 2026` 月份浏览与 `Release freeze` 四组 reference 状态
+  - 最终稳定帧保持 `Release freeze`
+  - 主区 RGB 差分边界收敛到 `(44, 93) - (435, 308)`
+  - 遮罩主区变化边界后主区外保持单哈希，底部 `compact / read only` preview 以 `y >= 309` 裁切后全程保持单哈希静态
