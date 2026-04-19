@@ -1,85 +1,128 @@
-# menu_bar 设计说明
+# MenuBar 设计说明
 
 ## 参考来源
 - 参考设计系统：`Fluent 2`
 - 参考开源库：`WPF UI`
 - 补充参考：`ModernWpf`
 - 对应组件名：`MenuBar`
-- 本次保留状态：`standard`、`active menu`、`dropdown panel`、`compact`、`read only`
-- 删除效果：页面级 `guide`、状态文案、section label、可点击 preview 卡、重阴影、强描边、桌面系统级多级菜单叙事
-- EGUI 适配说明：继续复用仓库内 `menu_bar` 基础实现，本轮只收口 `reference` 页面结构、示例命令内容和绘制强度，不修改 `sdk/EmbeddedGUI`
+- 当前保留形态：`File`、`Edit`、`View`、`Tools`、`compact`、`read only`
+- 当前保留交互：主区继续保留顶层 menu 切换、panel row 选择与激活、same-target release、`Left / Right / Home / End / Down / Enter` 键盘导航，以及 `set_snapshots / current_snapshot / current_item / font / meta_font / palette / compact / read_only` setter 统一清理 `pressed_menu / pressed_item / is_pressed`；`read_only / !enable` guard 会先清理 `pressed` 再拒绝后续 `touch / key` 输入；底部 `compact / read only` preview 继续通过静态 preview API 吞掉 `touch / key` 并保持状态不变，不触发 selection / activation listener
+- 当前移除内容：页面级 `guide`、状态文案、section label、可点击 preview 卡、preview 焦点循环、preview 清焦收尾桥接、重阴影、强描边、重型 focus ring、桌面系统级多级菜单叙事，以及旧版 finalize README 章节顺序
+- EGUI 适配说明：继续复用仓库内已有 `menu_bar` 基础实现，本轮只收口 `reference` 页面说明、README 与验收口径，不修改 `sdk/EmbeddedGUI`
 
 ## 1. 为什么需要这个控件
 `menu_bar` 用来表达“常驻顶层命令分类 + 当前菜单下拉面板”的标准桌面菜单栏语义，适合 `File / Edit / View / Tools` 这类结构稳定、分组明确的命令入口。
 
-## 2. 为什么现有控件不够用
+## 2. 为什么现有控件不够
 - `menu_flyout` 是局部弹出菜单，不承担常驻顶层菜单栏语义。
 - `command_bar` 更接近工具栏，不强调顶层分类菜单与下拉层级。
 - `nav_panel` 负责页面导航，不是命令菜单。
 - `tab_strip` 负责页面切换，不是命令分组入口。
+- 当前 reference 主线仍需要一版贴近 Fluent / WPF UI `MenuBar` 语义的 custom widget。
 
-因此这里继续保留 `menu_bar`，但示例页回到统一的 `Fluent / WPF UI` reference 结构。
+## 3. 当前页面结构
+- 标题：`Menu Bar`
+- 主区：一个主 `menu_bar`
+- 底部：两个真正静态的 preview
+- 左侧 preview：`compact`，固定显示 `Open / Compact`
+- 右侧 preview：`read only`，固定显示 `Pinned` 摘要
+- 页面结构统一收口为：标题 -> 主 `menu_bar` -> 底部 `compact / read only`
 
-## 3. 目标场景与示例概览
-- 主控件：展示标准 `MenuBar`，保留当前菜单高亮、下拉面板、危险项、子菜单入口和只读外的真实交互。
-- `compact` 预览：保留相同菜单语义，但压缩为更小尺寸，用于验证小尺寸 reference 收口。
-- `read only` 预览：保留菜单摘要和锁定态，只作为静态对照，不再承担点击或焦点循环职责。
-- 底部两个 preview 统一走静态 preview API，吞掉 touch / key 输入，不再承担切换或清焦收尾职责。
-- 页面只保留标题、主 `menu_bar` 和底部 `compact / read only` 双预览，不再保留 guide、状态栏、额外说明 chrome。
+目录：
+- `example/HelloCustomWidgets/navigation/menu_bar/`
 
-## 4. 视觉与布局规格
+## 4. 主区 reference 快照
+主区录制轨道只保留四组主区状态与最终稳定帧：
+
+1. `File`
+   默认主状态，显示 `New workspace / Open recent / Copy link / Properties`
+2. `Edit`
+   程序化切到编辑态，验证 `Redo / Find in page / Preferences`
+3. `View`
+   程序化切到视图态，验证 `Density compact / Reading mode / Panels`
+4. `Tools`
+   程序化切到工具态，验证 `Sync now / Export report / Delete record`
+5. `File`
+   回到默认主状态，作为最终稳定帧
+
+底部 preview 在整条录制轨道中保持固定：
+
+1. `compact`
+   `Open / Compact`
+   紧凑静态对照，固定 `compact_mode`
+2. `read only`
+   `Pinned`
+   只读静态对照，固定 `compact_mode + read_only_mode`
+
+## 5. 视觉与布局规格
+- 画布：`480 x 480`
 - 根容器尺寸：`224 x 224`
 - 主控件尺寸：`196 x 108`
 - 底部对照行尺寸：`216 x 74`
-- `compact` 预览：`104 x 74`
-- `read only` 预览：`104 x 74`
-- 页面结构：标题 -> 主 `menu_bar` -> `compact / read only`
-- 样式约束：
-  - 保持浅底、白色菜单卡、轻边框、低噪音阴影的 Fluent 方向。
-  - 顶层当前菜单只保留轻量填充和细 underline，不做厚重按钮化处理。
-  - 下拉面板继续保留层级关系，但边框、separator、focus ring 和行内状态都要克制。
-  - 底部两个 preview 固定为静态 reference 对照，不再参与页面交互闭环。
+- 单个 preview 尺寸：`104 x 74`
+- 页面结构：标题 -> 主 `menu_bar` -> 底部 `compact / read only`
+- 页面风格：浅底、白色菜单卡、轻边框、低噪音阴影，以及通过轻填充、细 underline、右侧 meta 和克制的 danger 色表达菜单层级
 
-## 5. 控件清单
-
-| 变量名 | 类型 | 尺寸 (W x H) | 初始状态 | 用途 |
-| --- | --- | ---: | --- | --- |
-| `menu_bar_primary` | `egui_view_menu_bar_t` | `196 x 108` | `File` 菜单展开 | 主 `MenuBar` |
-| `menu_bar_compact` | `egui_view_menu_bar_t` | `104 x 74` | compact | 底部紧凑静态对照 |
-| `menu_bar_read_only` | `egui_view_menu_bar_t` | `104 x 74` | read only | 底部只读静态对照 |
-| `primary_snapshots` | `egui_view_menu_bar_snapshot_t[4]` | - | `File / Edit / View / Tools` | 主控件状态轨道 |
-| `compact_snapshots` | `egui_view_menu_bar_snapshot_t[1]` | - | `Open / Compact` | 紧凑预览固定对照轨道 |
-| `read_only_snapshots` | `egui_view_menu_bar_snapshot_t[1]` | - | `Pinned` 摘要 | 只读预览固定数据 |
-
-## 6. 状态覆盖矩阵
-| 区域 / 轨道 | Snapshot | 关键状态 | 说明 |
+## 6. 状态矩阵
+| 状态 / 区域 | 主控件 | Compact preview | Read only preview |
 | --- | --- | --- | --- |
-| 主控件 | `File` | 默认菜单面板 | 保留 submenu 入口和 separator |
-| 主控件 | `Edit` | 键盘与焦点迁移 | 验证当前项切换和选中行 |
-| 主控件 | `View` | 紧凑/过滤类状态项 | 验证 `On` meta 与当前行高亮 |
-| 主控件 | `Tools` | 危险命令 | 验证 danger 行仍保持低噪音 |
-| `compact` | `Open / Compact` | 紧凑对照 | 固定 compact 对照，不参与状态切换 |
-| `read only` | `Pinned` | 只读摘要 | 固定锁定态，对外禁用触摸和焦点 |
+| `File` | 是 | 否 | 否 |
+| `Edit` | 是 | 否 | 否 |
+| `View` | 是 | 否 | 否 |
+| `Tools` | 是 | 否 | 否 |
+| `Open / Compact` | 否 | 是 | 否 |
+| `Pinned` | 否 | 否 | 是 |
+| `compact_mode` | 否 | 是 | 是 |
+| `read_only_mode` | 否 | 否 | 是 |
+| menu / row same-target release | 是 | 否 | 否 |
+| keyboard navigation | 是 | 否 | 否 |
+| 静态 preview 吞掉 `touch / key` 且状态不变 | 否 | 是 | 是 |
 
-## 7. `egui_port_get_recording_action()` 录制动作设计
-1. 重置主控件、`compact` 和 `read only` 到默认 snapshot。
-2. 输出默认 `File` 截图。
-3. 程序化切到主控件 `Edit`。
-4. 输出 `Edit` 截图。
-5. 程序化切到主控件 `View`。
-6. 输出 `View` 截图。
-7. 程序化切到主控件 `Tools`。
-8. 输出 `Tools` 截图。
-9. 恢复主控件默认状态，输出最终稳定帧。
+## 7. 交互语义与单测口径
+`example/HelloUnitTest/test/test_menu_bar.c` 当前覆盖 `16` 条用例：
 
-录制只导出主控件的状态变化。底部 `compact / read only` preview 在整条 reference 轨道中保持静态，不承担切换、桥接或收尾职责。
+1. `set_snapshots()` 覆盖 disabled focus item 收敛、disabled 初始 snapshot 跳过，以及基础状态回落。
+2. `set_current_item()` 覆盖 disabled row 跳过，确保不会误落到不可交互项。
+3. `set_current_snapshot()` 覆盖 disabled menu snapshot 跳过，并在切换时清理 runtime pressed 状态。
+4. `font / meta_font / palette / set_snapshots / current_snapshot / current_item / compact / read_only` setter 全部覆盖 `pressed_menu / pressed_item / is_pressed` 清理。
+5. 触摸点击顶层 menu 会切换 `current_snapshot`，并触发 selection listener。
+6. 触摸点击 panel row 会先更新 `current_item`，再在 `UP` 时触发 activation listener。
+7. `ACTION_CANCEL` 只清理 `pressed`，不会误改当前 snapshot / item，也不会误触发 listener。
+8. menu 与 panel row 都继续遵守 same-target release：`DOWN(A) -> MOVE(B) -> UP(B)` 不提交，回到 `A` 后 `UP(A)` 才提交。
+9. 键盘导航覆盖 `Down / Left / Right / Home / End / Enter`，验证 menu 切换、row 切换与当前项激活。
+10. `read_only / !enable` guard 会清理 `pressed` 并忽略后续 `touch / key` 输入；恢复后继续允许正常导航。
+11. 静态 preview 用例验证“consumes input and keeps state”，固定校验 `current_snapshot / current_item / compact_mode` 不变，且不会触发 selection / activation listener。
 
-## 8. 编译、touch、runtime、单测与文档检查
+补充说明：
+- 主区顶层 menu 与 panel row 都属于非拖拽点击目标，统一遵守 same-target release。
+- 底部 `compact / read only` preview 统一通过 `egui_view_menu_bar_override_static_preview_api()` 吞掉输入，只承担静态 reference 对照职责。
+- preview 输入只清理残留 `pressed`，不改 `current_snapshot / current_item`。
+
+## 8. 录制动作设计
+`egui_port_get_recording_action()` 当前 `reference` 轨道顺序如下：
+
+1. 还原默认 `File` 和底部两个静态 preview，请求首帧并等待 `MENU_BAR_RECORD_FRAME_WAIT`。
+2. 切到 `Edit`，等待 `MENU_BAR_RECORD_WAIT`。
+3. 请求第二帧并等待 `MENU_BAR_RECORD_FRAME_WAIT`。
+4. 切到 `View`，等待 `MENU_BAR_RECORD_WAIT`。
+5. 请求第三帧并等待 `MENU_BAR_RECORD_FRAME_WAIT`。
+6. 切到 `Tools`，等待 `MENU_BAR_RECORD_WAIT`。
+7. 请求第四帧并等待 `MENU_BAR_RECORD_FRAME_WAIT`。
+8. 回到默认 `File`，同步底部 preview 固定状态并等待 `MENU_BAR_RECORD_WAIT`。
+9. 请求最终稳定帧，并继续等待 `MENU_BAR_RECORD_FINAL_WAIT`。
+
+说明：
+- 所有截图请求统一走 `request_page_snapshot()`，先布局，再刷新，再申请录制。
+- `apply_primary_snapshot()` 与 `apply_preview_states()` 在 `ui_ready` 后都会显式触发 `layout_page()`，保证初始化和录制首尾使用同一条布局路径。
+- 底部 `compact / read only` preview 在整条轨道中不承担任何状态切换职责。
+- 主区变化只来自 `File / Edit / View / Tools` 四组状态，以及最终回到默认 `File` 的稳定帧。
+
+## 9. 验收命令
 ```bash
 make all APP=HelloCustomWidgets APP_SUB=navigation/menu_bar PORT=pc
 
+# 在 X:\ 短路径下执行
 make all APP=HelloUnitTest PORT=pc_test
-output\main.exe
 
 python scripts/sync_widget_catalog.py
 python scripts/checks/check_touch_release_semantics.py --scope custom --category navigation
@@ -92,48 +135,69 @@ python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub naviga
 python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_navigation_menu_bar
 ```
 
-验收重点：
-- 主控件和底部 `compact / read only` 预览都必须完整可见。
-- 顶层菜单 underline、面板锚点、separator、当前行和危险项都必须可辨识，但不能变成高噪音装饰。
-- `compact / read only` preview 必须统一吞掉 touch / key，不再参与焦点循环或菜单切换。
-- `compact / read only` preview 在所有 runtime 帧里都必须保持静态一致。
-- 切换到 `read only`、`disabled` 或 setter 更新时都要立即清空残留 `pressed_menu / pressed_item / is_pressed`。
-- 触摸释放语义必须继续满足“按下与抬起命中同一目标才提交”。
-- runtime 需要重点复核主区域 `File -> Edit -> View -> Tools -> File` 的变化，以及底部 `compact / read only` preview 的静态一致性。
+## 10. 验收重点
+- 主控件和底部 `compact / read only` preview 都必须完整可见，不能黑屏、白屏或裁切。
+- 顶层 underline、panel 锚点、separator、当前 row 和 danger row 都必须可辨识，但不能退回高噪音装饰。
+- 主区域需要出现 `File -> Edit -> View -> Tools -> File` 的真实变化。
+- menu 与 panel row 都必须继续满足 same-target release，不能误提交。
+- `ACTION_CANCEL` 只能清理 `pressed`，不能误改 `current_snapshot / current_item`。
+- `read_only / !enable / static preview` 都不能误触发 selection / activation listener，并且要先清理残留 `pressed`。
+- 最终稳定帧必须显式回到默认 `File`，底部 `compact / read only` preview 全程保持静态。
 
-## 9. 已知限制与后续方向
-- 当前仍用固定 `snapshot` 驱动菜单与面板，不实现真实多级子菜单状态机。
-- 命令激活只联动 `snapshot / current item` 变化，不承接真实业务回调。
-- 文本宽度仍使用近似规则，不引入复杂测量与弹性布局求解。
+## 11. 截图复核口径
+- 检查目录：`runtime_check_output/HelloCustomWidgets_navigation_menu_bar/default`
+- 本轮复核结果：
+  - 共捕获 `11` 帧
+  - 主区共出现 `4` 组唯一状态，对应 `File`、`Edit`、`View` 和 `Tools`
+  - 主区 RGB 差分边界为 `(50, 109) - (430, 211)`
+  - 遮罩主区变化边界后，主区外区域唯一哈希数为 `1`
+  - 按 `y >= 211` 裁切底部 preview 后，preview 区唯一哈希数为 `1`
+  - 最终稳定帧显式回到默认 `File`
 
-## 10. 与现有控件的边界
+## 12. 与现有控件的边界
 - 相比 `menu_flyout`：这里是常驻顶层菜单栏，不是局部弹出菜单。
 - 相比 `command_bar`：这里强调命令分类和下拉面板，不是工具栏按钮集合。
 - 相比 `nav_panel`：这里表达命令结构，不承担页面导航。
 - 相比 `tab_strip`：这里不是页面切换，而是命令入口组织。
 
-## 11. 参考设计系统与开源母本
-- 参考设计系统：`Fluent 2`
-- 参考开源库：`WPF UI`
-- 补充参考：`ModernWpf`
+## 13. 本轮保留与删减
+- 保留的主区状态：`File`、`Edit`、`View`、`Tools`
+- 保留的底部对照：`compact`、`read only`
+- 保留的交互与实现约束：顶层 menu 切换、panel row 选择与激活、same-target release、`Left / Right / Home / End / Down / Enter` 键盘导航、`set_snapshots / current_snapshot / current_item / font / meta_font / palette / compact / read_only` setter 清理 `pressed`、static preview 对照
+- 删减的旧桥接与旧装饰：页面级 `guide`、状态文案、section label、可点击 preview 卡、preview 焦点循环、preview 清焦收尾桥接、重阴影、强描边、重型 focus ring、桌面系统级多级菜单叙事、旧版 finalize README 章节顺序
 
-## 12. 对应组件名与本次保留的核心状态
-- 对应组件名：`MenuBar`
-- 本次保留核心状态：
-  - `standard`
-  - `active menu`
-  - `dropdown panel`
-  - `compact`
-  - `read only`
-
-## 13. 相比参考原型删掉的效果或装饰
-- 删掉页面级 guide、状态说明和 section label。
-- 删掉可点击 preview 卡、preview 焦点循环和 preview 清焦收尾职责。
-- 删掉重阴影、厚描边、重型 focus ring 和强按钮化顶层菜单。
-- 删掉桌面系统级菜单接管、复杂 nested submenu 动画和原生快捷键分发。
-
-## 14. EGUI 适配时的简化点与约束
-- 用 `snapshot` 数组驱动顶层菜单和下拉内容，优先保证 reference 稳定。
-- 底部 `compact / read only` 固定放在同一行，只承担静态对照职责。
-- `read only` 直接使用 `read_only_mode`，避免页面语义和控件实现脱节。
-- 当前先作为 `HelloCustomWidgets` reference 示例维护，后续是否下沉框架层再单独评估。
+## 14. 当前验收结果（2026-04-19）
+- 单控件编译：`PASS`
+  - `make all APP=HelloCustomWidgets APP_SUB=navigation/menu_bar PORT=pc`
+  - 本轮沿用已归档 acceptance 结果
+- `HelloUnitTest`：`日志复核 PASS`
+  - 在 `X:\` 短路径下执行 `make all APP=HelloUnitTest PORT=pc_test`
+  - 本轮沿用已归档 unit 日志复核，总计 `845 / 845`，其中 `menu_bar` suite `16 / 16`
+- catalog / 文档 / 触摸语义：`PASS`
+  - `python scripts/sync_widget_catalog.py`
+  - `python scripts/checks/check_touch_release_semantics.py --scope custom --category navigation`
+  - `python scripts/checks/check_docs_encoding.py`
+  - `python scripts/checks/check_widget_catalog.py`
+  - 触摸语义结果：`custom_audited=12 custom_skipped_allowlist=1`
+  - 文档编码结果：`134 files`
+  - widget catalog 结果：`106 widgets`
+- 单控件 runtime：`PASS`
+  - `python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub navigation/menu_bar --track reference --timeout 10 --keep-screenshots`
+  - 输出目录：`runtime_check_output/HelloCustomWidgets_navigation_menu_bar/default`
+  - 共捕获 `11` 帧
+  - 本轮沿用已归档 runtime 结果，并重新复核截图边界与哈希
+- navigation 分类 compile/runtime 回归：`PASS`
+  - `python scripts/code_compile_check.py --custom-widgets --category navigation --bits64`
+  - `python scripts/code_runtime_check.py --app HelloCustomWidgets --category navigation --track reference --bits64`
+  - 沿用最近一次 navigation 分类回归结果：`13 / 13` 全部通过
+- web 链路：`PASS`
+  - `python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub navigation/menu_bar`
+  - `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_navigation_menu_bar`
+  - smoke 结果：`status=Running canvas=480x480 ratio=0.1708 colors=174`
+- 截图复核结论：
+  - 共捕获 `11` 帧
+  - 主区共出现 `4` 组唯一状态，对应 `File`、`Edit`、`View` 和 `Tools`
+  - 主区 RGB 差分边界为 `(50, 109) - (430, 211)`
+  - 遮罩主区变化边界后主区外唯一哈希数为 `1`
+  - 按 `y >= 211` 裁切底部 preview 后 preview 区唯一哈希数为 `1`
+  - 结论：最终稳定帧已回到默认 `File`，底部 `compact / read only` preview 全程保持静态
