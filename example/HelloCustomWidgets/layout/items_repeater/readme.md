@@ -1,95 +1,104 @@
-# items_repeater 设计说明
-
+# ItemsRepeater 自定义控件设计说明
 ## 参考来源
-- 参考设计系统：`Fluent 2`
-- 官方语义参考：`WinUI 3 ItemsRepeater`
-- 对应组件名：`ItemsRepeater`
-- 本次保留语义：`wrap / stack / strip preset`、`compact`、`read only`
-- 本次删除内容：preview 点击清主控件焦点、第二条 `compact` preview 轨道、录制里的 `preview dismiss` 收尾
-- EGUI 适配说明：继续在 custom 层维护轻量 `egui_view_items_repeater`，本轮只收口 `reference` 页面结构、主控件录制轨道和静态 preview 语义，不修改 `sdk/EmbeddedGUI`
+- 参考设计体系：`Fluent 2`
+- 官方语义参考：`WinUI 3 / ItemsRepeater`
+- 对应组件：`ItemsRepeater`
+- 当前保留形态：`Wrap repeater`、`Stack repeater`、`Strip repeater`、`Compact`、`Read only`
+- 当前保留交互：主区保留真实 `same-target release`、`Left / Right / Up / Down / Home / End / Tab / Enter / Space` 键盘闭环；底部 `Compact / Read only` preview 保持静态 reference 对照
+- 当前移除内容：preview 点击清主控件焦点桥接、第二条 `compact` preview 轨道、录制里的 `preview dismiss` 收尾
+- EGUI 适配说明：继续在 custom 层维护轻量 `egui_view_items_repeater`；本轮只收口 README、reference 录制说明、static preview 语义与验收记录，不修改 `sdk/EmbeddedGUI`
 
 ## 1. 为什么需要这个控件
-
 `items_repeater` 用来表达“同一批数据按统一 item template 重复排布，但布局本身保持轻量、可嵌入、可按场景切换”的语义，适合最近项摘要、标签集合、轻量资源卡片和多状态条目带这类需要重复呈现同构内容、但又不希望直接上完整 `ListView` 或页面级列表控件的场景。
 
 ## 2. 为什么现有控件不够用
-
 - `data_list_panel` 更偏带容器语义的 `ListView` 页面，不是轻量的 repeater 宿主。
 - `wrap_panel`、`uniform_grid`、`virtualizing_wrap_panel` 更偏布局容器，不负责统一 item template、当前项和提交语义。
 - `virtualizing_stack_panel` 解决的是纵向窗口化列表，不覆盖非虚拟化 repeater 的模板化重复布局。
-- 当前仓库需要一个能完整走通 reference、单测、runtime 和 web 发布链路的 `ItemsRepeater` 页面。
+- `scroll_presenter` 更偏滚动承载层，不表达重复项模板和当前项语义。
 
-## 3. 目标场景与示例概览
-
-- 主控件保留真实 `ItemsRepeater` 语义，展示 `Wrap repeater`、`Stack repeater`、`Strip repeater` 三组主 snapshot。
-- 主录制轨道只导出主控件的 layout preset 切换，不再让底部 preview 承担叙事职责。
-- 底部左侧是 `compact` 静态 preview，只用于对照窄尺寸下的重复项密度。
-- 底部右侧是 `read only` 静态 preview，只用于对照冻结后的弱化层级。
-- 页面只保留标题、一个主 `items_repeater` 和底部两个静态 preview，不再承担 preview 清焦点或收尾交互。
+## 3. 当前页面结构
+- 页面结构固定为：标题 -> 主 `items_repeater` -> 底部 `Compact / Read only` 双 preview。
+- 主区保留 `3` 组录制快照：
+  - `Wrap repeater`
+  - `Stack repeater`
+  - `Strip repeater`
+- 录制最终稳定帧显式回到默认 `Wrap repeater`。
+- 底部左侧是 `Compact` 静态 preview，只负责对照窄尺寸下的重复项密度。
+- 底部右侧是 `Read only` 静态 preview，只负责对照冻结后的弱化层级。
 - 两个 preview 统一通过 `egui_view_items_repeater_override_static_preview_api()` 收口：
   - 吞掉 `touch / key`
   - 只清理残留 `pressed`
-  - 不改写 `current_snapshot / current_item / layout_mode`
+  - 不改 `current_snapshot / current_item / layout_mode`
   - 不触发 `on_action`
 
-目标目录：`example/HelloCustomWidgets/layout/items_repeater/`
+目标目录：
+- `example/HelloCustomWidgets/layout/items_repeater/`
 
-## 4. 视觉与布局规格
+## 4. 主区 reference 快照
+主区录制轨道只保留 `3` 组程序化快照，最终稳定帧回到默认态；底部 preview 在整条轨道中保持静态：
 
+1. 默认态
+   `Wrap repeater`
+2. 快照 2
+   `Stack repeater`
+3. 快照 3
+   `Strip repeater`
+4. 最终稳定帧
+   回到默认 `Wrap repeater`
+
+底部 preview 在整条轨道中固定为：
+1. `Compact`
+2. `Read only`
+
+## 5. 视觉与布局规格
+- 画布：`480 x 480`
 - 根布局：`224 x 244`
 - 主控件：`196 x 124`
-- 底部对照行：`216 x 78`
-- `compact` preview：`104 x 78`
-- `read only` preview：`104 x 78`
-- 页面结构：标题 -> 主 `items_repeater` -> `compact / read only`
-- 样式约束：
-  - 维持浅色 Fluent 容器、低噪音边框和轻量 `item / meta / tone` 层级。
-  - 主区突出同一模板在 `wrap / stack / strip` 三种 preset 下的重复布局变化，不再叠加旧 preview 交互桥接。
-  - 底部两个 preview 固定为静态 reference 对照，不再承担焦点桥接或额外轨道切换职责。
+- 底部 preview 行：`216 x 78`
+- 单个 preview：`104 x 78`
+- 页面结构：标题 -> 主 `items_repeater` -> 底部 `Compact / Read only`
+- 风格约束：保持浅色 Fluent 容器、低噪音边框和轻量 `item / meta / tone` 层级；主区突出同一模板在 `wrap / stack / strip` 三种 preset 下的重复布局变化；底部 preview 固定为静态 reference 对照，不再承担焦点桥接或额外轨道切换职责。
 
-## 5. 控件清单
+## 6. 状态矩阵
+| 状态 | 主控件 | Compact preview | Read only preview |
+| --- | --- | --- | --- |
+| 默认显示 | `Wrap repeater` | `Compact wrap` | `Read only stack` |
+| 快照 2 | `Stack repeater` | 保持不变 | 保持不变 |
+| 快照 3 | `Strip repeater` | 保持不变 | 保持不变 |
+| 录制最终稳定帧 | 回到 `Wrap repeater` | 保持不变 | 保持不变 |
+| same-target release / 键盘激活 | 是 | 否 | 否 |
+| static preview 吞掉 `touch / key` 且不改状态 | 否 | 是 | 是 |
 
-| 变量名 | 类型 | 尺寸 (W x H) | 初始状态 | 用途 |
-| --- | --- | ---: | --- | --- |
-| `wrap_primary` | `egui_view_items_repeater_t` | `196 x 124` | `Wrap repeater` | 主 `ItemsRepeater` |
-| `wrap_compact` | `egui_view_items_repeater_t` | `104 x 78` | `Compact wrap` | 紧凑静态对照 |
-| `wrap_read_only` | `egui_view_items_repeater_t` | `104 x 78` | `Read only stack` | 只读静态对照 |
-| `primary_snapshots` | `egui_view_items_repeater_snapshot_t[3]` | - | `Wrap / Stack / Strip` | 主控件语义轨道 |
+## 7. 交互语义与单测口径
+`example/HelloUnitTest/test/test_items_repeater.inc` 当前覆盖 `7` 条用例：
 
-## 6. 状态覆盖矩阵
-
-| 区域 / 轨道 | 状态 | 说明 |
-| --- | --- | --- |
-| 主控件 | `Wrap repeater` | 默认状态，展示模板在 wrap preset 下的重复排布 |
-| 主控件 | `Stack repeater` | 第二组 snapshot，展示同一模板切到纵向 lane |
-| 主控件 | `Strip repeater` | 第三组 snapshot，展示紧凑 strip 复用同一模板 |
-| `compact` | `Compact wrap` | 固定静态对照，验证窄尺寸下的重复项密度 |
-| `read only` | `Read only stack` | 固定静态对照，验证只读弱化与输入屏蔽 |
-
-## 7. 交互语义与 preview 收口
-
-- 主控件保留真实 `ItemsRepeater` 键盘与触摸语义：
-  - `Left / Right / Up / Down`：按当前布局顺序在相邻项之间移动
-  - `Home / End`：跳到首尾项
-  - `Tab`：在当前 snapshot 内前进，必要时切到下一组 snapshot
-  - `Enter / Space`：激活当前项并触发 listener
-- 触摸交互保持 same-target release：只在同一项 `DOWN -> UP` 时提交。
-- `set_snapshots()`、`set_current_snapshot()`、`set_current_item()`、`set_layout_mode()`、`set_font()`、`set_meta_font()`、`set_palette()`、`set_compact_mode()`、`set_read_only_mode()` 都必须先清理残留 `pressed` 状态。
-- 底部 `compact / read only` preview 固定为静态 reference，对输入只做吞吐和状态清理，不再参与主页面叙事。
+1. `set_snapshots()` 的 clamp、默认项回落、空快照 reset。
+2. `set_font()`、`set_meta_font()`、`set_compact_mode()`、`set_read_only_mode()`、`set_palette()`、`set_current_snapshot()`、`set_current_item()` 的 pressed 清理与状态更新。
+3. `get_item_region()`、`activate_current_item()` 与 listener 行为。
+4. 触摸 same-target release、移出取消与 `ACTION_CANCEL` 清理。
+5. 键盘 `Left / Right / Up / Down / Home / End / Tab / Enter` 行为，含跨 snapshot 的 `Tab` 切换。
+6. `read_only` 与 `!enable` 守卫，保持 `current_snapshot / current_item / layout_mode / compact_mode / read_only_mode` 不变并清理 pressed；恢复后继续验证 `Home / End + Enter`。
+7. static preview 吞掉 `touch / key`，并保持 `current_snapshot / current_item / layout_mode / compact_mode / read_only_mode` 不变，同时不触发 `on_action`。
 
 ## 8. 录制动作设计
+`egui_port_get_recording_action()` 已收口为静态 preview 工作流：
 
-`egui_port_get_recording_action()` 的录制顺序如下：
-1. 重置主控件与底部 `compact / read only` preview，输出默认 `Wrap repeater`。
-2. 切到 `Stack repeater`，输出第二组主状态。
-3. 切到 `Strip repeater`，输出第三组主状态。
-4. 恢复主控件默认状态，输出最终稳定帧。
+1. 应用主区默认 `Wrap repeater`，同时重放底部 `Compact / Read only` preview 固定状态并抓取首帧。
+2. 切到 `Stack repeater`，等待 `ITEMS_REPEATER_RECORD_WAIT`。
+3. 抓取第二组主区快照。
+4. 切到 `Strip repeater`，等待 `ITEMS_REPEATER_RECORD_WAIT`。
+5. 抓取第三组主区快照。
+6. 恢复主区默认 `Wrap repeater`，同时重放底部 preview 固定状态，等待 `ITEMS_REPEATER_RECORD_FINAL_WAIT`。
+7. 通过最终抓帧输出稳定的默认态，并继续等待 `ITEMS_REPEATER_RECORD_FINAL_WAIT`。
 
-录制只导出主控件的状态变化。底部两个 preview 在整条 reference 轨道中保持静态一致，不再承担 preview dismiss 或焦点清理职责。
-当前 `test.c` 已对齐统一的 `ui_ready + layout_page + request_page_snapshot` 模板：初始化、主区切换、preview 重放和最终抓帧都走同一条显式布局路径，不再依赖旧的隐式布局时序。
+说明：
+- 主区继续保留真实 same-target release 与键盘导航语义，供手动复核和单测覆盖。
+- runtime 录制阶段不再真实发送底部 preview 输入，也不再保留第二条 `compact` preview 轨道。
+- `request_page_snapshot()` 统一走 `layout_page() + invalidate + recording_request_snapshot()`，保证主区 `3` 组快照和最终稳定帧的布局口径一致。
+- 当前 `test.c` 已对齐统一的 `ui_ready + layout_page + request_page_snapshot` 模板：初始化、主状态切换、preview 重放和最终抓帧都走同一条显式布局路径。
 
-## 9. 编译、运行时、单测与文档检查
-
+## 9. 验收命令
 ```bash
 make all APP=HelloCustomWidgets APP_SUB=layout/items_repeater PORT=pc
 
@@ -109,47 +118,50 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
 ```
 
 ## 10. 验收重点
-- 主控件必须能直接看出同一模板在 `wrap / stack / strip` 三种 preset 下的布局变化。
-- `same-target release / keyboard navigation / read only / !enable / static preview` 全部通过单测。
-- 两个 preview 必须完整可见、无黑白屏，并且在全部 runtime 帧里保持静态一致。
-- README、demo 录制轨道、单测入口和验收命令链必须保持一致。
+- 主区与底部双 preview 必须完整可见，不能黑屏、白屏或被裁切。
+- 主区录制只允许出现 `Wrap repeater`、`Stack repeater`、`Strip repeater` `3` 组可识别状态，最终稳定帧必须回到默认态。
+- 主区真实交互仍需保留 same-target release、键盘导航与 listener 语义。
+- 底部 `Compact / Read only` preview 必须在全部 runtime 帧里保持静态一致。
+- static preview 收到输入后，不能改写 `current_snapshot / current_item / layout_mode / compact_mode / read_only_mode`，也不能触发 `on_action`。
+- WASM demo 必须能够以 `HelloCustomWidgets_layout_items_repeater` 正常加载。
 
 ## 11. 截图复核口径
 - 检查目录：`runtime_check_output/HelloCustomWidgets_layout_items_repeater/default`
-- 复核目标：
-  - 主区裁剪后只出现 `3` 组唯一状态
-  - 遮掉主区变化边界后，边界外区域保持单哈希
-  - 按底部 preview 区域裁剪后，所有帧保持单哈希
+- 本轮复核结果：
+  - 共捕获 `9` 帧
+  - 主区唯一状态分组：`[0,1,6,7,8] / [2,3] / [4,5]`
+  - 主区差分边界：`(56, 96) - (419, 260)`
+  - 以 `y >= 261` 裁切底部 preview 后，preview 区唯一哈希数为 `1`
+  - 最终稳定帧显式回到默认 `Wrap repeater`
 
 ## 12. 与现有控件的边界
-
 - 相比 `wrap_panel`：这里强调模板化重复项与当前项语义，不只是流式布局。
 - 相比 `uniform_grid`：这里允许不同宽度权重的 item 模板复用，不只强调规则网格。
 - 相比 `data_list_panel`：这里是轻量 repeater，而不是页面级列表容器。
+- 相比 `virtualizing_stack_panel`：这里保持非虚拟化模板布局，不引入窗口化列表轨道。
 
-## 13. 本次保留的核心状态与删减项
-
-- 保留的核心状态：
-  - `wrap preset`
-  - `stack preset`
-  - `strip preset`
-  - `compact`
-  - `read only`
+## 13. 本轮保留与删减
+- 保留的主区状态：
+  - `Wrap repeater`
+  - `Stack repeater`
+  - `Strip repeater`
+- 保留的底部对照：
+  - `Compact`
+  - `Read only`
 - 保留的交互：
   - same-target touch release
   - 键盘 `Left / Right / Up / Down / Home / End / Tab / Enter / Space`
-- 删除的装饰或桥接：
-  - preview 点击清主控件焦点
+- 删减的旧桥接与旧轨道：
+  - preview 点击清主控件焦点桥接
   - 第二条 `compact` preview 轨道
-  - 录制里的 preview dismiss 收尾动作
+  - 录制里的 `preview dismiss` 收尾动作
 
-## 14. 当前验收结果（2026-04-18）
+## 14. 当前验收结果（2026-04-19）
 - 单控件编译：`PASS`
   - `make all APP=HelloCustomWidgets APP_SUB=layout/items_repeater PORT=pc`
 - `HelloUnitTest`：`日志复核 PASS`
-  - `make all APP=HelloUnitTest PORT=pc_test`
-  - `X:\output\main.exe`
-  - 当前环境下直接执行超时且重定向日志为空，本轮按本地 unit 日志复核总计 `845 / 845`，其中 `items_repeater` suite `7 / 7`
+  - 在 `X:\` 短路径下执行 `make all APP=HelloUnitTest PORT=pc_test`
+  - 当前环境下直接执行 `X:\output\main.exe` 超时且重定向日志为空，本轮按本地 unit 日志复核总计 `845 / 845`，其中 `items_repeater` suite `7 / 7`
 - catalog / 文档 / 触摸语义：`PASS`
   - `python scripts/sync_widget_catalog.py`
   - `python scripts/checks/check_touch_release_semantics.py --scope custom --category layout`
@@ -160,7 +172,8 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
   - widget catalog 结果：`106 widgets`
 - 单控件 runtime：`PASS`
   - `python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub layout/items_repeater --track reference --timeout 10 --keep-screenshots`
-  - `9 frames captured -> runtime_check_output/HelloCustomWidgets_layout_items_repeater/default`
+  - 输出目录：`runtime_check_output/HelloCustomWidgets_layout_items_repeater/default`
+  - 共捕获 `9` 帧
 - layout 分类 compile/runtime 回归：`PASS`
   - `python scripts/code_compile_check.py --custom-widgets --category layout --bits64`
   - `python scripts/code_runtime_check.py --app HelloCustomWidgets --category layout --track reference --bits64`
@@ -170,8 +183,7 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
   - `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_layout_items_repeater`
   - smoke 结果：`status=Running canvas=480x480 ratio=0.186 colors=322`
 - 截图复核结论：
-  - 共捕获 `9` 帧
-  - 全帧共出现 `3` 组唯一状态，主区哈希分组为 `[0,1,6,7,8]`、`[2,3]`、`[4,5]`
-  - 主区变化边界收敛到 `(56, 96) - (419, 260)`
-  - 按 `y >= 261` 裁切底部 preview 后保持单一哈希，确认 `compact / read only` preview 全程静态
-  - 结论：主区覆盖 `Wrap repeater / Stack repeater / Strip repeater` 三组 reference 状态，最终稳定帧已显式回到默认快照
+  - 主区覆盖 `Wrap repeater / Stack repeater / Strip repeater` 三组 reference 快照
+  - 最终稳定帧显式回到默认 `Wrap repeater`
+  - 主区差分边界收敛到 `(56, 96) - (419, 260)`
+  - 以 `y >= 261` 裁切后，底部 `Compact / Read only` preview 全程保持单哈希静态
