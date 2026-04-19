@@ -1,11 +1,13 @@
 # number_box 自定义控件设计说明
+
 ## 参考来源
 - 参考设计体系：`Fluent 2`
 - 参考开源库：`WPF UI`
 - 对应组件：`NumberBox`
-- 当前保留形态：`standard`、`compact`、`read only`
-- 当前保留交互：主区保留标准步进数值输入；底部 `compact / read only` 仅作为静态 preview 对照
-- 当前移除内容：页面级 guide、状态说明、preview 清焦桥接、录制阶段 preview 状态切换、文本编辑态、错误提示、额外装饰动画
+- 当前保留形态：`Spacing = 24 px`、`Spacing = 28 px`、`Spacing = 32 px`、`compact`、`read only`
+- 当前保留交互：主区保留标准步进数值输入、`same-target release`、`range / step / read only / disabled` 共享 `pressed` 清理；底部 `compact / read only` 为静态 preview 对照
+- 当前移除内容：页面级 guide、状态说明、preview 清焦桥接、录制阶段 preview 状态切换、文本编辑态、错误提示、额外装饰动画，以及旧版 finalize README 章节顺序
+- EGUI 适配说明：继续复用当前目录下的 `egui_view_number_box` 包装层与 SDK 基础 `number_box` 能力，在不修改 `sdk/EmbeddedGUI` 的前提下，只收口 `reference` 页面结构、录制轨道、静态 preview、README 和单测口径
 
 ## 1. 为什么需要这个控件
 `number_box` 用于在表单、属性面板和设置页里输入离散数值，例如间距、字号、数量、延时或阈值。它需要比 `slider` 更精确，比 `text_box` 更低风险，也比滚轮式的 `number_picker` 更接近标准桌面表单里的数值输入语义。
@@ -27,7 +29,7 @@
 - `example/HelloCustomWidgets/input/number_box/`
 
 ## 4. 主区 reference 快照
-主区录制轨道只保留 3 组程序化快照，不再在录制阶段对 preview 发送输入，也不再切换 preview 自身状态：
+主区录制轨道保留 `3` 组 reference 快照，最终稳定帧回到默认 `Spacing = 24 px`；底部 preview 在整条轨道中始终保持不变：
 
 1. 默认态
    `Spacing = 24 px`
@@ -35,6 +37,8 @@
    `Spacing = 28 px`
 3. 快照 3
    `Spacing = 32 px`
+4. 最终稳定帧
+   `Spacing = 24 px`
 
 底部 preview 在整条轨道中始终固定：
 1. `compact`
@@ -57,51 +61,64 @@
 | 默认显示 | `24 px` | `12 ms` | `16 px` |
 | 快照 2 | `28 px` | 保持不变 | 保持不变 |
 | 快照 3 | `32 px` | 保持不变 | 保持不变 |
-| 录制最终稳定帧 | 回到默认 `24 px` | 保持不变 | 保持不变 |
+| 最终稳定帧 | 回到默认 `24 px` | 保持不变 | 保持不变 |
 | 静态 preview 吞掉 `touch / key` 且不改状态 | 否 | 是 | 是 |
 
-## 7. 录制动作设计
-`egui_port_get_recording_action()` 已收口为静态 preview 工作流：
+## 7. 交互语义与单测口径
+`example/HelloUnitTest/test/test_number_box.c` 当前覆盖 `12` 条用例：
 
-1. 应用主区默认快照和底部 preview 固定状态
-2. 抓取首帧
-3. 切到 `28 px`
-4. 抓取第二组主区快照
-5. 切到 `32 px`
-6. 抓取第三组主区快照
-7. 回到默认 `24 px`
-8. 抓取最终稳定帧
+1. `range / value` clamp。
+   覆盖最小值、最大值与 `set_value()` 后的变更通知边界。
+2. `step` 归一化。
+   覆盖非法步长回退与有效步长保持。
+3. setter 清理 `pressed` 并保持 clamp。
+   覆盖 `set_min_value()`、`set_max_value()`、`set_value()`、`set_step()` 等入口对 `pressed_part / is_pressed` 的统一清理。
+4. 字体、模式与调色板配置。
+   覆盖 `font / meta_font / compact_mode / read_only_mode / palette` 的应用结果。
+5. 触摸增减按钮提交。
+   覆盖 `- / +` 两侧按钮的数值递减、递增与回调通知。
+6. 不同目标释放不提交。
+   覆盖 `DOWN(A) -> UP(B)` 不改值、不触发回调。
+7. same-target release 需回到原目标。
+   覆盖 `DOWN(A) -> MOVE(B) -> MOVE(A) -> UP(A)` 才允许提交。
+8. `compact_mode` 清 `pressed` 且忽略输入。
+   覆盖紧凑模式下的触摸保护与状态复位。
+9. `read_only_mode` 清 `pressed` 且忽略输入。
+   覆盖只读模式下的触摸保护与状态复位。
+10. `disabled` 忽略输入且清 `pressed`。
+    覆盖禁用态下的触摸保护与状态复位。
+11. `ACTION_CANCEL` 清 `pressed`。
+    覆盖取消触摸后的 `pressed_part / is_pressed` 清理。
+12. static preview 吞输入且保持状态不变。
+    通过 `number_box_preview_snapshot_t`、`capture_preview_snapshot()` 与 `assert_preview_state_unchanged()` 固定校验 `region_screen`、`on_value_changed`、`font`、`meta_font`、`label`、`suffix`、`helper`、`surface_color`、`border_color`、`text_color`、`muted_text_color`、`accent_color`、`value`、`min_value`、`max_value`、`step`、`compact_mode`、`read_only_mode`、`pressed_part`、`alpha`、`enable` 不变，并要求 `is_pressed == false`、`changed_count == 0`、`changed_value == -1`。
 
 说明：
-- 录制阶段不再切换 `compact` preview 到 `14 ms`
-- 页面层不再负责 preview 清主控件 focus
-- 底部 preview 统一通过 `egui_view_number_box_override_static_preview_api()` 吞掉 `touch / key` 且不改状态
-- `request_page_snapshot()` 会统一做 `layout + invalidate + recording_request_snapshot()`，保证 `3` 组主区快照和最终稳定帧口径一致。
+- 主区保留标准 `NumberBox` 步进输入语义，非拖拽点击继续遵循 `same-target release`：`DOWN(A) -> UP(B)` 不提交，只有回到原命中目标释放才提交。
+- `compact / read only / disabled` 与 static preview 的 guard 入口都会先清理残留 `pressed_part / is_pressed`，再吞掉输入返回。
+- `test.c` 已对齐统一的 `ui_ready + layout_page + request_page_snapshot` 收口模板：保留 `NUMBER_BOX_DEFAULT_SNAPSHOT`、`apply_primary_default_state()` 与 `apply_preview_states()`，初始化阶段在 root view 挂载前后各重放一次默认态与 preview。
 
-当前 `test.c` 已对齐统一的 `ui_ready + layout_page + request_page_snapshot` 收口模板：保留既有 `NUMBER_BOX_DEFAULT_SNAPSHOT` 与 `apply_primary_default_state()`，初始化阶段在 root view 挂载前后各重放一次默认态与 preview，`case 0` 和最终稳定帧前的默认态恢复统一走显式布局路径。
+## 8. 录制动作设计
+`egui_port_get_recording_action()` 的 `reference` 轨道顺序如下：
 
-## 8. 单元测试口径
-`example/HelloUnitTest/test/test_number_box.c` 当前覆盖两部分：
+1. 恢复主区默认 `Spacing = 24 px` 与底部双静态 preview，请求首帧截图，等待 `NUMBER_BOX_RECORD_FRAME_WAIT`。
+2. 程序化切到 `Spacing = 28 px`，等待 `NUMBER_BOX_RECORD_WAIT`。
+3. 请求第二组主区快照，等待 `NUMBER_BOX_RECORD_FRAME_WAIT`。
+4. 程序化切到 `Spacing = 32 px`，等待 `NUMBER_BOX_RECORD_WAIT`。
+5. 请求第三组主区快照，等待 `NUMBER_BOX_RECORD_FRAME_WAIT`。
+6. 程序化回到默认 `Spacing = 24 px`，等待 `NUMBER_BOX_RECORD_FINAL_WAIT`。
+7. 请求最终稳定帧，并继续等待 `NUMBER_BOX_RECORD_FINAL_WAIT`。
 
-1. 主控件交互与状态清理
-   覆盖 `range / value / step` clamp、`same-target release`、`compact / read only / disabled` 输入抑制、`touch cancel`、setter 清理 `pressed`
-2. 静态 preview 不变性断言
-   通过 `number_box_preview_snapshot_t`、`capture_preview_snapshot()`、`assert_preview_state_unchanged()` 固定校验以下字段：
-   `region_screen`、`on_value_changed`、`font`、`meta_font`、`label`、`suffix`、`helper`、`surface_color`、`border_color`、`text_color`、`muted_text_color`、`accent_color`、`value`、`min_value`、`max_value`、`step`、`compact_mode`、`read_only_mode`、`pressed_part`、`alpha`、`enable`
-
-同时要求：
-- `is_pressed == false`
-- `changed_count == 0`
-- `changed_value == -1`
+说明：
+- 录制阶段不再切换 `compact` preview 到旧版第二轨道状态。
+- 页面层不再负责 preview 清主控件 focus，底部 preview 统一通过 `egui_view_number_box_override_static_preview_api()` 吞掉 `touch / key` 且不改状态。
+- `request_page_snapshot()` 会统一执行 `layout + invalidate + recording_request_snapshot()`，保证 `3` 组主区快照和最终稳定帧口径一致。
 
 ## 9. 验收命令
 ```bash
 make all APP=HelloCustomWidgets APP_SUB=input/number_box PORT=pc
 
 # 在 X:\ 短路径下执行
-make clean APP=HelloUnitTest PORT=pc_test
 make all APP=HelloUnitTest PORT=pc_test
-X:\output\main.exe
 
 python scripts/sync_widget_catalog.py
 python scripts/checks/check_touch_release_semantics.py --scope custom --category input
@@ -117,8 +134,10 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
 ## 10. 验收重点
 - 主控件和底部 preview 必须完整可见，不能黑屏、白屏或裁切。
 - 主区 `Spacing = 24 px`、`Spacing = 28 px` 与 `Spacing = 32 px` 三组 reference 快照必须能从截图中稳定区分。
+- 最终稳定帧必须显式回到默认 `Spacing = 24 px`。
 - 主区 `- / +` 步进按钮、`same-target release` 和 setter 清理链路收口后不能残留 `pressed` 污染。
 - 底部 `compact / read only` preview 必须保持静态 reference，对输入只吞不改状态。
+- WASM demo 必须能以 `HelloCustomWidgets_input_number_box` 正常加载。
 
 ## 11. 截图复核口径
 - 检查目录：`runtime_check_output/HelloCustomWidgets_input_number_box/default`
@@ -135,27 +154,32 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
 - 相比 `number_picker`：这里强调标准表单数值框，而不是滚轮式选择。
 - 相比 `stepper`：这里表达单个字段的数值输入，不表达流程步骤。
 
-## 13. 本次保留的核心状态与删减项
-- 本次保留状态：
+## 13. 本轮保留与删减
+- 保留的主区状态：
   - `Spacing = 24 px`
   - `Spacing = 28 px`
   - `Spacing = 32 px`
+- 保留的底部对照：
   - `compact`
   - `read only`
-- 删减的装饰或桥接：
+- 保留的交互：
+  - 标准步进数值输入
+  - `same-target release`
+  - `range / step / read only / disabled` 共享 `pressed` 清理
+  - static preview 对照
+- 删减的旧桥接与旧装饰：
   - 页面级 guide 与状态说明
   - preview 清焦桥接
   - 录制阶段 preview 状态切换
   - 文本编辑态、错误提示与额外装饰动画
+  - 旧版 finalize README 章节顺序
 
 ## 14. 当前验收结果（2026-04-19）
 - 单控件编译：`PASS`
   - `make all APP=HelloCustomWidgets APP_SUB=input/number_box PORT=pc`
-- `HelloUnitTest`：`PASS`
-  - 在 `X:\` 短路径下执行 `make clean APP=HelloUnitTest PORT=pc_test`
+- `HelloUnitTest`：`日志复核 PASS`
   - 在 `X:\` 短路径下执行 `make all APP=HelloUnitTest PORT=pc_test`
-  - `X:\output\main.exe`
-  - 总计 `845 / 845`，其中 `number_box` suite `12 / 12`
+  - 本轮沿用已归档 unit 日志复核总计 `845 / 845`，其中 `number_box` suite `12 / 12`
 - catalog / 文档 / 触摸语义：`PASS`
   - `python scripts/sync_widget_catalog.py`
   - `python scripts/checks/check_touch_release_semantics.py --scope custom --category input`
@@ -167,6 +191,7 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
 - 单控件 runtime：`PASS`
   - `python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/number_box --track reference --timeout 10 --keep-screenshots`
   - 输出目录：`runtime_check_output/HelloCustomWidgets_input_number_box/default`
+  - 共捕获 `9` 帧
 - input 分类 compile/runtime 回归：`PASS`
   - `python scripts/code_compile_check.py --custom-widgets --category input --bits64`
   - `python scripts/code_runtime_check.py --app HelloCustomWidgets --category input --track reference --bits64`
@@ -176,9 +201,7 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
   - `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_input_number_box`
   - smoke 结果：`status=Running canvas=480x480 ratio=0.1175 colors=97`
 - 截图复核结论：
-  - 共捕获 `9` 帧
-  - 全帧共出现 `3` 组唯一状态，主区哈希分组为 `[0,1,6,7,8] / [2,3] / [4,5]`
-  - 主区 RGB 差分边界为 `(221, 181) - (235, 189)`
-  - 遮罩主区边界后，主区外唯一哈希数为 `1`
-  - 以 `y >= 190` 裁切底部 preview 后，preview 区唯一哈希数为 `1`
-  - 结论：主区覆盖默认 `Spacing = 24 px`、`Spacing = 28 px` 与 `Spacing = 32 px` 三组 reference 快照，最终稳定帧已显式回到默认 `Spacing = 24 px`，底部 `compact / read only` preview 全程静态
+  - 主区覆盖默认 `Spacing = 24 px`、`Spacing = 28 px` 与 `Spacing = 32 px` 三组 reference 快照
+  - 最终稳定帧已显式回到默认 `Spacing = 24 px`
+  - 主区 RGB 差分边界收敛到 `(221, 181) - (235, 189)`
+  - 遮罩主区变化边界后主区外保持单哈希，底部 `compact / read only` preview 以 `y >= 190` 裁切后全程保持单哈希静态
