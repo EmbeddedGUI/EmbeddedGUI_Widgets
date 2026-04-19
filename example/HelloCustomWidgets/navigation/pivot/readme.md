@@ -4,9 +4,11 @@
 - 参考设计系统：`Fluent 2`
 - 平台语义参考：`WinUI 3 Pivot`
 - 次级补充参考：`WPF UI`、`ModernWpf`
-- 对应组件名：`Pivot`
-- 当前保留状态：`standard`、`compact`、`read only`、`same-target release`、键盘切换、静态 preview
-- 当前移除内容：旧 `compact_panel / read_only_panel` 包装、标题说明文案、preview 轮换、录制里的 preview 切换桥接、手势翻页动画、场景化页面 chrome
+- 对应组件：`Pivot`
+- 当前保留形态：`Overview`、`Activity`、`History`、`Compact`、`Read only`
+- 当前保留交互：主区保留 `same-target release`、`Left / Right / Up / Down / Home / End / Tab / Enter / Space` 键盘语义与真实 section 切换；底部 `Compact / Read only` preview 保持静态 reference 对照
+- 当前移除内容：旧 `compact_panel / read_only_panel` 包装、标题说明文案、preview 轮换、录制里的 preview 切换桥接、手势翻页动画、场景化页面 chrome，以及旧版 finalize README 章节结构
+- EGUI 适配说明：目录和 demo 继续使用 `navigation/pivot`，底层仍复用仓库内现有 `hcw_pivot` 实现；本轮只收口 README、reference 录制说明、static preview 语义与验收记录，不修改 `sdk/EmbeddedGUI`
 
 ## 1. 为什么需要这个控件
 `pivot` 用来表达“顶部 header 负责切换分区，主体区域一次只展示一个内容页”的导航语义，适合总览、活动、历史这类平级 section 的轻量切换。它比 `tab_view` 更轻，不承担页签管理；又比单纯的选择条更完整，因为它需要把当前 body 内容一起收口。
@@ -24,7 +26,8 @@
 - 左侧 preview：`compact`，固定显示 `Home`
 - 右侧 preview：`read only`，固定显示 `Audit`
 
-当前目录：`example/HelloCustomWidgets/navigation/pivot/`
+目标目录：
+- `example/HelloCustomWidgets/navigation/pivot/`
 
 ## 4. 主区 reference 快照
 主控件录制轨道已经收口为 3 组 reference 快照和最终稳定帧：
@@ -71,43 +74,45 @@
 | 静态 preview 吞掉 `touch / key` 且保持状态不变 | 否 | 是 | 是 |
 | `read_only_mode / !enable` 先清 pressed 再拒绝输入 | 是 | 否 | 是 |
 
-## 7. 录制动作设计
-`egui_port_get_recording_action()` 已收口为 static preview 工作流：
+## 7. 交互语义与单测口径
+`example/HelloUnitTest/test/test_pivot.c` 当前覆盖 `4` 条用例：
 
-1. 应用主区默认快照和底部 preview 固定状态
-2. 抓取首帧
-3. 切到 `Activity`
-4. 抓取第二组主区快照
-5. 切到 `History`
-6. 抓取第三组主区快照
-7. 回到默认 `Overview`
-8. 抓取最终稳定帧
+1. 样式 helper 与 setter 状态清理。
+   覆盖 `apply_compact_style()`、`apply_read_only_style()`、`set_font()`、`set_meta_font()`、`set_palette()`、`set_items()`、`set_current_index()` 对残留 `pressed` 的清理。
+2. touch same-target release 与 cancel。
+   覆盖 `DOWN(A) -> MOVE(B) -> UP(B)` 不提交，以及回到 `A` 后才提交。
+3. 键盘导航与 guard。
+   覆盖 `Right / End / Home / Tab / Enter / Space`，以及 `read_only_mode / !enable` 下的拒绝输入与 `pressed` 清理。
+4. static preview 不变性断言。
+   通过 `pivot_preview_snapshot_t`、`capture_preview_snapshot()` 和 `assert_preview_state_unchanged()` 固定校验 `region_screen / background / items / font / meta_font / on_changed / api / surface_color / border_color / text_color / muted_text_color / accent_color / card_surface_color / item_count / current_index / compact_mode / read_only_mode / pressed_index / alpha / enable / is_focused / is_pressed / padding` 保持不变。
 
 说明：
-- 录制阶段不再切换 `compact` preview，但最终稳定帧前会显式恢复主区默认态。
-- 底部 preview 统一通过 `hcw_pivot_override_static_preview_api()` 吞掉 `touch / key`，只承担静态 reference 对照。
-- 主区真实 touch 和 keyboard 语义仍然保留在控件实现与单测里闭环。
+- 主区真实交互继续保留 `same-target release`、section 切换和键盘导航闭环；`Enter / Space` 仍然 consume 但不触发切换。
+- `read_only_mode / !enable`、样式 helper、setter 和 static preview 路径都统一要求先清理残留 `pressed_index / is_pressed`，再处理后续状态。
+- 底部 `Compact / Read only` preview 统一通过 `hcw_pivot_override_static_preview_api()` 吞掉 `touch / key`，只承担静态 reference 对照，不触发 `on_changed`。
 
-当前 `test.c` 已对齐统一的 `ui_ready + layout_page + request_page_snapshot` 收口模板：保留既有 `PIVOT_DEFAULT_INDEX` 与 `apply_primary_default_state()`，初始化阶段在 root view 挂载前后各重放一次默认态与 preview，`case 0` 和最终稳定帧前的默认态恢复统一走显式布局路径。
+## 8. 录制动作设计
+`egui_port_get_recording_action()` 已收口为静态 preview 工作流：
 
-## 8. 单元测试口径
-`example/HelloUnitTest/test/test_pivot.c` 当前覆盖四部分：
+1. 应用主区默认 `Overview`，同时重放底部 `Compact / Read only` preview 固定状态并抓取首帧，等待 `PIVOT_RECORD_FRAME_WAIT`。
+2. 切到 `Activity`，等待 `PIVOT_RECORD_WAIT`。
+3. 抓取 `Activity` 主区快照，等待 `PIVOT_RECORD_FRAME_WAIT`。
+4. 切到 `History`，等待 `PIVOT_RECORD_WAIT`。
+5. 抓取 `History` 主区快照，等待 `PIVOT_RECORD_FRAME_WAIT`。
+6. 恢复主区默认 `Overview`，等待 `PIVOT_RECORD_WAIT`。
+7. 通过最终抓帧输出稳定的默认态，并继续等待 `PIVOT_RECORD_FINAL_WAIT`。
 
-1. 样式 helper 与 setter 状态清理
-   覆盖 `apply_compact_style()`、`apply_read_only_style()`、`set_font()`、`set_meta_font()`、`set_palette()`、`set_items()`、`set_current_index()` 对残留 `pressed` 的清理。
-2. touch same-target release 与 cancel
-   覆盖 `DOWN(A) -> MOVE(B) -> UP(B)` 不提交，以及回到 `A` 后才提交。
-3. 键盘导航与 guard
-   覆盖 `Right / End / Home / Tab / Enter / Space`，以及 `read_only_mode / !enable` 下的拒绝输入与 pressed 清理。
-4. 静态 preview 不变性断言
-   通过 `pivot_preview_snapshot_t`、`capture_preview_snapshot()` 和 `assert_preview_state_unchanged()` 固定校验：
-   `region_screen / background / items / font / meta_font / on_changed / api / surface_color / border_color / text_color / muted_text_color / accent_color / card_surface_color / item_count / current_index / compact_mode / read_only_mode / pressed_index / alpha / enable / is_focused / is_pressed / padding`
+说明：
+- 录制只导出主区 `Overview / Activity / History` 的状态变化，底部 `Compact / Read only` preview 在整条 reference 轨道里保持静态一致。
+- `request_page_snapshot()` 统一走 `layout_page() + invalidate + recording_request_snapshot()`，保证默认态、两组切换态和最终稳定帧的布局口径一致。
+- `apply_primary_default_state()` 与 `apply_preview_states()` 仅在 `ui_ready` 后触发布局，避免 root view 挂载前后出现布局口径分叉。
+- README 这里按当前 `test.c` 如实保留 `PIVOT_RECORD_WAIT / PIVOT_RECORD_FRAME_WAIT / PIVOT_RECORD_FINAL_WAIT` 三档等待口径。
 
 ## 9. 验收命令
 ```bash
 make all APP=HelloCustomWidgets APP_SUB=navigation/pivot PORT=pc
 
-make clean APP=HelloUnitTest PORT=pc_test
+# 在 X:\ 短路径下执行
 make all APP=HelloUnitTest PORT=pc_test
 X:\output\main.exe
 
@@ -122,47 +127,77 @@ python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub naviga
 python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_navigation_pivot
 ```
 
-## 10. 当前验收结果（2026-04-18）
-- `HelloCustomWidgets` 单控件编译：`PASS`，`make all APP=HelloCustomWidgets APP_SUB=navigation/pivot PORT=pc`
-- `HelloUnitTest`：`PASS`，已在 `X:\` 短路径通过 `make clean APP=HelloUnitTest PORT=pc_test`、`make all APP=HelloUnitTest PORT=pc_test` 和 `X:\output\main.exe`，总计 `845 / 845`，其中 `pivot` suite `4 / 4`
-- `sync_widget_catalog.py`：`PASS`，同步后保持 `106` 个 widgets
-- `touch release semantics`：`PASS`，`custom_audited=12 custom_skipped_allowlist=1`
-- `docs encoding`：`PASS`，`134` 个文档文件编码检查通过
-- `widget catalog check`：`PASS`，`106 widgets: reference=106, showcase=0, deprecated=0`
-- 单控件 runtime：`PASS`，`9 frames captured -> runtime_check_output/HelloCustomWidgets_navigation_pivot/default`
-- navigation 分类 compile/runtime 回归：`PASS`
-  compile `13 / 13`，runtime `13 / 13`
-- wasm 构建：`PASS`，`web/demos/HelloCustomWidgets_navigation_pivot`
-- web smoke：`PASS status=Running canvas=480x480 ratio=0.1581 colors=171`
+## 10. 验收重点
+- 主区与底部双 preview 必须完整可见，不能黑屏、白屏或被裁切。
+- 主区录制必须清晰覆盖默认 `Overview`、`Activity`、`History` 三组状态，最终稳定帧必须回到默认 `Overview`。
+- 主区真实交互仍需保留 `same-target release`、键盘切换和 `read_only / !enable` guard 语义。
+- 底部 `Compact / Read only` preview 必须在全部 runtime 帧里保持静态一致，并持续吞掉 `touch / key`，不能改写 `current_index / compact_mode / read_only_mode`。
+- 样式 helper、setter、guard 和 static preview 都必须统一遵守“先清理残留 `pressed_index / is_pressed` 再处理后续状态”的语义。
+- WASM demo 必须能以 `HelloCustomWidgets_navigation_pivot` 正常加载。
 
-## 11. Runtime 复核结论
-复核目录：`runtime_check_output/HelloCustomWidgets_navigation_pivot/default`
+## 11. 截图复核口径
+- 检查目录：`runtime_check_output/HelloCustomWidgets_navigation_pivot/default`
+- 本轮复核结果：
+  - 共捕获 `9` 帧
+  - 主区唯一状态分组：`[0,1,6,7,8] / [2,3] / [4,5]`
+  - 主区 RGB 差分边界：`(54, 121) - (425, 264)`
+  - 遮罩主区变化边界后，主区外唯一哈希数为 `1`
+  - 以 `y >= 265` 裁切底部 preview 后，preview 区唯一哈希数为 `1`
+  - `frame_0000`、`frame_0001` 与最终稳定帧同组，确认最终稳定帧显式回到默认 `Overview`
 
-- 总帧数：`9`
-- 主区 RGB 差分边界：`(54, 121) - (425, 264)`
-- 遮罩主区变化边界后，主区外唯一哈希数：`1`
-- 按主区边界裁切后，主区唯一状态数：`3`
-- 按 `y >= 265` 裁切底部 preview 区域后，preview 区唯一哈希数：`1`
-
-结论：
-- 主区变化严格收敛在 `pivot` reference 主体，主区外页面 chrome 在整条轨道中保持静态。
-- `9` 帧里主区保持 `3` 组唯一状态，对应 `Overview / Activity / History` 三组主区快照；最终稳定帧已显式回到默认 `Overview`。
-- 底部 `compact / read only` preview 在整条录制轨道中保持静态一致。
-
-## 12. 已知限制
-- 当前只覆盖固定 item 集合，不引入数据源、溢出折叠或滚动联动。
-- header 宽度仍采用轻量估算，不接入真实文本测量。
-- body 只展示摘要卡，不扩展为复杂分页容器。
-- 底部 preview 只承担 reference 对照，不承担交互职责。
-
-## 13. 与现有控件的边界
+## 12. 与现有控件的边界
 - 相比 `tab_strip`：这里补齐 body 区域，不只是 header 切换条。
 - 相比 `selector_bar`：这里表达页内 section 切换，而不只是选择入口。
 - 相比 `flip_view`：这里保留顶部 header 导航，不强调翻页手势。
 - 相比 `tab_view`：这里不绑定页签壳层，也不处理 `close / add`。
 
-## 14. EGUI 适配说明
-- 继续在 custom 层维护轻量 `hcw_pivot`，不修改 `sdk/EmbeddedGUI`。
-- 主区、`compact`、`read only` 复用同一套控件实现，只通过 palette 和 mode 切换表现。
-- setter、guard 和 static preview 都统一走 pressed-state 清理逻辑。
-- `HCW_PIVOT_MAX_ITEMS` 当前固定为 `6`，超出部分会被截断。
+## 13. 本轮保留与删减
+- 保留的主区状态：
+  - `Overview`
+  - `Activity`
+  - `History`
+- 保留的底部对照：
+  - `Compact`
+  - `Read only`
+- 保留的交互：
+  - `same-target release`
+  - 键盘 `Left / Right / Up / Down / Home / End / Tab / Enter / Space`
+  - 主区 section 切换
+- 删减的旧桥接与旧装饰：
+  - `compact_panel / read_only_panel` 包装
+  - preview 轮换
+  - 录制里的 preview 切换桥接
+  - 手势翻页动画
+  - 场景化页面 chrome
+
+## 14. 当前验收结果（2026-04-19）
+- 单控件编译：`PASS`
+  - `make all APP=HelloCustomWidgets APP_SUB=navigation/pivot PORT=pc`
+- `HelloUnitTest`：`日志复核 PASS`
+  - 在 `X:\` 短路径下执行 `make all APP=HelloUnitTest PORT=pc_test`
+  - 本轮沿用已归档 unit 日志复核总计 `845 / 845`，其中 `pivot` suite `4 / 4`
+- catalog / 文档 / 触摸语义：`PASS`
+  - `python scripts/sync_widget_catalog.py`
+  - `python scripts/checks/check_touch_release_semantics.py --scope custom --category navigation`
+  - `python scripts/checks/check_docs_encoding.py`
+  - `python scripts/checks/check_widget_catalog.py`
+  - 触摸语义结果：`custom_audited=12 custom_skipped_allowlist=1`
+  - 文档编码结果：`134 files`
+  - widget catalog 结果：`106 widgets`
+- 单控件 runtime：`PASS`
+  - `python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub navigation/pivot --track reference --timeout 10 --keep-screenshots`
+  - 输出目录：`runtime_check_output/HelloCustomWidgets_navigation_pivot/default`
+  - 共捕获 `9` 帧
+- navigation 分类 compile/runtime 回归：`PASS`
+  - `python scripts/code_compile_check.py --custom-widgets --category navigation --bits64`
+  - `python scripts/code_runtime_check.py --app HelloCustomWidgets --category navigation --track reference --bits64`
+  - navigation `13 / 13` 全部通过
+- web 链路：`PASS`
+  - `python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub navigation/pivot`
+  - `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_navigation_pivot`
+  - smoke 结果：`status=Running canvas=480x480 ratio=0.1581 colors=171`
+- 截图复核结论：
+  - 主区覆盖默认 `Overview`、`Activity`、`History`
+  - 最终稳定帧显式回到默认 `Overview`
+  - 主区 RGB 差分边界收敛到 `(54, 121) - (425, 264)`
+  - 遮罩主区变化边界后主区外保持单哈希，底部 `Compact / Read only` preview 以 `y >= 265` 裁切后全程保持单哈希静态
