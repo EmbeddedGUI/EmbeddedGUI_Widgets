@@ -1,99 +1,107 @@
-# grid_view 设计说明
+# GridView 自定义控件设计说明
 
 ## 参考来源
-- 参考设计系统：`Fluent 2`
+- 参考设计体系：`Fluent 2`
 - 官方语义参考：`WinUI GridView`
-- 对应组件名：`GridView`
-- 本次保留语义：`assets gallery / template board / team board / compact / read only / selection focus`
-- 本次删除内容：`preview` 点击清主控件焦点、第二条 `compact` preview 轨道、录制里的 `preview dismiss` 收尾
-- EGUI 适配说明：继续在 custom 层维护轻量 `hcw_grid_view` 封装，本轮只收口 `reference` 页面结构、录制轨道和静态 preview 语义，不修改 `sdk/EmbeddedGUI`
+- 对应组件：`GridView`
+- 当前保留形态：`assets gallery`、`template board`、`team board`、`compact`、`read only`
+- 当前保留交互：主区保留 tile 集合导航、same-target release、`Left / Right / Up / Down / Home / End / Tab / Enter / Space` 键盘闭环与静态 preview 对照
+- 当前移除内容：页面级 `guide`、preview 清主区焦点桥接、第二条 `compact` preview 轨道、录制里的 `preview dismiss` 收尾
+- EGUI 适配说明：继续使用当前目录下的 `hcw_grid_view` custom view，在不修改 `sdk/EmbeddedGUI` 的前提下完成 reference 页面、README、录制轨道和单测收口
 
-## 1. 为什么需要这个控件？
-`grid_view` 用来表达“同构内容按多列磁贴方式浏览，并保留当前项焦点、选择和激活语义”的标准集合视图。它适合素材墙、模板库、人员卡片墙、设备概览和资源挑选这类需要快速扫视多项内容的场景。
+## 1. 为什么需要这个控件
+`grid_view` 用来表达“同构内容按多列磁贴方式浏览，并保留当前项焦点、选择和激活语义”的标准集合视图，适合素材墙、模板库、人员卡片墙、设备概览和资源挑选这类需要快速扫视多项内容的场景。
+
+仓库里已有 `items_repeater`、`uniform_grid`、`data_list_panel` 和 `wrap_panel`，但仍缺少一个能稳定承接 `GridView` 集合导航与激活语义、带独立 reference 页面、README、单测与 web 链路的控件。
 
 ## 2. 为什么现有控件不够用
-- `data_list_panel` 更偏单列摘要列表，不适合表达多列磁贴集合。
-- `items_repeater` 是布局和模板复用基础件，本身不承担 `GridView` 的当前项与激活语义。
-- `wrap_panel`、`uniform_grid`、`virtualizing_wrap_panel` 更偏容器，不负责集合项焦点、选择和输入闭环。
-- 本仓库需要一个和 `items_repeater / uniform_grid / card_control / card_action / card_expander` 对齐的 `GridView` reference 页面、单测和 web 验证入口。
+- `items_repeater` 更偏模板复用基础件，本身不承担 `GridView` 的当前项与激活语义。
+- `uniform_grid` 更偏固定网格容器，不负责集合项焦点和输入闭环。
+- `wrap_panel`、`virtualizing_wrap_panel` 更偏布局容器，不负责 snapshot 与当前项切换。
+- `data_list_panel` 更偏单列摘要列表，不适合表达多列磁贴集合浏览。
 
-## 3. 目标场景与页面结构
-- 页面只保留标题、一个主 `grid_view`、底部两个静态 preview。
-- 主控件展示三组 snapshot：
-  - `Assets gallery`
-  - `Template board`
-  - `Team board`
-- 底部左侧是 `compact` 静态 preview，只负责展示紧凑密度。
-- 底部右侧是 `read only` 静态 preview，只负责展示只读弱化状态。
-- 两个 preview 统一通过 `hcw_grid_view_override_static_preview_api()` 收口：
-  - 吞掉新的 `touch / key`
-  - 只清理残留 `pressed`
-  - 不改 `current_snapshot / current_item / layout_mode`
-  - 不触发 `on_action`
+## 3. 当前页面结构
+- 标题：`Grid View`
+- 主区：1 个保留真实集合导航语义的 `grid_view`
+- 底部：一行并排的两个静态 preview
+- 左侧 preview：`compact`，固定显示 `Compact grid`
+- 右侧 preview：`read only`，固定显示 `Read only grid`
 
-目标目录：`example/HelloCustomWidgets/layout/grid_view/`
+目录：
+- `example/HelloCustomWidgets/layout/grid_view/`
 
-## 4. 视觉与布局规格
+## 4. 主区 reference 快照
+主区录制轨道只保留 3 组程序化快照，最终稳定帧显式回到默认态；底部 preview 在整条轨道中始终固定，不再参与轮换：
+
+1. 默认态
+   `Assets gallery`
+2. 快照 2
+   `Template board`
+3. 快照 3
+   `Team board`
+4. 最终稳定帧
+   回到默认 `Assets gallery`
+
+底部 preview 在整条轨道中始终固定：
+
+1. `compact`
+   `Compact grid`
+2. `read only`
+   `Read only grid`
+
+## 5. 视觉与布局规格
+- 画布：`480 x 480`
 - 根布局：`224 x 288`
 - 主控件：`196 x 148`
-- 底部对照行：`216 x 86`
-- `compact` preview：`104 x 86`
-- `read only` preview：`104 x 86`
-- 页面结构：标题 -> 主 `grid_view` -> `compact / read only`
-- 样式约束：
-  - 维持浅色 Fluent 容器、低噪音边框和轻量 tone 区分。
-  - 主区保留标题、摘要、磁贴区、当前项高亮和轻量 footer。
-  - preview 固定为静态 reference 对照，不再承担焦点桥接或额外轨道切换职责。
+- 底部 preview 行：`216 x 86`
+- 单个 preview：`104 x 86`
+- 页面结构：标题 -> 主 `grid_view` -> 底部 `compact / read only`
+- 风格约束：浅色 page panel、低噪音描边、轻量 title 与 helper 文案层级，以及稳定的 tile 密度和当前项高亮，不回退到旧 demo 的 guide 与场景包装
 
-## 5. 控件清单
+## 6. 状态矩阵
+| 状态 | 主控件 | Compact preview | Read only preview |
+| --- | --- | --- | --- |
+| 默认显示 | `Assets gallery` | `Compact grid` | `Read only grid` |
+| 快照 2 | `Template board` | 保持不变 | 保持不变 |
+| 快照 3 | `Team board` | 保持不变 | 保持不变 |
+| 录制最终稳定帧 | 回到 `Assets gallery` | 保持不变 | 保持不变 |
+| same-target release / 键盘集合导航 | 是 | 否 | 否 |
+| 静态 preview 吞掉 `touch / key` 且不改状态 | 否 | 是 | 是 |
 
-| 变量名 | 类型 | 尺寸 (W x H) | 初始状态 | 用途 |
-| --- | --- | ---: | --- | --- |
-| `grid_view_primary` | `hcw_grid_view_t` | `196 x 148` | `Assets gallery` | 主 `GridView` |
-| `grid_view_compact` | `hcw_grid_view_t` | `104 x 86` | `Compact grid` | 紧凑静态 preview |
-| `grid_view_read_only` | `hcw_grid_view_t` | `104 x 86` | `Read only grid` | 只读静态 preview |
-| `primary_snapshots` | `hcw_grid_view_snapshot_t[3]` | - | `Assets / Template / Team` | 主状态轨道 |
+## 7. 录制动作设计
+`egui_port_get_recording_action()` 已收口为静态 preview 工作流：
 
-## 6. 状态覆盖矩阵
+1. 应用默认主区快照和底部 preview 固定状态
+2. 抓取首帧
+3. 切到 `Template board`
+4. 抓取第二组主区快照
+5. 切到 `Team board`
+6. 抓取第三组主区快照
+7. 恢复默认主区和底部 preview 固定状态
+8. 等待稳定后抓取最终帧
 
-| 区域 / 轨道 | 状态 | 说明 |
-| --- | --- | --- |
-| 主控件 | `Assets gallery` | 默认状态，展示标准 `GridView` 外壳与焦点项 |
-| 主控件 | `Template board` | 第二组 snapshot，验证同壳体下的密度变化 |
-| 主控件 | `Team board` | 第三组 snapshot，验证不同磁贴元信息仍保持同一集合语义 |
-| `compact` | `Compact grid` | 固定静态对照，只验证紧凑尺寸下的磁贴密度 |
-| `read only` | `Read only grid` | 固定静态对照，只验证只读弱化与输入屏蔽 |
+说明：
+- 主区仍保留真实 `current_snapshot / current_item / layout_mode`、same-target release 和键盘集合导航，供运行时手动交互。
+- runtime 录制阶段不再真实发送主区点击或底部 preview 输入。
+- 底部 preview 统一通过 `hcw_grid_view_override_static_preview_api()` 吞掉 `touch / key`。
+- `request_page_snapshot()` 会统一走 `layout + invalidate + recording_request_snapshot()`，保证 `3` 组主区快照和最终稳定帧口径一致。
 
-## 7. 交互语义与单测要求
-- 主控件保留真实输入闭环：
-  - `Left / Right / Up / Down / Home / End / Tab` 负责集合导航。
-  - `Enter / Space` 激活当前项并触发 listener。
-  - 触摸保持 same-target release：只有同一项上的 `DOWN -> UP` 才提交。
-- `set_snapshots()`、`set_current_snapshot()`、`set_current_item()`、`set_font()`、`set_meta_font()`、`set_palette()`、`set_compact_mode()`、`set_read_only_mode()` 都必须先清理残留 `pressed`。
-- `read only` 和 `!enable` 期间：
-  - `touch / dispatch_key_event / handle_navigation_key` 都不能改变状态
-  - `current_snapshot / current_item / layout_mode` 保持不变
-  - 不触发 listener
-- static preview 期间：
-  - 只清理残留 `pressed`
-  - 保持 `current_snapshot / current_item / layout_mode / compact_mode / read_only_mode` 不变
-  - 不触发 listener
+当前 `test.c` 已对齐统一的 `ui_ready + layout_page + request_page_snapshot` 收口模板：初始化阶段在 root view 挂载前后各重放一次默认态与 preview，最终稳定帧继续走显式布局路径。
 
-## 8. 录制动作设计
-`egui_port_get_recording_action()` 的录制顺序如下：
-1. 重置主控件和底部 `compact / read only` preview，输出默认 `Assets gallery`
-2. 切到 `Template board`，输出第二组主状态
-3. 切到 `Team board`，输出第三组主状态
-4. 恢复默认主状态并输出最终稳定帧
+## 8. 单元测试口径
+`example/HelloUnitTest/test/test_grid_view.inc` 当前覆盖 `7` 条用例，分为两部分：
 
-录制只导出主控件的状态变化。底部两个 preview 在整条 `reference` 轨道里保持静态一致，不再承担第二条 `compact` 轨道、preview dismiss 或清焦点职责。
-当前 `test.c` 已对齐统一的 `ui_ready + layout_page + request_page_snapshot` 模板：初始化、主区切换、preview 重放和最终抓帧都走同一条显式布局路径，不再依赖旧的隐式布局时序。
+1. 主控件交互与状态守卫
+   覆盖 `set_snapshots()` clamp/default、setter 清理 pressed、区域激活 listener、same-target touch release、`Home / End / Tab / Enter` 键盘导航，以及 `read only / !enable` guard。
+2. 静态 preview 输入抑制
+   通过单独 preview widget 固定校验 `touch / key / navigation` 输入被吞掉后，`current_snapshot / current_item / layout_mode / compact_mode / read_only_mode` 保持不变，且 `action_count == 0`、`pressed_item` 与 `is_pressed` 会被清理。
 
-## 9. 编译、单测、运行时与文档检查
+## 9. 验收命令
 ```bash
 make all APP=HelloCustomWidgets APP_SUB=layout/grid_view PORT=pc
 
 # 在 X:\ 短路径下执行
+make clean APP=HelloUnitTest PORT=pc_test
 make all APP=HelloUnitTest PORT=pc_test
 X:\output\main.exe
 
@@ -109,17 +117,20 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
 ```
 
 ## 10. 验收重点
-- 主控件必须能直接看出三组 `GridView` 主状态变化。
-- `same-target release / keyboard activation / read only / !enable / static preview` 全部通过单测。
-- runtime 截图里底部 preview 必须在全程保持静态一致。
-- README、demo 录制轨道、单测入口和验收命令链必须保持一致。
+- 主区与底部双 preview 必须完整可见，不能黑屏、白屏或被裁切。
+- 主区录制只允许出现 `Assets gallery`、`Template board`、`Team board` 3 组可识别状态，最终稳定帧必须回到默认态。
+- 主区真实交互仍需保留集合导航、same-target release 与激活 listener 语义。
+- 底部 `compact / read only` preview 必须在全部 runtime 帧里保持静态一致。
+- 静态 preview 收到输入后，不能改写 `current_snapshot / current_item / layout_mode / compact_mode / read_only_mode / region_screen / palette`。
 
 ## 11. 截图复核口径
 - 检查目录：`runtime_check_output/HelloCustomWidgets_layout_grid_view/default`
-- 复核目标：
-  - 主区存在 3 组可辨识唯一状态
-  - 底部 preview 区域在全程保持单一静态哈希
-  - 变化边界只出现在主区，不扩散到 preview 区
+- 本轮复核结果：
+  - 共捕获 `9` 帧
+  - 全帧共出现 `3` 组唯一状态，主区哈希分组为 `[0,1,6,7,8] / [2,3] / [4,5]`
+  - 主区 RGB 差分边界收敛到 `(56, 62) - (403, 264)`
+  - 遮罩主区变化边界后，主区外区域唯一哈希数为 `1`
+  - 以 `y >= 265` 裁切底部 preview 后，preview 区唯一哈希数为 `1`
 
 ## 12. 与现有控件的边界
 - 相比 `items_repeater`：这里保留集合导航和激活语义，不只是模板重复器。
@@ -128,26 +139,24 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
 - 相比 `wrap_panel / virtualizing_wrap_panel`：这里是 reference 级集合控件，不是纯布局器。
 
 ## 13. 本次保留的核心状态与删减项
-- 保留的核心状态：
-  - `assets gallery`
-  - `template board`
-  - `team board`
+- 本次保留状态：
+  - `Assets gallery`
+  - `Template board`
+  - `Team board`
   - `compact`
   - `read only`
-  - `selection focus`
-- 保留的交互：
-  - same-target touch release
-  - 键盘 `Left / Right / Up / Down / Home / End / Tab / Enter / Space`
-- 删除的旧桥接与轨道：
-  - preview 点击清主控件焦点
+- 删减的装饰或桥接：
+  - 页面级 `guide`
+  - preview 清主区焦点桥接
   - 第二条 `compact` preview 轨道
-  - 录制里的 `preview dismiss` 收尾动作
+  - 录制里的 `preview dismiss` 收尾
 
-## 14. 当前验收结果（2026-04-18）
+## 14. 当前验收结果（2026-04-19）
 - 单控件编译：`PASS`
   - `make all APP=HelloCustomWidgets APP_SUB=layout/grid_view PORT=pc`
 - `HelloUnitTest`：`PASS`
-  - `make all APP=HelloUnitTest PORT=pc_test`
+  - 在 `X:\` 短路径下执行 `make clean APP=HelloUnitTest PORT=pc_test`
+  - 在 `X:\` 短路径下执行 `make all APP=HelloUnitTest PORT=pc_test`
   - `X:\output\main.exe`
   - 总计 `845 / 845`，其中 `grid_view` suite `7 / 7`
 - catalog / 文档 / 触摸语义：`PASS`
@@ -160,7 +169,7 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
   - widget catalog 结果：`106 widgets`
 - 单控件 runtime：`PASS`
   - `python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub layout/grid_view --track reference --timeout 10 --keep-screenshots`
-  - `9 frames captured -> runtime_check_output/HelloCustomWidgets_layout_grid_view/default`
+  - 输出目录：`runtime_check_output/HelloCustomWidgets_layout_grid_view/default`
 - layout 分类 compile/runtime 回归：`PASS`
   - `python scripts/code_compile_check.py --custom-widgets --category layout --bits64`
   - `python scripts/code_runtime_check.py --app HelloCustomWidgets --category layout --track reference --bits64`
@@ -171,7 +180,8 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
   - smoke 结果：`status=Running canvas=480x480 ratio=0.2196 colors=316`
 - 截图复核结论：
   - 共捕获 `9` 帧
-  - 全帧共出现 `3` 组唯一状态，主区哈希分组为 `[0,1,6,7,8]`、`[2,3]`、`[4,5]`
-  - 主区变化边界收敛到 `(56, 62) - (403, 264)`
-  - 按 `y >= 265` 裁切底部 preview 后保持单一哈希，确认 `compact / read only` preview 全程静态
-  - 结论：主区覆盖 `Assets gallery / Template board / Team board` 三组 reference 状态，最终稳定帧已显式回到默认快照
+  - 全帧共出现 `3` 组唯一状态，主区哈希分组为 `[0,1,6,7,8] / [2,3] / [4,5]`
+  - 主区 RGB 差分边界为 `(56, 62) - (403, 264)`
+  - 遮罩主区边界后，主区外唯一哈希数为 `1`
+  - 以 `y >= 265` 裁切底部 preview 后，preview 区唯一哈希数为 `1`
+  - 结论：主区覆盖默认 `Assets gallery`、`Template board` 与 `Team board` 3 组 reference 快照，最终稳定帧已回到默认 `Assets gallery`，底部 `compact / read only` preview 全程静态
