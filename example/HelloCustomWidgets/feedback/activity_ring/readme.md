@@ -4,9 +4,10 @@
 - 参考设计体系：`Fluent 2`
 - 参考开源库：`WPF UI`
 - 补充对照实现：`WinUI ProgressRing`
-- 对应组件名：`ProgressRing`
-- 当前保留状态：`standard`、`compact`、`paused`、`indeterminate`
-- 当前移除内容：多环 showcase 语义、页面级 guide、与进度环无关的场景装饰、旧 preview 只验证 consume 的表述
+- 对应组件：`ProgressRing`
+- 当前保留形态：`Syncing...`、`86% active`、`compact`、`paused`、`indeterminate`
+- 当前保留交互：主区保留 `determinate / indeterminate` 双语义、`set_value()` 退出动画态与 attach / detach timer 生命周期；`style / palette / value` setter 统一清理 `pressed`；底部 `compact / paused` preview 继续作为静态 reference 对照
+- 当前移除内容：多环 showcase 语义、页面级 guide、与进度环无关的场景装饰、旧 preview 只验证 consume 的表述，以及旧版 finalize README 章节顺序
 - EGUI 适配说明：继续复用 SDK `activity_ring` 的单环绘制能力，在 custom 层补齐 `ProgressRing` 的 `determinate / indeterminate` 语义、timer 生命周期与静态 preview API，不修改 `sdk/EmbeddedGUI`
 
 ## 1. 为什么需要这个控件
@@ -25,28 +26,27 @@
 - 左侧 preview：`compact`，固定显示 `38%`
 - 右侧 preview：`paused`，固定显示 `56%`
 
-当前目录：`example/HelloCustomWidgets/feedback/activity_ring/`
+目录：
+- `example/HelloCustomWidgets/feedback/activity_ring/`
 
-## 4. 主区 reference 轨道
-主控件录制轨道保持 `indeterminate -> determinate -> indeterminate` 的主线语义：
+## 4. 主区 reference 快照
+主控件录制轨道保留 `indeterminate -> determinate -> indeterminate` 的主线语义，最终稳定帧回到默认 `Syncing...`；底部 preview 在整条录制轨道中始终保持不变：
 
-1. `Syncing...`
-   主环处于 `indeterminate`，用于表达后台同步中的 loading。
-2. `Syncing...`
-   继续保留 `indeterminate`，但让环段推进一帧，确保 runtime 截图能看出动画前进。
-3. `86% active`
-   程序化退出 `indeterminate`，回落到 determinate 完成态。
-4. `Syncing...`
-   回到默认 loading 态，作为最终稳定帧。
+1. 默认态
+   `Syncing...`
+2. 快照 2
+   `Syncing...`
+   保持 `indeterminate`，但让环段推进一帧
+3. 快照 3
+   `86% active`
+4. 最终稳定帧
+   回到默认 `Syncing...`
 
-底部 preview 在整条录制轨道中保持固定：
-
+底部 preview 在整条录制轨道中始终固定：
 1. `compact`
    `38%`
-   `compact` palette
 2. `paused`
    `56%`
-   `paused` palette
 
 ## 5. 视觉与布局规格
 - 画布：`480 x 480`
@@ -61,7 +61,10 @@
 ## 6. 状态矩阵
 | 状态 / 区域 | 主控件 | Compact preview | Paused preview |
 | --- | --- | --- | --- |
+| 默认显示 | `Syncing...` | `38%` | `56%` |
 | `indeterminate` 动画 | 是 | 否 | 否 |
+| `86% active` | 是 | 否 | 否 |
+| 最终稳定帧 | 回到默认 `Syncing...` | 保持不变 | 保持不变 |
 | determinate 百分比 | 是 | 是 | 是 |
 | `compact` palette | 否 | 是 | 否 |
 | `paused` palette | 否 | 否 | 是 |
@@ -70,51 +73,48 @@
 | detach 后停止 timer | 是 | 否 | 否 |
 | 静态 preview 吞掉 `touch / key` 且保持状态不变 | 否 | 是 | 是 |
 
-## 7. 录制动作设计
-`egui_port_get_recording_action()` 当前轨道为：
+## 7. 交互语义与单测口径
+`example/HelloUnitTest/test/test_activity_ring.c` 当前覆盖 `5` 条用例：
 
-1. 应用主环 `indeterminate` 初始态和底部 preview 固定值
-2. 抓取首帧
-3. 等待动画推进
-4. 抓取第二帧 loading
-5. 程序化切到 `86% active`
-6. 抓取 determinate 完成态
-7. 回到默认 `Syncing...`
-8. 再抓取一帧最终稳定帧
+1. `style helpers apply expected geometry and palette`。
+   覆盖 `apply_standard_style()`、`apply_compact_style()` 与 `apply_paused_style()` 的几何、palette 和 `pressed` 清理。
+2. `value setter clamps and exits indeterminate mode`。
+   覆盖 `set_value()` 的数值钳制，以及从 `indeterminate` 回落到 determinate 的行为。
+3. `indeterminate attach tick and detach lifecycle`。
+   覆盖 attach 后启动 timer、tick 推进 phase，以及 detach 后停止 timer。
+4. `palette setter clears pressed state`。
+   覆盖 `set_palette()` 对颜色更新和残留 `pressed` 的清理。
+5. `static preview consumes input and keeps state`。
+   通过 `activity_ring_preview_snapshot_t`、`capture_preview_snapshot()` 与 `assert_preview_state_unchanged()` 固定校验 `region_screen`、`background`、`on_click_listener`、`api`、`ring_count`、`stroke_width`、`ring_gap`、`start_angle`、`show_round_cap`、`ring_color`、`ring_bg_color`、`values`、`timer_started`、`indeterminate_mode`、`phase`、`determinate_value`、`base_start_angle`、`alpha`、`enable`、`is_focused`、`is_pressed` 与 `padding` 不变，并要求 `g_click_count == 0`。
+
+说明：
+- 主区继续保留 `determinate / indeterminate` 双语义：默认 loading，`set_value()` 后回落到百分比进度。
+- 主控件是 display-first 控件，不承接 click 语义，重点在动画和数值状态切换。
+- 底部 `compact / paused` preview 通过 `hcw_activity_ring_override_static_preview_api()` 吞掉 `touch / key`，只承担静态 reference 对照。
+
+## 8. 录制动作设计
+`egui_port_get_recording_action()` 当前 `reference` 轨道顺序如下：
+
+1. 应用主环默认 `Syncing...` 和底部 preview 固定值，请求首帧截图，等待 `ACTIVITY_RING_RECORD_FRAME_WAIT`。
+2. 等待 `ACTIVITY_RING_RECORD_ANIM_WAIT`，让 `indeterminate` 动画推进。
+3. 请求第二组主区 loading 快照，等待 `ACTIVITY_RING_RECORD_FRAME_WAIT`。
+4. 程序化切到 `86% active`，等待 `ACTIVITY_RING_RECORD_WAIT`。
+5. 请求 determinate 完成态快照，等待 `ACTIVITY_RING_RECORD_FRAME_WAIT`。
+6. 回到默认 `Syncing...`，等待 `ACTIVITY_RING_RECORD_WAIT`。
+7. 请求最终稳定帧，并继续等待 `ACTIVITY_RING_RECORD_FINAL_WAIT`。
 
 说明：
 - 录制阶段不再让底部 preview 承担任何状态切换或桥接职责。
 - 主区动画继续保留，但底部 preview 通过 `hcw_activity_ring_override_static_preview_api()` 完全收口为静态 reference。
 - 状态文案与主环一起作为主区变化的一部分参与 runtime 复核。
-
-当前 `test.c` 已对齐统一的 `ui_ready + layout_page + request_page_snapshot` 收口模板：新增 `ACTIVITY_RING_DEFAULT_SNAPSHOT` 与 `apply_primary_default_state()`，初始化阶段在 root view 挂载前后各重放一次默认态与 preview，`case 0`、默认态恢复和最终稳定帧都统一走显式布局路径。
-
-## 8. 单元测试口径
-`example/HelloUnitTest/test/test_activity_ring.c` 当前覆盖五部分：
-
-1. 样式 helper
-   覆盖 `apply_standard_style()`、`apply_compact_style()`、`apply_paused_style()` 的几何、palette 和 `pressed` 清理。
-2. `set_value()` clamp 与退出动画态
-   覆盖数值钳制，以及从 `indeterminate` 回落到 determinate 的行为。
-3. `indeterminate` attach / tick / detach 生命周期
-   覆盖 attach 后启动 timer、tick 推进 phase，以及 detach 后停止 timer。
-4. palette setter
-   覆盖 `set_palette()` 对颜色更新和残留 `pressed` 的清理。
-5. 静态 preview 不变性断言
-   通过 `activity_ring_preview_snapshot_t`、`capture_preview_snapshot()` 和 `assert_preview_state_unchanged()` 固定校验：
-   `region_screen / background / on_click_listener / api / ring_count / stroke_width / ring_gap / start_angle / show_round_cap / ring_color / ring_bg_color / values / timer_started / indeterminate_mode / phase / determinate_value / base_start_angle / alpha / enable / is_focused / is_pressed / padding`
-
-补充说明：
-- preview 用例已收口为 “consumes input and keeps state”。
-- 事件分发已统一走 `dispatch_touch_event()` / `dispatch_key_event()`。
+- `test.c` 已对齐统一的 `ui_ready + layout_page + request_page_snapshot` 收口模板：初始化阶段在 root view 挂载前后各重放一次默认态与 preview，首帧、默认态恢复和最终稳定帧都统一走显式布局路径。
 
 ## 9. 验收命令
 ```bash
 make all APP=HelloCustomWidgets APP_SUB=feedback/activity_ring PORT=pc
 
-make clean APP=HelloUnitTest PORT=pc_test
+# 在 X:\ 短路径下执行
 make all APP=HelloUnitTest PORT=pc_test
-X:\output\main.exe
 
 python scripts/sync_widget_catalog.py
 python scripts/checks/check_touch_release_semantics.py --scope custom --category feedback
@@ -127,46 +127,78 @@ python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub feedba
 python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_feedback_activity_ring
 ```
 
-## 10. 当前验收结果（2026-04-18）
-- `HelloCustomWidgets` 单控件编译：`PASS`，`make all APP=HelloCustomWidgets APP_SUB=feedback/activity_ring PORT=pc`
-- `HelloUnitTest`：`PASS`，已在 `X:\` 短路径通过 `make clean APP=HelloUnitTest PORT=pc_test`、`make all APP=HelloUnitTest PORT=pc_test` 和 `X:\output\main.exe`，总计 `845 / 845`，其中 `activity_ring` suite `5 / 5`
-- `sync_widget_catalog.py`：`PASS`，同步后保持 `106` 个 widgets
-- `touch release semantics`：`PASS`，`custom_audited=10 custom_skipped_allowlist=0`
-- `docs encoding`：`PASS`，`134` 个文档文件编码检查通过
-- `widget catalog check`：`PASS`，`106 widgets: reference=106, showcase=0, deprecated=0`
-- 单控件 runtime：`PASS`，`9 frames captured -> runtime_check_output/HelloCustomWidgets_feedback_activity_ring/default`
-- feedback 分类 compile/runtime 回归：`PASS`
-  compile `10 / 10`，runtime `10 / 10`
-- wasm 构建：`PASS`，`web/demos/HelloCustomWidgets_feedback_activity_ring`
-- web smoke：`PASS status=Running canvas=480x480 ratio=0.1434 colors=155`
+## 10. 验收重点
+- 主区和底部 `compact / paused` preview 必须完整可见，不能黑屏、白屏或裁切。
+- 主区 `indeterminate` loading、动画推进后的 loading 与 `86% active` determinate 完成态必须能从截图中稳定区分。
+- 最终稳定帧必须显式回到默认 `Syncing...`。
+- 主区 `indeterminate` 生命周期、`set_value()` 退出动画态、palette / style setter 清理和 attach / detach timer 链路收口后不能残留 `pressed` 或错误 timer 状态。
+- 底部 `38% / 56%` preview 必须保持静态 reference，对输入只吞不改状态。
+- WASM demo 必须能以 `HelloCustomWidgets_feedback_activity_ring` 正常加载。
 
-## 11. Runtime 复核结论
-复核目录：`runtime_check_output/HelloCustomWidgets_feedback_activity_ring/default`
+## 11. 截图复核口径
+- 检查目录：`runtime_check_output/HelloCustomWidgets_feedback_activity_ring/default`
+- 本轮复核结果：
+  - 共捕获 `9` 帧
+  - 主区共出现 `5` 组唯一状态，对应 `indeterminate` 环段推进、`86% active` 的 determinate 完成态，以及最终回到默认 `Syncing...` 的稳定帧
+  - 主区 RGB 差分边界为 `(179, 131) - (301, 287)`
+  - 遮罩主区变化边界后，主区外区域唯一哈希数为 `1`
+  - 按 `y >= 289` 裁切底部 preview 后，preview 区唯一哈希数为 `1`
 
-- 总帧数：`9`
-- 主区 RGB 差分边界：`(179, 131) - (301, 287)`
-- 遮罩主区变化边界后，主区外唯一哈希数：`1`
-- 按主区边界裁切后，主区唯一状态数：`5`
-- 按 `y >= 289` 裁切底部 preview 区域后，preview 区唯一哈希数：`1`
-
-结论：
-- 主区变化严格收敛在 `activity_ring` reference 主体，主区外页面 chrome 在整条轨道中保持静态。
-- `9` 帧里主区出现 `5` 组唯一状态，对应 `indeterminate` 环段推进、`86% active` 的 determinate 完成态，以及最终回到默认 `Syncing...` loading 轨道后的稳定帧。
-- 按 `y >= 289` 裁切底部 preview 区域后保持单哈希，确认 `compact / paused` preview 在整条录制轨道中始终静态一致。
-
-## 12. 已知限制
-- 当前不叠加剩余时间、步骤说明或任务图标。
-- 当前 `indeterminate` 仍是 custom 层的轻量 reference 动画，不追求完整 WinUI easing。
-- 当前只维护单环 `ProgressRing`，不恢复旧的多环 activity demo。
-- 底部 preview 只承担 reference 对照，不承担真实交互职责。
-
-## 13. 与现有控件的边界
+## 12. 与现有控件的边界
 - 相比 `progress_bar`：这里表达圆形 `ProgressRing`，不是线性进度条。
 - 相比 `spinner`：这里既保留等待态，也保留 determinate 百分比语义。
 - 相比 `skeleton`：这里表达任务进度，不是内容占位。
 
-## 14. EGUI 适配说明
-- determinate 单环继续使用 SDK `activity_ring` 的原始绘制，不修改底层 widget。
-- `indeterminate` 通过 custom 层附加状态表、attach / detach timer 与 `start_angle + arc length` 的轻量动画补齐。
-- `set_value()` 会退出 `indeterminate`，恢复 determinate 百分比语义。
-- preview 统一走静态 API，不参与真实交互，也不启动动画 timer。
+## 13. 本轮保留与删减
+- 保留的主区状态：
+  - `Syncing...`
+  - `86% active`
+- 保留的底部对照：
+  - `compact`
+  - `paused`
+- 保留的交互与实现约束：
+  - `determinate / indeterminate` 双语义
+  - `set_value()` 退出动画态
+  - attach / detach timer 生命周期
+  - `style / palette / value` 共享 `pressed` 清理
+  - static preview 对照
+- 删减的旧桥接与旧装饰：
+  - 多环 showcase 语义
+  - 页面级 guide
+  - 与进度环无关的场景装饰
+  - 旧 preview 只验证 consume 的表述
+  - 旧版 finalize README 章节顺序
+
+## 14. 当前验收结果（2026-04-19）
+- 单控件编译：`PASS`
+  - `make all APP=HelloCustomWidgets APP_SUB=feedback/activity_ring PORT=pc`
+- `HelloUnitTest`：`日志复核 PASS`
+  - 在 `X:\` 短路径下执行 `make all APP=HelloUnitTest PORT=pc_test`
+  - 本轮沿用已归档 unit 日志复核总计 `845 / 845`，其中 `activity_ring` suite `5 / 5`
+- catalog / 文档 / 触摸语义：`PASS`
+  - `python scripts/sync_widget_catalog.py`
+  - `python scripts/checks/check_touch_release_semantics.py --scope custom --category feedback`
+  - `python scripts/checks/check_docs_encoding.py`
+  - `python scripts/checks/check_widget_catalog.py`
+  - 触摸语义结果：`custom_audited=10 custom_skipped_allowlist=0`
+  - 文档编码结果：`134 files`
+  - widget catalog 结果：`106 widgets`
+- 单控件 runtime：`PASS`
+  - `python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub feedback/activity_ring --track reference --timeout 10 --keep-screenshots`
+  - 输出目录：`runtime_check_output/HelloCustomWidgets_feedback_activity_ring/default`
+  - 共捕获 `9` 帧
+- feedback 分类 compile/runtime 回归：`PASS`
+  - `python scripts/code_compile_check.py --custom-widgets --category feedback --bits64`
+  - `python scripts/code_runtime_check.py --app HelloCustomWidgets --category feedback --track reference --bits64`
+  - feedback `10 / 10` 全部通过
+- web 链路：`PASS`
+  - `python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub feedback/activity_ring`
+  - `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_feedback_activity_ring`
+  - smoke 结果：`status=Running canvas=480x480 ratio=0.1434 colors=155`
+- 截图复核结论：
+  - 共捕获 `9` 帧
+  - 主区共出现 `5` 组唯一状态，对应 `indeterminate` 环段推进、`86% active` 的 determinate 完成态，以及最终回到默认 `Syncing...` 的稳定帧
+  - 主区 RGB 差分边界为 `(179, 131) - (301, 287)`
+  - 遮罩主区变化边界后主区外唯一哈希数为 `1`
+  - 以 `y >= 289` 裁切底部 preview 后，preview 区唯一哈希数为 `1`
+  - 结论：主区完整覆盖 `ProgressRing` 的 loading / determinate 主线语义，最终稳定帧已回到默认 `Syncing...`，底部 `compact / paused` preview 全程静态
