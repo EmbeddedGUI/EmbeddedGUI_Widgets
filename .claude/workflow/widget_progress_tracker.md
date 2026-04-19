@@ -32,7 +32,7 @@
 
 ## 当前进行中
 
-- `暂无`
+- 暂无
 
 ## 当前保留的 Reference 主线控件
 
@@ -159,6 +159,11 @@
 
 ## 最近完成的收口动作
 
+- `2026-04-19`
+  - 再次收口 `layout/settings_panel` reference 控件：在不修改 `sdk/EmbeddedGUI`、不改动既有示例实现和单测逻辑的前提下，把 README 从旧版 finalize 章节结构继续收口到最新模板口径，继续保留主区默认 `Workspace settings`、`Backup and alerts`、`Release controls`、`Account review` 这条 reference 轨道；底部 `Compact / Read only` preview 继续保持静态 reference 对照。
+  - `example/HelloCustomWidgets/layout/settings_panel/test.c` 与 `example/HelloUnitTest/test/test_settings_panel.c` 已保持统一 finalize 模板，无需再改录制轨道或交互实现；`example/HelloCustomWidgets/layout/settings_panel/readme.md` 已按本轮真实 compile / unit / runtime / web / 截图复核结果刷新说明，并把 `## 14. 当前验收结果` 更新为 `2026-04-19` 口径。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=layout/settings_panel PORT=pc`、`python scripts/sync_widget_catalog.py`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category layout`、`python scripts/checks/check_docs_encoding.py`、`python scripts/checks/check_widget_catalog.py`、在 `X:\` 执行的 `make clean APP=HelloUnitTest PORT=pc_test`、`make all APP=HelloUnitTest PORT=pc_test` 与 `X:\output\main.exe`（总计 `845 / 845`，其中 `settings_panel` suite `9 / 9`，构建阶段仍有无关 warning `test_split_view.c:186:13: warning: 'get_view_center' defined but not used`）、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub layout/settings_panel --track reference --timeout 10 --keep-screenshots`、`python scripts/code_compile_check.py --custom-widgets --category layout --bits64`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --category layout --track reference --bits64`、`python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub layout/settings_panel` 与对应 `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_layout_settings_panel`（`PASS status=Running canvas=480x480 ratio=0.1967 colors=184`）。
+  - 复核 `runtime_check_output/HelloCustomWidgets_layout_settings_panel/default`：共捕获 `11` 帧，主区唯一状态分组为 `[0,1,8,9,10] / [2,3] / [4,5] / [6,7]`；主区差分边界收敛到 `(46, 75) - (433, 259)`，遮罩主区后主区外区域唯一哈希数为 `1`；按 `y >= 260` 裁切底部 preview 后 preview 区唯一哈希数为 `1`，且 `frame_0000` 与 `frame_0001` 哈希一致没有 warmup 首帧差异，确认最终稳定帧回到默认 `Workspace settings`，底部 `Compact / Read only` preview 全程静态一致。
 - `2026-04-19`
   - 再次收口 `layout/settings_expander` reference 控件：在不修改 `sdk/EmbeddedGUI`、不改动既有示例页实现和单测逻辑的前提下，把 README 从旧版 finalize 章节结构继续收口到最新模板口径，继续保留主区默认 `Backup options`、`Sharing scope`、`Quiet hours`、`Rollout cadence` 这条 reference 轨道；底部 `Compact / Read only` preview 继续保持静态 reference 对照。
   - `example/HelloCustomWidgets/layout/settings_expander/test.c` 与 `example/HelloUnitTest/test/test_settings_expander.c` 已保持统一 finalize 模板，无需再改录制轨道或交互实现；`example/HelloCustomWidgets/layout/settings_expander/readme.md` 已按本轮真实 compile / unit / runtime / web / 截图复核结果刷新说明，并补齐 `## 9. 验收命令` 的 `X:\` 短路径 `make clean` 口径与 `## 14. 当前验收结果` 收口；`HelloUnitTest` 本轮已在 `X:\` 短路径重新 clean + rebuild 并执行，通过总计 `845 / 845`，其中 `settings_expander` suite `9 / 9`。
