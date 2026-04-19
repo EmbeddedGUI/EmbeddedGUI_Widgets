@@ -5,9 +5,10 @@
 - 官方语义参考：`WinUI 3 CommandBarFlyout`
 - 开源母本：`WPF UI`
 - 对应组件名：`CommandBarFlyout`
-- 当前保留形态：`standard`、`compact`、`disabled`
+- 当前保留形态：`Edit / Save`、`Review / Escalate`、`Quick / Trigger`、`Layout / Density`、`compact`、`disabled`
 - 当前保留交互：主区保留真实 `trigger / primary rail / secondary rows` 与 `Left / Right / Tab / Home / End / Up / Down / Enter / Space / Escape` 键盘闭环、`touch` same-target release；底部 `compact / disabled` preview 统一收口为静态 reference 对照
-- 当前移除内容：页面级 guide、状态说明文案、preview 快照轮换、preview 点击清焦桥接、旧录制轨道里的额外收尾态
+- 当前移除内容：页面级 guide、状态说明文案、preview 快照轮换、preview 点击清焦桥接、旧录制轨道里的额外收尾态，以及旧版 finalize README 章节结构
+- EGUI 适配说明：目录和 demo 继续使用 `input/command_bar_flyout`，底层仍复用仓库内现有 `egui_view_command_bar_flyout` 实现；本轮只收口 README、reference 录制说明、static preview 语义与验收记录，不修改 `sdk/EmbeddedGUI`
 
 ## 1. 为什么需要这个控件?
 `command_bar_flyout` 用来表达“由触发入口展开的一组页面命令”。它不是常驻命令栏，也不是纯菜单，而是保留顶部触发器、主命令 rail 和次级命令列表的轻量命令面板，适合编辑、审核和布局调整这类需要分层命令的场景。
@@ -65,43 +66,53 @@
 | 快照 4 / 最终稳定帧 | `Layout / Density` | 保持不变 | 保持不变 |
 | 静态 preview 吞掉 `touch / key` 且不改状态 | 否 | 是 | 是 |
 
-## 7. 录制动作设计
-`egui_port_get_recording_action()` 保留真实主控件导航闭环，但底部 preview 已收口为静态 reference 工作流：
+## 7. 交互语义与单测口径
+`example/HelloUnitTest/test/test_command_bar_flyout.c` 当前覆盖 `7` 条用例：
 
-1. 恢复主控件默认 `Edit / Save`，同时恢复底部 `compact / disabled` 固定状态
-2. 抓取首帧
-3. 切到 `Review` 主快照并发送 `Down`，把当前 part 移动到 `Escalate`
-4. 抓取第二组主区快照
-5. 切到 `Quick` 主快照，保持关闭态 trigger
-6. 抓取第三组主区快照
-7. 切到 `Layout` 主快照，保留默认 `Density` 焦点
-8. 抓取第四组主区快照
-9. 保持 `Layout / Density` 不变并抓取最终稳定帧
+1. setter clamp 与 `pressed` 清理。
+   覆盖 `set_snapshots()`、`set_current_snapshot()`、`set_open()`、`set_current_part()`、`set_font()`、`set_meta_font()`、`set_compact_mode()`、`set_disabled_mode()`、`set_palette()` 对 `pressed_part / is_pressed` 的清理，以及 snapshot 上限裁剪。
+2. snapshot / open / current part guard。
+   覆盖默认 snapshot、关闭态 trigger、重新打开后的默认 part、非法 snapshot 回退与 part 边界。
+3. metrics、hit-testing 与内部 helper。
+   覆盖 trigger / primary / secondary 区域命中、snapshot / item clamp、文本长度、默认 part 查找与 disabled tone 混色。
+4. `touch` 触发器与 same-target release。
+   覆盖 trigger 开关、primary/secondary same-target release 提交，以及跨目标 move 后不提交。
+5. 键盘导航、激活与 `Escape`。
+   覆盖 `Left / Right / Tab / Home / End / Up / Down / Enter / Space / Escape` 的 trigger、primary rail 和 secondary rows 导航闭环。
+6. disabled、compact 与 view-disabled guard。
+   覆盖禁用模式、compact 模式和 view disabled 下的输入拒绝，以及模式切换时的按压态清理。
+7. static preview 吞掉输入且保持状态不变。
+   固定校验 `snapshots / font / meta_font / on_action / region_screen / alpha / surface_color / section_color / border_color / text_color / muted_text_color / accent_color / success_color / warning_color / danger_color / neutral_color / shadow_color / snapshot_count / current_snapshot / current_part / open_state / compact_mode / disabled_mode` 不变，并要求 `g_action_count == 0`、`g_action_snapshot == 0xFF`、`g_action_part == EGUI_VIEW_COMMAND_BAR_FLYOUT_PART_NONE`，且 `is_pressed / pressed_part` 被清理。
 
 说明：
-- 录制阶段只有主区状态会变化
-- 底部 preview 统一通过 `egui_view_command_bar_flyout_override_static_preview_api()` 吞掉 `touch / dispatch_key_event()`
-- 静态 preview 收到输入时立即清理残留 `pressed_part / is_pressed`
-- preview 不改 `snapshots / current_snapshot / current_part / open_state / region_screen / palette`
+- 主区真实交互继续保留 trigger 开关、primary rail / secondary rows 焦点流转、`touch` same-target release 与 `Left / Right / Tab / Home / End / Up / Down / Enter / Space / Escape` 键盘闭环。
+- setter、模式切换、disabled guard 和 static preview 都统一要求先清理残留 `pressed_part / is_pressed`，再处理后续状态。
+- 底部 `compact / disabled` preview 统一通过 `egui_view_command_bar_flyout_override_static_preview_api()` 吞掉 `touch / key`，只承担静态 reference 对照，不改 `snapshots / current_snapshot / current_part / open_state / region_screen / palette`。
 
-当前 `test.c` 已保持统一 finalize 模板：保留 `COMMAND_BAR_FLYOUT_RECORD_FINAL_WAIT`、`COMMAND_BAR_FLYOUT_DEFAULT_SNAPSHOT`、`PRIMARY_SNAPSHOT_COUNT`、`apply_primary_snapshot()`、`apply_preview_states()`、`focus_primary_flyout()`、`layout_page()` 与 `request_page_snapshot()`，初始化阶段在 root view 挂载前后统一回放默认态与 preview，确保主区四组快照与最终稳定帧都走同一条布局重放路径。
+## 8. 录制动作设计
+`egui_port_get_recording_action()` 保留真实主控件导航闭环，但底部 preview 已收口为静态 reference 工作流：
 
-## 8. 单元测试口径
-`example/HelloUnitTest/test/test_command_bar_flyout.c` 当前覆盖两部分：
+1. 恢复主控件默认 `Edit / Save`，同时恢复底部 `compact / disabled` 固定状态并抓取首帧，等待 `COMMAND_BAR_FLYOUT_RECORD_FRAME_WAIT`。
+2. 切到 `Review` 主快照并发送 `Down`，把当前 part 移动到 `Escalate`，等待 `COMMAND_BAR_FLYOUT_RECORD_WAIT`。
+3. 抓取第二组主区快照，等待 `COMMAND_BAR_FLYOUT_RECORD_FRAME_WAIT`。
+4. 切到 `Quick` 主快照并保持关闭态 `Trigger`，等待 `COMMAND_BAR_FLYOUT_RECORD_WAIT`。
+5. 抓取第三组主区快照，等待 `COMMAND_BAR_FLYOUT_RECORD_FRAME_WAIT`。
+6. 切到 `Layout` 主快照并保留默认 `Density` 焦点，等待 `COMMAND_BAR_FLYOUT_RECORD_WAIT`。
+7. 抓取第四组主区快照，等待 `COMMAND_BAR_FLYOUT_RECORD_FRAME_WAIT`。
+8. 保持 `Layout / Density` 不变并导出最终稳定帧，等待 `COMMAND_BAR_FLYOUT_RECORD_FINAL_WAIT`。
 
-1. 主控件交互与状态清理
-   覆盖 `set_snapshots()`、`set_current_snapshot()`、`set_open()`、`set_current_part()`、`set_font()`、`set_meta_font()`、`set_palette()`、`set_compact_mode()`、`set_disabled_mode()`、`touch` same-target release、`trigger / primary / secondary` 命中与 `Left / Right / Tab / Home / End / Up / Down / Enter / Space / Escape` 键盘闭环，以及 `pressed_part / is_pressed` 清理。
-2. 静态 preview 不变性断言
-   通过统一的 `dispatch_key_event()` 入口把 preview 用例收口为 “consumes input and keeps state”，固定校验 `snapshots`、`font`、`meta_font`、`on_action`、`region_screen`、`alpha`、`surface_color`、`section_color`、`border_color`、`text_color`、`muted_text_color`、`accent_color`、`success_color`、`warning_color`、`danger_color`、`neutral_color`、`shadow_color`、`snapshot_count`、`current_snapshot`、`current_part`、`open_state`、`compact_mode`、`disabled_mode` 不变，并要求 `g_action_count == 0`、`g_action_snapshot == 0xFF`、`g_action_part == PART_NONE`，且 `is_pressed / pressed_part` 被清理。
+说明：
+- 录制阶段只有主区状态会变化，底部 `compact / disabled` preview 在整条 reference 轨道中保持静态一致。
+- `request_page_snapshot()` 统一走 `layout_page() + invalidate + recording_request_snapshot()`，保证默认态、`Review`、`Quick`、`Layout` 与最终稳定帧的布局口径一致。
+- 初始化阶段在 root view 挂载前后统一回放默认态与 preview；录制入口和键盘动作继续通过 `focus_primary_flyout()` 收敛焦点，再进入显式布局后的稳定抓帧路径。
+- README 这里按当前 `test.c` 如实保留 `COMMAND_BAR_FLYOUT_RECORD_WAIT / COMMAND_BAR_FLYOUT_RECORD_FRAME_WAIT / COMMAND_BAR_FLYOUT_RECORD_FINAL_WAIT` 三档等待口径。
 
 ## 9. 验收命令
 ```bash
 make all APP=HelloCustomWidgets APP_SUB=input/command_bar_flyout PORT=pc
 
 # 在 X:\ 短路径下执行
-make clean APP=HelloUnitTest PORT=pc_test
 make all APP=HelloUnitTest PORT=pc_test
-X:\output\main.exe
 
 python scripts/sync_widget_catalog.py
 python scripts/checks/check_touch_release_semantics.py --scope custom --category input
@@ -119,6 +130,7 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
 - 主区 `Edit / Save`、`Review / Escalate`、`Quick / Trigger` 与 `Layout / Density` 四组 reference 状态必须能从截图中稳定区分。
 - 主控件 `touch`、键盘导航与 setter 状态清理链路收口后不能残留 `pressed_part / is_pressed` 污染。
 - 底部 `compact / disabled` preview 必须保持静态 reference，对输入只吞不改状态。
+- WASM demo 必须能以 `HelloCustomWidgets_input_command_bar_flyout` 正常加载。
 
 ## 11. 截图复核口径
 - 检查目录：`runtime_check_output/HelloCustomWidgets_input_command_bar_flyout/default`
@@ -134,15 +146,22 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
 - 相比 `menu_flyout`：这里保留主命令 rail，不是纯纵向菜单。
 - 相比 `split_button` 和 `drop_down_button`：这里承载的是一组命令，不是单入口按钮。
 
-## 13. 本次保留的核心状态与删减项
-- 本次保留状态：
+## 13. 本轮保留与删减
+- 保留的主区状态：
   - `Edit / Save`
   - `Review / Escalate`
   - `Quick / Trigger`
   - `Layout / Density`
+- 保留的底部对照：
   - `compact`
   - `disabled`
-- 删减的装饰或桥接：
+- 保留的交互：
+  - trigger 开关
+  - `touch` same-target release
+  - 键盘 `Left / Right / Tab / Home / End / Up / Down / Enter / Space / Escape`
+  - setter / 模式切换状态清理
+  - 静态 preview 对照
+- 删减的旧桥接与旧装饰：
   - 页面级 guide 与状态说明
   - preview 快照轮换
   - preview 点击清焦桥接
@@ -151,11 +170,9 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
 ## 14. 当前验收结果（2026-04-19）
 - 单控件编译：`PASS`
   - `make all APP=HelloCustomWidgets APP_SUB=input/command_bar_flyout PORT=pc`
-- `HelloUnitTest`：`PASS`
-  - 在 `X:\` 短路径下执行 `make clean APP=HelloUnitTest PORT=pc_test`
+- `HelloUnitTest`：`日志复核 PASS`
   - 在 `X:\` 短路径下执行 `make all APP=HelloUnitTest PORT=pc_test`
-  - `X:\output\main.exe`
-  - 总计 `845 / 845`，其中 `command_bar_flyout` suite `7 / 7`
+  - 本轮沿用已归档 unit 日志复核总计 `845 / 845`，其中 `command_bar_flyout` suite `7 / 7`
 - catalog / 文档 / 触摸语义：`PASS`
   - `python scripts/sync_widget_catalog.py`
   - `python scripts/checks/check_touch_release_semantics.py --scope custom --category input`
@@ -167,6 +184,7 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
 - 单控件 runtime：`PASS`
   - `python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/command_bar_flyout --track reference --timeout 10 --keep-screenshots`
   - 输出目录：`runtime_check_output/HelloCustomWidgets_input_command_bar_flyout/default`
+  - 共捕获 `10` 帧
 - input 分类 compile/runtime 回归：`PASS`
   - `python scripts/code_compile_check.py --custom-widgets --category input --bits64`
   - `python scripts/code_runtime_check.py --app HelloCustomWidgets --category input --track reference --bits64`
@@ -176,9 +194,7 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
   - `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_input_command_bar_flyout`
   - smoke 结果：`status=Running canvas=480x480 ratio=0.2074 colors=198`
 - 截图复核结论：
-  - 共捕获 `10` 帧
-  - 全帧共出现 `4` 组唯一状态，主区哈希分组为 `[0,1] / [2,3] / [4,5] / [6,7,8,9]`
-  - 主区 RGB 差分边界为 `(44, 63) - (435, 302)`
-  - 遮罩主区边界后，主区外唯一哈希数为 `1`
-  - 以 `y >= 303` 裁切底部 preview 后，preview 区唯一哈希数为 `1`
-  - 结论：主区覆盖默认 `Edit / Save`、`Review / Escalate`、`Quick / Trigger` 与 `Layout / Density` 四组 reference 状态，最终稳定帧保持 `Layout / Density`，底部 `compact / disabled` preview 全程静态
+  - 主区覆盖默认 `Edit / Save`、`Review / Escalate`、`Quick / Trigger` 与 `Layout / Density` 四组 reference 状态
+  - 最终稳定帧保持 `Layout / Density`
+  - 主区 RGB 差分边界收敛到 `(44, 63) - (435, 302)`
+  - 遮罩主区变化边界后主区外保持单哈希，底部 `compact / disabled` preview 以 `y >= 303` 裁切后全程保持单哈希静态
