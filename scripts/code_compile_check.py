@@ -240,7 +240,7 @@ def compile_code(params, output_dir=None, objroot_dir=None, app_obj_suffix=None)
     if build_system == 'cmake':
         return compile_code_cmake(params)
 
-    cmd = 'make'
+    cmd = 'make all'
     parallel_arg = get_make_parallel_arg()
     if parallel_arg:
         cmd += ' ' + parallel_arg
@@ -353,11 +353,11 @@ def run_unit_tests(params):
 
         # Run the test executable
         if os.name == 'nt':
-            cmd = 'output\\main.exe'
+            exe_path = ROOT_DIR / 'output' / 'main.exe'
         else:
-            cmd = './output/main'
-        print(cmd)
-        res = os.system(cmd)
+            exe_path = ROOT_DIR / 'output' / 'main'
+        print(str(exe_path))
+        res = subprocess.call([str(exe_path)], cwd=ROOT_DIR)
 
     if res != 0:
         print("Unit tests FAILED!")
