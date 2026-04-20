@@ -25,13 +25,13 @@ SDK resolution order for local tooling:
 
 ```bash
 # Build one widget demo on PC
-make all APP=HelloCustomWidgets APP_SUB=input/xy_pad PORT=pc
+make all APP=HelloCustomWidgets APP_SUB=input/auto_suggest_box PORT=pc
 
 # Run a compile sweep for one category
 python scripts/code_compile_check.py --custom-widgets --category input --bits64
 
 # Run runtime verification for one widget
-python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/xy_pad --timeout 10 --keep-screenshots
+python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/auto_suggest_box --timeout 10 --keep-screenshots
 
 # Run runtime verification for one category
 python scripts/code_runtime_check.py --app HelloCustomWidgets --category input --bits64

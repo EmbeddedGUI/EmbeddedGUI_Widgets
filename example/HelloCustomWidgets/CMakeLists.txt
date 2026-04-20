@@ -1,5 +1,5 @@
 # HelloCustomWidgets: uses two-level APP_SUB (category/widget_name)
-# Usage: cmake -DAPP=HelloCustomWidgets -DAPP_SUB=input/xy_pad ..
+# Usage: cmake -DAPP=HelloCustomWidgets -DAPP_SUB=input/auto_suggest_box ..
 
 # Common source files (uicode.c compatibility shell + uicode_disp0.c entry)
 file(GLOB HELLO_CUSTOM_SRC *.c)

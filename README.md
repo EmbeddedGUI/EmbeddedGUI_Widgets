@@ -35,7 +35,7 @@ The default SDK resolution order is:
    Windows: `setup.bat`
    Linux / macOS: `./setup.sh`
 2. Verify the SDK submodule and the PC toolchain:
-   `make all APP=HelloCustomWidgets APP_SUB=input/xy_pad PORT=pc`
+   `make all APP=HelloCustomWidgets APP_SUB=input/auto_suggest_box PORT=pc`
 3. Run one local CI sweep for a category:
    `make ci CATEGORY=input`
 4. If you prefer a direct Python entrypoint:
@@ -67,7 +67,7 @@ The default SDK resolution order is:
 - Bootstrap from Python directly:
   `python scripts/setup_env.py --skip-emsdk`
 - Build one widget on PC:
-  `make all APP=HelloCustomWidgets APP_SUB=input/xy_pad PORT=pc`
+  `make all APP=HelloCustomWidgets APP_SUB=input/auto_suggest_box PORT=pc`
 - Default widget showcase canvas:
   `480 x 480`
 - Run the local widget CI flow for one category:
@@ -81,7 +81,7 @@ The default SDK resolution order is:
 - Compile-check one category:
   `python scripts/code_compile_check.py --custom-widgets --category input --bits64`
 - Runtime-check one widget:
-  `python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/xy_pad --timeout 10 --keep-screenshots`
+  `python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/auto_suggest_box --timeout 10 --keep-screenshots`
 - Runtime-check one category:
   `python scripts/code_runtime_check.py --app HelloCustomWidgets --category input --bits64`
 - Touch semantics audit:
