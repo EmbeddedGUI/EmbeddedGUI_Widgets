@@ -90,7 +90,7 @@
 说明：
 
 - 默认先做 `HelloCustomWidgets` 版本，不直接下沉到 `src/widget/`。
-- 接入 `HelloCustomWidgets` / `HelloUnitTest` 的 app 根入口时，保持 `uicode.c` 兼容壳 + `uicode_disp0.c` display 0 入口结构，并通过 `uicode.h` 暴露公共入口，不要退回旧的单文件入口假设。
+- 接入 `HelloCustomWidgets` / `HelloUnitTest` 的 app 根入口时，直接使用 `uicode_disp0.c` / `uicode_disp0.h` 这套多屏入口，不要再回退到旧兼容壳或单文件入口假设。
 - 只有控件在当前仓库里稳定、且确实有复用价值时，才再讨论是否升级为框架层控件。
 
 ## Step 3：编译验证

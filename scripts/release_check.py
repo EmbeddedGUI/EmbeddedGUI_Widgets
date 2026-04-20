@@ -248,8 +248,8 @@ def parse_args() -> argparse.Namespace:
             "  python scripts/release_check.py --keep-going --skip runtime\n"
             "\n"
             "Entry note:\n"
-            "  HelloCustomWidgets / HelloUnitTest keep uicode.c as the compatibility shell\n"
-            "  and uicode_disp0.c as the display 0 entry for the multi-display SDK.\n"
+            "  HelloCustomWidgets / HelloUnitTest use uicode_disp0.c / uicode_disp0.h\n"
+            "  directly as the multi-display SDK entry.\n"
         ),
     )
     parser.add_argument("--skip", type=str, default="", help=f"Comma-separated list of steps to skip. Available: {', '.join(ALL_STEP_NAMES)}")

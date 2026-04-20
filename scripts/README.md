@@ -17,8 +17,8 @@ This repository keeps only the scripts needed for standalone custom-widget work.
 
 ## App entry note
 
-- `HelloCustomWidgets` and `HelloUnitTest` keep `uicode.c` as the compatibility shell and `uicode_disp0.c` as the display 0 entry for the multi-display SDK.
-- New widget demos, runtime recording hooks, and shared entry wiring should continue to go through `uicode.h` instead of reverting to the old single-file entry assumption.
+- `HelloCustomWidgets` and `HelloUnitTest` use `uicode_disp0.c` / `uicode_disp0.h` directly for the multi-display SDK entry.
+- New widget demos, runtime recording hooks, and shared entry wiring should continue to go through `uicode_disp0.h`.
 
 ## Subdirectories
 

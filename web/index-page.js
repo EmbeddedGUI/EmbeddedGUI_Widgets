@@ -105,8 +105,8 @@
         },
         principlesEntryTitle: { "zh-CN": "多屏入口保持稳定", "en": "Keep Multi-display Entry Stable" },
         principlesEntryBody: {
-            "zh-CN": "HelloCustomWidgets 和 HelloUnitTest 的 app 根入口统一保持 `uicode.c` 兼容壳 + `uicode_disp0.c` display 0 入口结构；新增 demo、录制动作和接线时继续通过 `uicode.h` 对齐。",
-            "en": "HelloCustomWidgets and HelloUnitTest keep the app root as a `uicode.c` compatibility shell plus the `uicode_disp0.c` display 0 entry. New demos, recording hooks, and shared wiring should continue to align through `uicode.h`."
+            "zh-CN": "HelloCustomWidgets 和 HelloUnitTest 的 app 根入口统一直接使用 `uicode_disp0.c` / `uicode_disp0.h`；新增 demo、录制动作和接线时也按这套多屏入口对齐。",
+            "en": "HelloCustomWidgets and HelloUnitTest use `uicode_disp0.c` / `uicode_disp0.h` directly at the app root. New demos, recording hooks, and shared wiring should align to the same multi-display entry."
         },
         workflowCompileTitle: { "zh-CN": "Reference 编译检查", "en": "Reference Compile Sweep" },
         workflowRuntimeTitle: { "zh-CN": "Reference 运行检查", "en": "Reference Runtime Sweep" },

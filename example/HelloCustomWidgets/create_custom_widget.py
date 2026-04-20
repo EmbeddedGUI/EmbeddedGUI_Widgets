@@ -4,9 +4,9 @@
 Usage:
     python example/HelloCustomWidgets/create_custom_widget.py --category display --name weather_icon
 
-The generated widget scaffold plugs into the shared app root through `uicode.h`.
-`HelloCustomWidgets` and `HelloUnitTest` keep `uicode.c` as the compatibility
-shell and `uicode_disp0.c` as the display 0 entry for the multi-display SDK.
+The generated widget scaffold plugs into the shared app root through `uicode_disp0.h`.
+`HelloCustomWidgets` and `HelloUnitTest` use `uicode_disp0.c` /
+`uicode_disp0.h` directly for the multi-display SDK entry.
 """
 
 from __future__ import annotations
@@ -27,8 +27,8 @@ VALID_CATEGORIES = (
 
 NAME_PATTERN = re.compile(r"^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$")
 MULTI_DISPLAY_ENTRY_NOTE = (
-    "Wire new widgets through uicode.h; keep the app root as "
-    "uicode.c compatibility shell + uicode_disp0.c display 0 entry."
+    "Wire new widgets through uicode_disp0.h; keep the app root on "
+    "uicode_disp0.c / uicode_disp0.h."
 )
 
 
@@ -255,7 +255,7 @@ def test_template(name: str, name_upper: str, display_title: str) -> str:
         f"""
         #include "egui.h"
         #include "egui_view_{name}.h"
-        #include "uicode.h"
+        #include "uicode_disp0.h"
         #include "demo_scaffold.h"
 
         #if EGUI_CONFIG_RECORDING_TEST

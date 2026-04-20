@@ -1137,8 +1137,8 @@ Examples:
   %(prog)s --full-check                              Test all HelloCustomWidgets demos
 
 Entry note:
-  HelloCustomWidgets / HelloUnitTest keep uicode.c as the compatibility shell
-  and uicode_disp0.c as the display 0 entry for the multi-display SDK.
+  HelloCustomWidgets / HelloUnitTest use uicode_disp0.c / uicode_disp0.h
+  directly as the multi-display SDK entry.
         """
     )
     parser.add_argument('--app', type=str,

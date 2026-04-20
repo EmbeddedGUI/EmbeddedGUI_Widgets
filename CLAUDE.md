@@ -51,7 +51,7 @@ python web/start_server.py --port 8080
 - `sdk/EmbeddedGUI/`
   Pinned SDK submodule. Do not edit it for widget-repo-only changes unless the task explicitly requires an SDK change.
 - `example/HelloCustomWidgets/`
-  All custom widgets, still organized as `category/widget`, with an app root that keeps `uicode.c` as the compatibility shell and `uicode_disp0.c` as the display 0 entry.
+  All custom widgets, still organized as `category/widget`, with an app root that uses `uicode_disp0.c` / `uicode_disp0.h` as the multi-display entry.
 - `example/HelloUnitTest/`
   Minimal unit-test harness for custom widgets that need direct test coverage, with the same app root multi-display entry structure.
 - `scripts/`

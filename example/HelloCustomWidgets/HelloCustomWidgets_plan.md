@@ -77,7 +77,7 @@ example/HelloCustomWidgets/<category>/<widget>/
 
 - Make 默认入口切换为标准 `reference` 控件，例如：`input/auto_suggest_box`
 - CMake 仍然支持两级 `APP_SUB`
-- App 根目录保持 `uicode.c` 兼容壳 + `uicode_disp0.c` display 0 入口；后续脚手架、文档和 Web 说明都应基于这套多屏结构。
+- App 根目录直接使用 `uicode_disp0.c` / `uicode_disp0.h` 作为多屏入口；后续脚手架、文档和 Web 说明都应基于这套结构。
 - 推荐示例：`input/auto_suggest_box`、`feedback/message_bar`、`navigation/tree_view`
 
 ## 推荐验证命令

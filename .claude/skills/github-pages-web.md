@@ -54,7 +54,7 @@ web/
 ### 步骤 1：创建示例应用
 ```
 example/MyNewApp/
-├── main.c / uicode.c / uicode_disp0.c / uicode.h
+├── main.c / uicode_disp0.c / uicode_disp0.h
 ├── build.mk
 ├── app_egui_config.h
 └── readme.md              # 会自动发布为文档面板内容
@@ -196,7 +196,7 @@ COMMON_FLAGS += -DEGUI_CONFIG_RECORDING_TEST=0
 ```
 
 **WASM demo 不会自动播放操作序列**，用户直接用鼠标/触摸与 canvas 交互。
-- `egui_port_get_recording_action()` 可以放在 `uicode_disp0.c`、`uicode.c`（兼容壳）或单个 demo 的 `test.c` 中（由 `#if EGUI_CONFIG_RECORDING_TEST` 包裹），**不影响 WASM 构建**
+- `egui_port_get_recording_action()` 可以放在 `uicode_disp0.c` 或单个 demo 的 `test.c` 中（由 `#if EGUI_CONFIG_RECORDING_TEST` 包裹），**不影响 WASM 构建**
 - 无需为 WASM 单独实现交互逻辑，SDL 输入事件由 Emscripten 自动转发
 
 ### Canvas 尺寸
