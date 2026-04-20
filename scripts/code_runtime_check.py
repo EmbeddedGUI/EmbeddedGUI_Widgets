@@ -1135,6 +1135,10 @@ Examples:
   %(prog)s --app HelloCustomWidgets --category input Test HelloCustomWidgets category
   %(prog)s --app HelloCustomWidgets --app-sub input/auto_suggest_box --timeout 10 --keep-screenshots
   %(prog)s --full-check                              Test all HelloCustomWidgets demos
+
+Entry note:
+  HelloCustomWidgets / HelloUnitTest keep uicode.c as the compatibility shell
+  and uicode_disp0.c as the display 0 entry for the multi-display SDK.
         """
     )
     parser.add_argument('--app', type=str,

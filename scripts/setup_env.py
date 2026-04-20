@@ -545,6 +545,7 @@ def print_summary(
     print("  make all APP=HelloCustomWidgets APP_SUB=input/auto_suggest_box PORT=pc")
     print("  make ci CATEGORY=input")
     print("  python scripts/release_check.py")
+    print("  App root entry: uicode.c compatibility shell + uicode_disp0.c display 0 entry")
     if emcc_ready:
         print("  python scripts/web/wasm_build_demos.py")
     if venv_python.exists():
@@ -561,7 +562,15 @@ def normalize_python_mode(args: argparse.Namespace) -> str:
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="EmbeddedGUI Widgets environment setup")
+    parser = argparse.ArgumentParser(
+        description="EmbeddedGUI Widgets environment setup",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog=(
+            "Entry note:\n"
+            "  HelloCustomWidgets / HelloUnitTest keep uicode.c as the compatibility shell\n"
+            "  and uicode_disp0.c as the display 0 entry for the multi-display SDK.\n"
+        ),
+    )
     parser.add_argument("--python-mode", choices=["full", "basic", "none"], default="full", help="Python dependency profile to install (default: full).")
     parser.add_argument("--mode", choices=["0", "1", "2", "3"], help=argparse.SUPPRESS)
     parser.add_argument("--venv-dir", default=DEFAULT_VENV_DIR, help="Virtual environment directory (default: .venv).")
