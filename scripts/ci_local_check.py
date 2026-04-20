@@ -32,6 +32,12 @@ def add_category_arg(cmd, category):
 def main():
     parser = argparse.ArgumentParser(
         description="Run the local widget CI flow: catalog audit, touch audit, compile, runtime, and HelloUnitTest.",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog=(
+            "Entry note:\n"
+            "  HelloCustomWidgets / HelloUnitTest keep uicode.c as the compatibility shell\n"
+            "  and uicode_disp0.c as the display 0 entry for the multi-display SDK.\n"
+        ),
     )
     parser.add_argument(
         "--category",

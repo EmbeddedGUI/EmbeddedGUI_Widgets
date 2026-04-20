@@ -246,6 +246,10 @@ def parse_args() -> argparse.Namespace:
             "  python scripts/release_check.py --skip wasm,web_smoke\n"
             "  python scripts/release_check.py --category input --skip wasm,web_smoke\n"
             "  python scripts/release_check.py --keep-going --skip runtime\n"
+            "\n"
+            "Entry note:\n"
+            "  HelloCustomWidgets / HelloUnitTest keep uicode.c as the compatibility shell\n"
+            "  and uicode_disp0.c as the display 0 entry for the multi-display SDK.\n"
         ),
     )
     parser.add_argument("--skip", type=str, default="", help=f"Comma-separated list of steps to skip. Available: {', '.join(ALL_STEP_NAMES)}")
