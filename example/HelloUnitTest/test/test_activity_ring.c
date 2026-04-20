@@ -60,7 +60,7 @@ static void on_preview_click(egui_view_t *self)
 
 static void setup_activity_ring(void)
 {
-    egui_timer_init();
+    egui_timer_init(uicode_get_core());
     hcw_activity_ring_init(EGUI_VIEW_OF(&test_activity_ring));
     egui_view_set_size(EGUI_VIEW_OF(&test_activity_ring), 88, 88);
     hcw_activity_ring_apply_standard_style(EGUI_VIEW_OF(&test_activity_ring));
@@ -69,7 +69,7 @@ static void setup_activity_ring(void)
 
 static void setup_preview_activity_ring(void)
 {
-    egui_timer_init();
+    egui_timer_init(uicode_get_core());
     hcw_activity_ring_init(EGUI_VIEW_OF(&preview_activity_ring));
     egui_view_set_size(EGUI_VIEW_OF(&preview_activity_ring), 48, 48);
     hcw_activity_ring_apply_compact_style(EGUI_VIEW_OF(&preview_activity_ring));

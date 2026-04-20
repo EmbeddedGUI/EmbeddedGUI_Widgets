@@ -2,6 +2,7 @@
 #define _HELLO_CUSTOM_WIDGETS_INFO_LABEL_H_
 
 #include "egui.h"
+#include "sdk_compat.h"
 
 #ifdef __cplusplus
 extern "C" {

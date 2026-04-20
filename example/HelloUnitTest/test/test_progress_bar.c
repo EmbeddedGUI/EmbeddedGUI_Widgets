@@ -64,7 +64,7 @@ static void on_preview_click(egui_view_t *self)
 
 static void setup_progress_bar(void)
 {
-    egui_timer_init();
+    egui_timer_init(uicode_get_core());
     hcw_progress_bar_init(EGUI_VIEW_OF(&test_progress_bar));
     egui_view_set_size(EGUI_VIEW_OF(&test_progress_bar), 196, 18);
     hcw_progress_bar_apply_standard_style(EGUI_VIEW_OF(&test_progress_bar));
@@ -76,7 +76,7 @@ static void setup_progress_bar(void)
 
 static void setup_preview_progress_bar(void)
 {
-    egui_timer_init();
+    egui_timer_init(uicode_get_core());
     hcw_progress_bar_init(EGUI_VIEW_OF(&preview_progress_bar));
     egui_view_set_size(EGUI_VIEW_OF(&preview_progress_bar), 96, 12);
     hcw_progress_bar_apply_paused_style(EGUI_VIEW_OF(&preview_progress_bar));

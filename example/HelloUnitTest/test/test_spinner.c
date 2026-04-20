@@ -51,7 +51,7 @@ static void on_preview_click(egui_view_t *self)
 
 static void setup_spinner(void)
 {
-    egui_timer_init();
+    egui_timer_init(uicode_get_core());
     egui_view_spinner_init(EGUI_VIEW_OF(&test_spinner_widget));
     egui_view_set_size(EGUI_VIEW_OF(&test_spinner_widget), 44, 44);
     hcw_spinner_apply_standard_style(EGUI_VIEW_OF(&test_spinner_widget));
@@ -60,7 +60,7 @@ static void setup_spinner(void)
 
 static void setup_preview_spinner(void)
 {
-    egui_timer_init();
+    egui_timer_init(uicode_get_core());
     egui_view_spinner_init(EGUI_VIEW_OF(&preview_spinner_widget));
     egui_view_set_size(EGUI_VIEW_OF(&preview_spinner_widget), 40, 40);
     hcw_spinner_apply_compact_style(EGUI_VIEW_OF(&preview_spinner_widget));

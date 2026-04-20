@@ -1,7 +1,8 @@
-﻿#ifndef _EGUI_VIEW_VIRTUALIZING_WRAP_PANEL_H_
+#ifndef _EGUI_VIEW_VIRTUALIZING_WRAP_PANEL_H_
 #define _EGUI_VIEW_VIRTUALIZING_WRAP_PANEL_H_
 
 #include "egui.h"
+#include "sdk_compat.h"
 
 #ifdef __cplusplus
 extern "C" {

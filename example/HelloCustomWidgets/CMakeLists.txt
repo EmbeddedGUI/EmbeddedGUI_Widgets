@@ -12,3 +12,4 @@ if(NOT APP_SUB STREQUAL "")
 endif()
 
 add_library(example_lib ${HELLO_CUSTOM_SRC})
+target_include_directories(example_lib PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/..)

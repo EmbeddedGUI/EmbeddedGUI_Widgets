@@ -85,7 +85,7 @@ static void reset_click_count(void)
 
 static void setup_widget(void)
 {
-    egui_timer_init();
+    egui_timer_init(uicode_get_core());
     egui_view_tool_tip_init(EGUI_VIEW_OF(&test_widget));
     egui_view_set_size(EGUI_VIEW_OF(&test_widget), 140, 118);
     egui_view_tool_tip_set_snapshots(EGUI_VIEW_OF(&test_widget), test_snapshots, 2);
@@ -100,7 +100,7 @@ static void setup_widget(void)
 
 static void setup_preview_widget(void)
 {
-    egui_timer_init();
+    egui_timer_init(uicode_get_core());
     egui_view_tool_tip_init(EGUI_VIEW_OF(&preview_widget));
     egui_view_set_size(EGUI_VIEW_OF(&preview_widget), 104, 82);
     egui_view_tool_tip_set_snapshots(EGUI_VIEW_OF(&preview_widget), preview_snapshots, 1);
@@ -307,7 +307,7 @@ static void click_target_to_begin_delay(egui_view_tool_tip_t *widget, egui_dim_t
 
 static void test_tool_tip_init_uses_default_state(void)
 {
-    egui_timer_init();
+    egui_timer_init(uicode_get_core());
     egui_view_tool_tip_init(EGUI_VIEW_OF(&test_widget));
 
     EGUI_TEST_ASSERT_EQUAL_INT(420, egui_view_tool_tip_get_show_delay(EGUI_VIEW_OF(&test_widget)));

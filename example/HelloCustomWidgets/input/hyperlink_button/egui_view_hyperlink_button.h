@@ -2,6 +2,7 @@
 #define _HELLO_CUSTOM_WIDGETS_HYPERLINK_BUTTON_STYLE_H_
 
 #include "../../../../sdk/EmbeddedGUI/src/widget/egui_view_button.h"
+#include "sdk_compat.h"
 
 #ifdef __cplusplus
 extern "C" {

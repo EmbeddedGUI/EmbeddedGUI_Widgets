@@ -45,7 +45,7 @@ static void assert_region_equal(const egui_region_t *expected, const egui_region
 
 static void setup_widget(void)
 {
-    egui_timer_init();
+    egui_timer_init(uicode_get_core());
     egui_view_repeat_button_init(EGUI_VIEW_OF(&test_widget));
     egui_view_set_size(EGUI_VIEW_OF(&test_widget), 120, 40);
     egui_view_repeat_button_set_text(EGUI_VIEW_OF(&test_widget), "Increase");
@@ -62,7 +62,7 @@ static void setup_widget(void)
 
 static void setup_preview_widget(void)
 {
-    egui_timer_init();
+    egui_timer_init(uicode_get_core());
     egui_view_repeat_button_init(EGUI_VIEW_OF(&preview_widget));
     egui_view_set_size(EGUI_VIEW_OF(&preview_widget), 96, 32);
     egui_view_repeat_button_apply_compact_style(EGUI_VIEW_OF(&preview_widget));
@@ -216,7 +216,7 @@ static void seed_preview_timer_state(uint8_t touch_active, uint8_t key_active)
 
 static void test_repeat_button_init_uses_default_timing_and_style(void)
 {
-    egui_timer_init();
+    egui_timer_init(uicode_get_core());
     egui_view_repeat_button_init(EGUI_VIEW_OF(&test_widget));
 
     EGUI_TEST_ASSERT_EQUAL_INT(360, test_widget.initial_delay_ms);

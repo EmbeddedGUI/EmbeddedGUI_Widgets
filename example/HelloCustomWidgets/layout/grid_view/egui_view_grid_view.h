@@ -2,6 +2,7 @@
 #define _HELLO_CUSTOM_WIDGETS_GRID_VIEW_REFERENCE_H_
 
 #include "../items_repeater/egui_view_items_repeater.h"
+#include "sdk_compat.h"
 
 #ifdef __cplusplus
 extern "C" {

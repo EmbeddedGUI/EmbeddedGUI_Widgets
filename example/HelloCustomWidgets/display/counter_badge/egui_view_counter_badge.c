@@ -213,7 +213,7 @@ static void egui_view_counter_badge_on_draw(egui_view_t *self)
         return;
     }
 
-    egui_view_notification_badge_draw_background(&metrics.badge_region, badge_color, metrics.use_circle);
+    egui_view_notification_badge_draw_background(egui_sdk_compat_get_canvas(), &metrics.badge_region, badge_color, metrics.use_circle);
     egui_view_counter_badge_draw_outline(&metrics.badge_region, metrics.use_circle, outline_color, egui_color_alpha_mix(self->alpha, outline_alpha));
     egui_canvas_draw_text_in_rect(font, local->text_buffer, &metrics.text_region, EGUI_ALIGN_CENTER, text_color,
                                   egui_color_alpha_mix(self->alpha, EGUI_ALPHA_100));

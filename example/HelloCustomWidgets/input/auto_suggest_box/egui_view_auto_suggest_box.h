@@ -2,6 +2,7 @@
 #define _HELLO_CUSTOM_WIDGETS_AUTO_SUGGEST_BOX_STYLE_H_
 
 #include "../../../../sdk/EmbeddedGUI/src/widget/egui_view_autocomplete.h"
+#include "sdk_compat.h"
 
 #ifdef __cplusplus
 extern "C" {

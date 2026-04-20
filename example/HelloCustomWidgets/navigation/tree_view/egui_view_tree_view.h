@@ -2,6 +2,7 @@
 #define _EGUI_VIEW_TREE_VIEW_H_
 
 #include "egui.h"
+#include "sdk_compat.h"
 
 #ifdef __cplusplus
 extern "C" {

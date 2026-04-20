@@ -2,6 +2,7 @@
 #define _HELLO_CUSTOM_WIDGETS_INFO_BADGE_H_
 
 #include "../../../../sdk/EmbeddedGUI/src/widget/egui_view_notification_badge.h"
+#include "sdk_compat.h"
 
 #ifdef __cplusplus
 extern "C" {

@@ -99,7 +99,7 @@ static void reset_click_count(void)
 
 static void setup_skeleton(void)
 {
-    egui_timer_init();
+    egui_timer_init(uicode_get_core());
     egui_view_skeleton_init(EGUI_VIEW_OF(&test_skeleton));
     egui_view_set_size(EGUI_VIEW_OF(&test_skeleton), 196, 96);
     egui_view_skeleton_set_snapshots(EGUI_VIEW_OF(&test_skeleton), g_snapshots, 2);
@@ -109,7 +109,7 @@ static void setup_skeleton(void)
 
 static void setup_preview_skeleton(void)
 {
-    egui_timer_init();
+    egui_timer_init(uicode_get_core());
     egui_view_skeleton_init(EGUI_VIEW_OF(&preview_skeleton));
     egui_view_set_size(EGUI_VIEW_OF(&preview_skeleton), 104, 60);
     egui_view_skeleton_set_snapshots(EGUI_VIEW_OF(&preview_skeleton), g_preview_snapshots, 1);

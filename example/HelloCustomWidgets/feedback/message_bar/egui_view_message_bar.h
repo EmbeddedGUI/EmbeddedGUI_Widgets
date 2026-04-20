@@ -2,6 +2,7 @@
 #define _EGUI_VIEW_MESSAGE_BAR_H_
 
 #include "egui.h"
+#include "sdk_compat.h"
 
 #ifdef __cplusplus
 extern "C" {

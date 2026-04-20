@@ -2,6 +2,7 @@
 #define _HELLO_CUSTOM_WIDGETS_SEARCH_BOX_H_
 
 #include "../../../../sdk/EmbeddedGUI/src/widget/egui_view_textinput.h"
+#include "sdk_compat.h"
 
 #ifdef __cplusplus
 extern "C" {
