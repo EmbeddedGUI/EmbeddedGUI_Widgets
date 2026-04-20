@@ -5,9 +5,9 @@
 ## 当前状态
 
 - `HelloCustomWidgets` 继续使用 `category/widget_name` 的两级 `APP_SUB` 结构。
-- 截至 `2026-04-08`，仓库保留 `42` 个控件目录，覆盖 `input`、`layout`、`navigation`、`display`、`feedback` 五个分类。
-- 当前 catalog 只保留 `reference=42` 一条主线，默认构建、默认网页目录和后续维护都以这一主线为准。
-- `2026-04-08` 已完成全部 `deprecated` 与 `showcase` 控件目录清退，不再保留历史演示轨道。
+- 截至 `2026-04-21`，`widget_catalog.json` 收录 `106` 个控件条目，覆盖 `input`、`layout`、`navigation`、`display`、`feedback` 五个分类。
+- 当前 catalog 保持 `reference=106`、`showcase=0`、`deprecated=0`，默认构建、默认网页目录和后续维护都以这一条主线为准。
+- `showcase` 与 `deprecated` 轨道已经清退完成，不再保留历史演示目录。
 
 ## 主参考体系
 

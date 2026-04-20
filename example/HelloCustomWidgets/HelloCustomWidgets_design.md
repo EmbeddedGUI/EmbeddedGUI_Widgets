@@ -3,7 +3,7 @@
 ## 当前定位
 
 - `HelloCustomWidgets` 已经收口为 `Reference` 主线控件库，默认对齐 `Fluent 2 / WPF UI`。
-- 截至 `2026-04-13`，仓库保留 `90` 个控件目录，覆盖 `input`、`layout`、`navigation`、`display`、`feedback` 五个分类。
+- 截至 `2026-04-21`，`widget_catalog.json` 收录 `106` 个控件条目，覆盖 `input`、`layout`、`navigation`、`display`、`feedback` 五个分类。
 - 历史 `showcase` / `deprecated` 轨道以及 `chart`、`media`、`decoration` 等非主线分类已经清退，不再作为新增控件的目标目录。
 
 ## 控件边界
