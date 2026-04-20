@@ -3,6 +3,10 @@
 
 Usage:
     python example/HelloCustomWidgets/create_custom_widget.py --category display --name weather_icon
+
+The generated widget scaffold plugs into the shared app root through `uicode.h`.
+`HelloCustomWidgets` and `HelloUnitTest` keep `uicode.c` as the compatibility
+shell and `uicode_disp0.c` as the display 0 entry for the multi-display SDK.
 """
 
 from __future__ import annotations
@@ -22,6 +26,10 @@ VALID_CATEGORIES = (
 )
 
 NAME_PATTERN = re.compile(r"^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$")
+MULTI_DISPLAY_ENTRY_NOTE = (
+    "Wire new widgets through uicode.h; keep the app root as "
+    "uicode.c compatibility shell + uicode_disp0.c display 0 entry."
+)
 
 
 def to_display_title(name: str) -> str:
@@ -432,7 +440,12 @@ def create_widget_scaffold(category: str, name: str) -> Path:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Create a new HelloCustomWidgets scaffold")
+    parser = argparse.ArgumentParser(
+        description=(
+            "Create a new HelloCustomWidgets scaffold that matches the current "
+            "multi-display app entry structure"
+        )
+    )
     parser.add_argument("--category", required=True, choices=VALID_CATEGORIES, help="Widget category")
     parser.add_argument("--name", required=True, help="Widget name in snake_case, for example weather_icon")
     args = parser.parse_args()
@@ -461,6 +474,7 @@ def main() -> int:
     print("Next steps:")
     print(f"  make all APP=HelloCustomWidgets APP_SUB={args.category}/{name} PORT=pc")
     print(f"  python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub {args.category}/{name} --track reference --timeout 10 --keep-screenshots")
+    print(f"  {MULTI_DISPLAY_ENTRY_NOTE}")
     print("  Update readme.md and iteration_log/iteration_log.md before acceptance")
     print("  Keep iteration_log/ local-only and out of git commits")
     return 0
