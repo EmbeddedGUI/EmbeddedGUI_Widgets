@@ -15,6 +15,11 @@ This repository keeps only the scripts needed for standalone custom-widget work.
 - `ci_local_check.py`
   Fast local CI wrapper for one widget category or the full widget set.
 
+## App entry note
+
+- `HelloCustomWidgets` and `HelloUnitTest` keep `uicode.c` as the compatibility shell and `uicode_disp0.c` as the display 0 entry for the multi-display SDK.
+- New widget demos, runtime recording hooks, and shared entry wiring should continue to go through `uicode.h` instead of reverting to the old single-file entry assumption.
+
 ## Subdirectories
 
 - `checks/`
