@@ -546,7 +546,15 @@ def main():
         if env_emsdk and Path(env_emsdk).exists():
             default_emsdk_path = env_emsdk
 
-    parser = argparse.ArgumentParser(description="Build WASM demos")
+    parser = argparse.ArgumentParser(
+        description="Build WASM demos",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog=(
+            "Entry note:\n"
+            "  HelloCustomWidgets / HelloUnitTest keep uicode.c as the compatibility shell\n"
+            "  and uicode_disp0.c as the display 0 entry for the multi-display SDK.\n"
+        ),
+    )
     parser.add_argument("--emsdk-path", default=default_emsdk_path or "",
                         help="Path to emsdk (default: $EMSDK)")
     parser.add_argument("--output-dir", default="web/demos",
