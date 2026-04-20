@@ -591,7 +591,7 @@ def compile_app(app, app_sub=None, bits64=False, user_cflags="", recording_test=
     # Always inject RECORDING_TEST into the build signature so cached outputs stay isolated.
     recording_flag = '-DEGUI_CONFIG_RECORDING_TEST=%d' % (1 if recording_test else 0)
     combined_cflags = ('%s %s' % (recording_flag, user_cflags)).strip()
-    cmd = ['make', get_make_job_arg(make_jobs), 'APP=%s' % app, 'PORT=pc'] + COMPILE_FAST_FLAGS
+    cmd = ['make', get_make_job_arg(make_jobs), 'all', 'APP=%s' % app, 'PORT=pc'] + COMPILE_FAST_FLAGS
     if app_sub:
         cmd.append('APP_SUB=%s' % app_sub)
     if bits64:
