@@ -64,6 +64,7 @@ python scripts/code_runtime_check.py --app HelloCustomWidgets --category {CATEGO
 说明：
 - `code_runtime_check.py` 会把 `APP_SUB` 里的 `/` 和 `\` 统一替换为 `_`
 - 分类批量回归适合和 `custom-widgets-check.yml`、本地收口回归保持一致
+- `HelloCustomWidgets` / `HelloUnitTest` 的 app 根入口保持 `uicode.c` 兼容壳 + `uicode_disp0.c` display 0 入口结构；新增录制动作或排查 runtime 时，优先通过 `uicode.h` 对齐这套多屏入口。
 
 ## 多页面应用检查要求
 
