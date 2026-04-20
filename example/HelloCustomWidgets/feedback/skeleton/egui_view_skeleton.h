@@ -1,8 +1,6 @@
 #ifndef _EGUI_VIEW_SKELETON_H_
 #define _EGUI_VIEW_SKELETON_H_
 
-#include "core/egui_timer.h"
-#include "sdk_compat.h"
 #include "egui.h"
 #include "sdk_compat.h"
 
