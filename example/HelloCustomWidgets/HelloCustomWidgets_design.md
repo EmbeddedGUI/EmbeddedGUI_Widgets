@@ -59,6 +59,7 @@ python example/HelloCustomWidgets/create_custom_widget.py --category display --n
 
 - 只允许当前五个分类
 - 默认生成 `egui_view_<widget>.h/.c`
+- 生成的 widget header 默认包含 `sdk_compat.h`，确保新 SDK 多屏接口兼容层始终随 scaffold 输出
 - 默认生成基于 `demo_scaffold.h` 的 `test.c`
 - 默认生成 `readme.md`
 - 默认创建本地 `iteration_log/iteration_log.md` 和 `iteration_log/images/`
