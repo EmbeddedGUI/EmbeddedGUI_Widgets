@@ -72,7 +72,15 @@ class Utf8StaticHandler(SimpleHTTPRequestHandler):
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Headless browser smoke check for web demos.")
+    parser = argparse.ArgumentParser(
+        description="Headless browser smoke check for web demos.",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog=(
+            "Entry note:\n"
+            "  HelloCustomWidgets / HelloUnitTest keep uicode.c as the compatibility shell\n"
+            "  and uicode_disp0.c as the display 0 entry for the multi-display SDK.\n"
+        ),
+    )
     parser.add_argument("--manifest", default=str(DEFAULT_MANIFEST), help="Path to demos.json.")
     parser.add_argument("--web-root", default=str(DEFAULT_WEB_ROOT), help="Static web root directory.")
     parser.add_argument("--browser", default="", help="Browser executable path. Defaults to Edge/Chrome auto-detection.")

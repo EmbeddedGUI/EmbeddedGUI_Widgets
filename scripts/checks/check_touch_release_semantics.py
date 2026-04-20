@@ -32,7 +32,15 @@ PRESSED_ASSIGN_RE = re.compile(r"\blocal->(pressed_[A-Za-z0-9_]+)\s*(?<![=!<>])=
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Check widget touch handlers for release-target drift.")
+    parser = argparse.ArgumentParser(
+        description="Check widget touch handlers for release-target drift.",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog=(
+            "Entry note:\n"
+            "  HelloCustomWidgets / HelloUnitTest keep uicode.c as the compatibility shell\n"
+            "  and uicode_disp0.c as the display 0 entry for the multi-display SDK.\n"
+        ),
+    )
     parser.add_argument("--scope", choices=("custom", "core", "all"), default="all", help="Audit custom widgets, core widgets, or both.")
     parser.add_argument("--category", type=str, default=None, help="Only audit a specific HelloCustomWidgets category.")
     return parser.parse_args()

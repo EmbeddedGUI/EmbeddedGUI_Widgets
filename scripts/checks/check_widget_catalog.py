@@ -28,7 +28,13 @@ from widget_catalog import (
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Check HelloCustomWidgets widget_catalog.json for coverage and mainline policy consistency."
+        description="Check HelloCustomWidgets widget_catalog.json for coverage and mainline policy consistency.",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog=(
+            "Entry note:\n"
+            "  HelloCustomWidgets / HelloUnitTest keep uicode.c as the compatibility shell\n"
+            "  and uicode_disp0.c as the display 0 entry for the multi-display SDK.\n"
+        ),
     )
     return parser.parse_args()
 
