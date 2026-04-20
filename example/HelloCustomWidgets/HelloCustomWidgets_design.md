@@ -22,6 +22,8 @@ example/HelloCustomWidgets/
 ├── create_custom_widget.py
 ├── demo_scaffold.c
 ├── demo_scaffold.h
+├── uicode.c / uicode.h
+├── uicode_disp0.c / uicode_disp0.h
 ├── widget_catalog.json
 ├── input/
 ├── layout/
@@ -46,6 +48,8 @@ example/HelloCustomWidgets/
 - `resource/`
 - `resource/img/`
 - `resource/font/`
+
+- App 根目录当前采用 `uicode.c` 兼容壳 + `uicode_disp0.c` display 0 入口结构；新增脚手架、构建说明和 Web 文档时应保持这一约定。
 
 ## 脚手架约束
 
