@@ -1,6 +1,8 @@
 #ifndef _EMBEDDEDGUI_WIDGETS_SDK_COMPAT_H_
 #define _EMBEDDEDGUI_WIDGETS_SDK_COMPAT_H_
 
+#include "../sdk/EmbeddedGUI/src/core/egui_core.h"
+
 egui_core_t *uicode_get_core(void);
 void egui_core_layout_childs_user_root_view(egui_core_t *core, uint8_t is_orientation_horizontal, uint8_t align_type);
 
