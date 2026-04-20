@@ -44,6 +44,7 @@ def header_template(name: str, name_upper: str) -> str:
         #define _EGUI_VIEW_{name_upper}_H_
 
         #include "egui.h"
+        #include "sdk_compat.h"
 
         #ifdef __cplusplus
         extern "C" {{
