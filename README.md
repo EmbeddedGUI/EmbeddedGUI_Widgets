@@ -98,9 +98,9 @@ The default SDK resolution order is:
 ## Repository layout
 
 - `example/HelloCustomWidgets/`
-  All widget sources, docs, and per-widget test entries.
+  All widget sources, docs, per-widget test entries, and the app root multi-display entry (`uicode.c` compatibility shell + `uicode_disp0.c` display 0 entry).
 - `example/HelloUnitTest/`
-  Custom-widget unit-test harness.
+  Custom-widget unit-test harness with the same app root multi-display entry structure.
 - `scripts/`
   Widgets-specific compile/runtime/WASM helpers.
 - `web/`
@@ -112,5 +112,6 @@ The default SDK resolution order is:
 
 - `iteration_log/` is local-only review evidence and stays ignored.
 - The repo root `Makefile` forwards build requests into `sdk/EmbeddedGUI` while keeping outputs in this repository.
+- `HelloCustomWidgets` and `HelloUnitTest` now keep `uicode.c` as a compatibility shell and `uicode_disp0.c` as the display 0 entry required by the multi-display SDK shape.
 - Root convenience entrypoints:
   `setup.bat` / `setup.sh`, `make setup`, `make release-check`, `make sync-catalog`
