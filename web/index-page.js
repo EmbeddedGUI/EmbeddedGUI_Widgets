@@ -103,6 +103,11 @@
             "zh-CN": "文档和站点源码统一保持 UTF-8；README、脚本和页面都要通过编码检查，避免再次出现乱码或历史残留文本。",
             "en": "Documentation and site sources must stay in UTF-8. README files, scripts, and pages should pass encoding checks to avoid mojibake regressions."
         },
+        principlesEntryTitle: { "zh-CN": "多屏入口保持稳定", "en": "Keep Multi-display Entry Stable" },
+        principlesEntryBody: {
+            "zh-CN": "HelloCustomWidgets 和 HelloUnitTest 的 app 根入口统一保持 `uicode.c` 兼容壳 + `uicode_disp0.c` display 0 入口结构；新增 demo、录制动作和接线时继续通过 `uicode.h` 对齐。",
+            "en": "HelloCustomWidgets and HelloUnitTest keep the app root as a `uicode.c` compatibility shell plus the `uicode_disp0.c` display 0 entry. New demos, recording hooks, and shared wiring should continue to align through `uicode.h`."
+        },
         workflowCompileTitle: { "zh-CN": "Reference 编译检查", "en": "Reference Compile Sweep" },
         workflowRuntimeTitle: { "zh-CN": "Reference 运行检查", "en": "Reference Runtime Sweep" },
         workflowManifestTitle: { "zh-CN": "刷新网页 manifest", "en": "Refresh Web Manifest" },
@@ -224,7 +229,8 @@
             state.policy.showcase === 0
                 ? { title: t("principlesPrunedTitle"), body: t("principlesPrunedBody") }
                 : { title: t("principlesShowcaseTitle"), body: t("principlesShowcaseBody") },
-            { title: t("principlesDocsTitle"), body: t("principlesDocsBody") }
+            { title: t("principlesDocsTitle"), body: t("principlesDocsBody") },
+            { title: t("principlesEntryTitle"), body: t("principlesEntryBody") }
         ];
 
         document.getElementById("principles-grid").innerHTML = cards.map(function(card) {
