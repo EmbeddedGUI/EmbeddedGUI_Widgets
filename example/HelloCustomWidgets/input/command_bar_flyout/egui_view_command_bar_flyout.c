@@ -104,6 +104,20 @@ static uint8_t egui_view_command_bar_flyout_text_len(const char *text)
     return length;
 }
 
+static egui_dim_t egui_view_command_bar_flyout_measure_font_line_height(const egui_font_t *font)
+{
+    egui_dim_t width = 0;
+    egui_dim_t height = 0;
+
+    if (font == NULL || font->api == NULL || font->api->get_str_size == NULL)
+    {
+        return 0;
+    }
+
+    font->api->get_str_size(font, "A", 0, 0, &width, &height);
+    return height;
+}
+
 static uint8_t egui_view_command_bar_flyout_part_is_primary(uint8_t part)
 {
     return part >= EGUI_VIEW_COMMAND_BAR_FLYOUT_PART_PRIMARY_BASE &&
@@ -429,6 +443,8 @@ static void egui_view_command_bar_flyout_get_metrics(egui_view_command_bar_flyou
     egui_dim_t row_h = local->compact_mode ? EGUI_VIEW_COMMAND_BAR_FLYOUT_COMPACT_ROW_H : EGUI_VIEW_COMMAND_BAR_FLYOUT_STANDARD_ROW_H;
     egui_dim_t row_gap = local->compact_mode ? EGUI_VIEW_COMMAND_BAR_FLYOUT_COMPACT_ROW_GAP : EGUI_VIEW_COMMAND_BAR_FLYOUT_STANDARD_ROW_GAP;
     egui_dim_t item_gap = local->compact_mode ? EGUI_VIEW_COMMAND_BAR_FLYOUT_COMPACT_ITEM_GAP : EGUI_VIEW_COMMAND_BAR_FLYOUT_STANDARD_ITEM_GAP;
+    egui_dim_t primary_line_height = egui_view_command_bar_flyout_measure_font_line_height(local->font);
+    egui_dim_t meta_line_height = egui_view_command_bar_flyout_measure_font_line_height(local->meta_font);
     egui_dim_t helper_h = (!local->compact_mode && snapshot != NULL && snapshot->panel_helper != NULL && snapshot->panel_helper[0] != '\0')
                                   ? EGUI_VIEW_COMMAND_BAR_FLYOUT_STANDARD_HELPER_H
                                   : 0;
@@ -444,6 +460,20 @@ static void egui_view_command_bar_flyout_get_metrics(egui_view_command_bar_flyou
 
     egui_view_get_work_region(self, &region);
     egui_view_command_bar_flyout_reset_metrics(metrics);
+
+    if (primary_line_height > header_h)
+    {
+        header_h = primary_line_height;
+    }
+    if (meta_line_height > header_h)
+    {
+        header_h = meta_line_height;
+    }
+    if (meta_line_height > helper_h)
+    {
+        helper_h = meta_line_height;
+    }
+
     metrics->content_region = region;
     metrics->trigger_region = region;
     metrics->trigger_region.size.height = trigger_h;
@@ -826,6 +856,7 @@ static void egui_view_command_bar_flyout_draw_trigger(egui_view_t *self, egui_vi
     egui_color_t meta = egui_rgb_mix(local->muted_text_color, tone, 10);
     egui_dim_t eyebrow_w = egui_view_command_bar_flyout_measure_eyebrow_width(local->compact_mode, snapshot->eyebrow,
                                                                               metrics->trigger_region.size.width / 3);
+    egui_dim_t meta_line_height = egui_view_command_bar_flyout_measure_font_line_height(local->meta_font);
     egui_dim_t radius = local->compact_mode ? EGUI_VIEW_COMMAND_BAR_FLYOUT_COMPACT_RADIUS : EGUI_VIEW_COMMAND_BAR_FLYOUT_STANDARD_RADIUS;
     egui_dim_t chevron_x = metrics->trigger_region.location.x + metrics->trigger_region.size.width - (local->compact_mode ? 12 : 14);
     egui_dim_t chevron_y = metrics->trigger_region.location.y + metrics->trigger_region.size.height / 2;
@@ -862,6 +893,12 @@ static void egui_view_command_bar_flyout_draw_trigger(egui_view_t *self, egui_vi
         egui_dim_t pill_h = local->compact_mode ? 8 : 10;
         egui_dim_t pill_y = metrics->trigger_region.location.y + (metrics->trigger_region.size.height - pill_h) / 2;
         egui_dim_t pill_x = chevron_x - eyebrow_w - (local->compact_mode ? 6 : 8);
+
+        if (meta_line_height > pill_h)
+        {
+            pill_h = meta_line_height;
+            pill_y = metrics->trigger_region.location.y + (metrics->trigger_region.size.height - pill_h) / 2;
+        }
 
         egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, pill_x, pill_y, eyebrow_w, pill_h, pill_h / 2, egui_rgb_mix(fill, tone, 20),
                                               egui_color_alpha_mix(self->alpha, 96));
@@ -1020,6 +1057,7 @@ static void egui_view_command_bar_flyout_on_draw(egui_view_t *self)
     egui_color_t header_text;
     egui_color_t helper_text;
     egui_dim_t eyebrow_w;
+    egui_dim_t meta_line_height = egui_view_command_bar_flyout_measure_font_line_height(local->meta_font);
     egui_dim_t radius = local->compact_mode ? EGUI_VIEW_COMMAND_BAR_FLYOUT_COMPACT_RADIUS : EGUI_VIEW_COMMAND_BAR_FLYOUT_STANDARD_RADIUS;
     uint8_t i;
 
@@ -1079,6 +1117,12 @@ static void egui_view_command_bar_flyout_on_draw(egui_view_t *self)
             egui_dim_t pill_h = local->compact_mode ? 8 : 10;
             egui_dim_t pill_y = metrics.header_region.location.y + (metrics.header_region.size.height - pill_h) / 2;
             egui_dim_t pill_x = metrics.header_region.location.x + metrics.header_region.size.width - eyebrow_w;
+
+            if (meta_line_height > pill_h)
+            {
+                pill_h = meta_line_height;
+                pill_y = metrics.header_region.location.y + (metrics.header_region.size.height - pill_h) / 2;
+            }
 
             egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, pill_x, pill_y, eyebrow_w, pill_h, pill_h / 2,
                                                   egui_rgb_mix(local->section_color, local->accent_color, 16), egui_color_alpha_mix(self->alpha, 96));
