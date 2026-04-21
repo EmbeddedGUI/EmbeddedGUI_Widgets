@@ -43,6 +43,68 @@ static uint8_t egui_view_reference_list_text_len(const char *text)
     return len;
 }
 
+static egui_dim_t egui_view_reference_list_measure_font_line_height(const egui_font_t *font)
+{
+    egui_dim_t dummy_width = 0;
+    egui_dim_t line_height = 0;
+
+    if (font == NULL || font->api == NULL || font->api->get_str_size == NULL)
+    {
+        return 0;
+    }
+
+    font->api->get_str_size(font, "A", 0, 0, &dummy_width, &line_height);
+    return line_height;
+}
+
+static egui_dim_t egui_view_reference_list_get_title_line_height(egui_view_reference_list_t *local)
+{
+    egui_dim_t line_height = egui_view_reference_list_measure_font_line_height(local->font);
+    egui_dim_t fallback = local->compact_mode ? EGUI_VIEW_REFERENCE_LIST_COMPACT_ROW_H : EGUI_VIEW_REFERENCE_LIST_STANDARD_ROW_H;
+
+    return line_height > 0 ? line_height : fallback;
+}
+
+static egui_dim_t egui_view_reference_list_get_meta_line_height(egui_view_reference_list_t *local)
+{
+    egui_dim_t line_height = egui_view_reference_list_measure_font_line_height(local->meta_font);
+    egui_dim_t fallback = local->compact_mode ? EGUI_VIEW_REFERENCE_LIST_COMPACT_ROW_H : EGUI_VIEW_REFERENCE_LIST_STANDARD_ROW_H;
+
+    return line_height > 0 ? line_height : fallback;
+}
+
+static egui_dim_t egui_view_reference_list_get_badge_height(egui_view_reference_list_t *local)
+{
+    egui_dim_t badge_h = egui_view_reference_list_get_meta_line_height(local);
+    egui_dim_t min_h = local->compact_mode ? 10 : 12;
+
+    return badge_h > min_h ? badge_h : min_h;
+}
+
+static egui_dim_t egui_view_reference_list_get_row_height(egui_view_reference_list_t *local)
+{
+    egui_dim_t title_h = egui_view_reference_list_get_title_line_height(local);
+    egui_dim_t meta_h = egui_view_reference_list_get_meta_line_height(local);
+    egui_dim_t row_h;
+    egui_dim_t min_h = local->compact_mode ? EGUI_VIEW_REFERENCE_LIST_COMPACT_ROW_H : EGUI_VIEW_REFERENCE_LIST_STANDARD_ROW_H;
+
+    if (local->compact_mode)
+    {
+        row_h = title_h > meta_h ? title_h : meta_h;
+        meta_h = egui_view_reference_list_get_badge_height(local);
+        if (meta_h > row_h)
+        {
+            row_h = meta_h;
+        }
+    }
+    else
+    {
+        row_h = title_h + meta_h;
+    }
+
+    return row_h > min_h ? row_h : min_h;
+}
+
 static egui_color_t egui_view_reference_list_mix_disabled(egui_color_t color)
 {
     return egui_rgb_mix(color, EGUI_COLOR_DARK_GREY, 68);
@@ -130,7 +192,7 @@ static void egui_view_reference_list_get_metrics(egui_view_reference_list_t *loc
     egui_region_t work_region;
     egui_dim_t pad_x = local->compact_mode ? EGUI_VIEW_REFERENCE_LIST_COMPACT_PAD_X : EGUI_VIEW_REFERENCE_LIST_STANDARD_PAD_X;
     egui_dim_t pad_y = local->compact_mode ? EGUI_VIEW_REFERENCE_LIST_COMPACT_PAD_Y : EGUI_VIEW_REFERENCE_LIST_STANDARD_PAD_Y;
-    egui_dim_t row_h = local->compact_mode ? EGUI_VIEW_REFERENCE_LIST_COMPACT_ROW_H : EGUI_VIEW_REFERENCE_LIST_STANDARD_ROW_H;
+    egui_dim_t row_h = egui_view_reference_list_get_row_height(local);
     egui_dim_t row_gap = local->compact_mode ? EGUI_VIEW_REFERENCE_LIST_COMPACT_ROW_GAP : EGUI_VIEW_REFERENCE_LIST_STANDARD_ROW_GAP;
     egui_dim_t total_h = 0;
     egui_dim_t start_y;
@@ -164,7 +226,7 @@ static void egui_view_reference_list_get_metrics(egui_view_reference_list_t *loc
     }
     if (total_h > metrics->content_region.size.height)
     {
-        row_h = local->compact_mode ? 9 : 16;
+        row_gap = 0;
         total_h = item_count * row_h + (item_count > 0 ? (item_count - 1) * row_gap : 0);
     }
 
@@ -377,12 +439,14 @@ static void egui_view_reference_list_draw_item(egui_view_t *self, egui_view_refe
     egui_color_t badge_border = egui_rgb_mix(local->border_color, tone_color, selected ? 24 : 16);
     egui_color_t badge_text = selected ? tone_color : egui_rgb_mix(local->muted_text_color, tone_color, 18);
     egui_color_t divider_color = egui_rgb_mix(local->border_color, tone_color, 10);
+    egui_dim_t title_h = egui_view_reference_list_get_title_line_height(local);
+    egui_dim_t meta_h = egui_view_reference_list_get_meta_line_height(local);
     egui_dim_t dot_size = (local->compact_mode ? 3 : 4) + (item->emphasized ? 1 : 0);
     egui_dim_t dot_x = region->location.x + (local->compact_mode ? 7 : 8);
     egui_dim_t dot_y = region->location.y + (region->size.height - dot_size) / 2;
     egui_dim_t text_x = dot_x + dot_size + (local->compact_mode ? 5 : 7);
     egui_dim_t inset_right = local->compact_mode ? 4 : 6;
-    egui_dim_t badge_h = local->compact_mode ? 8 : 10;
+    egui_dim_t badge_h = egui_view_reference_list_get_badge_height(local);
     egui_dim_t badge_w = egui_view_reference_list_badge_width(item->badge, local->compact_mode, region->size.width / 3);
     egui_dim_t badge_x = region->location.x + region->size.width - badge_w - inset_right;
     egui_dim_t badge_y = region->location.y + (region->size.height - badge_h) / 2;
@@ -460,14 +524,14 @@ static void egui_view_reference_list_draw_item(egui_view_t *self, egui_view_refe
     }
 
     text_region.location.x = text_x;
-    text_region.location.y = region->location.y + 2;
+    text_region.location.y = region->location.y;
     text_region.size.width = (badge_w > 0 ? badge_x : region->location.x + region->size.width - inset_right) - text_x - 4;
-    text_region.size.height = 8;
-    egui_view_reference_list_draw_text(local->font, self, item->title, &text_region, EGUI_ALIGN_LEFT, title_color);
+    text_region.size.height = title_h;
+    egui_view_reference_list_draw_text(local->font, self, item->title, &text_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, title_color);
 
-    text_region.location.y = region->location.y + region->size.height - 8;
-    text_region.size.height = 7;
-    egui_view_reference_list_draw_text(local->meta_font, self, item->meta, &text_region, EGUI_ALIGN_LEFT, meta_color);
+    text_region.location.y = region->location.y + region->size.height - meta_h;
+    text_region.size.height = meta_h;
+    egui_view_reference_list_draw_text(local->meta_font, self, item->meta, &text_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, meta_color);
 }
 
 static void egui_view_reference_list_on_draw(egui_view_t *self)

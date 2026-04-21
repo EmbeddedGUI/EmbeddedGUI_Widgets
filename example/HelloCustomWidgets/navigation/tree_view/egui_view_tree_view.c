@@ -90,6 +90,92 @@ static uint8_t egui_view_tree_view_text_len(const char *text)
     return length;
 }
 
+static egui_dim_t egui_view_tree_view_measure_font_line_height(const egui_font_t *font)
+{
+    egui_dim_t dummy_width = 0;
+    egui_dim_t line_height = 0;
+
+    if (font == NULL || font->api == NULL || font->api->get_str_size == NULL)
+    {
+        return 0;
+    }
+
+    font->api->get_str_size(font, "A", 0, 0, &dummy_width, &line_height);
+    return line_height;
+}
+
+static egui_dim_t egui_view_tree_view_get_title_line_height(egui_view_tree_view_t *local)
+{
+    egui_dim_t line_height = egui_view_tree_view_measure_font_line_height(local->font);
+    egui_dim_t fallback = local->compact_mode ? EGUI_VIEW_TREE_VIEW_COMPACT_ROW_HEIGHT : EGUI_VIEW_TREE_VIEW_STANDARD_ROW_HEIGHT;
+
+    return line_height > 0 ? line_height : fallback;
+}
+
+static egui_dim_t egui_view_tree_view_get_meta_line_height(egui_view_tree_view_t *local)
+{
+    egui_dim_t line_height = egui_view_tree_view_measure_font_line_height(local->meta_font);
+    egui_dim_t fallback = local->compact_mode ? EGUI_VIEW_TREE_VIEW_COMPACT_FOOTER_HEIGHT : EGUI_VIEW_TREE_VIEW_STANDARD_FOOTER_HEIGHT;
+
+    return line_height > 0 ? line_height : fallback;
+}
+
+static egui_dim_t egui_view_tree_view_get_header_height(egui_view_tree_view_t *local)
+{
+    egui_dim_t header_h = egui_view_tree_view_get_title_line_height(local);
+    egui_dim_t min_h = local->compact_mode ? EGUI_VIEW_TREE_VIEW_COMPACT_HEADER_HEIGHT : EGUI_VIEW_TREE_VIEW_STANDARD_HEADER_HEIGHT;
+
+    return header_h > min_h ? header_h : min_h;
+}
+
+static egui_dim_t egui_view_tree_view_get_footer_height(egui_view_tree_view_t *local)
+{
+    egui_dim_t footer_h = egui_view_tree_view_get_meta_line_height(local);
+    egui_dim_t min_h = local->compact_mode ? EGUI_VIEW_TREE_VIEW_COMPACT_FOOTER_HEIGHT : 11;
+
+    return footer_h > min_h ? footer_h : min_h;
+}
+
+static egui_dim_t egui_view_tree_view_get_meta_height(egui_view_tree_view_t *local)
+{
+    egui_dim_t meta_h = egui_view_tree_view_get_meta_line_height(local);
+    egui_dim_t min_h = local->compact_mode ? EGUI_VIEW_TREE_VIEW_COMPACT_META_HEIGHT : EGUI_VIEW_TREE_VIEW_STANDARD_META_HEIGHT;
+
+    return meta_h > min_h ? meta_h : min_h;
+}
+
+static egui_dim_t egui_view_tree_view_get_row_height(egui_view_tree_view_t *local)
+{
+    egui_dim_t row_h = egui_view_tree_view_get_title_line_height(local);
+    egui_dim_t min_h = local->compact_mode ? EGUI_VIEW_TREE_VIEW_COMPACT_ROW_HEIGHT : EGUI_VIEW_TREE_VIEW_STANDARD_ROW_HEIGHT;
+
+    return row_h > min_h ? row_h : min_h;
+}
+
+static void egui_view_tree_view_update_regions(const egui_region_t *region, egui_dim_t pad_x, egui_dim_t pad_y, egui_dim_t header_h, egui_dim_t header_gap,
+                                               egui_dim_t list_gap, egui_dim_t footer_h, egui_view_tree_view_metrics_t *metrics)
+{
+    metrics->content.location.x = region->location.x + pad_x;
+    metrics->content.location.y = region->location.y + pad_y;
+    metrics->content.size.width = region->size.width - pad_x * 2;
+    metrics->content.size.height = region->size.height - pad_y * 2;
+
+    metrics->header_region.location.x = metrics->content.location.x;
+    metrics->header_region.location.y = metrics->content.location.y;
+    metrics->header_region.size.width = metrics->content.size.width;
+    metrics->header_region.size.height = header_h;
+
+    metrics->footer_region.location.x = metrics->content.location.x;
+    metrics->footer_region.location.y = metrics->content.location.y + metrics->content.size.height - footer_h;
+    metrics->footer_region.size.width = metrics->content.size.width;
+    metrics->footer_region.size.height = footer_h;
+
+    metrics->list_region.location.x = metrics->content.location.x;
+    metrics->list_region.location.y = metrics->header_region.location.y + metrics->header_region.size.height + header_gap;
+    metrics->list_region.size.width = metrics->content.size.width;
+    metrics->list_region.size.height = metrics->footer_region.location.y - list_gap - metrics->list_region.location.y;
+}
+
 static egui_color_t egui_view_tree_view_mix_disabled(egui_color_t color)
 {
     return egui_rgb_mix(color, EGUI_COLOR_DARK_GREY, 68);
@@ -245,39 +331,22 @@ static void egui_view_tree_view_get_metrics(egui_view_tree_view_t *local, egui_v
     egui_region_t region;
     egui_dim_t pad_x = local->compact_mode ? EGUI_VIEW_TREE_VIEW_COMPACT_PAD_X : EGUI_VIEW_TREE_VIEW_STANDARD_PAD_X;
     egui_dim_t pad_y = local->compact_mode ? EGUI_VIEW_TREE_VIEW_COMPACT_PAD_Y : EGUI_VIEW_TREE_VIEW_STANDARD_PAD_Y;
-    egui_dim_t header_h = local->compact_mode ? EGUI_VIEW_TREE_VIEW_COMPACT_HEADER_HEIGHT : EGUI_VIEW_TREE_VIEW_STANDARD_HEADER_HEIGHT;
+    egui_dim_t packed_pad_y = local->compact_mode ? 4 : 6;
+    egui_dim_t header_h = egui_view_tree_view_get_header_height(local);
     egui_dim_t header_gap = local->compact_mode ? EGUI_VIEW_TREE_VIEW_COMPACT_HEADER_GAP : EGUI_VIEW_TREE_VIEW_STANDARD_HEADER_GAP;
     egui_dim_t list_gap = local->compact_mode ? EGUI_VIEW_TREE_VIEW_COMPACT_LIST_GAP : EGUI_VIEW_TREE_VIEW_STANDARD_LIST_GAP;
-    egui_dim_t footer_h = local->compact_mode ? EGUI_VIEW_TREE_VIEW_COMPACT_FOOTER_HEIGHT : EGUI_VIEW_TREE_VIEW_STANDARD_FOOTER_HEIGHT;
-    egui_dim_t row_h = local->compact_mode ? EGUI_VIEW_TREE_VIEW_COMPACT_ROW_HEIGHT : EGUI_VIEW_TREE_VIEW_STANDARD_ROW_HEIGHT;
+    egui_dim_t footer_h = egui_view_tree_view_get_footer_height(local);
+    egui_dim_t row_h = egui_view_tree_view_get_row_height(local);
     egui_dim_t row_gap = local->compact_mode ? EGUI_VIEW_TREE_VIEW_COMPACT_ROW_GAP : EGUI_VIEW_TREE_VIEW_STANDARD_ROW_GAP;
     egui_dim_t required_rows_h;
     egui_dim_t list_inset = local->compact_mode ? 2 : 4;
-    egui_dim_t min_row_h = local->compact_mode ? 8 : 10;
+    egui_dim_t min_row_h = egui_view_tree_view_get_title_line_height(local);
     egui_dim_t available_height;
     egui_dim_t item_y;
     uint8_t i;
 
     egui_view_get_work_region(self, &region);
-    metrics->content.location.x = region.location.x + pad_x;
-    metrics->content.location.y = region.location.y + pad_y;
-    metrics->content.size.width = region.size.width - pad_x * 2;
-    metrics->content.size.height = region.size.height - pad_y * 2;
-
-    metrics->header_region.location.x = metrics->content.location.x;
-    metrics->header_region.location.y = metrics->content.location.y;
-    metrics->header_region.size.width = metrics->content.size.width;
-    metrics->header_region.size.height = header_h;
-
-    metrics->footer_region.location.x = metrics->content.location.x;
-    metrics->footer_region.location.y = metrics->content.location.y + metrics->content.size.height - footer_h;
-    metrics->footer_region.size.width = metrics->content.size.width;
-    metrics->footer_region.size.height = footer_h;
-
-    metrics->list_region.location.x = metrics->content.location.x;
-    metrics->list_region.location.y = metrics->header_region.location.y + metrics->header_region.size.height + header_gap;
-    metrics->list_region.size.width = metrics->content.size.width;
-    metrics->list_region.size.height = metrics->footer_region.location.y - list_gap - metrics->list_region.location.y;
+    egui_view_tree_view_update_regions(&region, pad_x, pad_y, header_h, header_gap, list_gap, footer_h, metrics);
 
     metrics->visible_item_count = egui_view_tree_view_clamp_item_count(item_count);
     if (metrics->visible_item_count == 0)
@@ -300,16 +369,24 @@ static void egui_view_tree_view_get_metrics(egui_view_tree_view_t *local, egui_v
     required_rows_h = (egui_dim_t)metrics->visible_item_count * row_h + (egui_dim_t)(metrics->visible_item_count - 1) * row_gap;
     if (required_rows_h > available_height && metrics->visible_item_count > 0)
     {
-        row_h = (available_height - (egui_dim_t)(metrics->visible_item_count - 1) * row_gap) / metrics->visible_item_count;
-        if (row_h < min_row_h)
-        {
-            row_gap = 0;
-            row_h = available_height / metrics->visible_item_count;
-        }
-        if (row_h < min_row_h && available_height >= (egui_dim_t)metrics->visible_item_count * min_row_h)
-        {
-            row_h = min_row_h;
-        }
+        pad_y = packed_pad_y;
+        header_gap = 1;
+        list_gap = 1;
+        footer_h = egui_view_tree_view_get_footer_height(local);
+        list_inset = 0;
+        egui_view_tree_view_update_regions(&region, pad_x, pad_y, header_h, header_gap, list_gap, footer_h, metrics);
+        available_height = metrics->list_region.size.height;
+        required_rows_h = (egui_dim_t)metrics->visible_item_count * row_h + (egui_dim_t)(metrics->visible_item_count - 1) * row_gap;
+    }
+    if (required_rows_h > available_height && metrics->visible_item_count > 0)
+    {
+        row_gap = 0;
+        required_rows_h = (egui_dim_t)metrics->visible_item_count * row_h;
+    }
+    if (required_rows_h > available_height && metrics->visible_item_count > 0)
+    {
+        row_h = min_row_h;
+        required_rows_h = (egui_dim_t)metrics->visible_item_count * row_h;
     }
 
     required_rows_h = (egui_dim_t)metrics->visible_item_count * row_h + (egui_dim_t)(metrics->visible_item_count - 1) * row_gap;
@@ -629,7 +706,7 @@ static void egui_view_tree_view_draw_row(egui_view_t *self, egui_view_tree_view_
     egui_dim_t glyph_w = local->compact_mode ? EGUI_VIEW_TREE_VIEW_COMPACT_GLYPH_WIDTH : EGUI_VIEW_TREE_VIEW_STANDARD_GLYPH_WIDTH;
     egui_dim_t glyph_h = local->compact_mode ? EGUI_VIEW_TREE_VIEW_COMPACT_GLYPH_HEIGHT : EGUI_VIEW_TREE_VIEW_STANDARD_GLYPH_HEIGHT;
     egui_dim_t glyph_radius = local->compact_mode ? EGUI_VIEW_TREE_VIEW_COMPACT_GLYPH_RADIUS : EGUI_VIEW_TREE_VIEW_STANDARD_GLYPH_RADIUS;
-    egui_dim_t meta_h = local->compact_mode ? EGUI_VIEW_TREE_VIEW_COMPACT_META_HEIGHT : EGUI_VIEW_TREE_VIEW_STANDARD_META_HEIGHT;
+    egui_dim_t meta_h = egui_view_tree_view_get_meta_height(local);
     egui_dim_t branch_base_x = item_region->location.x + (local->compact_mode ? 8 : 10);
     egui_dim_t caret_x = branch_base_x + item->depth * indent;
     egui_dim_t caret_y = item_region->location.y + (item_region->size.height - caret_size) / 2;
@@ -854,7 +931,7 @@ static void egui_view_tree_view_on_draw(egui_view_t *self)
     caption_w = egui_view_tree_view_caption_width(snapshot->caption, local->compact_mode, metrics.header_region.size.width / 2);
     if (snapshot->caption != NULL && snapshot->caption[0] != '\0')
     {
-        egui_dim_t caption_h = local->compact_mode ? EGUI_VIEW_TREE_VIEW_COMPACT_META_HEIGHT + 2 : EGUI_VIEW_TREE_VIEW_STANDARD_META_HEIGHT + 2;
+        egui_dim_t caption_h = egui_view_tree_view_get_meta_height(local);
 
         egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.header_region.location.x + metrics.header_region.size.width - caption_w, metrics.header_region.location.y,
                                               caption_w, caption_h, caption_h / 2, caption_fill, egui_color_alpha_mix(self->alpha, 78));
