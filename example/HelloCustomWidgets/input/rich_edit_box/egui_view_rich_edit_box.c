@@ -104,6 +104,20 @@ static egui_dim_t rich_edit_box_resolve_line_height(const egui_font_t *font, egu
     return line_height > fallback ? line_height : fallback;
 }
 
+static egui_dim_t rich_edit_box_measure_text_width(const egui_font_t *font, const char *text)
+{
+    egui_dim_t text_width = 0;
+    egui_dim_t text_height = 0;
+
+    if (text == NULL || text[0] == '\0' || font == NULL || font->api == NULL || font->api->get_str_size == NULL)
+    {
+        return 0;
+    }
+
+    font->api->get_str_size(font, text, 0, 0, &text_width, &text_height);
+    return text_width;
+}
+
 static uint8_t rich_edit_box_text_len(const char *text)
 {
     uint8_t length = 0;
@@ -565,10 +579,20 @@ static void rich_edit_box_draw_text(const egui_font_t *font, egui_view_t *self, 
 
 static egui_dim_t rich_edit_box_measure_pill_width(egui_view_rich_edit_box_t *local, const char *text)
 {
-    egui_dim_t width = (egui_dim_t)(rich_edit_box_text_len(text) *
-                                    (local->compact_mode ? EGUI_VIEW_RICH_EDIT_BOX_COMPACT_PILL_CHAR_W : EGUI_VIEW_RICH_EDIT_BOX_STANDARD_PILL_CHAR_W));
+    const egui_font_t *pill_font = local->meta_font != NULL ? local->meta_font : local->font;
+    egui_dim_t base_w = local->compact_mode ? EGUI_VIEW_RICH_EDIT_BOX_COMPACT_PILL_BASE_W : EGUI_VIEW_RICH_EDIT_BOX_STANDARD_PILL_BASE_W;
+    egui_dim_t width = base_w;
 
-    width += local->compact_mode ? EGUI_VIEW_RICH_EDIT_BOX_COMPACT_PILL_BASE_W : EGUI_VIEW_RICH_EDIT_BOX_STANDARD_PILL_BASE_W;
+    if (rich_edit_box_has_text(text))
+    {
+        width += rich_edit_box_measure_text_width(pill_font, text);
+        if (width <= base_w)
+        {
+            width = (egui_dim_t)(base_w + rich_edit_box_text_len(text) *
+                                          (local->compact_mode ? EGUI_VIEW_RICH_EDIT_BOX_COMPACT_PILL_CHAR_W
+                                                               : EGUI_VIEW_RICH_EDIT_BOX_STANDARD_PILL_CHAR_W));
+        }
+    }
     if (local->compact_mode)
     {
         if (width < EGUI_VIEW_RICH_EDIT_BOX_COMPACT_PILL_MIN_W)
