@@ -689,8 +689,11 @@ static void scroll_viewer_draw_block(egui_view_t *self, egui_view_scroll_viewer_
     egui_dim_t bottom_pad = local->compact_mode ? 3 : 5;
     egui_dim_t badge_gap = 2;
     egui_dim_t text_gap = 1;
+    egui_dim_t min_pad = local->compact_mode ? 1 : 2;
     egui_dim_t content_y;
     egui_dim_t meta_y;
+    egui_dim_t required_h;
+    egui_dim_t reduce;
     uint8_t show_badge;
 
     if (block == NULL)
@@ -719,6 +722,53 @@ static void scroll_viewer_draw_block(egui_view_t *self, egui_view_scroll_viewer_
     fill_color = egui_rgb_mix(surface_color, tone_color, block->emphasized ? 18 : 12);
     line_color = egui_rgb_mix(border_color, tone_color, 22);
     show_badge = scroll_viewer_has_text(block->badge);
+
+    required_h = top_pad + bottom_pad + title_h + meta_h + text_gap;
+    if (show_badge)
+    {
+        required_h += badge_h + badge_gap;
+    }
+
+    if (required_h > block_region.size.height && badge_gap > 0)
+    {
+        reduce = required_h - block_region.size.height;
+        if (reduce > badge_gap)
+        {
+            reduce = badge_gap;
+        }
+        badge_gap -= reduce;
+        required_h -= reduce;
+    }
+    if (required_h > block_region.size.height && text_gap > 0)
+    {
+        reduce = required_h - block_region.size.height;
+        if (reduce > text_gap)
+        {
+            reduce = text_gap;
+        }
+        text_gap -= reduce;
+        required_h -= reduce;
+    }
+    if (required_h > block_region.size.height && top_pad > min_pad)
+    {
+        reduce = required_h - block_region.size.height;
+        if (reduce > top_pad - min_pad)
+        {
+            reduce = top_pad - min_pad;
+        }
+        top_pad -= reduce;
+        required_h -= reduce;
+    }
+    if (required_h > block_region.size.height && bottom_pad > min_pad)
+    {
+        reduce = required_h - block_region.size.height;
+        if (reduce > bottom_pad - min_pad)
+        {
+            reduce = bottom_pad - min_pad;
+        }
+        bottom_pad -= reduce;
+        required_h -= reduce;
+    }
 
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, block_region.location.x, block_region.location.y, block_region.size.width, block_region.size.height, 7, fill_color,
                                           egui_color_alpha_mix(self->alpha, 96));
