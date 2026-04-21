@@ -94,6 +94,20 @@ static egui_dim_t egui_view_settings_expander_measure_font_line_height(const egu
     return line_height;
 }
 
+static egui_dim_t egui_view_settings_expander_measure_text_width(const egui_font_t *font, const char *text)
+{
+    egui_dim_t text_width = 0;
+    egui_dim_t dummy_height = 0;
+
+    if (text == NULL || text[0] == '\0' || font == NULL || font->api == NULL || font->api->get_str_size == NULL)
+    {
+        return 0;
+    }
+
+    font->api->get_str_size(font, text, 0, 0, &text_width, &dummy_height);
+    return text_width;
+}
+
 static egui_dim_t egui_view_settings_expander_header_badge_height(egui_view_settings_expander_t *local)
 {
     egui_dim_t min_h = local->compact_mode ? EGUI_VIEW_SETTINGS_EXPANDER_COMPACT_BADGE_H : EGUI_VIEW_SETTINGS_EXPANDER_STANDARD_BADGE_H;
@@ -328,13 +342,18 @@ static void egui_view_settings_expander_sync_current_part(egui_view_settings_exp
     }
 }
 
-static egui_dim_t egui_view_settings_expander_pill_width(const char *text, uint8_t compact_mode, egui_dim_t min_width, egui_dim_t max_width)
+static egui_dim_t egui_view_settings_expander_pill_width(const egui_font_t *font, const char *text, uint8_t compact_mode, egui_dim_t min_width,
+                                                         egui_dim_t max_width)
 {
     egui_dim_t width = min_width;
 
     if (egui_view_settings_expander_has_text(text))
     {
-        width += egui_view_settings_expander_text_len(text) * (compact_mode ? 4 : 5);
+        width += egui_view_settings_expander_measure_text_width(font, text);
+        if (width <= min_width)
+        {
+            width = min_width + egui_view_settings_expander_text_len(text) * (compact_mode ? 4 : 5);
+        }
     }
 
     if (width > max_width)
@@ -640,12 +659,21 @@ static void egui_view_settings_expander_draw_header(egui_view_t *self, egui_view
     egui_dim_t chevron_h = local->compact_mode ? 8 : 10;
     egui_dim_t chevron_x = region->location.x + region->size.width - (local->compact_mode ? 7 : 9) - chevron_w;
     egui_dim_t chevron_y = region->location.y + (region->size.height - chevron_h) / 2;
-    egui_dim_t value_w = egui_view_settings_expander_pill_width(snapshot->value, local->compact_mode, local->compact_mode ? 18 : 24,
-                                                                region->size.width / 3);
+    egui_dim_t value_max_w = region->size.width - (inner_x - region->location.x) - icon_size - 7 - chevron_w - (local->compact_mode ? 16 : 26) -
+                             (local->compact_mode ? 18 : 36);
+    egui_dim_t value_w;
     egui_dim_t value_h = egui_view_settings_expander_value_height(local);
-    egui_dim_t value_x = chevron_x - (egui_view_settings_expander_has_text(snapshot->value) ? (value_w + (local->compact_mode ? 4 : 6)) : 0);
+    egui_dim_t value_x;
     egui_dim_t title_x = inner_x + icon_size + 7;
-    egui_dim_t text_right = value_x > title_x ? value_x - 4 : chevron_x - 4;
+    egui_dim_t text_right;
+
+    if (value_max_w < (local->compact_mode ? 18 : 24))
+    {
+        value_max_w = local->compact_mode ? 18 : 24;
+    }
+    value_w = egui_view_settings_expander_pill_width(local->meta_font, snapshot->value, local->compact_mode, local->compact_mode ? 18 : 24, value_max_w);
+    value_x = chevron_x - (egui_view_settings_expander_has_text(snapshot->value) ? (value_w + (local->compact_mode ? 4 : 6)) : 0);
+    text_right = value_x > title_x ? value_x - 4 : chevron_x - 4;
 
     if (pressed)
     {
@@ -702,7 +730,14 @@ static void egui_view_settings_expander_draw_header(egui_view_t *self, egui_view
 
     if (!local->compact_mode && egui_view_settings_expander_has_text(snapshot->eyebrow))
     {
-        egui_dim_t badge_w = egui_view_settings_expander_pill_width(snapshot->eyebrow, local->compact_mode, 26, region->size.width / 3);
+        egui_dim_t badge_max_w = chevron_x - title_x - 8;
+        egui_dim_t badge_w;
+
+        if (badge_max_w < 26)
+        {
+            badge_max_w = 26;
+        }
+        badge_w = egui_view_settings_expander_pill_width(local->meta_font, snapshot->eyebrow, local->compact_mode, 26, badge_max_w);
 
         egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, title_x, inner_y, badge_w, badge_h, badge_h / 2, badge_fill, egui_color_alpha_mix(self->alpha, 90));
         egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, title_x, inner_y, badge_w, badge_h, badge_h / 2, 1, badge_border, egui_color_alpha_mix(self->alpha, 36));
@@ -763,6 +798,7 @@ static void egui_view_settings_expander_draw_row(egui_view_t *self, egui_view_se
     egui_dim_t title_x = region->location.x + 5 + icon_size + 7;
     egui_dim_t trailing_w = 0;
     egui_dim_t trailing_h = egui_view_settings_expander_value_height(local);
+    egui_dim_t trailing_max_w;
     egui_dim_t trailing_x;
     egui_dim_t trailing_y = region->location.y + (region->size.height - trailing_h) / 2;
 
@@ -824,7 +860,12 @@ static void egui_view_settings_expander_draw_row(egui_view_t *self, egui_view_se
         trailing_h = local->compact_mode ? 8 : 10;
         break;
     default:
-        trailing_w = egui_view_settings_expander_pill_width(row->value, local->compact_mode, local->compact_mode ? 18 : 24, region->size.width / 3);
+        trailing_max_w = region->size.width - (title_x - region->location.x) - (local->compact_mode ? 6 : 7) - 4 - (local->compact_mode ? 18 : 32);
+        if (trailing_max_w < (local->compact_mode ? 18 : 24))
+        {
+            trailing_max_w = local->compact_mode ? 18 : 24;
+        }
+        trailing_w = egui_view_settings_expander_pill_width(local->meta_font, row->value, local->compact_mode, local->compact_mode ? 18 : 24, trailing_max_w);
         break;
     }
 
