@@ -56,21 +56,81 @@ static uint8_t egui_view_persona_group_clamp_item_count(uint8_t count)
     return count;
 }
 
-static uint8_t egui_view_persona_group_text_len(const char *text)
+static uint8_t egui_view_persona_group_has_text(const char *text)
 {
-    uint8_t len = 0;
+    return text != NULL && text[0] != '\0' ? 1 : 0;
+}
 
-    if (text == NULL)
+static egui_dim_t egui_view_persona_group_measure_font_line_height(const egui_font_t *font)
+{
+    egui_dim_t dummy_width = 0;
+    egui_dim_t line_height = 0;
+
+    if (font == NULL || font->api == NULL || font->api->get_str_size == NULL)
     {
         return 0;
     }
 
-    while (text[len] != '\0')
+    font->api->get_str_size(font, "A", 0, 0, &dummy_width, &line_height);
+    return line_height;
+}
+
+static egui_dim_t egui_view_persona_group_measure_text_width(const egui_font_t *font, const char *text)
+{
+    egui_dim_t text_width = 0;
+    egui_dim_t dummy_height = 0;
+
+    if (!egui_view_persona_group_has_text(text) || font == NULL || font->api == NULL || font->api->get_str_size == NULL)
     {
-        len++;
+        return 0;
     }
 
-    return len;
+    font->api->get_str_size(font, text, 0, 0, &text_width, &dummy_height);
+    return text_width;
+}
+
+static egui_dim_t egui_view_persona_group_get_eyebrow_height(egui_view_persona_group_t *local)
+{
+    egui_dim_t eyebrow_h = egui_view_persona_group_measure_font_line_height(local->meta_font);
+
+    return eyebrow_h > EGUI_VIEW_PERSONA_GROUP_STANDARD_HEADER_HEIGHT ? eyebrow_h : EGUI_VIEW_PERSONA_GROUP_STANDARD_HEADER_HEIGHT;
+}
+
+static egui_dim_t egui_view_persona_group_get_title_height(egui_view_persona_group_t *local)
+{
+    egui_dim_t title_h = egui_view_persona_group_measure_font_line_height(local->font);
+    egui_dim_t min_h = local->compact_mode ? EGUI_VIEW_PERSONA_GROUP_COMPACT_TITLE_HEIGHT : EGUI_VIEW_PERSONA_GROUP_STANDARD_TITLE_HEIGHT;
+
+    return title_h > min_h ? title_h : min_h;
+}
+
+static egui_dim_t egui_view_persona_group_get_name_height(egui_view_persona_group_t *local)
+{
+    egui_dim_t name_h = egui_view_persona_group_measure_font_line_height(local->font);
+    egui_dim_t min_h = local->compact_mode ? 9 : 10;
+
+    return name_h > min_h ? name_h : min_h;
+}
+
+static egui_dim_t egui_view_persona_group_get_role_height(egui_view_persona_group_t *local)
+{
+    egui_dim_t role_h;
+
+    if (local->compact_mode)
+    {
+        return 0;
+    }
+
+    role_h = egui_view_persona_group_measure_font_line_height(local->meta_font);
+    return role_h > 8 ? role_h : 8;
+}
+
+static egui_dim_t egui_view_persona_group_get_footer_height(egui_view_persona_group_t *local)
+{
+    egui_dim_t footer_h = egui_view_persona_group_measure_font_line_height(local->meta_font);
+    egui_dim_t min_h = local->compact_mode ? EGUI_VIEW_PERSONA_GROUP_COMPACT_FOOTER_HEIGHT : EGUI_VIEW_PERSONA_GROUP_STANDARD_FOOTER_HEIGHT;
+
+    return footer_h > min_h ? footer_h : min_h;
 }
 
 static egui_color_t egui_view_persona_group_mix_disabled(egui_color_t color)
@@ -164,9 +224,9 @@ static void egui_view_persona_group_draw_text(const egui_font_t *font, egui_view
     egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, font, text, &draw_region, align, color, self->alpha);
 }
 
-static egui_dim_t egui_view_persona_group_footer_width(const char *text, uint8_t compact_mode, egui_dim_t max_width)
+static egui_dim_t egui_view_persona_group_footer_width(const egui_font_t *font, const char *text, uint8_t compact_mode, egui_dim_t max_width)
 {
-    egui_dim_t width = (compact_mode ? 18 : 24) + egui_view_persona_group_text_len(text) * (compact_mode ? 4 : 5);
+    egui_dim_t width = (compact_mode ? 18 : 24) + egui_view_persona_group_measure_text_width(font, text);
 
     if (width > max_width)
     {
@@ -197,7 +257,11 @@ static void egui_view_persona_group_get_metrics(egui_view_persona_group_t *local
     egui_dim_t row_width;
     egui_dim_t start_x;
     egui_dim_t row_y;
-    egui_dim_t footer_h = local->compact_mode ? EGUI_VIEW_PERSONA_GROUP_COMPACT_FOOTER_HEIGHT : EGUI_VIEW_PERSONA_GROUP_STANDARD_FOOTER_HEIGHT;
+    egui_dim_t eyebrow_h = local->compact_mode ? 0 : egui_view_persona_group_get_eyebrow_height(local);
+    egui_dim_t title_h = egui_view_persona_group_get_title_height(local);
+    egui_dim_t name_h = egui_view_persona_group_get_name_height(local);
+    egui_dim_t role_h = egui_view_persona_group_get_role_height(local);
+    egui_dim_t footer_h = egui_view_persona_group_get_footer_height(local);
     egui_dim_t overflow_size = avatar_size - (local->compact_mode ? 1 : 2);
     uint8_t item_count = 0;
     uint8_t i;
@@ -239,7 +303,18 @@ static void egui_view_persona_group_get_metrics(egui_view_persona_group_t *local
         row_width = metrics->content_region.size.width;
     }
     start_x = metrics->content_region.location.x + (metrics->content_region.size.width - row_width) / 2;
-    row_y = metrics->content_region.location.y + (local->compact_mode ? 19 : 29);
+
+    metrics->eyebrow_region.location.x = metrics->content_region.location.x + 2;
+    metrics->eyebrow_region.location.y = metrics->content_region.location.y + 1;
+    metrics->eyebrow_region.size.width = metrics->content_region.size.width - 4;
+    metrics->eyebrow_region.size.height = eyebrow_h;
+
+    metrics->title_region.location.x = metrics->content_region.location.x + 2;
+    metrics->title_region.location.y = local->compact_mode ? (metrics->content_region.location.y + 4) : (metrics->eyebrow_region.location.y + eyebrow_h + 3);
+    metrics->title_region.size.width = metrics->content_region.size.width - 4;
+    metrics->title_region.size.height = title_h;
+
+    row_y = metrics->title_region.location.y + title_h + 6;
 
     for (i = 0; i < item_count; i++)
     {
@@ -257,25 +332,15 @@ static void egui_view_persona_group_get_metrics(egui_view_persona_group_t *local
         metrics->overflow_region.size.height = overflow_size;
     }
 
-    metrics->eyebrow_region.location.x = metrics->content_region.location.x + 2;
-    metrics->eyebrow_region.location.y = metrics->content_region.location.y + 1;
-    metrics->eyebrow_region.size.width = metrics->content_region.size.width - 4;
-    metrics->eyebrow_region.size.height = EGUI_VIEW_PERSONA_GROUP_STANDARD_HEADER_HEIGHT;
-
-    metrics->title_region.location.x = metrics->content_region.location.x + 2;
-    metrics->title_region.location.y = metrics->content_region.location.y + (local->compact_mode ? 4 : 12);
-    metrics->title_region.size.width = metrics->content_region.size.width - 4;
-    metrics->title_region.size.height = local->compact_mode ? EGUI_VIEW_PERSONA_GROUP_COMPACT_TITLE_HEIGHT : EGUI_VIEW_PERSONA_GROUP_STANDARD_TITLE_HEIGHT;
-
     metrics->name_region.location.x = metrics->content_region.location.x + 4;
     metrics->name_region.location.y = row_y + avatar_size + (local->compact_mode ? 5 : 7);
     metrics->name_region.size.width = metrics->content_region.size.width - 8;
-    metrics->name_region.size.height = local->compact_mode ? 9 : 10;
+    metrics->name_region.size.height = name_h;
 
     metrics->role_region.location.x = metrics->content_region.location.x + 4;
     metrics->role_region.location.y = metrics->name_region.location.y + metrics->name_region.size.height + 1;
     metrics->role_region.size.width = metrics->content_region.size.width - 8;
-    metrics->role_region.size.height = local->compact_mode ? 0 : 8;
+    metrics->role_region.size.height = role_h;
 
     metrics->footer_region.size.height = footer_h;
     metrics->footer_region.location.y = metrics->content_region.location.y + metrics->content_region.size.height - footer_h;
@@ -691,7 +756,7 @@ static void egui_view_persona_group_on_draw(egui_view_t *self)
         egui_view_persona_group_draw_text(local->meta_font, self, item->role, &metrics.role_region, EGUI_ALIGN_CENTER, role_color);
     }
 
-    footer_w = egui_view_persona_group_footer_width(snapshot->summary, local->compact_mode, metrics.footer_region.size.width);
+    footer_w = egui_view_persona_group_footer_width(local->meta_font, snapshot->summary, local->compact_mode, metrics.footer_region.size.width);
     text_region = metrics.footer_region;
     text_region.location.x = metrics.content_region.location.x + (metrics.content_region.size.width - footer_w) / 2;
     text_region.size.width = footer_w;
