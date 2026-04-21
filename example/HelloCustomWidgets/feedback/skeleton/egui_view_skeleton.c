@@ -35,6 +35,27 @@ static uint8_t egui_view_skeleton_clear_pressed_state(egui_view_t *self)
     return 1;
 }
 
+static egui_dim_t egui_view_skeleton_measure_font_line_height(const egui_font_t *font)
+{
+    egui_dim_t dummy_width = 0;
+    egui_dim_t line_height = 0;
+
+    if (font == NULL || font->api == NULL || font->api->get_str_size == NULL)
+    {
+        return 0;
+    }
+
+    font->api->get_str_size(font, "A", 0, 0, &dummy_width, &line_height);
+    return line_height;
+}
+
+static egui_dim_t egui_view_skeleton_resolve_line_height(const egui_font_t *font, egui_dim_t fallback)
+{
+    egui_dim_t line_height = egui_view_skeleton_measure_font_line_height(font);
+
+    return line_height > fallback ? line_height : fallback;
+}
+
 static void egui_view_skeleton_tick(egui_timer_t *timer)
 {
     egui_view_t *self = (egui_view_t *)timer->user_data;
@@ -225,7 +246,7 @@ static uint8_t egui_view_skeleton_get_pulse_mix(uint8_t phase)
 }
 
 static void egui_view_skeleton_draw_footer(egui_view_skeleton_t *local, egui_view_t *self, const char *text, egui_dim_t x, egui_dim_t y, egui_dim_t width,
-                                           egui_color_t color)
+                                           egui_dim_t height, egui_color_t color)
 {
     egui_region_t text_region;
 
@@ -237,7 +258,7 @@ static void egui_view_skeleton_draw_footer(egui_view_skeleton_t *local, egui_vie
     text_region.location.x = x;
     text_region.location.y = y;
     text_region.size.width = width;
-    text_region.size.height = 10;
+    text_region.size.height = height;
     egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, local->font, text, &text_region, EGUI_ALIGN_LEFT, color, self->alpha);
 }
 
@@ -257,6 +278,7 @@ static void egui_view_skeleton_on_draw(egui_view_t *self)
     egui_dim_t content_y;
     egui_dim_t content_width;
     egui_dim_t content_height;
+    egui_dim_t footer_h = egui_view_skeleton_resolve_line_height(local->font, 10);
     egui_dim_t footer_y;
     uint8_t block_count;
     uint8_t i;
@@ -321,7 +343,7 @@ static void egui_view_skeleton_on_draw(egui_view_t *self)
     content_height = region.size.height - (local->compact_mode ? 16 : 20);
     if (local->show_footer && !local->compact_mode)
     {
-        content_height -= 12;
+        content_height -= footer_h + 2;
     }
     if (content_width <= 0 || content_height <= 0)
     {
@@ -392,7 +414,7 @@ static void egui_view_skeleton_on_draw(egui_view_t *self)
     if (local->show_footer && !local->compact_mode)
     {
         footer_y = content_y + content_height + 3;
-        egui_view_skeleton_draw_footer(local, self, snapshot->footer ? snapshot->footer : "Loading content", content_x, footer_y, content_width,
+        egui_view_skeleton_draw_footer(local, self, snapshot->footer ? snapshot->footer : "Loading content", content_x, footer_y, content_width, footer_h,
                                        local->read_only_mode ? muted_text_color : text_color);
     }
 }
