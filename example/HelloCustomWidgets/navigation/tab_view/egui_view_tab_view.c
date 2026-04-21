@@ -94,6 +94,21 @@ static egui_dim_t egui_view_tab_view_measure_text_width(const egui_font_t *font,
     return text_width;
 }
 
+static uint8_t egui_view_tab_view_text_len(const char *text)
+{
+    uint8_t length = 0;
+
+    if (text == NULL)
+    {
+        return 0;
+    }
+    while (text[length] != '\0')
+    {
+        length++;
+    }
+    return length;
+}
+
 static void egui_view_tab_view_copy_elided(char *buffer, uint8_t buffer_size, const char *text, uint8_t max_chars)
 {
     uint8_t length = 0;
@@ -509,8 +524,15 @@ static void egui_view_tab_view_draw_text(const egui_font_t *font, egui_view_t *s
 static egui_dim_t egui_view_tab_view_measure_tab_width(egui_view_tab_view_t *local, const egui_view_tab_view_tab_t *tab, uint8_t active, const char *label)
 {
     egui_dim_t width = local->compact_mode ? EGUI_VIEW_TAB_VIEW_COMPACT_TAB_BASE_WIDTH : EGUI_VIEW_TAB_VIEW_STANDARD_TAB_BASE_WIDTH;
+    egui_dim_t text_width = egui_view_tab_view_measure_text_width(local->font, label);
 
-    width += egui_view_tab_view_measure_text_width(local->font, label);
+    if (text_width <= 0 && label != NULL && label[0] != '\0')
+    {
+        text_width = (egui_dim_t)egui_view_tab_view_text_len(label) *
+                     (local->compact_mode ? EGUI_VIEW_TAB_VIEW_COMPACT_TAB_CHAR_WIDTH : EGUI_VIEW_TAB_VIEW_STANDARD_TAB_CHAR_WIDTH);
+    }
+
+    width += text_width;
     if (active)
     {
         width += local->compact_mode ? EGUI_VIEW_TAB_VIEW_COMPACT_TAB_ACTIVE_BONUS : EGUI_VIEW_TAB_VIEW_STANDARD_TAB_ACTIVE_BONUS;
@@ -542,6 +564,19 @@ static egui_dim_t egui_view_tab_view_measure_tab_width(egui_view_tab_view_t *loc
         }
     }
     return width;
+}
+
+static void egui_view_tab_view_fit_label_to_width(egui_view_tab_view_t *local, const egui_view_tab_view_tab_t *tab, uint8_t active, const char *text, char *buffer,
+                                                  uint8_t buffer_size, egui_dim_t max_width)
+{
+    uint8_t max_chars = egui_view_tab_view_text_len(text);
+
+    egui_view_tab_view_copy_elided(buffer, buffer_size, text, max_chars);
+    while (max_chars > 1 && egui_view_tab_view_measure_tab_width(local, tab, active, buffer) > max_width)
+    {
+        max_chars--;
+        egui_view_tab_view_copy_elided(buffer, buffer_size, text, max_chars);
+    }
 }
 
 static void egui_view_tab_view_build_metrics(egui_view_t *self, egui_view_tab_view_metrics_t *metrics)
@@ -667,6 +702,18 @@ static void egui_view_tab_view_build_metrics(egui_view_t *self, egui_view_tab_vi
         total_width = 0;
         for (i = 0; i < visible_count; i++)
         {
+            const egui_view_tab_view_tab_t *tab = egui_view_tab_view_get_tab(local, metrics->items[i].tab_index);
+            uint8_t active = metrics->items[i].tab_index == local->current_tab;
+            uint8_t max_chars = 1;
+
+            if (fallback_width > (local->compact_mode ? 10 : 16))
+            {
+                max_chars = (uint8_t)((fallback_width - (local->compact_mode ? 10 : 16)) /
+                                      (local->compact_mode ? EGUI_VIEW_TAB_VIEW_COMPACT_TAB_CHAR_WIDTH : EGUI_VIEW_TAB_VIEW_STANDARD_TAB_CHAR_WIDTH));
+            }
+            egui_view_tab_view_copy_elided(metrics->items[i].label, sizeof(metrics->items[i].label), tab != NULL ? tab->title : NULL, max_chars);
+            egui_view_tab_view_fit_label_to_width(local, tab, active, tab != NULL ? tab->title : NULL, metrics->items[i].label,
+                                                  sizeof(metrics->items[i].label), fallback_width);
             metrics->items[i].tab_region.size.width = fallback_width;
             total_width += fallback_width;
         }
