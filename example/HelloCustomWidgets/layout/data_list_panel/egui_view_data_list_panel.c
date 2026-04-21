@@ -60,6 +60,34 @@ static uint8_t egui_view_data_list_panel_text_len(const char *text)
     return len;
 }
 
+static egui_dim_t egui_view_data_list_panel_measure_font_line_height(const egui_font_t *font)
+{
+    egui_dim_t dummy_width = 0;
+    egui_dim_t line_height = 0;
+
+    if (font == NULL || font->api == NULL || font->api->get_str_size == NULL)
+    {
+        return 0;
+    }
+
+    font->api->get_str_size(font, "A", 0, 0, &dummy_width, &line_height);
+    return line_height;
+}
+
+static egui_dim_t egui_view_data_list_panel_meta_height(egui_view_data_list_panel_t *local, egui_dim_t fallback)
+{
+    egui_dim_t line_height = egui_view_data_list_panel_measure_font_line_height(local->meta_font);
+
+    return line_height > fallback ? line_height : fallback;
+}
+
+static egui_dim_t egui_view_data_list_panel_title_height(egui_view_data_list_panel_t *local, egui_dim_t fallback)
+{
+    egui_dim_t line_height = egui_view_data_list_panel_measure_font_line_height(local->font);
+
+    return line_height > fallback ? line_height : fallback;
+}
+
 static egui_color_t egui_view_data_list_panel_mix_disabled(egui_color_t color)
 {
     return egui_rgb_mix(color, EGUI_COLOR_DARK_GREY, 68);
@@ -166,11 +194,18 @@ static void egui_view_data_list_panel_get_metrics(egui_view_data_list_panel_t *l
     egui_dim_t pad_y = local->compact_mode ? EGUI_VIEW_DATA_LIST_PANEL_COMPACT_PAD_Y : EGUI_VIEW_DATA_LIST_PANEL_STANDARD_PAD_Y;
     egui_dim_t row_h = local->compact_mode ? EGUI_VIEW_DATA_LIST_PANEL_COMPACT_ROW_H : EGUI_VIEW_DATA_LIST_PANEL_STANDARD_ROW_H;
     egui_dim_t row_gap = local->compact_mode ? EGUI_VIEW_DATA_LIST_PANEL_COMPACT_ROW_GAP : EGUI_VIEW_DATA_LIST_PANEL_STANDARD_ROW_GAP;
-    egui_dim_t footer_h = local->compact_mode ? EGUI_VIEW_DATA_LIST_PANEL_COMPACT_FOOTER_H : EGUI_VIEW_DATA_LIST_PANEL_STANDARD_FOOTER_H;
+    egui_dim_t footer_h = egui_view_data_list_panel_meta_height(
+            local,
+            local->compact_mode ? EGUI_VIEW_DATA_LIST_PANEL_COMPACT_FOOTER_H : EGUI_VIEW_DATA_LIST_PANEL_STANDARD_FOOTER_H);
     egui_dim_t rows_y = local->compact_mode ? EGUI_VIEW_DATA_LIST_PANEL_COMPACT_ROWS_Y : EGUI_VIEW_DATA_LIST_PANEL_STANDARD_ROWS_Y;
     egui_dim_t available_h;
     egui_dim_t total_h;
     egui_dim_t start_y;
+    egui_dim_t title_y;
+    egui_dim_t summary_y;
+    egui_dim_t eyebrow_h = local->compact_mode ? 0 : egui_view_data_list_panel_meta_height(local, 8);
+    egui_dim_t title_h = egui_view_data_list_panel_title_height(local, local->compact_mode ? 9 : 11);
+    egui_dim_t summary_h = local->compact_mode ? 0 : egui_view_data_list_panel_meta_height(local, 8);
     uint8_t item_count = 0;
     uint8_t i;
 
@@ -196,22 +231,33 @@ static void egui_view_data_list_panel_get_metrics(egui_view_data_list_panel_t *l
     metrics->eyebrow_region.location.x = metrics->content_region.location.x + 2;
     metrics->eyebrow_region.location.y = metrics->content_region.location.y + 1;
     metrics->eyebrow_region.size.width = metrics->content_region.size.width - 4;
-    metrics->eyebrow_region.size.height = 8;
+    metrics->eyebrow_region.size.height = eyebrow_h;
 
+    title_y = metrics->content_region.location.y + (local->compact_mode ? 4 : (eyebrow_h + 2));
     metrics->title_region.location.x = metrics->content_region.location.x + 2;
-    metrics->title_region.location.y = metrics->content_region.location.y + (local->compact_mode ? 4 : 10);
+    metrics->title_region.location.y = title_y;
     metrics->title_region.size.width = metrics->content_region.size.width - 4;
-    metrics->title_region.size.height = local->compact_mode ? 9 : 11;
+    metrics->title_region.size.height = title_h;
 
+    summary_y = title_y + title_h + 1;
     metrics->summary_region.location.x = metrics->content_region.location.x + 4;
-    metrics->summary_region.location.y = metrics->content_region.location.y + (local->compact_mode ? 0 : 22);
+    metrics->summary_region.location.y = summary_y;
     metrics->summary_region.size.width = metrics->content_region.size.width - 8;
-    metrics->summary_region.size.height = local->compact_mode ? 0 : 8;
+    metrics->summary_region.size.height = summary_h;
 
     metrics->footer_region.location.x = metrics->content_region.location.x + 4;
     metrics->footer_region.location.y = metrics->content_region.location.y + metrics->content_region.size.height - footer_h - (local->compact_mode ? 1 : 0);
     metrics->footer_region.size.width = metrics->content_region.size.width - 8;
     metrics->footer_region.size.height = footer_h;
+
+    if (local->compact_mode)
+    {
+        rows_y = (title_y - metrics->content_region.location.y) + title_h + 5;
+    }
+    else
+    {
+        rows_y = (summary_y - metrics->content_region.location.y) + summary_h - 1;
+    }
 
     available_h = metrics->footer_region.location.y - (metrics->content_region.location.y + rows_y) - (local->compact_mode ? 2 : 5);
     total_h = item_count > 0 ? (item_count * row_h + (item_count - 1) * row_gap) : 0;
@@ -445,11 +491,11 @@ static void egui_view_data_list_panel_draw_row(egui_view_t *self, egui_view_data
     egui_color_t value_border = egui_rgb_mix(local->border_color, tone_color, selected ? 24 : 16);
     egui_color_t value_color = selected ? tone_color : egui_rgb_mix(local->muted_text_color, tone_color, 18);
     egui_color_t divider_color = egui_rgb_mix(local->border_color, tone_color, 10);
-    egui_dim_t glyph_size = local->compact_mode ? 8 : 10;
+    egui_dim_t glyph_size = egui_view_data_list_panel_meta_height(local, local->compact_mode ? 8 : 10);
     egui_dim_t glyph_x = region->location.x + (local->compact_mode ? 5 : 6);
     egui_dim_t glyph_y = region->location.y + (region->size.height - glyph_size) / 2;
     egui_dim_t title_x = glyph_x + glyph_size + (local->compact_mode ? 6 : 6);
-    egui_dim_t value_h = local->compact_mode ? 9 : 13;
+    egui_dim_t value_h = egui_view_data_list_panel_meta_height(local, local->compact_mode ? 9 : 13);
     egui_dim_t value_w = local->compact_mode ? (egui_dim_t)(egui_view_data_list_panel_text_len(item->value) * 4 + 6)
                                              : egui_view_data_list_panel_pill_width(item->value, local->compact_mode, 24, region->size.width / 3);
     egui_dim_t value_x = region->location.x + region->size.width - value_w - (local->compact_mode ? 4 : 6);
