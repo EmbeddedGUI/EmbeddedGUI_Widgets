@@ -57,6 +57,20 @@ static egui_dim_t egui_view_reference_list_measure_font_line_height(const egui_f
     return line_height;
 }
 
+static egui_dim_t egui_view_reference_list_measure_text_width(const egui_font_t *font, const char *text)
+{
+    egui_dim_t text_width = 0;
+    egui_dim_t dummy_height = 0;
+
+    if (text == NULL || text[0] == '\0' || font == NULL || font->api == NULL || font->api->get_str_size == NULL)
+    {
+        return 0;
+    }
+
+    font->api->get_str_size(font, text, 0, 0, &text_width, &dummy_height);
+    return text_width;
+}
+
 static egui_dim_t egui_view_reference_list_get_title_line_height(egui_view_reference_list_t *local)
 {
     egui_dim_t line_height = egui_view_reference_list_measure_font_line_height(local->font);
@@ -156,14 +170,19 @@ static void egui_view_reference_list_draw_text(const egui_font_t *font, egui_vie
     egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, font, text, &draw_region, align, color, self->alpha);
 }
 
-static egui_dim_t egui_view_reference_list_badge_width(const char *text, uint8_t compact_mode, egui_dim_t max_w)
+static egui_dim_t egui_view_reference_list_badge_width(const egui_font_t *font, const char *text, uint8_t compact_mode, egui_dim_t max_w)
 {
-    egui_dim_t width = (compact_mode ? 14 : 18) + egui_view_reference_list_text_len(text) * (compact_mode ? 4 : 5);
+    egui_dim_t width = compact_mode ? 14 : 18;
     egui_dim_t min_w = compact_mode ? 18 : 22;
 
     if (text == NULL || text[0] == '\0')
     {
         return 0;
+    }
+    width += egui_view_reference_list_measure_text_width(font, text);
+    if (width <= (compact_mode ? 14 : 18))
+    {
+        width = (compact_mode ? 14 : 18) + egui_view_reference_list_text_len(text) * (compact_mode ? 4 : 5);
     }
     if (width < min_w)
     {
@@ -447,7 +466,7 @@ static void egui_view_reference_list_draw_item(egui_view_t *self, egui_view_refe
     egui_dim_t text_x = dot_x + dot_size + (local->compact_mode ? 5 : 7);
     egui_dim_t inset_right = local->compact_mode ? 4 : 6;
     egui_dim_t badge_h = egui_view_reference_list_get_badge_height(local);
-    egui_dim_t badge_w = egui_view_reference_list_badge_width(item->badge, local->compact_mode, region->size.width / 3);
+    egui_dim_t badge_w = egui_view_reference_list_badge_width(local->meta_font, item->badge, local->compact_mode, region->size.width / 3);
     egui_dim_t badge_x = region->location.x + region->size.width - badge_w - inset_right;
     egui_dim_t badge_y = region->location.y + (region->size.height - badge_h) / 2;
     egui_dim_t indicator_w = local->compact_mode ? 2 : 3;
