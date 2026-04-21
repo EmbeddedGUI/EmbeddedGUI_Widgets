@@ -41,23 +41,23 @@ static const char *title_text = "Grid Splitter";
 
 static const egui_view_grid_splitter_snapshot_t primary_snapshots[] = {
         {"LAYOUT", "Canvas split", "Drag the rail to rebalance navigation and detail panes.", "Layers", "12 groups", "Pinned tools keep the left rail readable.",
-         "Canvas", "Zoom 100%", "Inspector content stays aligned while the rail moves.", "42% left / 58% right", 42,
+         "Canvas", "Zoom 100%", "Inspector stays aligned as the rail moves.", "42% left / 58% right", 42,
          EGUI_VIEW_GRID_SPLITTER_EMPHASIS_RIGHT},
         {"REVIEW", "Audit split", "Wider left content keeps issue lists visible before inspection.", "Review queue", "18 items",
-         "Priority rows stay anchored near the handle.", "Inspector", "Ready", "Approvals remain stable on the right pane.", "58% left / 42% right", 58,
+         "Priority rows stay near the handle.", "Inspector", "Ready", "Approvals stay stable on the right.", "58% left / 42% right", 58,
          EGUI_VIEW_GRID_SPLITTER_EMPHASIS_LEFT},
         {"DETAIL", "Inspector split", "A narrow left rail leaves room for a denser details surface.", "Outline", "5 sections",
-         "Selection stays compact when detail needs more room.", "Properties", "Editable", "Right pane keeps the long-form layout payload.", "33% left / 67% right",
+         "Selection stays compact while detail gets more room.", "Properties", "Editable", "Right pane keeps the long-form layout.", "33% left / 67% right",
          33, EGUI_VIEW_GRID_SPLITTER_EMPHASIS_RIGHT},
 };
 
 static const egui_view_grid_splitter_snapshot_t compact_snapshot = {
-        "UI", "Compact split", "", "List", "6", "Left rail stays visible.", "Preview", "1:1", "Right pane keeps the detail block.", "", 46,
+        "UI", "Compact split", "", "List", "6", "Left rail stays visible.", "Preview", "1:1", "Detail block stays visible.", "", 46,
         EGUI_VIEW_GRID_SPLITTER_EMPHASIS_RIGHT};
 
 static const egui_view_grid_splitter_snapshot_t read_only_snapshot = {
-        "LOCK", "Read only split", "", "Library", "8", "Left rail stays fixed in review.", "Properties", "View", "Drag affordance is muted in static preview.", "",
-        48, EGUI_VIEW_GRID_SPLITTER_EMPHASIS_NONE};
+        "LOCK", "Read only split", "", "Library", "8", "Left rail stays fixed in review.", "Properties", "View", "Muted drag affordance.", "",
+         48, EGUI_VIEW_GRID_SPLITTER_EMPHASIS_NONE};
 
 static void apply_primary_snapshot(uint8_t index)
 {
@@ -320,4 +320,3 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     }
 }
 #endif
-
