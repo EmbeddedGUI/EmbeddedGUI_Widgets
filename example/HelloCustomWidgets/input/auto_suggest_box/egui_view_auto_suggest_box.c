@@ -44,19 +44,19 @@ static void hcw_auto_suggest_box_apply_palette(egui_view_t *self, egui_dim_t col
 void hcw_auto_suggest_box_apply_standard_style(egui_view_t *self)
 {
     hcw_auto_suggest_box_apply_palette(self, 34, 24, 4, EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD5DCE4), EGUI_COLOR_HEX(0x1A2734), EGUI_COLOR_HEX(0x6B7A89),
-                                       EGUI_COLOR_HEX(0xEAF3FB));
+                                       EGUI_COLOR_HEX(0x5B7FD6));
 }
 
 void hcw_auto_suggest_box_apply_compact_style(egui_view_t *self)
 {
     hcw_auto_suggest_box_apply_palette(self, 28, 21, 3, EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD5DCE4), EGUI_COLOR_HEX(0x1A2734), EGUI_COLOR_HEX(0x6B7A89),
-                                       EGUI_COLOR_HEX(0xEAF3FB));
+                                       EGUI_COLOR_HEX(0x5B7FD6));
 }
 
 void hcw_auto_suggest_box_apply_read_only_style(egui_view_t *self)
 {
     hcw_auto_suggest_box_apply_palette(self, 28, 21, 3, EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD5DCE4), EGUI_COLOR_HEX(0x6B7A89), EGUI_COLOR_HEX(0x7A8796),
-                                       EGUI_COLOR_HEX(0xEEF3F8));
+                                       EGUI_COLOR_HEX(0x6F8FD8));
 }
 
 void hcw_auto_suggest_box_set_suggestions(egui_view_t *self, const char **suggestions, uint8_t count)
