@@ -42,6 +42,27 @@ static uint8_t rating_has_text(const char *text)
     return (text != NULL && text[0] != '\0') ? 1 : 0;
 }
 
+static egui_dim_t rating_measure_font_line_height(const egui_font_t *font)
+{
+    egui_dim_t dummy_width = 0;
+    egui_dim_t line_height = 0;
+
+    if (font == NULL || font->api == NULL || font->api->get_str_size == NULL)
+    {
+        return 0;
+    }
+
+    font->api->get_str_size(font, "A", 0, 0, &dummy_width, &line_height);
+    return line_height;
+}
+
+static egui_dim_t rating_resolve_line_height(const egui_font_t *font, egui_dim_t fallback)
+{
+    egui_dim_t line_height = rating_measure_font_line_height(font);
+
+    return line_height > fallback ? line_height : fallback;
+}
+
 static uint8_t rating_is_star(egui_view_rating_control_t *local, uint8_t part)
 {
     return (part >= 1 && part <= local->item_count) ? 1 : 0;
@@ -163,6 +184,9 @@ static void rating_get_metrics(egui_view_rating_control_t *local, egui_view_t *s
     egui_dim_t row_width;
     egui_dim_t available_width;
     egui_dim_t min_gap = local->compact_mode ? 2 : 4;
+    egui_dim_t title_h = rating_resolve_line_height(local->font, RC_STD_TITLE_H);
+    egui_dim_t caption_h = rating_resolve_line_height(local->meta_font, 10);
+    egui_dim_t label_h = rating_resolve_line_height(local->meta_font, 8);
     egui_dim_t row_x;
     egui_dim_t row_y;
     uint8_t index;
@@ -176,10 +200,10 @@ static void rating_get_metrics(egui_view_rating_control_t *local, egui_view_t *s
     metrics->title_region.location.x = region.location.x + pad_x;
     metrics->title_region.location.y = region.location.y + pad_y;
     metrics->title_region.size.width = region.size.width - pad_x * 2 - (metrics->show_clear ? RC_STD_CLEAR_W + 6 : 0);
-    metrics->title_region.size.height = metrics->show_title ? RC_STD_TITLE_H : 0;
+    metrics->title_region.size.height = metrics->show_title ? title_h : 0;
 
     metrics->clear_region.location.x = region.location.x + region.size.width - pad_x - RC_STD_CLEAR_W;
-    metrics->clear_region.location.y = region.location.y + pad_y - 1;
+    metrics->clear_region.location.y = region.location.y + pad_y + (title_h - RC_STD_CLEAR_H) / 2;
     metrics->clear_region.size.width = metrics->show_clear ? RC_STD_CLEAR_W : 0;
     metrics->clear_region.size.height = metrics->show_clear ? RC_STD_CLEAR_H : 0;
 
@@ -228,7 +252,7 @@ static void rating_get_metrics(egui_view_rating_control_t *local, egui_view_t *s
     }
     else
     {
-        row_y = region.location.y + (metrics->show_title ? RC_STD_ITEM_Y : (RC_STD_ITEM_Y - 6));
+        row_y = region.location.y + (metrics->show_title ? (pad_y + title_h + 9) : (RC_STD_ITEM_Y - 6));
     }
 
     for (index = 0; index < local->item_count; index++)
@@ -249,17 +273,17 @@ static void rating_get_metrics(egui_view_rating_control_t *local, egui_view_t *s
     metrics->caption_region.location.x = region.location.x + pad_x;
     metrics->caption_region.location.y = row_y + item_size + 6;
     metrics->caption_region.size.width = region.size.width - pad_x * 2;
-    metrics->caption_region.size.height = metrics->show_caption ? 10 : 0;
+    metrics->caption_region.size.height = metrics->show_caption ? caption_h : 0;
 
     metrics->low_region.location.x = metrics->item_regions[0].location.x;
-    metrics->low_region.location.y = row_y + item_size + (metrics->show_caption ? 17 : 8);
+    metrics->low_region.location.y = row_y + item_size + (metrics->show_caption ? (6 + caption_h + 1) : 8);
     metrics->low_region.size.width = item_size * 2;
-    metrics->low_region.size.height = metrics->show_labels ? 8 : 0;
+    metrics->low_region.size.height = metrics->show_labels ? label_h : 0;
 
     metrics->high_region.location.x = metrics->item_regions[local->item_count - 1].location.x - item_size;
     metrics->high_region.location.y = metrics->low_region.location.y;
     metrics->high_region.size.width = item_size * 2;
-    metrics->high_region.size.height = metrics->show_labels ? 8 : 0;
+    metrics->high_region.size.height = metrics->show_labels ? label_h : 0;
 }
 
 static void rating_draw_focus(egui_view_t *self, const egui_region_t *region, egui_dim_t radius, egui_color_t color, egui_alpha_t alpha)
