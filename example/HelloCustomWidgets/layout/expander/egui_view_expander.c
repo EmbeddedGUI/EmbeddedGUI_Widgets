@@ -62,6 +62,103 @@ static uint8_t expander_text_len(const char *text)
     return length;
 }
 
+static egui_dim_t expander_measure_font_line_height(const egui_font_t *font)
+{
+    egui_dim_t dummy_width = 0;
+    egui_dim_t line_height = 0;
+
+    if (font == NULL || font->api == NULL || font->api->get_str_size == NULL)
+    {
+        return 0;
+    }
+
+    font->api->get_str_size(font, "A", 0, 0, &dummy_width, &line_height);
+    return line_height;
+}
+
+static egui_dim_t expander_get_title_line_height(egui_view_expander_t *local)
+{
+    egui_dim_t line_height = expander_measure_font_line_height(local->font);
+    egui_dim_t fallback = local->compact_mode ? EGUI_VIEW_EXPANDER_COMPACT_HEADER_HEIGHT : EGUI_VIEW_EXPANDER_STANDARD_HEADER_HEIGHT;
+
+    return line_height > 0 ? line_height : fallback;
+}
+
+static egui_dim_t expander_get_meta_line_height(egui_view_expander_t *local)
+{
+    egui_dim_t line_height = expander_measure_font_line_height(local->meta_font);
+    egui_dim_t fallback = local->compact_mode ? EGUI_VIEW_EXPANDER_COMPACT_META_HEIGHT : EGUI_VIEW_EXPANDER_STANDARD_META_HEIGHT;
+
+    return line_height > 0 ? line_height : fallback;
+}
+
+static egui_dim_t expander_get_header_height(egui_view_expander_t *local)
+{
+    egui_dim_t title_h = expander_get_title_line_height(local);
+    egui_dim_t meta_h = expander_get_meta_line_height(local);
+    egui_dim_t header_h = title_h > meta_h ? title_h : meta_h;
+    egui_dim_t min_h = local->compact_mode ? EGUI_VIEW_EXPANDER_COMPACT_HEADER_HEIGHT : EGUI_VIEW_EXPANDER_STANDARD_HEADER_HEIGHT;
+
+    header_h += 2;
+    return header_h > min_h ? header_h : min_h;
+}
+
+static egui_dim_t expander_get_meta_height(egui_view_expander_t *local)
+{
+    egui_dim_t meta_h = expander_get_meta_line_height(local);
+    egui_dim_t min_h = local->compact_mode ? EGUI_VIEW_EXPANDER_COMPACT_META_HEIGHT : EGUI_VIEW_EXPANDER_STANDARD_META_HEIGHT;
+
+    return meta_h > min_h ? meta_h : min_h;
+}
+
+static egui_dim_t expander_get_eyebrow_height(egui_view_expander_t *local)
+{
+    egui_dim_t eyebrow_h = expander_get_meta_line_height(local);
+    egui_dim_t min_h = local->compact_mode ? EGUI_VIEW_EXPANDER_COMPACT_EYEBROW_H : EGUI_VIEW_EXPANDER_STANDARD_EYEBROW_H;
+
+    return eyebrow_h > min_h ? eyebrow_h : min_h;
+}
+
+static egui_dim_t expander_get_footer_height(egui_view_expander_t *local)
+{
+    egui_dim_t footer_h = expander_get_meta_line_height(local);
+    egui_dim_t min_h = local->compact_mode ? EGUI_VIEW_EXPANDER_COMPACT_FOOTER_H : EGUI_VIEW_EXPANDER_STANDARD_FOOTER_H;
+
+    return footer_h > min_h ? footer_h : min_h;
+}
+
+static egui_dim_t expander_get_body_height(egui_view_expander_t *local, const egui_view_expander_item_t *item)
+{
+    egui_dim_t body_text_h = expander_get_meta_line_height(local);
+    egui_dim_t base_h = local->compact_mode ? EGUI_VIEW_EXPANDER_COMPACT_BODY_HEIGHT : EGUI_VIEW_EXPANDER_STANDARD_BODY_HEIGHT;
+
+    if (local->compact_mode)
+    {
+        egui_dim_t compact_h = body_text_h + 6;
+
+        return compact_h > base_h ? compact_h : base_h;
+    }
+
+    if (item != NULL)
+    {
+        egui_dim_t eyebrow_h = 0;
+        egui_dim_t body_h = 5 + expander_get_footer_height(local) + 5 + body_text_h;
+
+        if (item->eyebrow != NULL && item->eyebrow[0] != '\0')
+        {
+            eyebrow_h = expander_get_eyebrow_height(local) + 3;
+        }
+        body_h += eyebrow_h;
+        if (item->body_secondary != NULL && item->body_secondary[0] != '\0')
+        {
+            body_h += body_text_h;
+        }
+        return body_h > base_h ? body_h : base_h;
+    }
+
+    return base_h;
+}
+
 static egui_color_t expander_mix_disabled(egui_color_t color)
 {
     return egui_rgb_mix(color, EGUI_COLOR_DARK_GREY, 68);
@@ -164,11 +261,10 @@ static void expander_get_metrics(egui_view_expander_t *local, egui_view_t *self,
     egui_region_t region;
     egui_dim_t pad_x = local->compact_mode ? EGUI_VIEW_EXPANDER_COMPACT_PAD_X : EGUI_VIEW_EXPANDER_STANDARD_PAD_X;
     egui_dim_t pad_y = local->compact_mode ? EGUI_VIEW_EXPANDER_COMPACT_PAD_Y : EGUI_VIEW_EXPANDER_STANDARD_PAD_Y;
-    egui_dim_t header_height = local->compact_mode ? EGUI_VIEW_EXPANDER_COMPACT_HEADER_HEIGHT : EGUI_VIEW_EXPANDER_STANDARD_HEADER_HEIGHT;
+    egui_dim_t header_height = expander_get_header_height(local);
     egui_dim_t item_gap = local->compact_mode ? EGUI_VIEW_EXPANDER_COMPACT_ITEM_GAP : EGUI_VIEW_EXPANDER_STANDARD_ITEM_GAP;
     egui_dim_t body_gap = local->compact_mode ? EGUI_VIEW_EXPANDER_COMPACT_BODY_GAP : EGUI_VIEW_EXPANDER_STANDARD_BODY_GAP;
-    egui_dim_t body_height = local->compact_mode ? EGUI_VIEW_EXPANDER_COMPACT_BODY_HEIGHT : EGUI_VIEW_EXPANDER_STANDARD_BODY_HEIGHT;
-    egui_dim_t min_body_height = local->compact_mode ? 9 : 16;
+    egui_dim_t body_height = 0;
     egui_dim_t total_height;
     egui_dim_t available_height;
     egui_dim_t cursor_y;
@@ -190,23 +286,18 @@ static void expander_get_metrics(egui_view_expander_t *local, egui_view_t *self,
     total_height = local->item_count * header_height + (local->item_count - 1) * item_gap;
     if (local->expanded_index != EGUI_VIEW_EXPANDER_INDEX_NONE)
     {
+        const egui_view_expander_item_t *expanded_item = &local->items[local->expanded_index];
+
+        body_height = expander_get_body_height(local, expanded_item);
         if (total_height + body_gap + body_height > available_height)
         {
-            if (available_height > total_height + body_gap)
-            {
-                body_height = available_height - total_height - body_gap;
-                if (body_height < min_body_height)
-                {
-                    body_height = min_body_height;
-                }
-            }
-            else
-            {
-                body_height = 0;
-            }
+            body_height = 0;
         }
-        total_height += body_gap + body_height;
-        metrics->body_height = body_height;
+        if (body_height > 0)
+        {
+            total_height += body_gap + body_height;
+            metrics->body_height = body_height;
+        }
     }
 
     cursor_y = metrics->content_region.location.y;
@@ -483,7 +574,7 @@ static void expander_draw_header(egui_view_t *self, egui_view_expander_t *local,
     egui_dim_t radius = local->compact_mode ? EGUI_VIEW_EXPANDER_COMPACT_HEADER_RADIUS : EGUI_VIEW_EXPANDER_STANDARD_HEADER_RADIUS;
     egui_dim_t glyph_w = local->compact_mode ? EGUI_VIEW_EXPANDER_COMPACT_GLYPH_W : EGUI_VIEW_EXPANDER_STANDARD_GLYPH_W;
     egui_dim_t glyph_h = local->compact_mode ? EGUI_VIEW_EXPANDER_COMPACT_GLYPH_H : EGUI_VIEW_EXPANDER_STANDARD_GLYPH_H;
-    egui_dim_t meta_h = local->compact_mode ? EGUI_VIEW_EXPANDER_COMPACT_META_HEIGHT : EGUI_VIEW_EXPANDER_STANDARD_META_HEIGHT;
+    egui_dim_t meta_h = expander_get_meta_height(local);
     egui_dim_t meta_w = expander_meta_width(item->meta, local->compact_mode, region->size.width / 3);
     egui_dim_t inset = local->compact_mode ? 5 : 7;
     egui_dim_t title_x = region->location.x + inset + glyph_w + 6;
@@ -568,8 +659,9 @@ static void expander_draw_body(egui_view_t *self, egui_view_expander_t *local, c
     egui_color_t footer_fill = egui_rgb_mix(local->section_color, tone_color, 12);
     egui_color_t footer_border = egui_rgb_mix(local->border_color, tone_color, 18);
     egui_color_t footer_color = egui_rgb_mix(local->muted_text_color, tone_color, 22);
-    egui_dim_t eyebrow_h = local->compact_mode ? EGUI_VIEW_EXPANDER_COMPACT_EYEBROW_H : EGUI_VIEW_EXPANDER_STANDARD_EYEBROW_H;
-    egui_dim_t footer_h = local->compact_mode ? EGUI_VIEW_EXPANDER_COMPACT_FOOTER_H : EGUI_VIEW_EXPANDER_STANDARD_FOOTER_H;
+    egui_dim_t eyebrow_h = expander_get_eyebrow_height(local);
+    egui_dim_t footer_h = expander_get_footer_height(local);
+    egui_dim_t body_text_h = expander_get_meta_line_height(local);
     egui_dim_t inner_x = region->location.x + (local->compact_mode ? 5 : 7);
     egui_dim_t inner_y = region->location.y + (local->compact_mode ? 4 : 5);
     egui_dim_t inner_w = region->size.width - (local->compact_mode ? 10 : 14);
@@ -630,9 +722,9 @@ static void expander_draw_body(egui_view_t *self, egui_view_expander_t *local, c
     }
 
     text_region.location.x = inner_x;
-    text_region.location.y = local->compact_mode ? (region->location.y + (region->size.height - 8) / 2) : (inner_y + eyebrow_h + 3);
+    text_region.location.y = local->compact_mode ? (region->location.y + (region->size.height - body_text_h) / 2) : (inner_y + eyebrow_h + 3);
     text_region.size.width = inner_w;
-    text_region.size.height = local->compact_mode ? 8 : 10;
+    text_region.size.height = body_text_h;
     expander_draw_text(local->meta_font, self, item->body_primary, &text_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, primary_color);
 
     if (local->compact_mode)
@@ -643,7 +735,7 @@ static void expander_draw_body(egui_view_t *self, egui_view_expander_t *local, c
     if (item->body_secondary != NULL && item->body_secondary[0] != '\0')
     {
         text_region.location.y += text_region.size.height;
-        text_region.size.height = 9;
+        text_region.size.height = body_text_h;
         expander_draw_text(local->meta_font, self, item->body_secondary, &text_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, secondary_color);
     }
 

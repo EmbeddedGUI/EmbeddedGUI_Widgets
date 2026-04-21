@@ -8,9 +8,9 @@
 #endif
 
 #define EXPANDER_ROOT_WIDTH        224
-#define EXPANDER_ROOT_HEIGHT       226
+#define EXPANDER_ROOT_HEIGHT       248
 #define EXPANDER_PRIMARY_WIDTH     196
-#define EXPANDER_PRIMARY_HEIGHT    110
+#define EXPANDER_PRIMARY_HEIGHT    132
 #define EXPANDER_PREVIEW_WIDTH     104
 #define EXPANDER_PREVIEW_HEIGHT    76
 #define EXPANDER_BOTTOM_ROW_WIDTH  216
@@ -281,4 +281,3 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     }
 }
 #endif
-
