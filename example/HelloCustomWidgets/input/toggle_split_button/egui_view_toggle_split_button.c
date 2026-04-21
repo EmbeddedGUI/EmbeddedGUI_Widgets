@@ -60,6 +60,27 @@ static uint8_t toggle_split_button_has_text(const char *text)
     return (text != NULL && text[0] != '\0') ? 1 : 0;
 }
 
+static egui_dim_t toggle_split_button_measure_font_line_height(const egui_font_t *font)
+{
+    egui_dim_t dummy_width = 0;
+    egui_dim_t line_height = 0;
+
+    if (font == NULL || font->api == NULL || font->api->get_str_size == NULL)
+    {
+        return 0;
+    }
+
+    font->api->get_str_size(font, "A", 0, 0, &dummy_width, &line_height);
+    return line_height;
+}
+
+static egui_dim_t toggle_split_button_resolve_line_height(const egui_font_t *font, egui_dim_t fallback)
+{
+    egui_dim_t line_height = toggle_split_button_measure_font_line_height(font);
+
+    return line_height > fallback ? line_height : fallback;
+}
+
 static egui_color_t toggle_split_button_tone_color(egui_view_toggle_split_button_t *local, uint8_t tone)
 {
     switch (tone)
@@ -176,7 +197,8 @@ static void toggle_split_button_get_metrics(egui_view_toggle_split_button_t *loc
     egui_region_t work_region;
     egui_dim_t pad_x = local->compact_mode ? TSB_COMPACT_PAD_X : TSB_STD_PAD_X;
     egui_dim_t pad_y = local->compact_mode ? TSB_COMPACT_PAD_Y : TSB_STD_PAD_Y;
-    egui_dim_t title_h = local->compact_mode ? TSB_COMPACT_TITLE_H : TSB_STD_TITLE_H;
+    egui_dim_t title_h =
+            toggle_split_button_resolve_line_height(local->meta_font, local->compact_mode ? TSB_COMPACT_TITLE_H : TSB_STD_TITLE_H);
     egui_dim_t title_gap = local->compact_mode ? TSB_COMPACT_TITLE_GAP : TSB_STD_TITLE_GAP;
     egui_dim_t row_h = local->compact_mode ? TSB_COMPACT_ROW_H : TSB_STD_ROW_H;
     egui_dim_t row_gap = local->compact_mode ? TSB_COMPACT_ROW_GAP : TSB_STD_ROW_GAP;
@@ -185,6 +207,7 @@ static void toggle_split_button_get_metrics(egui_view_toggle_split_button_t *loc
     egui_dim_t badge_h = local->compact_mode ? TSB_COMPACT_BADGE_H : TSB_STD_BADGE_H;
     egui_dim_t badge_gap = local->compact_mode ? TSB_COMPACT_BADGE_GAP : TSB_STD_BADGE_GAP;
     egui_dim_t glyph_w = local->compact_mode ? TSB_COMPACT_GLYPH_W : TSB_STD_GLYPH_W;
+    egui_dim_t helper_h = toggle_split_button_resolve_line_height(local->meta_font, TSB_STD_HELPER_H);
     egui_dim_t row_y;
     egui_dim_t content_x;
     egui_dim_t content_y;
@@ -203,7 +226,7 @@ static void toggle_split_button_get_metrics(egui_view_toggle_split_button_t *loc
     metrics->title_region.location.x = content_x;
     metrics->title_region.location.y = content_y;
     metrics->title_region.size.width = content_w;
-    metrics->title_region.size.height = title_h;
+    metrics->title_region.size.height = metrics->show_title ? title_h : 0;
 
     row_y = content_y;
     if (metrics->show_title)
@@ -247,7 +270,7 @@ static void toggle_split_button_get_metrics(egui_view_toggle_split_button_t *loc
     metrics->helper_region.location.x = content_x;
     metrics->helper_region.location.y = row_y + row_h + TSB_STD_HELPER_GAP;
     metrics->helper_region.size.width = content_w;
-    metrics->helper_region.size.height = TSB_STD_HELPER_H;
+    metrics->helper_region.size.height = metrics->show_helper ? helper_h : 0;
 }
 
 static uint8_t toggle_split_button_hit_part(egui_view_toggle_split_button_t *local, egui_view_t *self, egui_dim_t x, egui_dim_t y)
@@ -557,7 +580,7 @@ static void toggle_split_button_draw_text(const egui_font_t *font, egui_view_t *
 {
     egui_region_t draw_region = *region;
 
-    if (!toggle_split_button_has_text(text))
+    if (region == NULL || region->size.width <= 0 || region->size.height <= 0 || !toggle_split_button_has_text(text))
     {
         return;
     }
