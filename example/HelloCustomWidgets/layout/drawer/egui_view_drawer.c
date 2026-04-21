@@ -222,6 +222,20 @@ static egui_dim_t drawer_measure_font_line_height(const egui_font_t *font)
     return line_height;
 }
 
+static egui_dim_t drawer_measure_text_width(const egui_font_t *font, const char *text)
+{
+    egui_dim_t text_width = 0;
+    egui_dim_t text_height = 0;
+
+    if (text == NULL || text[0] == '\0' || font == NULL || font->api == NULL || font->api->get_str_size == NULL)
+    {
+        return 0;
+    }
+
+    font->api->get_str_size(font, text, 0, 0, &text_width, &text_height);
+    return text_width;
+}
+
 static egui_dim_t drawer_title_line_height(const egui_view_drawer_t *local)
 {
     return drawer_measure_font_line_height(drawer_font(local));
@@ -288,7 +302,7 @@ static egui_dim_t drawer_host_card_line_h(const egui_view_drawer_t *local)
     return line_height > line_h ? line_height : line_h;
 }
 
-static egui_dim_t drawer_pill_width(const char *text, uint8_t compact_mode, egui_dim_t max_width)
+static egui_dim_t drawer_pill_width(const egui_font_t *font, const char *text, uint8_t compact_mode, egui_dim_t max_width)
 {
     egui_dim_t width;
 
@@ -296,7 +310,11 @@ static egui_dim_t drawer_pill_width(const char *text, uint8_t compact_mode, egui
     {
         return 0;
     }
-    width = (compact_mode ? 14 : 18) + drawer_text_len(text) * (compact_mode ? 4 : 5);
+    width = (compact_mode ? 14 : 18) + drawer_measure_text_width(font, text);
+    if (width <= (compact_mode ? 14 : 18))
+    {
+        width = (compact_mode ? 14 : 18) + drawer_text_len(text) * (compact_mode ? 4 : 5);
+    }
     return width > max_width ? max_width : width;
 }
 
@@ -458,7 +476,7 @@ static void drawer_get_metrics(egui_view_drawer_t *local, egui_view_t *self, egu
         return;
     }
 
-    tag_w = drawer_pill_width(local->tag, local->compact_mode, metrics->footer_region.size.width / 2);
+    tag_w = drawer_pill_width(drawer_meta_font(local), local->tag, local->compact_mode, metrics->footer_region.size.width / 2);
     metrics->show_tag = tag_w > 0 ? 1 : 0;
     if (metrics->show_tag)
     {
