@@ -233,6 +233,19 @@ static egui_dim_t hcw_pivot_header_width(uint8_t compact_mode, const egui_font_t
     return width;
 }
 
+static void hcw_pivot_fit_header_label_to_width(const egui_font_t *font, uint8_t compact_mode, uint8_t is_active, const char *text, char *buffer,
+                                                uint8_t capacity, egui_dim_t max_width)
+{
+    uint8_t max_chars = hcw_pivot_text_len(text);
+
+    hcw_pivot_copy_elided(buffer, capacity, text, max_chars);
+    while (max_chars > 1 && hcw_pivot_header_width(compact_mode, font, is_active, buffer) > max_width)
+    {
+        max_chars--;
+        hcw_pivot_copy_elided(buffer, capacity, text, max_chars);
+    }
+}
+
 static egui_dim_t hcw_pivot_pad_x(uint8_t compact_mode)
 {
     return compact_mode ? HCW_PIVOT_COMPACT_PAD_X : HCW_PIVOT_STANDARD_PAD_X;
@@ -383,6 +396,17 @@ static uint8_t hcw_pivot_prepare_header_layout(hcw_pivot_t *local, egui_view_t *
         }
         for (index = 0; index < count; index++)
         {
+            const char *header = local->items[index].header;
+            uint8_t max_chars = 1;
+
+            if (fallback_width > (local->compact_mode ? 12 : 16))
+            {
+                max_chars = (uint8_t)((fallback_width - (local->compact_mode ? 12 : 16)) /
+                                      (local->compact_mode ? HCW_PIVOT_COMPACT_CHAR_WIDTH : HCW_PIVOT_STANDARD_CHAR_WIDTH));
+            }
+            hcw_pivot_copy_elided(items[index].label, sizeof(items[index].label), header, max_chars);
+            hcw_pivot_fit_header_label_to_width(font, local->compact_mode, index == local->current_index, header, items[index].label,
+                                                sizeof(items[index].label), fallback_width);
             items[index].region.size.width = fallback_width;
         }
         total_width = fallback_width * count + gap * (count - 1);
