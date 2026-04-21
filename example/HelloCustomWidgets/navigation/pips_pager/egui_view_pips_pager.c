@@ -46,6 +46,20 @@ static uint8_t pips_pager_has_text(const char *text)
     return (text != NULL && text[0] != '\0') ? 1 : 0;
 }
 
+static egui_dim_t pips_pager_measure_font_line_height(const egui_font_t *font)
+{
+    egui_dim_t width = 0;
+    egui_dim_t height = 0;
+
+    if (font == NULL || font->api == NULL || font->api->get_str_size == NULL)
+    {
+        return 0;
+    }
+
+    font->api->get_str_size(font, "A", 0, 0, &width, &height);
+    return height;
+}
+
 static uint8_t pips_pager_clear_pressed_state(egui_view_t *self, egui_view_pips_pager_t *local)
 {
     uint8_t was_pressed = self->is_pressed ? 1 : 0;
@@ -279,6 +293,9 @@ static void pips_pager_get_metrics(egui_view_pips_pager_t *local, egui_view_t *s
     egui_dim_t content_w;
     egui_dim_t content_h;
     egui_dim_t rail_w;
+    egui_dim_t meta_line_height = pips_pager_measure_font_line_height(local->meta_font);
+    egui_dim_t title_h = PP_STD_TITLE_H;
+    egui_dim_t helper_h = PP_STD_HELPER_H;
 
     pips_pager_normalize_state(local);
     egui_view_get_work_region(self, &work_region);
@@ -292,14 +309,23 @@ static void pips_pager_get_metrics(egui_view_pips_pager_t *local, egui_view_t *s
     metrics->window_start = pips_pager_get_window_start(local);
     metrics->window_count = local->total_count == 0 ? 0 : local->visible_count;
 
+    if (meta_line_height > title_h)
+    {
+        title_h = meta_line_height;
+    }
+    if (meta_line_height > helper_h)
+    {
+        helper_h = meta_line_height;
+    }
+
     metrics->title_region.location.x = content_x;
     metrics->title_region.location.y = content_y;
     metrics->title_region.size.width = content_w;
-    metrics->title_region.size.height = PP_STD_TITLE_H;
+    metrics->title_region.size.height = title_h;
 
     if (metrics->show_title)
     {
-        row_y = content_y + PP_STD_TITLE_H + PP_STD_TITLE_GAP;
+        row_y = content_y + title_h + PP_STD_TITLE_GAP;
     }
     else
     {
@@ -308,7 +334,7 @@ static void pips_pager_get_metrics(egui_view_pips_pager_t *local, egui_view_t *s
 
     if (metrics->show_helper)
     {
-        row_y = content_y + (content_h - (PP_STD_ROW_H + PP_STD_HELPER_GAP + PP_STD_HELPER_H)) / 2;
+        row_y = content_y + (content_h - (PP_STD_ROW_H + PP_STD_HELPER_GAP + helper_h)) / 2;
     }
 
     metrics->row_region.location.x = content_x;
@@ -344,7 +370,7 @@ static void pips_pager_get_metrics(egui_view_pips_pager_t *local, egui_view_t *s
     metrics->helper_region.location.x = content_x;
     metrics->helper_region.location.y = row_y + metrics->row_region.size.height + PP_STD_HELPER_GAP;
     metrics->helper_region.size.width = content_w;
-    metrics->helper_region.size.height = PP_STD_HELPER_H;
+    metrics->helper_region.size.height = helper_h;
 }
 
 static uint8_t pips_pager_get_pip_region_inner(egui_view_pips_pager_t *local, egui_view_t *self, uint8_t index, egui_region_t *region)
