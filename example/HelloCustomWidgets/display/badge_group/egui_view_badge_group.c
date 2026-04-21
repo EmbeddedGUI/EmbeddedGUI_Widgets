@@ -18,19 +18,74 @@ static uint8_t egui_view_badge_group_clamp_item_count(uint8_t count)
     return count;
 }
 
-static uint8_t egui_view_badge_group_text_len(const char *text)
+static uint8_t egui_view_badge_group_has_text(const char *text)
 {
-    uint8_t length = 0;
+    return text != NULL && text[0] != '\0' ? 1 : 0;
+}
 
-    if (text == NULL)
+static egui_dim_t egui_view_badge_group_measure_font_line_height(const egui_font_t *font)
+{
+    egui_dim_t dummy_width = 0;
+    egui_dim_t line_height = 0;
+
+    if (font == NULL || font->api == NULL || font->api->get_str_size == NULL)
     {
         return 0;
     }
-    while (text[length] != '\0')
+
+    font->api->get_str_size(font, "A", 0, 0, &dummy_width, &line_height);
+    return line_height;
+}
+
+static egui_dim_t egui_view_badge_group_measure_text_width(const egui_font_t *font, const char *text)
+{
+    egui_dim_t text_width = 0;
+    egui_dim_t dummy_height = 0;
+
+    if (!egui_view_badge_group_has_text(text) || font == NULL || font->api == NULL || font->api->get_str_size == NULL)
     {
-        length++;
+        return 0;
     }
-    return length;
+
+    font->api->get_str_size(font, text, 0, 0, &text_width, &dummy_height);
+    return text_width;
+}
+
+static egui_dim_t egui_view_badge_group_get_badge_height(egui_view_badge_group_t *local)
+{
+    egui_dim_t badge_h = egui_view_badge_group_measure_font_line_height(local->meta_font);
+    egui_dim_t min_h = local->compact_mode ? 11 : 13;
+
+    return badge_h > min_h ? badge_h : min_h;
+}
+
+static egui_dim_t egui_view_badge_group_get_title_height(egui_view_badge_group_t *local)
+{
+    egui_dim_t title_h = egui_view_badge_group_measure_font_line_height(local->font);
+    egui_dim_t min_h = local->compact_mode ? 11 : 13;
+
+    return title_h > min_h ? title_h : min_h;
+}
+
+static egui_dim_t egui_view_badge_group_get_body_height(egui_view_badge_group_t *local)
+{
+    egui_dim_t body_h;
+
+    if (local->compact_mode)
+    {
+        return 0;
+    }
+
+    body_h = egui_view_badge_group_measure_font_line_height(local->font);
+    return body_h > 11 ? body_h : 11;
+}
+
+static egui_dim_t egui_view_badge_group_get_footer_height(egui_view_badge_group_t *local)
+{
+    egui_dim_t footer_h = egui_view_badge_group_measure_font_line_height(local->meta_font);
+    egui_dim_t min_h = local->compact_mode ? 12 : 16;
+
+    return footer_h > min_h ? footer_h : min_h;
 }
 
 static uint8_t egui_view_badge_group_focus_index(const egui_view_badge_group_snapshot_t *snapshot, uint8_t item_count)
@@ -84,9 +139,14 @@ static void egui_view_badge_group_draw_text(const egui_font_t *font, egui_view_t
     egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, font, text, &draw_region, align, color, self->alpha);
 }
 
-static egui_dim_t egui_view_badge_group_pill_width(const char *text, uint8_t compact_mode, egui_dim_t min_w, egui_dim_t max_w)
+static egui_dim_t egui_view_badge_group_pill_width(const egui_font_t *font, const char *text, egui_dim_t min_w, egui_dim_t max_w)
 {
-    egui_dim_t width = min_w + egui_view_badge_group_text_len(text) * (compact_mode ? 4 : 5);
+    egui_dim_t width = min_w;
+
+    if (egui_view_badge_group_has_text(text))
+    {
+        width += egui_view_badge_group_measure_text_width(font, text);
+    }
 
     if (width < min_w)
     {
@@ -145,9 +205,9 @@ static void egui_view_badge_group_draw_badge(egui_view_t *self, egui_view_badge_
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, x, y, width, height, radius, 1, border_color, egui_color_alpha_mix(self->alpha, focused ? 54 : 42));
 
     meta_w = 0;
-    if (item->meta != NULL && item->meta[0] != '\0')
+    if (egui_view_badge_group_has_text(item->meta))
     {
-        meta_w = 10 + egui_view_badge_group_text_len(item->meta) * (local->compact_mode ? 4 : 5);
+        meta_w = 10 + egui_view_badge_group_measure_text_width(local->meta_font, item->meta);
         if (meta_w < (local->compact_mode ? 16 : 18))
         {
             meta_w = local->compact_mode ? 16 : 18;
@@ -171,6 +231,10 @@ static void egui_view_badge_group_draw_badge(egui_view_t *self, egui_view_badge_
     text_region.location.y = y;
     text_region.size.width = width - meta_w - (local->compact_mode ? 9 : 13);
     text_region.size.height = height;
+    if (text_region.size.width < 0)
+    {
+        text_region.size.width = 0;
+    }
     egui_view_badge_group_draw_text(local->meta_font, self, item->label, &text_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, text_color);
 }
 
@@ -303,6 +367,8 @@ static void egui_view_badge_group_on_draw(egui_view_t *self)
     egui_dim_t h;
     egui_dim_t padding;
     egui_dim_t badge_h;
+    egui_dim_t title_h;
+    egui_dim_t body_h;
     egui_dim_t title_y;
     egui_dim_t body_y;
     egui_dim_t badges_y;
@@ -388,18 +454,32 @@ static void egui_view_badge_group_on_draw(egui_view_t *self)
     w = region.size.width;
     h = region.size.height;
     padding = local->compact_mode ? 7 : 9;
-    badge_h = local->compact_mode ? 11 : 13;
+    badge_h = egui_view_badge_group_get_badge_height(local);
+    title_h = egui_view_badge_group_get_title_height(local);
+    body_h = egui_view_badge_group_get_body_height(local);
     row_gap = local->compact_mode ? 3 : 4;
     badge_gap = local->compact_mode ? 3 : 4;
-    footer_h = local->compact_mode ? 12 : 16;
+    footer_h = egui_view_badge_group_get_footer_height(local);
     footer_y = y + h - padding - footer_h;
     title_y = y + padding + badge_h + 4;
-    body_y = title_y + (local->compact_mode ? 11 : 12) + 2;
-    badges_y = body_y + (local->compact_mode ? 0 : 10);
+    body_y = title_y + title_h + 2;
+    badges_y = body_y;
+    if (body_h > 0)
+    {
+        badges_y += body_h + 3;
+    }
     badges_w = w - padding * 2;
-    eyebrow_w = egui_view_badge_group_pill_width(snapshot->eyebrow, local->compact_mode, local->compact_mode ? 24 : 28, badges_w);
-    focus_pill_h = local->compact_mode ? 10 : 12;
-    focus_pill_w = egui_view_badge_group_pill_width(focus_item->label, local->compact_mode, local->compact_mode ? 20 : 24, badges_w / 2);
+    eyebrow_w = egui_view_badge_group_pill_width(local->meta_font, snapshot->eyebrow, local->compact_mode ? 24 : 28, badges_w);
+    focus_pill_h = badge_h;
+    if (focus_pill_h < (local->compact_mode ? 10 : 12))
+    {
+        focus_pill_h = local->compact_mode ? 10 : 12;
+    }
+    if (focus_pill_h > footer_h - 2)
+    {
+        focus_pill_h = footer_h - 2;
+    }
+    focus_pill_w = egui_view_badge_group_pill_width(local->meta_font, focus_item->label, local->compact_mode ? 20 : 24, badges_w / 2);
     focus_pill_x = x + padding + 4;
     focus_pill_y = footer_y + (footer_h - focus_pill_h) / 2;
 
@@ -420,15 +500,15 @@ static void egui_view_badge_group_on_draw(egui_view_t *self)
     text_region.location.x = x + padding;
     text_region.location.y = title_y;
     text_region.size.width = w - padding * 2;
-    text_region.size.height = local->compact_mode ? 11 : 13;
+    text_region.size.height = title_h;
     egui_view_badge_group_draw_text(local->font, self, snapshot->title, &text_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, title_color);
 
-    if (!local->compact_mode)
+    if (body_h > 0)
     {
         text_region.location.x = x + padding;
         text_region.location.y = body_y;
         text_region.size.width = w - padding * 2;
-        text_region.size.height = 11;
+        text_region.size.height = body_h;
         egui_view_badge_group_draw_text(local->font, self, snapshot->body, &text_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, body_color);
     }
 
@@ -436,10 +516,10 @@ static void egui_view_badge_group_on_draw(egui_view_t *self)
     cursor_y = badges_y;
     for (i = 0; i < item_count; i++)
     {
-        badge_w = 18 + egui_view_badge_group_text_len(snapshot->items[i].label) * (local->compact_mode ? 4 : 5);
-        if (snapshot->items[i].meta != NULL && snapshot->items[i].meta[0] != '\0')
+        badge_w = 18 + egui_view_badge_group_measure_text_width(local->meta_font, snapshot->items[i].label);
+        if (egui_view_badge_group_has_text(snapshot->items[i].meta))
         {
-            badge_w += 12 + egui_view_badge_group_text_len(snapshot->items[i].meta) * (local->compact_mode ? 4 : 5);
+            badge_w += 12 + egui_view_badge_group_measure_text_width(local->meta_font, snapshot->items[i].meta);
         }
 
         if (badge_w < (local->compact_mode ? 34 : 42))
