@@ -52,6 +52,20 @@ static egui_color_t egui_view_nav_panel_mix_disabled(egui_color_t color)
     return egui_rgb_mix(color, EGUI_COLOR_DARK_GREY, 68);
 }
 
+static egui_dim_t egui_view_nav_panel_measure_font_line_height(const egui_font_t *font)
+{
+    egui_dim_t width = 0;
+    egui_dim_t height = 0;
+
+    if (font == NULL || font->api == NULL || font->api->get_str_size == NULL)
+    {
+        return 0;
+    }
+
+    font->api->get_str_size(font, "A", 0, 0, &width, &height);
+    return height;
+}
+
 static uint8_t egui_view_nav_panel_get_visible_item_count(egui_view_nav_panel_t *local)
 {
     return local->item_count > EGUI_VIEW_NAV_PANEL_MAX_ITEMS ? EGUI_VIEW_NAV_PANEL_MAX_ITEMS : local->item_count;
@@ -92,11 +106,21 @@ static void egui_view_nav_panel_get_metrics(egui_view_nav_panel_t *local, egui_v
     egui_dim_t footer_gap = local->compact_mode ? EGUI_VIEW_NAV_PANEL_COMPACT_FOOTER_GAP : EGUI_VIEW_NAV_PANEL_STANDARD_FOOTER_GAP;
     egui_dim_t header_h = local->compact_mode ? 0 : EGUI_VIEW_NAV_PANEL_STANDARD_HEADER_HEIGHT;
     egui_dim_t header_gap = local->compact_mode ? 0 : EGUI_VIEW_NAV_PANEL_STANDARD_HEADER_GAP;
+    egui_dim_t meta_line_height = egui_view_nav_panel_measure_font_line_height(local->meta_font);
     egui_dim_t row_gap = local->compact_mode ? EGUI_VIEW_NAV_PANEL_COMPACT_ROW_GAP : EGUI_VIEW_NAV_PANEL_STANDARD_ROW_GAP;
     egui_dim_t rows_area_height;
     egui_dim_t row_height;
     egui_dim_t item_y;
     uint8_t i;
+
+    if (meta_line_height > header_h)
+    {
+        header_h = meta_line_height;
+    }
+    if (meta_line_height > footer_h)
+    {
+        footer_h = meta_line_height;
+    }
 
     egui_view_get_work_region(self, &region);
     metrics->content.location.x = region.location.x + pad_x;
