@@ -35,6 +35,34 @@ static uint8_t egui_view_menu_flyout_text_len(const char *text)
     return length;
 }
 
+static egui_dim_t egui_view_menu_flyout_measure_font_line_height(const egui_font_t *font)
+{
+    egui_dim_t dummy_width = 0;
+    egui_dim_t line_height = 0;
+
+    if (font == NULL || font->api == NULL || font->api->get_str_size == NULL)
+    {
+        return 0;
+    }
+
+    font->api->get_str_size(font, "A", 0, 0, &dummy_width, &line_height);
+    return line_height;
+}
+
+static egui_dim_t egui_view_menu_flyout_measure_text_width(const egui_font_t *font, const char *text)
+{
+    egui_dim_t text_width = 0;
+    egui_dim_t dummy_height = 0;
+
+    if (text == NULL || text[0] == '\0' || font == NULL || font->api == NULL || font->api->get_str_size == NULL)
+    {
+        return 0;
+    }
+
+    font->api->get_str_size(font, text, 0, 0, &text_width, &dummy_height);
+    return text_width;
+}
+
 static uint8_t egui_view_menu_flyout_focus_index(const egui_view_menu_flyout_snapshot_t *snapshot, uint8_t item_count)
 {
     if (snapshot == NULL || item_count == 0 || snapshot->focus_index >= item_count)
@@ -78,7 +106,7 @@ static egui_color_t egui_view_menu_flyout_tone_color(egui_view_menu_flyout_t *lo
     }
 }
 
-static egui_dim_t egui_view_menu_flyout_meta_width(const char *text, uint8_t compact_mode, egui_dim_t max_w)
+static egui_dim_t egui_view_menu_flyout_meta_width(const egui_font_t *font, const char *text, uint8_t compact_mode, egui_dim_t max_w)
 {
     egui_dim_t width;
 
@@ -87,7 +115,11 @@ static egui_dim_t egui_view_menu_flyout_meta_width(const char *text, uint8_t com
         return 0;
     }
 
-    width = 6 + egui_view_menu_flyout_text_len(text) * (compact_mode ? 4 : 5);
+    width = 6 + egui_view_menu_flyout_measure_text_width(font, text);
+    if (width <= 6)
+    {
+        width = 6 + egui_view_menu_flyout_text_len(text) * (compact_mode ? 4 : 5);
+    }
     if (width > max_w)
     {
         width = max_w;
@@ -126,7 +158,7 @@ static void egui_view_menu_flyout_draw_row(egui_view_t *self, egui_view_menu_fly
     egui_dim_t trailing_w = item->trailing_kind == EGUI_VIEW_MENU_FLYOUT_TRAILING_SUBMENU ? (local->compact_mode ? 8 : 10) : 0;
     egui_dim_t trailing_x = x + width - trailing_w - (local->compact_mode ? 8 : 9);
     egui_dim_t meta_max_w = width / 3;
-    egui_dim_t meta_w = egui_view_menu_flyout_meta_width(item->meta, local->compact_mode, meta_max_w);
+    egui_dim_t meta_w = egui_view_menu_flyout_meta_width(local->meta_font, item->meta, local->compact_mode, meta_max_w);
     egui_dim_t meta_x = trailing_x - meta_w - (meta_w > 0 && trailing_w > 0 ? 3 : 0);
     egui_dim_t title_x = icon_x + icon_size + (local->compact_mode ? 6 : 8);
     uint8_t show_row_fill = focused || item->emphasized;
@@ -320,6 +352,9 @@ static void egui_view_menu_flyout_on_draw(egui_view_t *self)
     egui_dim_t h;
     egui_dim_t padding;
     egui_dim_t row_h;
+    egui_dim_t title_line_h;
+    egui_dim_t meta_line_h;
+    egui_dim_t min_row_h;
     egui_dim_t cursor_y;
     egui_dim_t max_y;
     egui_dim_t radius;
@@ -359,6 +394,14 @@ static void egui_view_menu_flyout_on_draw(egui_view_t *self)
     h = region.size.height;
     padding = local->compact_mode ? 5 : 7;
     row_h = local->compact_mode ? 18 : 20;
+    title_line_h = egui_view_menu_flyout_measure_font_line_height(local->font);
+    meta_line_h = egui_view_menu_flyout_measure_font_line_height(local->meta_font);
+    min_row_h = title_line_h > meta_line_h ? title_line_h : meta_line_h;
+    min_row_h += local->compact_mode ? 8 : 10;
+    if (min_row_h > row_h)
+    {
+        row_h = min_row_h;
+    }
     cursor_y = y + padding;
     max_y = y + h - padding;
     radius = local->compact_mode ? 7 : 9;
