@@ -271,6 +271,20 @@ static const egui_font_t *hcw_field_get_icon_font(const hcw_field_t *local)
     return local->icon_font == NULL ? hcw_field_default_icon_font() : local->icon_font;
 }
 
+static egui_dim_t hcw_field_measure_font_line_height(const egui_font_t *font)
+{
+    egui_dim_t width = 0;
+    egui_dim_t height = 0;
+
+    if (font == NULL || font->api == NULL || font->api->get_str_size == NULL)
+    {
+        return 0;
+    }
+
+    font->api->get_str_size(font, "A", 0, 0, &width, &height);
+    return height;
+}
+
 static void hcw_field_measure_text(const egui_font_t *font, const char *text, egui_dim_t *width, egui_dim_t *height)
 {
     egui_dim_t out_width = 0;
@@ -332,9 +346,31 @@ static void hcw_field_get_metrics(hcw_field_t *local, egui_view_t *self, hcw_fie
     egui_dim_t available_for_bubble;
     egui_dim_t available_for_field;
     egui_dim_t label_text_width = 0;
+    egui_dim_t primary_line_height = hcw_field_measure_font_line_height(hcw_field_get_font(local));
+    egui_dim_t meta_line_height = hcw_field_measure_font_line_height(hcw_field_get_meta_font(local));
+    egui_dim_t bubble_title_height;
+    egui_dim_t bubble_body_gap = local->compact_mode ? 2 : 4;
 
     memset(metrics, 0, sizeof(*metrics));
     egui_view_get_work_region(self, &metrics->region);
+
+    if (primary_line_height > label_height)
+    {
+        label_height = primary_line_height;
+    }
+    if (meta_line_height > helper_height)
+    {
+        helper_height = meta_line_height;
+    }
+    if (meta_line_height > validation_height)
+    {
+        validation_height = meta_line_height;
+    }
+    bubble_title_height = local->compact_mode ? 10 : 12;
+    if (primary_line_height > bubble_title_height)
+    {
+        bubble_title_height = primary_line_height;
+    }
 
     x = metrics->region.location.x + side_pad;
     y = metrics->region.location.y + top_pad;
@@ -422,11 +458,10 @@ static void hcw_field_get_metrics(hcw_field_t *local, egui_view_t *self, hcw_fie
             metrics->bubble_title_region.location.x = x + bubble_pad_x;
             metrics->bubble_title_region.location.y = y + bubble_pad_y;
             metrics->bubble_title_region.size.width = width - bubble_pad_x * 2;
-            metrics->bubble_title_region.size.height = local->compact_mode ? 10 : 12;
+            metrics->bubble_title_region.size.height = bubble_title_height;
 
             metrics->bubble_body_region.location.x = x + bubble_pad_x;
-            metrics->bubble_body_region.location.y =
-                    metrics->bubble_title_region.location.y + metrics->bubble_title_region.size.height + (local->compact_mode ? 2 : 4);
+            metrics->bubble_body_region.location.y = metrics->bubble_title_region.location.y + metrics->bubble_title_region.size.height + bubble_body_gap;
             metrics->bubble_body_region.size.width = width - bubble_pad_x * 2;
             metrics->bubble_body_region.size.height =
                     y + available_for_bubble - bubble_pad_y - metrics->bubble_body_region.location.y;
