@@ -80,6 +80,91 @@ static uint8_t egui_view_settings_expander_has_text(const char *text)
     return text != NULL && text[0] != '\0' ? 1 : 0;
 }
 
+static egui_dim_t egui_view_settings_expander_measure_font_line_height(const egui_font_t *font)
+{
+    egui_dim_t dummy_width = 0;
+    egui_dim_t line_height = 0;
+
+    if (font == NULL || font->api == NULL || font->api->get_str_size == NULL)
+    {
+        return 0;
+    }
+
+    font->api->get_str_size(font, "A", 0, 0, &dummy_width, &line_height);
+    return line_height;
+}
+
+static egui_dim_t egui_view_settings_expander_header_badge_height(egui_view_settings_expander_t *local)
+{
+    egui_dim_t min_h = local->compact_mode ? EGUI_VIEW_SETTINGS_EXPANDER_COMPACT_BADGE_H : EGUI_VIEW_SETTINGS_EXPANDER_STANDARD_BADGE_H;
+    egui_dim_t line_height = egui_view_settings_expander_measure_font_line_height(local->meta_font);
+
+    return line_height > min_h ? line_height : min_h;
+}
+
+static egui_dim_t egui_view_settings_expander_header_title_height(egui_view_settings_expander_t *local)
+{
+    egui_dim_t min_h = local->compact_mode ? 10 : 11;
+    egui_dim_t line_height = egui_view_settings_expander_measure_font_line_height(local->font);
+
+    return line_height > min_h ? line_height : min_h;
+}
+
+static egui_dim_t egui_view_settings_expander_header_description_height(egui_view_settings_expander_t *local)
+{
+    egui_dim_t line_height;
+
+    if (local->compact_mode)
+    {
+        return 0;
+    }
+
+    line_height = egui_view_settings_expander_measure_font_line_height(local->meta_font);
+    return line_height > 9 ? line_height : 9;
+}
+
+static egui_dim_t egui_view_settings_expander_value_height(egui_view_settings_expander_t *local)
+{
+    egui_dim_t min_h = local->compact_mode ? 10 : 12;
+    egui_dim_t line_height = egui_view_settings_expander_measure_font_line_height(local->meta_font);
+
+    return line_height > min_h ? line_height : min_h;
+}
+
+static egui_dim_t egui_view_settings_expander_header_height(egui_view_settings_expander_t *local,
+                                                            const egui_view_settings_expander_snapshot_t *snapshot)
+{
+    egui_dim_t header_h = local->compact_mode ? EGUI_VIEW_SETTINGS_EXPANDER_COMPACT_HEADER_HEIGHT : EGUI_VIEW_SETTINGS_EXPANDER_STANDARD_HEADER_HEIGHT;
+    egui_dim_t title_h = egui_view_settings_expander_header_title_height(local);
+
+    if (local->compact_mode)
+    {
+        egui_dim_t min_h = title_h + 10;
+
+        return min_h > header_h ? min_h : header_h;
+    }
+
+    if (snapshot != NULL)
+    {
+        egui_dim_t required_h = 5 + title_h;
+
+        if (egui_view_settings_expander_has_text(snapshot->eyebrow))
+        {
+            required_h += egui_view_settings_expander_header_badge_height(local);
+        }
+        if (egui_view_settings_expander_has_text(snapshot->description))
+        {
+            required_h += egui_view_settings_expander_header_description_height(local);
+        }
+        if (required_h > header_h)
+        {
+            header_h = required_h;
+        }
+    }
+
+    return header_h;
+}
+
 static egui_color_t egui_view_settings_expander_mix_disabled(egui_color_t color)
 {
     return egui_rgb_mix(color, EGUI_COLOR_DARK_GREY, 68);
@@ -313,7 +398,7 @@ static void egui_view_settings_expander_get_metrics(egui_view_settings_expander_
 {
     egui_dim_t pad_x = local->compact_mode ? EGUI_VIEW_SETTINGS_EXPANDER_COMPACT_PAD_X : EGUI_VIEW_SETTINGS_EXPANDER_STANDARD_PAD_X;
     egui_dim_t pad_y = local->compact_mode ? EGUI_VIEW_SETTINGS_EXPANDER_COMPACT_PAD_Y : EGUI_VIEW_SETTINGS_EXPANDER_STANDARD_PAD_Y;
-    egui_dim_t header_h = local->compact_mode ? EGUI_VIEW_SETTINGS_EXPANDER_COMPACT_HEADER_HEIGHT : EGUI_VIEW_SETTINGS_EXPANDER_STANDARD_HEADER_HEIGHT;
+    egui_dim_t header_h = egui_view_settings_expander_header_height(local, snapshot);
     egui_dim_t body_gap = local->compact_mode ? EGUI_VIEW_SETTINGS_EXPANDER_COMPACT_BODY_GAP : EGUI_VIEW_SETTINGS_EXPANDER_STANDARD_BODY_GAP;
     egui_dim_t row_h = local->compact_mode ? EGUI_VIEW_SETTINGS_EXPANDER_COMPACT_ROW_HEIGHT : EGUI_VIEW_SETTINGS_EXPANDER_STANDARD_ROW_HEIGHT;
     egui_dim_t row_gap = local->compact_mode ? EGUI_VIEW_SETTINGS_EXPANDER_COMPACT_ROW_GAP : EGUI_VIEW_SETTINGS_EXPANDER_STANDARD_ROW_GAP;
@@ -546,7 +631,9 @@ static void egui_view_settings_expander_draw_header(egui_view_t *self, egui_view
     egui_color_t icon_color = egui_rgb_mix(local->text_color, tone_color, focused ? 16 : 10);
     egui_dim_t radius = local->compact_mode ? 6 : 8;
     egui_dim_t icon_size = local->compact_mode ? EGUI_VIEW_SETTINGS_EXPANDER_COMPACT_ICON_SIZE : EGUI_VIEW_SETTINGS_EXPANDER_STANDARD_ICON_SIZE;
-    egui_dim_t badge_h = local->compact_mode ? EGUI_VIEW_SETTINGS_EXPANDER_COMPACT_BADGE_H : EGUI_VIEW_SETTINGS_EXPANDER_STANDARD_BADGE_H;
+    egui_dim_t badge_h = egui_view_settings_expander_header_badge_height(local);
+    egui_dim_t title_h = egui_view_settings_expander_header_title_height(local);
+    egui_dim_t description_h = egui_view_settings_expander_header_description_height(local);
     egui_dim_t inner_x = region->location.x + (local->compact_mode ? 5 : 7);
     egui_dim_t inner_y = region->location.y + (local->compact_mode ? 4 : 5);
     egui_dim_t chevron_w = local->compact_mode ? 8 : 10;
@@ -555,7 +642,7 @@ static void egui_view_settings_expander_draw_header(egui_view_t *self, egui_view
     egui_dim_t chevron_y = region->location.y + (region->size.height - chevron_h) / 2;
     egui_dim_t value_w = egui_view_settings_expander_pill_width(snapshot->value, local->compact_mode, local->compact_mode ? 18 : 24,
                                                                 region->size.width / 3);
-    egui_dim_t value_h = local->compact_mode ? 10 : 12;
+    egui_dim_t value_h = egui_view_settings_expander_value_height(local);
     egui_dim_t value_x = chevron_x - (egui_view_settings_expander_has_text(snapshot->value) ? (value_w + (local->compact_mode ? 4 : 6)) : 0);
     egui_dim_t title_x = inner_x + icon_size + 7;
     egui_dim_t text_right = value_x > title_x ? value_x - 4 : chevron_x - 4;
@@ -644,15 +731,16 @@ static void egui_view_settings_expander_draw_header(egui_view_t *self, egui_view
     egui_view_settings_expander_draw_chevron(self, chevron_x, chevron_y, chevron_w, chevron_h, local->expanded_state, tone_color);
 
     text_region.location.x = title_x;
-    text_region.location.y = local->compact_mode ? (region->location.y + (region->size.height - 10) / 2) : (region->location.y + 16);
+    text_region.location.y = local->compact_mode ? (region->location.y + (region->size.height - title_h) / 2)
+                                                 : (inner_y + (egui_view_settings_expander_has_text(snapshot->eyebrow) ? badge_h : 0));
     text_region.size.width = text_right - title_x;
-    text_region.size.height = local->compact_mode ? 10 : 11;
+    text_region.size.height = title_h;
     egui_view_settings_expander_draw_text(local->font, self, snapshot->title, &text_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, title_color);
 
-    if (!local->compact_mode)
+    if (!local->compact_mode && description_h > 0)
     {
         text_region.location.y += text_region.size.height;
-        text_region.size.height = 9;
+        text_region.size.height = description_h;
         egui_view_settings_expander_draw_text(local->meta_font, self, snapshot->description, &text_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER,
                                               desc_color);
     }
@@ -674,7 +762,7 @@ static void egui_view_settings_expander_draw_row(egui_view_t *self, egui_view_se
     egui_dim_t icon_size = local->compact_mode ? EGUI_VIEW_SETTINGS_EXPANDER_COMPACT_ICON_SIZE : EGUI_VIEW_SETTINGS_EXPANDER_STANDARD_ICON_SIZE;
     egui_dim_t title_x = region->location.x + 5 + icon_size + 7;
     egui_dim_t trailing_w = 0;
-    egui_dim_t trailing_h = local->compact_mode ? 10 : 12;
+    egui_dim_t trailing_h = egui_view_settings_expander_value_height(local);
     egui_dim_t trailing_x;
     egui_dim_t trailing_y = region->location.y + (region->size.height - trailing_h) / 2;
 
