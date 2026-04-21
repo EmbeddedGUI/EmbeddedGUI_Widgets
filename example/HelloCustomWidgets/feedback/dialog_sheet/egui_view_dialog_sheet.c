@@ -74,23 +74,6 @@ static uint8_t egui_view_dialog_sheet_clamp_snapshot_count(uint8_t count)
     return count;
 }
 
-static uint8_t egui_view_dialog_sheet_text_len(const char *text)
-{
-    uint8_t length = 0;
-
-    if (text == NULL)
-    {
-        return 0;
-    }
-
-    while (text[length] != '\0')
-    {
-        length++;
-    }
-
-    return length;
-}
-
 static egui_dim_t egui_view_dialog_sheet_measure_font_line_height(const egui_font_t *font)
 {
     egui_dim_t dummy_width = 0;
@@ -103,6 +86,20 @@ static egui_dim_t egui_view_dialog_sheet_measure_font_line_height(const egui_fon
 
     font->api->get_str_size(font, "A", 0, 0, &dummy_width, &line_height);
     return line_height;
+}
+
+static egui_dim_t egui_view_dialog_sheet_measure_text_width(const egui_font_t *font, const char *text)
+{
+    egui_dim_t text_width = 0;
+    egui_dim_t dummy_height = 0;
+
+    if (text == NULL || text[0] == '\0' || font == NULL || font->api == NULL || font->api->get_str_size == NULL)
+    {
+        return 0;
+    }
+
+    font->api->get_str_size(font, text, 0, 0, &text_width, &dummy_height);
+    return text_width;
 }
 
 static egui_dim_t egui_view_dialog_sheet_meta_height(egui_view_dialog_sheet_t *local, egui_dim_t fallback)
@@ -196,7 +193,7 @@ static uint8_t egui_view_dialog_sheet_normalize_action(const egui_view_dialog_sh
     return EGUI_VIEW_DIALOG_SHEET_ACTION_NONE;
 }
 
-static egui_dim_t egui_view_dialog_sheet_pill_width(const char *text, uint8_t compact_mode, egui_dim_t max_w)
+static egui_dim_t egui_view_dialog_sheet_pill_width(const egui_font_t *font, const char *text, uint8_t compact_mode, egui_dim_t max_w)
 {
     egui_dim_t min_w = compact_mode ? 16 : 20;
     egui_dim_t width;
@@ -206,7 +203,7 @@ static egui_dim_t egui_view_dialog_sheet_pill_width(const char *text, uint8_t co
         return 0;
     }
 
-    width = min_w + egui_view_dialog_sheet_text_len(text) * (compact_mode ? 4 : 4);
+    width = min_w + egui_view_dialog_sheet_measure_text_width(font, text);
     if (width > max_w)
     {
         width = max_w;
@@ -215,7 +212,7 @@ static egui_dim_t egui_view_dialog_sheet_pill_width(const char *text, uint8_t co
     return width;
 }
 
-static egui_dim_t egui_view_dialog_sheet_button_width(const char *text, uint8_t compact_mode, egui_dim_t max_w)
+static egui_dim_t egui_view_dialog_sheet_button_width(const egui_font_t *font, const char *text, uint8_t compact_mode, egui_dim_t max_w)
 {
     egui_dim_t min_w = compact_mode ? 22 : 26;
     egui_dim_t width;
@@ -225,7 +222,7 @@ static egui_dim_t egui_view_dialog_sheet_button_width(const char *text, uint8_t 
         return 0;
     }
 
-    width = min_w + egui_view_dialog_sheet_text_len(text) * (compact_mode ? 4 : 4);
+    width = min_w + egui_view_dialog_sheet_measure_text_width(font, text);
     if (width > max_w)
     {
         width = max_w;
@@ -421,10 +418,10 @@ static void egui_view_dialog_sheet_get_metrics(egui_view_dialog_sheet_t *local, 
     metrics->title_region.size.height = hero_size;
 
     max_button_w = metrics->footer_region.size.width / (show_secondary ? 3 : 2);
-    primary_w = egui_view_dialog_sheet_button_width(snapshot == NULL ? "" : snapshot->primary_action, local->compact_mode, max_button_w);
+    primary_w = egui_view_dialog_sheet_button_width(local->meta_font, snapshot == NULL ? "" : snapshot->primary_action, local->compact_mode, max_button_w);
     if (show_secondary)
     {
-        secondary_w = egui_view_dialog_sheet_button_width(snapshot == NULL ? "" : snapshot->secondary_action, local->compact_mode, max_button_w);
+        secondary_w = egui_view_dialog_sheet_button_width(local->meta_font, snapshot == NULL ? "" : snapshot->secondary_action, local->compact_mode, max_button_w);
     }
 
     metrics->primary_action_region.size.width = primary_w;
@@ -440,7 +437,7 @@ static void egui_view_dialog_sheet_get_metrics(egui_view_dialog_sheet_t *local, 
         metrics->secondary_action_region.location.y = metrics->primary_action_region.location.y;
     }
 
-    tag_w = egui_view_dialog_sheet_pill_width(snapshot == NULL ? "" : snapshot->tag, local->compact_mode, metrics->footer_region.size.width / 3);
+    tag_w = egui_view_dialog_sheet_pill_width(local->meta_font, snapshot == NULL ? "" : snapshot->tag, local->compact_mode, metrics->footer_region.size.width / 3);
     if (tag_w > 0)
     {
         metrics->tag_region.location.x = metrics->footer_region.location.x;
