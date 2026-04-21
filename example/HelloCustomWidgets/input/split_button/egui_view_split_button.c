@@ -79,6 +79,34 @@ static uint8_t egui_view_split_button_text_len(const char *text)
     return length;
 }
 
+static egui_dim_t egui_view_split_button_measure_font_line_height(const egui_font_t *font)
+{
+    egui_dim_t width = 0;
+    egui_dim_t height = 0;
+
+    if (font == NULL || font->api == NULL || font->api->get_str_size == NULL)
+    {
+        return 0;
+    }
+
+    font->api->get_str_size(font, "A", 0, 0, &width, &height);
+    return height;
+}
+
+static egui_dim_t egui_view_split_button_measure_text_width(const egui_font_t *font, const char *text)
+{
+    egui_dim_t width = 0;
+    egui_dim_t height = 0;
+
+    if (font == NULL || text == NULL || text[0] == '\0' || font->api == NULL || font->api->get_str_size == NULL)
+    {
+        return 0;
+    }
+
+    font->api->get_str_size(font, text, 0, 0, &width, &height);
+    return width;
+}
+
 static egui_color_t egui_view_split_button_tone_color(egui_view_split_button_t *local, uint8_t tone)
 {
     switch (tone)
@@ -206,32 +234,60 @@ static void egui_view_split_button_get_metrics(egui_view_split_button_t *local, 
     egui_dim_t helper_h = EGUI_VIEW_SPLIT_BUTTON_STANDARD_HELPER_HEIGHT;
     egui_dim_t menu_w = local->compact_mode ? EGUI_VIEW_SPLIT_BUTTON_COMPACT_MENU_WIDTH : EGUI_VIEW_SPLIT_BUTTON_STANDARD_MENU_WIDTH;
     egui_dim_t row_y;
+    egui_dim_t block_h = row_h;
+    egui_dim_t block_y;
+    egui_dim_t meta_line_height = egui_view_split_button_measure_font_line_height(local->meta_font);
 
     egui_view_get_work_region(self, &region);
-    metrics->content_region.location.x = region.location.x + pad_x;
-    metrics->content_region.location.y = region.location.y + pad_y;
-    metrics->content_region.size.width = region.size.width - pad_x * 2;
-    metrics->content_region.size.height = region.size.height - pad_y * 2;
     metrics->show_title = (snapshot != NULL && snapshot->title != NULL && snapshot->title[0] != '\0') ? 1 : 0;
     metrics->show_helper = (!local->compact_mode && snapshot != NULL && snapshot->helper != NULL && snapshot->helper[0] != '\0') ? 1 : 0;
+    metrics->content_region.location.x = region.location.x + pad_x;
+    metrics->content_region.size.width = region.size.width - pad_x * 2;
+    metrics->content_region.location.y = region.location.y + pad_y;
+    metrics->content_region.size.height = region.size.height - pad_y * 2;
+
+    if (meta_line_height > title_h)
+    {
+        title_h = meta_line_height;
+    }
+    if (meta_line_height > helper_h)
+    {
+        helper_h = meta_line_height;
+    }
+
+    if (metrics->show_title)
+    {
+        block_h += title_h + title_gap;
+    }
+    if (metrics->show_helper)
+    {
+        block_h += helper_h + helper_gap;
+    }
+    if (block_h > metrics->content_region.size.height && region.size.height >= block_h)
+    {
+        pad_y = (region.size.height - block_h) / 2;
+        metrics->content_region.location.y = region.location.y + pad_y;
+        metrics->content_region.size.height = region.size.height - pad_y * 2;
+    }
+
+    block_y = metrics->content_region.location.y;
+    if (metrics->content_region.size.height > block_h)
+    {
+        block_y += (metrics->content_region.size.height - block_h) / 2;
+    }
 
     metrics->title_region.location.x = metrics->content_region.location.x;
-    metrics->title_region.location.y = metrics->content_region.location.y;
+    metrics->title_region.location.y = block_y;
     metrics->title_region.size.width = metrics->content_region.size.width;
     metrics->title_region.size.height = title_h;
 
     if (metrics->show_title)
     {
-        row_y = metrics->content_region.location.y + title_h + title_gap;
+        row_y = block_y + title_h + title_gap;
     }
     else
     {
-        row_y = metrics->content_region.location.y;
-    }
-
-    if (!metrics->show_helper)
-    {
-        row_y = metrics->content_region.location.y + (metrics->content_region.size.height - row_h) / 2;
+        row_y = block_y;
     }
 
     metrics->row_region.location.x = metrics->content_region.location.x;
@@ -487,6 +543,7 @@ static void egui_view_split_button_on_draw(egui_view_t *self)
     uint8_t primary_enabled;
     uint8_t menu_enabled;
     uint8_t show_glyph;
+    egui_dim_t label_width;
     egui_dim_t radius;
     egui_dim_t segment_radius;
 
@@ -613,8 +670,13 @@ static void egui_view_split_button_on_draw(egui_view_t *self)
     egui_canvas_draw_line(&uicode_get_core()->canvas, metrics.menu_region.location.x, metrics.row_region.location.y + 4, metrics.menu_region.location.x,
                           metrics.row_region.location.y + metrics.row_region.size.height - 4, 1, divider_color, egui_color_alpha_mix(self->alpha, 44));
 
+    label_width = egui_view_split_button_measure_text_width(local->font, snapshot->label);
+    if (label_width <= 0 && snapshot->label != NULL && snapshot->label[0] != '\0')
+    {
+        label_width = (egui_dim_t)egui_view_split_button_text_len(snapshot->label) * 5;
+    }
     show_glyph = (!local->compact_mode && snapshot->glyph != NULL && snapshot->glyph[0] != '\0' &&
-                  primary_fill_region.size.width > (egui_dim_t)(egui_view_split_button_text_len(snapshot->label) * 5 + 28))
+                  primary_fill_region.size.width > label_width + 33)
                          ? 1
                          : 0;
     if (show_glyph)
