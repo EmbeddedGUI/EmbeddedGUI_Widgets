@@ -62,6 +62,93 @@ static uint8_t egui_view_tool_tip_has_text(const char *text)
     return (text != NULL && text[0] != '\0') ? 1 : 0;
 }
 
+static egui_dim_t egui_view_tool_tip_measure_font_line_height(const egui_font_t *font)
+{
+    egui_dim_t dummy_width = 0;
+    egui_dim_t line_height = 0;
+
+    if (font == NULL || font->api == NULL || font->api->get_str_size == NULL)
+    {
+        return 0;
+    }
+
+    font->api->get_str_size(font, "A", 0, 0, &dummy_width, &line_height);
+    return line_height;
+}
+
+static egui_dim_t egui_view_tool_tip_hint_height(egui_view_tool_tip_t *local)
+{
+    egui_dim_t fallback = local->compact_mode ? 8 : 10;
+    egui_dim_t line_height = egui_view_tool_tip_measure_font_line_height(local->meta_font);
+
+    return line_height > fallback ? line_height : fallback;
+}
+
+static egui_dim_t egui_view_tool_tip_title_height(egui_view_tool_tip_t *local)
+{
+    egui_dim_t fallback = local->compact_mode ? 12 : 14;
+    egui_dim_t line_height = egui_view_tool_tip_measure_font_line_height(local->font);
+
+    return line_height > fallback ? line_height : fallback;
+}
+
+static egui_dim_t egui_view_tool_tip_compact_body_height(egui_view_tool_tip_t *local)
+{
+    egui_dim_t fallback = 10;
+    egui_dim_t line_height = egui_view_tool_tip_measure_font_line_height(local->meta_font);
+
+    return line_height > fallback ? line_height : fallback;
+}
+
+static egui_dim_t egui_view_tool_tip_read_only_badge_height(egui_view_tool_tip_t *local)
+{
+    egui_dim_t fallback = local->compact_mode ? 10 : 11;
+    egui_dim_t line_height = egui_view_tool_tip_measure_font_line_height(local->meta_font);
+
+    return line_height > fallback ? line_height : fallback;
+}
+
+static egui_dim_t egui_view_tool_tip_bubble_height(egui_view_tool_tip_t *local, const egui_view_tool_tip_snapshot_t *snapshot)
+{
+    egui_dim_t bubble_h = local->compact_mode ? EGUI_VIEW_TOOL_TIP_COMPACT_BUBBLE_HEIGHT : EGUI_VIEW_TOOL_TIP_STANDARD_BUBBLE_HEIGHT;
+    egui_dim_t hint_h = egui_view_tool_tip_hint_height(local);
+    egui_dim_t title_h = egui_view_tool_tip_title_height(local);
+    egui_dim_t required_h;
+
+    if (local->compact_mode)
+    {
+        required_h = egui_view_tool_tip_has_text(snapshot != NULL ? snapshot->hint : NULL) ? (6 + hint_h + 2 + title_h) : (10 + title_h);
+        if (egui_view_tool_tip_has_text(snapshot != NULL ? snapshot->body : NULL))
+        {
+            required_h += egui_view_tool_tip_compact_body_height(local);
+        }
+        required_h += 6;
+        if (local->read_only_mode)
+        {
+            egui_dim_t badge_required_h = egui_view_tool_tip_read_only_badge_height(local) + 6;
+
+            if (badge_required_h > required_h)
+            {
+                required_h = badge_required_h;
+            }
+        }
+    }
+    else
+    {
+        required_h = egui_view_tool_tip_has_text(snapshot != NULL ? snapshot->hint : NULL) ? (8 + hint_h + 2 + title_h) : (12 + title_h);
+        if (egui_view_tool_tip_has_text(snapshot != NULL ? snapshot->body : NULL))
+        {
+            required_h += egui_view_tool_tip_measure_font_line_height(local->meta_font) + 8;
+        }
+        else
+        {
+            required_h += 8;
+        }
+    }
+
+    return required_h > bubble_h ? required_h : bubble_h;
+}
+
 static uint8_t egui_view_tool_tip_text_len(const char *text)
 {
     uint8_t length = 0;
@@ -201,7 +288,9 @@ static void egui_view_tool_tip_get_metrics(egui_view_tool_tip_t *local, egui_vie
     egui_dim_t pad_y = local->compact_mode ? EGUI_VIEW_TOOL_TIP_COMPACT_PAD_Y : EGUI_VIEW_TOOL_TIP_STANDARD_PAD_Y;
     egui_dim_t target_h = local->compact_mode ? EGUI_VIEW_TOOL_TIP_COMPACT_TARGET_HEIGHT : EGUI_VIEW_TOOL_TIP_STANDARD_TARGET_HEIGHT;
     egui_dim_t gap = local->compact_mode ? EGUI_VIEW_TOOL_TIP_COMPACT_TARGET_GAP : EGUI_VIEW_TOOL_TIP_STANDARD_TARGET_GAP;
-    egui_dim_t bubble_h = local->compact_mode ? EGUI_VIEW_TOOL_TIP_COMPACT_BUBBLE_HEIGHT : EGUI_VIEW_TOOL_TIP_STANDARD_BUBBLE_HEIGHT;
+    egui_dim_t bubble_h = egui_view_tool_tip_bubble_height(local, snapshot);
+    egui_dim_t hint_h = egui_view_tool_tip_hint_height(local);
+    egui_dim_t title_h = egui_view_tool_tip_title_height(local);
     egui_dim_t bubble_w;
     egui_dim_t target_w;
     egui_dim_t target_x;
@@ -274,12 +363,13 @@ static void egui_view_tool_tip_get_metrics(egui_view_tool_tip_t *local, egui_vie
     metrics->hint_region.location.x = metrics->bubble_region.location.x + (local->compact_mode ? 8 : 10);
     metrics->hint_region.location.y = metrics->bubble_region.location.y + (local->compact_mode ? 6 : 8);
     metrics->hint_region.size.width = metrics->bubble_region.size.width - (local->compact_mode ? 16 : 20);
-    metrics->hint_region.size.height = local->compact_mode ? 8 : 10;
+    metrics->hint_region.size.height = hint_h;
 
     metrics->title_region.location.x = metrics->bubble_region.location.x + (local->compact_mode ? 8 : 10);
-    metrics->title_region.location.y = metrics->bubble_region.location.y + (metrics->show_hint ? (local->compact_mode ? 16 : 20) : (local->compact_mode ? 10 : 12));
+    metrics->title_region.location.y = metrics->show_hint ? (metrics->hint_region.location.y + metrics->hint_region.size.height + 2)
+                                                          : (metrics->bubble_region.location.y + (local->compact_mode ? 10 : 12));
     metrics->title_region.size.width = metrics->bubble_region.size.width - (local->compact_mode ? 16 : 20);
-    metrics->title_region.size.height = local->compact_mode ? 12 : 14;
+    metrics->title_region.size.height = title_h;
 
     metrics->body_region.location.x = metrics->bubble_region.location.x + (local->compact_mode ? 8 : 10);
     metrics->body_region.location.y = metrics->title_region.location.y + metrics->title_region.size.height + (local->compact_mode ? 0 : 6);
@@ -420,9 +510,14 @@ static void egui_view_tool_tip_draw_bubble(egui_view_t *self, egui_view_tool_tip
     else if (local->compact_mode && egui_view_tool_tip_has_text(snapshot->body))
     {
         egui_region_t compact_body_region = metrics->title_region;
+        egui_dim_t badge_reserved_w = local->read_only_mode ? ((local->compact_mode ? 24 : 30) + 4) : 0;
 
-        compact_body_region.location.y += 11;
-        compact_body_region.size.height = 10;
+        compact_body_region.location.y += metrics->title_region.size.height;
+        compact_body_region.size.height = egui_view_tool_tip_compact_body_height(local);
+        if (badge_reserved_w > 0 && compact_body_region.size.width > badge_reserved_w)
+        {
+            compact_body_region.size.width -= badge_reserved_w;
+        }
         egui_view_tool_tip_draw_text(local->meta_font, self, snapshot->body, &compact_body_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, body_color);
     }
 
@@ -431,9 +526,10 @@ static void egui_view_tool_tip_draw_bubble(egui_view_t *self, egui_view_tool_tip
         egui_region_t badge_region;
         egui_color_t badge_fill = egui_rgb_mix(local->surface_color, tone_color, 4);
         egui_color_t badge_text = egui_rgb_mix(muted_text_color, text_color, 18);
+        egui_dim_t badge_h = egui_view_tool_tip_read_only_badge_height(local);
 
         badge_region.size.width = local->compact_mode ? 24 : 30;
-        badge_region.size.height = local->compact_mode ? 10 : 11;
+        badge_region.size.height = badge_h;
         badge_region.location.x = metrics->bubble_region.location.x + metrics->bubble_region.size.width - badge_region.size.width - (local->compact_mode ? 8 : 10);
         badge_region.location.y = metrics->bubble_region.location.y + metrics->bubble_region.size.height - badge_region.size.height - (local->compact_mode ? 6 : 8);
         egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, badge_region.location.x, badge_region.location.y, badge_region.size.width, badge_region.size.height, 5, badge_fill,
