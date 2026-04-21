@@ -9,19 +9,37 @@ static uint8_t egui_view_card_panel_clamp_snapshot_count(uint8_t count)
     return count;
 }
 
-static uint8_t egui_view_card_panel_text_len(const char *text)
+static uint8_t egui_view_card_panel_has_text(const char *text)
 {
-    uint8_t length = 0;
+    return text != NULL && text[0] != '\0' ? 1 : 0;
+}
 
-    if (text == NULL)
+static egui_dim_t egui_view_card_panel_measure_font_line_height(const egui_font_t *font)
+{
+    egui_dim_t dummy_width = 0;
+    egui_dim_t line_height = 0;
+
+    if (font == NULL || font->api == NULL || font->api->get_str_size == NULL)
     {
         return 0;
     }
-    while (text[length] != '\0')
+
+    font->api->get_str_size(font, "A", 0, 0, &dummy_width, &line_height);
+    return line_height;
+}
+
+static egui_dim_t egui_view_card_panel_measure_text_width(const egui_font_t *font, const char *text)
+{
+    egui_dim_t text_width = 0;
+    egui_dim_t dummy_height = 0;
+
+    if (!egui_view_card_panel_has_text(text) || font == NULL || font->api == NULL || font->api->get_str_size == NULL)
     {
-        length++;
+        return 0;
     }
-    return length;
+
+    font->api->get_str_size(font, text, 0, 0, &text_width, &dummy_height);
+    return text_width;
 }
 
 static egui_color_t egui_view_card_panel_mix_disabled(egui_color_t color)
@@ -66,9 +84,14 @@ static void egui_view_card_panel_draw_text(const egui_font_t *font, egui_view_t 
     egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, font, text, &draw_region, align, color, self->alpha);
 }
 
-static egui_dim_t egui_view_card_panel_pill_width(const char *text, uint8_t compact_mode, egui_dim_t min_w, egui_dim_t max_w)
+static egui_dim_t egui_view_card_panel_pill_width(const egui_font_t *font, const char *text, egui_dim_t min_w, egui_dim_t max_w)
 {
-    egui_dim_t width = min_w + egui_view_card_panel_text_len(text) * (compact_mode ? 4 : 5);
+    egui_dim_t width = min_w;
+
+    if (egui_view_card_panel_has_text(text))
+    {
+        width += egui_view_card_panel_measure_text_width(font, text);
+    }
 
     if (width < min_w)
     {
@@ -246,6 +269,9 @@ static void egui_view_card_panel_on_draw(egui_view_t *self)
     egui_dim_t title_y;
     egui_dim_t title_w;
     egui_dim_t title_h;
+    egui_dim_t detail_title_h;
+    egui_dim_t value_h;
+    egui_dim_t value_label_h;
     egui_dim_t body_y;
     egui_dim_t body_h;
     egui_dim_t detail_h;
@@ -323,10 +349,14 @@ static void egui_view_card_panel_on_draw(egui_view_t *self)
     h = region.size.height;
     padding = local->compact_mode ? 8 : 10;
     radius = local->compact_mode ? 7 : 9;
-    badge_h = local->compact_mode ? 10 : 11;
+    badge_h = egui_view_card_panel_measure_font_line_height(local->meta_font);
+    if (badge_h < (local->compact_mode ? 10 : 11))
+    {
+        badge_h = local->compact_mode ? 10 : 11;
+    }
     action_h = badge_h;
-    badge_w = egui_view_card_panel_pill_width(snapshot->badge, local->compact_mode, local->compact_mode ? 34 : 42, local->compact_mode ? 64 : 78);
-    action_w = egui_view_card_panel_pill_width(snapshot->action, local->compact_mode, local->compact_mode ? 22 : 36, local->compact_mode ? 42 : 66);
+    badge_w = egui_view_card_panel_pill_width(local->meta_font, snapshot->badge, local->compact_mode ? 34 : 42, local->compact_mode ? 64 : 78);
+    action_w = egui_view_card_panel_pill_width(local->meta_font, snapshot->action, local->compact_mode ? 22 : 36, local->compact_mode ? 42 : 66);
     summary_w = local->compact_mode ? 32 : 48;
     summary_h = local->compact_mode ? 26 : 44;
     summary_x = x + w - padding - summary_w;
@@ -334,10 +364,25 @@ static void egui_view_card_panel_on_draw(egui_view_t *self)
     title_x = x + padding;
     title_y = y + padding + badge_h + (local->compact_mode ? 6 : 8);
     title_w = summary_x - title_x - (local->compact_mode ? 4 : 10);
-    title_h = local->compact_mode ? 11 : 14;
+    title_h = egui_view_card_panel_measure_font_line_height(local->font);
+    if (title_h < (local->compact_mode ? 11 : 14))
+    {
+        title_h = local->compact_mode ? 11 : 14;
+    }
+    value_h = title_h;
+    value_label_h = egui_view_card_panel_measure_font_line_height(local->meta_font);
+    if (value_label_h < 10)
+    {
+        value_label_h = 10;
+    }
+    detail_title_h = value_label_h;
     body_y = title_y + title_h + (local->compact_mode ? 2 : 4);
     detail_h = local->compact_mode ? 16 : 30;
-    footer_h = local->compact_mode ? 10 : 11;
+    footer_h = egui_view_card_panel_measure_font_line_height(local->meta_font);
+    if (footer_h < (local->compact_mode ? 10 : 11))
+    {
+        footer_h = local->compact_mode ? 10 : 11;
+    }
     footer_y = y + h - padding - footer_h;
     detail_y = footer_y - (local->compact_mode ? 4 : 6) - detail_h;
     body_h = detail_y - body_y - (local->compact_mode ? 4 : 6);
@@ -384,13 +429,13 @@ static void egui_view_card_panel_on_draw(egui_view_t *self)
     text_region.location.x = summary_x;
     text_region.location.y = summary_y + (local->compact_mode ? 3 : 7);
     text_region.size.width = summary_w;
-    text_region.size.height = local->compact_mode ? 11 : 14;
+    text_region.size.height = value_h;
     egui_view_card_panel_draw_text(local->font, self, snapshot->value, &text_region, EGUI_ALIGN_CENTER, value_color);
 
     text_region.location.x = summary_x + 2;
-    text_region.location.y = summary_y + summary_h - (local->compact_mode ? 12 : 15);
+    text_region.location.y = summary_y + summary_h - value_label_h - (local->compact_mode ? 2 : 3);
     text_region.size.width = summary_w - 4;
-    text_region.size.height = 10;
+    text_region.size.height = value_label_h;
     egui_view_card_panel_draw_text(local->meta_font, self, snapshot->value_label, &text_region, EGUI_ALIGN_CENTER, body_color);
 
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, x + padding, detail_y, w - padding * 2, detail_h, local->compact_mode ? 6 : 8, section_fill,
@@ -401,15 +446,15 @@ static void egui_view_card_panel_on_draw(egui_view_t *self)
     text_region.location.x = x + padding + 6;
     text_region.location.y = detail_y + (local->compact_mode ? 3 : 5);
     text_region.size.width = w - padding * 2 - 12;
-    text_region.size.height = 10;
+    text_region.size.height = detail_title_h;
     egui_view_card_panel_draw_text(local->meta_font, self, snapshot->detail_title, &text_region, EGUI_ALIGN_LEFT, tone_color);
 
     if (!local->compact_mode)
     {
         text_region.location.x = x + padding + 6;
-        text_region.location.y = detail_y + 14;
+        text_region.location.y = detail_y + detail_title_h + 5;
         text_region.size.width = w - padding * 2 - 12;
-        text_region.size.height = detail_h - 16;
+        text_region.size.height = detail_h - detail_title_h - 7;
         egui_view_card_panel_draw_text(local->font, self, snapshot->detail_body, &text_region, EGUI_ALIGN_LEFT, body_color);
     }
 
