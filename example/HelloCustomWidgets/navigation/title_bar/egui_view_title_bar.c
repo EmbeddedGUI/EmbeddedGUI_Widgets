@@ -16,7 +16,6 @@
 #define EGUI_VIEW_TITLE_BAR_STANDARD_ACTION_HEIGHT      18
 #define EGUI_VIEW_TITLE_BAR_STANDARD_ACTION_RADIUS      7
 #define EGUI_VIEW_TITLE_BAR_STANDARD_ACTION_BASE_WIDTH  16
-#define EGUI_VIEW_TITLE_BAR_STANDARD_ACTION_CHAR_WIDTH  4
 #define EGUI_VIEW_TITLE_BAR_STANDARD_ACTION_MIN_WIDTH   24
 #define EGUI_VIEW_TITLE_BAR_STANDARD_ACTION_MAX_WIDTH   46
 #define EGUI_VIEW_TITLE_BAR_STANDARD_ACTION_GAP         4
@@ -36,14 +35,12 @@
 #define EGUI_VIEW_TITLE_BAR_COMPACT_ACTION_HEIGHT      16
 #define EGUI_VIEW_TITLE_BAR_COMPACT_ACTION_RADIUS      6
 #define EGUI_VIEW_TITLE_BAR_COMPACT_ACTION_BASE_WIDTH  12
-#define EGUI_VIEW_TITLE_BAR_COMPACT_ACTION_CHAR_WIDTH  4
 #define EGUI_VIEW_TITLE_BAR_COMPACT_ACTION_MIN_WIDTH   22
 #define EGUI_VIEW_TITLE_BAR_COMPACT_ACTION_MAX_WIDTH   38
 #define EGUI_VIEW_TITLE_BAR_COMPACT_ACTION_GAP         3
 #define EGUI_VIEW_TITLE_BAR_COMPACT_TITLE_HEIGHT       12
 
 #define EGUI_VIEW_TITLE_BAR_META_BASE_WIDTH 12
-#define EGUI_VIEW_TITLE_BAR_META_CHAR_WIDTH 4
 #define EGUI_VIEW_TITLE_BAR_META_MIN_WIDTH  24
 #define EGUI_VIEW_TITLE_BAR_META_MAX_WIDTH  52
 
@@ -88,20 +85,18 @@ static uint8_t egui_view_title_bar_has_text(const char *text)
     return (text != NULL && text[0] != '\0') ? 1 : 0;
 }
 
-static uint8_t egui_view_title_bar_text_len(const char *text)
+static egui_dim_t egui_view_title_bar_measure_font_line_height(const egui_font_t *font)
 {
-    uint8_t length = 0;
+    egui_dim_t dummy_width = 0;
+    egui_dim_t line_height = 0;
 
-    if (text == NULL)
+    if (font == NULL || font->api == NULL || font->api->get_str_size == NULL)
     {
         return 0;
     }
 
-    while (text[length] != '\0')
-    {
-        length++;
-    }
-    return length;
+    font->api->get_str_size(font, "A", 0, 0, &dummy_width, &line_height);
+    return line_height;
 }
 
 static uint8_t egui_view_title_bar_clamp_snapshot_count(uint8_t count)
@@ -118,13 +113,72 @@ static egui_color_t egui_view_title_bar_mix_disabled(egui_color_t color)
     return egui_rgb_mix(color, EGUI_COLOR_DARK_GREY, 64);
 }
 
-static egui_dim_t egui_view_title_bar_measure_action_width(uint8_t compact_mode, const char *text)
+static egui_dim_t egui_view_title_bar_measure_text_width(const egui_font_t *font, const char *text)
 {
-    egui_dim_t width = (egui_dim_t)(egui_view_title_bar_text_len(text) *
-                                    (compact_mode ? EGUI_VIEW_TITLE_BAR_COMPACT_ACTION_CHAR_WIDTH : EGUI_VIEW_TITLE_BAR_STANDARD_ACTION_CHAR_WIDTH));
+    egui_dim_t text_width = 0;
+    egui_dim_t dummy_height = 0;
 
-    width += compact_mode ? EGUI_VIEW_TITLE_BAR_COMPACT_ACTION_BASE_WIDTH : EGUI_VIEW_TITLE_BAR_STANDARD_ACTION_BASE_WIDTH;
-    if (compact_mode)
+    if (!egui_view_title_bar_has_text(text) || font == NULL || font->api == NULL || font->api->get_str_size == NULL)
+    {
+        return 0;
+    }
+
+    font->api->get_str_size(font, text, 0, 0, &text_width, &dummy_height);
+    return text_width;
+}
+
+static egui_dim_t egui_view_title_bar_get_meta_height(egui_view_title_bar_t *local)
+{
+    egui_dim_t meta_h;
+
+    if (local->compact_mode)
+    {
+        return 0;
+    }
+
+    meta_h = egui_view_title_bar_measure_font_line_height(local->meta_font);
+    return meta_h > EGUI_VIEW_TITLE_BAR_STANDARD_META_HEIGHT ? meta_h : EGUI_VIEW_TITLE_BAR_STANDARD_META_HEIGHT;
+}
+
+static egui_dim_t egui_view_title_bar_get_action_height(egui_view_title_bar_t *local)
+{
+    egui_dim_t action_h = egui_view_title_bar_measure_font_line_height(local->meta_font);
+    egui_dim_t min_h = local->compact_mode ? EGUI_VIEW_TITLE_BAR_COMPACT_ACTION_HEIGHT : EGUI_VIEW_TITLE_BAR_STANDARD_ACTION_HEIGHT;
+
+    if (action_h > 0)
+    {
+        action_h += local->compact_mode ? 8 : 10;
+    }
+    return action_h > min_h ? action_h : min_h;
+}
+
+static egui_dim_t egui_view_title_bar_get_title_height(egui_view_title_bar_t *local)
+{
+    egui_dim_t title_h = egui_view_title_bar_measure_font_line_height(local->font);
+    egui_dim_t min_h = local->compact_mode ? EGUI_VIEW_TITLE_BAR_COMPACT_TITLE_HEIGHT : EGUI_VIEW_TITLE_BAR_STANDARD_TITLE_HEIGHT;
+
+    return title_h > min_h ? title_h : min_h;
+}
+
+static egui_dim_t egui_view_title_bar_get_subtitle_height(egui_view_title_bar_t *local)
+{
+    egui_dim_t subtitle_h;
+
+    if (local->compact_mode)
+    {
+        return 0;
+    }
+
+    subtitle_h = egui_view_title_bar_measure_font_line_height(local->meta_font);
+    return subtitle_h > EGUI_VIEW_TITLE_BAR_STANDARD_SUBTITLE_HEIGHT ? subtitle_h : EGUI_VIEW_TITLE_BAR_STANDARD_SUBTITLE_HEIGHT;
+}
+
+static egui_dim_t egui_view_title_bar_measure_action_width(egui_view_title_bar_t *local, const char *text)
+{
+    egui_dim_t width = egui_view_title_bar_measure_text_width(local->meta_font, text);
+
+    width += local->compact_mode ? EGUI_VIEW_TITLE_BAR_COMPACT_ACTION_BASE_WIDTH : EGUI_VIEW_TITLE_BAR_STANDARD_ACTION_BASE_WIDTH;
+    if (local->compact_mode)
     {
         if (width < EGUI_VIEW_TITLE_BAR_COMPACT_ACTION_MIN_WIDTH)
         {
@@ -149,9 +203,9 @@ static egui_dim_t egui_view_title_bar_measure_action_width(uint8_t compact_mode,
     return width;
 }
 
-static egui_dim_t egui_view_title_bar_measure_meta_width(const char *text)
+static egui_dim_t egui_view_title_bar_measure_meta_width(egui_view_title_bar_t *local, const char *text)
 {
-    egui_dim_t width = (egui_dim_t)(egui_view_title_bar_text_len(text) * EGUI_VIEW_TITLE_BAR_META_CHAR_WIDTH);
+    egui_dim_t width = egui_view_title_bar_measure_text_width(local->meta_font, text);
 
     width += EGUI_VIEW_TITLE_BAR_META_BASE_WIDTH;
     if (width < EGUI_VIEW_TITLE_BAR_META_MIN_WIDTH)
@@ -313,16 +367,16 @@ static void egui_view_title_bar_get_metrics(egui_view_title_bar_t *local, egui_v
 {
     egui_dim_t pad_x = local->compact_mode ? EGUI_VIEW_TITLE_BAR_COMPACT_PAD_X : EGUI_VIEW_TITLE_BAR_STANDARD_PAD_X;
     egui_dim_t pad_y = local->compact_mode ? EGUI_VIEW_TITLE_BAR_COMPACT_PAD_Y : EGUI_VIEW_TITLE_BAR_STANDARD_PAD_Y;
-    egui_dim_t meta_h = local->compact_mode ? 0 : EGUI_VIEW_TITLE_BAR_STANDARD_META_HEIGHT;
+    egui_dim_t meta_h = egui_view_title_bar_get_meta_height(local);
     egui_dim_t meta_gap = local->compact_mode ? 0 : EGUI_VIEW_TITLE_BAR_STANDARD_META_GAP;
     egui_dim_t nav_size = local->compact_mode ? EGUI_VIEW_TITLE_BAR_COMPACT_NAV_SIZE : EGUI_VIEW_TITLE_BAR_STANDARD_NAV_SIZE;
     egui_dim_t nav_gap = local->compact_mode ? EGUI_VIEW_TITLE_BAR_COMPACT_NAV_GAP : EGUI_VIEW_TITLE_BAR_STANDARD_NAV_GAP;
     egui_dim_t icon_size = local->compact_mode ? EGUI_VIEW_TITLE_BAR_COMPACT_ICON_SIZE : EGUI_VIEW_TITLE_BAR_STANDARD_ICON_SIZE;
     egui_dim_t icon_gap = local->compact_mode ? EGUI_VIEW_TITLE_BAR_COMPACT_ICON_GAP : EGUI_VIEW_TITLE_BAR_STANDARD_ICON_GAP;
-    egui_dim_t action_h = local->compact_mode ? EGUI_VIEW_TITLE_BAR_COMPACT_ACTION_HEIGHT : EGUI_VIEW_TITLE_BAR_STANDARD_ACTION_HEIGHT;
+    egui_dim_t action_h = egui_view_title_bar_get_action_height(local);
     egui_dim_t action_gap = local->compact_mode ? EGUI_VIEW_TITLE_BAR_COMPACT_ACTION_GAP : EGUI_VIEW_TITLE_BAR_STANDARD_ACTION_GAP;
-    egui_dim_t title_h = local->compact_mode ? EGUI_VIEW_TITLE_BAR_COMPACT_TITLE_HEIGHT : EGUI_VIEW_TITLE_BAR_STANDARD_TITLE_HEIGHT;
-    egui_dim_t subtitle_h = EGUI_VIEW_TITLE_BAR_STANDARD_SUBTITLE_HEIGHT;
+    egui_dim_t title_h = egui_view_title_bar_get_title_height(local);
+    egui_dim_t subtitle_h = egui_view_title_bar_get_subtitle_height(local);
     egui_dim_t title_gap = EGUI_VIEW_TITLE_BAR_STANDARD_TITLE_GAP;
     egui_dim_t control_x;
     egui_dim_t body_y;
@@ -386,7 +440,7 @@ static void egui_view_title_bar_get_metrics(egui_view_title_bar_t *local, egui_v
 
     if (metrics->show_secondary_action)
     {
-        egui_dim_t action_w = egui_view_title_bar_measure_action_width(local->compact_mode, snapshot->secondary_action);
+        egui_dim_t action_w = egui_view_title_bar_measure_action_width(local, snapshot->secondary_action);
 
         metrics->secondary_action_region.size.width = action_w;
         metrics->secondary_action_region.size.height = action_h;
@@ -394,7 +448,7 @@ static void egui_view_title_bar_get_metrics(egui_view_title_bar_t *local, egui_v
 
     if (metrics->show_primary_action)
     {
-        egui_dim_t action_w = egui_view_title_bar_measure_action_width(local->compact_mode, snapshot->primary_action);
+        egui_dim_t action_w = egui_view_title_bar_measure_action_width(local, snapshot->primary_action);
 
         metrics->primary_action_region.size.width = action_w;
         metrics->primary_action_region.size.height = action_h;
@@ -440,7 +494,7 @@ static void egui_view_title_bar_get_metrics(egui_view_title_bar_t *local, egui_v
 
     if (metrics->show_trailing_header)
     {
-        egui_dim_t header_w = egui_view_title_bar_measure_meta_width(snapshot->trailing_header);
+        egui_dim_t header_w = egui_view_title_bar_measure_meta_width(local, snapshot->trailing_header);
 
         metrics->trailing_header_region.location.x = metrics->region.location.x + metrics->region.size.width - pad_x - header_w;
         metrics->trailing_header_region.location.y = metrics->region.location.y + pad_y;
