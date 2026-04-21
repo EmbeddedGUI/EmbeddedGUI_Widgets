@@ -52,6 +52,20 @@ static egui_dim_t swipe_control_measure_font_line_height(const egui_font_t *font
     return height;
 }
 
+static egui_dim_t swipe_control_measure_text_width(const egui_font_t *font, const char *text)
+{
+    egui_dim_t width = 0;
+    egui_dim_t height = 0;
+
+    if (text == NULL || text[0] == '\0' || font == NULL || font->api == NULL || font->api->get_str_size == NULL)
+    {
+        return 0;
+    }
+
+    font->api->get_str_size(font, text, 0, 0, &width, &height);
+    return width;
+}
+
 static egui_dim_t swipe_control_resolve_line_height(const egui_font_t *font, egui_dim_t fallback)
 {
     egui_dim_t line_height = swipe_control_measure_font_line_height(font);
@@ -498,7 +512,11 @@ static void swipe_control_draw_state_pill(egui_view_t *self, egui_view_swipe_con
         state_text = "End";
     }
 
-    pill_w = (egui_dim_t)(28 + strlen(state_text) * 4);
+    pill_w = 28 + swipe_control_measure_text_width(local->meta_font, state_text);
+    if (pill_w <= 28)
+    {
+        pill_w = (egui_dim_t)(28 + strlen(state_text) * 4);
+    }
     if (pill_w < 42)
     {
         pill_w = 42;
@@ -548,7 +566,11 @@ static void swipe_control_draw_surface(egui_view_t *self, egui_view_swipe_contro
     swipe_control_draw_round_fill_safe(metrics->surface_region.location.x + 10, metrics->surface_region.location.y + 11, 10,
                                        metrics->surface_region.size.height - 22, 5, accent_color, egui_color_alpha_mix(self->alpha, 86));
 
-    badge_w = (egui_dim_t)(22 + strlen(item->eyebrow ? item->eyebrow : "") * 4);
+    badge_w = 22 + swipe_control_measure_text_width(local->meta_font, item->eyebrow);
+    if (badge_w <= 22)
+    {
+        badge_w = (egui_dim_t)(22 + strlen(item->eyebrow ? item->eyebrow : "") * 4);
+    }
     if (badge_w < 40)
     {
         badge_w = 40;
