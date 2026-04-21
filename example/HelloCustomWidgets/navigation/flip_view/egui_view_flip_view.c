@@ -54,6 +54,20 @@ static egui_dim_t flip_view_measure_font_line_height(const egui_font_t *font)
     return line_height;
 }
 
+static egui_dim_t flip_view_measure_text_width(const egui_font_t *font, const char *text)
+{
+    egui_dim_t text_width = 0;
+    egui_dim_t dummy_height = 0;
+
+    if (text == NULL || text[0] == '\0' || font == NULL || font->api == NULL || font->api->get_str_size == NULL)
+    {
+        return 0;
+    }
+
+    font->api->get_str_size(font, text, 0, 0, &text_width, &dummy_height);
+    return text_width;
+}
+
 static egui_dim_t flip_view_meta_height(const egui_view_flip_view_t *local, egui_dim_t fallback)
 {
     egui_dim_t line_height = flip_view_measure_font_line_height(local->meta_font);
@@ -639,7 +653,11 @@ static void flip_view_draw_counter(egui_view_t *self, const egui_view_flip_view_
     egui_color_t counter_color = local->read_only_mode ? egui_rgb_mix(item->accent_color, local->inactive_color, 54) : item->accent_color;
 
     flip_view_format_counter(counter_text, sizeof(counter_text), local->current_index, local->item_count);
-    pill_w = (egui_dim_t)(34 + strlen(counter_text) * 4);
+    pill_w = 34 + flip_view_measure_text_width(meta_font, counter_text);
+    if (pill_w <= 34)
+    {
+        pill_w = (egui_dim_t)(34 + strlen(counter_text) * 4);
+    }
     if (pill_w < 44)
     {
         pill_w = 44;
@@ -700,7 +718,11 @@ static void flip_view_draw_surface(egui_view_t *self, egui_view_flip_view_t *loc
                                      metrics->surface_region.size.height, card_radius, 1, egui_rgb_mix(local->border_color, accent_color, local->compact_mode ? 4 : 6),
                                      egui_color_alpha_mix(self->alpha, 44));
 
-    eyebrow_w = (egui_dim_t)(24 + strlen(item->eyebrow ? item->eyebrow : "") * 4);
+    eyebrow_w = 24 + flip_view_measure_text_width(meta_font, item->eyebrow);
+    if (eyebrow_w <= 24)
+    {
+        eyebrow_w = (egui_dim_t)(24 + strlen(item->eyebrow ? item->eyebrow : "") * 4);
+    }
     if (eyebrow_w < 42)
     {
         eyebrow_w = 42;
