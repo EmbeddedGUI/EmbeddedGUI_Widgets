@@ -73,6 +73,20 @@ static egui_color_t color_picker_mix_disabled(egui_color_t color)
     return egui_rgb_mix(color, EGUI_COLOR_DARK_GREY, 72);
 }
 
+static egui_dim_t color_picker_measure_font_line_height(const egui_font_t *font)
+{
+    egui_dim_t width = 0;
+    egui_dim_t height = 0;
+
+    if (font == NULL || font->api == NULL || font->api->get_str_size == NULL)
+    {
+        return 0;
+    }
+
+    font->api->get_str_size(font, "A", 0, 0, &width, &height);
+    return height;
+}
+
 static uint8_t color_picker_clear_pressed_state(egui_view_t *self, egui_view_color_picker_t *local)
 {
     uint8_t was_pressed = self->is_pressed ? 1 : 0;
@@ -419,10 +433,20 @@ static void color_picker_get_metrics(egui_view_color_picker_t *local, egui_view_
     egui_dim_t label_gap = COLOR_PICKER_STANDARD_LABEL_GAP;
     egui_dim_t helper_h = COLOR_PICKER_STANDARD_HELPER_HEIGHT;
     egui_dim_t helper_gap = COLOR_PICKER_STANDARD_HELPER_GAP;
+    egui_dim_t meta_line_height = color_picker_measure_font_line_height(local->meta_font);
     egui_dim_t rail_gap = local->compact_mode ? COLOR_PICKER_COMPACT_MAIN_GAP : COLOR_PICKER_STANDARD_MAIN_GAP;
     egui_dim_t hue_w = local->compact_mode ? 10 : 12;
     egui_dim_t current_y;
     egui_dim_t main_bottom;
+
+    if (meta_line_height > label_h)
+    {
+        label_h = meta_line_height;
+    }
+    if (meta_line_height > helper_h)
+    {
+        helper_h = meta_line_height;
+    }
 
     memset(metrics, 0, sizeof(*metrics));
     egui_view_get_work_region(self, &region);
