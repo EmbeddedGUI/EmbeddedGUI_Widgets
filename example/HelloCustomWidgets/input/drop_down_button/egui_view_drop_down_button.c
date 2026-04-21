@@ -73,6 +73,34 @@ static uint8_t egui_view_drop_down_button_text_len(const char *text)
     return length;
 }
 
+static egui_dim_t egui_view_drop_down_button_measure_font_line_height(const egui_font_t *font)
+{
+    egui_dim_t width = 0;
+    egui_dim_t height = 0;
+
+    if (font == NULL || font->api == NULL || font->api->get_str_size == NULL)
+    {
+        return 0;
+    }
+
+    font->api->get_str_size(font, "A", 0, 0, &width, &height);
+    return height;
+}
+
+static egui_dim_t egui_view_drop_down_button_measure_text_width(const egui_font_t *font, const char *text)
+{
+    egui_dim_t width = 0;
+    egui_dim_t height = 0;
+
+    if (font == NULL || text == NULL || text[0] == '\0' || font->api == NULL || font->api->get_str_size == NULL)
+    {
+        return 0;
+    }
+
+    font->api->get_str_size(font, text, 0, 0, &width, &height);
+    return width;
+}
+
 static const egui_view_drop_down_button_snapshot_t *egui_view_drop_down_button_get_snapshot(egui_view_drop_down_button_t *local)
 {
     if (local->snapshots == NULL || local->snapshot_count == 0 || local->current_snapshot >= local->snapshot_count)
@@ -143,8 +171,14 @@ static egui_dim_t egui_view_drop_down_button_hint_width(egui_view_drop_down_butt
 {
     egui_dim_t min_width = local->compact_mode ? EGUI_VIEW_DROP_DOWN_BUTTON_COMPACT_HINT_MIN_WIDTH : EGUI_VIEW_DROP_DOWN_BUTTON_STANDARD_HINT_MIN_WIDTH;
     egui_dim_t side_pad = local->compact_mode ? EGUI_VIEW_DROP_DOWN_BUTTON_COMPACT_HINT_SIDE_PAD : EGUI_VIEW_DROP_DOWN_BUTTON_STANDARD_HINT_SIDE_PAD;
-    egui_dim_t text_width = egui_view_drop_down_button_text_len(hint) * (local->compact_mode ? 4 : 5);
+    egui_dim_t text_width = egui_view_drop_down_button_measure_text_width(local->meta_font, hint);
     egui_dim_t width = side_pad * 2 + text_width;
+
+    if (text_width <= 0 && hint != NULL && hint[0] != '\0')
+    {
+        text_width = egui_view_drop_down_button_text_len(hint) * (local->compact_mode ? 4 : 5);
+        width = side_pad * 2 + text_width;
+    }
 
     if (width < min_width)
     {
@@ -168,34 +202,61 @@ static void egui_view_drop_down_button_get_metrics(egui_view_drop_down_button_t 
     egui_dim_t row_y;
     egui_dim_t hint_w;
     egui_dim_t hint_h = local->compact_mode ? EGUI_VIEW_DROP_DOWN_BUTTON_COMPACT_HINT_HEIGHT : EGUI_VIEW_DROP_DOWN_BUTTON_STANDARD_HINT_HEIGHT;
+    egui_dim_t block_h = row_h;
+    egui_dim_t block_y;
+    egui_dim_t meta_line_height = egui_view_drop_down_button_measure_font_line_height(local->meta_font);
 
     egui_view_get_work_region(self, &region);
-    metrics->content_region.location.x = region.location.x + pad_x;
-    metrics->content_region.location.y = region.location.y + pad_y;
-    metrics->content_region.size.width = region.size.width - pad_x * 2;
-    metrics->content_region.size.height = region.size.height - pad_y * 2;
-
     metrics->show_title = (!local->compact_mode && snapshot != NULL && snapshot->title != NULL && snapshot->title[0] != '\0') ? 1 : 0;
     metrics->show_helper = (!local->compact_mode && snapshot != NULL && snapshot->helper != NULL && snapshot->helper[0] != '\0') ? 1 : 0;
+    metrics->content_region.location.x = region.location.x + pad_x;
+    metrics->content_region.size.width = region.size.width - pad_x * 2;
+    metrics->content_region.location.y = region.location.y + pad_y;
+    metrics->content_region.size.height = region.size.height - pad_y * 2;
     metrics->show_glyph = (!local->compact_mode && snapshot != NULL && snapshot->glyph != NULL && snapshot->glyph[0] != '\0') ? 1 : 0;
 
+    if (meta_line_height > title_h)
+    {
+        title_h = meta_line_height;
+    }
+    if (meta_line_height > helper_h)
+    {
+        helper_h = meta_line_height;
+    }
+
+    if (metrics->show_title)
+    {
+        block_h += title_h + title_gap;
+    }
+    if (metrics->show_helper)
+    {
+        block_h += helper_h + helper_gap;
+    }
+    if (block_h > metrics->content_region.size.height && region.size.height >= block_h)
+    {
+        pad_y = (region.size.height - block_h) / 2;
+        metrics->content_region.location.y = region.location.y + pad_y;
+        metrics->content_region.size.height = region.size.height - pad_y * 2;
+    }
+
+    block_y = metrics->content_region.location.y;
+    if (metrics->content_region.size.height > block_h)
+    {
+        block_y += (metrics->content_region.size.height - block_h) / 2;
+    }
+
     metrics->title_region.location.x = metrics->content_region.location.x;
-    metrics->title_region.location.y = metrics->content_region.location.y;
+    metrics->title_region.location.y = block_y;
     metrics->title_region.size.width = metrics->content_region.size.width;
     metrics->title_region.size.height = title_h;
 
     if (metrics->show_title)
     {
-        row_y = metrics->content_region.location.y + title_h + title_gap;
+        row_y = block_y + title_h + title_gap;
     }
     else
     {
-        row_y = metrics->content_region.location.y;
-    }
-
-    if (!metrics->show_helper)
-    {
-        row_y = metrics->content_region.location.y + (metrics->content_region.size.height - row_h) / 2;
+        row_y = block_y;
     }
 
     metrics->row_region.location.x = metrics->content_region.location.x;
