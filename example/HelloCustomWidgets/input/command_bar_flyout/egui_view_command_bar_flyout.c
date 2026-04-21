@@ -118,6 +118,20 @@ static egui_dim_t egui_view_command_bar_flyout_measure_font_line_height(const eg
     return height;
 }
 
+static egui_dim_t egui_view_command_bar_flyout_measure_text_width(const egui_font_t *font, const char *text)
+{
+    egui_dim_t width = 0;
+    egui_dim_t height = 0;
+
+    if (text == NULL || text[0] == '\0' || font == NULL || font->api == NULL || font->api->get_str_size == NULL)
+    {
+        return 0;
+    }
+
+    font->api->get_str_size(font, text, 0, 0, &width, &height);
+    return width;
+}
+
 static uint8_t egui_view_command_bar_flyout_part_is_primary(uint8_t part)
 {
     return part >= EGUI_VIEW_COMMAND_BAR_FLYOUT_PART_PRIMARY_BASE &&
@@ -353,18 +367,23 @@ static void egui_view_command_bar_flyout_draw_text(const egui_font_t *font, egui
     egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, font, text, &draw_region, align, color, self->alpha);
 }
 
-static egui_dim_t egui_view_command_bar_flyout_measure_eyebrow_width(uint8_t compact_mode, const char *text, egui_dim_t max_w)
+static egui_dim_t egui_view_command_bar_flyout_measure_eyebrow_width(const egui_font_t *font, uint8_t compact_mode, const char *text, egui_dim_t max_w)
 {
     egui_dim_t width;
+    egui_dim_t base_w =
+            compact_mode ? EGUI_VIEW_COMMAND_BAR_FLYOUT_COMPACT_EYEBROW_BASE : EGUI_VIEW_COMMAND_BAR_FLYOUT_STANDARD_EYEBROW_BASE;
 
     if (text == NULL || text[0] == '\0')
     {
         return 0;
     }
 
-    width = (compact_mode ? EGUI_VIEW_COMMAND_BAR_FLYOUT_COMPACT_EYEBROW_BASE : EGUI_VIEW_COMMAND_BAR_FLYOUT_STANDARD_EYEBROW_BASE) +
-            egui_view_command_bar_flyout_text_len(text) *
-                    (compact_mode ? EGUI_VIEW_COMMAND_BAR_FLYOUT_COMPACT_EYEBROW_CHARW : EGUI_VIEW_COMMAND_BAR_FLYOUT_STANDARD_EYEBROW_CHARW);
+    width = base_w + egui_view_command_bar_flyout_measure_text_width(font, text);
+    if (width <= base_w)
+    {
+        width = base_w + egui_view_command_bar_flyout_text_len(text) *
+                          (compact_mode ? EGUI_VIEW_COMMAND_BAR_FLYOUT_COMPACT_EYEBROW_CHARW : EGUI_VIEW_COMMAND_BAR_FLYOUT_STANDARD_EYEBROW_CHARW);
+    }
     if (width > max_w)
     {
         width = max_w;
@@ -373,7 +392,7 @@ static egui_dim_t egui_view_command_bar_flyout_measure_eyebrow_width(uint8_t com
     return width;
 }
 
-static egui_dim_t egui_view_command_bar_flyout_measure_primary_width(uint8_t compact_mode,
+static egui_dim_t egui_view_command_bar_flyout_measure_primary_width(const egui_font_t *font, uint8_t compact_mode,
                                                                      const egui_view_command_bar_flyout_primary_item_t *item)
 {
     egui_dim_t width;
@@ -398,7 +417,12 @@ static egui_dim_t egui_view_command_bar_flyout_measure_primary_width(uint8_t com
     }
 
     width = EGUI_VIEW_COMMAND_BAR_FLYOUT_STANDARD_ITEM_BASE_W + EGUI_VIEW_COMMAND_BAR_FLYOUT_STANDARD_GLYPH_W + 4 +
-            egui_view_command_bar_flyout_text_len(item->label) * EGUI_VIEW_COMMAND_BAR_FLYOUT_STANDARD_ITEM_CHAR_W + (item->emphasized ? 4 : 0);
+            egui_view_command_bar_flyout_measure_text_width(font, item->label) + (item->emphasized ? 4 : 0);
+    if (width <= EGUI_VIEW_COMMAND_BAR_FLYOUT_STANDARD_ITEM_BASE_W + EGUI_VIEW_COMMAND_BAR_FLYOUT_STANDARD_GLYPH_W + 4)
+    {
+        width = EGUI_VIEW_COMMAND_BAR_FLYOUT_STANDARD_ITEM_BASE_W + EGUI_VIEW_COMMAND_BAR_FLYOUT_STANDARD_GLYPH_W + 4 +
+                egui_view_command_bar_flyout_text_len(item->label) * EGUI_VIEW_COMMAND_BAR_FLYOUT_STANDARD_ITEM_CHAR_W + (item->emphasized ? 4 : 0);
+    }
     if (width < EGUI_VIEW_COMMAND_BAR_FLYOUT_STANDARD_ITEM_MIN_W)
     {
         width = EGUI_VIEW_COMMAND_BAR_FLYOUT_STANDARD_ITEM_MIN_W;
@@ -546,7 +570,7 @@ static void egui_view_command_bar_flyout_get_metrics(egui_view_command_bar_flyou
 
         for (i = 0; i < primary_count; ++i)
         {
-            widths[i] = egui_view_command_bar_flyout_measure_primary_width(local->compact_mode, &snapshot->primary_items[i]);
+        widths[i] = egui_view_command_bar_flyout_measure_primary_width(local->font, local->compact_mode, &snapshot->primary_items[i]);
             total_w += widths[i];
         }
 
@@ -854,7 +878,7 @@ static void egui_view_command_bar_flyout_draw_trigger(egui_view_t *self, egui_vi
     egui_color_t border = egui_rgb_mix(local->border_color, tone, local->current_part == EGUI_VIEW_COMMAND_BAR_FLYOUT_PART_TRIGGER ? 24 : 14);
     egui_color_t title = local->text_color;
     egui_color_t meta = egui_rgb_mix(local->muted_text_color, tone, 10);
-    egui_dim_t eyebrow_w = egui_view_command_bar_flyout_measure_eyebrow_width(local->compact_mode, snapshot->eyebrow,
+    egui_dim_t eyebrow_w = egui_view_command_bar_flyout_measure_eyebrow_width(local->meta_font, local->compact_mode, snapshot->eyebrow,
                                                                               metrics->trigger_region.size.width / 3);
     egui_dim_t meta_line_height = egui_view_command_bar_flyout_measure_font_line_height(local->meta_font);
     egui_dim_t radius = local->compact_mode ? EGUI_VIEW_COMMAND_BAR_FLYOUT_COMPACT_RADIUS : EGUI_VIEW_COMMAND_BAR_FLYOUT_STANDARD_RADIUS;
@@ -1111,7 +1135,8 @@ static void egui_view_command_bar_flyout_on_draw(egui_view_t *self)
 
     if (metrics.header_region.size.height > 0)
     {
-        eyebrow_w = egui_view_command_bar_flyout_measure_eyebrow_width(local->compact_mode, snapshot->eyebrow, metrics.header_region.size.width / 3);
+        eyebrow_w = egui_view_command_bar_flyout_measure_eyebrow_width(local->meta_font, local->compact_mode, snapshot->eyebrow,
+                                                                       metrics.header_region.size.width / 3);
         if (eyebrow_w > 0)
         {
             egui_dim_t pill_h = local->compact_mode ? 8 : 10;
