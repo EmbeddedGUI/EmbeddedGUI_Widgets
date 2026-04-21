@@ -97,6 +97,20 @@ static uint8_t egui_view_command_bar_text_len(const char *text)
     return length;
 }
 
+static egui_dim_t egui_view_command_bar_measure_font_line_height(const egui_font_t *font)
+{
+    egui_dim_t width = 0;
+    egui_dim_t height = 0;
+
+    if (font == NULL || font->api == NULL || font->api->get_str_size == NULL)
+    {
+        return 0;
+    }
+
+    font->api->get_str_size(font, "A", 0, 0, &width, &height);
+    return height;
+}
+
 static egui_color_t egui_view_command_bar_mix_disabled(egui_color_t color)
 {
     return egui_rgb_mix(color, EGUI_COLOR_DARK_GREY, 68);
@@ -290,6 +304,8 @@ static void egui_view_command_bar_get_metrics(egui_view_command_bar_t *local, eg
     egui_dim_t footer_h = compact_mode ? EGUI_VIEW_COMMAND_BAR_COMPACT_FOOTER_HEIGHT : EGUI_VIEW_COMMAND_BAR_STANDARD_FOOTER_HEIGHT;
     egui_dim_t gap = compact_mode ? EGUI_VIEW_COMMAND_BAR_COMPACT_GAP : EGUI_VIEW_COMMAND_BAR_STANDARD_GAP;
     egui_dim_t scope_h = compact_mode ? EGUI_VIEW_COMMAND_BAR_COMPACT_SCOPE_HEIGHT : EGUI_VIEW_COMMAND_BAR_STANDARD_SCOPE_HEIGHT;
+    egui_dim_t primary_line_height = egui_view_command_bar_measure_font_line_height(local->font);
+    egui_dim_t meta_line_height = egui_view_command_bar_measure_font_line_height(local->meta_font);
     egui_dim_t scope_w;
     egui_dim_t left_x;
     egui_dim_t right_x;
@@ -305,6 +321,23 @@ static void egui_view_command_bar_get_metrics(egui_view_command_bar_t *local, eg
 
     egui_view_get_work_region(self, &region);
     egui_view_command_bar_reset_metrics(metrics);
+
+    if (primary_line_height > header_h)
+    {
+        header_h = primary_line_height;
+    }
+    if (meta_line_height > header_h)
+    {
+        header_h = meta_line_height;
+    }
+    if (meta_line_height > footer_h)
+    {
+        footer_h = meta_line_height;
+    }
+    if (meta_line_height > scope_h)
+    {
+        scope_h = meta_line_height;
+    }
 
     metrics->content_region.location.x = region.location.x + pad_x;
     metrics->content_region.location.y = region.location.y + pad_y;
@@ -910,6 +943,7 @@ static void egui_view_command_bar_on_draw(egui_view_t *self)
     egui_color_t footer_border;
     egui_color_t footer_text;
     egui_dim_t eyebrow_w;
+    egui_dim_t meta_line_height = egui_view_command_bar_measure_font_line_height(local->meta_font);
     uint8_t item_count;
     uint8_t current_index;
     uint8_t i;
@@ -1008,6 +1042,12 @@ static void egui_view_command_bar_on_draw(egui_view_t *self)
     {
         egui_dim_t pill_h = local->compact_mode ? EGUI_VIEW_COMMAND_BAR_COMPACT_PILL_HEIGHT : EGUI_VIEW_COMMAND_BAR_STANDARD_PILL_HEIGHT;
         egui_dim_t pill_y = metrics.header_region.location.y + (metrics.header_region.size.height - pill_h) / 2;
+
+        if (meta_line_height > pill_h)
+        {
+            pill_h = meta_line_height;
+            pill_y = metrics.header_region.location.y + (metrics.header_region.size.height - pill_h) / 2;
+        }
 
         egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.header_region.location.x + metrics.header_region.size.width - eyebrow_w, pill_y, eyebrow_w, pill_h,
                                               pill_h / 2, eyebrow_fill, egui_color_alpha_mix(self->alpha, 96));
