@@ -70,6 +70,20 @@ static uint8_t parallax_view_text_len(const char *text)
     return length;
 }
 
+static egui_dim_t parallax_view_measure_font_line_height(const egui_font_t *font)
+{
+    egui_dim_t width = 0;
+    egui_dim_t height = 0;
+
+    if (font == NULL || font->api == NULL || font->api->get_str_size == NULL)
+    {
+        return 0;
+    }
+
+    font->api->get_str_size(font, "A", 0, 0, &width, &height);
+    return height;
+}
+
 static egui_dim_t parallax_view_get_max_offset_inner(const egui_view_parallax_view_t *local)
 {
     if (local->content_length <= local->viewport_length)
@@ -265,6 +279,8 @@ static void parallax_view_get_metrics(egui_view_parallax_view_t *local, egui_vie
     egui_dim_t row_gap = local->compact_mode ? PV_COMPACT_ROW_GAP : PV_STD_ROW_GAP;
     egui_dim_t title_height = local->compact_mode ? PV_COMPACT_TITLE_HEIGHT : PV_STD_TITLE_HEIGHT;
     egui_dim_t subtitle_height = local->compact_mode ? PV_COMPACT_SUBTITLE_HEIGHT : PV_STD_SUBTITLE_HEIGHT;
+    egui_dim_t font_line_height = parallax_view_measure_font_line_height(local->font);
+    egui_dim_t meta_line_height = parallax_view_measure_font_line_height(local->meta_font);
     egui_dim_t rows_start_y;
     egui_dim_t rows_limit_y;
     egui_dim_t total_rows_height;
@@ -284,6 +300,23 @@ static void parallax_view_get_metrics(egui_view_parallax_view_t *local, egui_vie
     if (metrics->content_region.size.width <= 0 || metrics->content_region.size.height <= 0)
     {
         return;
+    }
+
+    if (font_line_height > title_height)
+    {
+        title_height = font_line_height;
+    }
+    if (meta_line_height > subtitle_height)
+    {
+        subtitle_height = meta_line_height;
+    }
+    if (meta_line_height > footer_height)
+    {
+        footer_height = meta_line_height;
+    }
+    if (meta_line_height > progress_height)
+    {
+        progress_height = meta_line_height;
     }
 
     if (hero_height > metrics->content_region.size.height - footer_height - footer_gap - 8)
