@@ -117,6 +117,20 @@ static egui_dim_t egui_view_flyout_measure_font_line_height(const egui_font_t *f
     return line_height;
 }
 
+static egui_dim_t egui_view_flyout_measure_text_width(const egui_font_t *font, const char *text)
+{
+    egui_dim_t text_width = 0;
+    egui_dim_t dummy_height = 0;
+
+    if (text == NULL || text[0] == '\0' || font == NULL || font->api == NULL || font->api->get_str_size == NULL)
+    {
+        return 0;
+    }
+
+    font->api->get_str_size(font, text, 0, 0, &text_width, &dummy_height);
+    return text_width;
+}
+
 static egui_dim_t egui_view_flyout_meta_height(egui_view_flyout_t *local, egui_dim_t fallback)
 {
     egui_dim_t line_height = egui_view_flyout_measure_font_line_height(local->meta_font);
@@ -391,8 +405,12 @@ static void egui_view_flyout_get_metrics(egui_view_flyout_t *local, egui_view_t 
         bubble_w = local->compact_mode ? 64 : 116;
     }
 
-    target_w = (local->compact_mode ? 40 : 54) + egui_view_flyout_text_len(snapshot != NULL ? snapshot->target_label : NULL) *
-                                                     (local->compact_mode ? 4 : 5);
+    target_w = egui_view_flyout_measure_text_width(local->font, snapshot != NULL ? snapshot->target_label : NULL);
+    if (target_w <= 0 && snapshot != NULL && egui_view_flyout_has_text(snapshot->target_label))
+    {
+        target_w = egui_view_flyout_text_len(snapshot->target_label) * (local->compact_mode ? 4 : 5);
+    }
+    target_w += local->compact_mode ? 40 : 54;
     if (target_w < (local->compact_mode ? 48 : 62))
     {
         target_w = local->compact_mode ? 48 : 62;
@@ -501,8 +519,12 @@ static void egui_view_flyout_get_metrics(egui_view_flyout_t *local, egui_view_t 
 
     if (metrics->show_secondary)
     {
-        secondary_w = (local->compact_mode ? 16 : 22) +
-                      egui_view_flyout_text_len(snapshot != NULL ? snapshot->secondary_action : NULL) * (local->compact_mode ? 4 : 5);
+        secondary_w = egui_view_flyout_measure_text_width(local->meta_font, snapshot != NULL ? snapshot->secondary_action : NULL);
+        if (secondary_w <= 0 && snapshot != NULL && egui_view_flyout_has_text(snapshot->secondary_action))
+        {
+            secondary_w = egui_view_flyout_text_len(snapshot->secondary_action) * (local->compact_mode ? 4 : 5);
+        }
+        secondary_w += local->compact_mode ? 16 : 22;
         if (secondary_w < (local->compact_mode ? 24 : 40))
         {
             secondary_w = local->compact_mode ? 24 : 40;
