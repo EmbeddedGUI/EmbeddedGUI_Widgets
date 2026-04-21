@@ -67,6 +67,20 @@ static egui_dim_t shortcut_recorder_resolve_line_height(const egui_font_t *font,
     return line_height > fallback ? line_height : fallback;
 }
 
+static egui_dim_t shortcut_recorder_measure_text_width(const egui_font_t *font, const char *text)
+{
+    egui_dim_t measured_width = 0;
+    egui_dim_t measured_height = 0;
+
+    if (font == NULL || !shortcut_recorder_has_text(text) || font->api == NULL || font->api->get_str_size == NULL)
+    {
+        return 0;
+    }
+
+    font->api->get_str_size(font, text, 0, 0, &measured_width, &measured_height);
+    return measured_width;
+}
+
 static uint8_t shortcut_recorder_clear_pressed_state(egui_view_t *self, egui_view_shortcut_recorder_t *local)
 {
     uint8_t was_pressed = self->is_pressed ? 1 : 0;
@@ -604,16 +618,25 @@ static void shortcut_recorder_draw_focus(egui_view_t *self, const egui_region_t 
                                      egui_color_alpha_mix(self->alpha, 72));
 }
 
-static egui_dim_t shortcut_recorder_token_width(const char *text, uint8_t compact_mode)
+static egui_dim_t shortcut_recorder_token_width(const egui_font_t *font, const char *text, uint8_t compact_mode)
 {
     egui_dim_t base = compact_mode ? 8 : 10;
-    egui_dim_t char_width = compact_mode ? 4 : 5;
+    egui_dim_t text_width;
 
     if (!shortcut_recorder_has_text(text))
     {
         return compact_mode ? 28 : 34;
     }
-    return (egui_dim_t)(base + (egui_dim_t)strlen(text) * char_width);
+
+    text_width = shortcut_recorder_measure_text_width(font, text);
+    if (text_width <= 0)
+    {
+        egui_dim_t char_width = compact_mode ? 4 : 5;
+
+        text_width = (egui_dim_t)strlen(text) * char_width;
+    }
+
+    return base + text_width;
 }
 
 static void shortcut_recorder_draw_binding_tokens(egui_view_shortcut_recorder_t *local, egui_view_t *self, const egui_region_t *region,
@@ -655,7 +678,7 @@ static void shortcut_recorder_draw_binding_tokens(egui_view_shortcut_recorder_t 
     y = region->location.y + (region->size.height - token_h) / 2;
     for (i = 0; i < label_count; i++)
     {
-        egui_dim_t token_w = shortcut_recorder_token_width(labels[i], 0);
+        egui_dim_t token_w = shortcut_recorder_token_width(local->meta_font, labels[i], 0);
         egui_region_t token_region;
 
         if (x + token_w > region->location.x + region->size.width)
