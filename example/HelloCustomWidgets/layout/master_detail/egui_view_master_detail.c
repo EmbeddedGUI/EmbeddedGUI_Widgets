@@ -100,6 +100,20 @@ static egui_dim_t egui_view_master_detail_resolve_line_height(const egui_font_t 
     return line_height > fallback ? line_height : fallback;
 }
 
+static egui_dim_t egui_view_master_detail_measure_text_width(const egui_font_t *font, const char *text)
+{
+    egui_dim_t text_width = 0;
+    egui_dim_t text_height = 0;
+
+    if (text == NULL || text[0] == '\0' || font == NULL || font->api == NULL || font->api->get_str_size == NULL)
+    {
+        return 0;
+    }
+
+    font->api->get_str_size(font, text, 0, 0, &text_width, &text_height);
+    return text_width;
+}
+
 static egui_color_t egui_view_master_detail_tone_color(egui_view_master_detail_t *local, uint8_t tone)
 {
     switch (tone)
@@ -143,9 +157,18 @@ static void egui_view_master_detail_draw_text(const egui_font_t *font, egui_view
     egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, font, text, &draw_region, align, color, self->alpha);
 }
 
-static egui_dim_t egui_view_master_detail_footer_width(const char *text, uint8_t compact_mode, egui_dim_t max_width)
+static egui_dim_t egui_view_master_detail_footer_width(const egui_font_t *font, const char *text, uint8_t compact_mode, egui_dim_t max_width)
 {
-    egui_dim_t width = (compact_mode ? 18 : 22) + egui_view_master_detail_text_len(text) * (compact_mode ? 4 : 5);
+    egui_dim_t width = compact_mode ? 18 : 22;
+
+    if (text != NULL && text[0] != '\0')
+    {
+        width += egui_view_master_detail_measure_text_width(font, text);
+        if (width <= (compact_mode ? 18 : 22))
+        {
+            width = (compact_mode ? 18 : 22) + egui_view_master_detail_text_len(text) * (compact_mode ? 4 : 5);
+        }
+    }
 
     if (width > max_width)
     {
@@ -592,7 +615,8 @@ static void egui_view_master_detail_on_draw(egui_view_t *self)
     }
 
     footer_w =
-            egui_view_master_detail_footer_width(item->detail_footer, local->compact_mode, metrics.detail_region.size.width - (local->compact_mode ? 12 : 14));
+            egui_view_master_detail_footer_width(local->meta_font, item->detail_footer, local->compact_mode,
+                                                 metrics.detail_region.size.width - (local->compact_mode ? 12 : 14));
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.detail_region.location.x + (local->compact_mode ? 6 : 7),
                                           metrics.detail_region.location.y + metrics.detail_region.size.height - footer_h - (local->compact_mode ? 5 : 6),
                                           footer_w, footer_h, footer_h / 2, footer_fill, egui_color_alpha_mix(self->alpha, 98));
