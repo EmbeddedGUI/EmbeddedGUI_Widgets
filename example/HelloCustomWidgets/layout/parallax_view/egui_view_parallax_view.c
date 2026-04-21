@@ -84,6 +84,13 @@ static egui_dim_t parallax_view_measure_font_line_height(const egui_font_t *font
     return height;
 }
 
+static egui_dim_t parallax_view_resolve_line_height(const egui_font_t *font, egui_dim_t fallback)
+{
+    egui_dim_t line_height = parallax_view_measure_font_line_height(font);
+
+    return line_height > fallback ? line_height : fallback;
+}
+
 static egui_dim_t parallax_view_get_max_offset_inner(const egui_view_parallax_view_t *local)
 {
     if (local->content_length <= local->viewport_length)
@@ -281,6 +288,8 @@ static void parallax_view_get_metrics(egui_view_parallax_view_t *local, egui_vie
     egui_dim_t subtitle_height = local->compact_mode ? PV_COMPACT_SUBTITLE_HEIGHT : PV_STD_SUBTITLE_HEIGHT;
     egui_dim_t font_line_height = parallax_view_measure_font_line_height(local->font);
     egui_dim_t meta_line_height = parallax_view_measure_font_line_height(local->meta_font);
+    egui_dim_t row_meta_height = parallax_view_resolve_line_height(local->meta_font, local->compact_mode ? 7 : 9);
+    egui_dim_t min_row_height = local->compact_mode ? 11 : 13;
     egui_dim_t rows_start_y;
     egui_dim_t rows_limit_y;
     egui_dim_t total_rows_height;
@@ -317,6 +326,18 @@ static void parallax_view_get_metrics(egui_view_parallax_view_t *local, egui_vie
     if (meta_line_height > progress_height)
     {
         progress_height = meta_line_height;
+    }
+    if (font_line_height > min_row_height)
+    {
+        min_row_height = font_line_height;
+    }
+    if (row_meta_height + 4 > min_row_height)
+    {
+        min_row_height = row_meta_height + 4;
+    }
+    if (row_height < min_row_height)
+    {
+        row_height = min_row_height;
     }
 
     if (hero_height > metrics->content_region.size.height - footer_height - footer_gap - 8)
@@ -368,7 +389,7 @@ static void parallax_view_get_metrics(egui_view_parallax_view_t *local, egui_vie
         row_gap--;
         total_rows_height = (egui_dim_t)(local->row_count * row_height + (local->row_count - 1) * row_gap);
     }
-    while (local->row_count > 0 && total_rows_height > available_rows_height && row_height > (local->compact_mode ? 11 : 13))
+    while (local->row_count > 0 && total_rows_height > available_rows_height && row_height > min_row_height)
     {
         row_height--;
         total_rows_height = (egui_dim_t)(local->row_count * row_height + (local->row_count - 1) * row_gap);
@@ -462,7 +483,7 @@ static void parallax_view_draw_row(egui_view_t *self, egui_view_parallax_view_t 
     egui_color_t meta_border = egui_rgb_mix(local->border_color, tone_color, active ? (local->compact_mode ? 7 : 9) : 5);
     egui_color_t meta_color = egui_rgb_mix(local->muted_text_color, tone_color, active ? (local->compact_mode ? 7 : 9) : 5);
     egui_dim_t radius = local->compact_mode ? 5 : 7;
-    egui_dim_t meta_height = local->compact_mode ? 7 : 9;
+    egui_dim_t meta_height = parallax_view_resolve_line_height(local->meta_font, local->compact_mode ? 7 : 9);
     egui_dim_t meta_width = parallax_view_has_text(row->meta)
                                     ? (egui_dim_t)(parallax_view_text_len(row->meta) * (local->compact_mode ? 4 : 5) + (local->compact_mode ? 10 : 14))
                                     : 0;
