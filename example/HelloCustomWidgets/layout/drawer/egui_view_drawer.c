@@ -208,6 +208,86 @@ static const egui_font_t *drawer_meta_font(const egui_view_drawer_t *local)
     return local->meta_font == NULL ? drawer_default_font() : local->meta_font;
 }
 
+static egui_dim_t drawer_measure_font_line_height(const egui_font_t *font)
+{
+    egui_dim_t dummy_width = 0;
+    egui_dim_t line_height = 0;
+
+    if (font == NULL || font->api == NULL || font->api->get_str_size == NULL)
+    {
+        return 0;
+    }
+
+    font->api->get_str_size(font, "A", 0, 0, &dummy_width, &line_height);
+    return line_height;
+}
+
+static egui_dim_t drawer_title_line_height(const egui_view_drawer_t *local)
+{
+    return drawer_measure_font_line_height(drawer_font(local));
+}
+
+static egui_dim_t drawer_meta_line_height(const egui_view_drawer_t *local)
+{
+    return drawer_measure_font_line_height(drawer_meta_font(local));
+}
+
+static egui_dim_t drawer_eyebrow_h_dynamic(const egui_view_drawer_t *local)
+{
+    egui_dim_t eyebrow_h = local->compact_mode ? 7 : 8;
+    egui_dim_t line_height = drawer_meta_line_height(local);
+
+    return line_height > eyebrow_h ? line_height : eyebrow_h;
+}
+
+static egui_dim_t drawer_panel_header_h(const egui_view_drawer_t *local)
+{
+    egui_dim_t header_h = drawer_header_h(local->compact_mode);
+    egui_dim_t required_h = drawer_eyebrow_h_dynamic(local) + drawer_title_line_height(local) + (local->compact_mode ? 1 : 2);
+
+    return required_h > header_h ? required_h : header_h;
+}
+
+static egui_dim_t drawer_footer_h_dynamic(const egui_view_drawer_t *local)
+{
+    egui_dim_t footer_h = drawer_footer_h(local->compact_mode);
+    egui_dim_t line_height = drawer_meta_line_height(local);
+
+    return line_height > footer_h ? line_height : footer_h;
+}
+
+static egui_dim_t drawer_pill_h_dynamic(const egui_view_drawer_t *local)
+{
+    egui_dim_t pill_h = drawer_pill_h(local->compact_mode);
+    egui_dim_t line_height = drawer_meta_line_height(local);
+
+    return line_height > pill_h ? line_height : pill_h;
+}
+
+static egui_dim_t drawer_host_title_h(const egui_view_drawer_t *local)
+{
+    egui_dim_t title_h = local->compact_mode ? 10 : 12;
+    egui_dim_t line_height = drawer_title_line_height(local);
+
+    return line_height > title_h ? line_height : title_h;
+}
+
+static egui_dim_t drawer_host_note_h(const egui_view_drawer_t *local)
+{
+    egui_dim_t note_h = local->compact_mode ? 8 : 9;
+    egui_dim_t line_height = drawer_meta_line_height(local);
+
+    return line_height > note_h ? line_height : note_h;
+}
+
+static egui_dim_t drawer_host_card_line_h(const egui_view_drawer_t *local)
+{
+    egui_dim_t line_h = local->compact_mode ? 8 : 10;
+    egui_dim_t line_height = drawer_meta_line_height(local);
+
+    return line_height > line_h ? line_height : line_h;
+}
+
 static egui_dim_t drawer_pill_width(const char *text, uint8_t compact_mode, egui_dim_t max_width)
 {
     egui_dim_t width;
@@ -242,8 +322,8 @@ static void drawer_get_metrics(egui_view_drawer_t *local, egui_view_t *self, egu
     egui_dim_t toggle_h = drawer_toggle_h(local->compact_mode);
     egui_dim_t pad_x = drawer_pad_x(local->compact_mode);
     egui_dim_t pad_y = drawer_pad_y(local->compact_mode);
-    egui_dim_t header_h = drawer_header_h(local->compact_mode);
-    egui_dim_t footer_h = drawer_footer_h(local->compact_mode);
+    egui_dim_t header_h = drawer_panel_header_h(local);
+    egui_dim_t footer_h = drawer_footer_h_dynamic(local);
     egui_dim_t close_size = drawer_close_size(local->compact_mode);
     egui_dim_t min_body_w = local->compact_mode ? 22 : 34;
     egui_dim_t tag_w;
@@ -336,7 +416,7 @@ static void drawer_get_metrics(egui_view_drawer_t *local, egui_view_t *self, egu
     metrics->eyebrow_region.location.x = metrics->drawer_region.location.x + pad_x;
     metrics->eyebrow_region.location.y = metrics->drawer_region.location.y + pad_y;
     metrics->eyebrow_region.size.width = metrics->drawer_region.size.width - pad_x * 2;
-    metrics->eyebrow_region.size.height = local->compact_mode ? 7 : 8;
+    metrics->eyebrow_region.size.height = drawer_eyebrow_h_dynamic(local);
 
     if (metrics->show_close)
     {
@@ -354,7 +434,7 @@ static void drawer_get_metrics(egui_view_drawer_t *local, egui_view_t *self, egu
     {
         metrics->title_region.size.width = metrics->close_region.location.x - 4 - metrics->title_region.location.x;
     }
-    metrics->title_region.size.height = header_h - metrics->eyebrow_region.size.height - (local->compact_mode ? 1 : 2);
+    metrics->title_region.size.height = drawer_title_line_height(local);
 
     metrics->body_primary_region.location.x = metrics->drawer_region.location.x + pad_x;
     metrics->body_primary_region.location.y = metrics->drawer_region.location.y + pad_y + header_h;
@@ -383,9 +463,9 @@ static void drawer_get_metrics(egui_view_drawer_t *local, egui_view_t *self, egu
     if (metrics->show_tag)
     {
         metrics->tag_region.location.x = metrics->footer_region.location.x;
-        metrics->tag_region.location.y = metrics->footer_region.location.y + (metrics->footer_region.size.height - drawer_pill_h(local->compact_mode)) / 2;
+        metrics->tag_region.location.y = metrics->footer_region.location.y + (metrics->footer_region.size.height - drawer_pill_h_dynamic(local)) / 2;
         metrics->tag_region.size.width = tag_w;
-        metrics->tag_region.size.height = drawer_pill_h(local->compact_mode);
+        metrics->tag_region.size.height = drawer_pill_h_dynamic(local);
     }
     metrics->footer_text_region.location.x =
             metrics->show_tag ? metrics->tag_region.location.x + metrics->tag_region.size.width + (local->compact_mode ? 4 : 6) : metrics->footer_region.location.x;
@@ -507,6 +587,9 @@ static void drawer_draw_host(egui_view_t *self, egui_view_drawer_t *local, const
     egui_dim_t pad_y = drawer_pad_y(local->compact_mode);
     egui_dim_t card_h = drawer_card_h(local->compact_mode);
     egui_dim_t card_gap = drawer_card_gap(local->compact_mode);
+    egui_dim_t title_h = drawer_host_title_h(local);
+    egui_dim_t note_h = drawer_host_note_h(local);
+    egui_dim_t card_line_h = drawer_host_card_line_h(local);
     egui_region_t accent_region;
     egui_region_t title_region;
     egui_region_t note_region;
@@ -535,14 +618,14 @@ static void drawer_draw_host(egui_view_t *self, egui_view_drawer_t *local, const
     title_region.location.x = accent_region.location.x;
     title_region.location.y = accent_region.location.y + (local->compact_mode ? 6 : 8);
     title_region.size.width = metrics->body_region.size.width - pad_x * 2;
-    title_region.size.height = local->compact_mode ? 10 : 12;
+    title_region.size.height = title_h;
     drawer_draw_text(self, drawer_font(local), local->presentation_mode == EGUI_VIEW_DRAWER_MODE_OVERLAY ? "Overlay surface" : "Inline surface",
                      &title_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, text_color, EGUI_ALPHA_100);
 
     note_region.location.x = accent_region.location.x;
     note_region.location.y = title_region.location.y + title_region.size.height + 2;
     note_region.size.width = metrics->body_region.size.width - pad_x * 2;
-    note_region.size.height = local->compact_mode ? 8 : 9;
+    note_region.size.height = note_h;
     drawer_draw_text(self, drawer_meta_font(local),
                      local->anchor == EGUI_VIEW_DRAWER_ANCHOR_END ? "Anchored to the end edge." : "Anchored to the start edge.", &note_region,
                      EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, muted_text_color, EGUI_ALPHA_100);
@@ -564,9 +647,9 @@ static void drawer_draw_host(egui_view_t *self, egui_view_drawer_t *local, const
                                          local->compact_mode ? 5 : 7, 1, egui_rgb_mix(border_color, accent_color, (uint8_t)(i == 0 ? 12 : 7)),
                                          egui_color_alpha_mix(self->alpha, 36));
         line_region.location.x = card_region.location.x + (local->compact_mode ? 5 : 6);
-        line_region.location.y = card_region.location.y + (local->compact_mode ? 4 : 5);
+        line_region.location.y = card_region.location.y + (card_region.size.height - card_line_h) / 2;
         line_region.size.width = EGUI_MIN((egui_dim_t)(card_region.size.width - 12), (egui_dim_t)(local->compact_mode ? 26 : 34));
-        line_region.size.height = local->compact_mode ? 8 : 10;
+        line_region.size.height = card_line_h;
         drawer_draw_text(self, drawer_meta_font(local), i == 0 ? "Pinned summary" : "Context note", &line_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER,
                          i == 0 ? text_color : muted_text_color, EGUI_ALPHA_100);
         card_region.location.y += card_region.size.height + card_gap;
