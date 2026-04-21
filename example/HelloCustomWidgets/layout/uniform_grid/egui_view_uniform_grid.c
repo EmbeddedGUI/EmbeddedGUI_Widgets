@@ -85,6 +85,27 @@ static uint8_t uniform_grid_has_text(const char *text)
     return text != NULL && text[0] != '\0' ? 1 : 0;
 }
 
+static egui_dim_t uniform_grid_measure_font_line_height(const egui_font_t *font)
+{
+    egui_dim_t width = 0;
+    egui_dim_t height = 0;
+
+    if (font == NULL || font->api == NULL || font->api->get_str_size == NULL)
+    {
+        return 0;
+    }
+
+    font->api->get_str_size(font, "A", 0, 0, &width, &height);
+    return height;
+}
+
+static egui_dim_t uniform_grid_resolve_line_height(const egui_font_t *font, egui_dim_t fallback)
+{
+    egui_dim_t line_height = uniform_grid_measure_font_line_height(font);
+
+    return line_height > fallback ? line_height : fallback;
+}
+
 static egui_color_t uniform_grid_mix_disabled(egui_color_t color)
 {
     return egui_rgb_mix(color, EGUI_COLOR_DARK_GREY, 68);
@@ -242,13 +263,17 @@ static void uniform_grid_get_metrics(egui_view_uniform_grid_t *local, egui_view_
     egui_dim_t outer_pad_y = local->compact_mode ? EGUI_VIEW_UNIFORM_GRID_COMPACT_OUTER_PAD_Y : EGUI_VIEW_UNIFORM_GRID_STANDARD_OUTER_PAD_Y;
     egui_dim_t inner_pad_x = local->compact_mode ? EGUI_VIEW_UNIFORM_GRID_COMPACT_INNER_PAD_X : EGUI_VIEW_UNIFORM_GRID_STANDARD_INNER_PAD_X;
     egui_dim_t inner_pad_y = local->compact_mode ? EGUI_VIEW_UNIFORM_GRID_COMPACT_INNER_PAD_Y : EGUI_VIEW_UNIFORM_GRID_STANDARD_INNER_PAD_Y;
-    egui_dim_t badge_h = local->compact_mode ? EGUI_VIEW_UNIFORM_GRID_COMPACT_BADGE_H : EGUI_VIEW_UNIFORM_GRID_STANDARD_BADGE_H;
+    egui_dim_t badge_slot_h = local->compact_mode ? EGUI_VIEW_UNIFORM_GRID_COMPACT_BADGE_H : EGUI_VIEW_UNIFORM_GRID_STANDARD_BADGE_H;
+    egui_dim_t badge_h = uniform_grid_resolve_line_height(local->meta_font, badge_slot_h);
     egui_dim_t badge_gap = local->compact_mode ? EGUI_VIEW_UNIFORM_GRID_COMPACT_BADGE_GAP : EGUI_VIEW_UNIFORM_GRID_STANDARD_BADGE_GAP;
-    egui_dim_t title_h = local->compact_mode ? EGUI_VIEW_UNIFORM_GRID_COMPACT_TITLE_H : EGUI_VIEW_UNIFORM_GRID_STANDARD_TITLE_H;
-    egui_dim_t summary_h = local->compact_mode ? EGUI_VIEW_UNIFORM_GRID_COMPACT_SUMMARY_H : EGUI_VIEW_UNIFORM_GRID_STANDARD_SUMMARY_H;
+    egui_dim_t title_slot_h = local->compact_mode ? EGUI_VIEW_UNIFORM_GRID_COMPACT_TITLE_H : EGUI_VIEW_UNIFORM_GRID_STANDARD_TITLE_H;
+    egui_dim_t title_h = uniform_grid_resolve_line_height(local->font, title_slot_h);
+    egui_dim_t summary_slot_h = local->compact_mode ? EGUI_VIEW_UNIFORM_GRID_COMPACT_SUMMARY_H : EGUI_VIEW_UNIFORM_GRID_STANDARD_SUMMARY_H;
+    egui_dim_t summary_h = summary_slot_h > 0 ? uniform_grid_resolve_line_height(local->meta_font, summary_slot_h) : 0;
     egui_dim_t title_gap = local->compact_mode ? EGUI_VIEW_UNIFORM_GRID_COMPACT_TITLE_GAP : EGUI_VIEW_UNIFORM_GRID_STANDARD_TITLE_GAP;
     egui_dim_t grid_gap = local->compact_mode ? EGUI_VIEW_UNIFORM_GRID_COMPACT_GRID_GAP : EGUI_VIEW_UNIFORM_GRID_STANDARD_GRID_GAP;
-    egui_dim_t footer_h = local->compact_mode ? EGUI_VIEW_UNIFORM_GRID_COMPACT_FOOTER_H : EGUI_VIEW_UNIFORM_GRID_STANDARD_FOOTER_H;
+    egui_dim_t footer_slot_h = local->compact_mode ? EGUI_VIEW_UNIFORM_GRID_COMPACT_FOOTER_H : EGUI_VIEW_UNIFORM_GRID_STANDARD_FOOTER_H;
+    egui_dim_t footer_h = footer_slot_h > 0 ? uniform_grid_resolve_line_height(local->meta_font, footer_slot_h) : 0;
     egui_dim_t footer_gap = local->compact_mode ? EGUI_VIEW_UNIFORM_GRID_COMPACT_FOOTER_GAP : EGUI_VIEW_UNIFORM_GRID_STANDARD_FOOTER_GAP;
     egui_dim_t cell_gap = local->compact_mode ? EGUI_VIEW_UNIFORM_GRID_COMPACT_CELL_GAP : EGUI_VIEW_UNIFORM_GRID_STANDARD_CELL_GAP;
     egui_dim_t inner_x;
@@ -269,8 +294,8 @@ static void uniform_grid_get_metrics(egui_view_uniform_grid_t *local, egui_view_
     uint8_t column_count = uniform_grid_get_column_count(snapshot);
     uint8_t row_count = uniform_grid_get_row_count(snapshot);
     uint8_t has_badge = snapshot != NULL && uniform_grid_has_text(snapshot->header) ? 1 : 0;
-    uint8_t has_summary = summary_h > 0 && snapshot != NULL && uniform_grid_has_text(snapshot->summary) ? 1 : 0;
-    uint8_t has_footer = footer_h > 0 && snapshot != NULL && uniform_grid_has_text(snapshot->footer) ? 1 : 0;
+    uint8_t has_summary = summary_slot_h > 0 && snapshot != NULL && uniform_grid_has_text(snapshot->summary) ? 1 : 0;
+    uint8_t has_footer = footer_slot_h > 0 && snapshot != NULL && uniform_grid_has_text(snapshot->footer) ? 1 : 0;
     uint8_t row_index;
     uint8_t col_index;
     uint8_t cell_index = 0;
@@ -323,26 +348,26 @@ static void uniform_grid_get_metrics(egui_view_uniform_grid_t *local, egui_view_
     if (has_badge)
     {
         metrics->badge_region.location.x = inner_x;
-        metrics->badge_region.location.y = start_y;
+        metrics->badge_region.location.y = start_y + (badge_slot_h - badge_h) / 2;
         metrics->badge_region.size.width = uniform_grid_pill_width(snapshot->header, local->compact_mode, local->compact_mode ? 22 : 28, inner_w);
         metrics->badge_region.size.height = badge_h;
-        start_y += badge_h + badge_gap;
+        start_y += badge_slot_h + badge_gap;
     }
 
     metrics->title_region.location.x = inner_x;
-    metrics->title_region.location.y = start_y;
+    metrics->title_region.location.y = start_y + (title_slot_h - title_h) / 2;
     metrics->title_region.size.width = inner_w;
     metrics->title_region.size.height = title_h;
-    start_y += title_h;
+    start_y += title_slot_h;
 
     if (has_summary)
     {
         start_y += title_gap;
         metrics->summary_region.location.x = inner_x;
-        metrics->summary_region.location.y = start_y;
+        metrics->summary_region.location.y = start_y + (summary_slot_h - summary_h) / 2;
         metrics->summary_region.size.width = inner_w;
         metrics->summary_region.size.height = summary_h;
-        start_y += summary_h;
+        start_y += summary_slot_h;
     }
 
     if (cell_count == 0 || column_count == 0 || row_count == 0)
@@ -354,9 +379,9 @@ static void uniform_grid_get_metrics(egui_view_uniform_grid_t *local, egui_view_
     footer_y = inner_y + inner_h;
     if (has_footer)
     {
-        footer_y -= footer_h;
+        footer_y -= footer_slot_h;
         metrics->footer_region.location.x = inner_x;
-        metrics->footer_region.location.y = footer_y;
+        metrics->footer_region.location.y = footer_y + (footer_slot_h - footer_h) / 2;
         metrics->footer_region.size.width = uniform_grid_pill_width(snapshot->footer, local->compact_mode, local->compact_mode ? 18 : 24, inner_w);
         metrics->footer_region.size.height = footer_h;
         footer_y -= footer_gap;
@@ -498,10 +523,14 @@ static void uniform_grid_draw_cell(egui_view_t *self, egui_view_uniform_grid_t *
     egui_dim_t radius = local->compact_mode ? EGUI_VIEW_UNIFORM_GRID_COMPACT_CELL_RADIUS : EGUI_VIEW_UNIFORM_GRID_STANDARD_CELL_RADIUS;
     egui_dim_t pad_x = local->compact_mode ? 4 : 6;
     egui_dim_t pad_y = local->compact_mode ? 4 : 5;
-    egui_dim_t badge_h = local->compact_mode ? 7 : 9;
-    egui_dim_t title_h = local->compact_mode ? 8 : 10;
-    egui_dim_t meta_h = local->compact_mode ? 7 : 8;
-    egui_dim_t body_h = local->compact_mode ? 0 : 8;
+    egui_dim_t badge_slot_h = local->compact_mode ? 7 : 9;
+    egui_dim_t title_slot_h = local->compact_mode ? 8 : 10;
+    egui_dim_t meta_slot_h = local->compact_mode ? 7 : 8;
+    egui_dim_t body_slot_h = local->compact_mode ? 0 : 8;
+    egui_dim_t badge_h = uniform_grid_resolve_line_height(local->meta_font, badge_slot_h);
+    egui_dim_t title_h = uniform_grid_resolve_line_height(local->font, title_slot_h);
+    egui_dim_t meta_h = uniform_grid_resolve_line_height(local->meta_font, meta_slot_h);
+    egui_dim_t body_h = body_slot_h > 0 ? uniform_grid_resolve_line_height(local->meta_font, body_slot_h) : 0;
     egui_region_t badge_region;
     egui_region_t title_region;
     egui_region_t meta_region;
@@ -560,29 +589,29 @@ static void uniform_grid_draw_cell(egui_view_t *self, egui_view_uniform_grid_t *
     if (uniform_grid_has_text(cell->badge))
     {
         badge_region.location.x = region->location.x + pad_x;
-        badge_region.location.y = cursor_y;
+        badge_region.location.y = cursor_y + (badge_slot_h - badge_h) / 2;
         badge_region.size.width = uniform_grid_pill_width(cell->badge, local->compact_mode, local->compact_mode ? 12 : 16,
                                                           region->size.width - pad_x * 2);
         badge_region.size.height = badge_h;
         egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, badge_region.location.x, badge_region.location.y, badge_region.size.width, badge_region.size.height,
                                               badge_region.size.height / 2, badge_fill, egui_color_alpha_mix(self->alpha, 96));
         uniform_grid_draw_text(local->meta_font, self, cell->badge, &badge_region, EGUI_ALIGN_CENTER, badge_text);
-        cursor_y += badge_h + (local->compact_mode ? 2 : 3);
+        cursor_y += badge_slot_h + (local->compact_mode ? 2 : 3);
     }
 
     title_region.location.x = region->location.x + pad_x;
-    title_region.location.y = cursor_y;
+    title_region.location.y = cursor_y + (title_slot_h - title_h) / 2;
     title_region.size.width = region->size.width - pad_x * 2;
     title_region.size.height = title_h;
-    cursor_y += title_h;
+    cursor_y += title_slot_h;
 
     meta_region = title_region;
-    meta_region.location.y = cursor_y;
+    meta_region.location.y = cursor_y + (meta_slot_h - meta_h) / 2;
     meta_region.size.height = meta_h;
-    cursor_y += meta_h;
+    cursor_y += meta_slot_h;
 
     body_region = meta_region;
-    body_region.location.y = cursor_y + 1;
+    body_region.location.y = cursor_y + 1 + (body_slot_h - body_h) / 2;
     body_region.size.height = body_h;
 
     uniform_grid_draw_text(local->font, self, cell->title, &title_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, title_color);
