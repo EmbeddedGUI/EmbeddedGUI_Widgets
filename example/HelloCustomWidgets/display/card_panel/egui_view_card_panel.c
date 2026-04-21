@@ -275,6 +275,7 @@ static void egui_view_card_panel_on_draw(egui_view_t *self)
     egui_dim_t body_y;
     egui_dim_t body_h;
     egui_dim_t detail_h;
+    egui_dim_t detail_body_h;
     egui_dim_t detail_y;
     egui_dim_t footer_y;
     egui_dim_t footer_h;
@@ -376,8 +377,13 @@ static void egui_view_card_panel_on_draw(egui_view_t *self)
         value_label_h = 10;
     }
     detail_title_h = value_label_h;
+    detail_body_h = egui_view_card_panel_measure_font_line_height(local->font);
     body_y = title_y + title_h + (local->compact_mode ? 2 : 4);
     detail_h = local->compact_mode ? 16 : 30;
+    if (!local->compact_mode && detail_title_h + detail_body_h + 7 > detail_h)
+    {
+        detail_h = detail_title_h + detail_body_h + 7;
+    }
     footer_h = egui_view_card_panel_measure_font_line_height(local->meta_font);
     if (footer_h < (local->compact_mode ? 10 : 11))
     {
