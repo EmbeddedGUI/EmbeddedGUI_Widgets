@@ -40,23 +40,23 @@ EGUI_BACKGROUND_COLOR_STATIC_CONST_INIT(bg_page_panel, &bg_page_panel_params);
 static const char *title_text = "Scroll Presenter";
 
 static const egui_view_scroll_presenter_item_t canvas_items[] = {
-        {"MAP", "Origin card", "Primary viewport entry", 0, 0, 118, 38, EGUI_VIEW_SCROLL_PRESENTER_TONE_ACCENT, 1},
-        {"OPS", "Signal lane", "Shift summary cluster", 92, 58, 126, 42, EGUI_VIEW_SCROLL_PRESENTER_TONE_SUCCESS, 0},
-        {"QA", "Alert branch", "Drill notes and checks", 34, 132, 134, 40, EGUI_VIEW_SCROLL_PRESENTER_TONE_WARNING, 0},
-        {"DOC", "Far corner", "Pinned appendix route", 154, 184, 116, 38, EGUI_VIEW_SCROLL_PRESENTER_TONE_NEUTRAL, 0},
+        {"MAP", "Origin card", "Primary viewport entry", 0, 0, 118, 48, EGUI_VIEW_SCROLL_PRESENTER_TONE_ACCENT, 1},
+        {"OPS", "Signal lane", "Shift summary cluster", 92, 58, 126, 52, EGUI_VIEW_SCROLL_PRESENTER_TONE_SUCCESS, 0},
+        {"QA", "Alert branch", "Drill notes and checks", 34, 132, 134, 50, EGUI_VIEW_SCROLL_PRESENTER_TONE_WARNING, 0},
+        {"DOC", "Far corner", "Pinned appendix route", 154, 184, 116, 48, EGUI_VIEW_SCROLL_PRESENTER_TONE_NEUTRAL, 0},
 };
 
 static const egui_view_scroll_presenter_item_t timeline_items[] = {
-        {"REL", "Sprint map", "Milestone stream", 0, 0, 112, 36, EGUI_VIEW_SCROLL_PRESENTER_TONE_ACCENT, 0},
-        {"UX", "Review branch", "Linked notes", 138, 22, 118, 38, EGUI_VIEW_SCROLL_PRESENTER_TONE_NEUTRAL, 1},
-        {"ENG", "Build lane", "Validation queue", 60, 98, 130, 42, EGUI_VIEW_SCROLL_PRESENTER_TONE_SUCCESS, 0},
-        {"OPS", "Rollback shelf", "Fallback deck", 176, 156, 108, 36, EGUI_VIEW_SCROLL_PRESENTER_TONE_WARNING, 0},
+        {"REL", "Sprint map", "Milestone stream", 0, 0, 112, 46, EGUI_VIEW_SCROLL_PRESENTER_TONE_ACCENT, 0},
+        {"UX", "Review branch", "Linked notes", 138, 22, 118, 48, EGUI_VIEW_SCROLL_PRESENTER_TONE_NEUTRAL, 1},
+        {"ENG", "Build lane", "Validation queue", 60, 98, 130, 52, EGUI_VIEW_SCROLL_PRESENTER_TONE_SUCCESS, 0},
+        {"OPS", "Rollback shelf", "Fallback deck", 176, 156, 108, 46, EGUI_VIEW_SCROLL_PRESENTER_TONE_WARNING, 0},
 };
 
 static const egui_view_scroll_presenter_item_t compact_items[] = {
-        {"UI", "Mini map", "Preview route", 0, 0, 92, 30, EGUI_VIEW_SCROLL_PRESENTER_TONE_ACCENT, 0},
-        {"PM", "Pinned note", "Scroll cue", 72, 46, 94, 32, EGUI_VIEW_SCROLL_PRESENTER_TONE_NEUTRAL, 1},
-        {"ENG", "Edge node", "Drag target", 34, 94, 96, 30, EGUI_VIEW_SCROLL_PRESENTER_TONE_SUCCESS, 0},
+        {"UI", "Mini map", "Preview route", 0, 0, 92, 42, EGUI_VIEW_SCROLL_PRESENTER_TONE_ACCENT, 0},
+        {"PM", "Pinned note", "Scroll cue", 72, 46, 94, 44, EGUI_VIEW_SCROLL_PRESENTER_TONE_NEUTRAL, 1},
+        {"ENG", "Edge node", "Drag target", 34, 94, 96, 42, EGUI_VIEW_SCROLL_PRESENTER_TONE_SUCCESS, 0},
 };
 
 static const egui_view_scroll_presenter_snapshot_t primary_snapshots[] = {
@@ -269,4 +269,3 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     }
 }
 #endif
-

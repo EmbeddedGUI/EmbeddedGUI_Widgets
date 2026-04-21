@@ -77,6 +77,74 @@ static uint8_t scroll_viewer_clamp_block_count(uint8_t count)
     return count > EGUI_VIEW_SCROLL_VIEWER_MAX_BLOCKS ? EGUI_VIEW_SCROLL_VIEWER_MAX_BLOCKS : count;
 }
 
+static egui_dim_t scroll_viewer_measure_font_line_height(const egui_font_t *font)
+{
+    egui_dim_t dummy_width = 0;
+    egui_dim_t line_height = 0;
+
+    if (font == NULL || font->api == NULL || font->api->get_str_size == NULL)
+    {
+        return 0;
+    }
+
+    font->api->get_str_size(font, "A", 0, 0, &dummy_width, &line_height);
+    return line_height;
+}
+
+static egui_dim_t scroll_viewer_get_title_line_height(egui_view_scroll_viewer_t *local)
+{
+    egui_dim_t line_height = scroll_viewer_measure_font_line_height(local->font);
+    egui_dim_t fallback = local->compact_mode ? SV_COMPACT_TITLE_H : SV_STANDARD_TITLE_H;
+
+    return line_height > 0 ? line_height : fallback;
+}
+
+static egui_dim_t scroll_viewer_get_meta_line_height(egui_view_scroll_viewer_t *local)
+{
+    egui_dim_t line_height = scroll_viewer_measure_font_line_height(local->meta_font);
+    egui_dim_t fallback = local->compact_mode ? SV_COMPACT_FOOTER_H : SV_STANDARD_SUMMARY_H;
+
+    return line_height > 0 ? line_height : fallback;
+}
+
+static egui_dim_t scroll_viewer_get_eyebrow_height(egui_view_scroll_viewer_t *local)
+{
+    egui_dim_t eyebrow_h = scroll_viewer_get_meta_line_height(local);
+
+    if (!local->compact_mode && eyebrow_h < SV_STANDARD_EYEBROW_H)
+    {
+        eyebrow_h = SV_STANDARD_EYEBROW_H;
+    }
+    return eyebrow_h;
+}
+
+static egui_dim_t scroll_viewer_get_summary_height(egui_view_scroll_viewer_t *local)
+{
+    egui_dim_t summary_h = scroll_viewer_get_meta_line_height(local);
+
+    if (!local->compact_mode && summary_h < SV_STANDARD_SUMMARY_H)
+    {
+        summary_h = SV_STANDARD_SUMMARY_H;
+    }
+    return summary_h;
+}
+
+static egui_dim_t scroll_viewer_get_footer_height(egui_view_scroll_viewer_t *local)
+{
+    egui_dim_t footer_h = scroll_viewer_get_meta_line_height(local);
+    egui_dim_t min_h = local->compact_mode ? SV_COMPACT_FOOTER_H : SV_STANDARD_FOOTER_H;
+
+    return footer_h > min_h ? footer_h : min_h;
+}
+
+static egui_dim_t scroll_viewer_get_badge_height(egui_view_scroll_viewer_t *local)
+{
+    egui_dim_t badge_h = scroll_viewer_get_meta_line_height(local);
+    egui_dim_t min_h = local->compact_mode ? 10 : 12;
+
+    return badge_h > min_h ? badge_h : min_h;
+}
+
 static egui_color_t scroll_viewer_mix_disabled(egui_color_t color)
 {
     return egui_rgb_mix(color, EGUI_COLOR_DARK_GREY, 68);
@@ -366,15 +434,18 @@ static void scroll_viewer_get_metrics(egui_view_scroll_viewer_t *local, egui_vie
     egui_region_t work_region;
     egui_dim_t pad_x = local->compact_mode ? SV_COMPACT_PAD_X : SV_STANDARD_PAD_X;
     egui_dim_t pad_y = local->compact_mode ? SV_COMPACT_PAD_Y : SV_STANDARD_PAD_Y;
-    egui_dim_t title_h = local->compact_mode ? SV_COMPACT_TITLE_H : SV_STANDARD_TITLE_H;
+    egui_dim_t eyebrow_h = scroll_viewer_get_eyebrow_height(local);
+    egui_dim_t title_h = scroll_viewer_get_title_line_height(local);
+    egui_dim_t summary_h = scroll_viewer_get_summary_height(local);
     egui_dim_t title_gap = local->compact_mode ? SV_COMPACT_TITLE_GAP : SV_STANDARD_TITLE_GAP;
     egui_dim_t body_gap = local->compact_mode ? SV_COMPACT_BODY_GAP : SV_STANDARD_BODY_GAP;
-    egui_dim_t footer_h = local->compact_mode ? SV_COMPACT_FOOTER_H : SV_STANDARD_FOOTER_H;
+    egui_dim_t footer_h = scroll_viewer_get_footer_height(local);
     egui_dim_t scrollbar_w = local->compact_mode ? SV_COMPACT_SCROLLBAR_W : SV_STANDARD_SCROLLBAR_W;
     egui_dim_t scrollbar_gap = local->compact_mode ? SV_COMPACT_SCROLLBAR_GAP : SV_STANDARD_SCROLLBAR_GAP;
     egui_dim_t viewport_pad = local->compact_mode ? SV_COMPACT_VIEWPORT_PAD : SV_STANDARD_VIEWPORT_PAD;
     egui_dim_t track_pad_y = local->compact_mode ? SV_COMPACT_TRACK_PAD_Y : SV_STANDARD_TRACK_PAD_Y;
     egui_dim_t thumb_min_h = local->compact_mode ? SV_COMPACT_THUMB_MIN_H : SV_STANDARD_THUMB_MIN_H;
+    egui_dim_t viewport_min_content_h = scroll_viewer_get_meta_line_height(local);
     egui_dim_t cursor_y;
     egui_dim_t footer_y;
     egui_dim_t viewport_bottom;
@@ -412,8 +483,8 @@ static void scroll_viewer_get_metrics(egui_view_scroll_viewer_t *local, egui_vie
         metrics->eyebrow_region.location.x = metrics->content_region.location.x;
         metrics->eyebrow_region.location.y = cursor_y;
         metrics->eyebrow_region.size.width = metrics->content_region.size.width;
-        metrics->eyebrow_region.size.height = SV_STANDARD_EYEBROW_H;
-        cursor_y += SV_STANDARD_EYEBROW_H + SV_STANDARD_EYEBROW_GAP;
+        metrics->eyebrow_region.size.height = eyebrow_h;
+        cursor_y += eyebrow_h + SV_STANDARD_EYEBROW_GAP;
     }
     else
     {
@@ -432,8 +503,8 @@ static void scroll_viewer_get_metrics(egui_view_scroll_viewer_t *local, egui_vie
         metrics->summary_region.location.x = metrics->content_region.location.x;
         metrics->summary_region.location.y = cursor_y;
         metrics->summary_region.size.width = metrics->content_region.size.width;
-        metrics->summary_region.size.height = SV_STANDARD_SUMMARY_H;
-        cursor_y += SV_STANDARD_SUMMARY_H;
+        metrics->summary_region.size.height = summary_h;
+        cursor_y += summary_h;
     }
     else
     {
@@ -476,9 +547,9 @@ static void scroll_viewer_get_metrics(egui_view_scroll_viewer_t *local, egui_vie
     {
         metrics->viewport_content_region.size.width = 8;
     }
-    if (metrics->viewport_content_region.size.height < 8)
+    if (metrics->viewport_content_region.size.height < viewport_min_content_h)
     {
-        metrics->viewport_content_region.size.height = 8;
+        metrics->viewport_content_region.size.height = viewport_min_content_h;
     }
 
     metrics->track_region.location.x = metrics->viewport_region.location.x + metrics->viewport_region.size.width + scrollbar_gap;
@@ -610,6 +681,17 @@ static void scroll_viewer_draw_block(egui_view_t *self, egui_view_scroll_viewer_
     egui_color_t tone_color;
     egui_color_t fill_color;
     egui_color_t line_color;
+    egui_dim_t badge_h = scroll_viewer_get_badge_height(local);
+    egui_dim_t title_h = scroll_viewer_get_title_line_height(local);
+    egui_dim_t meta_h = scroll_viewer_get_meta_line_height(local);
+    egui_dim_t pad_x = 6;
+    egui_dim_t top_pad = local->compact_mode ? 3 : 5;
+    egui_dim_t bottom_pad = local->compact_mode ? 3 : 5;
+    egui_dim_t badge_gap = 2;
+    egui_dim_t text_gap = 1;
+    egui_dim_t content_y;
+    egui_dim_t meta_y;
+    uint8_t show_badge;
 
     if (block == NULL)
     {
@@ -636,35 +718,48 @@ static void scroll_viewer_draw_block(egui_view_t *self, egui_view_scroll_viewer_
     tone_color = scroll_viewer_tone_color(local, block->tone);
     fill_color = egui_rgb_mix(surface_color, tone_color, block->emphasized ? 18 : 12);
     line_color = egui_rgb_mix(border_color, tone_color, 22);
+    show_badge = scroll_viewer_has_text(block->badge);
 
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, block_region.location.x, block_region.location.y, block_region.size.width, block_region.size.height, 7, fill_color,
                                           egui_color_alpha_mix(self->alpha, 96));
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, block_region.location.x, block_region.location.y, block_region.size.width, block_region.size.height, 7, 1, line_color,
                                      egui_color_alpha_mix(self->alpha, 74));
 
-    badge_region.location.x = block_region.location.x + 6;
-    badge_region.location.y = block_region.location.y + 5;
-    badge_region.size.width = block_region.size.width - 12;
-    badge_region.size.height = 8;
+    badge_region.location.x = block_region.location.x + pad_x;
+    badge_region.location.y = block_region.location.y + top_pad;
+    badge_region.size.width = block_region.size.width - pad_x * 2;
+    badge_region.size.height = badge_h;
 
-    title_region.location.x = block_region.location.x + 6;
-    title_region.location.y = block_region.location.y + 18;
-    title_region.size.width = block_region.size.width - 12;
-    title_region.size.height = 10;
+    content_y = badge_region.location.y;
+    if (show_badge)
+    {
+        content_y += badge_h + badge_gap;
+    }
 
-    meta_region.location.x = block_region.location.x + 6;
-    meta_region.location.y = block_region.location.y + block_region.size.height - 16;
-    meta_region.size.width = block_region.size.width - 12;
-    meta_region.size.height = 10;
+    title_region.location.x = block_region.location.x + pad_x;
+    title_region.location.y = content_y;
+    title_region.size.width = block_region.size.width - pad_x * 2;
+    title_region.size.height = title_h;
 
-    if (scroll_viewer_has_text(block->badge))
+    meta_y = block_region.location.y + block_region.size.height - bottom_pad - meta_h;
+    if (meta_y < title_region.location.y + title_region.size.height + text_gap)
+    {
+        meta_y = title_region.location.y + title_region.size.height + text_gap;
+    }
+
+    meta_region.location.x = block_region.location.x + pad_x;
+    meta_region.location.y = meta_y;
+    meta_region.size.width = block_region.size.width - pad_x * 2;
+    meta_region.size.height = meta_h;
+
+    if (show_badge)
     {
         egui_region_t pill_region = badge_region;
 
         pill_region.size.width = 22;
-        if (pill_region.size.width > block_region.size.width - 12)
+        if (pill_region.size.width > block_region.size.width - pad_x * 2)
         {
-            pill_region.size.width = block_region.size.width - 12;
+            pill_region.size.width = block_region.size.width - pad_x * 2;
         }
         egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, pill_region.location.x, pill_region.location.y, pill_region.size.width, pill_region.size.height, 4,
                                               egui_rgb_mix(tone_color, EGUI_COLOR_WHITE, 20), egui_color_alpha_mix(self->alpha, 92));
@@ -707,7 +802,7 @@ static void scroll_viewer_draw_surface(egui_view_t *self, egui_view_scroll_viewe
     view_pill_region.location.x += 6;
     view_pill_region.location.y += 5;
     view_pill_region.size.width = metrics->viewport_region.size.width / 2;
-    view_pill_region.size.height = local->compact_mode ? 8 : 9;
+    view_pill_region.size.height = scroll_viewer_get_meta_line_height(local);
 
     if (snapshot != NULL && !local->compact_mode)
     {

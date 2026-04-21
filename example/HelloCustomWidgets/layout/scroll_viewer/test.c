@@ -40,23 +40,23 @@ EGUI_BACKGROUND_COLOR_STATIC_CONST_INIT(bg_page_panel, &bg_page_panel_params);
 static const char *title_text = "Scroll Viewer";
 
 static const egui_view_scroll_viewer_block_t release_blocks[] = {
-        {"REL", "Gate checks", "Artifacts and smoke status", 0, 0, 112, 36, EGUI_VIEW_SCROLL_VIEWER_TONE_ACCENT, 1},
-        {"OPS", "Deploy lane", "Ops deck and rollback notes", 16, 52, 128, 42, EGUI_VIEW_SCROLL_VIEWER_TONE_SUCCESS, 0},
-        {"QA", "Known issues", "Tracked defects and follow-ups", 8, 112, 138, 40, EGUI_VIEW_SCROLL_VIEWER_TONE_WARNING, 0},
-        {"DOC", "Footer appendix", "Linked release notes", 18, 176, 118, 34, EGUI_VIEW_SCROLL_VIEWER_TONE_NEUTRAL, 0},
+        {"REL", "Gate checks", "Artifacts and smoke status", 0, 0, 112, 46, EGUI_VIEW_SCROLL_VIEWER_TONE_ACCENT, 1},
+        {"OPS", "Deploy lane", "Ops deck and rollback notes", 16, 52, 128, 52, EGUI_VIEW_SCROLL_VIEWER_TONE_SUCCESS, 0},
+        {"QA", "Known issues", "Tracked defects and follow-ups", 8, 112, 138, 50, EGUI_VIEW_SCROLL_VIEWER_TONE_WARNING, 0},
+        {"DOC", "Footer appendix", "Linked release notes", 18, 176, 118, 44, EGUI_VIEW_SCROLL_VIEWER_TONE_NEUTRAL, 0},
 };
 
 static const egui_view_scroll_viewer_block_t diagnostics_blocks[] = {
-        {"OPS", "Signal summary", "CPU, memory and IO", 0, 0, 132, 38, EGUI_VIEW_SCROLL_VIEWER_TONE_ACCENT, 0},
-        {"QA", "Incident list", "Escalations in the last hour", 14, 56, 144, 42, EGUI_VIEW_SCROLL_VIEWER_TONE_WARNING, 1},
-        {"NET", "Edge peers", "Latency and packet health", 26, 116, 118, 38, EGUI_VIEW_SCROLL_VIEWER_TONE_SUCCESS, 0},
-        {"DOC", "Drill notes", "Operator checklist appendix", 8, 176, 140, 36, EGUI_VIEW_SCROLL_VIEWER_TONE_NEUTRAL, 0},
+        {"OPS", "Signal summary", "CPU, memory and IO", 0, 0, 132, 48, EGUI_VIEW_SCROLL_VIEWER_TONE_ACCENT, 0},
+        {"QA", "Incident list", "Escalations in the last hour", 14, 56, 144, 52, EGUI_VIEW_SCROLL_VIEWER_TONE_WARNING, 1},
+        {"NET", "Edge peers", "Latency and packet health", 26, 116, 118, 48, EGUI_VIEW_SCROLL_VIEWER_TONE_SUCCESS, 0},
+        {"DOC", "Drill notes", "Operator checklist appendix", 8, 176, 140, 46, EGUI_VIEW_SCROLL_VIEWER_TONE_NEUTRAL, 0},
 };
 
 static const egui_view_scroll_viewer_block_t backlog_blocks[] = {
-        {"UI", "Compact feed", "Grouped notes", 0, 0, 102, 32, EGUI_VIEW_SCROLL_VIEWER_TONE_ACCENT, 0},
-        {"PM", "Decision log", "Pinned actions", 10, 46, 112, 34, EGUI_VIEW_SCROLL_VIEWER_TONE_NEUTRAL, 1},
-        {"ENG", "Follow-ups", "Deferred tasks", 22, 92, 108, 32, EGUI_VIEW_SCROLL_VIEWER_TONE_SUCCESS, 0},
+        {"UI", "Compact feed", "Grouped notes", 0, 0, 102, 40, EGUI_VIEW_SCROLL_VIEWER_TONE_ACCENT, 0},
+        {"PM", "Decision log", "Pinned actions", 10, 46, 112, 42, EGUI_VIEW_SCROLL_VIEWER_TONE_NEUTRAL, 1},
+        {"ENG", "Follow-ups", "Deferred tasks", 22, 92, 108, 40, EGUI_VIEW_SCROLL_VIEWER_TONE_SUCCESS, 0},
 };
 
 static const egui_view_scroll_viewer_snapshot_t primary_snapshots[] = {
@@ -269,4 +269,3 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     }
 }
 #endif
-
