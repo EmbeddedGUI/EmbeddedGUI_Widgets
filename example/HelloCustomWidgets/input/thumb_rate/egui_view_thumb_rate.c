@@ -32,6 +32,27 @@ static uint8_t egui_view_thumb_rate_has_text(const char *text)
     return (text != NULL && text[0] != '\0') ? 1 : 0;
 }
 
+static egui_dim_t egui_view_thumb_rate_measure_font_line_height(const egui_font_t *font)
+{
+    egui_dim_t dummy_width = 0;
+    egui_dim_t line_height = 0;
+
+    if (font == NULL || font->api == NULL || font->api->get_str_size == NULL)
+    {
+        return 0;
+    }
+
+    font->api->get_str_size(font, "A", 0, 0, &dummy_width, &line_height);
+    return line_height;
+}
+
+static egui_dim_t egui_view_thumb_rate_resolve_line_height(const egui_font_t *font, egui_dim_t fallback)
+{
+    egui_dim_t line_height = egui_view_thumb_rate_measure_font_line_height(font);
+
+    return line_height > fallback ? line_height : fallback;
+}
+
 static uint8_t egui_view_thumb_rate_state_is_valid(uint8_t state)
 {
     return (state == EGUI_VIEW_THUMB_RATE_STATE_NONE || state == EGUI_VIEW_THUMB_RATE_STATE_LIKED ||
@@ -116,7 +137,7 @@ static void egui_view_thumb_rate_get_metrics(egui_view_thumb_rate_t *local, egui
     egui_dim_t pad_x = local->compact_mode ? THUMB_RATE_COMPACT_PAD_X : THUMB_RATE_STD_PAD_X;
     egui_dim_t pad_y = local->compact_mode ? THUMB_RATE_COMPACT_PAD_Y : THUMB_RATE_STD_PAD_Y;
     egui_dim_t gap = local->compact_mode ? THUMB_RATE_COMPACT_GAP : THUMB_RATE_STD_GAP;
-    egui_dim_t label_height = local->compact_mode ? THUMB_RATE_COMPACT_LABEL_H : THUMB_RATE_STD_LABEL_H;
+    egui_dim_t label_height = local->compact_mode ? THUMB_RATE_COMPACT_LABEL_H : egui_view_thumb_rate_resolve_line_height(local->font, THUMB_RATE_STD_LABEL_H);
     egui_dim_t part_width;
     egui_dim_t part_height;
 
