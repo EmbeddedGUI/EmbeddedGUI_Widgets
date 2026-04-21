@@ -114,21 +114,6 @@ static uint8_t virtualizing_stack_panel_clamp_item_count(uint8_t count)
     return count > EGUI_VIEW_VIRTUALIZING_STACK_PANEL_MAX_ITEMS ? EGUI_VIEW_VIRTUALIZING_STACK_PANEL_MAX_ITEMS : count;
 }
 
-static uint8_t virtualizing_stack_panel_text_len(const char *text)
-{
-    uint8_t length = 0;
-
-    if (text == NULL)
-    {
-        return 0;
-    }
-    while (text[length] != '\0')
-    {
-        length++;
-    }
-    return length;
-}
-
 static uint8_t virtualizing_stack_panel_has_text(const char *text)
 {
     return text != NULL && text[0] != '\0' ? 1 : 0;
@@ -146,6 +131,20 @@ static egui_dim_t virtualizing_stack_panel_measure_font_line_height(const egui_f
 
     font->api->get_str_size(font, "A", 0, 0, &width, &height);
     return height;
+}
+
+static egui_dim_t virtualizing_stack_panel_measure_text_width(const egui_font_t *font, const char *text)
+{
+    egui_dim_t width = 0;
+    egui_dim_t height = 0;
+
+    if (!virtualizing_stack_panel_has_text(text) || font == NULL || font->api == NULL || font->api->get_str_size == NULL)
+    {
+        return 0;
+    }
+
+    font->api->get_str_size(font, text, 0, 0, &width, &height);
+    return width;
 }
 
 static egui_color_t virtualizing_stack_panel_mix_disabled(egui_color_t color)
@@ -262,13 +261,14 @@ static uint8_t virtualizing_stack_panel_item_is_interactive(egui_view_virtualizi
     return virtualizing_stack_panel_item_exists(snapshot, item_index);
 }
 
-static egui_dim_t virtualizing_stack_panel_pill_width(const char *text, uint8_t compact_mode, egui_dim_t min_width, egui_dim_t max_width)
+static egui_dim_t virtualizing_stack_panel_pill_width(const egui_font_t *font, const char *text, uint8_t compact_mode, egui_dim_t min_width,
+                                                      egui_dim_t max_width)
 {
     egui_dim_t width = min_width;
 
     if (virtualizing_stack_panel_has_text(text))
     {
-        width += virtualizing_stack_panel_text_len(text) * (compact_mode ? 4 : 5);
+        width += virtualizing_stack_panel_measure_text_width(font, text);
     }
     if (width > max_width)
     {
@@ -392,7 +392,8 @@ static void virtualizing_stack_panel_get_metrics(egui_view_virtualizing_stack_pa
     {
         metrics->badge_region.location.x = inner_x;
         metrics->badge_region.location.y = cursor_y;
-        metrics->badge_region.size.width = virtualizing_stack_panel_pill_width(snapshot->header, local->compact_mode, local->compact_mode ? 18 : 24, inner_w);
+        metrics->badge_region.size.width =
+                virtualizing_stack_panel_pill_width(local->meta_font, snapshot->header, local->compact_mode, local->compact_mode ? 18 : 24, inner_w);
         metrics->badge_region.size.height = badge_h;
         cursor_y += badge_h + badge_gap;
     }
@@ -421,7 +422,7 @@ static void virtualizing_stack_panel_get_metrics(egui_view_virtualizing_stack_pa
         metrics->footer_region.location.x = inner_x;
         metrics->footer_region.location.y = footer_y;
         metrics->footer_region.size.width =
-                virtualizing_stack_panel_pill_width(snapshot->footer, local->compact_mode, local->compact_mode ? 18 : 22, inner_w);
+                virtualizing_stack_panel_pill_width(local->meta_font, snapshot->footer, local->compact_mode, local->compact_mode ? 18 : 22, inner_w);
         metrics->footer_region.size.height = footer_h;
         footer_y -= footer_gap;
     }
@@ -740,7 +741,8 @@ static void virtualizing_stack_panel_draw_item(egui_view_t *self, egui_view_virt
     {
         badge_region.location.x = text_left;
         badge_region.location.y = region->location.y + (region->size.height - badge_h) / 2;
-        badge_region.size.width = virtualizing_stack_panel_pill_width(item->badge, local->compact_mode, local->compact_mode ? 18 : 22, region->size.width / 3);
+        badge_region.size.width =
+                virtualizing_stack_panel_pill_width(local->meta_font, item->badge, local->compact_mode, local->compact_mode ? 18 : 22, region->size.width / 3);
         badge_region.size.height = badge_h;
         egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, badge_region.location.x, badge_region.location.y, badge_region.size.width, badge_region.size.height,
                                               badge_region.size.height / 2, badge_fill, egui_color_alpha_mix(self->alpha, 94));
@@ -752,7 +754,8 @@ static void virtualizing_stack_panel_draw_item(egui_view_t *self, egui_view_virt
 
     if (virtualizing_stack_panel_has_text(item->value))
     {
-        value_region.size.width = virtualizing_stack_panel_pill_width(item->value, local->compact_mode, local->compact_mode ? 16 : 20, region->size.width / 3);
+        value_region.size.width =
+                virtualizing_stack_panel_pill_width(local->meta_font, item->value, local->compact_mode, local->compact_mode ? 16 : 20, region->size.width / 3);
         value_region.size.height = value_h;
         value_region.location.x = text_right - value_region.size.width;
         value_region.location.y = region->location.y + (region->size.height - value_h) / 2;
