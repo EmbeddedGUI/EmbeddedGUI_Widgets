@@ -202,6 +202,27 @@ static const egui_font_t *hcw_info_label_get_icon_font(const hcw_info_label_t *l
     return local->icon_font == NULL ? hcw_info_label_default_icon_font() : local->icon_font;
 }
 
+static egui_dim_t hcw_info_label_measure_font_line_height(const egui_font_t *font)
+{
+    egui_dim_t dummy_width = 0;
+    egui_dim_t line_height = 0;
+
+    if (font == NULL || font->api == NULL || font->api->get_str_size == NULL)
+    {
+        return 0;
+    }
+
+    font->api->get_str_size(font, "A", 0, 0, &dummy_width, &line_height);
+    return line_height;
+}
+
+static egui_dim_t hcw_info_label_resolve_line_height(const egui_font_t *font, egui_dim_t fallback)
+{
+    egui_dim_t line_height = hcw_info_label_measure_font_line_height(font);
+
+    return line_height > fallback ? line_height : fallback;
+}
+
 static void hcw_info_label_draw_text(egui_view_t *self, const egui_font_t *font, const char *text, const egui_region_t *region, uint8_t align,
                                      egui_color_t color, egui_alpha_t alpha)
 {
@@ -227,7 +248,11 @@ static void hcw_info_label_get_metrics(hcw_info_label_t *local, egui_view_t *sel
     egui_dim_t bubble_height = hcw_info_label_bubble_height(local->compact_mode);
     egui_dim_t bubble_pad_x = hcw_info_label_bubble_pad_x(local->compact_mode);
     egui_dim_t bubble_pad_y = hcw_info_label_bubble_pad_y(local->compact_mode);
+    egui_dim_t bubble_body_gap = local->compact_mode ? 2 : 4;
     egui_dim_t min_label_width = local->compact_mode ? 28 : 36;
+    egui_dim_t title_height = hcw_info_label_resolve_line_height(hcw_info_label_get_font(local), local->compact_mode ? 10 : 12);
+    egui_dim_t body_line_height = hcw_info_label_resolve_line_height(hcw_info_label_get_meta_font(local), local->compact_mode ? 8 : 10);
+    egui_dim_t required_bubble_height = bubble_pad_y * 2 + title_height + bubble_body_gap + body_line_height;
     egui_dim_t remaining_height;
 
     egui_view_get_work_region(self, &metrics->region);
@@ -260,6 +285,10 @@ static void hcw_info_label_get_metrics(hcw_info_label_t *local, egui_view_t *sel
     metrics->bubble_region.location.y = metrics->row_region.location.y + row_height + bubble_gap;
     metrics->bubble_region.size.width = metrics->region.size.width - pad_x * 2;
     remaining_height = metrics->region.location.y + metrics->region.size.height - metrics->bubble_region.location.y - pad_y;
+    if (required_bubble_height > bubble_height)
+    {
+        bubble_height = required_bubble_height;
+    }
     metrics->bubble_region.size.height = remaining_height < bubble_height ? remaining_height : bubble_height;
     if (metrics->bubble_region.size.height < (local->compact_mode ? 12 : 18))
     {
@@ -269,13 +298,17 @@ static void hcw_info_label_get_metrics(hcw_info_label_t *local, egui_view_t *sel
     metrics->title_region.location.x = metrics->bubble_region.location.x + bubble_pad_x;
     metrics->title_region.location.y = metrics->bubble_region.location.y + bubble_pad_y;
     metrics->title_region.size.width = metrics->bubble_region.size.width - bubble_pad_x * 2;
-    metrics->title_region.size.height = local->compact_mode ? 10 : 12;
+    metrics->title_region.size.height = title_height;
 
     metrics->body_region.location.x = metrics->bubble_region.location.x + bubble_pad_x;
-    metrics->body_region.location.y = metrics->title_region.location.y + metrics->title_region.size.height + (local->compact_mode ? 2 : 4);
+    metrics->body_region.location.y = metrics->title_region.location.y + metrics->title_region.size.height + bubble_body_gap;
     metrics->body_region.size.width = metrics->bubble_region.size.width - bubble_pad_x * 2;
     metrics->body_region.size.height =
             metrics->bubble_region.location.y + metrics->bubble_region.size.height - metrics->body_region.location.y - bubble_pad_y;
+    if (metrics->body_region.size.height < 0)
+    {
+        metrics->body_region.size.height = 0;
+    }
 
     metrics->arrow_center_x = metrics->icon_region.location.x + metrics->icon_region.size.width / 2;
     if (metrics->arrow_center_x < metrics->bubble_region.location.x + 10)
