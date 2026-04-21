@@ -38,6 +38,20 @@ static uint8_t swipe_control_has_text(const char *text)
     return (text != NULL && text[0] != '\0') ? 1 : 0;
 }
 
+static egui_dim_t swipe_control_measure_font_line_height(const egui_font_t *font)
+{
+    egui_dim_t width = 0;
+    egui_dim_t height = 0;
+
+    if (font == NULL || font->api == NULL || font->api->get_str_size == NULL)
+    {
+        return 0;
+    }
+
+    font->api->get_str_size(font, "A", 0, 0, &width, &height);
+    return height;
+}
+
 static void swipe_control_draw_round_fill_safe(egui_dim_t x, egui_dim_t y, egui_dim_t w, egui_dim_t h, egui_dim_t radius, egui_color_t color,
                                                egui_alpha_t alpha)
 {
@@ -298,6 +312,9 @@ static void swipe_control_get_metrics(egui_view_swipe_control_t *local, egui_vie
     egui_dim_t pad_y = local->compact_mode ? SWC_COMPACT_PAD_Y : SWC_STD_PAD_Y;
     egui_dim_t action_w = local->compact_mode ? SWC_COMPACT_ACTION_W : SWC_STD_ACTION_W;
     egui_dim_t action_gap = local->compact_mode ? SWC_COMPACT_ACTION_GAP : SWC_STD_ACTION_GAP;
+    egui_dim_t meta_line_height = swipe_control_measure_font_line_height(local->meta_font);
+    egui_dim_t title_h = SWC_STD_TITLE_H;
+    egui_dim_t helper_h = SWC_STD_HELPER_H;
     egui_dim_t content_x;
     egui_dim_t content_y;
     egui_dim_t content_w;
@@ -314,25 +331,34 @@ static void swipe_control_get_metrics(egui_view_swipe_control_t *local, egui_vie
     metrics->show_title = (!local->compact_mode && swipe_control_has_text(local->title)) ? 1 : 0;
     metrics->show_helper = (!local->compact_mode && swipe_control_has_text(local->helper)) ? 1 : 0;
 
+    if (meta_line_height > title_h)
+    {
+        title_h = meta_line_height;
+    }
+    if (meta_line_height > helper_h)
+    {
+        helper_h = meta_line_height;
+    }
+
     metrics->title_region.location.x = content_x;
     metrics->title_region.location.y = content_y;
     metrics->title_region.size.width = content_w;
-    metrics->title_region.size.height = SWC_STD_TITLE_H;
+    metrics->title_region.size.height = title_h;
 
     if (metrics->show_title)
     {
-        content_y += SWC_STD_TITLE_H + SWC_STD_TITLE_GAP;
-        content_h -= SWC_STD_TITLE_H + SWC_STD_TITLE_GAP;
+        content_y += title_h + SWC_STD_TITLE_GAP;
+        content_h -= title_h + SWC_STD_TITLE_GAP;
     }
     if (metrics->show_helper)
     {
-        content_h -= SWC_STD_HELPER_H + SWC_STD_HELPER_GAP;
+        content_h -= helper_h + SWC_STD_HELPER_GAP;
     }
 
     metrics->helper_region.location.x = content_x;
     metrics->helper_region.location.y = content_y + content_h + SWC_STD_HELPER_GAP;
     metrics->helper_region.size.width = content_w;
-    metrics->helper_region.size.height = SWC_STD_HELPER_H;
+    metrics->helper_region.size.height = helper_h;
 
     metrics->start_action_region.location.x = content_x;
     metrics->start_action_region.location.y = content_y;
