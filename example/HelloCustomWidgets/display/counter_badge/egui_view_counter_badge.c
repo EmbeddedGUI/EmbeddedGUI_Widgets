@@ -157,12 +157,12 @@ static void egui_view_counter_badge_draw_outline(const egui_region_t *badge_regi
             return;
         }
 
-        egui_canvas_draw_circle(badge_region->location.x + badge_region->size.width / 2, badge_region->location.y + badge_region->size.height / 2, radius, 1,
+        egui_canvas_draw_circle(&uicode_get_core()->canvas, badge_region->location.x + badge_region->size.width / 2, badge_region->location.y + badge_region->size.height / 2, radius, 1,
                                 outline_color, alpha);
         return;
     }
 
-    egui_canvas_draw_round_rectangle(badge_region->location.x, badge_region->location.y, badge_region->size.width, badge_region->size.height,
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, badge_region->location.x, badge_region->location.y, badge_region->size.width, badge_region->size.height,
                                      badge_region->size.height / 2, 1, outline_color, alpha);
 }
 
@@ -206,16 +206,16 @@ static void egui_view_counter_badge_on_draw(egui_view_t *self)
             return;
         }
 
-        egui_canvas_draw_circle_fill(metrics.badge_region.location.x + metrics.badge_region.size.width / 2,
+        egui_canvas_draw_circle_fill(&uicode_get_core()->canvas, metrics.badge_region.location.x + metrics.badge_region.size.width / 2,
                                      metrics.badge_region.location.y + metrics.badge_region.size.height / 2, radius, badge_color,
                                      egui_color_alpha_mix(self->alpha, EGUI_ALPHA_100));
         egui_view_counter_badge_draw_outline(&metrics.badge_region, 1, outline_color, egui_color_alpha_mix(self->alpha, outline_alpha));
         return;
     }
 
-    egui_view_notification_badge_draw_background(egui_sdk_compat_get_canvas(), &metrics.badge_region, badge_color, metrics.use_circle);
+    egui_view_notification_badge_draw_background(&uicode_get_core()->canvas, &metrics.badge_region, badge_color, metrics.use_circle);
     egui_view_counter_badge_draw_outline(&metrics.badge_region, metrics.use_circle, outline_color, egui_color_alpha_mix(self->alpha, outline_alpha));
-    egui_canvas_draw_text_in_rect(font, local->text_buffer, &metrics.text_region, EGUI_ALIGN_CENTER, text_color,
+    egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, font, local->text_buffer, &metrics.text_region, EGUI_ALIGN_CENTER, text_color,
                                   egui_color_alpha_mix(self->alpha, EGUI_ALPHA_100));
 }
 
@@ -375,7 +375,7 @@ void egui_view_counter_badge_init(egui_view_t *self)
 {
     EGUI_INIT_LOCAL(egui_view_counter_badge_t);
 
-    egui_view_init(self);
+    egui_view_init(self, uicode_get_core());
     self->api = &EGUI_VIEW_API_TABLE_NAME(egui_view_counter_badge_t);
     egui_view_set_background(self, NULL);
     egui_view_set_shadow(self, NULL);

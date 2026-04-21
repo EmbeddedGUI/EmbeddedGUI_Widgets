@@ -193,7 +193,7 @@ void egui_view_text_block_init(egui_view_t *self)
 {
     egui_view_text_block_t *local = egui_view_text_block_local(self);
 
-    egui_view_textblock_init(self);
+    egui_view_textblock_init(self, uicode_get_core());
     local->standard_color = EGUI_COLOR_HEX(0x22303F);
     local->subtle_color = EGUI_COLOR_HEX(0x6B7A89);
     local->accent_color = EGUI_COLOR_HEX(0x0F6CBD);

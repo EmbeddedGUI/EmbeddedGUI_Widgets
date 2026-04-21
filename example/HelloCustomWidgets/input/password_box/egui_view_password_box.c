@@ -230,7 +230,7 @@ static void password_box_cursor_timer_callback(egui_timer_t *timer)
 
     local->cursor_visible = !local->cursor_visible;
     egui_view_invalidate(self);
-    egui_timer_start_timer(&local->cursor_timer, EGUI_CONFIG_TEXTINPUT_CURSOR_BLINK_MS, 0);
+    egui_timer_start_timer(uicode_get_core(), &local->cursor_timer, EGUI_CONFIG_TEXTINPUT_CURSOR_BLINK_MS, 0);
 }
 
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
@@ -241,12 +241,12 @@ static void password_box_on_focus_change(egui_view_t *self, int is_focused)
     if (is_focused && !local->read_only_mode)
     {
         local->cursor_visible = 1;
-        egui_timer_start_timer(&local->cursor_timer, EGUI_CONFIG_TEXTINPUT_CURSOR_BLINK_MS, 0);
+        egui_timer_start_timer(uicode_get_core(), &local->cursor_timer, EGUI_CONFIG_TEXTINPUT_CURSOR_BLINK_MS, 0);
     }
     else
     {
         local->cursor_visible = 0;
-        egui_timer_stop_timer(&local->cursor_timer);
+        egui_timer_stop_timer(uicode_get_core(), &local->cursor_timer);
     }
     egui_view_invalidate(self);
 }
@@ -255,8 +255,8 @@ static void password_box_on_focus_change(egui_view_t *self, int is_focused)
 static void password_box_reset_cursor_blink(egui_view_password_box_t *local)
 {
     local->cursor_visible = 1;
-    egui_timer_stop_timer(&local->cursor_timer);
-    egui_timer_start_timer(&local->cursor_timer, EGUI_CONFIG_TEXTINPUT_CURSOR_BLINK_MS, 0);
+    egui_timer_stop_timer(uicode_get_core(), &local->cursor_timer);
+    egui_timer_start_timer(uicode_get_core(), &local->cursor_timer, EGUI_CONFIG_TEXTINPUT_CURSOR_BLINK_MS, 0);
 }
 
 static void password_box_normalize_state(egui_view_password_box_t *local)
@@ -572,7 +572,7 @@ static void password_box_draw_text(const egui_font_t *font, egui_view_t *self, c
         return;
     }
 
-    egui_canvas_draw_text_in_rect(font, text, &draw_region, align, color, egui_color_alpha_mix(self->alpha, alpha));
+    egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, font, text, &draw_region, align, color, egui_color_alpha_mix(self->alpha, alpha));
 }
 
 void egui_view_password_box_set_font(egui_view_t *self, const egui_font_t *font)
@@ -709,10 +709,10 @@ static void password_box_draw_row(egui_view_password_box_t *local, egui_view_t *
         text_color = egui_rgb_mix(text_color, helper_color, 24);
     }
 
-    egui_canvas_draw_round_rectangle_fill(
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, 
             metrics->row_region.location.x, metrics->row_region.location.y, metrics->row_region.size.width, metrics->row_region.size.height, row_radius,
             row_fill, egui_color_alpha_mix(self->alpha, local->compact_mode ? PASSWORD_BOX_COMPACT_ROW_FILL_ALPHA : PASSWORD_BOX_STD_ROW_FILL_ALPHA));
-    egui_canvas_draw_round_rectangle(
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, 
             metrics->row_region.location.x, metrics->row_region.location.y, metrics->row_region.size.width, metrics->row_region.size.height, row_radius, 1,
             row_border, egui_color_alpha_mix(self->alpha, local->compact_mode ? PASSWORD_BOX_COMPACT_ROW_BORDER_ALPHA : PASSWORD_BOX_STD_ROW_BORDER_ALPHA));
 
@@ -735,7 +735,7 @@ static void password_box_draw_row(egui_view_password_box_t *local, egui_view_t *
     }
     else
     {
-        egui_canvas_draw_text(local->font, display_text, text_x, text_y, text_color, self->alpha);
+        egui_canvas_draw_text(&uicode_get_core()->canvas, local->font, display_text, text_x, text_y, text_color, self->alpha);
     }
 
     if (self->is_focused && !local->read_only_mode && !local->compact_mode && local->current_part == EGUI_VIEW_PASSWORD_BOX_PART_FIELD &&
@@ -747,7 +747,7 @@ static void password_box_draw_row(egui_view_password_box_t *local, egui_view_t *
             local->font->api->get_str_size(local->font, "A", 0, 0, &text_w, &cursor_h);
         }
         cursor_y = text_region.location.y + (text_region.size.height - cursor_h) / 2;
-        egui_canvas_draw_rectangle_fill(cursor_x, cursor_y, PASSWORD_BOX_CURSOR_W, cursor_h > 0 ? cursor_h : (text_region.size.height - 2), local->accent_color,
+        egui_canvas_draw_rectangle_fill(&uicode_get_core()->canvas, cursor_x, cursor_y, PASSWORD_BOX_CURSOR_W, cursor_h > 0 ? cursor_h : (text_region.size.height - 2), local->accent_color,
                                         egui_color_alpha_mix(self->alpha, 100));
     }
 
@@ -768,10 +768,10 @@ static void password_box_draw_row(egui_view_password_box_t *local, egui_view_t *
             reveal_fill = egui_rgb_mix(reveal_fill, local->accent_color, 16);
         }
 
-        egui_canvas_draw_round_rectangle_fill(metrics->reveal_region.location.x, metrics->reveal_region.location.y, metrics->reveal_region.size.width,
+        egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics->reveal_region.location.x, metrics->reveal_region.location.y, metrics->reveal_region.size.width,
                                               metrics->reveal_region.size.height, row_radius, reveal_fill,
                                               egui_color_alpha_mix(self->alpha, local->compact_mode ? 32 : 38));
-        egui_canvas_draw_round_rectangle(metrics->reveal_region.location.x, metrics->reveal_region.location.y, metrics->reveal_region.size.width,
+        egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics->reveal_region.location.x, metrics->reveal_region.location.y, metrics->reveal_region.size.width,
                                          metrics->reveal_region.size.height, row_radius, 1, reveal_border,
                                          egui_color_alpha_mix(self->alpha, local->compact_mode ? 48 : 54));
         password_box_draw_text(local->icon_font, self, glyph, &metrics->reveal_region, EGUI_ALIGN_CENTER, reveal_text, 100);
@@ -799,10 +799,10 @@ void egui_view_password_box_on_draw(egui_view_t *self)
         text_color = egui_rgb_mix(text_color, muted_color, 24);
     }
 
-    egui_canvas_draw_round_rectangle_fill(
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, 
             self->region_screen.location.x, self->region_screen.location.y, self->region_screen.size.width, self->region_screen.size.height, radius,
             surface_color, egui_color_alpha_mix(self->alpha, local->compact_mode ? PASSWORD_BOX_COMPACT_FILL_ALPHA : PASSWORD_BOX_STD_FILL_ALPHA));
-    egui_canvas_draw_round_rectangle(
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, 
             self->region_screen.location.x, self->region_screen.location.y, self->region_screen.size.width, self->region_screen.size.height, radius, 1,
             border_color, egui_color_alpha_mix(self->alpha, local->compact_mode ? PASSWORD_BOX_COMPACT_BORDER_ALPHA : PASSWORD_BOX_STD_BORDER_ALPHA));
 
@@ -1107,7 +1107,7 @@ void egui_view_password_box_init(egui_view_t *self)
 #endif
     };
 
-    egui_view_init(self);
+    egui_view_init(self, uicode_get_core());
     memset((uint8_t *)local + sizeof(egui_view_t), 0, sizeof(*local) - sizeof(egui_view_t));
     self->api = &api;
     self->is_clickable = 1;

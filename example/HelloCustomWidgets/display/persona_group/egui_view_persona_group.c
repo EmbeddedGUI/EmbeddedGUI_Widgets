@@ -161,7 +161,7 @@ static void egui_view_persona_group_draw_text(const egui_font_t *font, egui_view
         return;
     }
 
-    egui_canvas_draw_text_in_rect(font, text, &draw_region, align, color, self->alpha);
+    egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, font, text, &draw_region, align, color, self->alpha);
 }
 
 static egui_dim_t egui_view_persona_group_footer_width(const char *text, uint8_t compact_mode, egui_dim_t max_width)
@@ -529,11 +529,11 @@ static void egui_view_persona_group_draw_avatar(egui_view_t *self, egui_view_per
 
     if (selected)
     {
-        egui_canvas_draw_circle_basic(center_x, center_y, radius + 2, 1, ring_color, egui_color_alpha_mix(self->alpha, 56));
+        egui_canvas_draw_circle_basic(&uicode_get_core()->canvas, center_x, center_y, radius + 2, 1, ring_color, egui_color_alpha_mix(self->alpha, 56));
     }
 
-    egui_canvas_draw_circle_fill_basic(center_x, center_y, radius, fill_color, egui_color_alpha_mix(self->alpha, 84));
-    egui_canvas_draw_circle_basic(center_x, center_y, radius, 1, egui_rgb_mix(fill_color, local->surface_color, 24), egui_color_alpha_mix(self->alpha, 24));
+    egui_canvas_draw_circle_fill_basic(&uicode_get_core()->canvas, center_x, center_y, radius, fill_color, egui_color_alpha_mix(self->alpha, 84));
+    egui_canvas_draw_circle_basic(&uicode_get_core()->canvas, center_x, center_y, radius, 1, egui_rgb_mix(fill_color, local->surface_color, 24), egui_color_alpha_mix(self->alpha, 24));
 
     text_region.location.x = region->location.x;
     text_region.location.y = region->location.y;
@@ -541,9 +541,9 @@ static void egui_view_persona_group_draw_avatar(egui_view_t *self, egui_view_per
     text_region.size.height = region->size.height;
     egui_view_persona_group_draw_text(local->meta_font, self, item->initials, &text_region, EGUI_ALIGN_CENTER, text_color);
 
-    egui_canvas_draw_circle_fill_basic(region->location.x + region->size.width - 4, region->location.y + region->size.height - 4, 3, EGUI_COLOR_HEX(0xFFFFFF),
+    egui_canvas_draw_circle_fill_basic(&uicode_get_core()->canvas, region->location.x + region->size.width - 4, region->location.y + region->size.height - 4, 3, EGUI_COLOR_HEX(0xFFFFFF),
                                        egui_color_alpha_mix(self->alpha, 88));
-    egui_canvas_draw_circle_fill_basic(region->location.x + region->size.width - 4, region->location.y + region->size.height - 4, 2, presence_color,
+    egui_canvas_draw_circle_fill_basic(&uicode_get_core()->canvas, region->location.x + region->size.width - 4, region->location.y + region->size.height - 4, 2, presence_color,
                                        egui_color_alpha_mix(self->alpha, 86));
 }
 
@@ -579,8 +579,8 @@ static void egui_view_persona_group_draw_overflow(egui_view_t *self, egui_view_p
         text_color = egui_view_persona_group_mix_disabled(text_color);
     }
 
-    egui_canvas_draw_circle_fill_basic(center_x, center_y, radius, fill_color, egui_color_alpha_mix(self->alpha, 84));
-    egui_canvas_draw_circle_basic(center_x, center_y, radius, 1, border_color, egui_color_alpha_mix(self->alpha, 24));
+    egui_canvas_draw_circle_fill_basic(&uicode_get_core()->canvas, center_x, center_y, radius, fill_color, egui_color_alpha_mix(self->alpha, 84));
+    egui_canvas_draw_circle_basic(&uicode_get_core()->canvas, center_x, center_y, radius, 1, border_color, egui_color_alpha_mix(self->alpha, 24));
 
     text_region.location.x = region->location.x;
     text_region.location.y = region->location.y;
@@ -653,9 +653,9 @@ static void egui_view_persona_group_on_draw(egui_view_t *self)
         footer_text = egui_view_persona_group_mix_disabled(footer_text);
     }
 
-    egui_canvas_draw_round_rectangle_fill(metrics.content_region.location.x - 2, metrics.content_region.location.y - 2, metrics.content_region.size.width + 4,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.content_region.location.x - 2, metrics.content_region.location.y - 2, metrics.content_region.size.width + 4,
                                           metrics.content_region.size.height + 4, card_radius, card_fill, egui_color_alpha_mix(self->alpha, 94));
-    egui_canvas_draw_round_rectangle(metrics.content_region.location.x - 2, metrics.content_region.location.y - 2, metrics.content_region.size.width + 4,
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics.content_region.location.x - 2, metrics.content_region.location.y - 2, metrics.content_region.size.width + 4,
                                      metrics.content_region.size.height + 4, card_radius, 1, card_border, egui_color_alpha_mix(self->alpha, 34));
 
     if (!local->compact_mode)
@@ -695,9 +695,9 @@ static void egui_view_persona_group_on_draw(egui_view_t *self)
     text_region = metrics.footer_region;
     text_region.location.x = metrics.content_region.location.x + (metrics.content_region.size.width - footer_w) / 2;
     text_region.size.width = footer_w;
-    egui_canvas_draw_round_rectangle_fill(text_region.location.x, text_region.location.y, text_region.size.width, text_region.size.height,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, text_region.location.x, text_region.location.y, text_region.size.width, text_region.size.height,
                                           text_region.size.height / 2, footer_fill, egui_color_alpha_mix(self->alpha, 80));
-    egui_canvas_draw_round_rectangle(text_region.location.x, text_region.location.y, text_region.size.width, text_region.size.height,
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, text_region.location.x, text_region.location.y, text_region.size.width, text_region.size.height,
                                      text_region.size.height / 2, 1, footer_border, egui_color_alpha_mix(self->alpha, 20));
     egui_view_persona_group_draw_text(local->meta_font, self, snapshot->summary, &text_region, EGUI_ALIGN_CENTER, footer_text);
 }
@@ -885,7 +885,7 @@ void egui_view_persona_group_init(egui_view_t *self)
 {
     EGUI_INIT_LOCAL(egui_view_persona_group_t);
 
-    egui_view_init(self);
+    egui_view_init(self, uicode_get_core());
     self->api = &EGUI_VIEW_API_TABLE_NAME(egui_view_persona_group_t);
     egui_view_set_padding_all(self, 2);
 

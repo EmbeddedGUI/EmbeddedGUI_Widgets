@@ -92,7 +92,7 @@ static void layout_page(void);
 static void init_text_label(egui_view_label_t *label, egui_dim_t width, egui_dim_t height, const char *text, const egui_font_t *font,
                             egui_color_t color, uint8_t align)
 {
-    egui_view_label_init(EGUI_VIEW_OF(label));
+    egui_view_label_init(EGUI_VIEW_OF(label), uicode_get_core());
     egui_view_set_size(EGUI_VIEW_OF(label), width, height);
     egui_view_label_set_text(EGUI_VIEW_OF(label), text);
     egui_view_label_set_align_type(EGUI_VIEW_OF(label), align);
@@ -179,7 +179,7 @@ static void layout_local_views(void)
 static void layout_page(void)
 {
     layout_local_views();
-    egui_core_layout_childs_user_root_view(EGUI_LAYOUT_VERTICAL, EGUI_ALIGN_HCENTER | EGUI_ALIGN_VCENTER);
+    egui_core_layout_childs_user_root_view(uicode_get_core(), EGUI_LAYOUT_VERTICAL, EGUI_ALIGN_HCENTER | EGUI_ALIGN_VCENTER);
 }
 
 #if EGUI_CONFIG_RECORDING_TEST
@@ -194,7 +194,7 @@ static void request_page_snapshot(void)
 void test_init_ui(void)
 {
     ui_ready = 0;
-    egui_view_linearlayout_init(EGUI_VIEW_OF(&root_layout));
+    egui_view_linearlayout_init(EGUI_VIEW_OF(&root_layout), uicode_get_core());
     egui_view_set_size(EGUI_VIEW_OF(&root_layout), PERSONA_ROOT_WIDTH, PERSONA_ROOT_HEIGHT);
     egui_view_linearlayout_set_orientation(EGUI_VIEW_OF(&root_layout), 0);
     egui_view_linearlayout_set_align_type(EGUI_VIEW_OF(&root_layout), EGUI_ALIGN_HCENTER);
@@ -220,7 +220,7 @@ void test_init_ui(void)
     egui_view_set_margin(EGUI_VIEW_OF(&primary_status_label), 0, 0, 0, 6);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&primary_status_label));
 
-    egui_view_linearlayout_init(EGUI_VIEW_OF(&bottom_row));
+    egui_view_linearlayout_init(EGUI_VIEW_OF(&bottom_row), uicode_get_core());
     egui_view_set_size(EGUI_VIEW_OF(&bottom_row), PERSONA_BOTTOM_ROW_WIDTH, PERSONA_BOTTOM_ROW_HEIGHT);
     egui_view_linearlayout_set_orientation(EGUI_VIEW_OF(&bottom_row), 1);
     egui_view_linearlayout_set_align_type(EGUI_VIEW_OF(&bottom_row), EGUI_ALIGN_VCENTER);

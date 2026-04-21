@@ -2,7 +2,7 @@
 #define _HELLO_CUSTOM_WIDGETS_CANVAS_H_
 
 #include "../../../../sdk/EmbeddedGUI/src/widget/egui_view_group.h"
-#include "sdk_compat.h"
+#include "../../uicode_disp0.h"
 
 #ifdef __cplusplus
 extern "C" {

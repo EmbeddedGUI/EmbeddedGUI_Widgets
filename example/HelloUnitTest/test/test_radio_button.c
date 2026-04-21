@@ -63,7 +63,7 @@ static void setup_group(uint8_t selected_index)
     egui_view_radio_group_set_on_changed_listener(&test_group, on_group_changed);
     for (i = 0; i < EGUI_ARRAY_SIZE(test_buttons); ++i)
     {
-        egui_view_radio_button_init(EGUI_VIEW_OF(&test_buttons[i]));
+        egui_view_radio_button_init(EGUI_VIEW_OF(&test_buttons[i]), uicode_get_core());
         egui_view_set_size(EGUI_VIEW_OF(&test_buttons[i]), 180, 34);
         hcw_radio_button_set_font(EGUI_VIEW_OF(&test_buttons[i]), (const egui_font_t *)&egui_res_font_montserrat_10_4);
         hcw_radio_button_apply_standard_style(EGUI_VIEW_OF(&test_buttons[i]));
@@ -91,7 +91,7 @@ static void setup_preview_group(uint8_t selected_index)
     egui_view_radio_group_set_on_changed_listener(&preview_group, on_group_changed);
     for (i = 0; i < EGUI_ARRAY_SIZE(preview_buttons); ++i)
     {
-        egui_view_radio_button_init(EGUI_VIEW_OF(&preview_buttons[i]));
+        egui_view_radio_button_init(EGUI_VIEW_OF(&preview_buttons[i]), uicode_get_core());
         egui_view_set_size(EGUI_VIEW_OF(&preview_buttons[i]), 104, 24);
         hcw_radio_button_set_font(EGUI_VIEW_OF(&preview_buttons[i]), (const egui_font_t *)&egui_res_font_montserrat_10_4);
         hcw_radio_button_apply_compact_style(EGUI_VIEW_OF(&preview_buttons[i]));

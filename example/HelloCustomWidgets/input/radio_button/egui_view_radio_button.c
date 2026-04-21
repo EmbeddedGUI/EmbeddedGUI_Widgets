@@ -47,7 +47,7 @@ static void hcw_radio_button_on_draw(egui_view_t *self)
     }
 
     egui_view_get_work_region(self, &region);
-    egui_canvas_draw_round_rectangle(region.location.x, region.location.y, region.size.width, region.size.height, 8, 1, local->dot_color,
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, region.location.x, region.location.y, region.size.width, region.size.height, 8, 1, local->dot_color,
                                      egui_color_alpha_mix(self->alpha, 56));
 #else
     EGUI_UNUSED(local);

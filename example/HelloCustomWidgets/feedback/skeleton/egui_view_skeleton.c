@@ -53,7 +53,7 @@ static void egui_view_skeleton_start_timer(egui_view_t *self)
         return;
     }
 
-    egui_timer_start_timer(&local->anim_timer, 80, 80);
+    egui_timer_start_timer(uicode_get_core(), &local->anim_timer, 80, 80);
     local->timer_started = 1;
 }
 
@@ -66,7 +66,7 @@ static void egui_view_skeleton_stop_timer(egui_view_t *self)
         return;
     }
 
-    egui_timer_stop_timer(&local->anim_timer);
+    egui_timer_stop_timer(uicode_get_core(), &local->anim_timer);
     local->timer_started = 0;
 }
 
@@ -238,7 +238,7 @@ static void egui_view_skeleton_draw_footer(egui_view_skeleton_t *local, egui_vie
     text_region.location.y = y;
     text_region.size.width = width;
     text_region.size.height = 10;
-    egui_canvas_draw_text_in_rect(local->font, text, &text_region, EGUI_ALIGN_LEFT, color, self->alpha);
+    egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, local->font, text, &text_region, EGUI_ALIGN_LEFT, color, self->alpha);
 }
 
 static void egui_view_skeleton_on_draw(egui_view_t *self)
@@ -310,9 +310,9 @@ static void egui_view_skeleton_on_draw(egui_view_t *self)
         accent_color = egui_view_skeleton_mix_disabled(accent_color);
     }
 
-    egui_canvas_draw_round_rectangle_fill(region.location.x, region.location.y, region.size.width, region.size.height, radius, surface_color,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, region.location.x, region.location.y, region.size.width, region.size.height, radius, surface_color,
                                           egui_color_alpha_mix(self->alpha, local->compact_mode ? 86 : 90));
-    egui_canvas_draw_round_rectangle(region.location.x, region.location.y, region.size.width, region.size.height, radius, 1, border_color,
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, region.location.x, region.location.y, region.size.width, region.size.height, radius, 1, border_color,
                                      egui_color_alpha_mix(self->alpha, local->compact_mode ? 54 : 60));
 
     content_x = region.location.x + (local->compact_mode ? 8 : 10);
@@ -361,10 +361,10 @@ static void egui_view_skeleton_on_draw(egui_view_t *self)
             line_color = egui_rgb_mix(border_color, accent_color, 12 + pulse_mix / 2);
         }
 
-        egui_canvas_draw_round_rectangle_fill(x, y, w, h, block->radius, fill_color,
+        egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, x, y, w, h, block->radius, fill_color,
                                               egui_color_alpha_mix(self->alpha, local->read_only_mode ? (local->compact_mode ? 54 : 64)
                                                                                                        : (local->compact_mode ? 62 : 76)));
-        egui_canvas_draw_round_rectangle(x, y, w, h, block->radius, 1, line_color,
+        egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, x, y, w, h, block->radius, 1, line_color,
                                          egui_color_alpha_mix(self->alpha,
                                                               local->read_only_mode ? (local->compact_mode ? (is_emphasis ? 24 : 12) : (is_emphasis ? 32 : 18))
                                                                                     : (local->compact_mode ? (is_emphasis ? 38 : 16)
@@ -383,7 +383,7 @@ static void egui_view_skeleton_on_draw(egui_view_t *self)
             overlap_x1 = EGUI_MIN(x + w - 1, band_x + band_width);
             if (overlap_x1 > overlap_x0)
             {
-                egui_canvas_draw_round_rectangle_fill(overlap_x0, y + 1, overlap_x1 - overlap_x0, h - 2, EGUI_MIN(block->radius, 3), band_color,
+                egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, overlap_x0, y + 1, overlap_x1 - overlap_x0, h - 2, EGUI_MIN(block->radius, 3), band_color,
                                                       egui_color_alpha_mix(self->alpha, is_emphasis ? 32 : 18));
             }
         }
@@ -501,7 +501,7 @@ void egui_view_skeleton_init(egui_view_t *self)
 {
     EGUI_INIT_LOCAL(egui_view_skeleton_t);
 
-    egui_view_init(self);
+    egui_view_init(self, uicode_get_core());
     self->api = &EGUI_VIEW_API_TABLE_NAME(egui_view_skeleton_t);
     egui_view_set_padding_all(self, 2);
 

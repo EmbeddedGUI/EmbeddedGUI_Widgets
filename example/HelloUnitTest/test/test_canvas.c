@@ -22,14 +22,14 @@ static void on_preview_click(egui_view_t *self)
 
 static void init_card(egui_view_label_t *card, const char *text, egui_dim_t width, egui_dim_t height)
 {
-    egui_view_label_init(EGUI_VIEW_OF(card));
+    egui_view_label_init(EGUI_VIEW_OF(card), uicode_get_core());
     egui_view_set_size(EGUI_VIEW_OF(card), width, height);
     egui_view_label_set_text(EGUI_VIEW_OF(card), text);
 }
 
 static void setup_canvas(egui_view_group_t *canvas, egui_view_label_t *cards, egui_dim_t width, egui_dim_t height)
 {
-    egui_view_group_init(EGUI_VIEW_OF(canvas));
+    egui_view_group_init(EGUI_VIEW_OF(canvas), uicode_get_core());
     egui_view_set_size(EGUI_VIEW_OF(canvas), width, height);
     hcw_canvas_apply_standard_style(EGUI_VIEW_OF(canvas));
 

@@ -150,7 +150,7 @@ static void egui_view_teaching_tip_draw_text(const egui_font_t *font, egui_view_
         return;
     }
 
-    egui_canvas_draw_text_in_rect(font, text, &draw_region, align, color, self->alpha);
+    egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, font, text, &draw_region, align, color, self->alpha);
 }
 
 static uint8_t egui_view_teaching_tip_part_is_enabled(egui_view_teaching_tip_t *local, egui_view_t *self, const egui_view_teaching_tip_snapshot_t *snapshot,
@@ -833,13 +833,13 @@ static void egui_view_teaching_tip_draw_close(egui_view_t *self, const egui_regi
     egui_dim_t y2 = region->location.y + region->size.height - pad - 1;
     egui_alpha_t mixed_alpha = egui_color_alpha_mix(self->alpha, alpha);
 
-    egui_canvas_draw_line(x1, y1, x2, y2, 1, color, mixed_alpha);
-    egui_canvas_draw_line(x2, y1, x1, y2, 1, color, mixed_alpha);
+    egui_canvas_draw_line(&uicode_get_core()->canvas, x1, y1, x2, y2, 1, color, mixed_alpha);
+    egui_canvas_draw_line(&uicode_get_core()->canvas, x2, y1, x1, y2, 1, color, mixed_alpha);
 }
 
 static void egui_view_teaching_tip_draw_focus_ring(egui_view_t *self, const egui_region_t *region, egui_dim_t radius, egui_color_t color, egui_alpha_t alpha)
 {
-    egui_canvas_draw_round_rectangle(region->location.x - 1, region->location.y - 1, region->size.width + 2, region->size.height + 2, radius + 1, 1, color,
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, region->location.x - 1, region->location.y - 1, region->size.width + 2, region->size.height + 2, radius + 1, 1, color,
                                      egui_color_alpha_mix(self->alpha, alpha));
 }
 
@@ -859,18 +859,18 @@ static void egui_view_teaching_tip_draw_arrow(egui_view_t *self, egui_view_teach
     {
         egui_dim_t top_y = metrics->bubble_region.location.y + metrics->bubble_region.size.height;
 
-        egui_canvas_draw_triangle_fill(center_x - arrow_w / 2, top_y - 1, center_x + arrow_w / 2, top_y - 1, center_x, top_y + arrow_h, fill_color,
+        egui_canvas_draw_triangle_fill(&uicode_get_core()->canvas, center_x - arrow_w / 2, top_y - 1, center_x + arrow_w / 2, top_y - 1, center_x, top_y + arrow_h, fill_color,
                                        egui_color_alpha_mix(self->alpha, 94));
-        egui_canvas_draw_triangle(center_x - arrow_w / 2, top_y - 1, center_x + arrow_w / 2, top_y - 1, center_x, top_y + arrow_h, border_color,
+        egui_canvas_draw_triangle(&uicode_get_core()->canvas, center_x - arrow_w / 2, top_y - 1, center_x + arrow_w / 2, top_y - 1, center_x, top_y + arrow_h, border_color,
                                   egui_color_alpha_mix(self->alpha, 48));
     }
     else
     {
         egui_dim_t top_y = metrics->bubble_region.location.y;
 
-        egui_canvas_draw_triangle_fill(center_x - arrow_w / 2, top_y + 1, center_x + arrow_w / 2, top_y + 1, center_x, top_y - arrow_h, fill_color,
+        egui_canvas_draw_triangle_fill(&uicode_get_core()->canvas, center_x - arrow_w / 2, top_y + 1, center_x + arrow_w / 2, top_y + 1, center_x, top_y - arrow_h, fill_color,
                                        egui_color_alpha_mix(self->alpha, 94));
-        egui_canvas_draw_triangle(center_x - arrow_w / 2, top_y + 1, center_x + arrow_w / 2, top_y + 1, center_x, top_y - arrow_h, border_color,
+        egui_canvas_draw_triangle(&uicode_get_core()->canvas, center_x - arrow_w / 2, top_y + 1, center_x + arrow_w / 2, top_y + 1, center_x, top_y - arrow_h, border_color,
                                   egui_color_alpha_mix(self->alpha, 48));
     }
 }
@@ -904,7 +904,7 @@ static void egui_view_teaching_tip_draw_target(egui_view_t *self, egui_view_teac
         halo_region.location.y = metrics->target_region.location.y - 4;
         halo_region.size.width = metrics->target_region.size.width + 14;
         halo_region.size.height = metrics->target_region.size.height + 8;
-        egui_canvas_draw_round_rectangle_fill(halo_region.location.x, halo_region.location.y, halo_region.size.width, halo_region.size.height,
+        egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, halo_region.location.x, halo_region.location.y, halo_region.size.width, halo_region.size.height,
                                               EGUI_VIEW_TEACHING_TIP_STANDARD_BUBBLE_RADIUS + 3, halo_color,
                                               egui_color_alpha_mix(self->alpha, local->current_part == EGUI_VIEW_TEACHING_TIP_PART_TARGET ? 18 : 10));
     }
@@ -916,18 +916,18 @@ static void egui_view_teaching_tip_draw_target(egui_view_t *self, egui_view_teac
                 (local->compact_mode ? EGUI_VIEW_TEACHING_TIP_COMPACT_BUBBLE_RADIUS : EGUI_VIEW_TEACHING_TIP_STANDARD_BUBBLE_RADIUS), focus_color,
                 local->compact_mode ? 46 : 54);
     }
-    egui_canvas_draw_round_rectangle_fill(metrics->target_region.location.x, metrics->target_region.location.y, metrics->target_region.size.width,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics->target_region.location.x, metrics->target_region.location.y, metrics->target_region.size.width,
                                           metrics->target_region.size.height,
                                           local->compact_mode ? EGUI_VIEW_TEACHING_TIP_COMPACT_BUBBLE_RADIUS : EGUI_VIEW_TEACHING_TIP_STANDARD_BUBBLE_RADIUS,
                                           fill_color, egui_color_alpha_mix(self->alpha, 92));
-    egui_canvas_draw_round_rectangle(metrics->target_region.location.x, metrics->target_region.location.y, metrics->target_region.size.width,
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics->target_region.location.x, metrics->target_region.location.y, metrics->target_region.size.width,
                                      metrics->target_region.size.height,
                                      local->compact_mode ? EGUI_VIEW_TEACHING_TIP_COMPACT_BUBBLE_RADIUS : EGUI_VIEW_TEACHING_TIP_STANDARD_BUBBLE_RADIUS, 1,
                                      outline_color, egui_color_alpha_mix(self->alpha, 46));
 
     dot_x = metrics->target_region.location.x + 10;
     dot_y = metrics->target_region.location.y + metrics->target_region.size.height / 2;
-    egui_canvas_draw_circle_fill(dot_x, dot_y, local->compact_mode ? 2 : 3, tone_color, egui_color_alpha_mix(self->alpha, 82));
+    egui_canvas_draw_circle_fill(&uicode_get_core()->canvas, dot_x, dot_y, local->compact_mode ? 2 : 3, tone_color, egui_color_alpha_mix(self->alpha, 82));
 
     text_region.location.x = dot_x + (local->compact_mode ? 6 : 8);
     text_region.location.y = metrics->target_region.location.y;
@@ -974,13 +974,13 @@ static void egui_view_teaching_tip_draw_action(egui_view_t *self, egui_view_teac
     {
         egui_view_teaching_tip_draw_focus_ring(self, region, local->compact_mode ? 5 : 6, focus_color, emphasized ? 50 : 44);
     }
-    egui_canvas_draw_round_rectangle_fill(region->location.x, region->location.y, region->size.width, region->size.height, local->compact_mode ? 5 : 6,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, region->location.x, region->location.y, region->size.width, region->size.height, local->compact_mode ? 5 : 6,
                                           fill_color, egui_color_alpha_mix(self->alpha, emphasized ? 88 : 78));
-    egui_canvas_draw_round_rectangle(region->location.x, region->location.y, region->size.width, region->size.height, local->compact_mode ? 5 : 6, 1,
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, region->location.x, region->location.y, region->size.width, region->size.height, local->compact_mode ? 5 : 6, 1,
                                      outline_color, egui_color_alpha_mix(self->alpha, 46));
     if (focused && enabled && region->size.width > 18)
     {
-        egui_canvas_draw_round_rectangle_fill(region->location.x + 6, region->location.y + region->size.height - 4, region->size.width - 12, 2, 1,
+        egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, region->location.x + 6, region->location.y + region->size.height - 4, region->size.width - 12, 2, 1,
                                               indicator_color, egui_color_alpha_mix(self->alpha, emphasized ? 68 : 60));
     }
     egui_view_teaching_tip_draw_text(local->meta_font, self, label, region, EGUI_ALIGN_CENTER, label_color);
@@ -1003,20 +1003,20 @@ static void egui_view_teaching_tip_draw_bubble(egui_view_t *self, egui_view_teac
         return;
     }
 
-    egui_canvas_draw_round_rectangle_fill(metrics->bubble_region.location.x + 1, metrics->bubble_region.location.y + 2, metrics->bubble_region.size.width,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics->bubble_region.location.x + 1, metrics->bubble_region.location.y + 2, metrics->bubble_region.size.width,
                                           metrics->bubble_region.size.height,
                                           local->compact_mode ? EGUI_VIEW_TEACHING_TIP_COMPACT_BUBBLE_RADIUS : EGUI_VIEW_TEACHING_TIP_STANDARD_BUBBLE_RADIUS,
                                           shadow_color, egui_color_alpha_mix(self->alpha, local->compact_mode ? 12 : 20));
     egui_view_teaching_tip_draw_arrow(self, local, snapshot, metrics, bubble_fill, bubble_border);
-    egui_canvas_draw_round_rectangle_fill(metrics->bubble_region.location.x, metrics->bubble_region.location.y, metrics->bubble_region.size.width,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics->bubble_region.location.x, metrics->bubble_region.location.y, metrics->bubble_region.size.width,
                                           metrics->bubble_region.size.height,
                                           local->compact_mode ? EGUI_VIEW_TEACHING_TIP_COMPACT_BUBBLE_RADIUS : EGUI_VIEW_TEACHING_TIP_STANDARD_BUBBLE_RADIUS,
                                           bubble_fill, egui_color_alpha_mix(self->alpha, 96));
-    egui_canvas_draw_round_rectangle(metrics->bubble_region.location.x, metrics->bubble_region.location.y, metrics->bubble_region.size.width,
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics->bubble_region.location.x, metrics->bubble_region.location.y, metrics->bubble_region.size.width,
                                      metrics->bubble_region.size.height,
                                      local->compact_mode ? EGUI_VIEW_TEACHING_TIP_COMPACT_BUBBLE_RADIUS : EGUI_VIEW_TEACHING_TIP_STANDARD_BUBBLE_RADIUS, 1,
                                      bubble_border, egui_color_alpha_mix(self->alpha, local->compact_mode ? 48 : 54));
-    egui_canvas_draw_round_rectangle_fill(metrics->bubble_region.location.x + (local->compact_mode ? 6 : 10), metrics->bubble_region.location.y + 6,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics->bubble_region.location.x + (local->compact_mode ? 6 : 10), metrics->bubble_region.location.y + 6,
                                           local->compact_mode ? 12 : 20, local->compact_mode ? 2 : 3, 2, tone_color,
                                           egui_color_alpha_mix(self->alpha, local->compact_mode ? 64 : 72));
 
@@ -1040,7 +1040,7 @@ static void egui_view_teaching_tip_draw_bubble(egui_view_t *self, egui_view_teac
         egui_dim_t divider_x1 = metrics->bubble_region.location.x + 10;
         egui_dim_t divider_x2 = metrics->bubble_region.location.x + metrics->bubble_region.size.width - 11;
 
-        egui_canvas_draw_line(divider_x1, divider_y, divider_x2, divider_y, 1, divider_color, egui_color_alpha_mix(self->alpha, 20));
+        egui_canvas_draw_line(&uicode_get_core()->canvas, divider_x1, divider_y, divider_x2, divider_y, 1, divider_color, egui_color_alpha_mix(self->alpha, 20));
     }
     if (metrics->show_close)
     {
@@ -1056,9 +1056,9 @@ static void egui_view_teaching_tip_draw_bubble(egui_view_t *self, egui_view_teac
         {
             egui_view_teaching_tip_draw_focus_ring(self, &metrics->close_region, 4, close_focus, 34);
         }
-        egui_canvas_draw_round_rectangle_fill(metrics->close_region.location.x, metrics->close_region.location.y, metrics->close_region.size.width,
+        egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics->close_region.location.x, metrics->close_region.location.y, metrics->close_region.size.width,
                                               metrics->close_region.size.height, 4, close_fill, egui_color_alpha_mix(self->alpha, 78));
-        egui_canvas_draw_round_rectangle(metrics->close_region.location.x, metrics->close_region.location.y, metrics->close_region.size.width,
+        egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics->close_region.location.x, metrics->close_region.location.y, metrics->close_region.size.width,
                                          metrics->close_region.size.height, 4, 1, bubble_border, egui_color_alpha_mix(self->alpha, 42));
         egui_view_teaching_tip_draw_close(self, &metrics->close_region, close_icon, 84);
     }
@@ -1101,11 +1101,11 @@ static void egui_view_teaching_tip_draw_closed_hint(egui_view_t *self, egui_view
     hint_fill = egui_rgb_mix(local->surface_color, tone_color, 4);
     hint_border = egui_rgb_mix(muted_text_color, tone_color, 10);
 
-    egui_canvas_draw_round_rectangle_fill(hint_panel_region.location.x, hint_panel_region.location.y, hint_panel_region.size.width,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, hint_panel_region.location.x, hint_panel_region.location.y, hint_panel_region.size.width,
                                           hint_panel_region.size.height, 6, hint_fill, egui_color_alpha_mix(self->alpha, 64));
-    egui_canvas_draw_round_rectangle(hint_panel_region.location.x, hint_panel_region.location.y, hint_panel_region.size.width, hint_panel_region.size.height, 6,
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, hint_panel_region.location.x, hint_panel_region.location.y, hint_panel_region.size.width, hint_panel_region.size.height, 6,
                                      1, hint_border, egui_color_alpha_mix(self->alpha, 24));
-    egui_canvas_draw_round_rectangle_fill(hint_panel_region.location.x + hint_panel_region.size.width / 2 - 9, hint_panel_region.location.y + 4, 18, 2, 1,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, hint_panel_region.location.x + hint_panel_region.size.width / 2 - 9, hint_panel_region.location.y + 4, 18, 2, 1,
                                           tone_color, egui_color_alpha_mix(self->alpha, 48));
 
     egui_view_teaching_tip_draw_text(local->font, self, snapshot->title, &metrics->closed_title_region, EGUI_ALIGN_CENTER, text_color);
@@ -1158,11 +1158,11 @@ static void egui_view_teaching_tip_on_draw(egui_view_t *self)
     }
     egui_view_teaching_tip_get_metrics(local, self, snapshot, &metrics);
 
-    egui_canvas_draw_round_rectangle_fill(
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, 
             region.location.x, region.location.y, region.size.width, region.size.height,
             local->compact_mode ? EGUI_VIEW_TEACHING_TIP_COMPACT_RADIUS : EGUI_VIEW_TEACHING_TIP_STANDARD_RADIUS, surface_color,
             egui_color_alpha_mix(self->alpha, local->compact_mode ? EGUI_VIEW_TEACHING_TIP_COMPACT_FILL_ALPHA : EGUI_VIEW_TEACHING_TIP_STANDARD_FILL_ALPHA));
-    egui_canvas_draw_round_rectangle(region.location.x, region.location.y, region.size.width, region.size.height,
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, region.location.x, region.location.y, region.size.width, region.size.height,
                                      local->compact_mode ? EGUI_VIEW_TEACHING_TIP_COMPACT_RADIUS : EGUI_VIEW_TEACHING_TIP_STANDARD_RADIUS, 1, border_color,
                                      egui_color_alpha_mix(self->alpha, local->compact_mode ? EGUI_VIEW_TEACHING_TIP_COMPACT_BORDER_ALPHA
                                                                                            : EGUI_VIEW_TEACHING_TIP_STANDARD_BORDER_ALPHA));
@@ -1435,7 +1435,7 @@ void egui_view_teaching_tip_init(egui_view_t *self)
 {
     EGUI_INIT_LOCAL(egui_view_teaching_tip_t);
 
-    egui_view_init(self);
+    egui_view_init(self, uicode_get_core());
     self->api = &EGUI_VIEW_API_TABLE_NAME(egui_view_teaching_tip_t);
     egui_view_set_padding_all(self, 2);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS

@@ -171,12 +171,12 @@ static void egui_view_thumb_rate_draw_text(const egui_font_t *font, egui_view_t 
         return;
     }
 
-    egui_canvas_draw_text_in_rect(font, text, &draw_region, EGUI_ALIGN_CENTER, color, self->alpha);
+    egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, font, text, &draw_region, EGUI_ALIGN_CENTER, color, self->alpha);
 }
 
 static void egui_view_thumb_rate_draw_focus(egui_view_t *self, const egui_region_t *region, egui_dim_t radius, egui_color_t color, egui_alpha_t alpha)
 {
-    egui_canvas_draw_round_rectangle(region->location.x - 1, region->location.y - 1, region->size.width + 2, region->size.height + 2, radius, 1, color,
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, region->location.x - 1, region->location.y - 1, region->size.width + 2, region->size.height + 2, radius, 1, color,
                                      egui_color_alpha_mix(self->alpha, alpha));
 }
 
@@ -219,8 +219,8 @@ static void egui_view_thumb_rate_draw_thumb_icon(egui_view_t *self, egui_dim_t x
         points[index * 2 + 1] = y + (py * size) / 20;
     }
 
-    egui_canvas_draw_polygon_fill(points, 13, fill_color, egui_color_alpha_mix(self->alpha, fill_alpha));
-    egui_canvas_draw_polygon(points, 13, 1, border_color, egui_color_alpha_mix(self->alpha, border_alpha));
+    egui_canvas_draw_polygon_fill(&uicode_get_core()->canvas, points, 13, fill_color, egui_color_alpha_mix(self->alpha, fill_alpha));
+    egui_canvas_draw_polygon(&uicode_get_core()->canvas, points, 13, 1, border_color, egui_color_alpha_mix(self->alpha, border_alpha));
 }
 
 static void egui_view_thumb_rate_draw_part(egui_view_t *self, egui_view_thumb_rate_t *local, egui_view_thumb_rate_metrics_t *metrics, uint8_t part,
@@ -256,9 +256,9 @@ static void egui_view_thumb_rate_draw_part(egui_view_t *self, egui_view_thumb_ra
         egui_view_thumb_rate_draw_focus(self, part_region, metrics->part_radius, egui_rgb_mix(accent, EGUI_COLOR_WHITE, 12), local->compact_mode ? 44 : 54);
     }
 
-    egui_canvas_draw_round_rectangle_fill(part_region->location.x, part_region->location.y, part_region->size.width, part_region->size.height, metrics->part_radius,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, part_region->location.x, part_region->location.y, part_region->size.width, part_region->size.height, metrics->part_radius,
                                           fill_color, egui_color_alpha_mix(self->alpha, selected ? 96 : 94));
-    egui_canvas_draw_round_rectangle(part_region->location.x, part_region->location.y, part_region->size.width, part_region->size.height, metrics->part_radius, 1,
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, part_region->location.x, part_region->location.y, part_region->size.width, part_region->size.height, metrics->part_radius, 1,
                                      part_border_color, egui_color_alpha_mix(self->alpha, selected ? 82 : 58));
 
     icon_x = part_region->location.x + (part_region->size.width - metrics->icon_size) / 2;
@@ -668,14 +668,14 @@ static void egui_view_thumb_rate_on_draw(egui_view_t *self)
 
     if (!local->compact_mode)
     {
-        egui_canvas_draw_round_rectangle_fill(metrics.surface_region.location.x, metrics.surface_region.location.y + 2, metrics.surface_region.size.width,
+        egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.surface_region.location.x, metrics.surface_region.location.y + 2, metrics.surface_region.size.width,
                                               metrics.surface_region.size.height, THUMB_RATE_STD_RADIUS + 1, shadow_color,
                                               egui_color_alpha_mix(self->alpha, enabled ? 18 : 10));
     }
-    egui_canvas_draw_round_rectangle_fill(metrics.surface_region.location.x, metrics.surface_region.location.y, metrics.surface_region.size.width,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.surface_region.location.x, metrics.surface_region.location.y, metrics.surface_region.size.width,
                                           metrics.surface_region.size.height, local->compact_mode ? THUMB_RATE_COMPACT_RADIUS : THUMB_RATE_STD_RADIUS, surface_color,
                                           egui_color_alpha_mix(self->alpha, local->compact_mode ? 94 : 96));
-    egui_canvas_draw_round_rectangle(metrics.surface_region.location.x, metrics.surface_region.location.y, metrics.surface_region.size.width,
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics.surface_region.location.x, metrics.surface_region.location.y, metrics.surface_region.size.width,
                                      metrics.surface_region.size.height, local->compact_mode ? THUMB_RATE_COMPACT_RADIUS : THUMB_RATE_STD_RADIUS, 1, border_color,
                                      egui_color_alpha_mix(self->alpha, local->compact_mode ? 56 : 60));
 
@@ -862,7 +862,7 @@ void egui_view_thumb_rate_init(egui_view_t *self)
 {
     EGUI_INIT_LOCAL(egui_view_thumb_rate_t);
 
-    egui_view_init(self);
+    egui_view_init(self, uicode_get_core());
     self->api = &EGUI_VIEW_API_TABLE_NAME(egui_view_thumb_rate_t);
     egui_view_set_padding_all(self, 0);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS

@@ -100,7 +100,7 @@ python scripts/release_check.py --keep-going
 补充：
 
 - `code_compile_check.py --full-check` 默认会执行示例 icon font 检查
-- 如果外层流程已经先单独跑过 `check_example_icon_font.py`，可以追加 `--skip-icon-font-check` 避免重复执行
+- `code_compile_check.py` 会按仓库当前流程直接执行所需检查，不再提供旧兼容跳过参数
 
 ## 常见编译错误诊断
 

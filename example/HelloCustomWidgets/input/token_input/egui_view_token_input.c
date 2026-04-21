@@ -544,7 +544,7 @@ static void token_input_draw_text(const egui_font_t *font, egui_view_t *self, co
     {
         return;
     }
-    egui_canvas_draw_text_in_rect(font, text, &draw_region, align, color, egui_color_alpha_mix(self->alpha, alpha));
+    egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, font, text, &draw_region, align, color, egui_color_alpha_mix(self->alpha, alpha));
 }
 
 static void token_input_draw_item(egui_view_t *self, egui_view_token_input_t *local, const egui_region_t *region, const char *text, uint8_t focused,
@@ -576,9 +576,9 @@ static void token_input_draw_item(egui_view_t *self, egui_view_token_input_t *lo
         item_icon_color = egui_rgb_mix(item_icon_color, accent_color, 30);
     }
 
-    egui_canvas_draw_round_rectangle_fill(region->location.x, region->location.y, region->size.width, region->size.height, radius, fill_color,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, region->location.x, region->location.y, region->size.width, region->size.height, radius, fill_color,
                                           egui_color_alpha_mix(self->alpha, placeholder ? 92 : 96));
-    egui_canvas_draw_round_rectangle(region->location.x, region->location.y, region->size.width, region->size.height, radius, 1, item_border_color,
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, region->location.x, region->location.y, region->size.width, region->size.height, radius, 1, item_border_color,
                                      egui_color_alpha_mix(self->alpha, focused ? 76 : 54));
     token_input_draw_text(local->font, self, text, text_region == NULL ? region : text_region, text_align, item_text_color, placeholder ? 86 : EGUI_ALPHA_100);
     if (show_icon && icon_region != NULL)
@@ -630,7 +630,7 @@ static void egui_view_token_input_on_draw(egui_view_t *self)
         shadow_color = egui_rgb_mix(shadow_color, surface_color, 38);
     }
 
-    egui_canvas_draw_round_rectangle_fill(region.location.x, region.location.y + 2, region.size.width, region.size.height,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, region.location.x, region.location.y + 2, region.size.width, region.size.height,
                                           local->compact_mode ? TOKEN_COMPACT_RADIUS + 1 : TOKEN_STD_RADIUS + 1, shadow_color,
                                           egui_color_alpha_mix(self->alpha, enabled ? 16 : 10));
     frame_border_color = border_color;
@@ -638,9 +638,9 @@ static void egui_view_token_input_on_draw(egui_view_t *self)
     {
         frame_border_color = egui_rgb_mix(border_color, accent_color, 24);
     }
-    egui_canvas_draw_round_rectangle_fill(region.location.x, region.location.y, region.size.width, region.size.height,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, region.location.x, region.location.y, region.size.width, region.size.height,
                                           local->compact_mode ? TOKEN_COMPACT_RADIUS : TOKEN_STD_RADIUS, surface_color, egui_color_alpha_mix(self->alpha, 96));
-    egui_canvas_draw_round_rectangle(region.location.x, region.location.y, region.size.width, region.size.height,
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, region.location.x, region.location.y, region.size.width, region.size.height,
                                      local->compact_mode ? TOKEN_COMPACT_RADIUS : TOKEN_STD_RADIUS, 1, frame_border_color,
                                      egui_color_alpha_mix(self->alpha, 58));
 
@@ -1133,7 +1133,7 @@ void egui_view_token_input_init(egui_view_t *self)
 {
     EGUI_INIT_LOCAL(egui_view_token_input_t);
 
-    egui_view_init(self);
+    egui_view_init(self, uicode_get_core());
     self->api = &EGUI_VIEW_API_TABLE_NAME(egui_view_token_input_t);
     egui_view_set_padding_all(self, 2);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS

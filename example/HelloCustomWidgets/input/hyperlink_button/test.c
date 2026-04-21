@@ -81,7 +81,7 @@ static void focus_primary_widget(void);
 static void init_text_label(egui_view_label_t *label, egui_dim_t width, egui_dim_t height, const char *text, const egui_font_t *font, egui_color_t color,
                             uint8_t align)
 {
-    egui_view_label_init(EGUI_VIEW_OF(label));
+    egui_view_label_init(EGUI_VIEW_OF(label), uicode_get_core());
     egui_view_set_size(EGUI_VIEW_OF(label), width, height);
     egui_view_label_set_text(EGUI_VIEW_OF(label), text);
     egui_view_label_set_align_type(EGUI_VIEW_OF(label), align);
@@ -134,7 +134,7 @@ static void layout_local_views(void)
 static void layout_page(void)
 {
     layout_local_views();
-    egui_core_layout_childs_user_root_view(EGUI_LAYOUT_VERTICAL, EGUI_ALIGN_HCENTER | EGUI_ALIGN_VCENTER);
+    egui_core_layout_childs_user_root_view(uicode_get_core(), EGUI_LAYOUT_VERTICAL, EGUI_ALIGN_HCENTER | EGUI_ALIGN_VCENTER);
 }
 
 static void focus_primary_widget(void)
@@ -163,7 +163,7 @@ void test_init_ui(void)
 {
     ui_ready = 0;
 
-    egui_view_linearlayout_init(EGUI_VIEW_OF(&root_layout));
+    egui_view_linearlayout_init(EGUI_VIEW_OF(&root_layout), uicode_get_core());
     egui_view_set_size(EGUI_VIEW_OF(&root_layout), HYPERLINK_ROOT_WIDTH, HYPERLINK_ROOT_HEIGHT);
     egui_view_linearlayout_set_orientation(EGUI_VIEW_OF(&root_layout), 0);
     egui_view_linearlayout_set_align_type(EGUI_VIEW_OF(&root_layout), EGUI_ALIGN_HCENTER);
@@ -174,7 +174,7 @@ void test_init_ui(void)
     egui_view_set_margin(EGUI_VIEW_OF(&title_label), 0, 8, 0, 6);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label));
 
-    egui_view_linearlayout_init(EGUI_VIEW_OF(&primary_panel));
+    egui_view_linearlayout_init(EGUI_VIEW_OF(&primary_panel), uicode_get_core());
     egui_view_set_size(EGUI_VIEW_OF(&primary_panel), HYPERLINK_PANEL_WIDTH, HYPERLINK_PANEL_HEIGHT);
     egui_view_linearlayout_set_orientation(EGUI_VIEW_OF(&primary_panel), 0);
     egui_view_linearlayout_set_align_type(EGUI_VIEW_OF(&primary_panel), EGUI_ALIGN_LEFT);
@@ -188,7 +188,7 @@ void test_init_ui(void)
     egui_view_set_margin(EGUI_VIEW_OF(&panel_heading_label), 0, 0, 0, 8);
     egui_view_group_add_child(EGUI_VIEW_OF(&primary_panel), EGUI_VIEW_OF(&panel_heading_label));
 
-    egui_view_button_init(EGUI_VIEW_OF(&primary_link_button));
+    egui_view_button_init(EGUI_VIEW_OF(&primary_link_button), uicode_get_core());
     egui_view_set_size(EGUI_VIEW_OF(&primary_link_button), HYPERLINK_PRIMARY_WIDTH, HYPERLINK_PRIMARY_HEIGHT);
     hcw_hyperlink_button_apply_standard_style(EGUI_VIEW_OF(&primary_link_button));
     hcw_hyperlink_button_set_font(EGUI_VIEW_OF(&primary_link_button), (const egui_font_t *)&egui_res_font_montserrat_12_4);
@@ -204,13 +204,13 @@ void test_init_ui(void)
                     EGUI_COLOR_HEX(0x6B7A89), EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER);
     egui_view_group_add_child(EGUI_VIEW_OF(&primary_panel), EGUI_VIEW_OF(&note_label));
 
-    egui_view_linearlayout_init(EGUI_VIEW_OF(&bottom_row));
+    egui_view_linearlayout_init(EGUI_VIEW_OF(&bottom_row), uicode_get_core());
     egui_view_set_size(EGUI_VIEW_OF(&bottom_row), HYPERLINK_BOTTOM_ROW_WIDTH, HYPERLINK_BOTTOM_ROW_HEIGHT);
     egui_view_linearlayout_set_orientation(EGUI_VIEW_OF(&bottom_row), 1);
     egui_view_linearlayout_set_align_type(EGUI_VIEW_OF(&bottom_row), EGUI_ALIGN_VCENTER);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&bottom_row));
 
-    egui_view_button_init(EGUI_VIEW_OF(&inline_preview_button));
+    egui_view_button_init(EGUI_VIEW_OF(&inline_preview_button), uicode_get_core());
     egui_view_set_size(EGUI_VIEW_OF(&inline_preview_button), HYPERLINK_PREVIEW_WIDTH, HYPERLINK_PREVIEW_HEIGHT);
     hcw_hyperlink_button_apply_inline_style(EGUI_VIEW_OF(&inline_preview_button));
     hcw_hyperlink_button_set_font(EGUI_VIEW_OF(&inline_preview_button), (const egui_font_t *)&egui_res_font_montserrat_10_4);
@@ -220,7 +220,7 @@ void test_init_ui(void)
 #endif
     egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&inline_preview_button));
 
-    egui_view_button_init(EGUI_VIEW_OF(&disabled_preview_button));
+    egui_view_button_init(EGUI_VIEW_OF(&disabled_preview_button), uicode_get_core());
     egui_view_set_size(EGUI_VIEW_OF(&disabled_preview_button), HYPERLINK_PREVIEW_WIDTH, HYPERLINK_PREVIEW_HEIGHT);
     egui_view_set_margin(EGUI_VIEW_OF(&disabled_preview_button), 8, 0, 0, 0);
     hcw_hyperlink_button_apply_disabled_style(EGUI_VIEW_OF(&disabled_preview_button));

@@ -543,7 +543,7 @@ static void time_picker_draw_text(const egui_font_t *font, egui_view_t *self, co
         return;
     }
 
-    egui_canvas_draw_text_in_rect(font, text, &draw_region, align, color, self->alpha);
+    egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, font, text, &draw_region, align, color, self->alpha);
 }
 
 static void time_picker_draw_chevron(egui_view_t *self, const egui_region_t *region, egui_color_t color, uint8_t opened)
@@ -554,13 +554,13 @@ static void time_picker_draw_chevron(egui_view_t *self, const egui_region_t *reg
 
     if (opened)
     {
-        egui_canvas_draw_line(cx - 3, cy + 1, cx, cy - 2, 1, color, alpha);
-        egui_canvas_draw_line(cx, cy - 2, cx + 3, cy + 1, 1, color, alpha);
+        egui_canvas_draw_line(&uicode_get_core()->canvas, cx - 3, cy + 1, cx, cy - 2, 1, color, alpha);
+        egui_canvas_draw_line(&uicode_get_core()->canvas, cx, cy - 2, cx + 3, cy + 1, 1, color, alpha);
     }
     else
     {
-        egui_canvas_draw_line(cx - 3, cy - 1, cx, cy + 2, 1, color, alpha);
-        egui_canvas_draw_line(cx, cy + 2, cx + 3, cy - 1, 1, color, alpha);
+        egui_canvas_draw_line(&uicode_get_core()->canvas, cx - 3, cy - 1, cx, cy + 2, 1, color, alpha);
+        egui_canvas_draw_line(&uicode_get_core()->canvas, cx, cy + 2, cx + 3, cy - 1, 1, color, alpha);
     }
 }
 
@@ -778,11 +778,11 @@ static void time_picker_draw_field(egui_view_t *self, egui_view_time_picker_t *l
         field_fill = egui_rgb_mix(field_fill, accent_color, 18);
     }
 
-    egui_canvas_draw_round_rectangle_fill(metrics->field_region.location.x, metrics->field_region.location.y, metrics->field_region.size.width,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics->field_region.location.x, metrics->field_region.location.y, metrics->field_region.size.width,
                                           metrics->field_region.size.height,
                                           local->compact_mode ? EGUI_VIEW_TIME_PICKER_COMPACT_FIELD_RADIUS : EGUI_VIEW_TIME_PICKER_STANDARD_FIELD_RADIUS,
                                           field_fill, egui_color_alpha_mix(self->alpha, fill_alpha));
-    egui_canvas_draw_round_rectangle(metrics->field_region.location.x, metrics->field_region.location.y, metrics->field_region.size.width,
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics->field_region.location.x, metrics->field_region.location.y, metrics->field_region.size.width,
                                      metrics->field_region.size.height,
                                      local->compact_mode ? EGUI_VIEW_TIME_PICKER_COMPACT_FIELD_RADIUS : EGUI_VIEW_TIME_PICKER_STANDARD_FIELD_RADIUS, 1,
                                      field_border, egui_color_alpha_mix(self->alpha, border_alpha));
@@ -793,10 +793,10 @@ static void time_picker_draw_field(egui_view_t *self, egui_view_time_picker_t *l
         {
             segment_fill = egui_rgb_mix(local->surface_color, accent_color, local->open_mode ? 18 : 12);
             segment_border = egui_rgb_mix(border_color, accent_color, 28);
-            egui_canvas_draw_round_rectangle_fill(metrics->field_segment_regions[i].location.x, metrics->field_segment_regions[i].location.y,
+            egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics->field_segment_regions[i].location.x, metrics->field_segment_regions[i].location.y,
                                                   metrics->field_segment_regions[i].size.width, metrics->field_segment_regions[i].size.height, 5, segment_fill,
                                                   egui_color_alpha_mix(self->alpha, local->open_mode ? 72 : 64));
-            egui_canvas_draw_round_rectangle(metrics->field_segment_regions[i].location.x, metrics->field_segment_regions[i].location.y,
+            egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics->field_segment_regions[i].location.x, metrics->field_segment_regions[i].location.y,
                                              metrics->field_segment_regions[i].size.width, metrics->field_segment_regions[i].size.height, 5, 1, segment_border,
                                              egui_color_alpha_mix(self->alpha, 72));
         }
@@ -831,10 +831,10 @@ static void time_picker_draw_panel(egui_view_t *self, egui_view_time_picker_t *l
     uint8_t row;
     char buffer[8];
 
-    egui_canvas_draw_round_rectangle_fill(metrics->panel_region.location.x, metrics->panel_region.location.y, metrics->panel_region.size.width,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics->panel_region.location.x, metrics->panel_region.location.y, metrics->panel_region.size.width,
                                           metrics->panel_region.size.height, EGUI_VIEW_TIME_PICKER_STANDARD_PANEL_RADIUS, panel_fill,
                                           egui_color_alpha_mix(self->alpha, EGUI_VIEW_TIME_PICKER_STANDARD_PANEL_FILL_ALPHA));
-    egui_canvas_draw_round_rectangle(metrics->panel_region.location.x, metrics->panel_region.location.y, metrics->panel_region.size.width,
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics->panel_region.location.x, metrics->panel_region.location.y, metrics->panel_region.size.width,
                                      metrics->panel_region.size.height, EGUI_VIEW_TIME_PICKER_STANDARD_PANEL_RADIUS, 1, panel_border,
                                      egui_color_alpha_mix(self->alpha, EGUI_VIEW_TIME_PICKER_STANDARD_PANEL_BORDER_ALPHA));
 
@@ -842,10 +842,10 @@ static void time_picker_draw_panel(egui_view_t *self, egui_view_time_picker_t *l
     {
         row_h = metrics->panel_columns[i].size.height / 3;
         column_fill = egui_rgb_mix(local->surface_color, accent_color, local->focused_segment == i ? 14 : 5);
-        egui_canvas_draw_round_rectangle_fill(metrics->panel_columns[i].location.x, metrics->panel_columns[i].location.y, metrics->panel_columns[i].size.width,
+        egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics->panel_columns[i].location.x, metrics->panel_columns[i].location.y, metrics->panel_columns[i].size.width,
                                               metrics->panel_columns[i].size.height, 6, column_fill,
                                               egui_color_alpha_mix(self->alpha, local->focused_segment == i ? 40 : 28));
-        egui_canvas_draw_round_rectangle(metrics->panel_columns[i].location.x, metrics->panel_columns[i].location.y, metrics->panel_columns[i].size.width,
+        egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics->panel_columns[i].location.x, metrics->panel_columns[i].location.y, metrics->panel_columns[i].size.width,
                                          metrics->panel_columns[i].size.height, 6, 1,
                                          egui_rgb_mix(border_color, accent_color, local->focused_segment == i ? 24 : 12),
                                          egui_color_alpha_mix(self->alpha, 56));
@@ -855,7 +855,7 @@ static void time_picker_draw_panel(egui_view_t *self, egui_view_time_picker_t *l
         row_region.size.width = metrics->panel_columns[i].size.width - 4;
         row_region.size.height = row_h;
         row_fill = egui_rgb_mix(local->surface_color, accent_color, local->focused_segment == i ? 28 : 16);
-        egui_canvas_draw_round_rectangle_fill(row_region.location.x, row_region.location.y, row_region.size.width, row_region.size.height, 5, row_fill,
+        egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, row_region.location.x, row_region.location.y, row_region.size.width, row_region.size.height, 5, row_fill,
                                               egui_color_alpha_mix(self->alpha, local->focused_segment == i ? 78 : 64));
 
         for (row = 0; row < 3; ++row)
@@ -913,15 +913,15 @@ static void egui_view_time_picker_on_draw(egui_view_t *self)
     }
 
     time_picker_get_metrics(local, self, &metrics);
-    egui_canvas_draw_round_rectangle_fill(
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, 
             region.location.x, region.location.y, region.size.width, region.size.height,
             local->compact_mode ? EGUI_VIEW_TIME_PICKER_COMPACT_RADIUS : EGUI_VIEW_TIME_PICKER_STANDARD_RADIUS, outer_fill,
             egui_color_alpha_mix(self->alpha, local->compact_mode ? EGUI_VIEW_TIME_PICKER_COMPACT_FILL_ALPHA : EGUI_VIEW_TIME_PICKER_STANDARD_FILL_ALPHA));
-    egui_canvas_draw_round_rectangle(
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, 
             region.location.x, region.location.y, region.size.width, region.size.height,
             local->compact_mode ? EGUI_VIEW_TIME_PICKER_COMPACT_RADIUS : EGUI_VIEW_TIME_PICKER_STANDARD_RADIUS, 1, outer_border,
             egui_color_alpha_mix(self->alpha, local->compact_mode ? EGUI_VIEW_TIME_PICKER_COMPACT_BORDER_ALPHA : EGUI_VIEW_TIME_PICKER_STANDARD_BORDER_ALPHA));
-    egui_canvas_draw_round_rectangle_fill(region.location.x + 2, region.location.y + 2, region.size.width - 4, local->compact_mode ? 3 : 4,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, region.location.x + 2, region.location.y + 2, region.size.width - 4, local->compact_mode ? 3 : 4,
                                           local->compact_mode ? EGUI_VIEW_TIME_PICKER_COMPACT_RADIUS : EGUI_VIEW_TIME_PICKER_STANDARD_RADIUS, accent_color,
                                           egui_color_alpha_mix(self->alpha, local->read_only_mode ? 12 : 24));
 
@@ -1140,7 +1140,7 @@ void egui_view_time_picker_init(egui_view_t *self)
 {
     EGUI_INIT_LOCAL(egui_view_time_picker_t);
 
-    egui_view_init(self);
+    egui_view_init(self, uicode_get_core());
     self->api = &EGUI_VIEW_API_TABLE_NAME(egui_view_time_picker_t);
     egui_view_set_padding_all(self, 2);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS

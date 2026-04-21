@@ -189,14 +189,14 @@ static void hcw_text_box_on_draw(egui_view_t *self)
     egui_view_get_work_region(self, &work_region);
     hcw_text_box_local_region_to_screen(self, &work_region, &text_screen_region);
 
-    if (!egui_canvas_is_region_active(&text_screen_region))
+    if (!egui_canvas_is_region_active(&uicode_get_core()->canvas, &text_screen_region))
     {
         return;
     }
 
     if (local->text_len == 0 && !self->is_focused && local->placeholder != NULL)
     {
-        egui_canvas_draw_text_in_rect(local->font, local->placeholder, &work_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, local->placeholder_color,
+        egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, local->font, local->placeholder, &work_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, local->placeholder_color,
                                       local->placeholder_alpha);
     }
     else if (local->text_len > 0)
@@ -204,7 +204,7 @@ static void hcw_text_box_on_draw(egui_view_t *self)
         local->font->api->get_str_size(local->font, local->text, 0, 0, &text_width, &text_height);
         text_x = work_region.location.x - local->scroll_offset_x;
         text_y = work_region.location.y + (work_region.size.height - text_height) / 2;
-        egui_canvas_draw_text(local->font, local->text, text_x, text_y, local->text_color, local->text_alpha);
+        egui_canvas_draw_text(&uicode_get_core()->canvas, local->font, local->text, text_x, text_y, local->text_color, local->text_alpha);
     }
 
     if (self->is_enable && self->is_focused && local->cursor_visible)
@@ -215,9 +215,9 @@ static void hcw_text_box_on_draw(egui_view_t *self)
         if (hcw_text_box_get_cursor_region(self, local, &cursor_region))
         {
             hcw_text_box_local_region_to_screen(self, &cursor_region, &cursor_screen_region);
-            if (egui_canvas_is_region_active(&cursor_screen_region))
+            if (egui_canvas_is_region_active(&uicode_get_core()->canvas, &cursor_screen_region))
             {
-                egui_canvas_draw_rectangle_fill(cursor_region.location.x, cursor_region.location.y, cursor_region.size.width, cursor_region.size.height,
+                egui_canvas_draw_rectangle_fill(&uicode_get_core()->canvas, cursor_region.location.x, cursor_region.location.y, cursor_region.size.width, cursor_region.size.height,
                                                 local->cursor_color, EGUI_ALPHA_100);
             }
         }

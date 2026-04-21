@@ -45,7 +45,7 @@ static void swipe_control_draw_round_fill_safe(egui_dim_t x, egui_dim_t y, egui_
     {
         return;
     }
-    egui_canvas_draw_round_rectangle_fill(x, y, w, h, radius, color, alpha);
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, x, y, w, h, radius, color, alpha);
 }
 
 static void swipe_control_draw_round_stroke_safe(egui_dim_t x, egui_dim_t y, egui_dim_t w, egui_dim_t h, egui_dim_t radius, egui_dim_t stroke_width,
@@ -55,7 +55,7 @@ static void swipe_control_draw_round_stroke_safe(egui_dim_t x, egui_dim_t y, egu
     {
         return;
     }
-    egui_canvas_draw_round_rectangle(x, y, w, h, radius, stroke_width, color, alpha);
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, x, y, w, h, radius, stroke_width, color, alpha);
 }
 
 static uint8_t swipe_control_part_enabled(egui_view_swipe_control_t *local, egui_view_t *self, uint8_t part)
@@ -384,7 +384,7 @@ static void swipe_control_draw_text(const egui_font_t *font, egui_view_t *self, 
     {
         return;
     }
-    egui_canvas_draw_text_in_rect(font, text, &draw_region, align, color, self->alpha);
+    egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, font, text, &draw_region, align, color, self->alpha);
 }
 
 static void swipe_control_draw_focus(egui_view_t *self, const egui_region_t *region, egui_dim_t radius, egui_color_t color)
@@ -541,7 +541,7 @@ static void swipe_control_draw_surface(egui_view_t *self, egui_view_swipe_contro
         text_region.size.height = 22;
         swipe_control_draw_text(local->meta_font, self, item->description, &text_region, EGUI_ALIGN_LEFT, body_color);
 
-        egui_canvas_draw_line(metrics->surface_region.location.x + 12, metrics->surface_region.location.y + metrics->surface_region.size.height - 28,
+        egui_canvas_draw_line(&uicode_get_core()->canvas, metrics->surface_region.location.x + 12, metrics->surface_region.location.y + metrics->surface_region.size.height - 28,
                               metrics->surface_region.location.x + metrics->surface_region.size.width - 12,
                               metrics->surface_region.location.y + metrics->surface_region.size.height - 28, 1,
                               egui_rgb_mix(accent_color, local->surface_color, 34), egui_color_alpha_mix(self->alpha, 62));
@@ -1081,7 +1081,7 @@ void egui_view_swipe_control_init(egui_view_t *self)
 {
     EGUI_INIT_LOCAL(egui_view_swipe_control_t);
 
-    egui_view_init(self);
+    egui_view_init(self, uicode_get_core());
     self->api = &EGUI_VIEW_API_TABLE_NAME(egui_view_swipe_control_t);
     self->is_clickable = true;
     egui_view_set_padding_all(self, 2);

@@ -126,7 +126,7 @@ static void apply_preview_states(void)
 static void init_radio_button(egui_view_radio_button_t *button, egui_view_api_t *api, egui_dim_t width, egui_dim_t height, const egui_font_t *font,
                               void (*apply_style)(egui_view_t *), uint8_t is_focusable, uint8_t is_static_preview)
 {
-    egui_view_radio_button_init(EGUI_VIEW_OF(button));
+    egui_view_radio_button_init(EGUI_VIEW_OF(button), uicode_get_core());
     egui_view_set_size(EGUI_VIEW_OF(button), width, height);
     hcw_radio_button_set_font(EGUI_VIEW_OF(button), font);
     apply_style(EGUI_VIEW_OF(button));
@@ -157,7 +157,7 @@ static void layout_local_views(void)
 static void layout_page(void)
 {
     layout_local_views();
-    egui_core_layout_childs_user_root_view(EGUI_LAYOUT_VERTICAL, EGUI_ALIGN_HCENTER | EGUI_ALIGN_VCENTER);
+    egui_core_layout_childs_user_root_view(uicode_get_core(), EGUI_LAYOUT_VERTICAL, EGUI_ALIGN_HCENTER | EGUI_ALIGN_VCENTER);
 }
 
 static void focus_primary_button(uint8_t index)
@@ -187,13 +187,13 @@ void test_init_ui(void)
 
     ui_ready = 0;
 
-    egui_view_linearlayout_init(EGUI_VIEW_OF(&root_layout));
+    egui_view_linearlayout_init(EGUI_VIEW_OF(&root_layout), uicode_get_core());
     egui_view_set_size(EGUI_VIEW_OF(&root_layout), RADIO_BUTTON_ROOT_WIDTH, RADIO_BUTTON_ROOT_HEIGHT);
     egui_view_linearlayout_set_orientation(EGUI_VIEW_OF(&root_layout), 0);
     egui_view_linearlayout_set_align_type(EGUI_VIEW_OF(&root_layout), EGUI_ALIGN_HCENTER);
     egui_view_set_background(EGUI_VIEW_OF(&root_layout), EGUI_BG_OF(&bg_page_panel));
 
-    egui_view_label_init(EGUI_VIEW_OF(&title_label));
+    egui_view_label_init(EGUI_VIEW_OF(&title_label), uicode_get_core());
     egui_view_set_size(EGUI_VIEW_OF(&title_label), RADIO_BUTTON_ROOT_WIDTH, 18);
     egui_view_label_set_text(EGUI_VIEW_OF(&title_label), title_text);
     egui_view_label_set_align_type(EGUI_VIEW_OF(&title_label), EGUI_ALIGN_CENTER);
@@ -202,7 +202,7 @@ void test_init_ui(void)
     egui_view_set_margin(EGUI_VIEW_OF(&title_label), 0, 8, 0, 8);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label));
 
-    egui_view_linearlayout_init(EGUI_VIEW_OF(&primary_column));
+    egui_view_linearlayout_init(EGUI_VIEW_OF(&primary_column), uicode_get_core());
     egui_view_set_size(EGUI_VIEW_OF(&primary_column), RADIO_BUTTON_PRIMARY_COLUMN_WIDTH, RADIO_BUTTON_PRIMARY_COLUMN_HEIGHT);
     egui_view_linearlayout_set_orientation(EGUI_VIEW_OF(&primary_column), 0);
     egui_view_linearlayout_set_align_type(EGUI_VIEW_OF(&primary_column), EGUI_ALIGN_HCENTER);
@@ -222,13 +222,13 @@ void test_init_ui(void)
         egui_view_group_add_child(EGUI_VIEW_OF(&primary_column), EGUI_VIEW_OF(&primary_buttons[i]));
     }
 
-    egui_view_linearlayout_init(EGUI_VIEW_OF(&bottom_row));
+    egui_view_linearlayout_init(EGUI_VIEW_OF(&bottom_row), uicode_get_core());
     egui_view_set_size(EGUI_VIEW_OF(&bottom_row), RADIO_BUTTON_BOTTOM_ROW_WIDTH, RADIO_BUTTON_BOTTOM_ROW_HEIGHT);
     egui_view_linearlayout_set_orientation(EGUI_VIEW_OF(&bottom_row), 1);
     egui_view_linearlayout_set_align_type(EGUI_VIEW_OF(&bottom_row), EGUI_ALIGN_VCENTER);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&bottom_row));
 
-    egui_view_linearlayout_init(EGUI_VIEW_OF(&compact_column));
+    egui_view_linearlayout_init(EGUI_VIEW_OF(&compact_column), uicode_get_core());
     egui_view_set_size(EGUI_VIEW_OF(&compact_column), RADIO_BUTTON_PREVIEW_WIDTH, RADIO_BUTTON_PREVIEW_COLUMN_HEIGHT);
     egui_view_linearlayout_set_orientation(EGUI_VIEW_OF(&compact_column), 0);
     egui_view_linearlayout_set_align_type(EGUI_VIEW_OF(&compact_column), EGUI_ALIGN_HCENTER);
@@ -247,7 +247,7 @@ void test_init_ui(void)
         egui_view_group_add_child(EGUI_VIEW_OF(&compact_column), EGUI_VIEW_OF(&compact_buttons[i]));
     }
 
-    egui_view_linearlayout_init(EGUI_VIEW_OF(&read_only_column));
+    egui_view_linearlayout_init(EGUI_VIEW_OF(&read_only_column), uicode_get_core());
     egui_view_set_size(EGUI_VIEW_OF(&read_only_column), RADIO_BUTTON_PREVIEW_WIDTH, RADIO_BUTTON_PREVIEW_COLUMN_HEIGHT);
     egui_view_set_margin(EGUI_VIEW_OF(&read_only_column), 8, 0, 0, 0);
     egui_view_linearlayout_set_orientation(EGUI_VIEW_OF(&read_only_column), 0);

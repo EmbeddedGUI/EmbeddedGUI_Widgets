@@ -52,7 +52,7 @@ static void on_preview_click(egui_view_t *self)
 static void setup_spinner(void)
 {
     egui_timer_init(uicode_get_core());
-    egui_view_spinner_init(EGUI_VIEW_OF(&test_spinner_widget));
+    egui_view_spinner_init(EGUI_VIEW_OF(&test_spinner_widget), uicode_get_core());
     egui_view_set_size(EGUI_VIEW_OF(&test_spinner_widget), 44, 44);
     hcw_spinner_apply_standard_style(EGUI_VIEW_OF(&test_spinner_widget));
     g_click_count = 0;
@@ -61,7 +61,7 @@ static void setup_spinner(void)
 static void setup_preview_spinner(void)
 {
     egui_timer_init(uicode_get_core());
-    egui_view_spinner_init(EGUI_VIEW_OF(&preview_spinner_widget));
+    egui_view_spinner_init(EGUI_VIEW_OF(&preview_spinner_widget), uicode_get_core());
     egui_view_set_size(EGUI_VIEW_OF(&preview_spinner_widget), 40, 40);
     hcw_spinner_apply_compact_style(EGUI_VIEW_OF(&preview_spinner_widget));
     hcw_spinner_set_spinning(EGUI_VIEW_OF(&preview_spinner_widget), 0);
@@ -134,7 +134,7 @@ static void capture_preview_snapshot(spinner_preview_snapshot_t *snapshot)
     snapshot->stroke_width = preview_spinner_widget.stroke_width;
     snapshot->color = preview_spinner_widget.color;
     snapshot->is_spinning = preview_spinner_widget.is_spinning;
-    snapshot->timer_started = (uint8_t)egui_timer_check_timer_start(&preview_spinner_widget.spin_timer);
+    snapshot->timer_started = (uint8_t)egui_timer_check_timer_start(uicode_get_core(), &preview_spinner_widget.spin_timer);
     snapshot->alpha = EGUI_VIEW_OF(&preview_spinner_widget)->alpha;
     snapshot->enable = (uint8_t)egui_view_get_enable(EGUI_VIEW_OF(&preview_spinner_widget));
     snapshot->is_focused = EGUI_VIEW_OF(&preview_spinner_widget)->is_focused;
@@ -156,7 +156,7 @@ static void assert_preview_state_unchanged(const spinner_preview_snapshot_t *sna
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->stroke_width, preview_spinner_widget.stroke_width);
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->color.full, preview_spinner_widget.color.full);
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->is_spinning, preview_spinner_widget.is_spinning);
-    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->timer_started, egui_timer_check_timer_start(&preview_spinner_widget.spin_timer));
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->timer_started, egui_timer_check_timer_start(uicode_get_core(), &preview_spinner_widget.spin_timer));
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->alpha, EGUI_VIEW_OF(&preview_spinner_widget)->alpha);
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->enable, egui_view_get_enable(EGUI_VIEW_OF(&preview_spinner_widget)));
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->is_focused, EGUI_VIEW_OF(&preview_spinner_widget)->is_focused);
@@ -226,22 +226,22 @@ static void test_spinner_set_spinning_starts_and_stops_animation(void)
 {
     setup_spinner();
     attach_view(EGUI_VIEW_OF(&test_spinner_widget));
-    EGUI_TEST_ASSERT_TRUE(egui_timer_check_timer_start(&test_spinner_widget.spin_timer));
+    EGUI_TEST_ASSERT_TRUE(egui_timer_check_timer_start(uicode_get_core(), &test_spinner_widget.spin_timer));
 
     egui_view_set_pressed(EGUI_VIEW_OF(&test_spinner_widget), 1);
     hcw_spinner_set_spinning(EGUI_VIEW_OF(&test_spinner_widget), 0);
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_spinner_widget)->is_pressed);
     EGUI_TEST_ASSERT_FALSE(test_spinner_widget.is_spinning);
-    EGUI_TEST_ASSERT_FALSE(egui_timer_check_timer_start(&test_spinner_widget.spin_timer));
+    EGUI_TEST_ASSERT_FALSE(egui_timer_check_timer_start(uicode_get_core(), &test_spinner_widget.spin_timer));
 
     egui_view_set_pressed(EGUI_VIEW_OF(&test_spinner_widget), 1);
     hcw_spinner_set_spinning(EGUI_VIEW_OF(&test_spinner_widget), 1);
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_spinner_widget)->is_pressed);
     EGUI_TEST_ASSERT_TRUE(test_spinner_widget.is_spinning);
-    EGUI_TEST_ASSERT_TRUE(egui_timer_check_timer_start(&test_spinner_widget.spin_timer));
+    EGUI_TEST_ASSERT_TRUE(egui_timer_check_timer_start(uicode_get_core(), &test_spinner_widget.spin_timer));
 
     detach_view(EGUI_VIEW_OF(&test_spinner_widget));
-    EGUI_TEST_ASSERT_FALSE(egui_timer_check_timer_start(&test_spinner_widget.spin_timer));
+    EGUI_TEST_ASSERT_FALSE(egui_timer_check_timer_start(uicode_get_core(), &test_spinner_widget.spin_timer));
 }
 
 static void test_spinner_static_preview_consumes_input_and_keeps_state(void)
@@ -252,7 +252,7 @@ static void test_spinner_static_preview_consumes_input_and_keeps_state(void)
 
     setup_preview_spinner();
     attach_view(EGUI_VIEW_OF(&preview_spinner_widget));
-    EGUI_TEST_ASSERT_FALSE(egui_timer_check_timer_start(&preview_spinner_widget.spin_timer));
+    EGUI_TEST_ASSERT_FALSE(egui_timer_check_timer_start(uicode_get_core(), &preview_spinner_widget.spin_timer));
 
     layout_view(EGUI_VIEW_OF(&preview_spinner_widget), 12, 18, 40, 40);
     get_view_center(EGUI_VIEW_OF(&preview_spinner_widget), &center_x, &center_y);
@@ -271,7 +271,7 @@ static void test_spinner_static_preview_consumes_input_and_keeps_state(void)
     EGUI_TEST_ASSERT_EQUAL_INT(0, g_click_count);
 
     detach_view(EGUI_VIEW_OF(&preview_spinner_widget));
-    EGUI_TEST_ASSERT_FALSE(egui_timer_check_timer_start(&preview_spinner_widget.spin_timer));
+    EGUI_TEST_ASSERT_FALSE(egui_timer_check_timer_start(uicode_get_core(), &preview_spinner_widget.spin_timer));
 }
 
 void test_spinner_run(void)

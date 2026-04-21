@@ -281,7 +281,7 @@ static void egui_view_persona_draw_text(egui_view_t *self, const egui_font_t *fo
     }
 
     draw_region = *region;
-    egui_canvas_draw_text_in_rect(font, text, &draw_region, align, color, egui_color_alpha_mix(self->alpha, alpha));
+    egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, font, text, &draw_region, align, color, egui_color_alpha_mix(self->alpha, alpha));
 }
 
 static void egui_view_persona_get_metrics(egui_view_persona_t *local, egui_view_t *self, egui_view_persona_metrics_t *metrics)
@@ -516,7 +516,7 @@ static void egui_view_persona_draw_do_not_disturb_glyph(egui_view_t *self, const
     center_y = region->location.y + region->size.height / 2;
     stroke_width = region->size.height >= 14 ? 2 : 1;
 
-    egui_canvas_draw_line(start_x, center_y, end_x, center_y, stroke_width, glyph_color, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_100));
+    egui_canvas_draw_line(&uicode_get_core()->canvas, start_x, center_y, end_x, center_y, stroke_width, glyph_color, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_100));
 }
 
 static void egui_view_persona_on_draw(egui_view_t *self)
@@ -595,16 +595,16 @@ static void egui_view_persona_on_draw(egui_view_t *self)
 
     if (!local->compact_mode && metrics.panel_region.size.height >= 34)
     {
-        egui_canvas_draw_round_rectangle_fill(metrics.panel_region.location.x, metrics.panel_region.location.y + 2, metrics.panel_region.size.width,
+        egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.panel_region.location.x, metrics.panel_region.location.y + 2, metrics.panel_region.size.width,
                                               metrics.panel_region.size.height, panel_radius, shadow_color, egui_color_alpha_mix(self->alpha, 22));
     }
-    egui_canvas_draw_round_rectangle_fill(metrics.panel_region.location.x, metrics.panel_region.location.y, metrics.panel_region.size.width,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.panel_region.location.x, metrics.panel_region.location.y, metrics.panel_region.size.width,
                                           metrics.panel_region.size.height, panel_radius, surface_color, egui_color_alpha_mix(self->alpha, 96));
-    egui_canvas_draw_round_rectangle(metrics.panel_region.location.x, metrics.panel_region.location.y, metrics.panel_region.size.width,
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics.panel_region.location.x, metrics.panel_region.location.y, metrics.panel_region.size.width,
                                      metrics.panel_region.size.height, panel_radius, 1, border_color,
                                      egui_color_alpha_mix(self->alpha, local->compact_mode ? 40 : 52));
 
-    egui_canvas_draw_round_rectangle_fill(metrics.section_region.location.x, metrics.section_region.location.y, metrics.section_region.size.width,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.section_region.location.x, metrics.section_region.location.y, metrics.section_region.size.width,
                                           metrics.section_region.size.height, section_radius, section_color, egui_color_alpha_mix(self->alpha, 82));
     if (metrics.section_region.size.height > 10)
     {
@@ -616,15 +616,15 @@ static void egui_view_persona_on_draw(egui_view_t *self)
             indicator_h = 6;
             indicator_y = metrics.section_region.location.y + (metrics.section_region.size.height - indicator_h) / 2;
         }
-        egui_canvas_draw_round_rectangle_fill(metrics.section_region.location.x + 4, indicator_y, local->compact_mode ? 3 : 4, indicator_h, 1, tone_color,
+        egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.section_region.location.x + 4, indicator_y, local->compact_mode ? 3 : 4, indicator_h, 1, tone_color,
                                               egui_color_alpha_mix(self->alpha, 62));
     }
 
     avatar_center_x = metrics.avatar_region.location.x + metrics.avatar_region.size.width / 2;
     avatar_center_y = metrics.avatar_region.location.y + metrics.avatar_region.size.height / 2;
     avatar_radius = metrics.avatar_region.size.width / 2;
-    egui_canvas_draw_circle_fill_basic(avatar_center_x, avatar_center_y, avatar_radius, avatar_fill, egui_color_alpha_mix(self->alpha, 92));
-    egui_canvas_draw_circle_basic(avatar_center_x, avatar_center_y, avatar_radius, 1, avatar_border, egui_color_alpha_mix(self->alpha, 36));
+    egui_canvas_draw_circle_fill_basic(&uicode_get_core()->canvas, avatar_center_x, avatar_center_y, avatar_radius, avatar_fill, egui_color_alpha_mix(self->alpha, 92));
+    egui_canvas_draw_circle_basic(&uicode_get_core()->canvas, avatar_center_x, avatar_center_y, avatar_radius, 1, avatar_border, egui_color_alpha_mix(self->alpha, 36));
 
     egui_view_persona_resolve_initials(local->initials, local->display_name, resolved_initials);
     if (resolved_initials[0] != '\0')
@@ -644,19 +644,19 @@ static void egui_view_persona_on_draw(egui_view_t *self)
         egui_dim_t presence_center_y = metrics.presence_region.location.y + metrics.presence_region.size.height / 2;
         egui_dim_t presence_radius = metrics.presence_region.size.width / 2;
 
-        egui_canvas_draw_circle_fill_basic(presence_center_x, presence_center_y, presence_radius, presence_outline,
+        egui_canvas_draw_circle_fill_basic(&uicode_get_core()->canvas, presence_center_x, presence_center_y, presence_radius, presence_outline,
                                            egui_color_alpha_mix(self->alpha, EGUI_ALPHA_100));
         if (local->status == EGUI_VIEW_PERSONA_STATUS_OFFLINE)
         {
             if (presence_radius > 1)
             {
-                egui_canvas_draw_circle_basic(presence_center_x, presence_center_y, presence_radius - 1, 1, presence_color,
+                egui_canvas_draw_circle_basic(&uicode_get_core()->canvas, presence_center_x, presence_center_y, presence_radius - 1, 1, presence_color,
                                               egui_color_alpha_mix(self->alpha, 92));
             }
         }
         else if (presence_radius > 1)
         {
-            egui_canvas_draw_circle_fill_basic(presence_center_x, presence_center_y, presence_radius - 1, presence_color,
+            egui_canvas_draw_circle_fill_basic(&uicode_get_core()->canvas, presence_center_x, presence_center_y, presence_radius - 1, presence_color,
                                                egui_color_alpha_mix(self->alpha, 92));
             if (local->status == EGUI_VIEW_PERSONA_STATUS_DO_NOT_DISTURB)
             {
@@ -956,7 +956,7 @@ void egui_view_persona_init(egui_view_t *self)
 {
     EGUI_INIT_LOCAL(egui_view_persona_t);
 
-    egui_view_init(self);
+    egui_view_init(self, uicode_get_core());
     self->api = &EGUI_VIEW_API_TABLE_NAME(egui_view_persona_t);
     egui_view_set_background(self, NULL);
     egui_view_set_shadow(self, NULL);

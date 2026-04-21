@@ -114,7 +114,7 @@ void egui_view_font_icon_override_static_preview_api(egui_view_t *self, egui_vie
 
 void egui_view_font_icon_init(egui_view_t *self)
 {
-    egui_view_label_init(self);
+    egui_view_label_init(self, uicode_get_core());
     egui_view_label_set_align_type(self, EGUI_ALIGN_CENTER);
     egui_view_set_background(self, NULL);
     egui_view_set_shadow(self, NULL);

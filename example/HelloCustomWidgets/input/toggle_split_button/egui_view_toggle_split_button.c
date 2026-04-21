@@ -562,12 +562,12 @@ static void toggle_split_button_draw_text(const egui_font_t *font, egui_view_t *
         return;
     }
 
-    egui_canvas_draw_text_in_rect(font, text, &draw_region, align, color, self->alpha);
+    egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, font, text, &draw_region, align, color, self->alpha);
 }
 
 static void toggle_split_button_draw_focus(egui_view_t *self, const egui_region_t *region, egui_dim_t radius, egui_color_t color)
 {
-    egui_canvas_draw_round_rectangle(region->location.x - 1, region->location.y - 1, region->size.width + 2, region->size.height + 2, radius, 1, color,
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, region->location.x - 1, region->location.y - 1, region->size.width + 2, region->size.height + 2, radius, 1, color,
                                      egui_color_alpha_mix(self->alpha, 72));
 }
 
@@ -577,8 +577,8 @@ static void toggle_split_button_draw_chevron(egui_view_t *self, const egui_regio
     egui_dim_t cy = region->location.y + region->size.height / 2;
     egui_alpha_t alpha = egui_color_alpha_mix(self->alpha, 92);
 
-    egui_canvas_draw_line(cx - 3, cy - 1, cx, cy + 2, 1, color, alpha);
-    egui_canvas_draw_line(cx, cy + 2, cx + 3, cy - 1, 1, color, alpha);
+    egui_canvas_draw_line(&uicode_get_core()->canvas, cx - 3, cy - 1, cx, cy + 2, 1, color, alpha);
+    egui_canvas_draw_line(&uicode_get_core()->canvas, cx, cy + 2, cx + 3, cy - 1, 1, color, alpha);
 }
 
 static void egui_view_toggle_split_button_on_draw(egui_view_t *self)
@@ -618,9 +618,9 @@ static void egui_view_toggle_split_button_on_draw(egui_view_t *self)
 
     toggle_split_button_get_metrics(local, self, snapshot, &metrics);
 
-    egui_canvas_draw_round_rectangle_fill(self->region_screen.location.x, self->region_screen.location.y, self->region_screen.size.width,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, self->region_screen.location.x, self->region_screen.location.y, self->region_screen.size.width,
                                           self->region_screen.size.height, outer_radius, surface_color, egui_color_alpha_mix(self->alpha, 96));
-    egui_canvas_draw_round_rectangle(self->region_screen.location.x, self->region_screen.location.y, self->region_screen.size.width,
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, self->region_screen.location.x, self->region_screen.location.y, self->region_screen.size.width,
                                      self->region_screen.size.height, outer_radius, 1, border_color, egui_color_alpha_mix(self->alpha, 58));
 
     toggle_split_button_draw_text(local->meta_font, self, snapshot->title, &metrics.title_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, muted_text_color);
@@ -634,18 +634,18 @@ static void egui_view_toggle_split_button_on_draw(egui_view_t *self)
     {
         primary_fill = egui_rgb_mix(primary_fill, tone_color, 26);
     }
-    egui_canvas_draw_round_rectangle_fill(metrics.primary_region.location.x, metrics.primary_region.location.y, metrics.primary_region.size.width,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.primary_region.location.x, metrics.primary_region.location.y, metrics.primary_region.size.width,
                                           metrics.primary_region.size.height, segment_radius, primary_fill, egui_color_alpha_mix(self->alpha, 96));
-    egui_canvas_draw_round_rectangle(metrics.primary_region.location.x, metrics.primary_region.location.y, metrics.primary_region.size.width,
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics.primary_region.location.x, metrics.primary_region.location.y, metrics.primary_region.size.width,
                                      metrics.primary_region.size.height, segment_radius, 1, primary_border, egui_color_alpha_mix(self->alpha, 46));
 
     badge_fill = checked ? egui_rgb_mix(EGUI_COLOR_HEX(0xFFFFFF), tone_color, 14) : egui_rgb_mix(surface_color, border_color, 22);
     badge_border = checked ? egui_rgb_mix(tone_color, EGUI_COLOR_HEX(0xFFFFFF), 28) : egui_rgb_mix(border_color, tone_color, 10);
     badge_text = checked ? tone_color : muted_text_color;
-    egui_canvas_draw_round_rectangle_fill(metrics.badge_region.location.x, metrics.badge_region.location.y, metrics.badge_region.size.width,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.badge_region.location.x, metrics.badge_region.location.y, metrics.badge_region.size.width,
                                           metrics.badge_region.size.height, metrics.badge_region.size.height / 2, badge_fill,
                                           egui_color_alpha_mix(self->alpha, 100));
-    egui_canvas_draw_round_rectangle(metrics.badge_region.location.x, metrics.badge_region.location.y, metrics.badge_region.size.width,
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics.badge_region.location.x, metrics.badge_region.location.y, metrics.badge_region.size.width,
                                      metrics.badge_region.size.height, metrics.badge_region.size.height / 2, 1, badge_border,
                                      egui_color_alpha_mix(self->alpha, 68));
     toggle_split_button_draw_text(local->meta_font, self, checked ? "ON" : "OFF", &metrics.badge_region, EGUI_ALIGN_CENTER, badge_text);
@@ -664,9 +664,9 @@ static void egui_view_toggle_split_button_on_draw(egui_view_t *self)
     {
         menu_fill = egui_rgb_mix(menu_fill, tone_color, 22);
     }
-    egui_canvas_draw_round_rectangle_fill(metrics.menu_region.location.x, metrics.menu_region.location.y, metrics.menu_region.size.width,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.menu_region.location.x, metrics.menu_region.location.y, metrics.menu_region.size.width,
                                           metrics.menu_region.size.height, segment_radius, menu_fill, egui_color_alpha_mix(self->alpha, 96));
-    egui_canvas_draw_round_rectangle(metrics.menu_region.location.x, metrics.menu_region.location.y, metrics.menu_region.size.width,
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics.menu_region.location.x, metrics.menu_region.location.y, metrics.menu_region.size.width,
                                      metrics.menu_region.size.height, segment_radius, 1, menu_border, egui_color_alpha_mix(self->alpha, 44));
     toggle_split_button_draw_chevron(self, &metrics.menu_region, menu_text);
 
@@ -829,7 +829,7 @@ void egui_view_toggle_split_button_init(egui_view_t *self)
     EGUI_INIT_LOCAL(egui_view_toggle_split_button_t);
     uint8_t i;
 
-    egui_view_init(self);
+    egui_view_init(self, uicode_get_core());
     self->api = &EGUI_VIEW_API_TABLE_NAME(egui_view_toggle_split_button_t);
     egui_view_set_padding_all(self, 2);
 

@@ -215,7 +215,7 @@ static void egui_view_person_picture_draw_text(const egui_font_t *font, egui_vie
         return;
     }
 
-    egui_canvas_draw_text_in_rect(font, text, &draw_region, EGUI_ALIGN_CENTER, color, self->alpha);
+    egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, font, text, &draw_region, EGUI_ALIGN_CENTER, color, self->alpha);
 }
 
 static void egui_view_person_picture_get_avatar_region(egui_view_person_picture_t *local, egui_view_t *self, egui_region_t *avatar_region)
@@ -333,16 +333,16 @@ static void egui_view_person_picture_on_draw(egui_view_t *self)
         presence_outline_color = egui_view_person_picture_mix_disabled(presence_outline_color);
     }
 
-    egui_canvas_draw_circle_fill_basic(center_x, center_y, radius, fill_color, egui_color_alpha_mix(self->alpha, 92));
+    egui_canvas_draw_circle_fill_basic(&uicode_get_core()->canvas, center_x, center_y, radius, fill_color, egui_color_alpha_mix(self->alpha, 92));
 
     if (local->image != NULL)
     {
-        prev_mask = egui_canvas_get_mask();
+        prev_mask = egui_canvas_get_mask(&uicode_get_core()->canvas);
         egui_mask_set_position((egui_mask_t *)&local->image_mask, avatar_region.location.x, avatar_region.location.y);
         egui_mask_set_size((egui_mask_t *)&local->image_mask, avatar_region.size.width, avatar_region.size.height);
-        egui_canvas_set_mask((egui_mask_t *)&local->image_mask);
-        egui_canvas_draw_image_resize(local->image, avatar_region.location.x, avatar_region.location.y, avatar_region.size.width, avatar_region.size.height);
-        egui_canvas_set_mask(prev_mask);
+        egui_canvas_set_mask(&uicode_get_core()->canvas, (egui_mask_t *)&local->image_mask);
+        egui_canvas_draw_image_resize(&uicode_get_core()->canvas, local->image, avatar_region.location.x, avatar_region.location.y, avatar_region.size.width, avatar_region.size.height);
+        egui_canvas_set_mask(&uicode_get_core()->canvas, prev_mask);
     }
     else
     {
@@ -358,10 +358,10 @@ static void egui_view_person_picture_on_draw(egui_view_t *self)
         }
     }
 
-    egui_canvas_draw_circle_basic(center_x, center_y, radius, 1, border_color, egui_color_alpha_mix(self->alpha, 28));
+    egui_canvas_draw_circle_basic(&uicode_get_core()->canvas, center_x, center_y, radius, 1, border_color, egui_color_alpha_mix(self->alpha, 28));
     if (radius > 1)
     {
-        egui_canvas_draw_circle_basic(center_x, center_y, radius - 1, 1, egui_rgb_mix(fill_color, local->surface_color, 16),
+        egui_canvas_draw_circle_basic(&uicode_get_core()->canvas, center_x, center_y, radius - 1, 1, egui_rgb_mix(fill_color, local->surface_color, 16),
                                       egui_color_alpha_mix(self->alpha, 10));
     }
 
@@ -377,11 +377,11 @@ static void egui_view_person_picture_on_draw(egui_view_t *self)
             presence_center_x = presence_region.location.x + presence_region.size.width / 2;
             presence_center_y = presence_region.location.y + presence_region.size.height / 2;
             presence_radius = presence_region.size.width / 2;
-            egui_canvas_draw_circle_fill_basic(presence_center_x, presence_center_y, presence_radius, presence_outline_color,
+            egui_canvas_draw_circle_fill_basic(&uicode_get_core()->canvas, presence_center_x, presence_center_y, presence_radius, presence_outline_color,
                                                egui_color_alpha_mix(self->alpha, 96));
             if (presence_radius > 1)
             {
-                egui_canvas_draw_circle_fill_basic(presence_center_x, presence_center_y, presence_radius - 1, presence_color,
+                egui_canvas_draw_circle_fill_basic(&uicode_get_core()->canvas, presence_center_x, presence_center_y, presence_radius - 1, presence_color,
                                                    egui_color_alpha_mix(self->alpha, 92));
             }
         }
@@ -583,7 +583,7 @@ void egui_view_person_picture_init(egui_view_t *self)
 {
     EGUI_INIT_LOCAL(egui_view_person_picture_t);
 
-    egui_view_init(self);
+    egui_view_init(self, uicode_get_core());
     self->api = &EGUI_VIEW_API_TABLE_NAME(egui_view_person_picture_t);
     egui_view_set_background(self, NULL);
     egui_view_set_shadow(self, NULL);

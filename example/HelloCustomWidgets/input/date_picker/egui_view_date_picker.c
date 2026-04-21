@@ -653,7 +653,7 @@ static void date_picker_draw_text(const egui_font_t *font, egui_view_t *self, co
         return;
     }
 
-    egui_canvas_draw_text_in_rect(font, text, &draw_region, align, color, self->alpha);
+    egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, font, text, &draw_region, align, color, self->alpha);
 }
 
 static void date_picker_draw_chevron(egui_view_t *self, const egui_region_t *region, egui_color_t color, uint8_t direction)
@@ -664,23 +664,23 @@ static void date_picker_draw_chevron(egui_view_t *self, const egui_region_t *reg
 
     if (direction == 0)
     {
-        egui_canvas_draw_line(cx + 2, cy - 3, cx - 1, cy, 1, color, alpha);
-        egui_canvas_draw_line(cx - 1, cy, cx + 2, cy + 3, 1, color, alpha);
+        egui_canvas_draw_line(&uicode_get_core()->canvas, cx + 2, cy - 3, cx - 1, cy, 1, color, alpha);
+        egui_canvas_draw_line(&uicode_get_core()->canvas, cx - 1, cy, cx + 2, cy + 3, 1, color, alpha);
     }
     else if (direction == 1)
     {
-        egui_canvas_draw_line(cx - 2, cy - 3, cx + 1, cy, 1, color, alpha);
-        egui_canvas_draw_line(cx + 1, cy, cx - 2, cy + 3, 1, color, alpha);
+        egui_canvas_draw_line(&uicode_get_core()->canvas, cx - 2, cy - 3, cx + 1, cy, 1, color, alpha);
+        egui_canvas_draw_line(&uicode_get_core()->canvas, cx + 1, cy, cx - 2, cy + 3, 1, color, alpha);
     }
     else if (direction == 2)
     {
-        egui_canvas_draw_line(cx - 3, cy - 1, cx, cy + 2, 1, color, alpha);
-        egui_canvas_draw_line(cx, cy + 2, cx + 3, cy - 1, 1, color, alpha);
+        egui_canvas_draw_line(&uicode_get_core()->canvas, cx - 3, cy - 1, cx, cy + 2, 1, color, alpha);
+        egui_canvas_draw_line(&uicode_get_core()->canvas, cx, cy + 2, cx + 3, cy - 1, 1, color, alpha);
     }
     else
     {
-        egui_canvas_draw_line(cx - 3, cy + 1, cx, cy - 2, 1, color, alpha);
-        egui_canvas_draw_line(cx, cy - 2, cx + 3, cy + 1, 1, color, alpha);
+        egui_canvas_draw_line(&uicode_get_core()->canvas, cx - 3, cy + 1, cx, cy - 2, 1, color, alpha);
+        egui_canvas_draw_line(&uicode_get_core()->canvas, cx, cy - 2, cx + 3, cy + 1, 1, color, alpha);
     }
 }
 
@@ -904,11 +904,11 @@ static void date_picker_draw_field(egui_view_t *self, egui_view_date_picker_t *l
         field_fill = egui_rgb_mix(field_fill, accent_color, 18);
     }
 
-    egui_canvas_draw_round_rectangle_fill(metrics->field_region.location.x, metrics->field_region.location.y, metrics->field_region.size.width,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics->field_region.location.x, metrics->field_region.location.y, metrics->field_region.size.width,
                                           metrics->field_region.size.height,
                                           local->compact_mode ? EGUI_VIEW_DATE_PICKER_COMPACT_FIELD_RADIUS : EGUI_VIEW_DATE_PICKER_STANDARD_FIELD_RADIUS,
                                           field_fill, egui_color_alpha_mix(self->alpha, fill_alpha));
-    egui_canvas_draw_round_rectangle(metrics->field_region.location.x, metrics->field_region.location.y, metrics->field_region.size.width,
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics->field_region.location.x, metrics->field_region.location.y, metrics->field_region.size.width,
                                      metrics->field_region.size.height,
                                      local->compact_mode ? EGUI_VIEW_DATE_PICKER_COMPACT_FIELD_RADIUS : EGUI_VIEW_DATE_PICKER_STANDARD_FIELD_RADIUS, 1,
                                      field_border, egui_color_alpha_mix(self->alpha, border_alpha));
@@ -919,10 +919,10 @@ static void date_picker_draw_field(egui_view_t *self, egui_view_date_picker_t *l
     {
         egui_dim_t radius = local->compact_mode ? EGUI_VIEW_DATE_PICKER_COMPACT_FIELD_RADIUS : EGUI_VIEW_DATE_PICKER_STANDARD_FIELD_RADIUS;
 
-        egui_canvas_draw_round_rectangle(metrics->field_region.location.x, metrics->field_region.location.y, metrics->field_region.size.width,
+        egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics->field_region.location.x, metrics->field_region.location.y, metrics->field_region.size.width,
                                          metrics->field_region.size.height, radius, 2, accent_color,
                                          egui_color_alpha_mix(self->alpha, local->open_mode ? 96 : 84));
-        egui_canvas_draw_round_rectangle(metrics->field_region.location.x + 2, metrics->field_region.location.y + 2, metrics->field_region.size.width - 4,
+        egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics->field_region.location.x + 2, metrics->field_region.location.y + 2, metrics->field_region.size.width - 4,
                                          metrics->field_region.size.height - 4, radius > 2 ? (radius - 2) : radius, 1, accent_color,
                                          egui_color_alpha_mix(self->alpha, local->open_mode ? 48 : 40));
     }
@@ -936,7 +936,7 @@ static void date_picker_draw_field(egui_view_t *self, egui_view_date_picker_t *l
         egui_dim_t divider_x = metrics->chevron_region.location.x - 4;
         egui_color_t divider_color = egui_rgb_mix(border_color, accent_color, local->open_mode ? 18 : 8);
 
-        egui_canvas_draw_line(divider_x, metrics->field_region.location.y + 6, divider_x,
+        egui_canvas_draw_line(&uicode_get_core()->canvas, divider_x, metrics->field_region.location.y + 6, divider_x,
                               metrics->field_region.location.y + metrics->field_region.size.height - 7, 1, divider_color,
                               egui_color_alpha_mix(self->alpha, local->open_mode ? 52 : 34));
         date_picker_draw_chevron(self, &metrics->chevron_region, muted_text_color, local->open_mode ? 3 : 2);
@@ -961,38 +961,38 @@ static void date_picker_draw_panel(egui_view_t *self, egui_view_date_picker_t *l
     egui_color_t title_color = (local->panel_year != local->year || local->panel_month != local->month) ? accent_color : text_color;
     char buffer[16];
 
-    egui_canvas_draw_round_rectangle_fill(metrics->panel_region.location.x, metrics->panel_region.location.y, metrics->panel_region.size.width,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics->panel_region.location.x, metrics->panel_region.location.y, metrics->panel_region.size.width,
                                           metrics->panel_region.size.height, EGUI_VIEW_DATE_PICKER_STANDARD_PANEL_RADIUS, panel_fill,
                                           egui_color_alpha_mix(self->alpha, EGUI_VIEW_DATE_PICKER_STANDARD_PANEL_FILL_ALPHA));
-    egui_canvas_draw_round_rectangle(metrics->panel_region.location.x, metrics->panel_region.location.y, metrics->panel_region.size.width,
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics->panel_region.location.x, metrics->panel_region.location.y, metrics->panel_region.size.width,
                                      metrics->panel_region.size.height, EGUI_VIEW_DATE_PICKER_STANDARD_PANEL_RADIUS, 1, panel_border,
                                      egui_color_alpha_mix(self->alpha, EGUI_VIEW_DATE_PICKER_STANDARD_PANEL_BORDER_ALPHA));
 
-    egui_canvas_draw_line(metrics->panel_region.location.x + 8, metrics->panel_week_region.location.y - 3,
+    egui_canvas_draw_line(&uicode_get_core()->canvas, metrics->panel_region.location.x + 8, metrics->panel_week_region.location.y - 3,
                           metrics->panel_region.location.x + metrics->panel_region.size.width - 9, metrics->panel_week_region.location.y - 3, 1, panel_border,
                           egui_color_alpha_mix(self->alpha, 34));
-    egui_canvas_draw_round_rectangle_fill(metrics->panel_week_region.location.x, metrics->panel_week_region.location.y, metrics->panel_week_region.size.width,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics->panel_week_region.location.x, metrics->panel_week_region.location.y, metrics->panel_week_region.size.width,
                                           metrics->panel_week_region.size.height, 5, egui_rgb_mix(local->surface_color, accent_color, 8),
                                           egui_color_alpha_mix(self->alpha, 30));
 
-    egui_canvas_draw_round_rectangle_fill(metrics->panel_prev_region.location.x, metrics->panel_prev_region.location.y, metrics->panel_prev_region.size.width,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics->panel_prev_region.location.x, metrics->panel_prev_region.location.y, metrics->panel_prev_region.size.width,
                                           metrics->panel_prev_region.size.height, 5, nav_fill, egui_color_alpha_mix(self->alpha, 24));
-    egui_canvas_draw_round_rectangle(metrics->panel_prev_region.location.x, metrics->panel_prev_region.location.y, metrics->panel_prev_region.size.width,
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics->panel_prev_region.location.x, metrics->panel_prev_region.location.y, metrics->panel_prev_region.size.width,
                                      metrics->panel_prev_region.size.height, 5, 1, nav_border, egui_color_alpha_mix(self->alpha, 36));
-    egui_canvas_draw_round_rectangle_fill(metrics->panel_next_region.location.x, metrics->panel_next_region.location.y, metrics->panel_next_region.size.width,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics->panel_next_region.location.x, metrics->panel_next_region.location.y, metrics->panel_next_region.size.width,
                                           metrics->panel_next_region.size.height, 5, nav_fill, egui_color_alpha_mix(self->alpha, 24));
-    egui_canvas_draw_round_rectangle(metrics->panel_next_region.location.x, metrics->panel_next_region.location.y, metrics->panel_next_region.size.width,
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics->panel_next_region.location.x, metrics->panel_next_region.location.y, metrics->panel_next_region.size.width,
                                      metrics->panel_next_region.size.height, 5, 1, nav_border, egui_color_alpha_mix(self->alpha, 36));
 
     if (self->is_pressed && local->pressed_part == EGUI_VIEW_DATE_PICKER_PART_PREV)
     {
-        egui_canvas_draw_round_rectangle_fill(metrics->panel_prev_region.location.x, metrics->panel_prev_region.location.y,
+        egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics->panel_prev_region.location.x, metrics->panel_prev_region.location.y,
                                               metrics->panel_prev_region.size.width, metrics->panel_prev_region.size.height, 5,
                                               egui_rgb_mix(local->surface_color, accent_color, 18), egui_color_alpha_mix(self->alpha, 60));
     }
     if (self->is_pressed && local->pressed_part == EGUI_VIEW_DATE_PICKER_PART_NEXT)
     {
-        egui_canvas_draw_round_rectangle_fill(metrics->panel_next_region.location.x, metrics->panel_next_region.location.y,
+        egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics->panel_next_region.location.x, metrics->panel_next_region.location.y,
                                               metrics->panel_next_region.size.width, metrics->panel_next_region.size.height, 5,
                                               egui_rgb_mix(local->surface_color, accent_color, 18), egui_color_alpha_mix(self->alpha, 60));
     }
@@ -1008,7 +1008,7 @@ static void date_picker_draw_panel(egui_view_t *self, egui_view_date_picker_t *l
         egui_dim_t center_x = metrics->panel_title_region.location.x + metrics->panel_title_region.size.width / 2;
         egui_dim_t underline_y = metrics->panel_title_region.location.y + metrics->panel_title_region.size.height - 1;
 
-        egui_canvas_draw_line(center_x - line_half, underline_y, center_x + line_half, underline_y, 2, accent_color, egui_color_alpha_mix(self->alpha, 76));
+        egui_canvas_draw_line(&uicode_get_core()->canvas, center_x - line_half, underline_y, center_x + line_half, underline_y, 2, accent_color, egui_color_alpha_mix(self->alpha, 76));
     }
 
     for (col = 0; col < 7; ++col)
@@ -1055,28 +1055,28 @@ static void date_picker_draw_panel(egui_view_t *self, egui_view_date_picker_t *l
             {
                 egui_color_t press_fill = egui_rgb_mix(local->surface_color, accent_color, 18);
 
-                egui_canvas_draw_round_rectangle_fill(cell_inner_region.location.x, cell_inner_region.location.y, cell_inner_region.size.width,
+                egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, cell_inner_region.location.x, cell_inner_region.location.y, cell_inner_region.size.width,
                                                       cell_inner_region.size.height, 4, press_fill, egui_color_alpha_mix(self->alpha, 40));
-                egui_canvas_draw_round_rectangle(cell_inner_region.location.x, cell_inner_region.location.y, cell_inner_region.size.width,
+                egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, cell_inner_region.location.x, cell_inner_region.location.y, cell_inner_region.size.width,
                                                  cell_inner_region.size.height, 4, 1, egui_rgb_mix(border_color, accent_color, 32),
                                                  egui_color_alpha_mix(self->alpha, 76));
             }
 
             if (local->year == local->panel_year && local->month == local->panel_month && day == local->day)
             {
-                egui_canvas_draw_round_rectangle_fill(cell_inner_region.location.x, cell_inner_region.location.y, cell_inner_region.size.width,
+                egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, cell_inner_region.location.x, cell_inner_region.location.y, cell_inner_region.size.width,
                                                       cell_inner_region.size.height, 4, accent_color, egui_color_alpha_mix(self->alpha, 84));
-                egui_canvas_draw_round_rectangle(cell_inner_region.location.x, cell_inner_region.location.y, cell_inner_region.size.width,
+                egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, cell_inner_region.location.x, cell_inner_region.location.y, cell_inner_region.size.width,
                                                  cell_inner_region.size.height, 4, 1, egui_rgb_mix(accent_color, EGUI_COLOR_WHITE, 16),
                                                  egui_color_alpha_mix(self->alpha, 78));
                 day_text_color = EGUI_COLOR_WHITE;
             }
             else if (anchor_day > 0 && day == anchor_day)
             {
-                egui_canvas_draw_round_rectangle_fill(cell_inner_region.location.x, cell_inner_region.location.y, cell_inner_region.size.width,
+                egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, cell_inner_region.location.x, cell_inner_region.location.y, cell_inner_region.size.width,
                                                       cell_inner_region.size.height, 4, egui_rgb_mix(local->surface_color, accent_color, 14),
                                                       egui_color_alpha_mix(self->alpha, 24));
-                egui_canvas_draw_round_rectangle(cell_inner_region.location.x, cell_inner_region.location.y, cell_inner_region.size.width,
+                egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, cell_inner_region.location.x, cell_inner_region.location.y, cell_inner_region.size.width,
                                                  cell_inner_region.size.height, 4, 1, egui_rgb_mix(border_color, accent_color, 32),
                                                  egui_color_alpha_mix(self->alpha, 72));
                 day_text_color = accent_color;
@@ -1087,9 +1087,9 @@ static void date_picker_draw_panel(egui_view_t *self, egui_view_date_picker_t *l
                 egui_dim_t dot_center_x = cell_inner_region.location.x + cell_inner_region.size.width / 2;
                 egui_dim_t dot_center_y = cell_inner_region.location.y + cell_inner_region.size.height - 4;
 
-                egui_canvas_draw_round_rectangle(cell_inner_region.location.x, cell_inner_region.location.y, cell_inner_region.size.width,
+                egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, cell_inner_region.location.x, cell_inner_region.location.y, cell_inner_region.size.width,
                                                  cell_inner_region.size.height, 4, 1, local->today_color, egui_color_alpha_mix(self->alpha, 78));
-                egui_canvas_draw_circle_fill(dot_center_x, dot_center_y, dot_radius, local->today_color, egui_color_alpha_mix(self->alpha, 86));
+                egui_canvas_draw_circle_fill(&uicode_get_core()->canvas, dot_center_x, dot_center_y, dot_radius, local->today_color, egui_color_alpha_mix(self->alpha, 86));
                 day_text_color = local->today_color;
             }
             else if (((col + local->first_day_of_week) % 7) == 0 || ((col + local->first_day_of_week) % 7) == 6)
@@ -1150,15 +1150,15 @@ static void egui_view_date_picker_on_draw(egui_view_t *self)
 
     date_picker_get_metrics(local, self, &metrics);
 
-    egui_canvas_draw_round_rectangle_fill(
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, 
             region.location.x, region.location.y, region.size.width, region.size.height,
             local->compact_mode ? EGUI_VIEW_DATE_PICKER_COMPACT_RADIUS : EGUI_VIEW_DATE_PICKER_STANDARD_RADIUS, outer_fill,
             egui_color_alpha_mix(self->alpha, local->compact_mode ? EGUI_VIEW_DATE_PICKER_COMPACT_FILL_ALPHA : EGUI_VIEW_DATE_PICKER_STANDARD_FILL_ALPHA));
-    egui_canvas_draw_round_rectangle(
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, 
             region.location.x, region.location.y, region.size.width, region.size.height,
             local->compact_mode ? EGUI_VIEW_DATE_PICKER_COMPACT_RADIUS : EGUI_VIEW_DATE_PICKER_STANDARD_RADIUS, 1, outer_border,
             egui_color_alpha_mix(self->alpha, local->compact_mode ? EGUI_VIEW_DATE_PICKER_COMPACT_BORDER_ALPHA : EGUI_VIEW_DATE_PICKER_STANDARD_BORDER_ALPHA));
-    egui_canvas_draw_round_rectangle_fill(region.location.x + 2, region.location.y + 2, region.size.width - 4, local->compact_mode ? 3 : 4,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, region.location.x + 2, region.location.y + 2, region.size.width - 4, local->compact_mode ? 3 : 4,
                                           local->compact_mode ? EGUI_VIEW_DATE_PICKER_COMPACT_RADIUS : EGUI_VIEW_DATE_PICKER_STANDARD_RADIUS, accent_color,
                                           egui_color_alpha_mix(self->alpha, local->read_only_mode ? 12 : 24));
 
@@ -1473,7 +1473,7 @@ void egui_view_date_picker_init(egui_view_t *self)
 {
     EGUI_INIT_LOCAL(egui_view_date_picker_t);
 
-    egui_view_init(self);
+    egui_view_init(self, uicode_get_core());
     self->api = &EGUI_VIEW_API_TABLE_NAME(egui_view_date_picker_t);
     egui_view_set_padding_all(self, 2);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS

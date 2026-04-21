@@ -155,12 +155,12 @@ static void scroll_bar_draw_text(const egui_font_t *font, egui_view_t *self, con
         return;
     }
 
-    egui_canvas_draw_text_in_rect(font, text, &draw_region, align, color, self->alpha);
+    egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, font, text, &draw_region, align, color, self->alpha);
 }
 
 static void scroll_bar_draw_focus(egui_view_t *self, const egui_region_t *region, egui_dim_t radius, egui_color_t color, egui_alpha_t alpha)
 {
-    egui_canvas_draw_round_rectangle(region->location.x - 1, region->location.y - 1, region->size.width + 2, region->size.height + 2, radius, 1, color,
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, region->location.x - 1, region->location.y - 1, region->size.width + 2, region->size.height + 2, radius, 1, color,
                                      egui_color_alpha_mix(self->alpha, alpha));
 }
 
@@ -172,13 +172,13 @@ static void scroll_bar_draw_chevron(egui_view_t *self, const egui_region_t *regi
 
     if (is_increase)
     {
-        egui_canvas_draw_line(cx - 3, cy - 1, cx, cy + 2, 1, color, alpha);
-        egui_canvas_draw_line(cx, cy + 2, cx + 3, cy - 1, 1, color, alpha);
+        egui_canvas_draw_line(&uicode_get_core()->canvas, cx - 3, cy - 1, cx, cy + 2, 1, color, alpha);
+        egui_canvas_draw_line(&uicode_get_core()->canvas, cx, cy + 2, cx + 3, cy - 1, 1, color, alpha);
     }
     else
     {
-        egui_canvas_draw_line(cx - 3, cy + 1, cx, cy - 2, 1, color, alpha);
-        egui_canvas_draw_line(cx, cy - 2, cx + 3, cy + 1, 1, color, alpha);
+        egui_canvas_draw_line(&uicode_get_core()->canvas, cx - 3, cy + 1, cx, cy - 2, 1, color, alpha);
+        egui_canvas_draw_line(&uicode_get_core()->canvas, cx, cy - 2, cx + 3, cy + 1, 1, color, alpha);
     }
 }
 
@@ -576,9 +576,9 @@ static void scroll_bar_draw_preview(egui_view_t *self, egui_view_scroll_bar_t *l
         preview_inner.size.height = 8;
     }
 
-    egui_canvas_draw_round_rectangle_fill(preview_box.location.x, preview_box.location.y, preview_box.size.width, preview_box.size.height, 7,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, preview_box.location.x, preview_box.location.y, preview_box.size.width, preview_box.size.height, 7,
                                           egui_rgb_mix(surface_color, preview_color, 10), egui_color_alpha_mix(self->alpha, 92));
-    egui_canvas_draw_round_rectangle(preview_box.location.x, preview_box.location.y, preview_box.size.width, preview_box.size.height, 7, 1,
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, preview_box.location.x, preview_box.location.y, preview_box.size.width, preview_box.size.height, 7, 1,
                                      egui_rgb_mix(border_color, preview_color, 18), egui_color_alpha_mix(self->alpha, 58));
 
     for (index = 0; index < 4; index++)
@@ -590,7 +590,7 @@ static void scroll_bar_draw_preview(egui_view_t *self, egui_view_scroll_bar_t *l
         {
             width = 4;
         }
-        egui_canvas_draw_rectangle_fill(preview_inner.location.x + 1, y, width, 2, egui_rgb_mix(preview_color, muted_color, 40),
+        egui_canvas_draw_rectangle_fill(&uicode_get_core()->canvas, preview_inner.location.x + 1, y, width, 2, egui_rgb_mix(preview_color, muted_color, 40),
                                         egui_color_alpha_mix(self->alpha, 48));
     }
 
@@ -608,9 +608,9 @@ static void scroll_bar_draw_preview(egui_view_t *self, egui_view_scroll_bar_t *l
         viewport_y = (egui_dim_t)(((int32_t)local->offset * (preview_inner.size.height - viewport_h)) / max_offset);
     }
 
-    egui_canvas_draw_round_rectangle_fill(preview_inner.location.x, preview_inner.location.y + viewport_y, preview_inner.size.width, viewport_h, 5,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, preview_inner.location.x, preview_inner.location.y + viewport_y, preview_inner.size.width, viewport_h, 5,
                                           egui_rgb_mix(preview_color, accent_color, 42), egui_color_alpha_mix(self->alpha, 80));
-    egui_canvas_draw_round_rectangle(preview_inner.location.x, preview_inner.location.y + viewport_y, preview_inner.size.width, viewport_h, 5, 1,
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, preview_inner.location.x, preview_inner.location.y + viewport_y, preview_inner.size.width, viewport_h, 5, 1,
                                      egui_rgb_mix(accent_color, EGUI_COLOR_WHITE, 10), egui_color_alpha_mix(self->alpha, 76));
 
     scroll_bar_draw_text(local->meta_font, self, "Viewport", &title_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, muted_color);
@@ -629,9 +629,9 @@ static void scroll_bar_draw_button(egui_view_t *self, const egui_region_t *regio
         scroll_bar_draw_focus(self, region, 5, egui_rgb_mix(accent_color, EGUI_COLOR_WHITE, 8), 56);
     }
 
-    egui_canvas_draw_round_rectangle_fill(region->location.x, region->location.y, region->size.width, region->size.height, 5, fill_color,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, region->location.x, region->location.y, region->size.width, region->size.height, 5, fill_color,
                                           egui_color_alpha_mix(self->alpha, 94));
-    egui_canvas_draw_round_rectangle(region->location.x, region->location.y, region->size.width, region->size.height, 5, 1, line_color,
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, region->location.x, region->location.y, region->size.width, region->size.height, 5, 1, line_color,
                                      egui_color_alpha_mix(self->alpha, 60));
     scroll_bar_draw_chevron(self, region, egui_rgb_mix(icon_color, accent_color, focused ? 24 : 10), is_increase);
 }
@@ -647,9 +647,9 @@ static void scroll_bar_draw_track(egui_view_t *self, egui_view_scroll_bar_t *loc
     uint8_t thumb_focused = (local->current_part == EGUI_VIEW_SCROLL_BAR_PART_THUMB && !local->read_only_mode && !local->compact_mode) ? 1 : 0;
     uint8_t thumb_pressed = (local->pressed_part == EGUI_VIEW_SCROLL_BAR_PART_THUMB || local->thumb_dragging) ? 1 : 0;
 
-    egui_canvas_draw_round_rectangle_fill(metrics->track_region.location.x, metrics->track_region.location.y, metrics->track_region.size.width,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics->track_region.location.x, metrics->track_region.location.y, metrics->track_region.size.width,
                                           metrics->track_region.size.height, 6, track_fill, egui_color_alpha_mix(self->alpha, 86));
-    egui_canvas_draw_round_rectangle(metrics->track_region.location.x, metrics->track_region.location.y, metrics->track_region.size.width,
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics->track_region.location.x, metrics->track_region.location.y, metrics->track_region.size.width,
                                      metrics->track_region.size.height, 6, 1, egui_rgb_mix(border_color, preview_color, 14),
                                      egui_color_alpha_mix(self->alpha, 48));
 
@@ -669,7 +669,7 @@ static void scroll_bar_draw_track(egui_view_t *self, egui_view_scroll_bar_t *loc
 
         if (page_region.size.height > 0)
         {
-            egui_canvas_draw_round_rectangle_fill(page_region.location.x + 2, page_region.location.y, page_region.size.width - 4, page_region.size.height, 4,
+            egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, page_region.location.x + 2, page_region.location.y, page_region.size.width - 4, page_region.size.height, 4,
                                                   egui_rgb_mix(preview_color, accent_color, 28), egui_color_alpha_mix(self->alpha, 32));
         }
     }
@@ -690,9 +690,9 @@ static void scroll_bar_draw_track(egui_view_t *self, egui_view_scroll_bar_t *loc
         thumb_border = egui_rgb_mix(thumb_border, accent_color, 12);
     }
 
-    egui_canvas_draw_round_rectangle_fill(thumb_region.location.x, thumb_region.location.y, thumb_region.size.width, thumb_region.size.height, 6, thumb_fill,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, thumb_region.location.x, thumb_region.location.y, thumb_region.size.width, thumb_region.size.height, 6, thumb_fill,
                                           egui_color_alpha_mix(self->alpha, 94));
-    egui_canvas_draw_round_rectangle(thumb_region.location.x, thumb_region.location.y, thumb_region.size.width, thumb_region.size.height, 6, 1, thumb_border,
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, thumb_region.location.x, thumb_region.location.y, thumb_region.size.width, thumb_region.size.height, 6, 1, thumb_border,
                                      egui_color_alpha_mix(self->alpha, 78));
 
     if (thumb_region.size.height > 10)
@@ -700,8 +700,8 @@ static void scroll_bar_draw_track(egui_view_t *self, egui_view_scroll_bar_t *loc
         egui_dim_t cx = thumb_region.location.x + thumb_region.size.width / 2;
         egui_dim_t cy = thumb_region.location.y + thumb_region.size.height / 2;
 
-        egui_canvas_draw_line(cx - 4, cy - 2, cx + 4, cy - 2, 1, grip_color, egui_color_alpha_mix(self->alpha, 84));
-        egui_canvas_draw_line(cx - 4, cy + 2, cx + 4, cy + 2, 1, grip_color, egui_color_alpha_mix(self->alpha, 84));
+        egui_canvas_draw_line(&uicode_get_core()->canvas, cx - 4, cy - 2, cx + 4, cy - 2, 1, grip_color, egui_color_alpha_mix(self->alpha, 84));
+        egui_canvas_draw_line(&uicode_get_core()->canvas, cx - 4, cy + 2, cx + 4, cy + 2, 1, grip_color, egui_color_alpha_mix(self->alpha, 84));
     }
 }
 
@@ -755,13 +755,13 @@ static void egui_view_scroll_bar_on_draw(egui_view_t *self)
 
     if (!local->compact_mode)
     {
-        egui_canvas_draw_round_rectangle_fill(region.location.x, region.location.y + 2, region.size.width, region.size.height, SB_STD_RADIUS + 1, shadow_color,
+        egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, region.location.x, region.location.y + 2, region.size.width, region.size.height, SB_STD_RADIUS + 1, shadow_color,
                                               egui_color_alpha_mix(self->alpha, enabled ? 18 : 10));
     }
-    egui_canvas_draw_round_rectangle_fill(region.location.x, region.location.y, region.size.width, region.size.height,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, region.location.x, region.location.y, region.size.width, region.size.height,
                                           local->compact_mode ? SB_COMPACT_RADIUS : SB_STD_RADIUS, surface_color,
                                           egui_color_alpha_mix(self->alpha, local->compact_mode ? 94 : 96));
-    egui_canvas_draw_round_rectangle(region.location.x, region.location.y, region.size.width, region.size.height,
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, region.location.x, region.location.y, region.size.width, region.size.height,
                                      local->compact_mode ? SB_COMPACT_RADIUS : SB_STD_RADIUS, 1, border_color,
                                      egui_color_alpha_mix(self->alpha, local->compact_mode ? 56 : 60));
 
@@ -784,10 +784,10 @@ static void egui_view_scroll_bar_on_draw(egui_view_t *self)
     {
         percent = scroll_bar_get_max_offset_inner(local) > 0 ? (egui_dim_t)(((int32_t)local->offset * 100) / scroll_bar_get_max_offset_inner(local)) : 0;
         scroll_bar_format_percent(percent, summary_text, (int)sizeof(summary_text));
-        egui_canvas_draw_round_rectangle_fill(metrics.summary_region.location.x, metrics.summary_region.location.y, metrics.summary_region.size.width,
+        egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.summary_region.location.x, metrics.summary_region.location.y, metrics.summary_region.size.width,
                                               metrics.summary_region.size.height, 6, egui_rgb_mix(surface_color, preview_color, 12),
                                               egui_color_alpha_mix(self->alpha, 94));
-        egui_canvas_draw_round_rectangle(metrics.summary_region.location.x, metrics.summary_region.location.y, metrics.summary_region.size.width,
+        egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics.summary_region.location.x, metrics.summary_region.location.y, metrics.summary_region.size.width,
                                          metrics.summary_region.size.height, 6, 1, egui_rgb_mix(border_color, preview_color, 18),
                                          egui_color_alpha_mix(self->alpha, 60));
         scroll_bar_draw_text(local->meta_font, self, summary_text, &metrics.summary_region, EGUI_ALIGN_CENTER, egui_rgb_mix(text_color, accent_color, 18));
@@ -1352,7 +1352,7 @@ void egui_view_scroll_bar_init(egui_view_t *self)
 {
     EGUI_INIT_LOCAL(egui_view_scroll_bar_t);
 
-    egui_view_init(self);
+    egui_view_init(self, uicode_get_core());
     self->api = &EGUI_VIEW_API_TABLE_NAME(egui_view_scroll_bar_t);
     egui_view_set_padding_all(self, 2);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS

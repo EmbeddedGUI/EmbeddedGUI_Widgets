@@ -223,7 +223,7 @@ static void egui_view_dialog_sheet_draw_text(const egui_font_t *font, egui_view_
         return;
     }
 
-    egui_canvas_draw_text_in_rect(font, text, &draw_region, align, color, self->alpha);
+    egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, font, text, &draw_region, align, color, self->alpha);
 }
 
 static void egui_view_dialog_sheet_draw_button(egui_view_dialog_sheet_t *local, egui_view_t *self, const egui_region_t *region, const char *text,
@@ -277,9 +277,9 @@ static void egui_view_dialog_sheet_draw_button(egui_view_dialog_sheet_t *local, 
         text_color = egui_view_dialog_sheet_mix_disabled(text_color);
     }
 
-    egui_canvas_draw_round_rectangle_fill(region->location.x, region->location.y, region->size.width, region->size.height, radius, fill_color,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, region->location.x, region->location.y, region->size.width, region->size.height, radius, fill_color,
                                           egui_color_alpha_mix(self->alpha, fill_alpha));
-    egui_canvas_draw_round_rectangle(region->location.x, region->location.y, region->size.width, region->size.height, radius, 1, draw_border,
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, region->location.x, region->location.y, region->size.width, region->size.height, radius, 1, draw_border,
                                      egui_color_alpha_mix(self->alpha, border_alpha));
     egui_view_dialog_sheet_draw_text(local->meta_font, self, text, region, EGUI_ALIGN_CENTER, text_color);
 }
@@ -751,11 +751,11 @@ static void egui_view_dialog_sheet_on_draw(egui_view_t *self)
         shadow_color = egui_view_dialog_sheet_mix_disabled(shadow_color);
     }
 
-    egui_canvas_draw_round_rectangle_fill(
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, 
             metrics.backdrop_region.location.x, metrics.backdrop_region.location.y, metrics.backdrop_region.size.width, metrics.backdrop_region.size.height,
             radius, overlay_fill,
             egui_color_alpha_mix(self->alpha, local->compact_mode ? DIALOG_SHEET_COMPACT_OVERLAY_ALPHA : DIALOG_SHEET_STANDARD_OVERLAY_ALPHA));
-    egui_canvas_draw_round_rectangle(metrics.backdrop_region.location.x, metrics.backdrop_region.location.y, metrics.backdrop_region.size.width,
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics.backdrop_region.location.x, metrics.backdrop_region.location.y, metrics.backdrop_region.size.width,
                                      metrics.backdrop_region.size.height, radius, 1, overlay_line, egui_color_alpha_mix(self->alpha, 10));
 
     preview_region.location.x = metrics.backdrop_region.location.x + (local->compact_mode ? 8 : 14);
@@ -764,36 +764,36 @@ static void egui_view_dialog_sheet_on_draw(egui_view_t *self)
     preview_region.size.height = metrics.sheet_region.location.y - preview_region.location.y - (local->compact_mode ? 2 : 4);
     if (!local->compact_mode && preview_region.size.height > 8)
     {
-        egui_canvas_draw_round_rectangle_fill(preview_region.location.x, preview_region.location.y, preview_region.size.width, 8, 4, overlay_line,
+        egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, preview_region.location.x, preview_region.location.y, preview_region.size.width, 8, 4, overlay_line,
                                               egui_color_alpha_mix(self->alpha, 6));
 
         preview_line_region.location.x = preview_region.location.x;
         preview_line_region.location.y = preview_region.location.y + 6;
         preview_line_region.size.width = preview_region.size.width * 3 / 5;
         preview_line_region.size.height = 4;
-        egui_canvas_draw_round_rectangle_fill(preview_line_region.location.x, preview_line_region.location.y, preview_line_region.size.width,
+        egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, preview_line_region.location.x, preview_line_region.location.y, preview_line_region.size.width,
                                               preview_line_region.size.height, preview_line_region.size.height / 2, overlay_line,
                                               egui_color_alpha_mix(self->alpha, 4));
     }
 
-    egui_canvas_draw_round_rectangle_fill(metrics.sheet_region.location.x + 2, metrics.sheet_region.location.y + 3, metrics.sheet_region.size.width,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.sheet_region.location.x + 2, metrics.sheet_region.location.y + 3, metrics.sheet_region.size.width,
                                           metrics.sheet_region.size.height, radius, shadow_color,
                                           egui_color_alpha_mix(self->alpha, local->compact_mode ? 4 : 6));
-    egui_canvas_draw_round_rectangle_fill(metrics.sheet_region.location.x, metrics.sheet_region.location.y, metrics.sheet_region.size.width,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.sheet_region.location.x, metrics.sheet_region.location.y, metrics.sheet_region.size.width,
                                           metrics.sheet_region.size.height, radius, sheet_fill, egui_color_alpha_mix(self->alpha, 94));
-    egui_canvas_draw_round_rectangle(
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, 
             metrics.sheet_region.location.x, metrics.sheet_region.location.y, metrics.sheet_region.size.width, metrics.sheet_region.size.height, radius, 1,
             sheet_border, egui_color_alpha_mix(self->alpha, local->compact_mode ? DIALOG_SHEET_COMPACT_BORDER_ALPHA : DIALOG_SHEET_STANDARD_BORDER_ALPHA));
 
-    egui_canvas_draw_round_rectangle_fill(metrics.handle_region.location.x, metrics.handle_region.location.y, metrics.handle_region.size.width,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.handle_region.location.x, metrics.handle_region.location.y, metrics.handle_region.size.width,
                                           metrics.handle_region.size.height, metrics.handle_region.size.height / 2, handle_color,
                                           egui_color_alpha_mix(self->alpha, local->read_only_mode ? 12 : (local->compact_mode ? 30 : 40)));
-    egui_canvas_draw_circle_fill(metrics.hero_region.location.x + metrics.hero_region.size.width / 2,
+    egui_canvas_draw_circle_fill(&uicode_get_core()->canvas, metrics.hero_region.location.x + metrics.hero_region.size.width / 2,
                                  metrics.hero_region.location.y + metrics.hero_region.size.height / 2, metrics.hero_region.size.width / 2, hero_fill,
                                  egui_color_alpha_mix(self->alpha, local->read_only_mode ? 32 : 80));
     if (!local->compact_mode)
     {
-        egui_canvas_draw_circle(metrics.hero_region.location.x + metrics.hero_region.size.width / 2,
+        egui_canvas_draw_circle(&uicode_get_core()->canvas, metrics.hero_region.location.x + metrics.hero_region.size.width / 2,
                                 metrics.hero_region.location.y + metrics.hero_region.size.height / 2, metrics.hero_region.size.width / 2, 1, hero_border,
                                 egui_color_alpha_mix(self->alpha, local->read_only_mode ? 18 : 40));
     }
@@ -810,9 +810,9 @@ static void egui_view_dialog_sheet_on_draw(egui_view_t *self)
 
     if (show_close && metrics.close_region.size.width > 0)
     {
-        egui_canvas_draw_line(metrics.close_region.location.x + 2, metrics.close_region.location.y + 2, metrics.close_region.location.x + 6,
+        egui_canvas_draw_line(&uicode_get_core()->canvas, metrics.close_region.location.x + 2, metrics.close_region.location.y + 2, metrics.close_region.location.x + 6,
                               metrics.close_region.location.y + 6, 1, body_color, egui_color_alpha_mix(self->alpha, 40));
-        egui_canvas_draw_line(metrics.close_region.location.x + 6, metrics.close_region.location.y + 2, metrics.close_region.location.x + 2,
+        egui_canvas_draw_line(&uicode_get_core()->canvas, metrics.close_region.location.x + 6, metrics.close_region.location.y + 2, metrics.close_region.location.x + 2,
                               metrics.close_region.location.y + 6, 1, body_color, egui_color_alpha_mix(self->alpha, 40));
     }
 
@@ -825,9 +825,9 @@ static void egui_view_dialog_sheet_on_draw(egui_view_t *self)
         egui_alpha_t summary_fill_alpha = local->read_only_mode ? (local->compact_mode ? 10 : 12) : (local->compact_mode ? 14 : 18);
         egui_alpha_t summary_border_alpha = local->read_only_mode ? (local->compact_mode ? 12 : 14) : (local->compact_mode ? 16 : 20);
 
-        egui_canvas_draw_round_rectangle_fill(metrics.footer_text_region.location.x, summary_y, metrics.footer_text_region.size.width, summary_h, summary_h / 2,
+        egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.footer_text_region.location.x, summary_y, metrics.footer_text_region.size.width, summary_h, summary_h / 2,
                                               footer_fill, egui_color_alpha_mix(self->alpha, summary_fill_alpha));
-        egui_canvas_draw_round_rectangle(metrics.footer_text_region.location.x, summary_y, metrics.footer_text_region.size.width, summary_h, summary_h / 2, 1,
+        egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics.footer_text_region.location.x, summary_y, metrics.footer_text_region.size.width, summary_h, summary_h / 2, 1,
                                          footer_border, egui_color_alpha_mix(self->alpha, summary_border_alpha));
         if (footer_text_draw_region.size.width > summary_pad_x * 2)
         {
@@ -843,10 +843,10 @@ static void egui_view_dialog_sheet_on_draw(egui_view_t *self)
         egui_alpha_t tag_fill_alpha = local->read_only_mode ? 52 : 72;
         egui_alpha_t tag_border_alpha = local->read_only_mode ? 18 : 24;
 
-        egui_canvas_draw_round_rectangle_fill(metrics.tag_region.location.x, metrics.tag_region.location.y, metrics.tag_region.size.width,
+        egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.tag_region.location.x, metrics.tag_region.location.y, metrics.tag_region.size.width,
                                               metrics.tag_region.size.height, metrics.tag_region.size.height / 2, tag_fill,
                                               egui_color_alpha_mix(self->alpha, tag_fill_alpha));
-        egui_canvas_draw_round_rectangle(metrics.tag_region.location.x, metrics.tag_region.location.y, metrics.tag_region.size.width,
+        egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics.tag_region.location.x, metrics.tag_region.location.y, metrics.tag_region.size.width,
                                          metrics.tag_region.size.height, metrics.tag_region.size.height / 2, 1, tag_border,
                                          egui_color_alpha_mix(self->alpha, tag_border_alpha));
         egui_view_dialog_sheet_draw_text(local->meta_font, self, snapshot->tag, &metrics.tag_region, EGUI_ALIGN_CENTER, tag_text);
@@ -864,7 +864,7 @@ static void egui_view_dialog_sheet_on_draw(egui_view_t *self)
 
     if (local->read_only_mode || !enabled)
     {
-        egui_canvas_draw_line(metrics.sheet_region.location.x + (local->compact_mode ? 6 : 8),
+        egui_canvas_draw_line(&uicode_get_core()->canvas, metrics.sheet_region.location.x + (local->compact_mode ? 6 : 8),
                               metrics.sheet_region.location.y + metrics.sheet_region.size.height - (local->compact_mode ? 6 : 8),
                               metrics.sheet_region.location.x + metrics.sheet_region.size.width - (local->compact_mode ? 6 : 8),
                               metrics.sheet_region.location.y + metrics.sheet_region.size.height - (local->compact_mode ? 6 : 8), 1, sheet_border,
@@ -1076,7 +1076,7 @@ void egui_view_dialog_sheet_init(egui_view_t *self)
 {
     EGUI_INIT_LOCAL(egui_view_dialog_sheet_t);
 
-    egui_view_init(self);
+    egui_view_init(self, uicode_get_core());
     self->api = &EGUI_VIEW_API_TABLE_NAME(egui_view_dialog_sheet_t);
     egui_view_set_padding_all(self, 2);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS

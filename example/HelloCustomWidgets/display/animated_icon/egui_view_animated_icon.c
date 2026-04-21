@@ -222,7 +222,7 @@ static void egui_view_animated_icon_stop_timer(egui_view_t *self)
         return;
     }
 
-    egui_timer_stop_timer(&local->anim_timer);
+    egui_timer_stop_timer(uicode_get_core(), &local->anim_timer);
     local->timer_started = 0;
 }
 
@@ -236,7 +236,7 @@ static void egui_view_animated_icon_start_timer(egui_view_t *self)
         return;
     }
 
-    egui_timer_start_timer(&local->anim_timer, EGUI_VIEW_ANIMATED_ICON_TIMER_MS, EGUI_VIEW_ANIMATED_ICON_TIMER_MS);
+    egui_timer_start_timer(uicode_get_core(), &local->anim_timer, EGUI_VIEW_ANIMATED_ICON_TIMER_MS, EGUI_VIEW_ANIMATED_ICON_TIMER_MS);
     local->timer_started = 1;
 }
 
@@ -492,9 +492,9 @@ static void egui_view_animated_icon_draw_back(const egui_region_t *region, int32
     arm_dy = egui_view_animated_icon_lerp_i32((size * 4) / 18, (size * 5) / 18, hover_q10);
     arm_dy = egui_view_animated_icon_lerp_i32(arm_dy, (size * 7) / 36, press_q10);
 
-    egui_canvas_draw_line_round_cap_hq(join_x, center_y, tail_x2, center_y, stroke, color, alpha);
-    egui_canvas_draw_line_round_cap_hq(tip_x, center_y, join_x, center_y - arm_dy, stroke, color, alpha);
-    egui_canvas_draw_line_round_cap_hq(tip_x, center_y, join_x, center_y + arm_dy, stroke, color, alpha);
+    egui_canvas_draw_line_round_cap_hq(&uicode_get_core()->canvas, join_x, center_y, tail_x2, center_y, stroke, color, alpha);
+    egui_canvas_draw_line_round_cap_hq(&uicode_get_core()->canvas, tip_x, center_y, join_x, center_y - arm_dy, stroke, color, alpha);
+    egui_canvas_draw_line_round_cap_hq(&uicode_get_core()->canvas, tip_x, center_y, join_x, center_y + arm_dy, stroke, color, alpha);
 }
 
 static void egui_view_animated_icon_draw_chevron_down_small(const egui_region_t *region, int32_t progress_q10, egui_color_t color, egui_alpha_t alpha)
@@ -518,8 +518,8 @@ static void egui_view_animated_icon_draw_chevron_down_small(const egui_region_t 
     bottom_y = egui_view_animated_icon_lerp_i32(cy + size / 10, cy + size / 8, hover_q10);
     bottom_y = egui_view_animated_icon_lerp_i32(bottom_y, cy + size / 12, press_q10);
 
-    egui_canvas_draw_line_round_cap_hq(cx - half_width, top_y, cx, bottom_y, stroke, color, alpha);
-    egui_canvas_draw_line_round_cap_hq(cx, bottom_y, cx + half_width, top_y, stroke, color, alpha);
+    egui_canvas_draw_line_round_cap_hq(&uicode_get_core()->canvas, cx - half_width, top_y, cx, bottom_y, stroke, color, alpha);
+    egui_canvas_draw_line_round_cap_hq(&uicode_get_core()->canvas, cx, bottom_y, cx + half_width, top_y, stroke, color, alpha);
 }
 
 static void egui_view_animated_icon_draw_fallback(egui_view_t *self, egui_view_animated_icon_t *local, const egui_region_t *region, egui_color_t color)
@@ -540,7 +540,7 @@ static void egui_view_animated_icon_draw_fallback(egui_view_t *self, egui_view_a
     }
 
     draw_region = *region;
-    egui_canvas_draw_text_in_rect(font, glyph, &draw_region, EGUI_ALIGN_CENTER, color, self->alpha);
+    egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, font, glyph, &draw_region, EGUI_ALIGN_CENTER, color, self->alpha);
 }
 
 static void egui_view_animated_icon_on_draw(egui_view_t *self)
@@ -640,7 +640,7 @@ void egui_view_animated_icon_init(egui_view_t *self)
 {
     egui_view_animated_icon_t *local = egui_view_animated_icon_local(self);
 
-    egui_view_init(self);
+    egui_view_init(self, uicode_get_core());
     self->api = &EGUI_VIEW_API_TABLE_NAME(egui_view_animated_icon_t);
     egui_view_set_background(self, NULL);
     egui_view_set_shadow(self, NULL);

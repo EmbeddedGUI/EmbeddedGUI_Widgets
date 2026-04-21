@@ -568,7 +568,7 @@ static void shortcut_recorder_draw_text(const egui_font_t *font, egui_view_t *se
     }
 
     draw_region = *region;
-    egui_canvas_draw_text_in_rect(font, text, &draw_region, align, color, self->alpha);
+    egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, font, text, &draw_region, align, color, self->alpha);
 }
 
 static void shortcut_recorder_draw_focus(egui_view_t *self, const egui_region_t *region, egui_dim_t radius, egui_color_t color)
@@ -577,7 +577,7 @@ static void shortcut_recorder_draw_focus(egui_view_t *self, const egui_region_t 
     {
         return;
     }
-    egui_canvas_draw_round_rectangle(region->location.x - 1, region->location.y - 1, region->size.width + 2, region->size.height + 2, radius, 1, color,
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, region->location.x - 1, region->location.y - 1, region->size.width + 2, region->size.height + 2, radius, 1, color,
                                      egui_color_alpha_mix(self->alpha, 72));
 }
 
@@ -644,10 +644,10 @@ static void shortcut_recorder_draw_binding_tokens(egui_view_shortcut_recorder_t 
         token_region.location.y = y;
         token_region.size.width = token_w;
         token_region.size.height = token_h;
-        egui_canvas_draw_round_rectangle_fill(token_region.location.x, token_region.location.y, token_region.size.width, token_region.size.height, token_h / 2,
+        egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, token_region.location.x, token_region.location.y, token_region.size.width, token_region.size.height, token_h / 2,
                                               egui_rgb_mix(field_color, local->accent_color, i + 1 == label_count ? 34 : 12),
                                               egui_color_alpha_mix(self->alpha, 100));
-        egui_canvas_draw_round_rectangle(token_region.location.x, token_region.location.y, token_region.size.width, token_region.size.height, token_h / 2, 1,
+        egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, token_region.location.x, token_region.location.y, token_region.size.width, token_region.size.height, token_h / 2, 1,
                                          egui_rgb_mix(local->border_color, local->accent_color, i + 1 == label_count ? 28 : 12),
                                          egui_color_alpha_mix(self->alpha, 56));
         shortcut_recorder_draw_text(local->meta_font, self, labels[i], &token_region, EGUI_ALIGN_CENTER, text_color);
@@ -680,10 +680,10 @@ static void shortcut_recorder_draw_field(egui_view_shortcut_recorder_t *local, e
                                                                          : egui_rgb_mix(surface_color, local->accent_color, 12));
 
     field_fill = egui_rgb_mix(surface_color, local->listening ? local->listening_color : local->accent_color, local->listening ? 10 : 4);
-    egui_canvas_draw_round_rectangle_fill(metrics->field_region.location.x, metrics->field_region.location.y, metrics->field_region.size.width,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics->field_region.location.x, metrics->field_region.location.y, metrics->field_region.size.width,
                                           metrics->field_region.size.height, local->compact_mode ? SR_COMPACT_RADIUS : SR_STD_RADIUS, field_fill,
                                           egui_color_alpha_mix(self->alpha, 100));
-    egui_canvas_draw_round_rectangle(metrics->field_region.location.x, metrics->field_region.location.y, metrics->field_region.size.width,
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics->field_region.location.x, metrics->field_region.location.y, metrics->field_region.size.width,
                                      metrics->field_region.size.height, local->compact_mode ? SR_COMPACT_RADIUS : SR_STD_RADIUS, 1,
                                      egui_rgb_mix(border_color, focus_color, local->listening ? 28 : 10), egui_color_alpha_mix(self->alpha, 62));
 
@@ -693,9 +693,9 @@ static void shortcut_recorder_draw_field(egui_view_shortcut_recorder_t *local, e
     status_region.size.width = local->compact_mode ? SR_COMPACT_STATUS_W : SR_STD_STATUS_W;
     status_region.size.height = metrics->field_region.size.height - 10;
 
-    egui_canvas_draw_round_rectangle_fill(status_region.location.x, status_region.location.y, status_region.size.width, status_region.size.height,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, status_region.location.x, status_region.location.y, status_region.size.width, status_region.size.height,
                                           status_region.size.height / 2, status_fill, egui_color_alpha_mix(self->alpha, 100));
-    egui_canvas_draw_round_rectangle(status_region.location.x, status_region.location.y, status_region.size.width, status_region.size.height,
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, status_region.location.x, status_region.location.y, status_region.size.width, status_region.size.height,
                                      status_region.size.height / 2, 1, egui_rgb_mix(border_color, focus_color, local->listening ? 30 : 12),
                                      egui_color_alpha_mix(self->alpha, 54));
     shortcut_recorder_draw_text(local->meta_font, self, status_text, &status_region, EGUI_ALIGN_CENTER,
@@ -750,9 +750,9 @@ static void shortcut_recorder_draw_preset_row(egui_view_shortcut_recorder_t *loc
                                     : 4);
     row_border = egui_rgb_mix(border_color, local->accent_color, preset_index == local->current_preset ? 18 : 6);
 
-    egui_canvas_draw_round_rectangle_fill(region->location.x, region->location.y, region->size.width, region->size.height, region->size.height / 2, row_fill,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, region->location.x, region->location.y, region->size.width, region->size.height, region->size.height / 2, row_fill,
                                           egui_color_alpha_mix(self->alpha, 100));
-    egui_canvas_draw_round_rectangle(region->location.x, region->location.y, region->size.width, region->size.height, region->size.height / 2, 1, row_border,
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, region->location.x, region->location.y, region->size.width, region->size.height, region->size.height / 2, 1, row_border,
                                      egui_color_alpha_mix(self->alpha, 46));
 
     label_region.location.x += 8;
@@ -783,10 +783,10 @@ static void shortcut_recorder_draw_footer(egui_view_shortcut_recorder_t *local, 
     {
         egui_color_t fill = egui_rgb_mix(surface_color, local->danger_color, local->pressed_part == EGUI_VIEW_SHORTCUT_RECORDER_PART_CLEAR ? 20 : 8);
 
-        egui_canvas_draw_round_rectangle_fill(metrics->clear_region.location.x, metrics->clear_region.location.y, metrics->clear_region.size.width,
+        egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics->clear_region.location.x, metrics->clear_region.location.y, metrics->clear_region.size.width,
                                               metrics->clear_region.size.height, metrics->clear_region.size.height / 2, fill,
                                               egui_color_alpha_mix(self->alpha, 100));
-        egui_canvas_draw_round_rectangle(metrics->clear_region.location.x, metrics->clear_region.location.y, metrics->clear_region.size.width,
+        egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics->clear_region.location.x, metrics->clear_region.location.y, metrics->clear_region.size.width,
                                          metrics->clear_region.size.height, metrics->clear_region.size.height / 2, 1,
                                          egui_rgb_mix(border_color, local->danger_color, 22), egui_color_alpha_mix(self->alpha, 52));
         shortcut_recorder_draw_text(local->meta_font, self, "Clear", &metrics->clear_region, EGUI_ALIGN_CENTER, text_color);
@@ -817,10 +817,10 @@ static void egui_view_shortcut_recorder_on_draw(egui_view_t *self)
     }
 
     shortcut_recorder_get_metrics(local, self, &metrics);
-    egui_canvas_draw_round_rectangle_fill(self->region_screen.location.x, self->region_screen.location.y, self->region_screen.size.width,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, self->region_screen.location.x, self->region_screen.location.y, self->region_screen.size.width,
                                           self->region_screen.size.height, local->compact_mode ? SR_COMPACT_RADIUS : SR_STD_RADIUS, surface_color,
                                           egui_color_alpha_mix(self->alpha, 96));
-    egui_canvas_draw_round_rectangle(self->region_screen.location.x, self->region_screen.location.y, self->region_screen.size.width,
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, self->region_screen.location.x, self->region_screen.location.y, self->region_screen.size.width,
                                      self->region_screen.size.height, local->compact_mode ? SR_COMPACT_RADIUS : SR_STD_RADIUS, 1, border_color,
                                      egui_color_alpha_mix(self->alpha, 58));
 
@@ -1132,7 +1132,7 @@ void egui_view_shortcut_recorder_init(egui_view_t *self)
 {
     EGUI_INIT_LOCAL(egui_view_shortcut_recorder_t);
 
-    egui_view_init(self);
+    egui_view_init(self, uicode_get_core());
     self->api = &EGUI_VIEW_API_TABLE_NAME(egui_view_shortcut_recorder_t);
     egui_view_set_padding_all(self, 2);
 

@@ -30,6 +30,9 @@ APP_SUB_ROOTS = {
 SUB_APP_FAMILY_APPS = tuple(APP_SUB_ROOTS.keys())
 FULL_CHECK_SKIP_APPS = {"HelloCustomWidgets"}
 COMPILE_OUTPUT_ROOT = Path("output") / "cc"
+UNIT_TEST_OUTPUT_DIR = Path("o")
+UNIT_TEST_OBJROOT_DIR = Path("o")
+UNIT_TEST_APP_OBJ_SUFFIX = "ut"
 
 def get_example_list():
     path = 'example'
@@ -344,20 +347,28 @@ def run_unit_tests(params):
     else:
         # Force clean to ensure test build is fresh and not affected by previous builds (e.g., if test-specific files were added/removed, or to catch missing dependencies).
         os.system('make clean')
+        shutil.rmtree(UNIT_TEST_OUTPUT_DIR, ignore_errors=True)
         # Build with headless test port
         test_params = params + ' APP=HelloUnitTest PORT=pc_test'
-        res = compile_code(test_params)
+        res = compile_code(
+            test_params,
+            output_dir=UNIT_TEST_OUTPUT_DIR,
+            objroot_dir=UNIT_TEST_OBJROOT_DIR,
+            app_obj_suffix=UNIT_TEST_APP_OBJ_SUFFIX,
+        )
         if res != 0:
             print("Unit test build failed!")
             return res
 
         # Run the test executable
         if os.name == 'nt':
-            exe_path = ROOT_DIR / 'output' / 'main.exe'
+            exe_path = ROOT_DIR / UNIT_TEST_OUTPUT_DIR / 'main.exe'
         else:
-            exe_path = ROOT_DIR / 'output' / 'main'
+            exe_path = ROOT_DIR / UNIT_TEST_OUTPUT_DIR / 'main'
         print(str(exe_path))
         res = subprocess.call([str(exe_path)], cwd=ROOT_DIR)
+        if res == 0:
+            shutil.rmtree(UNIT_TEST_OUTPUT_DIR, ignore_errors=True)
 
     if res != 0:
         print("Unit tests FAILED!")
@@ -463,11 +474,6 @@ def parse_args():
                         action="store_true",
                         default=False,
                         help="Only build and run HelloUnitTest on pc_test.")
-
-    parser.add_argument("--skip-icon-font-check",
-                        action="store_true",
-                        default=False,
-                        help="Deprecated in this repository; kept for CLI compatibility.")
 
     parser.add_argument("--category",
                         type=str,
@@ -732,7 +738,7 @@ if __name__ == '__main__':
     app_sets = get_example_list()
     sub_app_sets = build_sub_app_sets()
 
-    # Clean once at start if requested (or for backward compat on first run)
+    # Clean once at start if requested.
     if args.clean:
         if build_system == 'cmake':
             if os.path.exists('build_cmake'):

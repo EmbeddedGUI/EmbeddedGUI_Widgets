@@ -63,7 +63,7 @@ static void on_preview_click(egui_view_t *self)
 
 static void setup_badge(void)
 {
-    egui_view_notification_badge_init(EGUI_VIEW_OF(&test_badge));
+    egui_view_notification_badge_init(EGUI_VIEW_OF(&test_badge), uicode_get_core());
     egui_view_set_size(EGUI_VIEW_OF(&test_badge), 34, 20);
     hcw_info_badge_apply_count_style(EGUI_VIEW_OF(&test_badge));
     g_click_count = 0;
@@ -71,7 +71,7 @@ static void setup_badge(void)
 
 static void setup_preview_badge(void)
 {
-    egui_view_notification_badge_init(EGUI_VIEW_OF(&preview_badge));
+    egui_view_notification_badge_init(EGUI_VIEW_OF(&preview_badge), uicode_get_core());
     egui_view_set_size(EGUI_VIEW_OF(&preview_badge), 12, 12);
     egui_view_set_on_click_listener(EGUI_VIEW_OF(&preview_badge), on_preview_click);
     egui_view_notification_badge_set_icon_font(EGUI_VIEW_OF(&preview_badge), EGUI_FONT_ICON_MS_16);

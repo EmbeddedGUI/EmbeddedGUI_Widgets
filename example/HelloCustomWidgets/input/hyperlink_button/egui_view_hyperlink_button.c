@@ -149,7 +149,7 @@ static void hcw_hyperlink_button_draw_underline(egui_view_t *self)
     {
         line_y = region.location.y;
     }
-    egui_canvas_draw_line(start_x, line_y, end_x, line_y, 1, local->base.color, alpha);
+    egui_canvas_draw_line(&uicode_get_core()->canvas, start_x, line_y, end_x, line_y, 1, local->base.color, alpha);
 }
 
 static void hcw_hyperlink_button_on_draw(egui_view_t *self)

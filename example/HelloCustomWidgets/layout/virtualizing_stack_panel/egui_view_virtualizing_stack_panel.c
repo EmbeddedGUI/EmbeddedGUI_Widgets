@@ -272,7 +272,7 @@ static void virtualizing_stack_panel_draw_text(const egui_font_t *font, egui_vie
     {
         return;
     }
-    egui_canvas_draw_text_in_rect(font, text, &draw_region, align, color, self->alpha);
+    egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, font, text, &draw_region, align, color, self->alpha);
 }
 
 static void virtualizing_stack_panel_get_metrics(egui_view_virtualizing_stack_panel_t *local, egui_view_t *self,
@@ -658,14 +658,14 @@ static void virtualizing_stack_panel_draw_item(egui_view_t *self, egui_view_virt
         value_text = virtualizing_stack_panel_mix_disabled(value_text);
     }
 
-    egui_canvas_draw_round_rectangle_fill(region->location.x, region->location.y, region->size.width, region->size.height, row_radius, row_fill,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, region->location.x, region->location.y, region->size.width, region->size.height, row_radius, row_fill,
                                           egui_color_alpha_mix(self->alpha, local->compact_mode ? 84 : 94));
-    egui_canvas_draw_round_rectangle(region->location.x, region->location.y, region->size.width, region->size.height, row_radius, 1, row_border,
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, region->location.x, region->location.y, region->size.width, region->size.height, row_radius, 1, row_border,
                                      egui_color_alpha_mix(self->alpha, item_index == local->current_item ? 44 : 28));
 
     if (item_index == local->current_item)
     {
-        egui_canvas_draw_round_rectangle_fill(region->location.x + 1, region->location.y + 2, indicator_w, region->size.height - 4, 1, tone_color,
+        egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, region->location.x + 1, region->location.y + 2, indicator_w, region->size.height - 4, 1, tone_color,
                                               egui_color_alpha_mix(self->alpha, 100));
     }
 
@@ -675,9 +675,9 @@ static void virtualizing_stack_panel_draw_item(egui_view_t *self, egui_view_virt
         badge_region.location.y = region->location.y + (region->size.height - badge_h) / 2;
         badge_region.size.width = virtualizing_stack_panel_pill_width(item->badge, local->compact_mode, local->compact_mode ? 18 : 22, region->size.width / 3);
         badge_region.size.height = badge_h;
-        egui_canvas_draw_round_rectangle_fill(badge_region.location.x, badge_region.location.y, badge_region.size.width, badge_region.size.height,
+        egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, badge_region.location.x, badge_region.location.y, badge_region.size.width, badge_region.size.height,
                                               badge_region.size.height / 2, badge_fill, egui_color_alpha_mix(self->alpha, 94));
-        egui_canvas_draw_round_rectangle(badge_region.location.x, badge_region.location.y, badge_region.size.width, badge_region.size.height,
+        egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, badge_region.location.x, badge_region.location.y, badge_region.size.width, badge_region.size.height,
                                          badge_region.size.height / 2, 1, row_border, egui_color_alpha_mix(self->alpha, 24));
         virtualizing_stack_panel_draw_text(local->meta_font, self, item->badge, &badge_region, EGUI_ALIGN_CENTER, badge_text);
         text_left = badge_region.location.x + badge_region.size.width + 5;
@@ -696,9 +696,9 @@ static void virtualizing_stack_panel_draw_item(egui_view_t *self, egui_view_virt
         }
         else
         {
-            egui_canvas_draw_round_rectangle_fill(value_region.location.x, value_region.location.y, value_region.size.width, value_region.size.height,
+            egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, value_region.location.x, value_region.location.y, value_region.size.width, value_region.size.height,
                                                   value_region.size.height / 2, value_fill, egui_color_alpha_mix(self->alpha, 96));
-            egui_canvas_draw_round_rectangle(value_region.location.x, value_region.location.y, value_region.size.width, value_region.size.height,
+            egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, value_region.location.x, value_region.location.y, value_region.size.width, value_region.size.height,
                                              value_region.size.height / 2, 1, value_border, egui_color_alpha_mix(self->alpha, 34));
             virtualizing_stack_panel_draw_text(local->meta_font, self, item->value, &value_region, EGUI_ALIGN_CENTER, value_text);
         }
@@ -849,17 +849,17 @@ static void egui_view_virtualizing_stack_panel_on_draw(egui_view_t *self)
         thumb_border = virtualizing_stack_panel_mix_disabled(thumb_border);
     }
 
-    egui_canvas_draw_round_rectangle_fill(metrics.content_region.location.x - 2, metrics.content_region.location.y - 2, metrics.content_region.size.width + 4,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.content_region.location.x - 2, metrics.content_region.location.y - 2, metrics.content_region.size.width + 4,
                                           metrics.content_region.size.height + 4, card_radius, card_fill, egui_color_alpha_mix(self->alpha, 96));
-    egui_canvas_draw_round_rectangle(metrics.content_region.location.x - 2, metrics.content_region.location.y - 2, metrics.content_region.size.width + 4,
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics.content_region.location.x - 2, metrics.content_region.location.y - 2, metrics.content_region.size.width + 4,
                                      metrics.content_region.size.height + 4, card_radius, 1, card_border, egui_color_alpha_mix(self->alpha, 54));
 
     if (virtualizing_stack_panel_region_has_size(&metrics.badge_region))
     {
-        egui_canvas_draw_round_rectangle_fill(metrics.badge_region.location.x, metrics.badge_region.location.y, metrics.badge_region.size.width,
+        egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.badge_region.location.x, metrics.badge_region.location.y, metrics.badge_region.size.width,
                                               metrics.badge_region.size.height, metrics.badge_region.size.height / 2, badge_fill,
                                               egui_color_alpha_mix(self->alpha, 96));
-        egui_canvas_draw_round_rectangle(metrics.badge_region.location.x, metrics.badge_region.location.y, metrics.badge_region.size.width,
+        egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics.badge_region.location.x, metrics.badge_region.location.y, metrics.badge_region.size.width,
                                          metrics.badge_region.size.height, metrics.badge_region.size.height / 2, 1, badge_border,
                                          egui_color_alpha_mix(self->alpha, 28));
         virtualizing_stack_panel_draw_text(local->meta_font, self, snapshot->header, &metrics.badge_region, EGUI_ALIGN_CENTER, badge_text);
@@ -870,24 +870,24 @@ static void egui_view_virtualizing_stack_panel_on_draw(egui_view_t *self)
 
     if (virtualizing_stack_panel_region_has_size(&metrics.shell_region))
     {
-        egui_canvas_draw_round_rectangle_fill(metrics.shell_region.location.x, metrics.shell_region.location.y, metrics.shell_region.size.width,
+        egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.shell_region.location.x, metrics.shell_region.location.y, metrics.shell_region.size.width,
                                               metrics.shell_region.size.height, shell_radius, shell_fill, egui_color_alpha_mix(self->alpha, 94));
-        egui_canvas_draw_round_rectangle(metrics.shell_region.location.x, metrics.shell_region.location.y, metrics.shell_region.size.width,
+        egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics.shell_region.location.x, metrics.shell_region.location.y, metrics.shell_region.size.width,
                                          metrics.shell_region.size.height, shell_radius, 1, shell_border, egui_color_alpha_mix(self->alpha, 26));
     }
 
     if (virtualizing_stack_panel_region_has_size(&metrics.track_region))
     {
-        egui_canvas_draw_round_rectangle_fill(metrics.track_region.location.x, metrics.track_region.location.y, metrics.track_region.size.width,
+        egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.track_region.location.x, metrics.track_region.location.y, metrics.track_region.size.width,
                                               metrics.track_region.size.height, metrics.track_region.size.width / 2, track_fill,
                                               egui_color_alpha_mix(self->alpha, 70));
     }
     if (virtualizing_stack_panel_region_has_size(&metrics.thumb_region))
     {
-        egui_canvas_draw_round_rectangle_fill(metrics.thumb_region.location.x, metrics.thumb_region.location.y, metrics.thumb_region.size.width,
+        egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.thumb_region.location.x, metrics.thumb_region.location.y, metrics.thumb_region.size.width,
                                               metrics.thumb_region.size.height, metrics.thumb_region.size.width / 2, thumb_fill,
                                               egui_color_alpha_mix(self->alpha, 96));
-        egui_canvas_draw_round_rectangle(metrics.thumb_region.location.x, metrics.thumb_region.location.y, metrics.thumb_region.size.width,
+        egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics.thumb_region.location.x, metrics.thumb_region.location.y, metrics.thumb_region.size.width,
                                          metrics.thumb_region.size.height, metrics.thumb_region.size.width / 2, 1, thumb_border,
                                          egui_color_alpha_mix(self->alpha, 34));
     }
@@ -906,10 +906,10 @@ static void egui_view_virtualizing_stack_panel_on_draw(egui_view_t *self)
 
     if (virtualizing_stack_panel_region_has_size(&metrics.footer_region))
     {
-        egui_canvas_draw_round_rectangle_fill(metrics.footer_region.location.x, metrics.footer_region.location.y, metrics.footer_region.size.width,
+        egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.footer_region.location.x, metrics.footer_region.location.y, metrics.footer_region.size.width,
                                               metrics.footer_region.size.height, metrics.footer_region.size.height / 2, footer_fill,
                                               egui_color_alpha_mix(self->alpha, 96));
-        egui_canvas_draw_round_rectangle(metrics.footer_region.location.x, metrics.footer_region.location.y, metrics.footer_region.size.width,
+        egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics.footer_region.location.x, metrics.footer_region.location.y, metrics.footer_region.size.width,
                                          metrics.footer_region.size.height, metrics.footer_region.size.height / 2, 1, footer_border,
                                          egui_color_alpha_mix(self->alpha, 34));
         virtualizing_stack_panel_draw_text(local->meta_font, self, snapshot->footer, &metrics.footer_region, EGUI_ALIGN_CENTER, footer_text);
@@ -1330,7 +1330,7 @@ void egui_view_virtualizing_stack_panel_init(egui_view_t *self)
 {
     EGUI_INIT_LOCAL(egui_view_virtualizing_stack_panel_t);
 
-    egui_view_init(self);
+    egui_view_init(self, uicode_get_core());
     self->api = &EGUI_VIEW_API_TABLE_NAME(egui_view_virtualizing_stack_panel_t);
     egui_view_set_padding_all(self, 2);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS

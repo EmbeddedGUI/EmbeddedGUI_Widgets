@@ -239,7 +239,7 @@ static void egui_view_radio_buttons_draw_indicator(egui_view_t *self, egui_view_
         return;
     }
 
-    egui_canvas_draw_circle_basic(center_x, center_y, outer_radius, stroke, ring_color, self->alpha);
+    egui_canvas_draw_circle_basic(&uicode_get_core()->canvas, center_x, center_y, outer_radius, stroke, ring_color, self->alpha);
     if (is_selected)
     {
         egui_dim_t inner_radius = local->compact_mode ? (outer_radius * 4) / 10 : (outer_radius * 5) / 10;
@@ -247,7 +247,7 @@ static void egui_view_radio_buttons_draw_indicator(egui_view_t *self, egui_view_
         {
             inner_radius = 2;
         }
-        egui_canvas_draw_circle_fill_basic(center_x, center_y, inner_radius, fill_color, self->alpha);
+        egui_canvas_draw_circle_fill_basic(&uicode_get_core()->canvas, center_x, center_y, inner_radius, fill_color, self->alpha);
     }
 }
 
@@ -302,10 +302,10 @@ static void egui_view_radio_buttons_on_draw(egui_view_t *self)
         accent_color = egui_view_radio_buttons_mix_disabled(accent_color);
     }
 
-    egui_canvas_draw_round_rectangle_fill(work_region.location.x, work_region.location.y, work_region.size.width, work_region.size.height,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, work_region.location.x, work_region.location.y, work_region.size.width, work_region.size.height,
                                           egui_view_radio_buttons_panel_radius(local->compact_mode), surface_color,
                                           egui_color_alpha_mix(self->alpha, local->compact_mode ? 82 : 88));
-    egui_canvas_draw_round_rectangle(work_region.location.x, work_region.location.y, work_region.size.width, work_region.size.height,
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, work_region.location.x, work_region.location.y, work_region.size.width, work_region.size.height,
                                      egui_view_radio_buttons_panel_radius(local->compact_mode), 1, border_color,
                                      egui_color_alpha_mix(self->alpha, local->compact_mode ? 34 : 40));
 
@@ -324,7 +324,7 @@ static void egui_view_radio_buttons_on_draw(egui_view_t *self)
             egui_color_t active_fill = egui_rgb_mix(surface_color, accent_color, local->read_only_mode ? 3 : 7);
             egui_alpha_t active_alpha = local->read_only_mode ? 16 : 22;
 
-            egui_canvas_draw_round_rectangle_fill(item_region.location.x, item_region.location.y, item_region.size.width, item_region.size.height,
+            egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, item_region.location.x, item_region.location.y, item_region.size.width, item_region.size.height,
                                                   egui_view_radio_buttons_item_radius(local->compact_mode), active_fill,
                                                   egui_color_alpha_mix(self->alpha, active_alpha));
             ring_color = accent_color;
@@ -339,7 +339,7 @@ static void egui_view_radio_buttons_on_draw(egui_view_t *self)
 
         if (is_pressed)
         {
-            egui_canvas_draw_round_rectangle_fill(item_region.location.x, item_region.location.y, item_region.size.width, item_region.size.height,
+            egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, item_region.location.x, item_region.location.y, item_region.size.width, item_region.size.height,
                                                   egui_view_radio_buttons_item_radius(local->compact_mode), EGUI_THEME_PRESS_OVERLAY,
                                                   EGUI_THEME_PRESS_OVERLAY_ALPHA);
         }
@@ -353,21 +353,21 @@ static void egui_view_radio_buttons_on_draw(egui_view_t *self)
         text_region.size.height = item_region.size.height;
         if (text_region.size.width > 0 && local->font != NULL && local->items[i] != NULL)
         {
-            egui_canvas_draw_text_in_rect(local->font, local->items[i], &text_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, item_text_color, self->alpha);
+            egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, local->font, local->items[i], &text_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, item_text_color, self->alpha);
         }
 
         if (i + 1 < count)
         {
             egui_dim_t divider_y = item_region.location.y + item_region.size.height + egui_view_radio_buttons_item_gap(local->compact_mode) / 2;
 
-            egui_canvas_draw_line(item_region.location.x + 2, divider_y, item_region.location.x + item_region.size.width - 2, divider_y, 1, border_color,
+            egui_canvas_draw_line(&uicode_get_core()->canvas, item_region.location.x + 2, divider_y, item_region.location.x + item_region.size.width - 2, divider_y, 1, border_color,
                                   egui_color_alpha_mix(self->alpha, local->compact_mode ? 14 : 18));
         }
 
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
         if (self->is_focused && is_enabled && !local->read_only_mode && i == local->current_index)
         {
-            egui_canvas_draw_round_rectangle(item_region.location.x, item_region.location.y, item_region.size.width, item_region.size.height,
+            egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, item_region.location.x, item_region.location.y, item_region.size.width, item_region.size.height,
                                              egui_view_radio_buttons_item_radius(local->compact_mode), 1, EGUI_THEME_FOCUS,
                                              egui_color_alpha_mix(self->alpha, local->compact_mode ? 52 : 64));
         }
@@ -744,7 +744,7 @@ void egui_view_radio_buttons_init(egui_view_t *self)
 {
     EGUI_INIT_LOCAL(egui_view_radio_buttons_t);
 
-    egui_view_init(self);
+    egui_view_init(self, uicode_get_core());
     self->api = &EGUI_VIEW_API_TABLE_NAME(egui_view_radio_buttons_t);
     egui_view_set_padding_all(self, 2);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS

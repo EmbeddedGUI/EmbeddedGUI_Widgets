@@ -285,7 +285,7 @@ static void hcw_search_box_draw_icon(egui_view_t *self, const egui_region_t *reg
     }
 
     hcw_search_box_local_region_to_screen(self, region, &screen_region);
-    if (!egui_canvas_is_region_active(&screen_region))
+    if (!egui_canvas_is_region_active(&uicode_get_core()->canvas, &screen_region))
     {
         return;
     }
@@ -297,7 +297,7 @@ static void hcw_search_box_draw_icon(egui_view_t *self, const egui_region_t *reg
     }
 
     draw_region = *region;
-    egui_canvas_draw_text_in_rect(icon_font, icon, &draw_region, EGUI_ALIGN_CENTER, color, EGUI_ALPHA_100);
+    egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, icon_font, icon, &draw_region, EGUI_ALIGN_CENTER, color, EGUI_ALPHA_100);
 }
 
 static void hcw_search_box_on_draw(egui_view_t *self)
@@ -329,7 +329,7 @@ static void hcw_search_box_on_draw(egui_view_t *self)
             egui_color_t fill_color = local->clear_pressed ? local->clear_fill_pressed_color : local->clear_fill_color;
             egui_alpha_t fill_alpha = local->clear_pressed ? 64 : 36;
 
-            egui_canvas_draw_circle_fill_basic(clear_region.location.x + clear_region.size.width / 2, clear_region.location.y + clear_region.size.height / 2,
+            egui_canvas_draw_circle_fill_basic(&uicode_get_core()->canvas, clear_region.location.x + clear_region.size.width / 2, clear_region.location.y + clear_region.size.height / 2,
                                                radius, fill_color, fill_alpha);
         }
         hcw_search_box_draw_icon(self, &clear_region, EGUI_ICON_MS_CLOSE, local->clear_icon_color);
@@ -337,14 +337,14 @@ static void hcw_search_box_on_draw(egui_view_t *self)
 
     egui_view_get_work_region(self, &work_region);
     hcw_search_box_local_region_to_screen(self, &work_region, &text_screen_region);
-    if (!egui_canvas_is_region_active(&text_screen_region))
+    if (!egui_canvas_is_region_active(&uicode_get_core()->canvas, &text_screen_region))
     {
         return;
     }
 
     if (input->text_len == 0 && !self->is_focused && input->placeholder != NULL)
     {
-        egui_canvas_draw_text_in_rect(input->font, input->placeholder, &work_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, input->placeholder_color,
+        egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, input->font, input->placeholder, &work_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, input->placeholder_color,
                                       input->placeholder_alpha);
     }
     else if (input->text_len > 0)
@@ -352,7 +352,7 @@ static void hcw_search_box_on_draw(egui_view_t *self)
         input->font->api->get_str_size(input->font, input->text, 0, 0, &text_width, &text_height);
         text_x = work_region.location.x - input->scroll_offset_x;
         text_y = work_region.location.y + (work_region.size.height - text_height) / 2;
-        egui_canvas_draw_text(input->font, input->text, text_x, text_y, input->text_color, input->text_alpha);
+        egui_canvas_draw_text(&uicode_get_core()->canvas, input->font, input->text, text_x, text_y, input->text_color, input->text_alpha);
     }
 
     if (self->is_enable && self->is_focused && input->cursor_visible)
@@ -363,9 +363,9 @@ static void hcw_search_box_on_draw(egui_view_t *self)
         if (hcw_search_box_get_cursor_region(self, input, &cursor_region))
         {
             hcw_search_box_local_region_to_screen(self, &cursor_region, &cursor_screen_region);
-            if (egui_canvas_is_region_active(&cursor_screen_region))
+            if (egui_canvas_is_region_active(&uicode_get_core()->canvas, &cursor_screen_region))
             {
-                egui_canvas_draw_rectangle_fill(cursor_region.location.x, cursor_region.location.y, cursor_region.size.width, cursor_region.size.height,
+                egui_canvas_draw_rectangle_fill(&uicode_get_core()->canvas, cursor_region.location.x, cursor_region.location.y, cursor_region.size.width, cursor_region.size.height,
                                                 input->cursor_color, EGUI_ALPHA_100);
             }
         }
@@ -470,7 +470,7 @@ void egui_view_search_box_init(egui_view_t *self)
 {
     EGUI_LOCAL_INIT(egui_view_search_box_t);
 
-    egui_view_textinput_init(self);
+    egui_view_textinput_init(self, uicode_get_core());
     egui_view_copy_api(self, &local->api);
     local->api.on_draw = hcw_search_box_on_draw;
 #if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH

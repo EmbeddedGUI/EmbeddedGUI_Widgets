@@ -46,7 +46,7 @@ void hcw_dock_panel_init(egui_view_t *self)
 {
     hcw_dock_panel_t *local = hcw_dock_panel_get_local(self);
 
-    egui_view_group_init(self);
+    egui_view_group_init(self, uicode_get_core());
     local->last_child_fill = 1;
     local->content_inset = 4;
     egui_view_set_view_name(self, "hcw_dock_panel");

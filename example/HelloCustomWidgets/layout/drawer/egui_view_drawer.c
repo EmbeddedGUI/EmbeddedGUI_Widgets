@@ -230,7 +230,7 @@ static void drawer_draw_text(egui_view_t *self, const egui_font_t *font, const c
         return;
     }
     draw_region = *region;
-    egui_canvas_draw_text_in_rect(font, text, &draw_region, align, color, egui_color_alpha_mix(self->alpha, alpha));
+    egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, font, text, &draw_region, align, color, egui_color_alpha_mix(self->alpha, alpha));
 }
 
 static void drawer_get_metrics(egui_view_drawer_t *local, egui_view_t *self, egui_view_drawer_metrics_t *metrics)
@@ -435,7 +435,7 @@ static void drawer_set_open_inner(egui_view_t *self, uint8_t is_open, uint8_t no
 
 static void drawer_draw_focus_ring(egui_view_t *self, const egui_region_t *region, egui_dim_t radius)
 {
-    egui_canvas_draw_round_rectangle(region->location.x - 2, region->location.y - 2, region->size.width + 4, region->size.height + 4, radius + 2, 1,
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, region->location.x - 2, region->location.y - 2, region->size.width + 4, region->size.height + 4, radius + 2, 1,
                                      EGUI_THEME_FOCUS, egui_color_alpha_mix(self->alpha, 68));
 }
 
@@ -454,33 +454,33 @@ static void drawer_draw_toggle(egui_view_t *self, egui_view_drawer_t *local, con
         border_color = egui_rgb_mix(border_color, accent_color, 14);
     }
 
-    egui_canvas_draw_round_rectangle_fill(region->location.x, region->location.y, region->size.width, region->size.height, region->size.height / 2, fill_color,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, region->location.x, region->location.y, region->size.width, region->size.height, region->size.height / 2, fill_color,
                                           egui_color_alpha_mix(self->alpha, 96));
-    egui_canvas_draw_round_rectangle(region->location.x, region->location.y, region->size.width, region->size.height, region->size.height / 2, 1, border_color,
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, region->location.x, region->location.y, region->size.width, region->size.height, region->size.height / 2, 1, border_color,
                                      egui_color_alpha_mix(self->alpha, 54));
 
     if (open)
     {
         if (anchor_end)
         {
-            egui_canvas_draw_line(cx + 2, cy - 3, cx - 1, cy, 1, icon_color, egui_color_alpha_mix(self->alpha, 92));
-            egui_canvas_draw_line(cx - 1, cy, cx + 2, cy + 3, 1, icon_color, egui_color_alpha_mix(self->alpha, 92));
+            egui_canvas_draw_line(&uicode_get_core()->canvas, cx + 2, cy - 3, cx - 1, cy, 1, icon_color, egui_color_alpha_mix(self->alpha, 92));
+            egui_canvas_draw_line(&uicode_get_core()->canvas, cx - 1, cy, cx + 2, cy + 3, 1, icon_color, egui_color_alpha_mix(self->alpha, 92));
         }
         else
         {
-            egui_canvas_draw_line(cx - 2, cy - 3, cx + 1, cy, 1, icon_color, egui_color_alpha_mix(self->alpha, 92));
-            egui_canvas_draw_line(cx + 1, cy, cx - 2, cy + 3, 1, icon_color, egui_color_alpha_mix(self->alpha, 92));
+            egui_canvas_draw_line(&uicode_get_core()->canvas, cx - 2, cy - 3, cx + 1, cy, 1, icon_color, egui_color_alpha_mix(self->alpha, 92));
+            egui_canvas_draw_line(&uicode_get_core()->canvas, cx + 1, cy, cx - 2, cy + 3, 1, icon_color, egui_color_alpha_mix(self->alpha, 92));
         }
     }
     else if (anchor_end)
     {
-        egui_canvas_draw_line(cx - 2, cy - 3, cx + 1, cy, 1, icon_color, egui_color_alpha_mix(self->alpha, 92));
-        egui_canvas_draw_line(cx + 1, cy, cx - 2, cy + 3, 1, icon_color, egui_color_alpha_mix(self->alpha, 92));
+        egui_canvas_draw_line(&uicode_get_core()->canvas, cx - 2, cy - 3, cx + 1, cy, 1, icon_color, egui_color_alpha_mix(self->alpha, 92));
+        egui_canvas_draw_line(&uicode_get_core()->canvas, cx + 1, cy, cx - 2, cy + 3, 1, icon_color, egui_color_alpha_mix(self->alpha, 92));
     }
     else
     {
-        egui_canvas_draw_line(cx + 2, cy - 3, cx - 1, cy, 1, icon_color, egui_color_alpha_mix(self->alpha, 92));
-        egui_canvas_draw_line(cx - 1, cy, cx + 2, cy + 3, 1, icon_color, egui_color_alpha_mix(self->alpha, 92));
+        egui_canvas_draw_line(&uicode_get_core()->canvas, cx + 2, cy - 3, cx - 1, cy, 1, icon_color, egui_color_alpha_mix(self->alpha, 92));
+        egui_canvas_draw_line(&uicode_get_core()->canvas, cx - 1, cy, cx + 2, cy + 3, 1, icon_color, egui_color_alpha_mix(self->alpha, 92));
     }
 }
 
@@ -490,13 +490,13 @@ static void drawer_draw_close(egui_view_t *self, const egui_region_t *region, eg
 
     if (pressed)
     {
-        egui_canvas_draw_round_rectangle_fill(region->location.x - 1, region->location.y - 1, region->size.width + 2, region->size.height + 2,
+        egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, region->location.x - 1, region->location.y - 1, region->size.width + 2, region->size.height + 2,
                                               region->size.height / 2, EGUI_THEME_PRESS_OVERLAY, EGUI_THEME_PRESS_OVERLAY_ALPHA);
         color = egui_rgb_mix(color, EGUI_COLOR_BLACK, 12);
     }
-    egui_canvas_draw_line(region->location.x + inset, region->location.y + inset, region->location.x + region->size.width - inset,
+    egui_canvas_draw_line(&uicode_get_core()->canvas, region->location.x + inset, region->location.y + inset, region->location.x + region->size.width - inset,
                           region->location.y + region->size.height - inset, 1, color, egui_color_alpha_mix(self->alpha, 92));
-    egui_canvas_draw_line(region->location.x + region->size.width - inset, region->location.y + inset, region->location.x + inset,
+    egui_canvas_draw_line(&uicode_get_core()->canvas, region->location.x + region->size.width - inset, region->location.y + inset, region->location.x + inset,
                           region->location.y + region->size.height - inset, 1, color, egui_color_alpha_mix(self->alpha, 92));
 }
 
@@ -514,10 +514,10 @@ static void drawer_draw_host(egui_view_t *self, egui_view_drawer_t *local, const
     egui_region_t line_region;
     uint8_t i;
 
-    egui_canvas_draw_round_rectangle_fill(metrics->host_region.location.x, metrics->host_region.location.y, metrics->host_region.size.width,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics->host_region.location.x, metrics->host_region.location.y, metrics->host_region.size.width,
                                           metrics->host_region.size.height, drawer_radius(local->compact_mode), host_surface,
                                           egui_color_alpha_mix(self->alpha, 96));
-    egui_canvas_draw_round_rectangle(metrics->host_region.location.x, metrics->host_region.location.y, metrics->host_region.size.width,
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics->host_region.location.x, metrics->host_region.location.y, metrics->host_region.size.width,
                                      metrics->host_region.size.height, drawer_radius(local->compact_mode), 1, border_color,
                                      egui_color_alpha_mix(self->alpha, 42));
     if (metrics->body_region.size.width <= 0 || metrics->body_region.size.height <= 0)
@@ -529,7 +529,7 @@ static void drawer_draw_host(egui_view_t *self, egui_view_drawer_t *local, const
     accent_region.location.y = metrics->body_region.location.y + pad_y;
     accent_region.size.width = EGUI_MIN((egui_dim_t)(metrics->body_region.size.width / 3), (egui_dim_t)(local->compact_mode ? 20 : 28));
     accent_region.size.height = 3;
-    egui_canvas_draw_round_rectangle_fill(accent_region.location.x, accent_region.location.y, accent_region.size.width, accent_region.size.height, 1,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, accent_region.location.x, accent_region.location.y, accent_region.size.width, accent_region.size.height, 1,
                                           accent_color, egui_color_alpha_mix(self->alpha, 82));
 
     title_region.location.x = accent_region.location.x;
@@ -557,10 +557,10 @@ static void drawer_draw_host(egui_view_t *self, egui_view_drawer_t *local, const
         {
             break;
         }
-        egui_canvas_draw_round_rectangle_fill(card_region.location.x, card_region.location.y, card_region.size.width, card_region.size.height,
+        egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, card_region.location.x, card_region.location.y, card_region.size.width, card_region.size.height,
                                               local->compact_mode ? 5 : 7, egui_rgb_mix(host_surface, accent_color, (uint8_t)(i == 0 ? 5 : 3)),
                                               egui_color_alpha_mix(self->alpha, 94));
-        egui_canvas_draw_round_rectangle(card_region.location.x, card_region.location.y, card_region.size.width, card_region.size.height,
+        egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, card_region.location.x, card_region.location.y, card_region.size.width, card_region.size.height,
                                          local->compact_mode ? 5 : 7, 1, egui_rgb_mix(border_color, accent_color, (uint8_t)(i == 0 ? 12 : 7)),
                                          egui_color_alpha_mix(self->alpha, 36));
         line_region.location.x = card_region.location.x + (local->compact_mode ? 5 : 6);
@@ -625,7 +625,7 @@ static void drawer_on_draw(egui_view_t *self)
     drawer_draw_host(self, local, &metrics, section_color, border_color, accent_color, text_color, muted_text_color);
     if (local->open && local->presentation_mode == EGUI_VIEW_DRAWER_MODE_OVERLAY)
     {
-        egui_canvas_draw_round_rectangle_fill(metrics.host_region.location.x, metrics.host_region.location.y, metrics.host_region.size.width,
+        egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.host_region.location.x, metrics.host_region.location.y, metrics.host_region.size.width,
                                               metrics.host_region.size.height, drawer_radius(local->compact_mode), overlay_color,
                                               egui_color_alpha_mix(self->alpha, local->compact_mode ? 18 : 24));
     }
@@ -643,14 +643,14 @@ static void drawer_on_draw(egui_view_t *self)
         return;
     }
 
-    egui_canvas_draw_round_rectangle_fill(metrics.drawer_region.location.x + 1, metrics.drawer_region.location.y + 2, metrics.drawer_region.size.width,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.drawer_region.location.x + 1, metrics.drawer_region.location.y + 2, metrics.drawer_region.size.width,
                                           metrics.drawer_region.size.height, drawer_radius(local->compact_mode), shadow_color,
                                           egui_color_alpha_mix(self->alpha, local->presentation_mode == EGUI_VIEW_DRAWER_MODE_OVERLAY ? 18 : 10));
-    egui_canvas_draw_round_rectangle_fill(metrics.drawer_region.location.x, metrics.drawer_region.location.y, metrics.drawer_region.size.width,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.drawer_region.location.x, metrics.drawer_region.location.y, metrics.drawer_region.size.width,
                                           metrics.drawer_region.size.height, drawer_radius(local->compact_mode),
                                           egui_rgb_mix(surface_color, EGUI_COLOR_HEX(0xFFFFFF), local->compact_mode ? 10 : 14),
                                           egui_color_alpha_mix(self->alpha, 98));
-    egui_canvas_draw_round_rectangle(metrics.drawer_region.location.x, metrics.drawer_region.location.y, metrics.drawer_region.size.width,
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics.drawer_region.location.x, metrics.drawer_region.location.y, metrics.drawer_region.size.width,
                                      metrics.drawer_region.size.height, drawer_radius(local->compact_mode), 1, border_color,
                                      egui_color_alpha_mix(self->alpha, 44));
 
@@ -659,14 +659,14 @@ static void drawer_on_draw(egui_view_t *self)
     accent_strip.size.height = metrics.drawer_region.size.height - 16;
     accent_strip.location.x = local->anchor == EGUI_VIEW_DRAWER_ANCHOR_END ? metrics.drawer_region.location.x + metrics.drawer_region.size.width - accent_strip.size.width
                                                                            : metrics.drawer_region.location.x;
-    egui_canvas_draw_round_rectangle_fill(accent_strip.location.x, accent_strip.location.y, accent_strip.size.width, accent_strip.size.height,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, accent_strip.location.x, accent_strip.location.y, accent_strip.size.width, accent_strip.size.height,
                                           accent_strip.size.width, accent_color, egui_color_alpha_mix(self->alpha, 78));
-    egui_canvas_draw_line(metrics.drawer_region.location.x + drawer_pad_x(local->compact_mode), metrics.body_primary_region.location.y - (local->compact_mode ? 3 : 4),
+    egui_canvas_draw_line(&uicode_get_core()->canvas, metrics.drawer_region.location.x + drawer_pad_x(local->compact_mode), metrics.body_primary_region.location.y - (local->compact_mode ? 3 : 4),
                           metrics.drawer_region.location.x + metrics.drawer_region.size.width - drawer_pad_x(local->compact_mode),
                           metrics.body_primary_region.location.y - (local->compact_mode ? 3 : 4), 1, border_color, egui_color_alpha_mix(self->alpha, 24));
     if (metrics.show_footer)
     {
-        egui_canvas_draw_line(metrics.footer_region.location.x, metrics.footer_region.location.y - (local->compact_mode ? 3 : 4),
+        egui_canvas_draw_line(&uicode_get_core()->canvas, metrics.footer_region.location.x, metrics.footer_region.location.y - (local->compact_mode ? 3 : 4),
                               metrics.footer_region.location.x + metrics.footer_region.size.width, metrics.footer_region.location.y - (local->compact_mode ? 3 : 4), 1,
                               border_color, egui_color_alpha_mix(self->alpha, 22));
     }
@@ -681,10 +681,10 @@ static void drawer_on_draw(egui_view_t *self)
     }
     if (metrics.show_tag)
     {
-        egui_canvas_draw_round_rectangle_fill(metrics.tag_region.location.x, metrics.tag_region.location.y, metrics.tag_region.size.width, metrics.tag_region.size.height,
+        egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.tag_region.location.x, metrics.tag_region.location.y, metrics.tag_region.size.width, metrics.tag_region.size.height,
                                               metrics.tag_region.size.height / 2, egui_rgb_mix(surface_color, accent_color, local->read_only_mode ? 8 : 14),
                                               egui_color_alpha_mix(self->alpha, 96));
-        egui_canvas_draw_round_rectangle(metrics.tag_region.location.x, metrics.tag_region.location.y, metrics.tag_region.size.width, metrics.tag_region.size.height,
+        egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics.tag_region.location.x, metrics.tag_region.location.y, metrics.tag_region.size.width, metrics.tag_region.size.height,
                                          metrics.tag_region.size.height / 2, 1, egui_rgb_mix(border_color, accent_color, local->read_only_mode ? 12 : 20),
                                          egui_color_alpha_mix(self->alpha, 42));
         drawer_draw_text(self, drawer_meta_font(local), local->tag, &metrics.tag_region, EGUI_ALIGN_CENTER, accent_color, EGUI_ALPHA_100);
@@ -1120,7 +1120,7 @@ void egui_view_drawer_init(egui_view_t *self)
 {
     EGUI_INIT_LOCAL(egui_view_drawer_t);
 
-    egui_view_init(self);
+    egui_view_init(self, uicode_get_core());
     self->api = &EGUI_VIEW_API_TABLE_NAME(egui_view_drawer_t);
     egui_view_set_padding_all(self, 2);
     egui_view_set_clickable(self, 1);

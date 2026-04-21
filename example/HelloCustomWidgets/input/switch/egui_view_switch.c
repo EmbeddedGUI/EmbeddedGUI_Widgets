@@ -51,7 +51,7 @@ static void hcw_switch_on_draw(egui_view_t *self)
         radius = 8;
     }
 
-    egui_canvas_draw_round_rectangle(region.location.x - 1, region.location.y - 1, region.size.width + 2, region.size.height + 2, radius + 1, 1,
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, region.location.x - 1, region.location.y - 1, region.size.width + 2, region.size.height + 2, radius + 1, 1,
                                      local->bk_color_on, egui_color_alpha_mix(local->alpha, 56));
 #else
     EGUI_UNUSED(local);

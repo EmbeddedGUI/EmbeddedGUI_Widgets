@@ -22,7 +22,7 @@ static void on_preview_click(egui_view_t *self)
 
 static void init_cell(egui_view_label_t *cell, const char *text)
 {
-    egui_view_label_init(EGUI_VIEW_OF(cell));
+    egui_view_label_init(EGUI_VIEW_OF(cell), uicode_get_core());
     egui_view_set_size(EGUI_VIEW_OF(cell), 40, 20);
     egui_view_label_set_text(EGUI_VIEW_OF(cell), text);
 }
@@ -31,7 +31,7 @@ static void setup_grid(egui_view_gridlayout_t *grid, egui_view_label_t *cells, u
 {
     uint8_t index;
 
-    egui_view_gridlayout_init(EGUI_VIEW_OF(grid));
+    egui_view_gridlayout_init(EGUI_VIEW_OF(grid), uicode_get_core());
     egui_view_set_size(EGUI_VIEW_OF(grid), width, height);
     hcw_grid_apply_standard_style(EGUI_VIEW_OF(grid));
 

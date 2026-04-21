@@ -52,7 +52,7 @@ static void assert_region_equal(const egui_region_t *expected, const egui_region
 
 static void setup_slider(uint8_t value)
 {
-    egui_view_slider_init(EGUI_VIEW_OF(&test_slider));
+    egui_view_slider_init(EGUI_VIEW_OF(&test_slider), uicode_get_core());
     egui_view_set_size(EGUI_VIEW_OF(&test_slider), 120, 36);
     hcw_slider_apply_standard_style(EGUI_VIEW_OF(&test_slider));
     hcw_slider_override_interaction_api(EGUI_VIEW_OF(&test_slider), &test_slider_api);
@@ -64,7 +64,7 @@ static void setup_slider(uint8_t value)
 
 static void setup_preview_slider(uint8_t value)
 {
-    egui_view_slider_init(EGUI_VIEW_OF(&preview_slider));
+    egui_view_slider_init(EGUI_VIEW_OF(&preview_slider), uicode_get_core());
     egui_view_set_size(EGUI_VIEW_OF(&preview_slider), 104, 28);
     hcw_slider_apply_compact_style(EGUI_VIEW_OF(&preview_slider));
     hcw_slider_set_value(EGUI_VIEW_OF(&preview_slider), value);

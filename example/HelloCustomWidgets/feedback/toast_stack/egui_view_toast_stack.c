@@ -190,7 +190,7 @@ static void egui_view_toast_stack_draw_text(const egui_font_t *font, egui_view_t
     {
         return;
     }
-    egui_canvas_draw_text_in_rect(font, text, &draw_region, align, color, self->alpha);
+    egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, font, text, &draw_region, align, color, self->alpha);
 }
 
 static void egui_view_toast_stack_draw_pill(const egui_font_t *font, egui_view_t *self, const char *text, egui_dim_t x, egui_dim_t y, egui_dim_t width,
@@ -204,14 +204,14 @@ static void egui_view_toast_stack_draw_pill(const egui_font_t *font, egui_view_t
         return;
     }
 
-    egui_canvas_draw_round_rectangle_fill(x, y, width, height, radius, fill_color, egui_color_alpha_mix(self->alpha, fill_alpha));
-    egui_canvas_draw_round_rectangle(x, y, width, height, radius, 1, border_color, egui_color_alpha_mix(self->alpha, border_alpha));
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, x, y, width, height, radius, fill_color, egui_color_alpha_mix(self->alpha, fill_alpha));
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, x, y, width, height, radius, 1, border_color, egui_color_alpha_mix(self->alpha, border_alpha));
 
     text_region.location.x = x;
     text_region.location.y = y;
     text_region.size.width = width;
     text_region.size.height = height;
-    egui_canvas_draw_text_in_rect(font, text, &text_region, EGUI_ALIGN_CENTER, text_color, self->alpha);
+    egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, font, text, &text_region, EGUI_ALIGN_CENTER, text_color, self->alpha);
 }
 
 static void egui_view_toast_stack_draw_back_card(egui_view_t *self, const egui_font_t *font, const egui_region_t *card_region, const char *title,
@@ -228,11 +228,11 @@ static void egui_view_toast_stack_draw_back_card(egui_view_t *self, const egui_f
         return;
     }
 
-    egui_canvas_draw_round_rectangle_fill(card_region->location.x, card_region->location.y, card_region->size.width, card_region->size.height, radius,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, card_region->location.x, card_region->location.y, card_region->size.width, card_region->size.height, radius,
                                           fill_color, egui_color_alpha_mix(self->alpha, compact_mode ? 88 : 92));
-    egui_canvas_draw_round_rectangle(card_region->location.x, card_region->location.y, card_region->size.width, card_region->size.height, radius, 1,
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, card_region->location.x, card_region->location.y, card_region->size.width, card_region->size.height, radius, 1,
                                      border_color, egui_color_alpha_mix(self->alpha, compact_mode ? 46 : 52));
-    egui_canvas_draw_round_rectangle_fill(card_region->location.x + 1, card_region->location.y + 1, strip_w, card_region->size.height - 2, radius - 2,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, card_region->location.x + 1, card_region->location.y + 1, strip_w, card_region->size.height - 2, radius - 2,
                                           strip_color, egui_color_alpha_mix(self->alpha, compact_mode ? 38 : 44));
 
     title_region.location.x = card_region->location.x + strip_w + (compact_mode ? 5 : 7);
@@ -246,7 +246,7 @@ static void egui_view_toast_stack_draw_back_card(egui_view_t *self, const egui_f
     {
         footer_w = 16;
     }
-    egui_canvas_draw_round_rectangle_fill(card_region->location.x + strip_w + (compact_mode ? 5 : 7),
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, card_region->location.x + strip_w + (compact_mode ? 5 : 7),
                                           card_region->location.y + card_region->size.height - (compact_mode ? 8 : 10), footer_w, 2, 1, border_color,
                                           egui_color_alpha_mix(self->alpha, compact_mode ? 12 : 16));
 }
@@ -383,13 +383,13 @@ static void egui_view_toast_stack_on_draw(egui_view_t *self)
                                          egui_rgb_mix(back_fill, local->surface_color, 10), egui_rgb_mix(back_border, local->border_color, 8), severity_color,
                                          meta_color, local->compact_mode);
 
-    egui_canvas_draw_round_rectangle_fill(front_region.location.x + 2, front_region.location.y + 3, front_region.size.width, front_region.size.height, radius,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, front_region.location.x + 2, front_region.location.y + 3, front_region.size.width, front_region.size.height, radius,
                                           shadow_color, egui_color_alpha_mix(self->alpha, local->compact_mode ? 6 : 8));
-    egui_canvas_draw_round_rectangle_fill(front_region.location.x, front_region.location.y, front_region.size.width, front_region.size.height, radius,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, front_region.location.x, front_region.location.y, front_region.size.width, front_region.size.height, radius,
                                           front_fill, egui_color_alpha_mix(self->alpha, local->compact_mode ? 92 : 95));
-    egui_canvas_draw_round_rectangle(front_region.location.x, front_region.location.y, front_region.size.width, front_region.size.height, radius, 1,
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, front_region.location.x, front_region.location.y, front_region.size.width, front_region.size.height, radius, 1,
                                      front_border, egui_color_alpha_mix(self->alpha, local->compact_mode ? 48 : 56));
-    egui_canvas_draw_round_rectangle_fill(front_region.location.x + 1, front_region.location.y + 1, strip_w, front_region.size.height - 2, radius - 2,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, front_region.location.x + 1, front_region.location.y + 1, strip_w, front_region.size.height - 2, radius - 2,
                                           severity_color, egui_color_alpha_mix(self->alpha, local->read_only_mode ? 24 : 70));
 
     content_x = front_region.location.x + (local->compact_mode ? 8 : 10);
@@ -403,7 +403,7 @@ static void egui_view_toast_stack_on_draw(egui_view_t *self)
     title_w = content_w - icon_size - 6 - (show_close ? 12 : 0);
     title_h = local->compact_mode ? 11 : 12;
 
-    egui_canvas_draw_circle_fill(content_x + icon_size / 2, content_y + icon_size / 2, icon_size / 2, severity_color,
+    egui_canvas_draw_circle_fill(&uicode_get_core()->canvas, content_x + icon_size / 2, content_y + icon_size / 2, icon_size / 2, severity_color,
                                  egui_color_alpha_mix(self->alpha, local->read_only_mode ? 22 : 74));
     text_region.location.x = content_x;
     text_region.location.y = content_y - 1;
@@ -422,8 +422,8 @@ static void egui_view_toast_stack_on_draw(egui_view_t *self)
     {
         egui_dim_t close_x = content_x + content_w - 10;
 
-        egui_canvas_draw_line(close_x, content_y + 2, close_x + 4, content_y + 6, 1, body_color, egui_color_alpha_mix(self->alpha, 60));
-        egui_canvas_draw_line(close_x + 4, content_y + 2, close_x, content_y + 6, 1, body_color, egui_color_alpha_mix(self->alpha, 60));
+        egui_canvas_draw_line(&uicode_get_core()->canvas, close_x, content_y + 2, close_x + 4, content_y + 6, 1, body_color, egui_color_alpha_mix(self->alpha, 60));
+        egui_canvas_draw_line(&uicode_get_core()->canvas, close_x + 4, content_y + 2, close_x, content_y + 6, 1, body_color, egui_color_alpha_mix(self->alpha, 60));
     }
 
     body_y = content_y + title_h + (local->compact_mode ? 3 : 5);
@@ -495,7 +495,7 @@ static void egui_view_toast_stack_on_draw(egui_view_t *self)
 
     if (local->read_only_mode || !is_enabled)
     {
-        egui_canvas_draw_line(content_x + 1, content_y + content_h, content_x + content_w - 2, content_y + content_h, 1, front_border,
+        egui_canvas_draw_line(&uicode_get_core()->canvas, content_x + 1, content_y + content_h, content_x + content_w - 2, content_y + content_h, 1, front_border,
                               egui_color_alpha_mix(self->alpha, 24));
     }
 }
@@ -592,7 +592,7 @@ void egui_view_toast_stack_init(egui_view_t *self)
 {
     EGUI_INIT_LOCAL(egui_view_toast_stack_t);
 
-    egui_view_init(self);
+    egui_view_init(self, uicode_get_core());
     self->api = &EGUI_VIEW_API_TABLE_NAME(egui_view_toast_stack_t);
     egui_view_set_padding_all(self, 2);
 

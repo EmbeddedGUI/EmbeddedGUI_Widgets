@@ -133,10 +133,10 @@ static void parallax_view_draw_round_fill_safe(egui_dim_t x, egui_dim_t y, egui_
     }
     if (radius <= 0 || width <= (radius << 1) || height <= (radius << 1))
     {
-        egui_canvas_draw_rectangle_fill(x, y, width, height, color, alpha);
+        egui_canvas_draw_rectangle_fill(&uicode_get_core()->canvas, x, y, width, height, color, alpha);
         return;
     }
-    egui_canvas_draw_round_rectangle_fill(x, y, width, height, radius, color, alpha);
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, x, y, width, height, radius, color, alpha);
 }
 
 static void parallax_view_draw_round_stroke_safe(egui_dim_t x, egui_dim_t y, egui_dim_t width, egui_dim_t height, egui_dim_t radius, egui_dim_t stroke_width,
@@ -148,10 +148,10 @@ static void parallax_view_draw_round_stroke_safe(egui_dim_t x, egui_dim_t y, egu
     }
     if (radius <= 0 || width <= (radius << 1) || height <= (radius << 1))
     {
-        egui_canvas_draw_rectangle(x, y, width, height, stroke_width, color, alpha);
+        egui_canvas_draw_rectangle(&uicode_get_core()->canvas, x, y, width, height, stroke_width, color, alpha);
         return;
     }
-    egui_canvas_draw_round_rectangle(x, y, width, height, radius, stroke_width, color, alpha);
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, x, y, width, height, radius, stroke_width, color, alpha);
 }
 
 static void parallax_view_draw_text(const egui_font_t *font, egui_view_t *self, const char *text, const egui_region_t *region, uint8_t align,
@@ -163,7 +163,7 @@ static void parallax_view_draw_text(const egui_font_t *font, egui_view_t *self, 
     {
         return;
     }
-    egui_canvas_draw_text_in_rect(font, text, &draw_region, align, color, self->alpha);
+    egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, font, text, &draw_region, align, color, self->alpha);
 }
 
 static void parallax_view_format_progress(char *buffer, size_t size, egui_dim_t offset, egui_dim_t max_offset)
@@ -918,7 +918,7 @@ void egui_view_parallax_view_init(egui_view_t *self)
 {
     EGUI_INIT_LOCAL(egui_view_parallax_view_t);
 
-    egui_view_init(self);
+    egui_view_init(self, uicode_get_core());
     self->api = &EGUI_VIEW_API_TABLE_NAME(egui_view_parallax_view_t);
     self->is_clickable = true;
     egui_view_set_padding_all(self, 2);

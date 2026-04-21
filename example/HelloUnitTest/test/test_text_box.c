@@ -83,7 +83,7 @@ static void layout_view(egui_view_t *view, egui_dim_t x, egui_dim_t y, egui_dim_
 
 static void setup_text_box(const char *text)
 {
-    egui_view_textinput_init(EGUI_VIEW_OF(&test_text_box));
+    egui_view_textinput_init(EGUI_VIEW_OF(&test_text_box), uicode_get_core());
     egui_view_set_size(EGUI_VIEW_OF(&test_text_box), 196, 40);
     hcw_text_box_set_font(EGUI_VIEW_OF(&test_text_box), (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT);
     hcw_text_box_apply_standard_style(EGUI_VIEW_OF(&test_text_box));
@@ -96,7 +96,7 @@ static void setup_text_box(const char *text)
 
 static void setup_preview_text_box(const char *text)
 {
-    egui_view_textinput_init(EGUI_VIEW_OF(&preview_text_box));
+    egui_view_textinput_init(EGUI_VIEW_OF(&preview_text_box), uicode_get_core());
     egui_view_set_size(EGUI_VIEW_OF(&preview_text_box), 104, 32);
     hcw_text_box_set_font(EGUI_VIEW_OF(&preview_text_box), (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT);
     hcw_text_box_apply_compact_style(EGUI_VIEW_OF(&preview_text_box));
@@ -212,7 +212,7 @@ static void assert_preview_state_unchanged(const text_box_preview_snapshot_t *sn
 
 static void test_text_box_style_helpers_apply_expected_state(void)
 {
-    egui_view_textinput_init(EGUI_VIEW_OF(&test_text_box));
+    egui_view_textinput_init(EGUI_VIEW_OF(&test_text_box), uicode_get_core());
 
     hcw_text_box_apply_standard_style(EGUI_VIEW_OF(&test_text_box));
     EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&test_text_box)->background != NULL);

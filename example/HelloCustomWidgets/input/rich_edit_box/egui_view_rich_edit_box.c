@@ -529,7 +529,7 @@ static void rich_edit_box_draw_focus_ring(egui_view_t *self, const egui_region_t
     {
         return;
     }
-    egui_canvas_draw_round_rectangle(region->location.x - 2, region->location.y - 2, region->size.width + 4, region->size.height + 4, radius + 2, 1, color,
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, region->location.x - 2, region->location.y - 2, region->size.width + 4, region->size.height + 4, radius + 2, 1, color,
                                      self->alpha);
 #else
     EGUI_UNUSED(self);
@@ -548,7 +548,7 @@ static void rich_edit_box_draw_text(const egui_font_t *font, egui_view_t *self, 
         return;
     }
 
-    egui_canvas_draw_text_in_rect(font, text, &draw_region, align, color, self->alpha);
+    egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, font, text, &draw_region, align, color, self->alpha);
 }
 
 static egui_dim_t rich_edit_box_measure_pill_width(egui_view_rich_edit_box_t *local, const char *text)
@@ -781,7 +781,7 @@ static void rich_edit_box_draw_wrapped_text(egui_view_rich_edit_box_t *local, eg
             egui_dim_t bullet_x = region->location.x;
             egui_dim_t bullet_y = draw_y + (line_height > bullet_size ? (line_height - bullet_size) / 2 : 0);
 
-            egui_canvas_draw_round_rectangle_fill(bullet_x, bullet_y, bullet_size, bullet_size, bullet_size / 2, local->accent_color, self->alpha);
+            egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, bullet_x, bullet_y, bullet_size, bullet_size, bullet_size / 2, local->accent_color, self->alpha);
             draw_x += checklist_indent;
         }
 
@@ -843,9 +843,9 @@ static void rich_edit_box_draw_editor(egui_view_rich_edit_box_t *local, egui_vie
         text_color = rich_edit_box_mix_disabled(text_color);
     }
 
-    egui_canvas_draw_round_rectangle_fill(editor_region->location.x, editor_region->location.y, editor_region->size.width, editor_region->size.height, radius,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, editor_region->location.x, editor_region->location.y, editor_region->size.width, editor_region->size.height, radius,
                                           fill_color, self->alpha);
-    egui_canvas_draw_round_rectangle(editor_region->location.x, editor_region->location.y, editor_region->size.width, editor_region->size.height, radius, 1,
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, editor_region->location.x, editor_region->location.y, editor_region->size.width, editor_region->size.height, radius, 1,
                                      border_color, self->alpha);
 
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
@@ -859,7 +859,7 @@ static void rich_edit_box_draw_editor(egui_view_rich_edit_box_t *local, egui_vie
     {
         egui_dim_t strip_w = local->compact_mode ? 4 : 5;
 
-        egui_canvas_draw_round_rectangle_fill(editor_region->location.x + 2, editor_region->location.y + 2, strip_w,
+        egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, editor_region->location.x + 2, editor_region->location.y + 2, strip_w,
                                               editor_region->size.height > 4 ? (egui_dim_t)(editor_region->size.height - 4) : editor_region->size.height, strip_w / 2,
                                               local->accent_color, self->alpha);
     }
@@ -884,7 +884,7 @@ static void rich_edit_box_draw_editor(egui_view_rich_edit_box_t *local, egui_vie
     {
         egui_dim_t cursor_w = local->compact_mode ? EGUI_VIEW_RICH_EDIT_BOX_COMPACT_CURSOR_WIDTH : EGUI_VIEW_RICH_EDIT_BOX_STANDARD_CURSOR_WIDTH;
 
-        egui_canvas_draw_rectangle_fill(text_result.cursor_x, text_result.cursor_y, cursor_w, text_result.cursor_height, local->accent_color, self->alpha);
+        egui_canvas_draw_rectangle_fill(&uicode_get_core()->canvas, text_result.cursor_x, text_result.cursor_y, cursor_w, text_result.cursor_height, local->accent_color, self->alpha);
     }
 #endif
 }
@@ -921,8 +921,8 @@ static void rich_edit_box_draw_preset(egui_view_rich_edit_box_t *local, egui_vie
         text_color = rich_edit_box_mix_disabled(text_color);
     }
 
-    egui_canvas_draw_round_rectangle_fill(region->location.x, region->location.y, region->size.width, region->size.height, radius, fill_color, self->alpha);
-    egui_canvas_draw_round_rectangle(region->location.x, region->location.y, region->size.width, region->size.height, radius, 1, border_color, self->alpha);
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, region->location.x, region->location.y, region->size.width, region->size.height, radius, fill_color, self->alpha);
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, region->location.x, region->location.y, region->size.width, region->size.height, radius, 1, border_color, self->alpha);
 
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     if (self->is_focused && self->is_enable && !local->read_only_mode && local->current_part == rich_edit_box_preset_to_part(preset_index))
@@ -1329,16 +1329,16 @@ static void egui_view_rich_edit_box_on_draw(egui_view_t *self)
         shadow_color = rich_edit_box_mix_disabled(shadow_color);
     }
 
-    egui_canvas_draw_round_rectangle_fill(metrics.content_region.location.x, metrics.content_region.location.y + 2, metrics.content_region.size.width,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.content_region.location.x, metrics.content_region.location.y + 2, metrics.content_region.size.width,
                                           metrics.content_region.size.height, radius, shadow_color, egui_color_alpha_mix(self->alpha, 20));
-    egui_canvas_draw_round_rectangle_fill(metrics.content_region.location.x, metrics.content_region.location.y, metrics.content_region.size.width,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.content_region.location.x, metrics.content_region.location.y, metrics.content_region.size.width,
                                           metrics.content_region.size.height, radius, card_fill, egui_color_alpha_mix(self->alpha, 97));
-    egui_canvas_draw_round_rectangle(metrics.content_region.location.x, metrics.content_region.location.y, metrics.content_region.size.width,
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics.content_region.location.x, metrics.content_region.location.y, metrics.content_region.size.width,
                                      metrics.content_region.size.height, radius, 1, card_border, egui_color_alpha_mix(self->alpha, 54));
 
     if (document != NULL && metrics.badge_region.size.width > 0 && metrics.badge_region.size.height > 0)
     {
-        egui_canvas_draw_round_rectangle_fill(metrics.badge_region.location.x, metrics.badge_region.location.y, metrics.badge_region.size.width,
+        egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.badge_region.location.x, metrics.badge_region.location.y, metrics.badge_region.size.width,
                                               metrics.badge_region.size.height, metrics.badge_region.size.height / 2, badge_fill,
                                               egui_color_alpha_mix(self->alpha, 98));
         rich_edit_box_draw_text(local->meta_font != NULL ? local->meta_font : local->font, self, document->header, &metrics.badge_region, EGUI_ALIGN_CENTER,
@@ -1374,10 +1374,10 @@ static void egui_view_rich_edit_box_on_draw(egui_view_t *self)
         footer_right_region.location.x += local->compact_mode ? 4 : 6;
         footer_right_region.size.width -= local->compact_mode ? 8 : 12;
 
-        egui_canvas_draw_round_rectangle_fill(metrics.footer_region.location.x, metrics.footer_region.location.y, metrics.footer_region.size.width,
+        egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.footer_region.location.x, metrics.footer_region.location.y, metrics.footer_region.size.width,
                                               metrics.footer_region.size.height, metrics.footer_region.size.height / 2, footer_fill,
                                               egui_color_alpha_mix(self->alpha, 96));
-        egui_canvas_draw_round_rectangle(metrics.footer_region.location.x, metrics.footer_region.location.y, metrics.footer_region.size.width,
+        egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics.footer_region.location.x, metrics.footer_region.location.y, metrics.footer_region.size.width,
                                          metrics.footer_region.size.height, metrics.footer_region.size.height / 2, 1, footer_border,
                                          egui_color_alpha_mix(self->alpha, 36));
         rich_edit_box_draw_text(local->meta_font != NULL ? local->meta_font : local->font, self, footer_meta_text, &footer_left_region,
@@ -1412,7 +1412,7 @@ void egui_view_rich_edit_box_init(egui_view_t *self)
 {
     EGUI_INIT_LOCAL(egui_view_rich_edit_box_t);
 
-    egui_view_init(self);
+    egui_view_init(self, uicode_get_core());
     self->api = &EGUI_VIEW_API_TABLE_NAME(egui_view_rich_edit_box_t);
     egui_view_set_padding_all(self, 2);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS

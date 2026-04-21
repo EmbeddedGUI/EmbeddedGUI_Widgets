@@ -203,7 +203,7 @@ static void egui_view_bitmap_icon_on_draw(egui_view_t *self)
 
             if (draw_alpha != 0)
             {
-                egui_canvas_draw_point(region.location.x + x, region.location.y + y, icon_color, draw_alpha);
+                egui_canvas_draw_point(&uicode_get_core()->canvas, region.location.x + x, region.location.y + y, icon_color, draw_alpha);
             }
         }
     }
@@ -257,7 +257,7 @@ void egui_view_bitmap_icon_override_static_preview_api(egui_view_t *self, egui_v
 
 void egui_view_bitmap_icon_init(egui_view_t *self)
 {
-    egui_view_image_init(self);
+    egui_view_image_init(self, uicode_get_core());
     self->api = &EGUI_VIEW_API_TABLE_NAME(egui_view_bitmap_icon_t);
     egui_view_set_background(self, NULL);
     egui_view_set_shadow(self, NULL);

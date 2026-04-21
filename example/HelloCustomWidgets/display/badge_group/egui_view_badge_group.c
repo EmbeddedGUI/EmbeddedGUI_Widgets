@@ -81,7 +81,7 @@ static void egui_view_badge_group_draw_text(const egui_font_t *font, egui_view_t
     {
         return;
     }
-    egui_canvas_draw_text_in_rect(font, text, &draw_region, align, color, self->alpha);
+    egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, font, text, &draw_region, align, color, self->alpha);
 }
 
 static egui_dim_t egui_view_badge_group_pill_width(const char *text, uint8_t compact_mode, egui_dim_t min_w, egui_dim_t max_w)
@@ -140,9 +140,9 @@ static void egui_view_badge_group_draw_badge(egui_view_t *self, egui_view_badge_
         meta_text = egui_view_badge_group_mix_disabled(meta_text);
     }
 
-    egui_canvas_draw_round_rectangle_fill(x, y, width, height, radius, fill_color,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, x, y, width, height, radius, fill_color,
                                           egui_color_alpha_mix(self->alpha, item->outlined ? 74 : (focused ? 96 : 90)));
-    egui_canvas_draw_round_rectangle(x, y, width, height, radius, 1, border_color, egui_color_alpha_mix(self->alpha, focused ? 54 : 42));
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, x, y, width, height, radius, 1, border_color, egui_color_alpha_mix(self->alpha, focused ? 54 : 42));
 
     meta_w = 0;
     if (item->meta != NULL && item->meta[0] != '\0')
@@ -157,7 +157,7 @@ static void egui_view_badge_group_draw_badge(egui_view_t *self, egui_view_badge_
             meta_w = width / 2;
         }
 
-        egui_canvas_draw_round_rectangle_fill(x + width - meta_w - 3, y + 2, meta_w, height - 4, (height - 4) / 2, meta_fill,
+        egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, x + width - meta_w - 3, y + 2, meta_w, height - 4, (height - 4) / 2, meta_fill,
                                               egui_color_alpha_mix(self->alpha, focused ? 80 : 74));
 
         text_region.location.x = x + width - meta_w - 3;
@@ -403,13 +403,13 @@ static void egui_view_badge_group_on_draw(egui_view_t *self)
     focus_pill_x = x + padding + 4;
     focus_pill_y = footer_y + (footer_h - focus_pill_h) / 2;
 
-    egui_canvas_draw_round_rectangle_fill(x, y, w, h, local->compact_mode ? 8 : 10, card_fill, egui_color_alpha_mix(self->alpha, 100));
-    egui_canvas_draw_round_rectangle(x, y, w, h, local->compact_mode ? 8 : 10, 1, card_border, egui_color_alpha_mix(self->alpha, 58));
-    egui_canvas_draw_round_rectangle_fill(x + 2, y + 2, w - 4, local->compact_mode ? 3 : 4, local->compact_mode ? 6 : 8, focus_color,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, x, y, w, h, local->compact_mode ? 8 : 10, card_fill, egui_color_alpha_mix(self->alpha, 100));
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, x, y, w, h, local->compact_mode ? 8 : 10, 1, card_border, egui_color_alpha_mix(self->alpha, 58));
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, x + 2, y + 2, w - 4, local->compact_mode ? 3 : 4, local->compact_mode ? 6 : 8, focus_color,
                                           egui_color_alpha_mix(self->alpha, local->read_only_mode ? 8 : 14));
 
-    egui_canvas_draw_round_rectangle_fill(x + padding, y + padding, eyebrow_w, badge_h, badge_h / 2, eyebrow_fill, egui_color_alpha_mix(self->alpha, 82));
-    egui_canvas_draw_round_rectangle(x + padding, y + padding, eyebrow_w, badge_h, badge_h / 2, 1, eyebrow_border, egui_color_alpha_mix(self->alpha, 40));
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, x + padding, y + padding, eyebrow_w, badge_h, badge_h / 2, eyebrow_fill, egui_color_alpha_mix(self->alpha, 82));
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, x + padding, y + padding, eyebrow_w, badge_h, badge_h / 2, 1, eyebrow_border, egui_color_alpha_mix(self->alpha, 40));
 
     text_region.location.x = x + padding;
     text_region.location.y = y + padding;
@@ -465,16 +465,16 @@ static void egui_view_badge_group_on_draw(egui_view_t *self)
         cursor_x += badge_w + badge_gap;
     }
 
-    egui_canvas_draw_round_rectangle_fill(x + padding, footer_y, w - padding * 2, footer_h, local->compact_mode ? 6 : 8, footer_fill,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, x + padding, footer_y, w - padding * 2, footer_h, local->compact_mode ? 6 : 8, footer_fill,
                                           egui_color_alpha_mix(self->alpha, local->compact_mode ? 16 : 20));
-    egui_canvas_draw_round_rectangle(x + padding, footer_y, w - padding * 2, footer_h, local->compact_mode ? 6 : 8, 1, footer_border,
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, x + padding, footer_y, w - padding * 2, footer_h, local->compact_mode ? 6 : 8, 1, footer_border,
                                      egui_color_alpha_mix(self->alpha, local->compact_mode ? 22 : 26));
 
     if (!local->compact_mode)
     {
-        egui_canvas_draw_round_rectangle_fill(focus_pill_x, focus_pill_y, focus_pill_w, focus_pill_h, focus_pill_h / 2, focus_fill,
+        egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, focus_pill_x, focus_pill_y, focus_pill_w, focus_pill_h, focus_pill_h / 2, focus_fill,
                                               egui_color_alpha_mix(self->alpha, 78));
-        egui_canvas_draw_round_rectangle(focus_pill_x, focus_pill_y, focus_pill_w, focus_pill_h, focus_pill_h / 2, 1, focus_border,
+        egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, focus_pill_x, focus_pill_y, focus_pill_w, focus_pill_h, focus_pill_h / 2, 1, focus_border,
                                          egui_color_alpha_mix(self->alpha, 38));
 
         text_region.location.x = focus_pill_x;
@@ -587,7 +587,7 @@ void egui_view_badge_group_init(egui_view_t *self)
 {
     EGUI_INIT_LOCAL(egui_view_badge_group_t);
 
-    egui_view_init(self);
+    egui_view_init(self, uicode_get_core());
     self->api = &EGUI_VIEW_API_TABLE_NAME(egui_view_badge_group_t);
     egui_view_set_padding_all(self, 2);
 

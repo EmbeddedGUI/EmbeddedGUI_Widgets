@@ -180,7 +180,7 @@ static void egui_view_split_button_draw_text(const egui_font_t *font, egui_view_
         return;
     }
 
-    egui_canvas_draw_text_in_rect(font, text, &draw_region, align, color, self->alpha);
+    egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, font, text, &draw_region, align, color, self->alpha);
 }
 
 static void egui_view_split_button_draw_chevron(egui_view_t *self, const egui_region_t *region, egui_color_t color, egui_alpha_t alpha)
@@ -189,8 +189,8 @@ static void egui_view_split_button_draw_chevron(egui_view_t *self, const egui_re
     egui_dim_t cy = region->location.y + region->size.height / 2;
     egui_alpha_t mixed_alpha = egui_color_alpha_mix(self->alpha, alpha);
 
-    egui_canvas_draw_line(cx - 3, cy - 1, cx, cy + 2, 1, color, mixed_alpha);
-    egui_canvas_draw_line(cx, cy + 2, cx + 3, cy - 1, 1, color, mixed_alpha);
+    egui_canvas_draw_line(&uicode_get_core()->canvas, cx - 3, cy - 1, cx, cy + 2, 1, color, mixed_alpha);
+    egui_canvas_draw_line(&uicode_get_core()->canvas, cx, cy + 2, cx + 3, cy - 1, 1, color, mixed_alpha);
 }
 
 static void egui_view_split_button_get_metrics(egui_view_split_button_t *local, egui_view_t *self, const egui_view_split_button_snapshot_t *snapshot,
@@ -564,11 +564,11 @@ static void egui_view_split_button_on_draw(egui_view_t *self)
         glyph_fill = egui_view_split_button_mix_disabled(glyph_fill);
     }
 
-    egui_canvas_draw_round_rectangle_fill(
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, 
             metrics.content_region.location.x - 2, metrics.content_region.location.y - 2, metrics.content_region.size.width + 4,
             metrics.content_region.size.height + 4, radius, card_fill,
             egui_color_alpha_mix(self->alpha, local->compact_mode ? EGUI_VIEW_SPLIT_BUTTON_COMPACT_FILL_ALPHA : EGUI_VIEW_SPLIT_BUTTON_STANDARD_FILL_ALPHA));
-    egui_canvas_draw_round_rectangle(metrics.content_region.location.x - 2, metrics.content_region.location.y - 2, metrics.content_region.size.width + 4,
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics.content_region.location.x - 2, metrics.content_region.location.y - 2, metrics.content_region.size.width + 4,
                                      metrics.content_region.size.height + 4, radius, 1, card_border,
                                      egui_color_alpha_mix(self->alpha, local->compact_mode ? EGUI_VIEW_SPLIT_BUTTON_COMPACT_BORDER_ALPHA
                                                                                            : EGUI_VIEW_SPLIT_BUTTON_STANDARD_BORDER_ALPHA));
@@ -582,11 +582,11 @@ static void egui_view_split_button_on_draw(egui_view_t *self)
         egui_view_split_button_draw_text(local->meta_font, self, snapshot->title, &text_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, title_color);
     }
 
-    egui_canvas_draw_round_rectangle_fill(metrics.row_region.location.x, metrics.row_region.location.y, metrics.row_region.size.width,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.row_region.location.x, metrics.row_region.location.y, metrics.row_region.size.width,
                                           metrics.row_region.size.height, segment_radius + 1, row_fill,
                                           egui_color_alpha_mix(self->alpha, local->compact_mode ? EGUI_VIEW_SPLIT_BUTTON_COMPACT_SEGMENT_FILL_ALPHA
                                                                                                 : EGUI_VIEW_SPLIT_BUTTON_STANDARD_SEGMENT_FILL_ALPHA));
-    egui_canvas_draw_round_rectangle(metrics.row_region.location.x, metrics.row_region.location.y, metrics.row_region.size.width,
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics.row_region.location.x, metrics.row_region.location.y, metrics.row_region.size.width,
                                      metrics.row_region.size.height, segment_radius + 1, 1, row_border,
                                      egui_color_alpha_mix(self->alpha, local->compact_mode ? EGUI_VIEW_SPLIT_BUTTON_COMPACT_SEGMENT_BORDER_ALPHA
                                                                                            : EGUI_VIEW_SPLIT_BUTTON_STANDARD_SEGMENT_BORDER_ALPHA));
@@ -600,17 +600,17 @@ static void egui_view_split_button_on_draw(egui_view_t *self)
     menu_fill_region.size.width = metrics.menu_region.size.width - 2;
     menu_fill_region.size.height = metrics.menu_region.size.height - 2;
 
-    egui_canvas_draw_round_rectangle_fill(primary_fill_region.location.x, primary_fill_region.location.y, primary_fill_region.size.width,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, primary_fill_region.location.x, primary_fill_region.location.y, primary_fill_region.size.width,
                                           primary_fill_region.size.height, segment_radius, primary_fill, egui_color_alpha_mix(self->alpha, 100));
-    egui_canvas_draw_round_rectangle(primary_fill_region.location.x, primary_fill_region.location.y, primary_fill_region.size.width,
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, primary_fill_region.location.x, primary_fill_region.location.y, primary_fill_region.size.width,
                                      primary_fill_region.size.height, segment_radius, 1, primary_border, egui_color_alpha_mix(self->alpha, 30));
 
-    egui_canvas_draw_round_rectangle_fill(menu_fill_region.location.x, menu_fill_region.location.y, menu_fill_region.size.width, menu_fill_region.size.height,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, menu_fill_region.location.x, menu_fill_region.location.y, menu_fill_region.size.width, menu_fill_region.size.height,
                                           segment_radius, menu_fill, egui_color_alpha_mix(self->alpha, 100));
-    egui_canvas_draw_round_rectangle(menu_fill_region.location.x, menu_fill_region.location.y, menu_fill_region.size.width, menu_fill_region.size.height,
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, menu_fill_region.location.x, menu_fill_region.location.y, menu_fill_region.size.width, menu_fill_region.size.height,
                                      segment_radius, 1, menu_border, egui_color_alpha_mix(self->alpha, 26));
 
-    egui_canvas_draw_line(metrics.menu_region.location.x, metrics.row_region.location.y + 4, metrics.menu_region.location.x,
+    egui_canvas_draw_line(&uicode_get_core()->canvas, metrics.menu_region.location.x, metrics.row_region.location.y + 4, metrics.menu_region.location.x,
                           metrics.row_region.location.y + metrics.row_region.size.height - 4, 1, divider_color, egui_color_alpha_mix(self->alpha, 44));
 
     show_glyph = (!local->compact_mode && snapshot->glyph != NULL && snapshot->glyph[0] != '\0' &&
@@ -619,7 +619,7 @@ static void egui_view_split_button_on_draw(egui_view_t *self)
                          : 0;
     if (show_glyph)
     {
-        egui_canvas_draw_round_rectangle_fill(primary_fill_region.location.x + 5,
+        egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, primary_fill_region.location.x + 5,
                                               primary_fill_region.location.y +
                                                       (primary_fill_region.size.height - EGUI_VIEW_SPLIT_BUTTON_STANDARD_GLYPH_HEIGHT) / 2,
                                               EGUI_VIEW_SPLIT_BUTTON_STANDARD_GLYPH_WIDTH, EGUI_VIEW_SPLIT_BUTTON_STANDARD_GLYPH_HEIGHT, 4, glyph_fill,
@@ -838,7 +838,7 @@ void egui_view_split_button_init(egui_view_t *self)
 {
     EGUI_INIT_LOCAL(egui_view_split_button_t);
 
-    egui_view_init(self);
+    egui_view_init(self, uicode_get_core());
     self->api = &EGUI_VIEW_API_TABLE_NAME(egui_view_split_button_t);
     egui_view_set_padding_all(self, 2);
 

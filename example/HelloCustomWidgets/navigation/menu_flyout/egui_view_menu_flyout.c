@@ -106,7 +106,7 @@ static void egui_view_menu_flyout_draw_text(const egui_font_t *font, egui_view_t
         return;
     }
 
-    egui_canvas_draw_text_in_rect(font, text, &draw_region, align, color, self->alpha);
+    egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, font, text, &draw_region, align, color, self->alpha);
 }
 
 static void egui_view_menu_flyout_draw_row(egui_view_t *self, egui_view_menu_flyout_t *local, const egui_view_menu_flyout_item_t *item, egui_dim_t x,
@@ -133,7 +133,7 @@ static void egui_view_menu_flyout_draw_row(egui_view_t *self, egui_view_menu_fly
 
     if (item->separator_before)
     {
-        egui_canvas_draw_line(x + 8, y - 1, x + width - 8, y - 1, 1, separator_color, egui_color_alpha_mix(self->alpha, 34));
+        egui_canvas_draw_line(&uicode_get_core()->canvas, x + 8, y - 1, x + width - 8, y - 1, 1, separator_color, egui_color_alpha_mix(self->alpha, 34));
     }
 
     if (item->enabled == 0 || local->disabled_mode)
@@ -156,10 +156,10 @@ static void egui_view_menu_flyout_draw_row(egui_view_t *self, egui_view_menu_fly
 
     if (show_row_fill)
     {
-        egui_canvas_draw_round_rectangle_fill(x, y, width, height, local->compact_mode ? 6 : 7, row_fill,
+        egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, x, y, width, height, local->compact_mode ? 6 : 7, row_fill,
                                               egui_color_alpha_mix(self->alpha, focused ? 94 : 60));
     }
-    egui_canvas_draw_round_rectangle_fill(icon_x, icon_y, icon_size, icon_size, local->compact_mode ? 3 : 4, icon_fill, egui_color_alpha_mix(self->alpha, 92));
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, icon_x, icon_y, icon_size, icon_size, local->compact_mode ? 3 : 4, icon_fill, egui_color_alpha_mix(self->alpha, 92));
 
     text_region.location.x = icon_x;
     text_region.location.y = icon_y;
@@ -363,10 +363,10 @@ static void egui_view_menu_flyout_on_draw(egui_view_t *self)
     max_y = y + h - padding;
     radius = local->compact_mode ? 7 : 9;
 
-    egui_canvas_draw_round_rectangle_fill(x, y + 2, w, h - 1, radius, egui_rgb_mix(shadow_color, EGUI_COLOR_HEX(0x0F172A), 12),
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, x, y + 2, w, h - 1, radius, egui_rgb_mix(shadow_color, EGUI_COLOR_HEX(0x0F172A), 12),
                                           egui_color_alpha_mix(self->alpha, local->compact_mode ? 7 : 10));
-    egui_canvas_draw_round_rectangle_fill(x, y, w, h, radius, surface_color, egui_color_alpha_mix(self->alpha, 100));
-    egui_canvas_draw_round_rectangle(x, y, w, h, radius, 1, border_color, egui_color_alpha_mix(self->alpha, 40));
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, x, y, w, h, radius, surface_color, egui_color_alpha_mix(self->alpha, 100));
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, x, y, w, h, radius, 1, border_color, egui_color_alpha_mix(self->alpha, 40));
 
     for (i = 0; i < item_count; i++)
     {
@@ -473,7 +473,7 @@ void egui_view_menu_flyout_init(egui_view_t *self)
 {
     EGUI_INIT_LOCAL(egui_view_menu_flyout_t);
 
-    egui_view_init(self);
+    egui_view_init(self, uicode_get_core());
     self->api = &EGUI_VIEW_API_TABLE_NAME(egui_view_menu_flyout_t);
     egui_view_set_padding_all(self, 2);
 

@@ -36,7 +36,7 @@ static void hcw_info_badge_on_draw(egui_view_t *self)
             return;
         }
 
-        egui_view_notification_badge_draw_background(egui_sdk_compat_get_canvas(), &region, local->badge_color, 1);
+        egui_view_notification_badge_draw_background(&uicode_get_core()->canvas, &region, local->badge_color, 1);
         return;
     }
 

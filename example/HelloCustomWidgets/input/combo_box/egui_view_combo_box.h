@@ -2,7 +2,7 @@
 #define _HELLO_CUSTOM_WIDGETS_COMBO_BOX_STYLE_H_
 
 #include "../../../../sdk/EmbeddedGUI/src/widget/egui_view_combobox.h"
-#include "sdk_compat.h"
+#include "../../uicode_disp0.h"
 
 #ifdef __cplusplus
 extern "C" {

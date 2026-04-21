@@ -69,7 +69,7 @@ void egui_view_image_icon_override_static_preview_api(egui_view_t *self, egui_vi
 
 void egui_view_image_icon_init(egui_view_t *self)
 {
-    egui_view_image_init(self);
+    egui_view_image_init(self, uicode_get_core());
     egui_view_set_background(self, NULL);
     egui_view_set_shadow(self, NULL);
     egui_view_set_padding_all(self, 0);

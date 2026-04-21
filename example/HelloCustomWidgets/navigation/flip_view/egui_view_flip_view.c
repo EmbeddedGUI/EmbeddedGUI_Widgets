@@ -67,7 +67,7 @@ static void flip_view_draw_round_fill_safe(egui_dim_t x, egui_dim_t y, egui_dim_
     {
         return;
     }
-    egui_canvas_draw_round_rectangle_fill(x, y, w, h, radius, color, alpha);
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, x, y, w, h, radius, color, alpha);
 }
 
 static void flip_view_draw_round_stroke_safe(egui_dim_t x, egui_dim_t y, egui_dim_t w, egui_dim_t h, egui_dim_t radius, egui_dim_t stroke_width,
@@ -77,7 +77,7 @@ static void flip_view_draw_round_stroke_safe(egui_dim_t x, egui_dim_t y, egui_di
     {
         return;
     }
-    egui_canvas_draw_round_rectangle(x, y, w, h, radius, stroke_width, color, alpha);
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, x, y, w, h, radius, stroke_width, color, alpha);
 }
 
 static void flip_view_normalize_state(egui_view_flip_view_t *local)
@@ -585,8 +585,8 @@ static void flip_view_draw_chevron(egui_view_t *self, const egui_region_t *regio
         x3 = cx + 2;
     }
 
-    egui_canvas_draw_line(x1, cy - 3, x2, cy, 1, color, egui_color_alpha_mix(self->alpha, 92));
-    egui_canvas_draw_line(x2, cy, x3, cy + 3, 1, color, egui_color_alpha_mix(self->alpha, 92));
+    egui_canvas_draw_line(&uicode_get_core()->canvas, x1, cy - 3, x2, cy, 1, color, egui_color_alpha_mix(self->alpha, 92));
+    egui_canvas_draw_line(&uicode_get_core()->canvas, x2, cy, x3, cy + 3, 1, color, egui_color_alpha_mix(self->alpha, 92));
 }
 
 static void flip_view_draw_text(const egui_font_t *font, egui_view_t *self, const char *text, const egui_region_t *region, uint8_t align, egui_color_t color)
@@ -597,7 +597,7 @@ static void flip_view_draw_text(const egui_font_t *font, egui_view_t *self, cons
     {
         return;
     }
-    egui_canvas_draw_text_in_rect(font, text, &draw_region, align, color, self->alpha);
+    egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, font, text, &draw_region, align, color, self->alpha);
 }
 
 static void flip_view_draw_focus(egui_view_t *self, const egui_region_t *region, egui_dim_t radius, egui_color_t color)
@@ -724,7 +724,7 @@ static void flip_view_draw_surface(egui_view_t *self, egui_view_flip_view_t *loc
         text_region.size.height = 12;
         flip_view_draw_text(meta_font, self, item->footer, &text_region, EGUI_ALIGN_LEFT, egui_rgb_mix(body_color, accent_color, 10));
 
-        egui_canvas_draw_line(metrics->surface_region.location.x + 12, metrics->surface_region.location.y + metrics->surface_region.size.height - 30,
+        egui_canvas_draw_line(&uicode_get_core()->canvas, metrics->surface_region.location.x + 12, metrics->surface_region.location.y + metrics->surface_region.size.height - 30,
                               metrics->surface_region.location.x + metrics->surface_region.size.width - 12,
                               metrics->surface_region.location.y + metrics->surface_region.size.height - 30, 1,
                               egui_rgb_mix(local->border_color, accent_color, 6), egui_color_alpha_mix(self->alpha, 40));
@@ -1019,7 +1019,7 @@ void egui_view_flip_view_init(egui_view_t *self)
 {
     EGUI_INIT_LOCAL(egui_view_flip_view_t);
 
-    egui_view_init(self);
+    egui_view_init(self, uicode_get_core());
     self->api = &EGUI_VIEW_API_TABLE_NAME(egui_view_flip_view_t);
     self->is_clickable = true;
     egui_view_set_padding_all(self, 2);

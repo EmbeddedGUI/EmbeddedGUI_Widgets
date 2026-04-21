@@ -305,7 +305,7 @@ static void egui_view_title_bar_draw_text(const egui_font_t *font, egui_view_t *
         return;
     }
 
-    egui_canvas_draw_text_in_rect(font, text, &draw_region, align, color, self->alpha);
+    egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, font, text, &draw_region, align, color, self->alpha);
 }
 
 static void egui_view_title_bar_get_metrics(egui_view_title_bar_t *local, egui_view_t *self, const egui_view_title_bar_snapshot_t *snapshot,
@@ -471,7 +471,7 @@ static void egui_view_title_bar_get_metrics(egui_view_title_bar_t *local, egui_v
 
 static void egui_view_title_bar_draw_focus_ring(egui_view_t *self, const egui_region_t *region, egui_dim_t radius)
 {
-    egui_canvas_draw_round_rectangle(region->location.x - 2, region->location.y - 2, region->size.width + 4, region->size.height + 4, radius + 2, 1,
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, region->location.x - 2, region->location.y - 2, region->size.width + 4, region->size.height + 4, radius + 2, 1,
                                      EGUI_THEME_FOCUS, egui_color_alpha_mix(self->alpha, 94));
 }
 
@@ -495,13 +495,13 @@ static void egui_view_title_bar_draw_button(egui_view_t *self, egui_view_title_b
         egui_view_title_bar_draw_focus_ring(self, region, radius);
     }
 
-    egui_canvas_draw_round_rectangle_fill(region->location.x, region->location.y, region->size.width, region->size.height, radius, resolved_fill,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, region->location.x, region->location.y, region->size.width, region->size.height, radius, resolved_fill,
                                           egui_color_alpha_mix(self->alpha, is_pressed ? 62 : 42));
-    egui_canvas_draw_round_rectangle(region->location.x, region->location.y, region->size.width, region->size.height, radius, 1, resolved_border,
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, region->location.x, region->location.y, region->size.width, region->size.height, radius, 1, resolved_border,
                                      egui_color_alpha_mix(self->alpha, is_pressed ? 56 : 34));
     if (is_pressed)
     {
-        egui_canvas_draw_round_rectangle_fill(region->location.x + 1, region->location.y + 1, region->size.width > 2 ? region->size.width - 2 : region->size.width,
+        egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, region->location.x + 1, region->location.y + 1, region->size.width > 2 ? region->size.width - 2 : region->size.width,
                                               region->size.height > 2 ? region->size.height - 2 : region->size.height, radius, EGUI_THEME_PRESS_OVERLAY,
                                               EGUI_THEME_PRESS_OVERLAY_ALPHA);
     }
@@ -529,13 +529,13 @@ static void egui_view_title_bar_draw_action(egui_view_t *self, egui_view_title_b
         egui_view_title_bar_draw_focus_ring(self, region, radius);
     }
 
-    egui_canvas_draw_round_rectangle_fill(region->location.x, region->location.y, region->size.width, region->size.height, radius, resolved_fill,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, region->location.x, region->location.y, region->size.width, region->size.height, radius, resolved_fill,
                                           egui_color_alpha_mix(self->alpha, emphasize ? 48 : (is_pressed ? 56 : 34)));
-    egui_canvas_draw_round_rectangle(region->location.x, region->location.y, region->size.width, region->size.height, radius, 1, resolved_border,
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, region->location.x, region->location.y, region->size.width, region->size.height, radius, 1, resolved_border,
                                      egui_color_alpha_mix(self->alpha, is_pressed ? 52 : 34));
     if (is_pressed)
     {
-        egui_canvas_draw_round_rectangle_fill(region->location.x + 1, region->location.y + 1, region->size.width > 2 ? region->size.width - 2 : region->size.width,
+        egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, region->location.x + 1, region->location.y + 1, region->size.width > 2 ? region->size.width - 2 : region->size.width,
                                               region->size.height > 2 ? region->size.height - 2 : region->size.height, radius, EGUI_THEME_PRESS_OVERLAY,
                                               EGUI_THEME_PRESS_OVERLAY_ALPHA);
     }
@@ -555,9 +555,9 @@ static void egui_view_title_bar_draw_icon_badge(egui_view_t *self, egui_view_tit
         return;
     }
 
-    egui_canvas_draw_round_rectangle_fill(region->location.x, region->location.y, region->size.width, region->size.height, radius, resolved_fill,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, region->location.x, region->location.y, region->size.width, region->size.height, radius, resolved_fill,
                                           egui_color_alpha_mix(self->alpha, 52));
-    egui_canvas_draw_round_rectangle(region->location.x, region->location.y, region->size.width, region->size.height, radius, 1, resolved_border,
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, region->location.x, region->location.y, region->size.width, region->size.height, radius, 1, resolved_border,
                                      egui_color_alpha_mix(self->alpha, 38));
     egui_view_title_bar_draw_text(egui_view_title_bar_resolve_icon_font(local), self, glyph, region, EGUI_ALIGN_CENTER, glyph_color);
 }
@@ -612,13 +612,13 @@ static void egui_view_title_bar_on_draw(egui_view_t *self)
         shadow_color = egui_view_title_bar_mix_disabled(shadow_color);
     }
 
-    egui_canvas_draw_round_rectangle_fill(metrics.region.location.x + 1, metrics.region.location.y + 2, metrics.region.size.width, metrics.region.size.height,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.region.location.x + 1, metrics.region.location.y + 2, metrics.region.size.width, metrics.region.size.height,
                                           radius, shadow_color, egui_color_alpha_mix(self->alpha, local->compact_mode ? 10 : 18));
-    egui_canvas_draw_round_rectangle_fill(metrics.region.location.x, metrics.region.location.y, metrics.region.size.width, metrics.region.size.height, radius,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.region.location.x, metrics.region.location.y, metrics.region.size.width, metrics.region.size.height, radius,
                                           surface_color, egui_color_alpha_mix(self->alpha,
                                                                               local->compact_mode ? EGUI_VIEW_TITLE_BAR_COMPACT_FILL_ALPHA
                                                                                                  : EGUI_VIEW_TITLE_BAR_STANDARD_FILL_ALPHA));
-    egui_canvas_draw_round_rectangle(metrics.region.location.x, metrics.region.location.y, metrics.region.size.width, metrics.region.size.height, radius, 1,
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics.region.location.x, metrics.region.location.y, metrics.region.size.width, metrics.region.size.height, radius, 1,
                                      border_color, egui_color_alpha_mix(self->alpha,
                                                                         local->compact_mode ? EGUI_VIEW_TITLE_BAR_COMPACT_BORDER_ALPHA
                                                                                            : EGUI_VIEW_TITLE_BAR_STANDARD_BORDER_ALPHA));
@@ -634,10 +634,10 @@ static void egui_view_title_bar_on_draw(egui_view_t *self)
         egui_color_t tag_fill = egui_rgb_mix(subtle_fill_color, accent_color, 8);
         egui_color_t tag_border = egui_rgb_mix(subtle_border_color, accent_color, 12);
 
-        egui_canvas_draw_round_rectangle_fill(metrics.trailing_header_region.location.x, metrics.trailing_header_region.location.y,
+        egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.trailing_header_region.location.x, metrics.trailing_header_region.location.y,
                                               metrics.trailing_header_region.size.width, metrics.trailing_header_region.size.height, 5, tag_fill,
                                               egui_color_alpha_mix(self->alpha, 44));
-        egui_canvas_draw_round_rectangle(metrics.trailing_header_region.location.x, metrics.trailing_header_region.location.y,
+        egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics.trailing_header_region.location.x, metrics.trailing_header_region.location.y,
                                          metrics.trailing_header_region.size.width, metrics.trailing_header_region.size.height, 5, 1, tag_border,
                                          egui_color_alpha_mix(self->alpha, 30));
         egui_view_title_bar_draw_text(local->meta_font, self, snapshot->trailing_header, &metrics.trailing_header_region, EGUI_ALIGN_CENTER,
@@ -1232,7 +1232,7 @@ void egui_view_title_bar_init(egui_view_t *self)
 {
     egui_view_title_bar_t *local = egui_view_title_bar_local(self);
 
-    egui_view_init(self);
+    egui_view_init(self, uicode_get_core());
     self->api = &EGUI_VIEW_API_TABLE_NAME(egui_view_title_bar_t);
     egui_view_set_padding_all(self, 2);
     egui_view_set_clickable(self, 1);

@@ -197,7 +197,7 @@ static void capture_preview_snapshot(tool_tip_preview_snapshot_t *snapshot)
     snapshot->read_only_mode = preview_widget.read_only_mode;
     snapshot->open = preview_widget.open;
     snapshot->timer_started = preview_widget.timer_started;
-    snapshot->timer_running = (uint8_t)egui_timer_check_timer_start(&preview_widget.show_timer);
+    snapshot->timer_running = (uint8_t)egui_timer_check_timer_start(uicode_get_core(), &preview_widget.show_timer);
     snapshot->pending_show = preview_widget.pending_show;
     snapshot->touch_active = preview_widget.touch_active;
     snapshot->key_active = preview_widget.key_active;
@@ -239,7 +239,7 @@ static void assert_preview_state_unchanged(const tool_tip_preview_snapshot_t *sn
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->read_only_mode, preview_widget.read_only_mode);
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->open, preview_widget.open);
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->timer_started, preview_widget.timer_started);
-    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->timer_running, egui_timer_check_timer_start(&preview_widget.show_timer));
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->timer_running, egui_timer_check_timer_start(uicode_get_core(), &preview_widget.show_timer));
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->pending_show, preview_widget.pending_show);
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->touch_active, preview_widget.touch_active);
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->key_active, preview_widget.key_active);
@@ -266,7 +266,7 @@ static void get_target_center(egui_view_t *view, egui_dim_t *x, egui_dim_t *y)
 static void assert_timer_stopped(egui_view_tool_tip_t *widget)
 {
     EGUI_TEST_ASSERT_FALSE(widget->timer_started);
-    EGUI_TEST_ASSERT_FALSE(egui_timer_check_timer_start(&widget->show_timer));
+    EGUI_TEST_ASSERT_FALSE(egui_timer_check_timer_start(uicode_get_core(), &widget->show_timer));
 }
 
 static void assert_interaction_cleared(egui_view_tool_tip_t *widget)
@@ -288,9 +288,9 @@ static void seed_pending_state(egui_view_tool_tip_t *widget)
     widget->toggle_on_release = 1;
     widget->current_part = EGUI_VIEW_TOOL_TIP_PART_TARGET;
     egui_view_set_pressed(EGUI_VIEW_OF(widget), 1);
-    egui_timer_start_timer(&widget->show_timer, 100, 0);
+    egui_timer_start_timer(uicode_get_core(), &widget->show_timer, 100, 0);
     widget->timer_started = 1;
-    EGUI_TEST_ASSERT_TRUE(egui_timer_check_timer_start(&widget->show_timer));
+    EGUI_TEST_ASSERT_TRUE(egui_timer_check_timer_start(uicode_get_core(), &widget->show_timer));
 }
 
 static void click_target_to_begin_delay(egui_view_tool_tip_t *widget, egui_dim_t *center_x, egui_dim_t *center_y)
@@ -302,7 +302,7 @@ static void click_target_to_begin_delay(egui_view_tool_tip_t *widget, egui_dim_t
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(widget)->is_pressed);
     EGUI_TEST_ASSERT_TRUE(widget->pending_show);
     EGUI_TEST_ASSERT_TRUE(widget->timer_started);
-    EGUI_TEST_ASSERT_TRUE(egui_timer_check_timer_start(&widget->show_timer));
+    EGUI_TEST_ASSERT_TRUE(egui_timer_check_timer_start(uicode_get_core(), &widget->show_timer));
 }
 
 static void test_tool_tip_init_uses_default_state(void)
@@ -513,7 +513,7 @@ static void test_tool_tip_attach_and_detach_restore_pending_timer(void)
 
     attach_view(EGUI_VIEW_OF(&test_widget));
     EGUI_TEST_ASSERT_TRUE(test_widget.timer_started);
-    EGUI_TEST_ASSERT_TRUE(egui_timer_check_timer_start(&test_widget.show_timer));
+    EGUI_TEST_ASSERT_TRUE(egui_timer_check_timer_start(uicode_get_core(), &test_widget.show_timer));
     egui_view_tool_tip_tick(&test_widget.show_timer);
     EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_tool_tip_get_open(EGUI_VIEW_OF(&test_widget)));
 }

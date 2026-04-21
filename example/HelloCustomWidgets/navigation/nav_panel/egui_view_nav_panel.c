@@ -147,7 +147,7 @@ static void egui_view_nav_panel_draw_text(const egui_font_t *font, egui_view_t *
                                           egui_color_t color)
 {
     egui_region_t draw_region = *region;
-    egui_canvas_draw_text_in_rect(font, text, &draw_region, align, color, self->alpha);
+    egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, font, text, &draw_region, align, color, self->alpha);
 }
 
 static uint8_t egui_view_nav_panel_clear_pressed_state(egui_view_t *self, egui_view_nav_panel_t *local)
@@ -362,13 +362,13 @@ static void egui_view_nav_panel_draw_standard_item(egui_view_t *self, egui_view_
     row_fill = egui_rgb_mix(local->surface_color, accent_color, is_selected ? (local->read_only_mode ? 6 : 10) : (is_pressed ? 4 : 0));
     if (is_selected || is_pressed)
     {
-        egui_canvas_draw_round_rectangle_fill(item_region->location.x, item_region->location.y, item_region->size.width, item_region->size.height,
+        egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, item_region->location.x, item_region->location.y, item_region->size.width, item_region->size.height,
                                               EGUI_VIEW_NAV_PANEL_STANDARD_ROW_RADIUS, row_fill, egui_color_alpha_mix(self->alpha, row_fill_alpha));
     }
 
     if (is_selected)
     {
-        egui_canvas_draw_round_rectangle_fill(item_region->location.x, item_region->location.y + 2, EGUI_VIEW_NAV_PANEL_STANDARD_INDICATOR_WIDTH,
+        egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, item_region->location.x, item_region->location.y + 2, EGUI_VIEW_NAV_PANEL_STANDARD_INDICATOR_WIDTH,
                                               item_region->size.height - 4, 2, accent_color,
                                               egui_color_alpha_mix(self->alpha, local->read_only_mode ? 56 : 88));
     }
@@ -381,10 +381,10 @@ static void egui_view_nav_panel_draw_standard_item(egui_view_t *self, egui_view_
     badge_fill = egui_rgb_mix(local->surface_color, accent_color, is_selected ? (local->read_only_mode ? 10 : 14) : (local->read_only_mode ? 4 : 6));
     badge_border = egui_rgb_mix(border_color, accent_color, is_selected ? (local->read_only_mode ? 7 : 10) : (local->read_only_mode ? 2 : 4));
     badge_text = is_selected ? accent_color : text_color;
-    egui_canvas_draw_round_rectangle_fill(badge_region.location.x, badge_region.location.y, badge_region.size.width, badge_region.size.height,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, badge_region.location.x, badge_region.location.y, badge_region.size.width, badge_region.size.height,
                                           EGUI_VIEW_NAV_PANEL_STANDARD_BADGE_RADIUS, badge_fill,
                                           egui_color_alpha_mix(self->alpha, badge_fill_alpha));
-    egui_canvas_draw_round_rectangle(badge_region.location.x, badge_region.location.y, badge_region.size.width, badge_region.size.height,
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, badge_region.location.x, badge_region.location.y, badge_region.size.width, badge_region.size.height,
                                      EGUI_VIEW_NAV_PANEL_STANDARD_BADGE_RADIUS, 1, badge_border,
                                      egui_color_alpha_mix(self->alpha, badge_border_alpha));
     egui_view_nav_panel_draw_text(local->meta_font, self, egui_view_nav_panel_get_badge_text(item), &badge_region, EGUI_ALIGN_CENTER, badge_text);
@@ -403,15 +403,15 @@ static void egui_view_nav_panel_draw_compact_item(egui_view_t *self, egui_view_n
     egui_color_t row_fill = egui_rgb_mix(local->surface_color, accent_color, is_selected ? (local->read_only_mode ? 6 : 10) : (is_pressed ? 4 : 0));
     egui_color_t row_border = egui_rgb_mix(border_color, accent_color, is_selected ? (local->read_only_mode ? 8 : 12) : (local->read_only_mode ? 2 : 4));
 
-    egui_canvas_draw_round_rectangle_fill(item_region->location.x, item_region->location.y, item_region->size.width, item_region->size.height,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, item_region->location.x, item_region->location.y, item_region->size.width, item_region->size.height,
                                           EGUI_VIEW_NAV_PANEL_COMPACT_ROW_RADIUS, row_fill,
                                           egui_color_alpha_mix(self->alpha, local->read_only_mode ? 18 : EGUI_VIEW_NAV_PANEL_COMPACT_BADGE_FILL_ALPHA));
-    egui_canvas_draw_round_rectangle(item_region->location.x, item_region->location.y, item_region->size.width, item_region->size.height,
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, item_region->location.x, item_region->location.y, item_region->size.width, item_region->size.height,
                                      EGUI_VIEW_NAV_PANEL_COMPACT_ROW_RADIUS, 1, row_border,
                                      egui_color_alpha_mix(self->alpha, local->read_only_mode ? 22 : EGUI_VIEW_NAV_PANEL_COMPACT_BADGE_BORDER_ALPHA));
     if (is_selected)
     {
-        egui_canvas_draw_round_rectangle_fill(item_region->location.x, item_region->location.y + 2, EGUI_VIEW_NAV_PANEL_COMPACT_INDICATOR_WIDTH,
+        egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, item_region->location.x, item_region->location.y + 2, EGUI_VIEW_NAV_PANEL_COMPACT_INDICATOR_WIDTH,
                                               item_region->size.height - 4, 2, accent_color,
                                               egui_color_alpha_mix(self->alpha, local->read_only_mode ? 52 : 86));
     }
@@ -459,10 +459,10 @@ static void egui_view_nav_panel_on_draw(egui_view_t *self)
         accent_color = egui_view_nav_panel_mix_disabled(accent_color);
     }
 
-    egui_canvas_draw_round_rectangle_fill(
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, 
             region.location.x, region.location.y, region.size.width, region.size.height, radius, surface_color,
             egui_color_alpha_mix(self->alpha, local->compact_mode ? EGUI_VIEW_NAV_PANEL_COMPACT_FILL_ALPHA : EGUI_VIEW_NAV_PANEL_STANDARD_FILL_ALPHA));
-    egui_canvas_draw_round_rectangle(
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, 
             region.location.x, region.location.y, region.size.width, region.size.height, radius, 1, border_color,
             egui_color_alpha_mix(self->alpha, local->compact_mode ? EGUI_VIEW_NAV_PANEL_COMPACT_BORDER_ALPHA : EGUI_VIEW_NAV_PANEL_STANDARD_BORDER_ALPHA));
 
@@ -494,7 +494,7 @@ static void egui_view_nav_panel_on_draw(egui_view_t *self)
     {
         if (!local->compact_mode)
         {
-            egui_canvas_draw_line(metrics.footer_region.location.x, metrics.footer_region.location.y - 2,
+            egui_canvas_draw_line(&uicode_get_core()->canvas, metrics.footer_region.location.x, metrics.footer_region.location.y - 2,
                                   metrics.footer_region.location.x + metrics.footer_region.size.width, metrics.footer_region.location.y - 2, 1, border_color,
                                   egui_color_alpha_mix(self->alpha, local->read_only_mode ? 10 : 16));
 
@@ -505,11 +505,11 @@ static void egui_view_nav_panel_on_draw(egui_view_t *self)
                 badge_region.size.width = EGUI_VIEW_NAV_PANEL_STANDARD_BADGE_WIDTH;
                 badge_region.size.height = EGUI_VIEW_NAV_PANEL_STANDARD_BADGE_HEIGHT;
                 badge_region.location.y += (metrics.footer_region.size.height - badge_region.size.height) / 2;
-                egui_canvas_draw_round_rectangle_fill(badge_region.location.x, badge_region.location.y, badge_region.size.width, badge_region.size.height,
+                egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, badge_region.location.x, badge_region.location.y, badge_region.size.width, badge_region.size.height,
                                                       EGUI_VIEW_NAV_PANEL_STANDARD_BADGE_RADIUS,
                                                       egui_rgb_mix(surface_color, accent_color, local->read_only_mode ? 2 : 4),
                                                       egui_color_alpha_mix(self->alpha, local->read_only_mode ? 16 : EGUI_VIEW_NAV_PANEL_STANDARD_BADGE_FILL_ALPHA));
-                egui_canvas_draw_round_rectangle(badge_region.location.x, badge_region.location.y, badge_region.size.width, badge_region.size.height,
+                egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, badge_region.location.x, badge_region.location.y, badge_region.size.width, badge_region.size.height,
                                                  EGUI_VIEW_NAV_PANEL_STANDARD_BADGE_RADIUS, 1, border_color,
                                                  egui_color_alpha_mix(self->alpha, local->read_only_mode ? 22 : EGUI_VIEW_NAV_PANEL_STANDARD_BADGE_BORDER_ALPHA));
                 egui_view_nav_panel_draw_text(local->meta_font, self, local->footer_badge, &badge_region, EGUI_ALIGN_CENTER, muted_text_color);
@@ -526,11 +526,11 @@ static void egui_view_nav_panel_on_draw(egui_view_t *self)
         }
         else if (local->footer_badge != NULL && local->footer_badge[0] != '\0')
         {
-            egui_canvas_draw_round_rectangle_fill(metrics.footer_region.location.x, metrics.footer_region.location.y, metrics.footer_region.size.width,
+            egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.footer_region.location.x, metrics.footer_region.location.y, metrics.footer_region.size.width,
                                                   metrics.footer_region.size.height, EGUI_VIEW_NAV_PANEL_COMPACT_ROW_RADIUS,
                                                   egui_rgb_mix(surface_color, accent_color, local->read_only_mode ? 2 : 4),
                                                   egui_color_alpha_mix(self->alpha, local->read_only_mode ? 18 : EGUI_VIEW_NAV_PANEL_COMPACT_BADGE_FILL_ALPHA));
-            egui_canvas_draw_round_rectangle(metrics.footer_region.location.x, metrics.footer_region.location.y, metrics.footer_region.size.width,
+            egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics.footer_region.location.x, metrics.footer_region.location.y, metrics.footer_region.size.width,
                                              metrics.footer_region.size.height, EGUI_VIEW_NAV_PANEL_COMPACT_ROW_RADIUS, 1, border_color,
                                              egui_color_alpha_mix(self->alpha, local->read_only_mode ? 22 : EGUI_VIEW_NAV_PANEL_COMPACT_BADGE_BORDER_ALPHA));
             egui_view_nav_panel_draw_text(local->meta_font, self, local->footer_badge, &metrics.footer_region, EGUI_ALIGN_CENTER, muted_text_color);
@@ -744,7 +744,7 @@ void egui_view_nav_panel_init(egui_view_t *self)
 {
     EGUI_INIT_LOCAL(egui_view_nav_panel_t);
 
-    egui_view_init(self);
+    egui_view_init(self, uicode_get_core());
     self->api = &EGUI_VIEW_API_TABLE_NAME(egui_view_nav_panel_t);
     egui_view_set_padding_all(self, 2);
 

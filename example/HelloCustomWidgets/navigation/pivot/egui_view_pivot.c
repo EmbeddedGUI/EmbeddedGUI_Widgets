@@ -391,7 +391,7 @@ static void hcw_pivot_draw_text(egui_view_t *self, const egui_font_t *font, cons
     }
 
     draw_region = *region;
-    egui_canvas_draw_text_in_rect(font, text, &draw_region, align_type, color, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_100));
+    egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, font, text, &draw_region, align_type, color, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_100));
 }
 
 static void hcw_pivot_draw_body(egui_view_t *self, hcw_pivot_t *local, egui_color_t text_color, egui_color_t muted_text_color, egui_color_t border_color,
@@ -446,12 +446,12 @@ static void hcw_pivot_draw_body(egui_view_t *self, hcw_pivot_t *local, egui_colo
         accent_color = hcw_pivot_mix_disabled(accent_color);
     }
 
-    egui_canvas_draw_round_rectangle_fill(body_region.location.x, body_region.location.y, body_region.size.width, body_region.size.height,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, body_region.location.x, body_region.location.y, body_region.size.width, body_region.size.height,
                                           local->compact_mode ? 8 : 10, body_fill, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_100));
-    egui_canvas_draw_round_rectangle(body_region.location.x, body_region.location.y, body_region.size.width, body_region.size.height, local->compact_mode ? 8 : 10,
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, body_region.location.x, body_region.location.y, body_region.size.width, body_region.size.height, local->compact_mode ? 8 : 10,
                                      1, border_color, egui_color_alpha_mix(self->alpha, 42));
 
-    egui_canvas_draw_line(body_region.location.x + 8, body_region.location.y + 6, body_region.location.x + body_region.size.width - 8, body_region.location.y + 6,
+    egui_canvas_draw_line(&uicode_get_core()->canvas, body_region.location.x + 8, body_region.location.y + 6, body_region.location.x + body_region.size.width - 8, body_region.location.y + 6,
                           1, accent_color, egui_color_alpha_mix(self->alpha, local->read_only_mode ? 24 : 46));
 
     eyebrow_height = local->compact_mode ? 8 : 9;
@@ -536,15 +536,15 @@ static void hcw_pivot_on_draw(egui_view_t *self)
         accent_color = hcw_pivot_mix_disabled(accent_color);
     }
 
-    egui_canvas_draw_round_rectangle_fill(
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, 
             region.location.x, region.location.y, region.size.width, region.size.height, local->compact_mode ? 10 : 12, surface_color,
             egui_color_alpha_mix(self->alpha, local->compact_mode ? HCW_PIVOT_COMPACT_FILL_ALPHA : HCW_PIVOT_STANDARD_FILL_ALPHA));
-    egui_canvas_draw_round_rectangle(
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, 
             region.location.x, region.location.y, region.size.width, region.size.height, local->compact_mode ? 10 : 12, 1, border_color,
             egui_color_alpha_mix(self->alpha, local->compact_mode ? HCW_PIVOT_COMPACT_BORDER_ALPHA : HCW_PIVOT_STANDARD_BORDER_ALPHA));
 
     divider_y = region.location.y + hcw_pivot_divider_y(local->compact_mode);
-    egui_canvas_draw_line(region.location.x + hcw_pivot_pad_x(local->compact_mode), divider_y, region.location.x + region.size.width - hcw_pivot_pad_x(local->compact_mode),
+    egui_canvas_draw_line(&uicode_get_core()->canvas, region.location.x + hcw_pivot_pad_x(local->compact_mode), divider_y, region.location.x + region.size.width - hcw_pivot_pad_x(local->compact_mode),
                           divider_y, 1, border_color, egui_color_alpha_mix(self->alpha, 18));
 
     count = hcw_pivot_prepare_header_layout(local, self, items);
@@ -557,16 +557,16 @@ static void hcw_pivot_on_draw(egui_view_t *self)
         {
             egui_color_t active_fill = egui_rgb_mix(surface_color, accent_color, local->compact_mode ? 3 : 4);
 
-            egui_canvas_draw_round_rectangle_fill(items[index].region.location.x, items[index].region.location.y - 1, items[index].region.size.width,
+            egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, items[index].region.location.x, items[index].region.location.y - 1, items[index].region.size.width,
                                                   items[index].region.size.height + 2, local->compact_mode ? 5 : 6, active_fill,
                                                   egui_color_alpha_mix(self->alpha, local->compact_mode ? HCW_PIVOT_COMPACT_ACTIVE_FILL_ALPHA
                                                                                                         : HCW_PIVOT_STANDARD_ACTIVE_FILL_ALPHA));
-            egui_canvas_draw_line(items[index].region.location.x + 6, divider_y, items[index].region.location.x + items[index].region.size.width - 6, divider_y, 1,
+            egui_canvas_draw_line(&uicode_get_core()->canvas, items[index].region.location.x + 6, divider_y, items[index].region.location.x + items[index].region.size.width - 6, divider_y, 1,
                                   accent_color, egui_color_alpha_mix(self->alpha, local->read_only_mode ? 24 : 56));
         }
         if (is_enabled && !local->read_only_mode && local->pressed_index == index)
         {
-            egui_canvas_draw_round_rectangle_fill(items[index].region.location.x, items[index].region.location.y - 1, items[index].region.size.width,
+            egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, items[index].region.location.x, items[index].region.location.y - 1, items[index].region.size.width,
                                                   items[index].region.size.height + 2, local->compact_mode ? 5 : 6, EGUI_THEME_PRESS_OVERLAY,
                                                   EGUI_THEME_PRESS_OVERLAY_ALPHA);
         }
@@ -585,9 +585,9 @@ static void hcw_pivot_on_draw(egui_view_t *self)
         egui_dim_t inner_h = region.size.height - 4;
         egui_dim_t radius = local->compact_mode ? 8 : 10;
 
-        egui_canvas_draw_round_rectangle(region.location.x, region.location.y, region.size.width, region.size.height, radius + 2, 2, EGUI_THEME_FOCUS,
+        egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, region.location.x, region.location.y, region.size.width, region.size.height, radius + 2, 2, EGUI_THEME_FOCUS,
                                          egui_color_alpha_mix(self->alpha, 90));
-        egui_canvas_draw_round_rectangle(inner_x, inner_y, inner_w, inner_h, radius, 1, EGUI_THEME_FOCUS, egui_color_alpha_mix(self->alpha, 44));
+        egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, inner_x, inner_y, inner_w, inner_h, radius, 1, EGUI_THEME_FOCUS, egui_color_alpha_mix(self->alpha, 44));
     }
 #endif
 }
@@ -984,7 +984,7 @@ void hcw_pivot_init(egui_view_t *self)
 {
     EGUI_INIT_LOCAL(hcw_pivot_t);
 
-    egui_view_init(self);
+    egui_view_init(self, uicode_get_core());
     self->api = &EGUI_VIEW_API_TABLE_NAME(hcw_pivot_t);
     egui_view_set_padding_all(self, 2);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS

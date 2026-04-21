@@ -66,7 +66,7 @@ static void assert_string_equal(const char *expected, const char *actual)
 
 static void setup_button(void)
 {
-    egui_view_button_init(EGUI_VIEW_OF(&test_button));
+    egui_view_button_init(EGUI_VIEW_OF(&test_button), uicode_get_core());
     egui_view_set_size(EGUI_VIEW_OF(&test_button), 132, 24);
     hcw_hyperlink_button_apply_standard_style(EGUI_VIEW_OF(&test_button));
     hcw_hyperlink_button_set_text(EGUI_VIEW_OF(&test_button), "Open release notes");
@@ -81,7 +81,7 @@ static void setup_button(void)
 
 static void setup_preview_button(void)
 {
-    egui_view_button_init(EGUI_VIEW_OF(&preview_button));
+    egui_view_button_init(EGUI_VIEW_OF(&preview_button), uicode_get_core());
     egui_view_set_size(EGUI_VIEW_OF(&preview_button), 96, 24);
     hcw_hyperlink_button_apply_inline_style(EGUI_VIEW_OF(&preview_button));
     hcw_hyperlink_button_set_text(EGUI_VIEW_OF(&preview_button), "Inline article");

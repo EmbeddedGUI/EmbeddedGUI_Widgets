@@ -344,7 +344,7 @@ static void egui_view_number_box_draw_text(const egui_font_t *font, egui_view_t 
 {
     egui_region_t draw_region = *region;
 
-    egui_canvas_draw_text_in_rect(font, text, &draw_region, align, color, self->alpha);
+    egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, font, text, &draw_region, align, color, self->alpha);
 }
 
 static void egui_view_number_box_draw_icon(egui_view_t *self, const egui_region_t *region, uint8_t part, egui_color_t color, egui_alpha_t alpha,
@@ -353,10 +353,10 @@ static void egui_view_number_box_draw_icon(egui_view_t *self, const egui_region_
     egui_dim_t cx = region->location.x + region->size.width / 2;
     egui_dim_t cy = region->location.y + region->size.height / 2;
 
-    egui_canvas_draw_line(cx - icon_size, cy, cx + icon_size, cy, 1, color, egui_color_alpha_mix(self->alpha, alpha));
+    egui_canvas_draw_line(&uicode_get_core()->canvas, cx - icon_size, cy, cx + icon_size, cy, 1, color, egui_color_alpha_mix(self->alpha, alpha));
     if (part == EGUI_VIEW_NUMBER_BOX_PART_INC)
     {
-        egui_canvas_draw_line(cx, cy - icon_size, cx, cy + icon_size, 1, color, egui_color_alpha_mix(self->alpha, alpha));
+        egui_canvas_draw_line(&uicode_get_core()->canvas, cx, cy - icon_size, cx, cy + icon_size, 1, color, egui_color_alpha_mix(self->alpha, alpha));
     }
 }
 
@@ -448,10 +448,10 @@ static void egui_view_number_box_on_draw(egui_view_t *self)
         button_icon = egui_view_number_box_mix_disabled(button_icon);
     }
 
-    egui_canvas_draw_round_rectangle_fill(
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, 
             region.location.x, region.location.y, region.size.width, region.size.height, radius, surface_color,
             egui_color_alpha_mix(self->alpha, local->compact_mode ? EGUI_VIEW_NUMBER_BOX_COMPACT_FILL_ALPHA : EGUI_VIEW_NUMBER_BOX_STANDARD_FILL_ALPHA));
-    egui_canvas_draw_round_rectangle(
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, 
             region.location.x, region.location.y, region.size.width, region.size.height, radius, 1, border_color,
             egui_color_alpha_mix(self->alpha, local->compact_mode ? EGUI_VIEW_NUMBER_BOX_COMPACT_BORDER_ALPHA : EGUI_VIEW_NUMBER_BOX_STANDARD_BORDER_ALPHA));
 
@@ -460,11 +460,11 @@ static void egui_view_number_box_on_draw(egui_view_t *self)
         egui_view_number_box_draw_text(local->meta_font, self, local->label, &metrics.label_region, EGUI_ALIGN_LEFT, muted_text_color);
     }
 
-    egui_canvas_draw_round_rectangle_fill(metrics.field_region.location.x, metrics.field_region.location.y, metrics.field_region.size.width,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.field_region.location.x, metrics.field_region.location.y, metrics.field_region.size.width,
                                           metrics.field_region.size.height, field_radius, field_fill,
                                           egui_color_alpha_mix(self->alpha, local->compact_mode ? EGUI_VIEW_NUMBER_BOX_COMPACT_FIELD_FILL_ALPHA
                                                                                                 : EGUI_VIEW_NUMBER_BOX_STANDARD_FIELD_FILL_ALPHA));
-    egui_canvas_draw_round_rectangle(metrics.field_region.location.x, metrics.field_region.location.y, metrics.field_region.size.width,
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics.field_region.location.x, metrics.field_region.location.y, metrics.field_region.size.width,
                                      metrics.field_region.size.height, field_radius, 1, field_border,
                                      egui_color_alpha_mix(self->alpha, local->compact_mode ? EGUI_VIEW_NUMBER_BOX_COMPACT_FIELD_BORDER_ALPHA
                                                                                            : EGUI_VIEW_NUMBER_BOX_STANDARD_FIELD_BORDER_ALPHA));
@@ -487,16 +487,16 @@ static void egui_view_number_box_on_draw(egui_view_t *self)
             inc_fill = egui_rgb_mix(button_fill, accent_color, 12);
         }
 
-        egui_canvas_draw_round_rectangle_fill(metrics.dec_region.location.x, metrics.dec_region.location.y, metrics.dec_region.size.width,
+        egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.dec_region.location.x, metrics.dec_region.location.y, metrics.dec_region.size.width,
                                               metrics.dec_region.size.height, field_radius, dec_fill, egui_color_alpha_mix(self->alpha, button_fill_alpha));
-        egui_canvas_draw_round_rectangle(metrics.dec_region.location.x, metrics.dec_region.location.y, metrics.dec_region.size.width,
+        egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics.dec_region.location.x, metrics.dec_region.location.y, metrics.dec_region.size.width,
                                          metrics.dec_region.size.height, field_radius, 1, button_border,
                                          egui_color_alpha_mix(self->alpha, button_border_alpha));
         egui_view_number_box_draw_icon(self, &metrics.dec_region, EGUI_VIEW_NUMBER_BOX_PART_DEC, button_icon, 86, icon_size);
 
-        egui_canvas_draw_round_rectangle_fill(metrics.inc_region.location.x, metrics.inc_region.location.y, metrics.inc_region.size.width,
+        egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.inc_region.location.x, metrics.inc_region.location.y, metrics.inc_region.size.width,
                                               metrics.inc_region.size.height, field_radius, inc_fill, egui_color_alpha_mix(self->alpha, button_fill_alpha));
-        egui_canvas_draw_round_rectangle(metrics.inc_region.location.x, metrics.inc_region.location.y, metrics.inc_region.size.width,
+        egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics.inc_region.location.x, metrics.inc_region.location.y, metrics.inc_region.size.width,
                                          metrics.inc_region.size.height, field_radius, 1, button_border,
                                          egui_color_alpha_mix(self->alpha, button_border_alpha));
         egui_view_number_box_draw_icon(self, &metrics.inc_region, EGUI_VIEW_NUMBER_BOX_PART_INC, button_icon, 86, icon_size);
@@ -651,7 +651,7 @@ void egui_view_number_box_init(egui_view_t *self)
 {
     EGUI_INIT_LOCAL(egui_view_number_box_t);
 
-    egui_view_init(self);
+    egui_view_init(self, uicode_get_core());
     self->api = &EGUI_VIEW_API_TABLE_NAME(egui_view_number_box_t);
     egui_view_set_padding_all(self, 2);
 

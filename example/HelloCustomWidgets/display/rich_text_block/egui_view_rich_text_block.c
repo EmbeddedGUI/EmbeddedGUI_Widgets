@@ -296,7 +296,7 @@ static void egui_view_rich_text_block_draw_line(const egui_font_t *font, const c
 
         egui_api_memcpy(glyph_buf, &text[offset], glyph_bytes);
         glyph_buf[glyph_bytes] = '\0';
-        egui_canvas_draw_text(font, glyph_buf, x, y, color, alpha);
+        egui_canvas_draw_text(&uicode_get_core()->canvas, font, glyph_buf, x, y, color, alpha);
 
         x += glyph_width;
         offset += glyph_bytes;
@@ -467,11 +467,11 @@ static void egui_view_rich_text_block_draw_accent_box(egui_view_rich_text_block_
         strip_color = egui_view_rich_text_block_mix_disabled(strip_color);
     }
 
-    egui_canvas_draw_round_rectangle_fill(layout->box_region.location.x, layout->box_region.location.y, layout->box_region.size.width, layout->box_region.size.height,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, layout->box_region.location.x, layout->box_region.location.y, layout->box_region.size.width, layout->box_region.size.height,
                                           local->compact_mode ? 6 : 8, box_fill, egui_color_alpha_mix(self->alpha, 96));
-    egui_canvas_draw_round_rectangle(layout->box_region.location.x, layout->box_region.location.y, layout->box_region.size.width, layout->box_region.size.height,
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, layout->box_region.location.x, layout->box_region.location.y, layout->box_region.size.width, layout->box_region.size.height,
                                      local->compact_mode ? 6 : 8, 1, box_border, egui_color_alpha_mix(self->alpha, 42));
-    egui_canvas_draw_round_rectangle_fill(layout->strip_region.location.x, layout->strip_region.location.y, layout->strip_region.size.width,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, layout->strip_region.location.x, layout->strip_region.location.y, layout->strip_region.size.width,
                                           layout->strip_region.size.height, 1, strip_color, egui_color_alpha_mix(self->alpha, 92));
 }
 
@@ -654,7 +654,7 @@ void egui_view_rich_text_block_init(egui_view_t *self)
 {
     EGUI_INIT_LOCAL(egui_view_rich_text_block_t);
 
-    egui_view_init(self);
+    egui_view_init(self, uicode_get_core());
     self->api = &EGUI_VIEW_API_TABLE_NAME(egui_view_rich_text_block_t);
     egui_view_set_background(self, NULL);
     egui_view_set_shadow(self, NULL);

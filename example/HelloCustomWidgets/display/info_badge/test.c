@@ -95,7 +95,7 @@ static void layout_page(void);
 static void init_text_label(egui_view_label_t *label, egui_dim_t width, egui_dim_t height, const char *text, const egui_font_t *font, egui_color_t color,
                             uint8_t align)
 {
-    egui_view_label_init(EGUI_VIEW_OF(label));
+    egui_view_label_init(EGUI_VIEW_OF(label), uicode_get_core());
     egui_view_set_size(EGUI_VIEW_OF(label), width, height);
     egui_view_label_set_text(EGUI_VIEW_OF(label), text);
     egui_view_label_set_align_type(EGUI_VIEW_OF(label), align);
@@ -105,7 +105,7 @@ static void init_text_label(egui_view_label_t *label, egui_dim_t width, egui_dim
 
 static void init_row(egui_view_linearlayout_t *row)
 {
-    egui_view_linearlayout_init(EGUI_VIEW_OF(row));
+    egui_view_linearlayout_init(EGUI_VIEW_OF(row), uicode_get_core());
     egui_view_set_size(EGUI_VIEW_OF(row), INFO_BADGE_ROW_WIDTH, INFO_BADGE_ROW_HEIGHT);
     egui_view_linearlayout_set_orientation(EGUI_VIEW_OF(row), 1);
     egui_view_linearlayout_set_align_type(EGUI_VIEW_OF(row), EGUI_ALIGN_VCENTER);
@@ -169,7 +169,7 @@ static void layout_local_views(void)
 static void layout_page(void)
 {
     layout_local_views();
-    egui_core_layout_childs_user_root_view(EGUI_LAYOUT_VERTICAL, EGUI_ALIGN_HCENTER | EGUI_ALIGN_VCENTER);
+    egui_core_layout_childs_user_root_view(uicode_get_core(), EGUI_LAYOUT_VERTICAL, EGUI_ALIGN_HCENTER | EGUI_ALIGN_VCENTER);
 }
 
 #if EGUI_CONFIG_RECORDING_TEST
@@ -184,13 +184,13 @@ static void request_page_snapshot(void)
 void test_init_ui(void)
 {
     ui_ready = 0;
-    egui_view_linearlayout_init(EGUI_VIEW_OF(&root_layout));
+    egui_view_linearlayout_init(EGUI_VIEW_OF(&root_layout), uicode_get_core());
     egui_view_set_size(EGUI_VIEW_OF(&root_layout), INFO_BADGE_ROOT_WIDTH, INFO_BADGE_ROOT_HEIGHT);
     egui_view_linearlayout_set_orientation(EGUI_VIEW_OF(&root_layout), 0);
     egui_view_linearlayout_set_align_type(EGUI_VIEW_OF(&root_layout), EGUI_ALIGN_HCENTER);
     egui_view_set_background(EGUI_VIEW_OF(&root_layout), EGUI_BG_OF(&bg_page_panel));
 
-    egui_view_label_init(EGUI_VIEW_OF(&title_label));
+    egui_view_label_init(EGUI_VIEW_OF(&title_label), uicode_get_core());
     egui_view_set_size(EGUI_VIEW_OF(&title_label), INFO_BADGE_ROOT_WIDTH, 18);
     egui_view_label_set_text(EGUI_VIEW_OF(&title_label), title_text);
     egui_view_label_set_align_type(EGUI_VIEW_OF(&title_label), EGUI_ALIGN_CENTER);
@@ -207,7 +207,7 @@ void test_init_ui(void)
                     EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER);
     egui_view_group_add_child(EGUI_VIEW_OF(&count_row), EGUI_VIEW_OF(&count_row_label));
 
-    egui_view_notification_badge_init(EGUI_VIEW_OF(&count_badge));
+    egui_view_notification_badge_init(EGUI_VIEW_OF(&count_badge), uicode_get_core());
     egui_view_set_size(EGUI_VIEW_OF(&count_badge), 34, 20);
     egui_view_set_margin(EGUI_VIEW_OF(&count_badge), 18, 0, 0, 0);
     egui_view_notification_badge_set_font(EGUI_VIEW_OF(&count_badge), (const egui_font_t *)&egui_res_font_montserrat_8_4);
@@ -224,7 +224,7 @@ void test_init_ui(void)
                     EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER);
     egui_view_group_add_child(EGUI_VIEW_OF(&icon_row), EGUI_VIEW_OF(&icon_row_label));
 
-    egui_view_notification_badge_init(EGUI_VIEW_OF(&icon_badge));
+    egui_view_notification_badge_init(EGUI_VIEW_OF(&icon_badge), uicode_get_core());
     egui_view_set_size(EGUI_VIEW_OF(&icon_badge), 20, 20);
     egui_view_set_margin(EGUI_VIEW_OF(&icon_badge), 32, 0, 0, 0);
     egui_view_notification_badge_set_icon_font(EGUI_VIEW_OF(&icon_badge), EGUI_FONT_ICON_MS_16);
@@ -241,7 +241,7 @@ void test_init_ui(void)
                     EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER);
     egui_view_group_add_child(EGUI_VIEW_OF(&dot_row), EGUI_VIEW_OF(&dot_row_label));
 
-    egui_view_notification_badge_init(EGUI_VIEW_OF(&dot_badge));
+    egui_view_notification_badge_init(EGUI_VIEW_OF(&dot_badge), uicode_get_core());
     egui_view_set_size(EGUI_VIEW_OF(&dot_badge), 12, 12);
     egui_view_set_margin(EGUI_VIEW_OF(&dot_badge), 40, 0, 0, 0);
     egui_view_notification_badge_set_icon_font(EGUI_VIEW_OF(&dot_badge), EGUI_FONT_ICON_MS_16);
@@ -250,13 +250,13 @@ void test_init_ui(void)
 #endif
     egui_view_group_add_child(EGUI_VIEW_OF(&dot_row), EGUI_VIEW_OF(&dot_badge));
 
-    egui_view_linearlayout_init(EGUI_VIEW_OF(&bottom_row));
+    egui_view_linearlayout_init(EGUI_VIEW_OF(&bottom_row), uicode_get_core());
     egui_view_set_size(EGUI_VIEW_OF(&bottom_row), INFO_BADGE_BOTTOM_ROW_WIDTH, INFO_BADGE_BOTTOM_ROW_HEIGHT);
     egui_view_linearlayout_set_orientation(EGUI_VIEW_OF(&bottom_row), 1);
     egui_view_linearlayout_set_align_type(EGUI_VIEW_OF(&bottom_row), EGUI_ALIGN_VCENTER);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&bottom_row));
 
-    egui_view_notification_badge_init(EGUI_VIEW_OF(&overflow_badge));
+    egui_view_notification_badge_init(EGUI_VIEW_OF(&overflow_badge), uicode_get_core());
     egui_view_set_size(EGUI_VIEW_OF(&overflow_badge), 40, 20);
     egui_view_notification_badge_set_font(EGUI_VIEW_OF(&overflow_badge), (const egui_font_t *)&egui_res_font_montserrat_8_4);
     hcw_info_badge_override_static_preview_api(EGUI_VIEW_OF(&overflow_badge), &overflow_badge_api);
@@ -265,7 +265,7 @@ void test_init_ui(void)
 #endif
     egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&overflow_badge));
 
-    egui_view_notification_badge_init(EGUI_VIEW_OF(&attention_badge));
+    egui_view_notification_badge_init(EGUI_VIEW_OF(&attention_badge), uicode_get_core());
     egui_view_set_size(EGUI_VIEW_OF(&attention_badge), 12, 12);
     egui_view_set_margin(EGUI_VIEW_OF(&attention_badge), 8, 0, 0, 0);
     egui_view_notification_badge_set_icon_font(EGUI_VIEW_OF(&attention_badge), EGUI_FONT_ICON_MS_16);

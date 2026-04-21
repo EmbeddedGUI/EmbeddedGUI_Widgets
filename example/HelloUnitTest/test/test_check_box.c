@@ -54,7 +54,7 @@ static void assert_region_equal(const egui_region_t *expected, const egui_region
 
 static void setup_box(uint8_t checked)
 {
-    egui_view_checkbox_init(EGUI_VIEW_OF(&test_box));
+    egui_view_checkbox_init(EGUI_VIEW_OF(&test_box), uicode_get_core());
     egui_view_set_size(EGUI_VIEW_OF(&test_box), 180, 34);
     egui_view_checkbox_set_font(EGUI_VIEW_OF(&test_box), (const egui_font_t *)&egui_res_font_montserrat_10_4);
     hcw_check_box_apply_standard_style(EGUI_VIEW_OF(&test_box));
@@ -70,7 +70,7 @@ static void setup_box(uint8_t checked)
 
 static void setup_preview_box(uint8_t checked)
 {
-    egui_view_checkbox_init(EGUI_VIEW_OF(&preview_box));
+    egui_view_checkbox_init(EGUI_VIEW_OF(&preview_box), uicode_get_core());
     egui_view_set_size(EGUI_VIEW_OF(&preview_box), 104, 28);
     egui_view_checkbox_set_font(EGUI_VIEW_OF(&preview_box), (const egui_font_t *)&egui_res_font_montserrat_10_4);
     hcw_check_box_apply_compact_style(EGUI_VIEW_OF(&preview_box));

@@ -49,7 +49,7 @@ static void setup_button(uint8_t is_toggled)
 {
     static egui_view_api_t test_button_interaction_api;
 
-    egui_view_toggle_button_init(EGUI_VIEW_OF(&test_button));
+    egui_view_toggle_button_init(EGUI_VIEW_OF(&test_button), uicode_get_core());
     egui_view_set_size(EGUI_VIEW_OF(&test_button), 116, 44);
     egui_view_toggle_button_set_text(EGUI_VIEW_OF(&test_button), "Alerts");
     egui_view_toggle_button_set_icon(EGUI_VIEW_OF(&test_button), EGUI_ICON_MS_NOTIFICATIONS);
@@ -67,7 +67,7 @@ static void setup_button(uint8_t is_toggled)
 
 static void setup_preview_button(void)
 {
-    egui_view_toggle_button_init(EGUI_VIEW_OF(&preview_button));
+    egui_view_toggle_button_init(EGUI_VIEW_OF(&preview_button), uicode_get_core());
     egui_view_set_size(EGUI_VIEW_OF(&preview_button), 104, 44);
     egui_view_toggle_button_set_text(EGUI_VIEW_OF(&preview_button), "Visible");
     egui_view_toggle_button_set_icon(EGUI_VIEW_OF(&preview_button), EGUI_ICON_MS_VISIBILITY);

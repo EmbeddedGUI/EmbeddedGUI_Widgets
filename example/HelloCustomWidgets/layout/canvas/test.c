@@ -203,7 +203,7 @@ static egui_color_t canvas_card_get_title_color(canvas_item_tone_t tone)
 static void init_text_label(egui_view_label_t *label, egui_dim_t width, egui_dim_t height, const char *text, const egui_font_t *font, egui_color_t color,
                             uint8_t align_type)
 {
-    egui_view_label_init(EGUI_VIEW_OF(label));
+    egui_view_label_init(EGUI_VIEW_OF(label), uicode_get_core());
     egui_view_set_size(EGUI_VIEW_OF(label), width, height);
     egui_view_label_set_text(EGUI_VIEW_OF(label), text);
     egui_view_label_set_align_type(EGUI_VIEW_OF(label), align_type);
@@ -213,7 +213,7 @@ static void init_text_label(egui_view_label_t *label, egui_dim_t width, egui_dim
 
 static void init_panel(egui_view_linearlayout_t *panel, egui_dim_t width, egui_dim_t height, egui_background_t *background, uint8_t align_type)
 {
-    egui_view_linearlayout_init(EGUI_VIEW_OF(panel));
+    egui_view_linearlayout_init(EGUI_VIEW_OF(panel), uicode_get_core());
     egui_view_set_size(EGUI_VIEW_OF(panel), width, height);
     egui_view_linearlayout_set_orientation(EGUI_VIEW_OF(panel), 0);
     egui_view_linearlayout_set_align_type(EGUI_VIEW_OF(panel), align_type);
@@ -223,7 +223,7 @@ static void init_panel(egui_view_linearlayout_t *panel, egui_dim_t width, egui_d
 
 static void init_card(egui_view_linearlayout_t *card, egui_view_label_t *title_value, egui_dim_t width, egui_dim_t height)
 {
-    egui_view_linearlayout_init(EGUI_VIEW_OF(card));
+    egui_view_linearlayout_init(EGUI_VIEW_OF(card), uicode_get_core());
     egui_view_set_size(EGUI_VIEW_OF(card), width, height);
     egui_view_linearlayout_set_orientation(EGUI_VIEW_OF(card), 0);
     egui_view_linearlayout_set_align_type(EGUI_VIEW_OF(card), EGUI_ALIGN_CENTER);
@@ -295,7 +295,7 @@ static void layout_local_views(void)
 static void layout_page(void)
 {
     layout_local_views();
-    egui_core_layout_childs_user_root_view(EGUI_LAYOUT_VERTICAL, EGUI_ALIGN_HCENTER | EGUI_ALIGN_VCENTER);
+    egui_core_layout_childs_user_root_view(uicode_get_core(), EGUI_LAYOUT_VERTICAL, EGUI_ALIGN_HCENTER | EGUI_ALIGN_VCENTER);
 }
 
 static void apply_primary_state(uint8_t index)
@@ -341,7 +341,7 @@ void test_init_ui(void)
 
     ui_ready = 0;
 
-    egui_view_linearlayout_init(EGUI_VIEW_OF(&root_layout));
+    egui_view_linearlayout_init(EGUI_VIEW_OF(&root_layout), uicode_get_core());
     egui_view_set_size(EGUI_VIEW_OF(&root_layout), CANVAS_ROOT_WIDTH, CANVAS_ROOT_HEIGHT);
     egui_view_linearlayout_set_orientation(EGUI_VIEW_OF(&root_layout), 0);
     egui_view_linearlayout_set_align_type(EGUI_VIEW_OF(&root_layout), EGUI_ALIGN_HCENTER);
@@ -362,7 +362,7 @@ void test_init_ui(void)
     egui_view_set_margin(EGUI_VIEW_OF(&primary_heading_label), 0, 0, 0, 4);
     egui_view_group_add_child(EGUI_VIEW_OF(&primary_panel), EGUI_VIEW_OF(&primary_heading_label));
 
-    egui_view_group_init(EGUI_VIEW_OF(&primary_canvas));
+    egui_view_group_init(EGUI_VIEW_OF(&primary_canvas), uicode_get_core());
     egui_view_set_size(EGUI_VIEW_OF(&primary_canvas), CANVAS_PRIMARY_CANVAS_WIDTH, CANVAS_PRIMARY_CANVAS_HEIGHT);
     egui_view_set_margin(EGUI_VIEW_OF(&primary_canvas), 0, 0, 0, 6);
     egui_view_group_add_child(EGUI_VIEW_OF(&primary_panel), EGUI_VIEW_OF(&primary_canvas));
@@ -377,7 +377,7 @@ void test_init_ui(void)
                     (const egui_font_t *)&egui_res_font_montserrat_8_4, EGUI_COLOR_HEX(0x6B7A89), EGUI_ALIGN_CENTER);
     egui_view_group_add_child(EGUI_VIEW_OF(&primary_panel), EGUI_VIEW_OF(&primary_note_label));
 
-    egui_view_linearlayout_init(EGUI_VIEW_OF(&bottom_row));
+    egui_view_linearlayout_init(EGUI_VIEW_OF(&bottom_row), uicode_get_core());
     egui_view_set_size(EGUI_VIEW_OF(&bottom_row), CANVAS_BOTTOM_ROW_WIDTH, CANVAS_BOTTOM_ROW_HEIGHT);
     egui_view_linearlayout_set_orientation(EGUI_VIEW_OF(&bottom_row), 1);
     egui_view_linearlayout_set_align_type(EGUI_VIEW_OF(&bottom_row), EGUI_ALIGN_VCENTER);
@@ -390,7 +390,7 @@ void test_init_ui(void)
     egui_view_set_margin(EGUI_VIEW_OF(&pinned_heading_label), 0, 0, 0, 4);
     egui_view_group_add_child(EGUI_VIEW_OF(&pinned_panel), EGUI_VIEW_OF(&pinned_heading_label));
 
-    egui_view_group_init(EGUI_VIEW_OF(&pinned_preview_canvas));
+    egui_view_group_init(EGUI_VIEW_OF(&pinned_preview_canvas), uicode_get_core());
     egui_view_set_size(EGUI_VIEW_OF(&pinned_preview_canvas), CANVAS_PREVIEW_CANVAS_WIDTH, CANVAS_PREVIEW_CANVAS_HEIGHT);
     egui_view_set_margin(EGUI_VIEW_OF(&pinned_preview_canvas), 0, 0, 0, 4);
     hcw_canvas_override_static_preview_api(EGUI_VIEW_OF(&pinned_preview_canvas), &pinned_preview_api);
@@ -418,7 +418,7 @@ void test_init_ui(void)
     egui_view_set_margin(EGUI_VIEW_OF(&compact_heading_label), 0, 0, 0, 4);
     egui_view_group_add_child(EGUI_VIEW_OF(&compact_panel), EGUI_VIEW_OF(&compact_heading_label));
 
-    egui_view_group_init(EGUI_VIEW_OF(&compact_preview_canvas));
+    egui_view_group_init(EGUI_VIEW_OF(&compact_preview_canvas), uicode_get_core());
     egui_view_set_size(EGUI_VIEW_OF(&compact_preview_canvas), CANVAS_PREVIEW_CANVAS_WIDTH, CANVAS_PREVIEW_CANVAS_HEIGHT);
     egui_view_set_margin(EGUI_VIEW_OF(&compact_preview_canvas), 0, 0, 0, 4);
     hcw_canvas_override_static_preview_api(EGUI_VIEW_OF(&compact_preview_canvas), &compact_preview_api);

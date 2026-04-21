@@ -390,7 +390,7 @@ static void egui_view_tab_strip_draw_text(egui_view_tab_strip_t *local, egui_vie
     text_region.location.y = y;
     text_region.size.width = width;
     text_region.size.height = height;
-    egui_canvas_draw_text_in_rect(local->font, text, &text_region, EGUI_ALIGN_CENTER, color, self->alpha);
+    egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, local->font, text, &text_region, EGUI_ALIGN_CENTER, color, self->alpha);
 }
 
 static uint8_t egui_view_tab_strip_resolve_hit(egui_view_tab_strip_t *local, egui_view_t *self, egui_dim_t screen_x)
@@ -479,10 +479,10 @@ static void egui_view_tab_strip_on_draw(egui_view_t *self)
         accent_color = egui_view_tab_strip_mix_disabled(accent_color);
     }
 
-    egui_canvas_draw_round_rectangle_fill(
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, 
             region.location.x, region.location.y, region.size.width, region.size.height, radius, surface_color,
             egui_color_alpha_mix(self->alpha, local->compact_mode ? EGUI_VIEW_TAB_STRIP_COMPACT_FILL_ALPHA : EGUI_VIEW_TAB_STRIP_STANDARD_FILL_ALPHA));
-    egui_canvas_draw_round_rectangle(
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, 
             region.location.x, region.location.y, region.size.width, region.size.height, radius, 1, border_color,
             egui_color_alpha_mix(self->alpha, local->compact_mode ? EGUI_VIEW_TAB_STRIP_COMPACT_BORDER_ALPHA : EGUI_VIEW_TAB_STRIP_STANDARD_BORDER_ALPHA));
 
@@ -500,7 +500,7 @@ static void egui_view_tab_strip_on_draw(egui_view_t *self)
     label_y = divider_y - label_h - (local->compact_mode ? EGUI_VIEW_TAB_STRIP_COMPACT_LABEL_OFFSET : EGUI_VIEW_TAB_STRIP_STANDARD_LABEL_OFFSET);
     count = egui_view_tab_strip_prepare_layout(local, content_x, content_w, items);
 
-    egui_canvas_draw_line(content_x, divider_y, content_x + content_w, divider_y, 1, border_color,
+    egui_canvas_draw_line(&uicode_get_core()->canvas, content_x, divider_y, content_x + content_w, divider_y, 1, border_color,
                           egui_color_alpha_mix(self->alpha, local->compact_mode ? 16 : 14));
 
     for (i = 0; i < count; i++)
@@ -517,7 +517,7 @@ static void egui_view_tab_strip_on_draw(egui_view_t *self)
                                  local->compact_mode ? EGUI_VIEW_TAB_STRIP_COMPACT_ACTIVE_FILL_MIX : EGUI_VIEW_TAB_STRIP_STANDARD_ACTIVE_FILL_MIX);
             egui_alpha_t active_alpha = local->compact_mode ? EGUI_VIEW_TAB_STRIP_COMPACT_ACTIVE_FILL_ALPHA : EGUI_VIEW_TAB_STRIP_STANDARD_ACTIVE_FILL_ALPHA;
 
-            egui_canvas_draw_round_rectangle_fill(items[i].x, label_y - 2, items[i].width, label_h + 2, local->compact_mode ? 4 : 5, active_fill,
+            egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, items[i].x, label_y - 2, items[i].width, label_h + 2, local->compact_mode ? 4 : 5, active_fill,
                                                   egui_color_alpha_mix(self->alpha, active_alpha));
             if (!local->read_only_mode && is_enabled)
             {
@@ -540,16 +540,16 @@ static void egui_view_tab_strip_on_draw(egui_view_t *self)
                 indicator_w = local->compact_mode ? 12 : 16;
             }
             indicator_x = items[i].x + (items[i].width - indicator_w) / 2;
-            egui_canvas_draw_line(indicator_x, divider_y, indicator_x + indicator_w, divider_y, 1, accent_color,
+            egui_canvas_draw_line(&uicode_get_core()->canvas, indicator_x, divider_y, indicator_x + indicator_w, divider_y, 1, accent_color,
                                   egui_color_alpha_mix(self->alpha, local->read_only_mode ? 24 : 44));
-            egui_canvas_draw_line(indicator_x, divider_y + 1, indicator_x + indicator_w, divider_y + 1, 1, accent_color,
+            egui_canvas_draw_line(&uicode_get_core()->canvas, indicator_x, divider_y + 1, indicator_x + indicator_w, divider_y + 1, 1, accent_color,
                                   egui_color_alpha_mix(self->alpha, local->read_only_mode ? 10 : 20));
         }
     }
 
     if (local->read_only_mode)
     {
-        egui_canvas_draw_line(content_x + 2, content_y + 1, content_x + content_w - 2, content_y + 1, 1, border_color,
+        egui_canvas_draw_line(&uicode_get_core()->canvas, content_x + 2, content_y + 1, content_x + content_w - 2, content_y + 1, 1, border_color,
                               egui_color_alpha_mix(self->alpha, 8));
     }
 }
@@ -724,7 +724,7 @@ void egui_view_tab_strip_init(egui_view_t *self)
 {
     EGUI_INIT_LOCAL(egui_view_tab_strip_t);
 
-    egui_view_init(self);
+    egui_view_init(self, uicode_get_core());
     self->api = &EGUI_VIEW_API_TABLE_NAME(egui_view_tab_strip_t);
     egui_view_set_padding_all(self, 2);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS

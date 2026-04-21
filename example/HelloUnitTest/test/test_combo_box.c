@@ -64,7 +64,7 @@ static void assert_region_equal(const egui_region_t *expected, const egui_region
 
 static void setup_box(void)
 {
-    egui_view_combobox_init(EGUI_VIEW_OF(&test_box));
+    egui_view_combobox_init(EGUI_VIEW_OF(&test_box), uicode_get_core());
     egui_view_set_size(EGUI_VIEW_OF(&test_box), 180, 34);
     egui_view_combobox_set_items(EGUI_VIEW_OF(&test_box), g_workspace_items, EGUI_ARRAY_SIZE(g_workspace_items));
     egui_view_combobox_set_on_selected_listener(EGUI_VIEW_OF(&test_box), on_selected);
@@ -89,7 +89,7 @@ static void layout_box(egui_dim_t x, egui_dim_t y, egui_dim_t width, egui_dim_t 
 
 static void setup_preview_box(void)
 {
-    egui_view_combobox_init(EGUI_VIEW_OF(&preview_box));
+    egui_view_combobox_init(EGUI_VIEW_OF(&preview_box), uicode_get_core());
     egui_view_set_size(EGUI_VIEW_OF(&preview_box), 104, 28);
     hcw_combo_box_set_items(EGUI_VIEW_OF(&preview_box), g_preview_items, EGUI_ARRAY_SIZE(g_preview_items));
     hcw_combo_box_set_current_index(EGUI_VIEW_OF(&preview_box), 0);

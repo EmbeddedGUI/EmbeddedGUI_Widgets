@@ -41,7 +41,7 @@ static void assert_region_equal(const egui_region_t *expected, const egui_region
 
 static void setup_button(void)
 {
-    egui_view_button_init(EGUI_VIEW_OF(&test_button));
+    egui_view_button_init(EGUI_VIEW_OF(&test_button), uicode_get_core());
     egui_view_set_size(EGUI_VIEW_OF(&test_button), 116, 40);
     hcw_button_apply_standard_style(EGUI_VIEW_OF(&test_button));
     hcw_button_set_text(EGUI_VIEW_OF(&test_button), "Deploy");
@@ -58,7 +58,7 @@ static void setup_button(void)
 
 static void setup_preview_button(void)
 {
-    egui_view_button_init(EGUI_VIEW_OF(&preview_button));
+    egui_view_button_init(EGUI_VIEW_OF(&preview_button), uicode_get_core());
     egui_view_set_size(EGUI_VIEW_OF(&preview_button), 96, 32);
     hcw_button_apply_compact_style(EGUI_VIEW_OF(&preview_button));
     hcw_button_set_text(EGUI_VIEW_OF(&preview_button), "Open");

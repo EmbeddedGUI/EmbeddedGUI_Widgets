@@ -52,7 +52,7 @@ static void assert_region_equal(const egui_region_t *expected, const egui_region
 
 static void setup_switch(uint8_t checked)
 {
-    egui_view_switch_init(EGUI_VIEW_OF(&test_switch));
+    egui_view_switch_init(EGUI_VIEW_OF(&test_switch), uicode_get_core());
     egui_view_set_size(EGUI_VIEW_OF(&test_switch), 112, 44);
     hcw_switch_apply_standard_style(EGUI_VIEW_OF(&test_switch));
     hcw_switch_set_state_icons(EGUI_VIEW_OF(&test_switch), EGUI_ICON_MS_DONE, EGUI_ICON_MS_CROSS);
@@ -68,7 +68,7 @@ static void setup_switch(uint8_t checked)
 
 static void setup_preview_switch(uint8_t checked)
 {
-    egui_view_switch_init(EGUI_VIEW_OF(&preview_switch));
+    egui_view_switch_init(EGUI_VIEW_OF(&preview_switch), uicode_get_core());
     egui_view_set_size(EGUI_VIEW_OF(&preview_switch), 76, 32);
     hcw_switch_apply_compact_style(EGUI_VIEW_OF(&preview_switch));
     hcw_switch_set_state_icons(EGUI_VIEW_OF(&preview_switch), EGUI_ICON_MS_DONE, NULL);

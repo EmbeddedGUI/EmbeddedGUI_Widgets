@@ -119,7 +119,7 @@ static void egui_view_symbol_icon_on_draw(egui_view_t *self)
         icon_color = egui_rgb_mix(icon_color, EGUI_COLOR_HEX(0x97A4B1), 58);
     }
 
-    egui_canvas_draw_text_in_rect(font, local->symbol, &region, EGUI_ALIGN_CENTER, icon_color, self->alpha);
+    egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, font, local->symbol, &region, EGUI_ALIGN_CENTER, icon_color, self->alpha);
 }
 
 #if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
@@ -176,7 +176,7 @@ void egui_view_symbol_icon_init(egui_view_t *self)
 {
     egui_view_symbol_icon_t *local = egui_view_symbol_icon_local(self);
 
-    egui_view_init(self);
+    egui_view_init(self, uicode_get_core());
     self->api = &EGUI_VIEW_API_TABLE_NAME(egui_view_symbol_icon_t);
     egui_view_set_padding_all(self, 0);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS

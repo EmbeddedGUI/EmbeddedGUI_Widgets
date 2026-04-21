@@ -51,10 +51,6 @@ FILE_OP_RETRY_DELAY_S = 0.1
 RUNTIME_FAIL_MARKERS = ("[RUNTIME_CHECK_FAIL]",)
 FRAME_LABEL_PATTERN = re.compile(r"PERF_FRAME:(frame_\d+\.png):([A-Za-z0-9_.-]+)")
 FRAME_LABEL_MANIFEST = "recording_frame_labels.json"
-FULL_CHECK_OPTIONAL_APPS = {
-    "HelloCustomWidgets": "requested by --skip-custom-widgets",
-}
-
 # Examples not suitable for runtime testing (headless/performance/test-only)
 SKIP_LIST = ["HelloUnitTest"]
 SUB_APP_ROOTS = {
@@ -1011,25 +1007,18 @@ def run_full_check(bits64, speed=RECORDING_SPEED, snapshot_settle_ms=RECORDING_S
                    clock_scale=RECORDING_CLOCK_SCALE,
                    snapshot_stable_cycles=RECORDING_SNAPSHOT_STABLE_CYCLES,
                    snapshot_max_wait_ms=RECORDING_SNAPSHOT_MAX_WAIT_MS,
-                   skip_custom_widgets=False, jobs=0, track="all", include_deprecated=False):
+                   jobs=0, track="all", include_deprecated=False):
     """Run runtime check on all examples.
     Returns list of (app_name, success, message) tuples.
     """
     app_sets = get_example_list()
     sub_app_sets = build_sub_app_sets(track=track, include_deprecated=include_deprecated or track == "deprecated")
-    skipped_apps = set()
-
-    if skip_custom_widgets:
-        skipped_apps.add("HelloCustomWidgets")
-
     print("Running with speed=%dx" % speed)
     for app in app_sets:
         if app in SKIP_LIST:
             print("\nSkipping: %s" % app)
-        elif app in skipped_apps:
-            print("\nSkipping: %s (%s)" % (app, FULL_CHECK_OPTIONAL_APPS[app]))
 
-    case_specs = build_runtime_case_specs("full", app_sets, sub_app_sets, skipped_apps=skipped_apps)
+    case_specs = build_runtime_case_specs("full", app_sets, sub_app_sets)
 
     return run_runtime_case_batch(
         case_specs,
@@ -1048,15 +1037,11 @@ def run_scope_check(scope, bits64, explicit_timeout=None,
                     clock_scale=RECORDING_CLOCK_SCALE,
                     snapshot_stable_cycles=RECORDING_SNAPSHOT_STABLE_CYCLES,
                     snapshot_max_wait_ms=RECORDING_SNAPSHOT_MAX_WAIT_MS,
-                    skip_custom_widgets=False, jobs=0, shard_count=1, shard_index=1,
+                    jobs=0, shard_count=1, shard_index=1,
                     track="all", include_deprecated=False):
     app_sets = get_example_list()
     sub_app_sets = build_sub_app_sets(track=track, include_deprecated=include_deprecated or track == "deprecated")
-    skipped_apps = set()
-    if skip_custom_widgets:
-        skipped_apps.add("HelloCustomWidgets")
-
-    case_specs = build_runtime_case_specs(scope, app_sets, sub_app_sets, skipped_apps=skipped_apps)
+    case_specs = build_runtime_case_specs(scope, app_sets, sub_app_sets)
     case_specs = apply_case_shard(case_specs, shard_count, shard_index)
 
     print("=" * 60)
@@ -1159,8 +1144,6 @@ Entry note:
                         help='Test all HelloCustomWidgets demos')
     parser.add_argument('--scope', choices=['standard', 'basic', 'virtual', 'size-analysis'],
                         help='Run one runtime case family only, useful for CI sharding')
-    parser.add_argument('--skip-custom-widgets', action='store_true',
-                        help='Deprecated in this repository; kept for CLI compatibility.')
     parser.add_argument('--jobs', type=int, default=0,
                         help='Parallel runtime cases for batch/full checks (default: auto, 0=auto)')
     parser.add_argument('--shard-count', type=int, default=1,
@@ -1219,7 +1202,6 @@ Entry note:
             snapshot_settle_ms=snapshot_settle_ms,
             snapshot_stable_cycles=snapshot_stable_cycles,
             snapshot_max_wait_ms=snapshot_max_wait_ms,
-            skip_custom_widgets=args.skip_custom_widgets,
             jobs=args.jobs,
             track=args.track,
             include_deprecated=args.include_deprecated,
@@ -1237,7 +1219,6 @@ Entry note:
                 snapshot_settle_ms=snapshot_settle_ms,
                 snapshot_stable_cycles=snapshot_stable_cycles,
                 snapshot_max_wait_ms=snapshot_max_wait_ms,
-                skip_custom_widgets=args.skip_custom_widgets,
                 jobs=args.jobs,
                 shard_count=args.shard_count,
                 shard_index=args.shard_index,

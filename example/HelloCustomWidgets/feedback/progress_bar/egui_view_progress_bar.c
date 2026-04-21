@@ -80,7 +80,7 @@ static void hcw_progress_bar_stop_timer_state(hcw_progress_bar_state_t *state)
         return;
     }
 
-    egui_timer_stop_timer(&state->anim_timer);
+    egui_timer_stop_timer(uicode_get_core(), &state->anim_timer);
     state->timer_started = 0;
 }
 
@@ -98,7 +98,7 @@ static void hcw_progress_bar_start_timer(egui_view_t *self)
         return;
     }
 
-    egui_timer_start_timer(&state->anim_timer, HCW_PROGRESS_BAR_TIMER_MS, HCW_PROGRESS_BAR_TIMER_MS);
+    egui_timer_start_timer(uicode_get_core(), &state->anim_timer, HCW_PROGRESS_BAR_TIMER_MS, HCW_PROGRESS_BAR_TIMER_MS);
     state->timer_started = 1;
 }
 
@@ -227,10 +227,10 @@ static void hcw_progress_bar_draw_indeterminate(egui_view_t *self, hcw_progress_
     }
 
 #if EGUI_CONFIG_WIDGET_ENHANCED_DRAW
-    egui_canvas_draw_round_rectangle_fill(metrics.start_x, metrics.track_y, metrics.usable_width, metrics.track_height, metrics.track_radius, local->bk_color,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.start_x, metrics.track_y, metrics.usable_width, metrics.track_height, metrics.track_radius, local->bk_color,
                                           EGUI_ALPHA_100);
 #else
-    egui_canvas_draw_round_rectangle_fill(metrics.start_x, metrics.track_y, metrics.usable_width, metrics.track_height, metrics.track_radius, local->bk_color,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.start_x, metrics.track_y, metrics.usable_width, metrics.track_height, metrics.track_radius, local->bk_color,
                                           EGUI_ALPHA_100);
 #endif
 
@@ -248,10 +248,10 @@ static void hcw_progress_bar_draw_indeterminate(egui_view_t *self, hcw_progress_
 
     visible_width = (egui_dim_t)(visible_end - visible_start);
 #if EGUI_CONFIG_WIDGET_ENHANCED_DRAW
-    egui_canvas_draw_round_rectangle_fill((egui_dim_t)visible_start, metrics.track_y, visible_width, metrics.track_height, metrics.track_radius,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, (egui_dim_t)visible_start, metrics.track_y, visible_width, metrics.track_height, metrics.track_radius,
                                           local->progress_color, EGUI_ALPHA_100);
 #else
-    egui_canvas_draw_round_rectangle_fill((egui_dim_t)visible_start, metrics.track_y, visible_width, metrics.track_height, metrics.track_radius,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, (egui_dim_t)visible_start, metrics.track_y, visible_width, metrics.track_height, metrics.track_radius,
                                           local->progress_color, EGUI_ALPHA_100);
 #endif
 }
@@ -322,7 +322,7 @@ static void hcw_progress_bar_apply_style(egui_view_t *self, egui_color_t track_c
 
 void hcw_progress_bar_init(egui_view_t *self)
 {
-    egui_view_progress_bar_init(self);
+    egui_view_progress_bar_init(self, uicode_get_core());
     hcw_progress_bar_reset_state(self);
 }
 

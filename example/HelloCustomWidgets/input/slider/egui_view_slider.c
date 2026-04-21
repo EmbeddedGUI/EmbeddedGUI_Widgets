@@ -104,12 +104,12 @@ static void hcw_slider_on_draw(egui_view_t *self)
         outer_radius = 8;
     }
 
-    egui_canvas_draw_round_rectangle_fill(region.location.x, region.location.y, region.size.width, region.size.height, outer_radius, shell_fill,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, region.location.x, region.location.y, region.size.width, region.size.height, outer_radius, shell_fill,
                                           egui_color_alpha_mix(self->alpha, compact_mode ? 94 : 100));
-    egui_canvas_draw_round_rectangle(region.location.x, region.location.y, region.size.width, region.size.height, outer_radius, 1, shell_border,
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, region.location.x, region.location.y, region.size.width, region.size.height, outer_radius, 1, shell_border,
                                      egui_color_alpha_mix(self->alpha, compact_mode ? 46 : 58));
 
-    egui_canvas_draw_round_rectangle_fill(metrics.start_x, metrics.track_y, metrics.usable_width, metrics.track_height, metrics.track_radius, track_color,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.start_x, metrics.track_y, metrics.usable_width, metrics.track_height, metrics.track_radius, track_color,
                                           egui_color_alpha_mix(self->alpha, 100));
 
     thumb_x = egui_view_linear_value_get_x(&metrics, local->value);
@@ -117,24 +117,24 @@ static void hcw_slider_on_draw(egui_view_t *self)
     active_width = thumb_x - metrics.start_x;
     if (active_width > 0)
     {
-        egui_canvas_draw_round_rectangle_fill(metrics.start_x, metrics.track_y, active_width, metrics.track_height, metrics.track_radius, active_color,
+        egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.start_x, metrics.track_y, active_width, metrics.track_height, metrics.track_radius, active_color,
                                               egui_color_alpha_mix(self->alpha, 100));
     }
 
     if (self->is_focused && egui_view_get_enable(self))
     {
-        egui_canvas_draw_round_rectangle(region.location.x - 1, region.location.y - 1, region.size.width + 2, region.size.height + 2, outer_radius, 1,
+        egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, region.location.x - 1, region.location.y - 1, region.size.width + 2, region.size.height + 2, outer_radius, 1,
                                          active_color, egui_color_alpha_mix(self->alpha, 72));
     }
 
     if (self->is_pressed || local->is_dragging)
     {
-        egui_canvas_draw_circle_fill_basic(thumb_x, thumb_y, metrics.knob_radius + 3, egui_rgb_mix(active_color, EGUI_COLOR_WHITE, 22),
+        egui_canvas_draw_circle_fill_basic(&uicode_get_core()->canvas, thumb_x, thumb_y, metrics.knob_radius + 3, egui_rgb_mix(active_color, EGUI_COLOR_WHITE, 22),
                                            egui_color_alpha_mix(self->alpha, 32));
     }
 
-    egui_canvas_draw_circle_fill_basic(thumb_x, thumb_y, metrics.knob_radius, thumb_color, egui_color_alpha_mix(self->alpha, 100));
-    egui_canvas_draw_circle_basic(thumb_x, thumb_y, metrics.knob_radius, 1, thumb_border, egui_color_alpha_mix(self->alpha, 94));
+    egui_canvas_draw_circle_fill_basic(&uicode_get_core()->canvas, thumb_x, thumb_y, metrics.knob_radius, thumb_color, egui_color_alpha_mix(self->alpha, 100));
+    egui_canvas_draw_circle_basic(&uicode_get_core()->canvas, thumb_x, thumb_y, metrics.knob_radius, 1, thumb_border, egui_color_alpha_mix(self->alpha, 94));
 }
 
 void hcw_slider_apply_standard_style(egui_view_t *self)

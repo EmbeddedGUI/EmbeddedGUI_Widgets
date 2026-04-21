@@ -2,7 +2,7 @@
 #define _EGUI_VIEW_ANNOTATED_SCROLL_BAR_H_
 
 #include "egui.h"
-#include "sdk_compat.h"
+#include "../../uicode_disp0.h"
 
 #ifdef __cplusplus
 extern "C" {

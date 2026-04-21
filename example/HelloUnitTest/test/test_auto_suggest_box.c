@@ -65,7 +65,7 @@ static void assert_region_equal(const egui_region_t *expected, const egui_region
 
 static void setup_box(void)
 {
-    egui_view_autocomplete_init(EGUI_VIEW_OF(&test_box));
+    egui_view_autocomplete_init(EGUI_VIEW_OF(&test_box), uicode_get_core());
     egui_view_set_size(EGUI_VIEW_OF(&test_box), 180, 34);
     egui_view_autocomplete_set_suggestions(EGUI_VIEW_OF(&test_box), g_people, 4);
     egui_view_autocomplete_set_on_selected_listener(EGUI_VIEW_OF(&test_box), on_selected);
@@ -90,7 +90,7 @@ static void layout_box(egui_dim_t x, egui_dim_t y, egui_dim_t width, egui_dim_t 
 
 static void setup_preview_box(void)
 {
-    egui_view_autocomplete_init(EGUI_VIEW_OF(&preview_box));
+    egui_view_autocomplete_init(EGUI_VIEW_OF(&preview_box), uicode_get_core());
     egui_view_set_size(EGUI_VIEW_OF(&preview_box), 104, 28);
     hcw_auto_suggest_box_set_suggestions(EGUI_VIEW_OF(&preview_box), g_commands, 2);
     hcw_auto_suggest_box_set_current_index(EGUI_VIEW_OF(&preview_box), 1);
@@ -399,7 +399,7 @@ static void test_auto_suggest_box_style_helpers_and_params(void)
     EGUI_TEST_ASSERT_EQUAL_INT(1, local->current_index);
     EGUI_TEST_ASSERT_TRUE(strcmp("Deploy Docs", egui_view_autocomplete_get_current_text(EGUI_VIEW_OF(&test_box))) == 0);
 
-    egui_view_autocomplete_init_with_params(EGUI_VIEW_OF(&params_box), &init_params);
+    egui_view_autocomplete_init_with_params(EGUI_VIEW_OF(&params_box), uicode_get_core(), &init_params);
     EGUI_TEST_ASSERT_EQUAL_INT(4, EGUI_VIEW_OF(&params_box)->region.location.x);
     EGUI_TEST_ASSERT_EQUAL_INT(5, EGUI_VIEW_OF(&params_box)->region.location.y);
     EGUI_TEST_ASSERT_EQUAL_INT(120, EGUI_VIEW_OF(&params_box)->region.size.width);

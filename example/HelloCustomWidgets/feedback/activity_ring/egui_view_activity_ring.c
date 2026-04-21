@@ -82,7 +82,7 @@ static void hcw_activity_ring_stop_timer_state(hcw_activity_ring_state_t *state)
         return;
     }
 
-    egui_timer_stop_timer(&state->anim_timer);
+    egui_timer_stop_timer(uicode_get_core(), &state->anim_timer);
     state->timer_started = 0;
 }
 
@@ -100,7 +100,7 @@ static void hcw_activity_ring_start_timer(egui_view_t *self)
         return;
     }
 
-    egui_timer_start_timer(&state->anim_timer, HCW_ACTIVITY_RING_TIMER_MS, HCW_ACTIVITY_RING_TIMER_MS);
+    egui_timer_start_timer(uicode_get_core(), &state->anim_timer, HCW_ACTIVITY_RING_TIMER_MS, HCW_ACTIVITY_RING_TIMER_MS);
     state->timer_started = 1;
 }
 
@@ -276,7 +276,7 @@ static void hcw_activity_ring_apply_style(egui_view_t *self, egui_dim_t stroke_w
 
 void hcw_activity_ring_init(egui_view_t *self)
 {
-    egui_view_activity_ring_init(self);
+    egui_view_activity_ring_init(self, uicode_get_core());
     hcw_activity_ring_reset_state(self);
 }
 

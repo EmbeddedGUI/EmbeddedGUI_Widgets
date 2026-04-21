@@ -174,7 +174,7 @@ static void egui_view_settings_card_draw_text(const egui_font_t *font, egui_view
         return;
     }
 
-    egui_canvas_draw_text_in_rect(font, text, &draw_region, align, color, self->alpha);
+    egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, font, text, &draw_region, align, color, self->alpha);
 }
 
 static void egui_view_settings_card_draw_switch(egui_view_t *self, egui_dim_t x, egui_dim_t y, egui_dim_t width, egui_dim_t height,
@@ -193,9 +193,9 @@ static void egui_view_settings_card_draw_switch(egui_view_t *self, egui_dim_t x,
         thumb_r = 1;
     }
 
-    egui_canvas_draw_round_rectangle_fill(x, y, width, height, radius, track_color, egui_color_alpha_mix(self->alpha, 88));
-    egui_canvas_draw_round_rectangle(x, y, width, height, radius, 1, border_color, egui_color_alpha_mix(self->alpha, 36));
-    egui_canvas_draw_circle_fill(thumb_x, thumb_y, thumb_r, thumb_color, egui_color_alpha_mix(self->alpha, 100));
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, x, y, width, height, radius, track_color, egui_color_alpha_mix(self->alpha, 88));
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, x, y, width, height, radius, 1, border_color, egui_color_alpha_mix(self->alpha, 36));
+    egui_canvas_draw_circle_fill(&uicode_get_core()->canvas, thumb_x, thumb_y, thumb_r, thumb_color, egui_color_alpha_mix(self->alpha, 100));
 }
 
 static void egui_view_settings_card_draw_chevron(egui_view_t *self, const egui_region_t *region, egui_color_t color)
@@ -219,7 +219,7 @@ static void egui_view_settings_card_draw_chevron(egui_view_t *self, const egui_r
         return;
     }
 
-    egui_canvas_draw_triangle_fill(x, y, x, y + height, x + width, y + height / 2, color, egui_color_alpha_mix(self->alpha, 92));
+    egui_canvas_draw_triangle_fill(&uicode_get_core()->canvas, x, y, x, y + height, x + width, y + height / 2, color, egui_color_alpha_mix(self->alpha, 92));
 }
 
 static void egui_view_settings_card_get_metrics(egui_view_settings_card_t *local, egui_view_t *self,
@@ -449,9 +449,9 @@ static void egui_view_settings_card_draw_trailing(egui_view_t *self, egui_view_s
             break;
         }
 
-        egui_canvas_draw_round_rectangle_fill(region->location.x, region->location.y, region->size.width, region->size.height, region->size.height / 2,
+        egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, region->location.x, region->location.y, region->size.width, region->size.height, region->size.height / 2,
                                               egui_rgb_mix(local->surface_color, tone_color, 10), egui_color_alpha_mix(self->alpha, 84));
-        egui_canvas_draw_round_rectangle(region->location.x, region->location.y, region->size.width, region->size.height, region->size.height / 2, 1,
+        egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, region->location.x, region->location.y, region->size.width, region->size.height, region->size.height / 2, 1,
                                          egui_rgb_mix(border_color, tone_color, 12), egui_color_alpha_mix(self->alpha, 32));
         text_region = *region;
         egui_view_settings_card_draw_text(local->meta_font, self, snapshot->value, &text_region, EGUI_ALIGN_CENTER, text_color);
@@ -548,26 +548,26 @@ static void egui_view_settings_card_on_draw(egui_view_t *self)
         trailing_text = egui_view_settings_card_mix_disabled(trailing_text);
     }
 
-    egui_canvas_draw_round_rectangle_fill(metrics.card_region.location.x, metrics.card_region.location.y, metrics.card_region.size.width,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.card_region.location.x, metrics.card_region.location.y, metrics.card_region.size.width,
                                           metrics.card_region.size.height, radius, card_fill, egui_color_alpha_mix(self->alpha, 100));
-    egui_canvas_draw_round_rectangle(metrics.card_region.location.x, metrics.card_region.location.y, metrics.card_region.size.width,
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics.card_region.location.x, metrics.card_region.location.y, metrics.card_region.size.width,
                                      metrics.card_region.size.height, radius, 1, card_border, egui_color_alpha_mix(self->alpha, 58));
-    egui_canvas_draw_round_rectangle_fill(metrics.card_region.location.x + 2, metrics.card_region.location.y + 2, metrics.card_region.size.width - 4,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.card_region.location.x + 2, metrics.card_region.location.y + 2, metrics.card_region.size.width - 4,
                                           local->compact_mode ? 2 : 3, radius - 2, accent_line,
                                           egui_color_alpha_mix(self->alpha, local->read_only_mode ? 10 : (snapshot->emphasized ? 20 : 14)));
 
     if (is_focused && egui_view_get_enable(self) && !local->read_only_mode)
     {
-        egui_canvas_draw_round_rectangle(metrics.card_region.location.x, metrics.card_region.location.y, metrics.card_region.size.width,
+        egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics.card_region.location.x, metrics.card_region.location.y, metrics.card_region.size.width,
                                          metrics.card_region.size.height, radius, 2, tone_color, egui_color_alpha_mix(self->alpha, 92));
     }
 
     if (metrics.badge_region.size.width > 0)
     {
-        egui_canvas_draw_round_rectangle_fill(metrics.badge_region.location.x, metrics.badge_region.location.y, metrics.badge_region.size.width,
+        egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.badge_region.location.x, metrics.badge_region.location.y, metrics.badge_region.size.width,
                                               metrics.badge_region.size.height, metrics.badge_region.size.height / 2, badge_fill,
                                               egui_color_alpha_mix(self->alpha, 84));
-        egui_canvas_draw_round_rectangle(metrics.badge_region.location.x, metrics.badge_region.location.y, metrics.badge_region.size.width,
+        egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics.badge_region.location.x, metrics.badge_region.location.y, metrics.badge_region.size.width,
                                          metrics.badge_region.size.height, metrics.badge_region.size.height / 2, 1, badge_border,
                                          egui_color_alpha_mix(self->alpha, 34));
         text_region = metrics.badge_region;
@@ -576,7 +576,7 @@ static void egui_view_settings_card_on_draw(egui_view_t *self)
 
     if (metrics.icon_region.size.width > 0)
     {
-        egui_canvas_draw_round_rectangle_fill(metrics.icon_region.location.x, metrics.icon_region.location.y, metrics.icon_region.size.width,
+        egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.icon_region.location.x, metrics.icon_region.location.y, metrics.icon_region.size.width,
                                               metrics.icon_region.size.height, local->compact_mode ? 4 : 5, icon_fill,
                                               egui_color_alpha_mix(self->alpha, 90));
         text_region = metrics.icon_region;
@@ -601,10 +601,10 @@ static void egui_view_settings_card_on_draw(egui_view_t *self)
     }
     if (metrics.footer_region.size.width > 0)
     {
-        egui_canvas_draw_round_rectangle_fill(metrics.footer_region.location.x, metrics.footer_region.location.y, metrics.footer_region.size.width,
+        egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.footer_region.location.x, metrics.footer_region.location.y, metrics.footer_region.size.width,
                                               metrics.footer_region.size.height, metrics.footer_region.size.height / 2, footer_fill,
                                               egui_color_alpha_mix(self->alpha, 82));
-        egui_canvas_draw_round_rectangle(metrics.footer_region.location.x, metrics.footer_region.location.y, metrics.footer_region.size.width,
+        egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics.footer_region.location.x, metrics.footer_region.location.y, metrics.footer_region.size.width,
                                          metrics.footer_region.size.height, metrics.footer_region.size.height / 2, 1, footer_border,
                                          egui_color_alpha_mix(self->alpha, 28));
         text_region.location.x = metrics.footer_region.location.x + 5;
@@ -989,7 +989,7 @@ void egui_view_settings_card_init(egui_view_t *self)
 {
     EGUI_INIT_LOCAL(egui_view_settings_card_t);
 
-    egui_view_init(self);
+    egui_view_init(self, uicode_get_core());
     self->api = &EGUI_VIEW_API_TABLE_NAME(egui_view_settings_card_t);
     egui_view_set_padding_all(self, 2);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS

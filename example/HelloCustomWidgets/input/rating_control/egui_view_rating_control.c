@@ -150,7 +150,7 @@ static void rating_draw_text(const egui_font_t *font, egui_view_t *self, const c
         return;
     }
 
-    egui_canvas_draw_text_in_rect(font, text, &draw_region, align, color, self->alpha);
+    egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, font, text, &draw_region, align, color, self->alpha);
 }
 
 static void rating_get_metrics(egui_view_rating_control_t *local, egui_view_t *self, egui_view_rating_control_metrics_t *metrics)
@@ -264,7 +264,7 @@ static void rating_get_metrics(egui_view_rating_control_t *local, egui_view_t *s
 
 static void rating_draw_focus(egui_view_t *self, const egui_region_t *region, egui_dim_t radius, egui_color_t color, egui_alpha_t alpha)
 {
-    egui_canvas_draw_round_rectangle(region->location.x - 1, region->location.y - 1, region->size.width + 2, region->size.height + 2, radius, 1, color,
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, region->location.x - 1, region->location.y - 1, region->size.width + 2, region->size.height + 2, radius, 1, color,
                                      egui_color_alpha_mix(self->alpha, alpha));
 }
 
@@ -280,8 +280,8 @@ static void rating_draw_star(egui_view_t *self, egui_dim_t center_x, egui_dim_t 
         points[index * 2] = center_x + (points_template[index * 2] * radius) / 10;
         points[index * 2 + 1] = center_y + (points_template[index * 2 + 1] * radius) / 10;
     }
-    egui_canvas_draw_polygon_fill(points, 10, fill_color, egui_color_alpha_mix(self->alpha, fill_alpha));
-    egui_canvas_draw_polygon(points, 10, 1, border_color, egui_color_alpha_mix(self->alpha, border_alpha));
+    egui_canvas_draw_polygon_fill(&uicode_get_core()->canvas, points, 10, fill_color, egui_color_alpha_mix(self->alpha, fill_alpha));
+    egui_canvas_draw_polygon(&uicode_get_core()->canvas, points, 10, 1, border_color, egui_color_alpha_mix(self->alpha, border_alpha));
 }
 
 static void rating_notify_changed(egui_view_t *self, uint8_t part)
@@ -538,9 +538,9 @@ static void rating_draw_clear(egui_view_t *self, egui_view_rating_control_t *loc
     {
         rating_draw_focus(self, region, 5, egui_rgb_mix(local->accent_color, EGUI_COLOR_WHITE, 6), 60);
     }
-    egui_canvas_draw_round_rectangle_fill(region->location.x, region->location.y, region->size.width, region->size.height, 5, fill_color,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, region->location.x, region->location.y, region->size.width, region->size.height, 5, fill_color,
                                           egui_color_alpha_mix(self->alpha, focused ? 96 : 92));
-    egui_canvas_draw_round_rectangle(region->location.x, region->location.y, region->size.width, region->size.height, 5, 1, border_color,
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, region->location.x, region->location.y, region->size.width, region->size.height, 5, 1, border_color,
                                      egui_color_alpha_mix(self->alpha, focused ? 68 : 54));
     rating_draw_text(local->meta_font, self, "Clear", region, EGUI_ALIGN_CENTER, text_color);
 }
@@ -594,13 +594,13 @@ static void egui_view_rating_control_on_draw(egui_view_t *self)
 
     if (!local->compact_mode)
     {
-        egui_canvas_draw_round_rectangle_fill(region.location.x, region.location.y + 2, region.size.width, region.size.height, RC_STD_RADIUS + 1, shadow_color,
+        egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, region.location.x, region.location.y + 2, region.size.width, region.size.height, RC_STD_RADIUS + 1, shadow_color,
                                               egui_color_alpha_mix(self->alpha, enabled ? 18 : 10));
     }
-    egui_canvas_draw_round_rectangle_fill(region.location.x, region.location.y, region.size.width, region.size.height,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, region.location.x, region.location.y, region.size.width, region.size.height,
                                           local->compact_mode ? RC_COMPACT_RADIUS : RC_STD_RADIUS, surface_color,
                                           egui_color_alpha_mix(self->alpha, local->compact_mode ? 94 : 96));
-    egui_canvas_draw_round_rectangle(region.location.x, region.location.y, region.size.width, region.size.height,
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, region.location.x, region.location.y, region.size.width, region.size.height,
                                      local->compact_mode ? RC_COMPACT_RADIUS : RC_STD_RADIUS, 1, border_color,
                                      egui_color_alpha_mix(self->alpha, local->compact_mode ? 54 : 58));
 
@@ -1121,7 +1121,7 @@ void egui_view_rating_control_init(egui_view_t *self)
 {
     EGUI_INIT_LOCAL(egui_view_rating_control_t);
 
-    egui_view_init(self);
+    egui_view_init(self, uicode_get_core());
     self->api = &EGUI_VIEW_API_TABLE_NAME(egui_view_rating_control_t);
     egui_view_set_padding_all(self, 2);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS

@@ -447,7 +447,7 @@ static void egui_view_breadcrumb_bar_draw_text(egui_view_breadcrumb_bar_t *local
     text_region.location.y = y;
     text_region.size.width = width;
     text_region.size.height = height;
-    egui_canvas_draw_text_in_rect(local->font, text, &text_region, align, color, self->alpha);
+    egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, local->font, text, &text_region, align, color, self->alpha);
 }
 
 static void egui_view_breadcrumb_bar_on_draw(egui_view_t *self)
@@ -543,9 +543,9 @@ static void egui_view_breadcrumb_bar_on_draw(egui_view_t *self)
         border_alpha = 58;
     }
 
-    egui_canvas_draw_round_rectangle_fill(region.location.x, region.location.y, region.size.width, region.size.height, container_radius, fill_color,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, region.location.x, region.location.y, region.size.width, region.size.height, container_radius, fill_color,
                                           egui_color_alpha_mix(self->alpha, fill_alpha));
-    egui_canvas_draw_round_rectangle(region.location.x, region.location.y, region.size.width, region.size.height, container_radius, 1, border_color,
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, region.location.x, region.location.y, region.size.width, region.size.height, container_radius, 1, border_color,
                                      egui_color_alpha_mix(self->alpha, border_alpha));
 
     content_x = region.location.x + (local->compact_mode ? 8 : 10);
@@ -592,9 +592,9 @@ static void egui_view_breadcrumb_bar_on_draw(egui_view_t *self)
             egui_alpha_t current_fill_alpha = local->compact_mode ? 76 : 68;
             egui_alpha_t current_border_alpha = local->compact_mode ? 68 : 58;
 
-            egui_canvas_draw_round_rectangle_fill(cursor_x, entry_y, entry_width, entry_height, current_radius, current_fill,
+            egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, cursor_x, entry_y, entry_width, entry_height, current_radius, current_fill,
                                                   egui_color_alpha_mix(self->alpha, current_fill_alpha));
-            egui_canvas_draw_round_rectangle(cursor_x, entry_y, entry_width, entry_height, current_radius, 1, current_border,
+            egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, cursor_x, entry_y, entry_width, entry_height, current_radius, 1, current_border,
                                              egui_color_alpha_mix(self->alpha, current_border_alpha));
             egui_view_breadcrumb_bar_draw_text(local, self, label, cursor_x + 2, entry_y, entry_width - 4, entry_height, EGUI_ALIGN_CENTER, text_color);
             current_x = cursor_x;
@@ -625,8 +625,8 @@ static void egui_view_breadcrumb_bar_on_draw(egui_view_t *self)
             egui_color_t chevron_color = local->compact_mode ? muted_text_color : egui_rgb_mix(muted_text_color, accent_color, 5);
             egui_alpha_t chevron_alpha = local->read_only_mode ? 24 : (local->compact_mode ? 34 : 46);
 
-            egui_canvas_draw_line(chevron_x, chevron_y - 3, chevron_x + 4, chevron_y, 1, chevron_color, egui_color_alpha_mix(self->alpha, chevron_alpha));
-            egui_canvas_draw_line(chevron_x, chevron_y + 3, chevron_x + 4, chevron_y, 1, chevron_color, egui_color_alpha_mix(self->alpha, chevron_alpha));
+            egui_canvas_draw_line(&uicode_get_core()->canvas, chevron_x, chevron_y - 3, chevron_x + 4, chevron_y, 1, chevron_color, egui_color_alpha_mix(self->alpha, chevron_alpha));
+            egui_canvas_draw_line(&uicode_get_core()->canvas, chevron_x, chevron_y + 3, chevron_x + 4, chevron_y, 1, chevron_color, egui_color_alpha_mix(self->alpha, chevron_alpha));
             cursor_x += egui_view_breadcrumb_bar_separator_gap(local->compact_mode);
         }
     }
@@ -635,13 +635,13 @@ static void egui_view_breadcrumb_bar_on_draw(egui_view_t *self)
     {
         egui_dim_t line_y = region.location.y + region.size.height - 6;
 
-        egui_canvas_draw_line(content_x, line_y, content_x + content_w, line_y, 1, border_color, egui_color_alpha_mix(self->alpha, 14));
+        egui_canvas_draw_line(&uicode_get_core()->canvas, content_x, line_y, content_x + content_w, line_y, 1, border_color, egui_color_alpha_mix(self->alpha, 14));
         if (current_w > 10)
         {
             egui_dim_t accent_start = current_x + 5;
             egui_dim_t accent_end = current_x + current_w - 5;
 
-            egui_canvas_draw_line(accent_start, line_y, accent_end, line_y, 1, accent_color,
+            egui_canvas_draw_line(&uicode_get_core()->canvas, accent_start, line_y, accent_end, line_y, 1, accent_color,
                                   egui_color_alpha_mix(self->alpha, local->read_only_mode ? 24 : 40));
         }
     }
@@ -739,7 +739,7 @@ void egui_view_breadcrumb_bar_init(egui_view_t *self)
 {
     EGUI_INIT_LOCAL(egui_view_breadcrumb_bar_t);
 
-    egui_view_init(self);
+    egui_view_init(self, uicode_get_core());
     self->api = &EGUI_VIEW_API_TABLE_NAME(egui_view_breadcrumb_bar_t);
     egui_view_set_padding_all(self, 2);
 

@@ -205,7 +205,7 @@ static void egui_view_tag_draw_text(const egui_font_t *font, egui_view_t *self, 
         return;
     }
 
-    egui_canvas_draw_text_in_rect(font, text, &draw_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, color, egui_color_alpha_mix(self->alpha, alpha));
+    egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, font, text, &draw_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, color, egui_color_alpha_mix(self->alpha, alpha));
 }
 
 static void egui_view_tag_notify_dismiss(egui_view_t *self)
@@ -268,9 +268,9 @@ static void egui_view_tag_on_draw(egui_view_t *self)
         secondary_color = egui_view_tag_mix_disabled(secondary_color);
     }
 
-    egui_canvas_draw_round_rectangle_fill(region.location.x, region.location.y, region.size.width, region.size.height, radius, fill_color,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, region.location.x, region.location.y, region.size.width, region.size.height, radius, fill_color,
                                           egui_color_alpha_mix(self->alpha, 100));
-    egui_canvas_draw_round_rectangle(region.location.x, region.location.y, region.size.width, region.size.height, radius, 1, border_color,
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, region.location.x, region.location.y, region.size.width, region.size.height, radius, 1, border_color,
                                      egui_color_alpha_mix(self->alpha, self->is_focused ? 88 : 64));
 
     egui_view_tag_draw_text(egui_view_tag_get_text_font(local), self, local->text, &metrics.primary_region, text_color, EGUI_ALPHA_100);
@@ -293,9 +293,9 @@ static void egui_view_tag_on_draw(egui_view_t *self)
             dismiss_icon = egui_view_tag_mix_disabled(dismiss_icon);
         }
 
-        egui_canvas_draw_circle_fill_basic(metrics.dismiss_region.location.x + metrics.dismiss_region.size.width / 2,
+        egui_canvas_draw_circle_fill_basic(&uicode_get_core()->canvas, metrics.dismiss_region.location.x + metrics.dismiss_region.size.width / 2,
                                            metrics.dismiss_region.location.y + metrics.dismiss_region.size.height / 2, radius_fill, dismiss_fill, fill_alpha);
-        egui_canvas_draw_text_in_rect(egui_view_tag_get_icon_font(local), EGUI_ICON_MS_CLOSE, &metrics.dismiss_region, EGUI_ALIGN_CENTER, dismiss_icon,
+        egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, egui_view_tag_get_icon_font(local), EGUI_ICON_MS_CLOSE, &metrics.dismiss_region, EGUI_ALIGN_CENTER, dismiss_icon,
                                       egui_color_alpha_mix(self->alpha, EGUI_ALPHA_100));
     }
 }
@@ -631,7 +631,7 @@ void egui_view_tag_init(egui_view_t *self)
 {
     EGUI_INIT_LOCAL(egui_view_tag_t);
 
-    egui_view_init(self);
+    egui_view_init(self, uicode_get_core());
     self->api = &EGUI_VIEW_API_TABLE_NAME(egui_view_tag_t);
     egui_view_set_padding_all(self, 2);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS

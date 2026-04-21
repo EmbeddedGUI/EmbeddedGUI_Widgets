@@ -22,7 +22,7 @@ static void on_preview_click(egui_view_t *self)
 
 static void init_cell(egui_view_label_t *cell, egui_dim_t width, egui_dim_t height, const char *text)
 {
-    egui_view_label_init(EGUI_VIEW_OF(cell));
+    egui_view_label_init(EGUI_VIEW_OF(cell), uicode_get_core());
     egui_view_set_size(EGUI_VIEW_OF(cell), width, height);
     egui_view_label_set_text(EGUI_VIEW_OF(cell), text);
     egui_view_label_set_align_type(EGUI_VIEW_OF(cell), EGUI_ALIGN_CENTER);
@@ -32,7 +32,7 @@ static void setup_test_stack_panel(void)
 {
     uint8_t index;
 
-    egui_view_linearlayout_init(EGUI_VIEW_OF(&test_stack_panel));
+    egui_view_linearlayout_init(EGUI_VIEW_OF(&test_stack_panel), uicode_get_core());
     egui_view_set_size(EGUI_VIEW_OF(&test_stack_panel), 120, 64);
     hcw_stack_panel_apply_standard_style(EGUI_VIEW_OF(&test_stack_panel));
 
@@ -49,7 +49,7 @@ static void setup_preview_stack_panel(void)
 {
     uint8_t index;
 
-    egui_view_linearlayout_init(EGUI_VIEW_OF(&preview_stack_panel));
+    egui_view_linearlayout_init(EGUI_VIEW_OF(&preview_stack_panel), uicode_get_core());
     egui_view_set_size(EGUI_VIEW_OF(&preview_stack_panel), 84, 36);
     hcw_stack_panel_apply_horizontal_style(EGUI_VIEW_OF(&preview_stack_panel));
 

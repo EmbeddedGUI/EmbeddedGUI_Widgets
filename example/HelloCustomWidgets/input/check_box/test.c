@@ -99,7 +99,7 @@ static void layout_local_views(void)
 static void layout_page(void)
 {
     layout_local_views();
-    egui_core_layout_childs_user_root_view(EGUI_LAYOUT_VERTICAL, EGUI_ALIGN_HCENTER | EGUI_ALIGN_VCENTER);
+    egui_core_layout_childs_user_root_view(uicode_get_core(), EGUI_LAYOUT_VERTICAL, EGUI_ALIGN_HCENTER | EGUI_ALIGN_VCENTER);
 }
 
 static void focus_primary_box(void)
@@ -121,13 +121,13 @@ static void request_page_snapshot(void)
 void test_init_ui(void)
 {
     ui_ready = 0;
-    egui_view_linearlayout_init(EGUI_VIEW_OF(&root_layout));
+    egui_view_linearlayout_init(EGUI_VIEW_OF(&root_layout), uicode_get_core());
     egui_view_set_size(EGUI_VIEW_OF(&root_layout), CHECK_BOX_ROOT_WIDTH, CHECK_BOX_ROOT_HEIGHT);
     egui_view_linearlayout_set_orientation(EGUI_VIEW_OF(&root_layout), 0);
     egui_view_linearlayout_set_align_type(EGUI_VIEW_OF(&root_layout), EGUI_ALIGN_HCENTER);
     egui_view_set_background(EGUI_VIEW_OF(&root_layout), EGUI_BG_OF(&bg_page_panel));
 
-    egui_view_label_init(EGUI_VIEW_OF(&title_label));
+    egui_view_label_init(EGUI_VIEW_OF(&title_label), uicode_get_core());
     egui_view_set_size(EGUI_VIEW_OF(&title_label), CHECK_BOX_ROOT_WIDTH, 18);
     egui_view_label_set_text(EGUI_VIEW_OF(&title_label), title_text);
     egui_view_label_set_align_type(EGUI_VIEW_OF(&title_label), EGUI_ALIGN_CENTER);
@@ -136,7 +136,7 @@ void test_init_ui(void)
     egui_view_set_margin(EGUI_VIEW_OF(&title_label), 0, 8, 0, 8);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label));
 
-    egui_view_checkbox_init(EGUI_VIEW_OF(&control_primary));
+    egui_view_checkbox_init(EGUI_VIEW_OF(&control_primary), uicode_get_core());
     egui_view_set_size(EGUI_VIEW_OF(&control_primary), CHECK_BOX_PRIMARY_WIDTH, CHECK_BOX_PRIMARY_HEIGHT);
     egui_view_checkbox_set_font(EGUI_VIEW_OF(&control_primary), (const egui_font_t *)&egui_res_font_montserrat_10_4);
     hcw_check_box_apply_standard_style(EGUI_VIEW_OF(&control_primary));
@@ -147,13 +147,13 @@ void test_init_ui(void)
     egui_view_set_margin(EGUI_VIEW_OF(&control_primary), 0, 0, 0, 12);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&control_primary));
 
-    egui_view_linearlayout_init(EGUI_VIEW_OF(&bottom_row));
+    egui_view_linearlayout_init(EGUI_VIEW_OF(&bottom_row), uicode_get_core());
     egui_view_set_size(EGUI_VIEW_OF(&bottom_row), CHECK_BOX_BOTTOM_ROW_WIDTH, CHECK_BOX_BOTTOM_ROW_HEIGHT);
     egui_view_linearlayout_set_orientation(EGUI_VIEW_OF(&bottom_row), 1);
     egui_view_linearlayout_set_align_type(EGUI_VIEW_OF(&bottom_row), EGUI_ALIGN_VCENTER);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&bottom_row));
 
-    egui_view_checkbox_init(EGUI_VIEW_OF(&control_compact));
+    egui_view_checkbox_init(EGUI_VIEW_OF(&control_compact), uicode_get_core());
     egui_view_set_size(EGUI_VIEW_OF(&control_compact), CHECK_BOX_PREVIEW_WIDTH, CHECK_BOX_PREVIEW_HEIGHT);
     egui_view_checkbox_set_font(EGUI_VIEW_OF(&control_compact), (const egui_font_t *)&egui_res_font_montserrat_10_4);
     hcw_check_box_apply_compact_style(EGUI_VIEW_OF(&control_compact));
@@ -163,7 +163,7 @@ void test_init_ui(void)
 #endif
     egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&control_compact));
 
-    egui_view_checkbox_init(EGUI_VIEW_OF(&control_read_only));
+    egui_view_checkbox_init(EGUI_VIEW_OF(&control_read_only), uicode_get_core());
     egui_view_set_size(EGUI_VIEW_OF(&control_read_only), CHECK_BOX_PREVIEW_WIDTH, CHECK_BOX_PREVIEW_HEIGHT);
     egui_view_set_margin(EGUI_VIEW_OF(&control_read_only), 8, 0, 0, 0);
     egui_view_checkbox_set_font(EGUI_VIEW_OF(&control_read_only), (const egui_font_t *)&egui_res_font_montserrat_10_4);

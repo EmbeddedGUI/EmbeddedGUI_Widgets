@@ -63,7 +63,7 @@ static void egui_view_card_panel_draw_text(const egui_font_t *font, egui_view_t 
     {
         return;
     }
-    egui_canvas_draw_text_in_rect(font, text, &draw_region, align, color, self->alpha);
+    egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, font, text, &draw_region, align, color, self->alpha);
 }
 
 static egui_dim_t egui_view_card_panel_pill_width(const char *text, uint8_t compact_mode, egui_dim_t min_w, egui_dim_t max_w)
@@ -92,14 +92,14 @@ static void egui_view_card_panel_draw_pill(const egui_font_t *font, egui_view_t 
         return;
     }
 
-    egui_canvas_draw_round_rectangle_fill(x, y, width, height, radius, fill_color, egui_color_alpha_mix(self->alpha, fill_alpha));
-    egui_canvas_draw_round_rectangle(x, y, width, height, radius, 1, border_color, egui_color_alpha_mix(self->alpha, border_alpha));
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, x, y, width, height, radius, fill_color, egui_color_alpha_mix(self->alpha, fill_alpha));
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, x, y, width, height, radius, 1, border_color, egui_color_alpha_mix(self->alpha, border_alpha));
 
     text_region.location.x = x;
     text_region.location.y = y;
     text_region.size.width = width;
     text_region.size.height = height;
-    egui_canvas_draw_text_in_rect(font, text, &text_region, EGUI_ALIGN_CENTER, text_color, self->alpha);
+    egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, font, text, &text_region, EGUI_ALIGN_CENTER, text_color, self->alpha);
 }
 
 void egui_view_card_panel_set_snapshots(egui_view_t *self, const egui_view_card_panel_snapshot_t *snapshots, uint8_t snapshot_count)
@@ -346,9 +346,9 @@ static void egui_view_card_panel_on_draw(egui_view_t *self)
         body_h = 10;
     }
 
-    egui_canvas_draw_round_rectangle_fill(x, y, w, h, radius, card_fill, egui_color_alpha_mix(self->alpha, local->compact_mode ? 97 : 100));
-    egui_canvas_draw_round_rectangle(x, y, w, h, radius, 1, card_border, egui_color_alpha_mix(self->alpha, local->compact_mode ? 56 : 62));
-    egui_canvas_draw_round_rectangle_fill(x + 2, y + 2, w - 4, local->compact_mode ? 2 : 3, radius - 2, tone_color,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, x, y, w, h, radius, card_fill, egui_color_alpha_mix(self->alpha, local->compact_mode ? 97 : 100));
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, x, y, w, h, radius, 1, card_border, egui_color_alpha_mix(self->alpha, local->compact_mode ? 56 : 62));
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, x + 2, y + 2, w - 4, local->compact_mode ? 2 : 3, radius - 2, tone_color,
                                           egui_color_alpha_mix(self->alpha, snapshot->emphasized ? 22 : 12));
 
     egui_view_card_panel_draw_pill(local->meta_font, self, snapshot->badge, x + padding, y + padding, badge_w, badge_h, 5, badge_fill,
@@ -374,11 +374,11 @@ static void egui_view_card_panel_on_draw(egui_view_t *self)
     text_region.size.height = body_h;
     egui_view_card_panel_draw_text(local->font, self, snapshot->body, &text_region, EGUI_ALIGN_LEFT, body_color);
 
-    egui_canvas_draw_round_rectangle_fill(summary_x, summary_y, summary_w, summary_h, local->compact_mode ? 6 : 8, value_fill,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, summary_x, summary_y, summary_w, summary_h, local->compact_mode ? 6 : 8, value_fill,
                                           egui_color_alpha_mix(self->alpha, local->compact_mode ? 22 : 26));
-    egui_canvas_draw_round_rectangle(summary_x, summary_y, summary_w, summary_h, local->compact_mode ? 6 : 8, 1, value_border,
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, summary_x, summary_y, summary_w, summary_h, local->compact_mode ? 6 : 8, 1, value_border,
                                      egui_color_alpha_mix(self->alpha, local->compact_mode ? 30 : 34));
-    egui_canvas_draw_round_rectangle_fill(summary_x + 4, summary_y + summary_h - 6, summary_w - 8, 2, 1, tone_color,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, summary_x + 4, summary_y + summary_h - 6, summary_w - 8, 2, 1, tone_color,
                                           egui_color_alpha_mix(self->alpha, snapshot->emphasized ? 46 : 24));
 
     text_region.location.x = summary_x;
@@ -393,9 +393,9 @@ static void egui_view_card_panel_on_draw(egui_view_t *self)
     text_region.size.height = 10;
     egui_view_card_panel_draw_text(local->meta_font, self, snapshot->value_label, &text_region, EGUI_ALIGN_CENTER, body_color);
 
-    egui_canvas_draw_round_rectangle_fill(x + padding, detail_y, w - padding * 2, detail_h, local->compact_mode ? 6 : 8, section_fill,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, x + padding, detail_y, w - padding * 2, detail_h, local->compact_mode ? 6 : 8, section_fill,
                                           egui_color_alpha_mix(self->alpha, local->compact_mode ? 16 : 20));
-    egui_canvas_draw_round_rectangle(x + padding, detail_y, w - padding * 2, detail_h, local->compact_mode ? 6 : 8, 1, section_border,
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, x + padding, detail_y, w - padding * 2, detail_h, local->compact_mode ? 6 : 8, 1, section_border,
                                      egui_color_alpha_mix(self->alpha, local->compact_mode ? 22 : 26));
 
     text_region.location.x = x + padding + 6;
@@ -421,7 +421,7 @@ static void egui_view_card_panel_on_draw(egui_view_t *self)
 
     if (local->read_only_mode || !is_enabled)
     {
-        egui_canvas_draw_line(x + padding, footer_y - 2, x + w - padding, footer_y - 2, 1, card_border, egui_color_alpha_mix(self->alpha, 24));
+        egui_canvas_draw_line(&uicode_get_core()->canvas, x + padding, footer_y - 2, x + w - padding, footer_y - 2, 1, card_border, egui_color_alpha_mix(self->alpha, 24));
     }
 }
 
@@ -517,7 +517,7 @@ void egui_view_card_panel_init(egui_view_t *self)
 {
     EGUI_INIT_LOCAL(egui_view_card_panel_t);
 
-    egui_view_init(self);
+    egui_view_init(self, uicode_get_core());
     self->api = &EGUI_VIEW_API_TABLE_NAME(egui_view_card_panel_t);
     egui_view_set_padding_all(self, 2);
 

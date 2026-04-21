@@ -74,7 +74,7 @@ static int hcw_toggle_button_on_touch_event(egui_view_t *self, egui_motion_event
         }
         else if (!self->is_no_focus_clear)
         {
-            egui_focus_manager_clear_focus();
+            egui_focus_manager_clear_focus(uicode_get_core());
         }
 #endif
         return 1;

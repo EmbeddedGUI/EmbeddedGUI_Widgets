@@ -511,7 +511,7 @@ static void color_picker_draw_text(const egui_font_t *font, egui_view_t *self, c
         return;
     }
 
-    egui_canvas_draw_text_in_rect(font, text, &draw_region, align, color, egui_color_alpha_mix(self->alpha, alpha));
+    egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, font, text, &draw_region, align, color, egui_color_alpha_mix(self->alpha, alpha));
 }
 
 static void color_picker_draw_preview(egui_view_t *self, egui_view_color_picker_t *local, const egui_view_color_picker_metrics_t *metrics,
@@ -523,21 +523,21 @@ static void color_picker_draw_preview(egui_view_t *self, egui_view_color_picker_
     egui_color_t swatch_border = egui_rgb_mix(border_color, local->selected_color, 24);
     egui_dim_t radius = local->compact_mode ? COLOR_PICKER_COMPACT_INNER_RADIUS : COLOR_PICKER_STANDARD_INNER_RADIUS;
 
-    egui_canvas_draw_round_rectangle_fill(metrics->preview_region.location.x, metrics->preview_region.location.y, metrics->preview_region.size.width,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics->preview_region.location.x, metrics->preview_region.location.y, metrics->preview_region.size.width,
                                           metrics->preview_region.size.height, radius, panel_fill, egui_color_alpha_mix(self->alpha, 38));
-    egui_canvas_draw_round_rectangle(metrics->preview_region.location.x, metrics->preview_region.location.y, metrics->preview_region.size.width,
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics->preview_region.location.x, metrics->preview_region.location.y, metrics->preview_region.size.width,
                                      metrics->preview_region.size.height, radius, 1, border_color, egui_color_alpha_mix(self->alpha, 40));
 
-    egui_canvas_draw_round_rectangle_fill(metrics->swatch_region.location.x, metrics->swatch_region.location.y, metrics->swatch_region.size.width,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics->swatch_region.location.x, metrics->swatch_region.location.y, metrics->swatch_region.size.width,
                                           metrics->swatch_region.size.height, 3, local->selected_color, egui_color_alpha_mix(self->alpha, 100));
-    egui_canvas_draw_round_rectangle(metrics->swatch_region.location.x, metrics->swatch_region.location.y, metrics->swatch_region.size.width,
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics->swatch_region.location.x, metrics->swatch_region.location.y, metrics->swatch_region.size.width,
                                      metrics->swatch_region.size.height, 3, 1, swatch_border, egui_color_alpha_mix(self->alpha, 72));
 
     color_picker_draw_text(local->font, self, local->hex_text, &metrics->hex_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, text_color, 100);
 
-    egui_canvas_draw_round_rectangle_fill(metrics->mode_region.location.x, metrics->mode_region.location.y, metrics->mode_region.size.width,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics->mode_region.location.x, metrics->mode_region.location.y, metrics->mode_region.size.width,
                                           metrics->mode_region.size.height, radius, mode_fill, egui_color_alpha_mix(self->alpha, 30));
-    egui_canvas_draw_round_rectangle(metrics->mode_region.location.x, metrics->mode_region.location.y, metrics->mode_region.size.width,
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics->mode_region.location.x, metrics->mode_region.location.y, metrics->mode_region.size.width,
                                      metrics->mode_region.size.height, radius, 1, egui_rgb_mix(border_color, accent_color, 18),
                                      egui_color_alpha_mix(self->alpha, 36));
     color_picker_draw_text(local->meta_font != NULL ? local->meta_font : local->font, self, mode_text, &metrics->mode_region, EGUI_ALIGN_CENTER,
@@ -582,14 +582,14 @@ static void color_picker_draw_palette_cells(egui_view_t *self, egui_view_color_p
                 cell_color = egui_rgb_mix(cell_color, surface_color, disabled_mix);
             }
 
-            egui_canvas_draw_round_rectangle_fill(x, y, cell_w, cell_h, local->compact_mode ? 2 : 3, cell_color, egui_color_alpha_mix(self->alpha, 100));
+            egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, x, y, cell_w, cell_h, local->compact_mode ? 2 : 3, cell_color, egui_color_alpha_mix(self->alpha, 100));
 
             if (selected)
             {
                 outline_color = self->is_focused && local->current_part == EGUI_VIEW_COLOR_PICKER_PART_PALETTE ? accent_color : border_color;
-                egui_canvas_draw_round_rectangle(x - 1, y - 1, cell_w + 2, cell_h + 2, local->compact_mode ? 2 : 3, 1, outline_color,
+                egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, x - 1, y - 1, cell_w + 2, cell_h + 2, local->compact_mode ? 2 : 3, 1, outline_color,
                                                  egui_color_alpha_mix(self->alpha, 92));
-                egui_canvas_draw_round_rectangle(x, y, cell_w, cell_h, local->compact_mode ? 2 : 3, 1, EGUI_COLOR_WHITE, egui_color_alpha_mix(self->alpha, 70));
+                egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, x, y, cell_w, cell_h, local->compact_mode ? 2 : 3, 1, EGUI_COLOR_WHITE, egui_color_alpha_mix(self->alpha, 70));
             }
         }
     }
@@ -623,12 +623,12 @@ static void color_picker_draw_hue_rail(egui_view_t *self, egui_view_color_picker
             segment_color = egui_rgb_mix(segment_color, surface_color, disabled_mix);
         }
 
-        egui_canvas_draw_round_rectangle_fill(metrics->hue_region.location.x, y, metrics->hue_region.size.width, segment_h, 2, segment_color,
+        egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics->hue_region.location.x, y, metrics->hue_region.size.width, segment_h, 2, segment_color,
                                               egui_color_alpha_mix(self->alpha, 100));
         if (selected)
         {
             egui_color_t outline = self->is_focused && local->current_part == EGUI_VIEW_COLOR_PICKER_PART_HUE ? accent_color : border_color;
-            egui_canvas_draw_round_rectangle(metrics->hue_region.location.x - 1, y - 1, metrics->hue_region.size.width + 2, segment_h + 2, 2, 1, outline,
+            egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics->hue_region.location.x - 1, y - 1, metrics->hue_region.size.width + 2, segment_h + 2, 2, 1, outline,
                                              egui_color_alpha_mix(self->alpha, 92));
         }
     }
@@ -680,15 +680,15 @@ static void egui_view_color_picker_on_draw(egui_view_t *self)
 
     color_picker_get_metrics(local, self, &metrics);
 
-    egui_canvas_draw_round_rectangle_fill(
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, 
             region.location.x, region.location.y, region.size.width, region.size.height,
             local->compact_mode ? COLOR_PICKER_COMPACT_RADIUS : COLOR_PICKER_STANDARD_RADIUS, outer_fill,
             egui_color_alpha_mix(self->alpha, local->compact_mode ? COLOR_PICKER_COMPACT_FILL_ALPHA : COLOR_PICKER_STANDARD_FILL_ALPHA));
-    egui_canvas_draw_round_rectangle(
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, 
             region.location.x, region.location.y, region.size.width, region.size.height,
             local->compact_mode ? COLOR_PICKER_COMPACT_RADIUS : COLOR_PICKER_STANDARD_RADIUS, 1, outer_border,
             egui_color_alpha_mix(self->alpha, local->compact_mode ? COLOR_PICKER_COMPACT_BORDER_ALPHA : COLOR_PICKER_STANDARD_BORDER_ALPHA));
-    egui_canvas_draw_round_rectangle_fill(region.location.x + 2, region.location.y + 2, region.size.width - 4, local->compact_mode ? 3 : 4,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, region.location.x + 2, region.location.y + 2, region.size.width - 4, local->compact_mode ? 3 : 4,
                                           local->compact_mode ? COLOR_PICKER_COMPACT_RADIUS : COLOR_PICKER_STANDARD_RADIUS, accent_color,
                                           egui_color_alpha_mix(self->alpha, local->read_only_mode ? 12 : 24));
 
@@ -704,7 +704,7 @@ static void egui_view_color_picker_on_draw(egui_view_t *self)
     if (self->is_focused && !local->read_only_mode && !local->compact_mode)
     {
         const egui_region_t *focus_region = local->current_part == EGUI_VIEW_COLOR_PICKER_PART_HUE ? &metrics.hue_region : &metrics.palette_region;
-        egui_canvas_draw_round_rectangle(focus_region->location.x - 2, focus_region->location.y - 2, focus_region->size.width + 4,
+        egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, focus_region->location.x - 2, focus_region->location.y - 2, focus_region->size.width + 4,
                                          focus_region->size.height + 4, local->compact_mode ? 4 : 5, 1, accent_color, egui_color_alpha_mix(self->alpha, 72));
     }
 
@@ -1102,7 +1102,7 @@ void egui_view_color_picker_init(egui_view_t *self)
 {
     EGUI_INIT_LOCAL(egui_view_color_picker_t);
 
-    egui_view_init(self);
+    egui_view_init(self, uicode_get_core());
     self->api = &EGUI_VIEW_API_TABLE_NAME(egui_view_color_picker_t);
     egui_view_set_padding_all(self, 2);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS

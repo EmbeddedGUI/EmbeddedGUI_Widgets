@@ -162,7 +162,7 @@ static void egui_view_arc_on_draw(egui_view_t *self)
         active_color = egui_view_arc_mix_disabled(active_color);
     }
 
-    egui_canvas_draw_arc_round_cap_hq(center_x, center_y, radius, local->start_angle, local->start_angle + local->sweep_angle, local->stroke_width, track_color,
+    egui_canvas_draw_arc_round_cap_hq(&uicode_get_core()->canvas, center_x, center_y, radius, local->start_angle, local->start_angle + local->sweep_angle, local->stroke_width, track_color,
                                       egui_color_alpha_mix(self->alpha, EGUI_ALPHA_100));
 
     if (local->value == 0)
@@ -171,7 +171,7 @@ static void egui_view_arc_on_draw(egui_view_t *self)
     }
 
     progress_end_angle = (int16_t)(local->start_angle + (int16_t)((int32_t)local->sweep_angle * local->value / 100));
-    egui_canvas_draw_arc_round_cap_hq(center_x, center_y, radius, local->start_angle, progress_end_angle, local->stroke_width, active_color,
+    egui_canvas_draw_arc_round_cap_hq(&uicode_get_core()->canvas, center_x, center_y, radius, local->start_angle, progress_end_angle, local->stroke_width, active_color,
                                       egui_color_alpha_mix(self->alpha, EGUI_ALPHA_100));
 }
 
@@ -243,7 +243,7 @@ void egui_view_arc_init(egui_view_t *self)
 {
     EGUI_INIT_LOCAL(egui_view_arc_t);
 
-    egui_view_init(self);
+    egui_view_init(self, uicode_get_core());
     self->api = &EGUI_VIEW_API_TABLE_NAME(egui_view_arc_t);
 
     local->value = 0;

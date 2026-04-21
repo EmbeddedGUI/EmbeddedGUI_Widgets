@@ -35,7 +35,7 @@ static void reset_listener_state(void)
 
 static void setup_control(void)
 {
-    egui_view_segmented_control_init(EGUI_VIEW_OF(&test_control));
+    egui_view_segmented_control_init(EGUI_VIEW_OF(&test_control), uicode_get_core());
     egui_view_set_size(EGUI_VIEW_OF(&test_control), 180, 36);
     hcw_segmented_control_override_interaction_api(EGUI_VIEW_OF(&test_control), &test_control_api);
     hcw_segmented_control_set_segments(EGUI_VIEW_OF(&test_control), g_segments_primary, 4);
@@ -60,7 +60,7 @@ static void layout_control(egui_dim_t width, egui_dim_t height)
 
 static void setup_preview_control(void)
 {
-    egui_view_segmented_control_init(EGUI_VIEW_OF(&preview_control));
+    egui_view_segmented_control_init(EGUI_VIEW_OF(&preview_control), uicode_get_core());
     egui_view_set_size(EGUI_VIEW_OF(&preview_control), 180, 36);
     hcw_segmented_control_override_static_preview_api(EGUI_VIEW_OF(&preview_control), &preview_control_api);
     hcw_segmented_control_set_segments(EGUI_VIEW_OF(&preview_control), g_segments_primary, 4);
@@ -348,7 +348,7 @@ static void test_segmented_control_style_helpers_and_params(void)
     EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_segmented_control_get_current_index(EGUI_VIEW_OF(&test_control)));
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_SEGMENTED_CONTROL_PRESSED_NONE, test_control.pressed_index);
 
-    egui_view_segmented_control_init_with_params(EGUI_VIEW_OF(&params_control), &init_params);
+    egui_view_segmented_control_init_with_params(EGUI_VIEW_OF(&params_control), uicode_get_core(), &init_params);
     EGUI_TEST_ASSERT_EQUAL_INT(4, EGUI_VIEW_OF(&params_control)->region.location.x);
     EGUI_TEST_ASSERT_EQUAL_INT(5, EGUI_VIEW_OF(&params_control)->region.location.y);
     EGUI_TEST_ASSERT_EQUAL_INT(120, EGUI_VIEW_OF(&params_control)->region.size.width);

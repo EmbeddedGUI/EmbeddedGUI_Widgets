@@ -277,12 +277,12 @@ static void egui_view_path_icon_draw_contour(const egui_view_path_icon_point_t *
     {
         if (count >= 3)
         {
-            egui_canvas_draw_polygon_fill(flattened, count, color, alpha);
+            egui_canvas_draw_polygon_fill(&uicode_get_core()->canvas, flattened, count, color, alpha);
         }
     }
     else if (count >= 2)
     {
-        egui_canvas_draw_polyline_round_cap_hq(flattened, count, stroke_width, color, alpha);
+        egui_canvas_draw_polyline_round_cap_hq(&uicode_get_core()->canvas, flattened, count, stroke_width, color, alpha);
     }
 }
 
@@ -485,7 +485,7 @@ void egui_view_path_icon_init(egui_view_t *self)
 {
     egui_view_path_icon_t *local = egui_view_path_icon_local(self);
 
-    egui_view_init(self);
+    egui_view_init(self, uicode_get_core());
     self->api = &EGUI_VIEW_API_TABLE_NAME(egui_view_path_icon_t);
     egui_view_set_background(self, NULL);
     egui_view_set_shadow(self, NULL);

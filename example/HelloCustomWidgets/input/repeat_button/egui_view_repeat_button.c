@@ -98,7 +98,7 @@ static void egui_view_repeat_button_stop_timer(egui_view_t *self)
         return;
     }
 
-    egui_timer_stop_timer(&local->repeat_timer);
+    egui_timer_stop_timer(uicode_get_core(), &local->repeat_timer);
     local->timer_started = 0;
 }
 
@@ -112,7 +112,7 @@ static void egui_view_repeat_button_start_timer(egui_view_t *self)
         return;
     }
 
-    egui_timer_start_timer(&local->repeat_timer, local->initial_delay_ms, local->repeat_interval_ms);
+    egui_timer_start_timer(uicode_get_core(), &local->repeat_timer, local->initial_delay_ms, local->repeat_interval_ms);
     local->timer_started = 1;
 }
 
@@ -158,7 +158,7 @@ static void egui_view_repeat_button_apply_focus_from_touch(egui_view_t *self, ui
     }
     else if (is_inside && !self->is_no_focus_clear)
     {
-        egui_focus_manager_clear_focus();
+        egui_focus_manager_clear_focus(uicode_get_core());
     }
 #else
     EGUI_UNUSED(self);
@@ -406,7 +406,7 @@ void egui_view_repeat_button_init(egui_view_t *self)
 {
     egui_view_repeat_button_t *local = egui_view_repeat_button_local(self);
 
-    egui_view_button_init(self);
+    egui_view_button_init(self, uicode_get_core());
     self->api = &EGUI_VIEW_API_TABLE_NAME(egui_view_repeat_button_t);
 
     egui_timer_init_timer(&local->repeat_timer, self, egui_view_repeat_button_tick);

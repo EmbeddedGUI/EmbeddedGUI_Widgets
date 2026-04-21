@@ -122,7 +122,7 @@ static void egui_view_presence_badge_draw_do_not_disturb_glyph(egui_view_t *self
     center_y = region->location.y + region->size.height / 2;
     stroke_width = region->size.height >= 14 ? 2 : 1;
 
-    egui_canvas_draw_line(start_x, center_y, end_x, center_y, stroke_width, glyph_color, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_100));
+    egui_canvas_draw_line(&uicode_get_core()->canvas, start_x, center_y, end_x, center_y, stroke_width, glyph_color, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_100));
 }
 
 static void egui_view_presence_badge_on_draw(egui_view_t *self)
@@ -165,29 +165,29 @@ static void egui_view_presence_badge_on_draw(egui_view_t *self)
     outer_radius = outer_region.size.width / 2;
     mark_radius = mark_region.size.width / 2;
 
-    egui_canvas_draw_circle_fill_basic(center_x, center_y, outer_radius, surface_color, egui_color_alpha_mix(self->alpha, 96));
+    egui_canvas_draw_circle_fill_basic(&uicode_get_core()->canvas, center_x, center_y, outer_radius, surface_color, egui_color_alpha_mix(self->alpha, 96));
 
     if (local->status == EGUI_VIEW_PRESENCE_BADGE_STATUS_OFFLINE)
     {
         if (mark_radius > 0)
         {
-            egui_canvas_draw_circle_basic(center_x, center_y, mark_radius, 1, status_color, egui_color_alpha_mix(self->alpha, 92));
+            egui_canvas_draw_circle_basic(&uicode_get_core()->canvas, center_x, center_y, mark_radius, 1, status_color, egui_color_alpha_mix(self->alpha, 92));
             if (mark_radius > 2 && !local->compact_mode)
             {
-                egui_canvas_draw_circle_basic(center_x, center_y, mark_radius - 1, 1, status_color, egui_color_alpha_mix(self->alpha, 40));
+                egui_canvas_draw_circle_basic(&uicode_get_core()->canvas, center_x, center_y, mark_radius - 1, 1, status_color, egui_color_alpha_mix(self->alpha, 40));
             }
         }
     }
     else
     {
-        egui_canvas_draw_circle_fill_basic(center_x, center_y, mark_radius, status_color, egui_color_alpha_mix(self->alpha, 92));
+        egui_canvas_draw_circle_fill_basic(&uicode_get_core()->canvas, center_x, center_y, mark_radius, status_color, egui_color_alpha_mix(self->alpha, 92));
         if (local->status == EGUI_VIEW_PRESENCE_BADGE_STATUS_DO_NOT_DISTURB)
         {
             egui_view_presence_badge_draw_do_not_disturb_glyph(self, &mark_region, glyph_color);
         }
     }
 
-    egui_canvas_draw_circle_basic(center_x, center_y, outer_radius, 1, outline_color, egui_color_alpha_mix(self->alpha, local->compact_mode ? 22 : 30));
+    egui_canvas_draw_circle_basic(&uicode_get_core()->canvas, center_x, center_y, outer_radius, 1, outline_color, egui_color_alpha_mix(self->alpha, local->compact_mode ? 22 : 30));
 }
 
 #if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
@@ -328,7 +328,7 @@ void egui_view_presence_badge_init(egui_view_t *self)
 {
     EGUI_INIT_LOCAL(egui_view_presence_badge_t);
 
-    egui_view_init(self);
+    egui_view_init(self, uicode_get_core());
     self->api = &EGUI_VIEW_API_TABLE_NAME(egui_view_presence_badge_t);
     egui_view_set_background(self, NULL);
     egui_view_set_shadow(self, NULL);

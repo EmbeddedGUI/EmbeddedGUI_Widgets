@@ -52,7 +52,7 @@ def header_template(name: str, name_upper: str) -> str:
         #define _EGUI_VIEW_{name_upper}_H_
 
         #include "egui.h"
-        #include "sdk_compat.h"
+        #include "../../uicode_disp0.h"
 
         #ifdef __cplusplus
         extern "C" {{
@@ -111,7 +111,7 @@ def source_template(name: str, display_title: str) -> str:
 
         static void init_internal_label(egui_view_label_t *label, egui_dim_t width, egui_dim_t height)
         {{
-            egui_view_label_init(EGUI_VIEW_OF(label));
+            egui_view_label_init(EGUI_VIEW_OF(label), uicode_get_core());
             egui_view_set_size(EGUI_VIEW_OF(label), width, height);
             egui_view_label_set_align_type(EGUI_VIEW_OF(label), EGUI_ALIGN_CENTER);
         }}
@@ -223,7 +223,7 @@ def source_template(name: str, display_title: str) -> str:
         {{
             EGUI_LOCAL_INIT_VAR(egui_view_{name}_t, widget);
 
-            egui_view_linearlayout_init(self);
+            egui_view_linearlayout_init(self, uicode_get_core());
             egui_view_linearlayout_set_orientation(self, 0);
             egui_view_linearlayout_set_align_type(self, EGUI_ALIGN_HCENTER);
 
@@ -280,13 +280,13 @@ def test_template(name: str, name_upper: str, display_title: str) -> str:
 
         void test_init_ui(void)
         {{
-            egui_view_linearlayout_init(EGUI_VIEW_OF(&root_layout));
+            egui_view_linearlayout_init(EGUI_VIEW_OF(&root_layout), uicode_get_core());
             egui_view_set_size(EGUI_VIEW_OF(&root_layout), {name_upper}_ROOT_WIDTH, {name_upper}_ROOT_HEIGHT);
             egui_view_linearlayout_set_orientation(EGUI_VIEW_OF(&root_layout), 0);
             egui_view_linearlayout_set_align_type(EGUI_VIEW_OF(&root_layout), EGUI_ALIGN_HCENTER);
             egui_view_set_background(EGUI_VIEW_OF(&root_layout), EGUI_BG_OF(&bg_page_panel));
 
-            egui_view_label_init(EGUI_VIEW_OF(&title_label));
+            egui_view_label_init(EGUI_VIEW_OF(&title_label), uicode_get_core());
             egui_view_set_size(EGUI_VIEW_OF(&title_label), {name_upper}_ROOT_WIDTH, 18);
             egui_view_label_set_text(EGUI_VIEW_OF(&title_label), title_text);
             egui_view_label_set_align_type(EGUI_VIEW_OF(&title_label), EGUI_ALIGN_CENTER);
@@ -308,7 +308,7 @@ def test_template(name: str, name_upper: str, display_title: str) -> str:
             egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&root_layout));
 
             egui_core_add_user_root_view(EGUI_VIEW_OF(&root_layout));
-            egui_core_layout_childs_user_root_view(EGUI_LAYOUT_VERTICAL, EGUI_ALIGN_HCENTER | EGUI_ALIGN_VCENTER);
+            egui_core_layout_childs_user_root_view(uicode_get_core(), EGUI_LAYOUT_VERTICAL, EGUI_ALIGN_HCENTER | EGUI_ALIGN_VCENTER);
         }}
 
         #if EGUI_CONFIG_RECORDING_TEST

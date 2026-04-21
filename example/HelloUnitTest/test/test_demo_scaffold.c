@@ -15,37 +15,37 @@ static egui_view_label_t chrome_view;
 
 static void setup_title_only_scaffold(void)
 {
-    egui_view_linearlayout_init(EGUI_VIEW_OF(&root_layout));
+    egui_view_linearlayout_init(EGUI_VIEW_OF(&root_layout), uicode_get_core());
     egui_view_set_size(EGUI_VIEW_OF(&root_layout), 96, 80);
     egui_view_linearlayout_set_orientation(EGUI_VIEW_OF(&root_layout), 0);
     egui_view_linearlayout_set_align_type(EGUI_VIEW_OF(&root_layout), EGUI_ALIGN_HCENTER);
 
-    egui_view_label_init(EGUI_VIEW_OF(&title_label));
+    egui_view_label_init(EGUI_VIEW_OF(&title_label), uicode_get_core());
     egui_view_set_size(EGUI_VIEW_OF(&title_label), 96, 18);
     egui_view_set_margin(EGUI_VIEW_OF(&title_label), 4, 6, 2, 4);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label));
 
-    egui_view_label_init(EGUI_VIEW_OF(&main_view));
+    egui_view_label_init(EGUI_VIEW_OF(&main_view), uicode_get_core());
     egui_view_set_size(EGUI_VIEW_OF(&main_view), 90, 40);
     egui_view_set_margin(EGUI_VIEW_OF(&main_view), 0, 0, 0, 2);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&main_view));
 
-    egui_view_linearlayout_init(EGUI_VIEW_OF(&preview_row));
+    egui_view_linearlayout_init(EGUI_VIEW_OF(&preview_row), uicode_get_core());
     egui_view_set_size(EGUI_VIEW_OF(&preview_row), 80, 26);
     egui_view_linearlayout_set_orientation(EGUI_VIEW_OF(&preview_row), 1);
     egui_view_linearlayout_set_align_type(EGUI_VIEW_OF(&preview_row), EGUI_ALIGN_VCENTER);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&preview_row));
 
-    egui_view_label_init(EGUI_VIEW_OF(&preview_left));
+    egui_view_label_init(EGUI_VIEW_OF(&preview_left), uicode_get_core());
     egui_view_set_size(EGUI_VIEW_OF(&preview_left), 40, 20);
     egui_view_group_add_child(EGUI_VIEW_OF(&preview_row), EGUI_VIEW_OF(&preview_left));
 
-    egui_view_label_init(EGUI_VIEW_OF(&preview_right));
+    egui_view_label_init(EGUI_VIEW_OF(&preview_right), uicode_get_core());
     egui_view_set_size(EGUI_VIEW_OF(&preview_right), 44, 20);
     egui_view_set_margin(EGUI_VIEW_OF(&preview_right), 6, 0, 0, 0);
     egui_view_group_add_child(EGUI_VIEW_OF(&preview_row), EGUI_VIEW_OF(&preview_right));
 
-    egui_view_label_init(EGUI_VIEW_OF(&chrome_view));
+    egui_view_label_init(EGUI_VIEW_OF(&chrome_view), uicode_get_core());
     egui_view_set_size(EGUI_VIEW_OF(&chrome_view), 20, 12);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&chrome_view));
 }

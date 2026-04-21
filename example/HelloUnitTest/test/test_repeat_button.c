@@ -94,7 +94,7 @@ static void capture_preview_snapshot(repeat_button_preview_snapshot_t *snapshot)
 static void assert_timer_stopped(egui_view_repeat_button_t *widget)
 {
     EGUI_TEST_ASSERT_FALSE(widget->timer_started);
-    EGUI_TEST_ASSERT_FALSE(egui_timer_check_timer_start(&widget->repeat_timer));
+    EGUI_TEST_ASSERT_FALSE(egui_timer_check_timer_start(uicode_get_core(), &widget->repeat_timer));
 }
 
 static void assert_pressed_state_cleared(egui_view_repeat_button_t *widget)
@@ -201,7 +201,7 @@ static void start_touch_hold(egui_dim_t *center_x, egui_dim_t *center_y)
     EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&test_widget)->is_pressed);
     EGUI_TEST_ASSERT_TRUE(test_widget.touch_active);
     EGUI_TEST_ASSERT_TRUE(test_widget.timer_started);
-    EGUI_TEST_ASSERT_TRUE(egui_timer_check_timer_start(&test_widget.repeat_timer));
+    EGUI_TEST_ASSERT_TRUE(egui_timer_check_timer_start(uicode_get_core(), &test_widget.repeat_timer));
 }
 
 static void seed_preview_timer_state(uint8_t touch_active, uint8_t key_active)
@@ -210,8 +210,8 @@ static void seed_preview_timer_state(uint8_t touch_active, uint8_t key_active)
     preview_widget.key_active = key_active;
     preview_widget.timer_started = 1;
     egui_view_set_pressed(EGUI_VIEW_OF(&preview_widget), 1);
-    egui_timer_start_timer(&preview_widget.repeat_timer, 100, 0);
-    EGUI_TEST_ASSERT_TRUE(egui_timer_check_timer_start(&preview_widget.repeat_timer));
+    egui_timer_start_timer(uicode_get_core(), &preview_widget.repeat_timer, 100, 0);
+    EGUI_TEST_ASSERT_TRUE(egui_timer_check_timer_start(uicode_get_core(), &preview_widget.repeat_timer));
 }
 
 static void test_repeat_button_init_uses_default_timing_and_style(void)
@@ -436,7 +436,7 @@ static void test_repeat_button_attach_and_detach_restore_repeat_timer(void)
 
     attach_view(EGUI_VIEW_OF(&test_widget));
     EGUI_TEST_ASSERT_TRUE(test_widget.timer_started);
-    EGUI_TEST_ASSERT_TRUE(egui_timer_check_timer_start(&test_widget.repeat_timer));
+    EGUI_TEST_ASSERT_TRUE(egui_timer_check_timer_start(uicode_get_core(), &test_widget.repeat_timer));
 
     egui_view_repeat_button_tick(&test_widget.repeat_timer);
     EGUI_TEST_ASSERT_EQUAL_INT(2, g_click_count);

@@ -177,7 +177,7 @@ static void egui_view_badge_draw_text(const egui_font_t *font, egui_view_t *self
         return;
     }
 
-    egui_canvas_draw_text_in_rect(font, text, &draw_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, color, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_100));
+    egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, font, text, &draw_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, color, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_100));
 }
 
 static void egui_view_badge_on_draw(egui_view_t *self)
@@ -215,14 +215,14 @@ static void egui_view_badge_on_draw(egui_view_t *self)
         accent_color = egui_view_badge_mix_disabled(accent_color);
     }
 
-    egui_canvas_draw_round_rectangle_fill(region.location.x, region.location.y, region.size.width, region.size.height, radius, fill_color,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, region.location.x, region.location.y, region.size.width, region.size.height, radius, fill_color,
                                           egui_color_alpha_mix(self->alpha, EGUI_ALPHA_100));
-    egui_canvas_draw_round_rectangle(region.location.x, region.location.y, region.size.width, region.size.height, radius, 1, border_color,
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, region.location.x, region.location.y, region.size.width, region.size.height, radius, 1, border_color,
                                      egui_color_alpha_mix(self->alpha, border_alpha));
 
     if (metrics.show_icon)
     {
-        egui_canvas_draw_text_in_rect(egui_view_badge_get_icon_font(local), local->icon, &metrics.icon_region, EGUI_ALIGN_CENTER, accent_color,
+        egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, egui_view_badge_get_icon_font(local), local->icon, &metrics.icon_region, EGUI_ALIGN_CENTER, accent_color,
                                       egui_color_alpha_mix(self->alpha, EGUI_ALPHA_100));
     }
     egui_view_badge_draw_text(egui_view_badge_get_text_font(local), self, local->text, &metrics.text_region, text_color);
@@ -428,7 +428,7 @@ void egui_view_badge_init(egui_view_t *self)
 {
     EGUI_INIT_LOCAL(egui_view_badge_t);
 
-    egui_view_init(self);
+    egui_view_init(self, uicode_get_core());
     self->api = &EGUI_VIEW_API_TABLE_NAME(egui_view_badge_t);
     egui_view_set_padding_all(self, 2);
     egui_view_set_background(self, NULL);

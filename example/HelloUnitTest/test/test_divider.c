@@ -50,7 +50,7 @@ static void on_preview_click(egui_view_t *self)
 
 static void setup_divider(void)
 {
-    egui_view_divider_init(EGUI_VIEW_OF(&test_divider));
+    egui_view_divider_init(EGUI_VIEW_OF(&test_divider), uicode_get_core());
     egui_view_set_size(EGUI_VIEW_OF(&test_divider), 176, 2);
     hcw_divider_apply_standard_style(EGUI_VIEW_OF(&test_divider));
     g_click_count = 0;
@@ -58,7 +58,7 @@ static void setup_divider(void)
 
 static void setup_preview_divider(void)
 {
-    egui_view_divider_init(EGUI_VIEW_OF(&preview_divider));
+    egui_view_divider_init(EGUI_VIEW_OF(&preview_divider), uicode_get_core());
     egui_view_set_size(EGUI_VIEW_OF(&preview_divider), 36, 2);
     hcw_divider_apply_subtle_style(EGUI_VIEW_OF(&preview_divider));
     egui_view_set_on_click_listener(EGUI_VIEW_OF(&preview_divider), on_preview_click);
