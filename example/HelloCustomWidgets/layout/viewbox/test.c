@@ -51,7 +51,7 @@ static const egui_view_viewbox_snapshot_t primary_snapshots[] = {
         {"REL", "Cover preview", "Fill mode shows how one surface absorbs the whole viewport when the shell wins.", "Launch poster", "520 x 180 artwork",
          "Wide artwork stretches to each edge for cover-like composition.", "Fill preset", primary_presets, 520, 180, 3, 1},
         {"QA", "Inspector thumb", "Downscale only keeps small content at 1:1 until the viewport becomes tighter.", "Audit chip", "96 x 64 surface",
-         "Compact sources do not upscale in the lightweight reference view.", "Downscale only", primary_presets, 96, 64, 3, 2},
+         "Small sources stay at 1:1 in the reference view.", "Downscale only", primary_presets, 96, 64, 3, 2},
 };
 
 static const egui_view_viewbox_preset_t compact_presets[] = {
@@ -288,4 +288,3 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     }
 }
 #endif
-

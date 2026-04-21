@@ -100,19 +100,104 @@ static uint8_t viewbox_clamp_stretch_mode(uint8_t stretch_mode)
     }
 }
 
-static uint8_t viewbox_text_len(const char *text)
-{
-    uint8_t length = 0;
+static uint8_t viewbox_has_text(const char *text);
 
-    if (text == NULL)
+static egui_dim_t viewbox_measure_font_line_height(const egui_font_t *font)
+{
+    egui_dim_t dummy_width = 0;
+    egui_dim_t line_height = 0;
+
+    if (font == NULL || font->api == NULL || font->api->get_str_size == NULL)
     {
         return 0;
     }
-    while (text[length] != '\0')
+
+    font->api->get_str_size(font, "A", 0, 0, &dummy_width, &line_height);
+    return line_height;
+}
+
+static egui_dim_t viewbox_measure_text_width(const egui_font_t *font, const char *text)
+{
+    egui_dim_t text_width = 0;
+    egui_dim_t dummy_height = 0;
+
+    if (!viewbox_has_text(text) || font == NULL || font->api == NULL || font->api->get_str_size == NULL)
     {
-        length++;
+        return 0;
     }
-    return length;
+
+    font->api->get_str_size(font, text, 0, 0, &text_width, &dummy_height);
+    return text_width;
+}
+
+static egui_dim_t viewbox_get_badge_height(egui_view_viewbox_t *local)
+{
+    egui_dim_t badge_h = viewbox_measure_font_line_height(local->meta_font);
+    egui_dim_t min_h = local->compact_mode ? EGUI_VIEW_VIEWBOX_COMPACT_BADGE_H : EGUI_VIEW_VIEWBOX_STANDARD_BADGE_H;
+
+    return badge_h > min_h ? badge_h : min_h;
+}
+
+static egui_dim_t viewbox_get_title_height(egui_view_viewbox_t *local)
+{
+    egui_dim_t title_h = viewbox_measure_font_line_height(local->font);
+    egui_dim_t min_h = local->compact_mode ? EGUI_VIEW_VIEWBOX_COMPACT_TITLE_H : EGUI_VIEW_VIEWBOX_STANDARD_TITLE_H;
+
+    return title_h > min_h ? title_h : min_h;
+}
+
+static egui_dim_t viewbox_get_summary_height(egui_view_viewbox_t *local)
+{
+    egui_dim_t summary_h;
+
+    if (local->compact_mode)
+    {
+        return 0;
+    }
+
+    summary_h = viewbox_measure_font_line_height(local->meta_font);
+    return summary_h > EGUI_VIEW_VIEWBOX_STANDARD_SUMMARY_H ? summary_h : EGUI_VIEW_VIEWBOX_STANDARD_SUMMARY_H;
+}
+
+static egui_dim_t viewbox_get_footer_height(egui_view_viewbox_t *local)
+{
+    egui_dim_t footer_h;
+
+    if (local->compact_mode)
+    {
+        return 0;
+    }
+
+    footer_h = viewbox_measure_font_line_height(local->meta_font);
+    return footer_h > EGUI_VIEW_VIEWBOX_STANDARD_FOOTER_H ? footer_h : EGUI_VIEW_VIEWBOX_STANDARD_FOOTER_H;
+}
+
+static egui_dim_t viewbox_get_content_title_height(egui_view_viewbox_t *local)
+{
+    egui_dim_t title_h = viewbox_measure_font_line_height(local->font);
+    egui_dim_t min_h = local->compact_mode ? 8 : 10;
+
+    return title_h > min_h ? title_h : min_h;
+}
+
+static egui_dim_t viewbox_get_content_meta_height(egui_view_viewbox_t *local)
+{
+    egui_dim_t meta_h = viewbox_measure_font_line_height(local->meta_font);
+    egui_dim_t min_h = local->compact_mode ? 0 : 8;
+
+    if (local->compact_mode)
+    {
+        return 0;
+    }
+    return meta_h > min_h ? meta_h : min_h;
+}
+
+static egui_dim_t viewbox_get_detail_height(egui_view_viewbox_t *local)
+{
+    egui_dim_t detail_h = viewbox_measure_font_line_height(local->meta_font);
+    egui_dim_t min_h = local->compact_mode ? 7 : 8;
+
+    return detail_h > min_h ? detail_h : min_h;
 }
 
 static uint8_t viewbox_has_text(const char *text)
@@ -244,13 +329,19 @@ static uint8_t viewbox_preset_is_interactive(egui_view_viewbox_t *local, egui_vi
     return viewbox_preset_exists(snapshot, preset_index);
 }
 
-static egui_dim_t viewbox_pill_width(const char *text, uint8_t compact_mode, egui_dim_t min_width, egui_dim_t max_width)
+static egui_dim_t viewbox_pill_width(const egui_font_t *font, const char *text, uint8_t compact_mode, egui_dim_t min_width, egui_dim_t max_width)
 {
     egui_dim_t width = min_width;
 
+    (void)compact_mode;
+    if (max_width <= 0)
+    {
+        return 0;
+    }
+
     if (viewbox_has_text(text))
     {
-        width += viewbox_text_len(text) * (compact_mode ? 4 : 5);
+        width += viewbox_measure_text_width(font, text);
     }
     if (width > max_width)
     {
@@ -375,15 +466,15 @@ static void viewbox_get_metrics(egui_view_viewbox_t *local, egui_view_t *self, c
     egui_dim_t outer_pad_y = local->compact_mode ? EGUI_VIEW_VIEWBOX_COMPACT_OUTER_PAD_Y : EGUI_VIEW_VIEWBOX_STANDARD_OUTER_PAD_Y;
     egui_dim_t inner_pad_x = local->compact_mode ? EGUI_VIEW_VIEWBOX_COMPACT_INNER_PAD_X : EGUI_VIEW_VIEWBOX_STANDARD_INNER_PAD_X;
     egui_dim_t inner_pad_y = local->compact_mode ? EGUI_VIEW_VIEWBOX_COMPACT_INNER_PAD_Y : EGUI_VIEW_VIEWBOX_STANDARD_INNER_PAD_Y;
-    egui_dim_t badge_h = local->compact_mode ? EGUI_VIEW_VIEWBOX_COMPACT_BADGE_H : EGUI_VIEW_VIEWBOX_STANDARD_BADGE_H;
+    egui_dim_t badge_h = viewbox_get_badge_height(local);
     egui_dim_t badge_gap = local->compact_mode ? EGUI_VIEW_VIEWBOX_COMPACT_BADGE_GAP : EGUI_VIEW_VIEWBOX_STANDARD_BADGE_GAP;
-    egui_dim_t title_h = local->compact_mode ? EGUI_VIEW_VIEWBOX_COMPACT_TITLE_H : EGUI_VIEW_VIEWBOX_STANDARD_TITLE_H;
-    egui_dim_t summary_h = local->compact_mode ? EGUI_VIEW_VIEWBOX_COMPACT_SUMMARY_H : EGUI_VIEW_VIEWBOX_STANDARD_SUMMARY_H;
+    egui_dim_t title_h = viewbox_get_title_height(local);
+    egui_dim_t summary_h = viewbox_get_summary_height(local);
     egui_dim_t title_gap = local->compact_mode ? EGUI_VIEW_VIEWBOX_COMPACT_TITLE_GAP : EGUI_VIEW_VIEWBOX_STANDARD_TITLE_GAP;
     egui_dim_t viewport_gap = local->compact_mode ? EGUI_VIEW_VIEWBOX_COMPACT_VIEWPORT_GAP : EGUI_VIEW_VIEWBOX_STANDARD_VIEWPORT_GAP;
     egui_dim_t preset_h = local->compact_mode ? EGUI_VIEW_VIEWBOX_COMPACT_PRESET_H : EGUI_VIEW_VIEWBOX_STANDARD_PRESET_H;
     egui_dim_t preset_gap = local->compact_mode ? EGUI_VIEW_VIEWBOX_COMPACT_PRESET_GAP : EGUI_VIEW_VIEWBOX_STANDARD_PRESET_GAP;
-    egui_dim_t footer_h = local->compact_mode ? EGUI_VIEW_VIEWBOX_COMPACT_FOOTER_H : EGUI_VIEW_VIEWBOX_STANDARD_FOOTER_H;
+    egui_dim_t footer_h = viewbox_get_footer_height(local);
     egui_dim_t footer_gap = local->compact_mode ? EGUI_VIEW_VIEWBOX_COMPACT_FOOTER_GAP : EGUI_VIEW_VIEWBOX_STANDARD_FOOTER_GAP;
     egui_dim_t inner_x;
     egui_dim_t inner_y;
@@ -431,7 +522,7 @@ static void viewbox_get_metrics(egui_view_viewbox_t *local, egui_view_t *self, c
     {
         metrics->badge_region.location.x = inner_x;
         metrics->badge_region.location.y = cursor_y;
-        metrics->badge_region.size.width = viewbox_pill_width(snapshot->header, local->compact_mode, local->compact_mode ? 18 : 24, inner_w);
+        metrics->badge_region.size.width = viewbox_pill_width(local->meta_font, snapshot->header, local->compact_mode, local->compact_mode ? 18 : 24, inner_w);
         metrics->badge_region.size.height = badge_h;
         cursor_y += badge_h + badge_gap;
     }
@@ -458,7 +549,7 @@ static void viewbox_get_metrics(egui_view_viewbox_t *local, egui_view_t *self, c
         bottom_y -= footer_h;
         metrics->footer_region.location.x = inner_x;
         metrics->footer_region.location.y = bottom_y;
-        metrics->footer_region.size.width = viewbox_pill_width(snapshot->footer, local->compact_mode, local->compact_mode ? 22 : 30, inner_w);
+        metrics->footer_region.size.width = viewbox_pill_width(local->meta_font, snapshot->footer, local->compact_mode, local->compact_mode ? 22 : 30, inner_w);
         metrics->footer_region.size.height = footer_h;
         bottom_y -= footer_gap;
     }
@@ -589,10 +680,11 @@ static void viewbox_draw_content_block(egui_view_t *self, egui_view_viewbox_t *l
     egui_dim_t radius = local->compact_mode ? 5 : 6;
     egui_dim_t pad_x = local->compact_mode ? 4 : 6;
     egui_dim_t pad_y = local->compact_mode ? 3 : 4;
-    egui_dim_t title_h = local->compact_mode ? 8 : 10;
-    egui_dim_t meta_h = local->compact_mode ? 7 : 8;
-    egui_dim_t footer_h = local->compact_mode ? 0 : 8;
+    egui_dim_t title_h = viewbox_get_content_title_height(local);
+    egui_dim_t meta_h = viewbox_get_content_meta_height(local);
+    egui_dim_t footer_h = local->compact_mode ? 0 : viewbox_get_detail_height(local);
     egui_dim_t bar_h = local->compact_mode ? 2 : 3;
+    egui_dim_t top_y;
     egui_region_t band_region;
     egui_region_t title_region;
     egui_region_t meta_region;
@@ -649,17 +741,22 @@ static void viewbox_draw_content_block(egui_view_t *self, egui_view_viewbox_t *l
                                               egui_color_alpha_mix(self->alpha, 92));
     }
 
+    top_y = content_region->location.y + pad_y + band_region.size.height + 1;
     title_region.location.x = content_region->location.x + pad_x;
-    title_region.location.y = content_region->location.y + pad_y + (local->compact_mode ? 1 : 2);
+    title_region.location.y = top_y;
     title_region.size.width = content_region->size.width - pad_x * 2;
     title_region.size.height = title_h;
 
-    meta_region = title_region;
-    meta_region.location.y += title_h;
-    meta_region.size.height = meta_h;
+    viewbox_reset_region(&meta_region);
+    if (meta_h > 0 && viewbox_has_text(snapshot->content_meta))
+    {
+        meta_region = title_region;
+        meta_region.location.y += title_h + 1;
+        meta_region.size.height = meta_h;
+    }
 
     viewbox_draw_text(local->font, self, snapshot->content_title, &title_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, title_color);
-    if (!local->compact_mode)
+    if (meta_h > 0)
     {
         viewbox_draw_text(local->meta_font, self, snapshot->content_meta, &meta_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, meta_color);
     }
@@ -673,20 +770,23 @@ static void viewbox_draw_content_block(egui_view_t *self, egui_view_viewbox_t *l
         viewbox_draw_text(local->meta_font, self, snapshot->content_footer, &footer_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, meta_color);
     }
 
-    line_region.location.x = content_region->location.x + pad_x;
-    line_region.location.y = content_region->location.y + content_region->size.height - pad_y - (local->compact_mode ? 9 : 16);
-    line_region.size.height = bar_h;
-    for (line_index = 0; line_index < 3; ++line_index)
+    if (content_region->size.height > (local->compact_mode ? 18 : 26))
     {
-        egui_dim_t shrink = (egui_dim_t)(line_index * (local->compact_mode ? 5 : 7));
-
-        line_region.size.width = content_region->size.width - pad_x * 2 - shrink;
-        if (line_region.size.width <= 0)
+        line_region.location.x = content_region->location.x + pad_x;
+        line_region.location.y = content_region->location.y + content_region->size.height - pad_y - (local->compact_mode ? 9 : 16);
+        line_region.size.height = bar_h;
+        for (line_index = 0; line_index < 3; ++line_index)
         {
-            continue;
+            egui_dim_t shrink = (egui_dim_t)(line_index * (local->compact_mode ? 5 : 7));
+
+            line_region.size.width = content_region->size.width - pad_x * 2 - shrink;
+            if (line_region.size.width <= 0)
+            {
+                continue;
+            }
+            egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, line_region.location.x, line_region.location.y + line_index * (local->compact_mode ? 4 : 5),
+                                                  line_region.size.width, line_region.size.height, 1, line_color, egui_color_alpha_mix(self->alpha, 76));
         }
-        egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, line_region.location.x, line_region.location.y + line_index * (local->compact_mode ? 4 : 5), line_region.size.width,
-                                              line_region.size.height, 1, line_color, egui_color_alpha_mix(self->alpha, 76));
     }
 }
 
@@ -773,10 +873,12 @@ static void egui_view_viewbox_on_draw(egui_view_t *self)
     egui_dim_t viewport_radius = local->compact_mode ? EGUI_VIEW_VIEWBOX_COMPACT_VIEWPORT_R : EGUI_VIEW_VIEWBOX_STANDARD_VIEWPORT_R;
     egui_dim_t source_width;
     egui_dim_t source_height;
+    egui_dim_t detail_h = viewbox_get_detail_height(local);
     char source_text[24];
     char scale_text[24];
     egui_region_t source_region;
     egui_region_t scale_region;
+    uint8_t show_viewport_detail = 0;
     uint8_t preset_count;
     uint8_t preset_index;
 
@@ -882,14 +984,22 @@ static void egui_view_viewbox_on_draw(egui_view_t *self)
                      (unsigned)(scale_info.scale_y_permille / 10));
         }
 
-        source_region = metrics.viewport_region;
-        source_region.location.x += local->compact_mode ? 4 : 6;
-        source_region.location.y += local->compact_mode ? 2 : 3;
-        source_region.size.height = local->compact_mode ? 7 : 8;
-        source_region.size.width -= local->compact_mode ? 8 : 12;
-        scale_region = source_region;
-        viewbox_draw_text(local->meta_font, self, source_text, &source_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_TOP, detail_text);
-        viewbox_draw_text(local->meta_font, self, scale_text, &scale_region, EGUI_ALIGN_RIGHT | EGUI_ALIGN_TOP, detail_text);
+        if (!viewbox_region_has_size(&scale_info.content_region) ||
+            scale_info.content_region.location.y > metrics.viewport_region.location.y + detail_h + (local->compact_mode ? 4 : 6))
+        {
+            show_viewport_detail = 1;
+        }
+        if (show_viewport_detail)
+        {
+            source_region = metrics.viewport_region;
+            source_region.location.x += local->compact_mode ? 4 : 6;
+            source_region.location.y += local->compact_mode ? 2 : 3;
+            source_region.size.height = detail_h;
+            source_region.size.width -= local->compact_mode ? 8 : 12;
+            scale_region = source_region;
+            viewbox_draw_text(local->meta_font, self, source_text, &source_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_TOP, detail_text);
+            viewbox_draw_text(local->meta_font, self, scale_text, &scale_region, EGUI_ALIGN_RIGHT | EGUI_ALIGN_TOP, detail_text);
+        }
     }
 
     preset_count = viewbox_get_preset_count(snapshot);
