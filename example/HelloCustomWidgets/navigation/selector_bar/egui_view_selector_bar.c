@@ -63,6 +63,43 @@ static egui_color_t egui_view_selector_bar_mix_disabled(egui_color_t color)
     return egui_rgb_mix(color, EGUI_COLOR_DARK_GREY, 64);
 }
 
+static const egui_font_t *egui_view_selector_bar_resolve_font(const egui_view_selector_bar_t *local)
+{
+    if (local == NULL || local->font == NULL)
+    {
+        return (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT;
+    }
+    return local->font;
+}
+
+static egui_dim_t egui_view_selector_bar_measure_font_line_height(const egui_font_t *font)
+{
+    egui_dim_t width = 0;
+    egui_dim_t height = 0;
+
+    if (font == NULL || font->api == NULL || font->api->get_str_size == NULL)
+    {
+        return 0;
+    }
+
+    font->api->get_str_size(font, "A", 0, 0, &width, &height);
+    return height;
+}
+
+static egui_dim_t egui_view_selector_bar_measure_text_width(const egui_font_t *font, const char *text)
+{
+    egui_dim_t width = 0;
+    egui_dim_t height = 0;
+
+    if (font == NULL || text == NULL || text[0] == '\0' || font->api == NULL || font->api->get_str_size == NULL)
+    {
+        return 0;
+    }
+
+    font->api->get_str_size(font, text, 0, 0, &width, &height);
+    return width;
+}
+
 static uint8_t egui_view_selector_bar_clear_pressed_state(egui_view_t *self)
 {
     EGUI_LOCAL_INIT(egui_view_selector_bar_t);
@@ -169,9 +206,11 @@ static void egui_view_selector_bar_copy_elided(char *buffer, uint8_t buffer_size
     buffer[copy_length + 3] = '\0';
 }
 
-static egui_dim_t egui_view_selector_bar_measure_item_width(uint8_t compact_mode, uint8_t has_icon, uint8_t is_active, const char *text)
+static egui_dim_t egui_view_selector_bar_measure_item_width(uint8_t compact_mode, const egui_font_t *font, uint8_t has_icon, uint8_t is_active,
+                                                            const char *text)
 {
     egui_dim_t width;
+    egui_dim_t text_width = egui_view_selector_bar_measure_text_width(font, text);
     uint8_t length = egui_view_selector_bar_text_len(text);
 
     if (length == 0 && has_icon)
@@ -184,8 +223,13 @@ static egui_dim_t egui_view_selector_bar_measure_item_width(uint8_t compact_mode
         return width;
     }
 
+    if (text_width <= 0 && length > 0)
+    {
+        text_width = (egui_dim_t)length * (compact_mode ? EGUI_VIEW_SELECTOR_BAR_COMPACT_CHAR_WIDTH : EGUI_VIEW_SELECTOR_BAR_STANDARD_CHAR_WIDTH);
+    }
+
     width = compact_mode ? EGUI_VIEW_SELECTOR_BAR_COMPACT_BASE_WIDTH : EGUI_VIEW_SELECTOR_BAR_STANDARD_BASE_WIDTH;
-    width += (egui_dim_t)length * (compact_mode ? EGUI_VIEW_SELECTOR_BAR_COMPACT_CHAR_WIDTH : EGUI_VIEW_SELECTOR_BAR_STANDARD_CHAR_WIDTH);
+    width += text_width;
     if (has_icon)
     {
         width += compact_mode ? EGUI_VIEW_SELECTOR_BAR_COMPACT_ICON_BONUS : EGUI_VIEW_SELECTOR_BAR_STANDARD_ICON_BONUS;
@@ -230,6 +274,7 @@ static uint8_t egui_view_selector_bar_prepare_layout(egui_view_selector_bar_t *l
 {
     egui_dim_t total_width = 0;
     egui_dim_t gap = egui_view_selector_bar_item_gap(local->compact_mode);
+    const egui_font_t *font = egui_view_selector_bar_resolve_font(local);
     uint8_t count = egui_view_selector_bar_clamp_count(local->item_count);
     uint8_t i;
 
@@ -247,7 +292,7 @@ static uint8_t egui_view_selector_bar_prepare_layout(egui_view_selector_bar_t *l
         uint8_t max_chars = local->compact_mode ? (has_icon ? (is_active ? 7 : 6) : (is_active ? 9 : 7)) : (has_icon ? (is_active ? 9 : 8) : (is_active ? 11 : 9));
 
         egui_view_selector_bar_copy_elided(items[i].label, sizeof(items[i].label), text, max_chars);
-        items[i].width = egui_view_selector_bar_measure_item_width(local->compact_mode, has_icon, is_active, items[i].label);
+        items[i].width = egui_view_selector_bar_measure_item_width(local->compact_mode, font, has_icon, is_active, items[i].label);
         total_width += items[i].width;
     }
 
@@ -307,12 +352,17 @@ static void egui_view_selector_bar_draw_item_content(egui_view_selector_bar_t *l
     if (has_icon && has_text)
     {
         egui_dim_t icon_height = local->compact_mode ? 15 : 18;
-        egui_dim_t label_height = local->compact_mode ? EGUI_VIEW_SELECTOR_BAR_COMPACT_LABEL_HEIGHT : EGUI_VIEW_SELECTOR_BAR_STANDARD_LABEL_HEIGHT;
+        egui_dim_t label_height = egui_view_selector_bar_measure_font_line_height(egui_view_selector_bar_resolve_font(local));
         egui_dim_t stack_gap = local->compact_mode ? EGUI_VIEW_SELECTOR_BAR_COMPACT_STACK_GAP : EGUI_VIEW_SELECTOR_BAR_STANDARD_STACK_GAP;
         egui_dim_t content_height;
         egui_dim_t content_y;
         egui_region_t icon_region;
         egui_region_t text_region;
+
+        if (label_height < (local->compact_mode ? EGUI_VIEW_SELECTOR_BAR_COMPACT_LABEL_HEIGHT : EGUI_VIEW_SELECTOR_BAR_STANDARD_LABEL_HEIGHT))
+        {
+            label_height = local->compact_mode ? EGUI_VIEW_SELECTOR_BAR_COMPACT_LABEL_HEIGHT : EGUI_VIEW_SELECTOR_BAR_STANDARD_LABEL_HEIGHT;
+        }
 
         if (label_height >= content_region.size.height)
         {
