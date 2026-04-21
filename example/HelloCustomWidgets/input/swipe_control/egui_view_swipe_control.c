@@ -52,6 +52,13 @@ static egui_dim_t swipe_control_measure_font_line_height(const egui_font_t *font
     return height;
 }
 
+static egui_dim_t swipe_control_resolve_line_height(const egui_font_t *font, egui_dim_t fallback)
+{
+    egui_dim_t line_height = swipe_control_measure_font_line_height(font);
+
+    return line_height > fallback ? line_height : fallback;
+}
+
 static void swipe_control_draw_round_fill_safe(egui_dim_t x, egui_dim_t y, egui_dim_t w, egui_dim_t h, egui_dim_t radius, egui_color_t color,
                                                egui_alpha_t alpha)
 {
@@ -427,6 +434,8 @@ static void swipe_control_draw_action(egui_view_t *self, egui_view_swipe_control
     egui_color_t border_color;
     egui_color_t text_color;
     egui_dim_t radius = local->compact_mode ? 9 : 10;
+    egui_dim_t label_h = swipe_control_resolve_line_height(local->font, 12);
+    egui_dim_t hint_h = swipe_control_resolve_line_height(local->meta_font, 10);
 
     if (action == NULL || region->size.width <= 0 || region->size.height <= 0)
     {
@@ -456,13 +465,13 @@ static void swipe_control_draw_action(egui_view_t *self, egui_view_swipe_control
     text_region.location.x = region->location.x + 4;
     text_region.location.y = region->location.y + (local->compact_mode ? 10 : 12);
     text_region.size.width = region->size.width - 8;
-    text_region.size.height = 12;
+    text_region.size.height = label_h;
     swipe_control_draw_text(local->font, self, action->label, &text_region, EGUI_ALIGN_CENTER, text_color);
 
     if (!local->compact_mode)
     {
-        text_region.location.y = region->location.y + region->size.height - 18;
-        text_region.size.height = 10;
+        text_region.location.y = region->location.y + region->size.height - hint_h - 8;
+        text_region.size.height = hint_h;
         swipe_control_draw_text(local->meta_font, self, action->hint, &text_region, EGUI_ALIGN_CENTER, egui_rgb_mix(text_color, EGUI_COLOR_HEX(0xFFFFFF), 24));
     }
 }
@@ -473,6 +482,7 @@ static void swipe_control_draw_state_pill(egui_view_t *self, egui_view_swipe_con
     const char *state_text = "Ready";
     egui_region_t region;
     egui_dim_t pill_w;
+    egui_dim_t pill_h = swipe_control_resolve_line_height(local->meta_font, local->compact_mode ? 11 : 12);
     egui_color_t fill_color;
 
     if (local->read_only_mode)
@@ -501,7 +511,7 @@ static void swipe_control_draw_state_pill(egui_view_t *self, egui_view_swipe_con
     region.location.x = surface_region->location.x + surface_region->size.width - pill_w - 10;
     region.location.y = surface_region->location.y + 10;
     region.size.width = pill_w;
-    region.size.height = local->compact_mode ? 11 : 12;
+    region.size.height = pill_h;
 
     fill_color = egui_rgb_mix(item->accent_color, local->surface_color, local->read_only_mode ? 42 : 18);
     swipe_control_draw_round_fill_safe(region.location.x, region.location.y, region.size.width, region.size.height, region.size.height / 2, fill_color,
@@ -523,6 +533,8 @@ static void swipe_control_draw_surface(egui_view_t *self, egui_view_swipe_contro
     egui_color_t body_color = local->read_only_mode ? egui_rgb_mix(local->muted_text_color, local->inactive_color, 26)
                                                     : egui_rgb_mix(local->text_color, local->muted_text_color, 28);
     egui_dim_t badge_w;
+    egui_dim_t badge_h = swipe_control_resolve_line_height(local->meta_font, local->compact_mode ? 11 : 12);
+    egui_dim_t footer_h = swipe_control_resolve_line_height(local->meta_font, 10);
 
     swipe_control_draw_round_fill_safe(metrics->surface_region.location.x + SWC_STD_SHADOW_X, metrics->surface_region.location.y + SWC_STD_SHADOW_Y,
                                        metrics->surface_region.size.width, metrics->surface_region.size.height, radius,
@@ -548,7 +560,7 @@ static void swipe_control_draw_surface(egui_view_t *self, egui_view_swipe_contro
     badge_region.location.x = metrics->surface_region.location.x + 26;
     badge_region.location.y = metrics->surface_region.location.y + 10;
     badge_region.size.width = badge_w;
-    badge_region.size.height = local->compact_mode ? 11 : 12;
+    badge_region.size.height = badge_h;
     swipe_control_draw_round_fill_safe(badge_region.location.x, badge_region.location.y, badge_region.size.width, badge_region.size.height,
                                        badge_region.size.height / 2, accent_color, egui_color_alpha_mix(self->alpha, local->read_only_mode ? 58 : 84));
     swipe_control_draw_text(local->meta_font, self, item->eyebrow, &badge_region, EGUI_ALIGN_CENTER, EGUI_COLOR_HEX(0xFFFFFF));
@@ -556,7 +568,7 @@ static void swipe_control_draw_surface(egui_view_t *self, egui_view_swipe_contro
     swipe_control_draw_state_pill(self, local, item, &metrics->surface_region);
 
     text_region.location.x = metrics->surface_region.location.x + 26;
-    text_region.location.y = metrics->surface_region.location.y + (local->compact_mode ? 29 : 33);
+    text_region.location.y = metrics->surface_region.location.y + 10 + badge_h + (local->compact_mode ? 8 : 11);
     text_region.size.width = metrics->surface_region.size.width - 36;
     text_region.size.height = local->compact_mode ? 13 : 15;
     swipe_control_draw_text(local->font, self, item->title, &text_region, EGUI_ALIGN_LEFT, title_color);
@@ -567,19 +579,19 @@ static void swipe_control_draw_surface(egui_view_t *self, egui_view_swipe_contro
         text_region.size.height = 22;
         swipe_control_draw_text(local->meta_font, self, item->description, &text_region, EGUI_ALIGN_LEFT, body_color);
 
-        egui_canvas_draw_line(&uicode_get_core()->canvas, metrics->surface_region.location.x + 12, metrics->surface_region.location.y + metrics->surface_region.size.height - 28,
+        egui_canvas_draw_line(&uicode_get_core()->canvas, metrics->surface_region.location.x + 12, metrics->surface_region.location.y + metrics->surface_region.size.height - footer_h - 18,
                               metrics->surface_region.location.x + metrics->surface_region.size.width - 12,
-                              metrics->surface_region.location.y + metrics->surface_region.size.height - 28, 1,
+                              metrics->surface_region.location.y + metrics->surface_region.size.height - footer_h - 18, 1,
                               egui_rgb_mix(accent_color, local->surface_color, 34), egui_color_alpha_mix(self->alpha, 62));
 
-        text_region.location.y = metrics->surface_region.location.y + metrics->surface_region.size.height - 20;
-        text_region.size.height = 10;
+        text_region.location.y = metrics->surface_region.location.y + metrics->surface_region.size.height - footer_h - 10;
+        text_region.size.height = footer_h;
         swipe_control_draw_text(local->meta_font, self, item->footer, &text_region, EGUI_ALIGN_LEFT, egui_rgb_mix(body_color, accent_color, 20));
     }
     else
     {
-        text_region.location.y = metrics->surface_region.location.y + metrics->surface_region.size.height - 16;
-        text_region.size.height = 10;
+        text_region.location.y = metrics->surface_region.location.y + metrics->surface_region.size.height - footer_h - 6;
+        text_region.size.height = footer_h;
         swipe_control_draw_text(local->meta_font, self, item->footer, &text_region, EGUI_ALIGN_LEFT, egui_rgb_mix(body_color, accent_color, 22));
     }
 }
