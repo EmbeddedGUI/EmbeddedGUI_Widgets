@@ -80,23 +80,6 @@ static const egui_view_teaching_tip_snapshot_t *egui_view_teaching_tip_get_snaps
     return &local->snapshots[local->current_snapshot];
 }
 
-static uint8_t egui_view_teaching_tip_text_len(const char *text)
-{
-    uint8_t length = 0;
-
-    if (text == NULL)
-    {
-        return 0;
-    }
-
-    while (text[length] != '\0')
-    {
-        length++;
-    }
-
-    return length;
-}
-
 static uint8_t egui_view_teaching_tip_has_text(const char *text)
 {
     return (text != NULL && text[0] != '\0') ? 1 : 0;
@@ -114,6 +97,20 @@ static egui_dim_t egui_view_teaching_tip_measure_font_line_height(const egui_fon
 
     font->api->get_str_size(font, "A", 0, 0, &dummy_width, &line_height);
     return line_height;
+}
+
+static egui_dim_t egui_view_teaching_tip_measure_text_width(const egui_font_t *font, const char *text)
+{
+    egui_dim_t text_width = 0;
+    egui_dim_t dummy_height = 0;
+
+    if (!egui_view_teaching_tip_has_text(text) || font == NULL || font->api == NULL || font->api->get_str_size == NULL)
+    {
+        return 0;
+    }
+
+    font->api->get_str_size(font, text, 0, 0, &text_width, &dummy_height);
+    return text_width;
 }
 
 static egui_dim_t egui_view_teaching_tip_meta_height(egui_view_teaching_tip_t *local, egui_dim_t fallback)
@@ -500,6 +497,10 @@ static void egui_view_teaching_tip_get_metrics(egui_view_teaching_tip_t *local, 
     egui_dim_t footer_h = egui_view_teaching_tip_meta_height(local, 8);
     egui_dim_t closed_title_h = egui_view_teaching_tip_title_height(local, 0);
     egui_dim_t closed_body_h = egui_view_teaching_tip_meta_height(local, 9);
+    egui_dim_t target_text_w = egui_view_teaching_tip_measure_text_width(local->font, snapshot == NULL ? NULL : snapshot->target_label);
+    egui_dim_t primary_text_w = egui_view_teaching_tip_measure_text_width(local->meta_font, snapshot == NULL ? NULL : snapshot->primary_action);
+    egui_dim_t secondary_text_w = egui_view_teaching_tip_measure_text_width(local->meta_font, snapshot == NULL ? NULL : snapshot->secondary_action);
+    egui_dim_t title_text_w = egui_view_teaching_tip_measure_text_width(local->font, snapshot == NULL ? NULL : snapshot->title);
 
     egui_view_get_work_region(self, &region);
     metrics->content_region.location.x = region.location.x + pad_x;
@@ -525,8 +526,7 @@ static void egui_view_teaching_tip_get_metrics(egui_view_teaching_tip_t *local, 
         metrics->show_body = 0;
     }
 
-    target_w =
-            (local->compact_mode ? 46 : 50) + egui_view_teaching_tip_text_len(snapshot == NULL ? NULL : snapshot->target_label) * (local->compact_mode ? 4 : 5);
+    target_w = (local->compact_mode ? 46 : 50) + target_text_w;
     if (target_w > metrics->content_region.size.width - 12)
     {
         target_w = metrics->content_region.size.width - 12;
@@ -680,10 +680,12 @@ static void egui_view_teaching_tip_get_metrics(egui_view_teaching_tip_t *local, 
     if (local->compact_mode)
     {
         title_h = egui_view_teaching_tip_title_height(local, metrics->show_primary);
-        title_y = metrics->bubble_region.location.y + inner_pad_y + 1;
+        title_y = metrics->bubble_region.location.y + inner_pad_y;
         if (metrics->show_primary)
         {
-            compact_button_w = 18 + egui_view_teaching_tip_text_len(snapshot == NULL ? NULL : snapshot->primary_action) * 4;
+            egui_dim_t inline_title_w;
+
+            compact_button_w = 18 + primary_text_w;
             if (compact_button_w < 30)
             {
                 compact_button_w = 30;
@@ -704,8 +706,15 @@ static void egui_view_teaching_tip_get_metrics(egui_view_teaching_tip_t *local, 
 
             metrics->title_region.location.x = metrics->bubble_region.location.x + inner_pad_x;
             metrics->title_region.location.y = title_y;
-            metrics->title_region.size.width = metrics->primary_region.location.x - metrics->title_region.location.x - action_gap;
+            inline_title_w = metrics->primary_region.location.x - metrics->title_region.location.x - action_gap;
+            metrics->title_region.size.width = inline_title_w;
             metrics->title_region.size.height = title_h;
+
+            if (title_text_w + 2 > inline_title_w)
+            {
+                metrics->title_region.size.width = bubble_inner_w;
+                metrics->primary_region.location.y = metrics->bubble_region.location.y + metrics->bubble_region.size.height - action_h - inner_pad_y;
+            }
 
             metrics->body_region.location.x = metrics->title_region.location.x;
             metrics->body_region.location.y = metrics->title_region.location.y;
@@ -742,7 +751,7 @@ static void egui_view_teaching_tip_get_metrics(egui_view_teaching_tip_t *local, 
         egui_dim_t min_secondary_w = 42;
         egui_dim_t max_secondary_w = bubble_inner_w - action_gap - min_primary_w;
 
-        button_w = 24 + egui_view_teaching_tip_text_len(snapshot == NULL ? NULL : snapshot->secondary_action) * 5;
+        button_w = 24 + secondary_text_w;
         if (button_w < min_secondary_w)
         {
             button_w = min_secondary_w;
