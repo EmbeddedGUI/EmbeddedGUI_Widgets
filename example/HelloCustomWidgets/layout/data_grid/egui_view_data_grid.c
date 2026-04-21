@@ -114,6 +114,20 @@ static egui_dim_t egui_view_data_grid_resolve_line_height(const egui_font_t *fon
     return line_height > fallback ? line_height : fallback;
 }
 
+static egui_dim_t egui_view_data_grid_measure_text_width(const egui_font_t *font, const char *text)
+{
+    egui_dim_t width = 0;
+    egui_dim_t height = 0;
+
+    if (text == NULL || text[0] == '\0' || font == NULL || font->api == NULL || font->api->get_str_size == NULL)
+    {
+        return 0;
+    }
+
+    font->api->get_str_size(font, text, 0, 0, &width, &height);
+    return width;
+}
+
 static egui_color_t egui_view_data_grid_mix_disabled(egui_color_t color)
 {
     return egui_rgb_mix(color, EGUI_COLOR_DARK_GREY, 68);
@@ -218,13 +232,18 @@ static uint8_t egui_view_data_grid_row_is_interactive(egui_view_data_grid_t *loc
     return egui_view_data_grid_row_exists(snapshot, row_index);
 }
 
-static egui_dim_t egui_view_data_grid_pill_width(const char *text, uint8_t compact_mode, egui_dim_t min_width, egui_dim_t max_width)
+static egui_dim_t egui_view_data_grid_pill_width(const egui_font_t *font, const char *text, uint8_t compact_mode, egui_dim_t min_width,
+                                                 egui_dim_t max_width)
 {
     egui_dim_t width = min_width;
 
     if (egui_view_data_grid_has_text(text))
     {
-        width += egui_view_data_grid_text_len(text) * (compact_mode ? 4 : 5);
+        width += egui_view_data_grid_measure_text_width(font, text);
+        if (width <= min_width)
+        {
+            width = min_width + egui_view_data_grid_text_len(text) * (compact_mode ? 4 : 5);
+        }
     }
     if (width > max_width)
     {
@@ -425,7 +444,7 @@ static void egui_view_data_grid_get_metrics(egui_view_data_grid_t *local, egui_v
         metrics->badge_region.location.x = inner_x;
         metrics->badge_region.location.y = start_y + (badge_slot_h - badge_h) / 2;
         metrics->badge_region.size.width =
-                egui_view_data_grid_pill_width(snapshot->header, local->compact_mode, local->compact_mode ? 24 : 30, inner_w / 2);
+                egui_view_data_grid_pill_width(local->meta_font, snapshot->header, local->compact_mode, local->compact_mode ? 24 : 30, inner_w / 2);
         metrics->badge_region.size.height = badge_h;
         start_y += badge_slot_h + badge_gap;
     }
