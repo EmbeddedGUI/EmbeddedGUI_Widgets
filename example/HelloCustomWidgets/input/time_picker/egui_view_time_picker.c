@@ -97,6 +97,20 @@ static egui_color_t time_picker_mix_disabled(egui_color_t color)
     return egui_rgb_mix(color, EGUI_COLOR_DARK_GREY, 68);
 }
 
+static egui_dim_t time_picker_measure_font_line_height(const egui_font_t *font)
+{
+    egui_dim_t width = 0;
+    egui_dim_t height = 0;
+
+    if (font == NULL || font->api == NULL || font->api->get_str_size == NULL)
+    {
+        return 0;
+    }
+
+    font->api->get_str_size(font, "A", 0, 0, &width, &height);
+    return height;
+}
+
 static uint8_t time_picker_clear_pressed_state(egui_view_t *self, egui_view_time_picker_t *local)
 {
     uint8_t was_pressed = self->is_pressed ? 1 : 0;
@@ -592,7 +606,22 @@ static void time_picker_get_metrics(egui_view_time_picker_t *local, egui_view_t 
     egui_dim_t column_gap = 6;
     egui_dim_t column_w;
     egui_dim_t column_h;
+    egui_dim_t font_line_height = time_picker_measure_font_line_height(local->font);
+    egui_dim_t meta_line_height = time_picker_measure_font_line_height(local->meta_font);
     uint8_t i;
+
+    if (meta_line_height > label_h)
+    {
+        label_h = meta_line_height;
+    }
+    if (meta_line_height > helper_h)
+    {
+        helper_h = meta_line_height;
+    }
+    if (font_line_height > 0 && font_line_height * 3 + 12 > panel_h)
+    {
+        panel_h = font_line_height * 3 + 12;
+    }
 
     egui_view_get_work_region(self, &region);
     metrics->content_region.location.x = region.location.x + pad_x;
