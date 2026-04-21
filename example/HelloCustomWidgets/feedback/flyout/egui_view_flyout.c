@@ -103,6 +103,35 @@ static uint8_t egui_view_flyout_has_text(const char *text)
     return (text != NULL && text[0] != '\0') ? 1 : 0;
 }
 
+static egui_dim_t egui_view_flyout_measure_font_line_height(const egui_font_t *font)
+{
+    egui_dim_t dummy_width = 0;
+    egui_dim_t line_height = 0;
+
+    if (font == NULL || font->api == NULL || font->api->get_str_size == NULL)
+    {
+        return 0;
+    }
+
+    font->api->get_str_size(font, "A", 0, 0, &dummy_width, &line_height);
+    return line_height;
+}
+
+static egui_dim_t egui_view_flyout_meta_height(egui_view_flyout_t *local, egui_dim_t fallback)
+{
+    egui_dim_t line_height = egui_view_flyout_measure_font_line_height(local->meta_font);
+
+    return line_height > fallback ? line_height : fallback;
+}
+
+static egui_dim_t egui_view_flyout_title_height(egui_view_flyout_t *local)
+{
+    egui_dim_t fallback = local->compact_mode ? 10 : 11;
+    egui_dim_t line_height = egui_view_flyout_measure_font_line_height(local->font);
+
+    return line_height > fallback ? line_height : fallback;
+}
+
 static egui_color_t egui_view_flyout_mix_disabled(egui_color_t color)
 {
     return egui_rgb_mix(color, EGUI_COLOR_DARK_GREY, 68);
@@ -326,6 +355,9 @@ static void egui_view_flyout_get_metrics(egui_view_flyout_t *local, egui_view_t 
     egui_dim_t footer_y;
     egui_dim_t body_y;
     egui_dim_t body_bottom;
+    egui_dim_t hint_h = egui_view_flyout_meta_height(local, 8);
+    egui_dim_t title_h = egui_view_flyout_title_height(local);
+    egui_dim_t footer_h = egui_view_flyout_meta_height(local, 8);
 
     egui_view_get_work_region(self, &metrics->region);
     metrics->content_region = metrics->region;
@@ -446,24 +478,24 @@ static void egui_view_flyout_get_metrics(egui_view_flyout_t *local, egui_view_t 
     metrics->hint_region.location.x = metrics->bubble_region.location.x + inner_pad_x;
     metrics->hint_region.location.y = metrics->bubble_region.location.y + inner_pad_y;
     metrics->hint_region.size.width = bubble_inner_w;
-    metrics->hint_region.size.height = metrics->show_hint ? (local->compact_mode ? 0 : 8) : 0;
+    metrics->hint_region.size.height = metrics->show_hint ? (local->compact_mode ? 0 : hint_h) : 0;
 
     if (local->compact_mode)
     {
-        title_y = metrics->bubble_region.location.y + inner_pad_y + 2;
+        title_y = metrics->bubble_region.location.y + inner_pad_y + 1;
         metrics->title_region.location.x = metrics->bubble_region.location.x + inner_pad_x;
         metrics->title_region.location.y = title_y;
         metrics->title_region.size.width = bubble_inner_w;
-        metrics->title_region.size.height = 10;
+        metrics->title_region.size.height = title_h;
         actions_y = metrics->bubble_region.location.y + metrics->bubble_region.size.height - inner_pad_y - action_h;
     }
     else
     {
-        title_y = metrics->bubble_region.location.y + inner_pad_y + (metrics->show_hint ? 10 : 2);
+        title_y = metrics->bubble_region.location.y + inner_pad_y + (metrics->show_hint ? (hint_h + 2) : 2);
         metrics->title_region.location.x = metrics->bubble_region.location.x + inner_pad_x;
         metrics->title_region.location.y = title_y;
         metrics->title_region.size.width = bubble_inner_w;
-        metrics->title_region.size.height = 11;
+        metrics->title_region.size.height = title_h;
         actions_y = metrics->bubble_region.location.y + metrics->bubble_region.size.height - inner_pad_y - action_h;
     }
 
@@ -511,15 +543,15 @@ static void egui_view_flyout_get_metrics(egui_view_flyout_t *local, egui_view_t 
 
     if (metrics->show_footer)
     {
-        footer_y = actions_y - 12;
+        footer_y = actions_y - footer_h - 3;
         metrics->footer_region.location.x = metrics->bubble_region.location.x + inner_pad_x;
         metrics->footer_region.location.y = footer_y;
         metrics->footer_region.size.width = bubble_inner_w;
-        metrics->footer_region.size.height = 8;
+        metrics->footer_region.size.height = footer_h;
     }
 
-    body_y = metrics->title_region.location.y + metrics->title_region.size.height + 5;
-    body_bottom = metrics->show_footer ? metrics->footer_region.location.y - 4 : actions_y - 6;
+    body_y = metrics->title_region.location.y + metrics->title_region.size.height + 2;
+    body_bottom = metrics->show_footer ? metrics->footer_region.location.y - 2 : actions_y - 3;
     if (body_bottom < body_y)
     {
         body_bottom = body_y;
