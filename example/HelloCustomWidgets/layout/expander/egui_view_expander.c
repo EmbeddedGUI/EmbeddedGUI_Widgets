@@ -76,6 +76,20 @@ static egui_dim_t expander_measure_font_line_height(const egui_font_t *font)
     return line_height;
 }
 
+static egui_dim_t expander_measure_text_width(const egui_font_t *font, const char *text)
+{
+    egui_dim_t text_width = 0;
+    egui_dim_t dummy_height = 0;
+
+    if (text == NULL || text[0] == '\0' || font == NULL || font->api == NULL || font->api->get_str_size == NULL)
+    {
+        return 0;
+    }
+
+    font->api->get_str_size(font, text, 0, 0, &text_width, &dummy_height);
+    return text_width;
+}
+
 static egui_dim_t expander_get_title_line_height(egui_view_expander_t *local)
 {
     egui_dim_t line_height = expander_measure_font_line_height(local->font);
@@ -198,7 +212,7 @@ static const egui_view_expander_item_t *expander_get_current_item(egui_view_expa
     return &local->items[local->current_index];
 }
 
-static egui_dim_t expander_meta_width(const char *text, uint8_t compact_mode, egui_dim_t max_width)
+static egui_dim_t expander_meta_width(const egui_font_t *font, const char *text, uint8_t compact_mode, egui_dim_t max_width)
 {
     egui_dim_t width;
     egui_dim_t min_width = compact_mode ? 16 : 22;
@@ -208,7 +222,11 @@ static egui_dim_t expander_meta_width(const char *text, uint8_t compact_mode, eg
         return 0;
     }
 
-    width = min_width + expander_text_len(text) * (compact_mode ? 4 : 5);
+    width = min_width + expander_measure_text_width(font, text);
+    if (width <= min_width)
+    {
+        width = min_width + expander_text_len(text) * (compact_mode ? 4 : 5);
+    }
     if (width > max_width)
     {
         width = max_width;
@@ -216,13 +234,17 @@ static egui_dim_t expander_meta_width(const char *text, uint8_t compact_mode, eg
     return width;
 }
 
-static egui_dim_t expander_pill_width(const char *text, uint8_t compact_mode, egui_dim_t min_width, egui_dim_t max_width)
+static egui_dim_t expander_pill_width(const egui_font_t *font, const char *text, uint8_t compact_mode, egui_dim_t min_width, egui_dim_t max_width)
 {
     egui_dim_t width = min_width;
 
     if (text != NULL && text[0] != '\0')
     {
-        width += expander_text_len(text) * (compact_mode ? 4 : 5);
+        width += expander_measure_text_width(font, text);
+        if (width <= min_width)
+        {
+            width += expander_text_len(text) * (compact_mode ? 4 : 5);
+        }
     }
     if (width > max_width)
     {
@@ -575,10 +597,18 @@ static void expander_draw_header(egui_view_t *self, egui_view_expander_t *local,
     egui_dim_t glyph_w = local->compact_mode ? EGUI_VIEW_EXPANDER_COMPACT_GLYPH_W : EGUI_VIEW_EXPANDER_STANDARD_GLYPH_W;
     egui_dim_t glyph_h = local->compact_mode ? EGUI_VIEW_EXPANDER_COMPACT_GLYPH_H : EGUI_VIEW_EXPANDER_STANDARD_GLYPH_H;
     egui_dim_t meta_h = expander_get_meta_height(local);
-    egui_dim_t meta_w = expander_meta_width(item->meta, local->compact_mode, region->size.width / 3);
     egui_dim_t inset = local->compact_mode ? 5 : 7;
     egui_dim_t title_x = region->location.x + inset + glyph_w + 6;
-    egui_dim_t meta_x = region->location.x + region->size.width - inset - meta_w;
+    egui_dim_t meta_max_w = region->size.width - (title_x - region->location.x) - inset - (local->compact_mode ? 18 : 34);
+    egui_dim_t meta_w;
+    egui_dim_t meta_x;
+
+    if (meta_max_w < (local->compact_mode ? 16 : 22))
+    {
+        meta_max_w = local->compact_mode ? 16 : 22;
+    }
+    meta_w = expander_meta_width(local->meta_font, item->meta, local->compact_mode, meta_max_w);
+    meta_x = region->location.x + region->size.width - inset - meta_w;
 
     if (pressed)
     {
@@ -666,7 +696,7 @@ static void expander_draw_body(egui_view_t *self, egui_view_expander_t *local, c
     egui_dim_t inner_y = region->location.y + (local->compact_mode ? 4 : 5);
     egui_dim_t inner_w = region->size.width - (local->compact_mode ? 10 : 14);
     egui_dim_t footer_y = region->location.y + region->size.height - footer_h - (local->compact_mode ? 4 : 5);
-    egui_dim_t eyebrow_w = expander_pill_width(item->eyebrow, local->compact_mode, local->compact_mode ? 16 : 20, inner_w / 2);
+    egui_dim_t eyebrow_w = expander_pill_width(local->meta_font, item->eyebrow, local->compact_mode, local->compact_mode ? 16 : 20, inner_w);
     egui_dim_t radius = local->compact_mode ? EGUI_VIEW_EXPANDER_COMPACT_BODY_RADIUS : EGUI_VIEW_EXPANDER_STANDARD_BODY_RADIUS;
 
     if (local->read_only_mode)
