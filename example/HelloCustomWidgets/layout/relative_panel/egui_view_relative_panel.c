@@ -74,19 +74,155 @@ static uint8_t relative_panel_has_text(const char *text)
     return text != NULL && text[0] != '\0' ? 1 : 0;
 }
 
-static uint8_t relative_panel_text_len(const char *text)
+static egui_dim_t relative_panel_measure_font_line_height(const egui_font_t *font)
 {
-    uint8_t length = 0;
+    egui_dim_t dummy_width = 0;
+    egui_dim_t line_height = 0;
 
-    if (text == NULL)
+    if (font == NULL || font->api == NULL || font->api->get_str_size == NULL)
     {
         return 0;
     }
-    while (text[length] != '\0')
+
+    font->api->get_str_size(font, "A", 0, 0, &dummy_width, &line_height);
+    return line_height;
+}
+
+static egui_dim_t relative_panel_measure_text_width(const egui_font_t *font, const char *text)
+{
+    egui_dim_t text_width = 0;
+    egui_dim_t dummy_height = 0;
+
+    if (!relative_panel_has_text(text) || font == NULL || font->api == NULL || font->api->get_str_size == NULL)
     {
-        length++;
+        return 0;
     }
-    return length;
+
+    font->api->get_str_size(font, text, 0, 0, &text_width, &dummy_height);
+    return text_width;
+}
+
+static egui_dim_t relative_panel_get_badge_height(egui_view_relative_panel_t *local)
+{
+    egui_dim_t badge_h = relative_panel_measure_font_line_height(local->meta_font);
+    egui_dim_t min_h = local->compact_mode ? RP_COMPACT_BADGE_H : RP_STANDARD_BADGE_H;
+
+    return badge_h > min_h ? badge_h : min_h;
+}
+
+static egui_dim_t relative_panel_get_rule_height(egui_view_relative_panel_t *local)
+{
+    egui_dim_t rule_h = relative_panel_measure_font_line_height(local->meta_font);
+    egui_dim_t min_h = local->compact_mode ? RP_COMPACT_RULE_H : RP_STANDARD_RULE_H;
+
+    return rule_h > min_h ? rule_h : min_h;
+}
+
+static egui_dim_t relative_panel_get_title_height(egui_view_relative_panel_t *local)
+{
+    egui_dim_t title_h = relative_panel_measure_font_line_height(local->font);
+    egui_dim_t min_h = local->compact_mode ? RP_COMPACT_TITLE_H : RP_STANDARD_TITLE_H;
+
+    return title_h > min_h ? title_h : min_h;
+}
+
+static egui_dim_t relative_panel_get_summary_height(egui_view_relative_panel_t *local)
+{
+    egui_dim_t summary_h;
+
+    if (local->compact_mode)
+    {
+        return 0;
+    }
+
+    summary_h = relative_panel_measure_font_line_height(local->meta_font);
+    return summary_h > RP_STANDARD_SUMMARY_H ? summary_h : RP_STANDARD_SUMMARY_H;
+}
+
+static egui_dim_t relative_panel_get_footer_height(egui_view_relative_panel_t *local)
+{
+    egui_dim_t footer_h;
+
+    if (local->compact_mode)
+    {
+        return 0;
+    }
+
+    footer_h = relative_panel_measure_font_line_height(local->meta_font);
+    return footer_h > RP_STANDARD_FOOTER_H ? footer_h : RP_STANDARD_FOOTER_H;
+}
+
+static egui_dim_t relative_panel_get_item_min_width(egui_view_relative_panel_t *local, const egui_view_relative_panel_item_t *item)
+{
+    egui_dim_t min_w = local->compact_mode ? 20 : 26;
+    egui_dim_t content_w = 0;
+    egui_dim_t title_w;
+    egui_dim_t meta_w;
+    egui_dim_t badge_w;
+
+    if (item == NULL)
+    {
+        return min_w;
+    }
+
+    title_w = relative_panel_measure_text_width(local->font, item->title);
+    meta_w = relative_panel_measure_text_width(local->meta_font, item->meta);
+    badge_w = relative_panel_has_text(item->badge) ?
+                      relative_panel_measure_text_width(local->meta_font, item->badge) + (local->compact_mode ? 16 : 18) :
+                      0;
+
+    if (title_w > content_w)
+    {
+        content_w = title_w;
+    }
+    if (meta_w > content_w)
+    {
+        content_w = meta_w;
+    }
+    if (badge_w > content_w)
+    {
+        content_w = badge_w;
+    }
+
+    content_w += local->compact_mode ? 10 : 14;
+    return content_w > min_w ? content_w : min_w;
+}
+
+static egui_dim_t relative_panel_get_item_min_height(egui_view_relative_panel_t *local, const egui_view_relative_panel_item_t *item)
+{
+    egui_dim_t min_h = local->compact_mode ? 14 : 20;
+    egui_dim_t content_h = 0;
+    egui_dim_t top_pad = local->compact_mode ? 4 : 5;
+    egui_dim_t bottom_pad = local->compact_mode ? 4 : 5;
+
+    if (item == NULL)
+    {
+        return min_h;
+    }
+
+    if (relative_panel_has_text(item->badge))
+    {
+        content_h = relative_panel_get_badge_height(local);
+    }
+    if (relative_panel_has_text(item->title))
+    {
+        if (content_h > 0)
+        {
+            content_h += local->compact_mode ? 2 : 3;
+        }
+        content_h += relative_panel_get_title_height(local);
+    }
+    if (relative_panel_has_text(item->meta))
+    {
+        if (content_h > 0)
+        {
+            content_h += 1;
+        }
+        content_h += relative_panel_get_badge_height(local);
+    }
+
+    content_h += top_pad + bottom_pad;
+    return content_h > min_h ? content_h : min_h;
 }
 
 static uint8_t relative_panel_clamp_snapshot_count(uint8_t count)
@@ -104,13 +240,19 @@ static egui_color_t relative_panel_mix_disabled(egui_color_t color)
     return egui_rgb_mix(color, EGUI_COLOR_DARK_GREY, 68);
 }
 
-static egui_dim_t relative_panel_pill_width(const char *text, uint8_t compact_mode, egui_dim_t min_width, egui_dim_t max_width)
+static egui_dim_t relative_panel_pill_width(const egui_font_t *font, const char *text, uint8_t compact_mode, egui_dim_t min_width, egui_dim_t max_width)
 {
     egui_dim_t width = min_width;
 
+    (void)compact_mode;
+    if (max_width <= 0)
+    {
+        return 0;
+    }
+
     if (relative_panel_has_text(text))
     {
-        width += relative_panel_text_len(text) * (compact_mode ? 4 : 5);
+        width += relative_panel_measure_text_width(font, text);
     }
     if (width > max_width)
     {
@@ -265,15 +407,15 @@ static void relative_panel_get_metrics(egui_view_relative_panel_t *local, egui_v
     egui_dim_t outer_pad_y = local->compact_mode ? RP_COMPACT_OUTER_PAD_Y : RP_STANDARD_OUTER_PAD_Y;
     egui_dim_t inner_pad_x = local->compact_mode ? RP_COMPACT_INNER_PAD_X : RP_STANDARD_INNER_PAD_X;
     egui_dim_t inner_pad_y = local->compact_mode ? RP_COMPACT_INNER_PAD_Y : RP_STANDARD_INNER_PAD_Y;
-    egui_dim_t badge_h = local->compact_mode ? RP_COMPACT_BADGE_H : RP_STANDARD_BADGE_H;
+    egui_dim_t badge_h = relative_panel_get_badge_height(local);
     egui_dim_t badge_gap = local->compact_mode ? RP_COMPACT_BADGE_GAP : RP_STANDARD_BADGE_GAP;
-    egui_dim_t rule_h = local->compact_mode ? RP_COMPACT_RULE_H : RP_STANDARD_RULE_H;
-    egui_dim_t title_h = local->compact_mode ? RP_COMPACT_TITLE_H : RP_STANDARD_TITLE_H;
+    egui_dim_t rule_h = relative_panel_get_rule_height(local);
+    egui_dim_t title_h = relative_panel_get_title_height(local);
     egui_dim_t title_gap = local->compact_mode ? RP_COMPACT_TITLE_GAP : RP_STANDARD_TITLE_GAP;
-    egui_dim_t summary_h = local->compact_mode ? RP_COMPACT_SUMMARY_H : RP_STANDARD_SUMMARY_H;
+    egui_dim_t summary_h = relative_panel_get_summary_height(local);
     egui_dim_t board_gap = local->compact_mode ? RP_COMPACT_BOARD_GAP : RP_STANDARD_BOARD_GAP;
     egui_dim_t board_pad = local->compact_mode ? RP_COMPACT_BOARD_PAD : RP_STANDARD_BOARD_PAD;
-    egui_dim_t footer_h = local->compact_mode ? RP_COMPACT_FOOTER_H : RP_STANDARD_FOOTER_H;
+    egui_dim_t footer_h = relative_panel_get_footer_height(local);
     egui_dim_t inner_x;
     egui_dim_t inner_y;
     egui_dim_t inner_w;
@@ -321,14 +463,14 @@ static void relative_panel_get_metrics(egui_view_relative_panel_t *local, egui_v
     {
         metrics->badge_region.location.x = inner_x;
         metrics->badge_region.location.y = inner_y;
-        metrics->badge_region.size.width = relative_panel_pill_width(snapshot->header, local->compact_mode, local->compact_mode ? 18 : 24, inner_w / 2);
+        metrics->badge_region.size.width = relative_panel_pill_width(local->meta_font, snapshot->header, local->compact_mode, local->compact_mode ? 18 : 24, inner_w / 2);
         metrics->badge_region.size.height = badge_h;
         top_row_h = badge_h;
     }
 
     if (relative_panel_has_text(relative_panel_current_rule_text(local)))
     {
-        metrics->rule_region.size.width = relative_panel_pill_width(relative_panel_current_rule_text(local), local->compact_mode, local->compact_mode ? 22 : 28,
+        metrics->rule_region.size.width = relative_panel_pill_width(local->meta_font, relative_panel_current_rule_text(local), local->compact_mode, local->compact_mode ? 22 : 28,
                                                                     inner_w - 12);
         metrics->rule_region.size.height = rule_h;
         metrics->rule_region.location.x = inner_x + inner_w - metrics->rule_region.size.width;
@@ -398,8 +540,8 @@ static void relative_panel_get_metrics(egui_view_relative_panel_t *local, egui_v
     {
         const egui_view_relative_panel_item_t *item = relative_panel_get_item(snapshot, item_index);
         egui_region_t *region = &metrics->item_regions[item_index];
-        egui_dim_t min_w = local->compact_mode ? 20 : 26;
-        egui_dim_t min_h = local->compact_mode ? 14 : 20;
+        egui_dim_t min_w = relative_panel_get_item_min_width(local, item);
+        egui_dim_t min_h = relative_panel_get_item_min_height(local, item);
 
         if (item == NULL)
         {
@@ -614,6 +756,14 @@ static void relative_panel_draw_item(egui_view_t *self, egui_view_relative_panel
     uint8_t active_item = local->current_item == item_index ? 1 : 0;
     uint8_t pressed_item = local->pressed_item == item_index && self->is_pressed ? 1 : 0;
     egui_dim_t radius = local->compact_mode ? 5 : 7;
+    egui_dim_t pad_x = local->compact_mode ? 5 : 7;
+    egui_dim_t top_pad = local->compact_mode ? 4 : 5;
+    egui_dim_t bottom_pad = local->compact_mode ? 4 : 5;
+    egui_dim_t badge_h = relative_panel_get_badge_height(local);
+    egui_dim_t title_h = relative_panel_get_title_height(local);
+    egui_dim_t meta_h = relative_panel_get_badge_height(local);
+    egui_dim_t badge_gap = local->compact_mode ? 2 : 3;
+    egui_dim_t cursor_y = region->location.y + top_pad;
 
     if (pressed_item)
     {
@@ -642,28 +792,38 @@ static void relative_panel_draw_item(egui_view_t *self, egui_view_relative_panel
     egui_canvas_draw_rectangle_fill(&uicode_get_core()->canvas, region->location.x + 2, region->location.y + 2, local->compact_mode ? 2 : 3, region->size.height - 4, accent_color,
                                     egui_color_alpha_mix(self->alpha, item->emphasized ? 88 : 64));
 
-    badge_region.location.x = region->location.x + 7;
-    badge_region.location.y = region->location.y + 5;
-    badge_region.size.width = relative_panel_pill_width(item->badge, local->compact_mode, local->compact_mode ? 16 : 18,
-                                                        region->size.width - 16);
-    badge_region.size.height = local->compact_mode ? 7 : 8;
-    if (relative_panel_has_text(item->badge) && badge_region.size.width > 0)
+    relative_panel_reset_region(&badge_region);
+    if (relative_panel_has_text(item->badge))
     {
+        badge_region.location.x = region->location.x + pad_x;
+        badge_region.location.y = cursor_y;
+        badge_region.size.width =
+                relative_panel_pill_width(local->meta_font, item->badge, local->compact_mode, local->compact_mode ? 16 : 18, region->size.width - pad_x * 2);
+        badge_region.size.height = badge_h;
         egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, badge_region.location.x, badge_region.location.y, badge_region.size.width, badge_region.size.height,
                                               badge_region.size.height / 2, egui_rgb_mix(accent_color, EGUI_COLOR_WHITE, 12),
                                               egui_color_alpha_mix(self->alpha, 94));
         relative_panel_draw_text(local->meta_font, self, item->badge, &badge_region, EGUI_ALIGN_CENTER, EGUI_COLOR_HEX(0xFFFFFF));
+        cursor_y += badge_h + badge_gap;
     }
 
-    title_region.location.x = region->location.x + 7;
-    title_region.location.y = region->location.y + (local->compact_mode ? 16 : 18);
-    title_region.size.width = region->size.width - 14;
-    title_region.size.height = local->compact_mode ? 9 : 10;
+    title_region.location.x = region->location.x + pad_x;
+    title_region.location.y = cursor_y;
+    title_region.size.width = region->size.width - pad_x * 2;
+    title_region.size.height = title_h;
 
-    meta_region.location.x = region->location.x + 7;
-    meta_region.location.y = region->location.y + region->size.height - (local->compact_mode ? 13 : 15);
-    meta_region.size.width = region->size.width - 14;
-    meta_region.size.height = local->compact_mode ? 8 : 9;
+    relative_panel_reset_region(&meta_region);
+    if (relative_panel_has_text(item->meta))
+    {
+        meta_region.location.x = region->location.x + pad_x;
+        meta_region.location.y = region->location.y + region->size.height - bottom_pad - meta_h;
+        meta_region.size.width = region->size.width - pad_x * 2;
+        meta_region.size.height = meta_h;
+        if (meta_region.location.y < title_region.location.y + title_region.size.height + 1)
+        {
+            meta_region.location.y = title_region.location.y + title_region.size.height + 1;
+        }
+    }
 
     relative_panel_draw_text(local->font, self, item->title, &title_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, title_color);
     relative_panel_draw_text(local->meta_font, self, item->meta, &meta_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, meta_color);

@@ -68,7 +68,7 @@ static const egui_view_relative_panel_snapshot_t primary_snapshots[] = {
          summary_items, 4, 0, 192, 152},
         {"REL", "Status rail", "The right rail and lower review card share a compact relationship shell.", "Tab to the rule pill, then cycle the preset.",
          rail_items, 4, 1, 192, 152},
-        {"QA", "Dense detail", "The lower detail block becomes the active rule while the footer note keeps its anchor.", "Compact preview keeps the same graph.",
+        {"QA", "Dense detail", "The active detail block keeps the footer note attached.", "Compact preview keeps the same graph.",
          dense_items, 4, 2, 192, 152},
 };
 
@@ -273,4 +273,3 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     }
 }
 #endif
-
