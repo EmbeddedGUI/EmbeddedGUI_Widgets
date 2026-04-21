@@ -141,6 +141,20 @@ static egui_color_t date_picker_mix_disabled(egui_color_t color)
     return egui_rgb_mix(color, EGUI_COLOR_DARK_GREY, 68);
 }
 
+static egui_dim_t date_picker_measure_font_line_height(const egui_font_t *font)
+{
+    egui_dim_t width = 0;
+    egui_dim_t height = 0;
+
+    if (font == NULL || font->api == NULL || font->api->get_str_size == NULL)
+    {
+        return 0;
+    }
+
+    font->api->get_str_size(font, "A", 0, 0, &width, &height);
+    return height;
+}
+
 static uint8_t date_picker_clear_pressed_state(egui_view_t *self, egui_view_date_picker_t *local)
 {
     uint8_t was_pressed = self->is_pressed ? 1 : 0;
@@ -698,6 +712,16 @@ static void date_picker_get_metrics(egui_view_date_picker_t *local, egui_view_t 
     egui_dim_t helper_h = EGUI_VIEW_DATE_PICKER_STANDARD_HELPER_HEIGHT;
     egui_dim_t block_h;
     egui_dim_t cursor_y;
+    egui_dim_t meta_line_height = date_picker_measure_font_line_height(local->meta_font);
+
+    if (meta_line_height > label_h)
+    {
+        label_h = meta_line_height;
+    }
+    if (meta_line_height > helper_h)
+    {
+        helper_h = meta_line_height;
+    }
 
     egui_view_get_work_region(self, &region);
     metrics->content_region.location.x = region.location.x + pad_x;
