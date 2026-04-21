@@ -57,6 +57,34 @@ static egui_color_t hcw_pivot_mix_disabled(egui_color_t color)
     return egui_rgb_mix(color, EGUI_COLOR_HEX(0x83909D), 48);
 }
 
+static egui_dim_t hcw_pivot_measure_font_line_height(const egui_font_t *font)
+{
+    egui_dim_t width = 0;
+    egui_dim_t height = 0;
+
+    if (font == NULL || font->api == NULL || font->api->get_str_size == NULL)
+    {
+        return 0;
+    }
+
+    font->api->get_str_size(font, "A", 0, 0, &width, &height);
+    return height;
+}
+
+static egui_dim_t hcw_pivot_measure_text_width(const egui_font_t *font, const char *text)
+{
+    egui_dim_t width = 0;
+    egui_dim_t height = 0;
+
+    if (font == NULL || text == NULL || text[0] == '\0' || font->api == NULL || font->api->get_str_size == NULL)
+    {
+        return 0;
+    }
+
+    font->api->get_str_size(font, text, 0, 0, &width, &height);
+    return width;
+}
+
 static uint8_t hcw_pivot_clear_pressed_state(egui_view_t *self)
 {
     EGUI_LOCAL_INIT(hcw_pivot_t);
@@ -162,13 +190,19 @@ static void hcw_pivot_copy_elided(char *buffer, uint8_t capacity, const char *te
     buffer[copy_length + 3] = '\0';
 }
 
-static egui_dim_t hcw_pivot_header_width(uint8_t compact_mode, uint8_t is_active, const char *text)
+static egui_dim_t hcw_pivot_header_width(uint8_t compact_mode, const egui_font_t *font, uint8_t is_active, const char *text)
 {
     egui_dim_t width;
+    egui_dim_t text_width = hcw_pivot_measure_text_width(font, text);
     uint8_t length = hcw_pivot_text_len(text);
 
+    if (text_width <= 0 && length > 0)
+    {
+        text_width = (egui_dim_t)length * (compact_mode ? HCW_PIVOT_COMPACT_CHAR_WIDTH : HCW_PIVOT_STANDARD_CHAR_WIDTH);
+    }
+
     width = compact_mode ? HCW_PIVOT_COMPACT_BASE_WIDTH : HCW_PIVOT_STANDARD_BASE_WIDTH;
-    width += (egui_dim_t)length * (compact_mode ? HCW_PIVOT_COMPACT_CHAR_WIDTH : HCW_PIVOT_STANDARD_CHAR_WIDTH);
+    width += text_width;
     if (is_active)
     {
         width += compact_mode ? HCW_PIVOT_COMPACT_ACTIVE_BONUS : HCW_PIVOT_STANDARD_ACTIVE_BONUS;
@@ -299,6 +333,7 @@ static uint8_t hcw_pivot_prepare_header_layout(hcw_pivot_t *local, egui_view_t *
     egui_dim_t gap = hcw_pivot_gap(local->compact_mode);
     egui_dim_t header_y;
     egui_dim_t header_height;
+    const egui_font_t *font = hcw_pivot_get_font(local);
     uint8_t count = hcw_pivot_clamp_count(local->item_count);
     uint8_t index;
 
@@ -317,6 +352,10 @@ static uint8_t hcw_pivot_prepare_header_layout(hcw_pivot_t *local, egui_view_t *
 
     header_y = region.location.y + hcw_pivot_header_y(local->compact_mode);
     header_height = hcw_pivot_header_height(local->compact_mode);
+    if (hcw_pivot_measure_font_line_height(font) > header_height)
+    {
+        header_height = hcw_pivot_measure_font_line_height(font);
+    }
 
     for (index = 0; index < count; index++)
     {
@@ -324,7 +363,7 @@ static uint8_t hcw_pivot_prepare_header_layout(hcw_pivot_t *local, egui_view_t *
         uint8_t max_chars = local->compact_mode ? (index == local->current_index ? 6 : 5) : (index == local->current_index ? 10 : 8);
 
         hcw_pivot_copy_elided(items[index].label, sizeof(items[index].label), header, max_chars);
-        items[index].region.size.width = hcw_pivot_header_width(local->compact_mode, index == local->current_index, items[index].label);
+        items[index].region.size.width = hcw_pivot_header_width(local->compact_mode, font, index == local->current_index, items[index].label);
         items[index].region.size.height = header_height;
         total_width += items[index].region.size.width;
     }
@@ -411,7 +450,15 @@ static void hcw_pivot_draw_body(egui_view_t *self, hcw_pivot_t *local, egui_colo
     egui_dim_t body_pad_y;
     egui_dim_t eyebrow_height;
     egui_dim_t title_height;
+    egui_dim_t body_text_height;
     egui_dim_t meta_height;
+    egui_dim_t top_inset;
+    egui_dim_t eyebrow_gap;
+    egui_dim_t title_gap;
+    egui_dim_t body_gap;
+    egui_dim_t bottom_inset;
+    const egui_font_t *title_font;
+    const egui_font_t *meta_font;
 
     if (item == NULL)
     {
@@ -434,6 +481,8 @@ static void hcw_pivot_draw_body(egui_view_t *self, hcw_pivot_t *local, egui_colo
 
     accent_color = hcw_pivot_tone_accent(local, item->tone);
     body_fill = hcw_pivot_tone_fill(local, item->tone);
+    title_font = hcw_pivot_get_font(local);
+    meta_font = hcw_pivot_get_meta_font(local);
 
     if (local->read_only_mode)
     {
@@ -454,37 +503,73 @@ static void hcw_pivot_draw_body(egui_view_t *self, hcw_pivot_t *local, egui_colo
     egui_canvas_draw_line(&uicode_get_core()->canvas, body_region.location.x + 8, body_region.location.y + 6, body_region.location.x + body_region.size.width - 8, body_region.location.y + 6,
                           1, accent_color, egui_color_alpha_mix(self->alpha, local->read_only_mode ? 24 : 46));
 
-    eyebrow_height = local->compact_mode ? 8 : 9;
-    title_height = local->compact_mode ? 10 : 13;
-    meta_height = local->compact_mode ? 8 : 9;
+    eyebrow_height = hcw_pivot_measure_font_line_height(meta_font);
+    title_height = hcw_pivot_measure_font_line_height(title_font);
+    body_text_height = hcw_pivot_measure_font_line_height(meta_font);
+    meta_height = hcw_pivot_measure_font_line_height(meta_font);
+    if (eyebrow_height < (local->compact_mode ? 8 : 9))
+    {
+        eyebrow_height = local->compact_mode ? 8 : 9;
+    }
+    if (title_height < (local->compact_mode ? 10 : 13))
+    {
+        title_height = local->compact_mode ? 10 : 13;
+    }
+    if (body_text_height < (local->compact_mode ? 10 : 12))
+    {
+        body_text_height = local->compact_mode ? 10 : 12;
+    }
+    if (meta_height < (local->compact_mode ? 8 : 9))
+    {
+        meta_height = local->compact_mode ? 8 : 9;
+    }
+    top_inset = local->compact_mode ? 4 : 6;
+    eyebrow_gap = local->compact_mode ? 1 : 2;
+    title_gap = local->compact_mode ? 1 : 3;
+    body_gap = local->compact_mode ? 0 : 3;
+    bottom_inset = local->compact_mode ? 3 : 4;
 
     eyebrow_region.location.x = body_region.location.x + 8;
-    eyebrow_region.location.y = body_region.location.y + (local->compact_mode ? 10 : 12);
+    eyebrow_region.location.y = body_region.location.y + top_inset;
     eyebrow_region.size.width = body_region.size.width - 16;
     eyebrow_region.size.height = eyebrow_height;
 
     title_region.location.x = body_region.location.x + 8;
-    title_region.location.y = eyebrow_region.location.y + eyebrow_height + (local->compact_mode ? 2 : 4);
+    title_region.location.y = eyebrow_region.location.y + eyebrow_height + eyebrow_gap;
     title_region.size.width = body_region.size.width - 16;
     title_region.size.height = title_height;
 
     body_text_region.location.x = body_region.location.x + 8;
-    body_text_region.location.y = title_region.location.y + title_height + (local->compact_mode ? 2 : 5);
+    body_text_region.location.y = title_region.location.y + title_height + title_gap;
     body_text_region.size.width = body_region.size.width - 16;
-    body_text_region.size.height = local->compact_mode ? 10 : 12;
+    body_text_region.size.height = 0;
 
     meta_region.location.x = body_region.location.x + 8;
-    meta_region.location.y = body_region.location.y + body_region.size.height - meta_height - (local->compact_mode ? 7 : 8);
+    meta_region.location.y = body_region.location.y + body_region.size.height - meta_height - bottom_inset;
     meta_region.size.width = body_region.size.width - 16;
     meta_region.size.height = meta_height;
 
-    hcw_pivot_draw_text(self, hcw_pivot_get_meta_font(local), item->eyebrow, &eyebrow_region, EGUI_ALIGN_CENTER, accent_color);
-    hcw_pivot_draw_text(self, hcw_pivot_get_font(local), item->title, &title_region, EGUI_ALIGN_CENTER, text_color);
-    if (!local->compact_mode)
+    if (!local->compact_mode && body_text_region.location.y < meta_region.location.y)
     {
-        hcw_pivot_draw_text(self, hcw_pivot_get_meta_font(local), item->body, &body_text_region, EGUI_ALIGN_CENTER, muted_text_color);
+        egui_dim_t available_body_h = meta_region.location.y - body_gap - body_text_region.location.y;
+
+        if (available_body_h > 0)
+        {
+            body_text_region.size.height = available_body_h;
+            if (body_text_region.size.height < body_text_height)
+            {
+                body_text_region.size.height = body_text_height < available_body_h ? body_text_height : available_body_h;
+            }
+        }
     }
-    hcw_pivot_draw_text(self, hcw_pivot_get_meta_font(local), item->meta, &meta_region, EGUI_ALIGN_CENTER, muted_text_color);
+
+    hcw_pivot_draw_text(self, meta_font, item->eyebrow, &eyebrow_region, EGUI_ALIGN_CENTER, accent_color);
+    hcw_pivot_draw_text(self, title_font, item->title, &title_region, EGUI_ALIGN_CENTER, text_color);
+    if (!local->compact_mode && body_text_region.size.height > 0)
+    {
+        hcw_pivot_draw_text(self, meta_font, item->body, &body_text_region, EGUI_ALIGN_CENTER, muted_text_color);
+    }
+    hcw_pivot_draw_text(self, meta_font, item->meta, &meta_region, EGUI_ALIGN_CENTER, muted_text_color);
 }
 
 static void hcw_pivot_on_draw(egui_view_t *self)
