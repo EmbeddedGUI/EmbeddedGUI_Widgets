@@ -141,14 +141,14 @@ void test_init_ui(void)
     egui_view_set_size(EGUI_VIEW_OF(&title_label), BUTTON_ROOT_WIDTH, 18);
     egui_view_label_set_text(EGUI_VIEW_OF(&title_label), title_text);
     egui_view_label_set_align_type(EGUI_VIEW_OF(&title_label), EGUI_ALIGN_CENTER);
-    egui_view_label_set_font(EGUI_VIEW_OF(&title_label), (const egui_font_t *)&egui_res_font_montserrat_12_4);
+    hello_custom_widgets_demo_set_label_font_with_min_height(EGUI_VIEW_OF(&title_label), (const egui_font_t *)&egui_res_font_montserrat_12_4);
     egui_view_label_set_font_color(EGUI_VIEW_OF(&title_label), EGUI_COLOR_HEX(0x21303F), EGUI_ALPHA_100);
     egui_view_set_margin(EGUI_VIEW_OF(&title_label), 0, 8, 0, 6);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label));
 
     egui_view_button_init(EGUI_VIEW_OF(&button_primary), uicode_get_core());
     egui_view_set_size(EGUI_VIEW_OF(&button_primary), BUTTON_PRIMARY_WIDTH, BUTTON_PRIMARY_HEIGHT);
-    egui_view_label_set_font(EGUI_VIEW_OF(&button_primary), (const egui_font_t *)&egui_res_font_montserrat_12_4);
+    hello_custom_widgets_demo_set_label_font_with_min_height(EGUI_VIEW_OF(&button_primary), (const egui_font_t *)&egui_res_font_montserrat_12_4);
     hcw_button_apply_standard_style(EGUI_VIEW_OF(&button_primary));
     hcw_button_set_icon_font(EGUI_VIEW_OF(&button_primary), EGUI_FONT_ICON_MS_16);
     hcw_button_override_interaction_api(EGUI_VIEW_OF(&button_primary), &button_primary_api);
@@ -167,7 +167,7 @@ void test_init_ui(void)
 
     egui_view_button_init(EGUI_VIEW_OF(&button_compact), uicode_get_core());
     egui_view_set_size(EGUI_VIEW_OF(&button_compact), BUTTON_PREVIEW_WIDTH, BUTTON_PREVIEW_HEIGHT);
-    egui_view_label_set_font(EGUI_VIEW_OF(&button_compact), (const egui_font_t *)&egui_res_font_montserrat_10_4);
+    hello_custom_widgets_demo_set_label_font_with_min_height(EGUI_VIEW_OF(&button_compact), (const egui_font_t *)&egui_res_font_montserrat_10_4);
     hcw_button_apply_compact_style(EGUI_VIEW_OF(&button_compact));
     hcw_button_set_icon_font(EGUI_VIEW_OF(&button_compact), EGUI_FONT_ICON_MS_16);
     hcw_button_override_static_preview_api(EGUI_VIEW_OF(&button_compact), &button_compact_api);
@@ -179,7 +179,7 @@ void test_init_ui(void)
     egui_view_button_init(EGUI_VIEW_OF(&button_disabled), uicode_get_core());
     egui_view_set_size(EGUI_VIEW_OF(&button_disabled), BUTTON_PREVIEW_WIDTH, BUTTON_PREVIEW_HEIGHT);
     egui_view_set_margin(EGUI_VIEW_OF(&button_disabled), 8, 0, 0, 0);
-    egui_view_label_set_font(EGUI_VIEW_OF(&button_disabled), (const egui_font_t *)&egui_res_font_montserrat_10_4);
+    hello_custom_widgets_demo_set_label_font_with_min_height(EGUI_VIEW_OF(&button_disabled), (const egui_font_t *)&egui_res_font_montserrat_10_4);
     hcw_button_apply_disabled_style(EGUI_VIEW_OF(&button_disabled));
     hcw_button_set_icon_font(EGUI_VIEW_OF(&button_disabled), EGUI_FONT_ICON_MS_16);
     hcw_button_override_static_preview_api(EGUI_VIEW_OF(&button_disabled), &button_disabled_api);

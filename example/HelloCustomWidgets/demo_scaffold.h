@@ -17,6 +17,7 @@ void hello_custom_widgets_demo_hide_views(egui_view_t **views, uint8_t count);
 void hello_custom_widgets_demo_apply_title_only_scaffold(egui_view_t *root, egui_view_t *title, egui_view_t **chrome_views, uint8_t chrome_view_count);
 void hello_custom_widgets_demo_get_triptych_rects(const egui_region_t *region, egui_dim_t top_inset, egui_region_t *main_rect, egui_region_t *left_rect,
                                                   egui_region_t *right_rect);
+void hello_custom_widgets_demo_set_label_font_with_min_height(egui_view_t *label, const egui_font_t *font);
 
 #ifdef __cplusplus
 }

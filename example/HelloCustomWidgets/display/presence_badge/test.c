@@ -72,7 +72,7 @@ static void init_text_label(egui_view_label_t *label, egui_dim_t width, egui_dim
     egui_view_set_size(EGUI_VIEW_OF(label), width, height);
     egui_view_label_set_text(EGUI_VIEW_OF(label), text);
     egui_view_label_set_align_type(EGUI_VIEW_OF(label), align);
-    egui_view_label_set_font(EGUI_VIEW_OF(label), font);
+    hello_custom_widgets_demo_set_label_font_with_min_height(EGUI_VIEW_OF(label), font);
     egui_view_label_set_font_color(EGUI_VIEW_OF(label), color, EGUI_ALPHA_100);
 }
 

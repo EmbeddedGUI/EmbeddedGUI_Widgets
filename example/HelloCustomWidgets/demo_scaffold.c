@@ -41,6 +41,38 @@ static void scale_padding(egui_view_padding_t *padding)
     padding->bottom = scale_height(padding->bottom);
 }
 
+static egui_dim_t measure_font_line_height(const egui_font_t *font)
+{
+    egui_dim_t width = 0;
+    egui_dim_t height = 0;
+
+    if (font == NULL || font->api == NULL || font->api->get_str_size == NULL)
+    {
+        return 0;
+    }
+
+    font->api->get_str_size(font, "A", 0, 0, &width, &height);
+    return height;
+}
+
+void hello_custom_widgets_demo_set_label_font_with_min_height(egui_view_t *label, const egui_font_t *font)
+{
+    egui_dim_t line_height;
+
+    if (label == NULL)
+    {
+        return;
+    }
+
+    egui_view_label_set_font(label, font);
+
+    line_height = measure_font_line_height(font);
+    if (line_height > label->region.size.height)
+    {
+        egui_view_set_size(label, label->region.size.width, line_height);
+    }
+}
+
 static void scale_tree_internal(egui_view_t *view)
 {
     egui_dnode_t *node;

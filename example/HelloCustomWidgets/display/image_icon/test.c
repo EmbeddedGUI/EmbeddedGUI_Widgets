@@ -137,7 +137,7 @@ void test_init_ui(void)
     egui_view_set_size(EGUI_VIEW_OF(&title_label), IMAGE_ICON_ROOT_WIDTH, 18);
     egui_view_label_set_text(EGUI_VIEW_OF(&title_label), title_text);
     egui_view_label_set_align_type(EGUI_VIEW_OF(&title_label), EGUI_ALIGN_CENTER);
-    egui_view_label_set_font(EGUI_VIEW_OF(&title_label), (const egui_font_t *)&egui_res_font_montserrat_12_4);
+    hello_custom_widgets_demo_set_label_font_with_min_height(EGUI_VIEW_OF(&title_label), (const egui_font_t *)&egui_res_font_montserrat_12_4);
     egui_view_label_set_font_color(EGUI_VIEW_OF(&title_label), EGUI_COLOR_HEX(0x21303F), EGUI_ALPHA_100);
     egui_view_set_margin(EGUI_VIEW_OF(&title_label), 0, 8, 0, 8);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label));
@@ -154,7 +154,7 @@ void test_init_ui(void)
     egui_view_set_size(EGUI_VIEW_OF(&primary_name_label), IMAGE_ICON_ROOT_WIDTH, 12);
     egui_view_label_set_text(EGUI_VIEW_OF(&primary_name_label), "Thumbnail");
     egui_view_label_set_align_type(EGUI_VIEW_OF(&primary_name_label), EGUI_ALIGN_CENTER);
-    egui_view_label_set_font(EGUI_VIEW_OF(&primary_name_label), (const egui_font_t *)&egui_res_font_montserrat_10_4);
+    hello_custom_widgets_demo_set_label_font_with_min_height(EGUI_VIEW_OF(&primary_name_label), (const egui_font_t *)&egui_res_font_montserrat_10_4);
     egui_view_label_set_font_color(EGUI_VIEW_OF(&primary_name_label), EGUI_COLOR_HEX(0x0F6CBD), EGUI_ALPHA_100);
     egui_view_set_margin(EGUI_VIEW_OF(&primary_name_label), 0, 0, 0, 10);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&primary_name_label));
