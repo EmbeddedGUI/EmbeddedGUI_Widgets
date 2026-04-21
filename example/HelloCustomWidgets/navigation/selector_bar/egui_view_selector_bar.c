@@ -264,6 +264,19 @@ static egui_dim_t egui_view_selector_bar_measure_item_width(uint8_t compact_mode
     return width;
 }
 
+static void egui_view_selector_bar_fit_label_to_width(const egui_font_t *font, uint8_t compact_mode, uint8_t has_icon, uint8_t is_active, const char *text,
+                                                      char *buffer, uint8_t buffer_size, egui_dim_t max_width)
+{
+    uint8_t max_chars = egui_view_selector_bar_text_len(text);
+
+    egui_view_selector_bar_copy_elided(buffer, buffer_size, text, max_chars);
+    while (max_chars > 1 && egui_view_selector_bar_measure_item_width(compact_mode, font, has_icon, is_active, buffer) > max_width)
+    {
+        max_chars--;
+        egui_view_selector_bar_copy_elided(buffer, buffer_size, text, max_chars);
+    }
+}
+
 static egui_dim_t egui_view_selector_bar_item_gap(uint8_t compact_mode)
 {
     return compact_mode ? EGUI_VIEW_SELECTOR_BAR_COMPACT_GAP : EGUI_VIEW_SELECTOR_BAR_STANDARD_GAP;
@@ -310,6 +323,19 @@ static uint8_t egui_view_selector_bar_prepare_layout(egui_view_selector_bar_t *l
         }
         for (i = 0; i < count; i++)
         {
+            const char *text = local->item_texts != NULL ? local->item_texts[i] : NULL;
+            const char *icon = local->item_icons != NULL ? local->item_icons[i] : NULL;
+            uint8_t has_icon = EGUI_VIEW_TEXT_VALID(icon) ? 1 : 0;
+            uint8_t is_active = i == local->current_index;
+            uint8_t max_chars = 1;
+
+            if (fallback_width > (local->compact_mode ? 14 : 20))
+            {
+                max_chars = (uint8_t)((fallback_width - (local->compact_mode ? 14 : 20)) /
+                                      (local->compact_mode ? EGUI_VIEW_SELECTOR_BAR_COMPACT_CHAR_WIDTH : EGUI_VIEW_SELECTOR_BAR_STANDARD_CHAR_WIDTH));
+            }
+            egui_view_selector_bar_copy_elided(items[i].label, sizeof(items[i].label), text, max_chars);
+            egui_view_selector_bar_fit_label_to_width(font, local->compact_mode, has_icon, is_active, text, items[i].label, sizeof(items[i].label), fallback_width);
             items[i].width = fallback_width;
         }
         total_width = fallback_width * count + gap * (count - 1);
@@ -665,7 +691,6 @@ static void egui_view_selector_bar_on_draw(egui_view_t *self)
     for (i = 0; i < count; i++)
     {
         egui_region_t item_region;
-        const char *text = local->item_texts != NULL ? local->item_texts[i] : NULL;
         const char *icon = local->item_icons != NULL ? local->item_icons[i] : NULL;
         uint8_t is_active = i == local->current_index;
         egui_color_t item_text_color = is_active ? text_color : muted_text_color;
@@ -704,7 +729,7 @@ static void egui_view_selector_bar_on_draw(egui_view_t *self)
                                                   local->compact_mode ? 7 : 8, EGUI_THEME_PRESS_OVERLAY, EGUI_THEME_PRESS_OVERLAY_ALPHA);
         }
 
-        egui_view_selector_bar_draw_item_content(local, self, &item_region, icon, text, item_text_color);
+        egui_view_selector_bar_draw_item_content(local, self, &item_region, icon, items[i].label, item_text_color);
 
         if (is_active)
         {
