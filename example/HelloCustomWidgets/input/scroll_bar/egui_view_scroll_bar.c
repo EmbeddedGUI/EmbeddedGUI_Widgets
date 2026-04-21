@@ -77,6 +77,27 @@ static egui_dim_t scroll_bar_get_total_length_inner(egui_view_scroll_bar_t *loca
     return total > 0 ? total : 1;
 }
 
+static egui_dim_t scroll_bar_measure_font_line_height(const egui_font_t *font)
+{
+    egui_dim_t dummy_width = 0;
+    egui_dim_t line_height = 0;
+
+    if (font == NULL || font->api == NULL || font->api->get_str_size == NULL)
+    {
+        return 0;
+    }
+
+    font->api->get_str_size(font, "A", 0, 0, &dummy_width, &line_height);
+    return line_height;
+}
+
+static egui_dim_t scroll_bar_resolve_line_height(const egui_font_t *font, egui_dim_t fallback)
+{
+    egui_dim_t line_height = scroll_bar_measure_font_line_height(font);
+
+    return line_height > fallback ? line_height : fallback;
+}
+
 static void scroll_bar_normalize_state(egui_view_scroll_bar_t *local)
 {
     egui_dim_t max_offset;
@@ -197,6 +218,11 @@ static void scroll_bar_get_metrics(egui_view_scroll_bar_t *local, egui_view_t *s
     egui_dim_t thumb_h;
     egui_dim_t thumb_travel;
     egui_dim_t thumb_pos = 0;
+    egui_dim_t label_h = scroll_bar_resolve_line_height(local->meta_font, SB_STD_LABEL_H);
+    egui_dim_t helper_h = scroll_bar_resolve_line_height(local->meta_font, SB_STD_HELPER_H);
+    egui_dim_t compact_summary_h = scroll_bar_resolve_line_height(local->meta_font, SB_COMPACT_SUMMARY_H);
+    egui_dim_t summary_h = scroll_bar_resolve_line_height(local->meta_font, SB_STD_SUMMARY_H);
+    egui_dim_t preview_footer_h = scroll_bar_resolve_line_height(local->meta_font, SB_STD_PREVIEW_FOOTER);
 
     egui_view_get_work_region(self, &region);
     metrics->content_region.location.x = region.location.x + pad_x;
@@ -222,8 +248,8 @@ static void scroll_bar_get_metrics(egui_view_scroll_bar_t *local, egui_view_t *s
         metrics->label_region.location.x = metrics->content_region.location.x;
         metrics->label_region.location.y = cursor_y;
         metrics->label_region.size.width = metrics->content_region.size.width;
-        metrics->label_region.size.height = SB_STD_LABEL_H;
-        cursor_y += SB_STD_LABEL_H + SB_STD_LABEL_GAP;
+        metrics->label_region.size.height = label_h;
+        cursor_y += label_h + SB_STD_LABEL_GAP;
     }
     else
     {
@@ -235,11 +261,11 @@ static void scroll_bar_get_metrics(egui_view_scroll_bar_t *local, egui_view_t *s
 
     if (metrics->show_helper)
     {
-        helper_total = SB_STD_HELPER_GAP + SB_STD_HELPER_H;
+        helper_total = SB_STD_HELPER_GAP + helper_h;
         metrics->helper_region.location.x = metrics->content_region.location.x;
-        metrics->helper_region.location.y = metrics->content_region.location.y + metrics->content_region.size.height - SB_STD_HELPER_H;
+        metrics->helper_region.location.y = metrics->content_region.location.y + metrics->content_region.size.height - helper_h;
         metrics->helper_region.size.width = metrics->content_region.size.width;
-        metrics->helper_region.size.height = SB_STD_HELPER_H;
+        metrics->helper_region.size.height = helper_h;
     }
     else
     {
@@ -263,9 +289,9 @@ static void scroll_bar_get_metrics(egui_view_scroll_bar_t *local, egui_view_t *s
         }
 
         metrics->summary_region.location.x = metrics->content_region.location.x;
-        metrics->summary_region.location.y = metrics->content_region.location.y + (metrics->content_region.size.height - SB_COMPACT_SUMMARY_H) / 2;
+        metrics->summary_region.location.y = metrics->content_region.location.y + (metrics->content_region.size.height - compact_summary_h) / 2;
         metrics->summary_region.size.width = summary_w;
-        metrics->summary_region.size.height = SB_COMPACT_SUMMARY_H;
+        metrics->summary_region.size.height = compact_summary_h;
 
         metrics->bar_panel_region.location.x = metrics->summary_region.location.x + metrics->summary_region.size.width + SB_COMPACT_BAR_GAP;
         metrics->bar_panel_region.location.y = metrics->content_region.location.y;
@@ -312,7 +338,7 @@ static void scroll_bar_get_metrics(egui_view_scroll_bar_t *local, egui_view_t *s
         metrics->preview_box_region.location.x = metrics->preview_region.location.x;
         metrics->preview_box_region.location.y = metrics->preview_region.location.y + SB_STD_PREVIEW_BOX_Y;
         metrics->preview_box_region.size.width = metrics->preview_region.size.width;
-        metrics->preview_box_region.size.height = metrics->preview_region.size.height - SB_STD_PREVIEW_BOX_Y - SB_STD_PREVIEW_FOOTER;
+        metrics->preview_box_region.size.height = metrics->preview_region.size.height - SB_STD_PREVIEW_BOX_Y - preview_footer_h;
         if (metrics->preview_box_region.size.height < 18)
         {
             metrics->preview_box_region.size.height = 18;
@@ -326,7 +352,7 @@ static void scroll_bar_get_metrics(egui_view_scroll_bar_t *local, egui_view_t *s
         metrics->summary_region.location.x = metrics->bar_panel_region.location.x;
         metrics->summary_region.location.y = metrics->bar_panel_region.location.y;
         metrics->summary_region.size.width = metrics->bar_panel_region.size.width;
-        metrics->summary_region.size.height = SB_STD_SUMMARY_H;
+        metrics->summary_region.size.height = summary_h;
 
         bar_width = SB_STD_BAR_W;
         button_h = SB_STD_BUTTON_H;
@@ -558,10 +584,12 @@ static void scroll_bar_draw_preview(egui_view_t *self, egui_view_scroll_bar_t *l
     egui_dim_t viewport_y = 0;
     char footer_text[24];
     uint8_t index;
+    egui_dim_t title_h = scroll_bar_resolve_line_height(local->meta_font, 10);
+    egui_dim_t footer_h = scroll_bar_resolve_line_height(local->meta_font, SB_STD_PREVIEW_FOOTER);
 
-    title_region.size.height = 10;
-    footer_region.location.y = metrics->preview_region.location.y + metrics->preview_region.size.height - SB_STD_PREVIEW_FOOTER;
-    footer_region.size.height = SB_STD_PREVIEW_FOOTER;
+    title_region.size.height = title_h;
+    footer_region.location.y = metrics->preview_region.location.y + metrics->preview_region.size.height - footer_h;
+    footer_region.size.height = footer_h;
 
     preview_inner.location.x = preview_box.location.x + 5;
     preview_inner.location.y = preview_box.location.y + 5;
@@ -571,9 +599,9 @@ static void scroll_bar_draw_preview(egui_view_t *self, egui_view_scroll_bar_t *l
     {
         preview_inner.size.width = 4;
     }
-    if (preview_inner.size.height < 8)
+    if (preview_inner.size.height < title_h)
     {
-        preview_inner.size.height = 8;
+        preview_inner.size.height = title_h;
     }
 
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, preview_box.location.x, preview_box.location.y, preview_box.size.width, preview_box.size.height, 7,
