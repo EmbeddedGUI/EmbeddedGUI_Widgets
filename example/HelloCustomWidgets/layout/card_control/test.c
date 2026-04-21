@@ -53,7 +53,7 @@ static const egui_view_card_control_snapshot_t compact_snapshot = {
         "SYNC", "WF", "Compact flow", "Short body.", "Live", "", EGUI_VIEW_CARD_CONTROL_TONE_ACCENT, 1, EGUI_VIEW_CARD_CONTROL_CONTROL_VALUE};
 
 static const egui_view_card_control_snapshot_t read_only_snapshot = {
-        "REVIEW", "CK", "Read only card", "Editing stays locked while review is active.", "Locked", "Preview only.",
+        "REVIEW", "CK", "Read only card", "Locked in review.", "Locked", "Preview only.",
         EGUI_VIEW_CARD_CONTROL_TONE_NEUTRAL, 0, EGUI_VIEW_CARD_CONTROL_CONTROL_VALUE};
 
 static void apply_primary_snapshot(uint8_t index)
@@ -250,4 +250,3 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     return false;
 }
 #endif
-

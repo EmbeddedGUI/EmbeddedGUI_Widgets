@@ -56,7 +56,7 @@ static const egui_view_card_expander_snapshot_t compact_snapshot = {
 
 static const egui_view_card_expander_snapshot_t read_only_snapshot = {
         "REVIEW", "CK", "Read only card", "Preview stays visible but does not toggle.",
-        "Locked review cards keep muted detail text visible.", "Preview only.", EGUI_VIEW_CARD_EXPANDER_TONE_NEUTRAL, 0, 1};
+        "Muted detail shown.", "Preview only.", EGUI_VIEW_CARD_EXPANDER_TONE_NEUTRAL, 0, 1};
 
 static void apply_primary_snapshot(uint8_t index)
 {
@@ -252,4 +252,3 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     return false;
 }
 #endif
-
