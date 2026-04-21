@@ -79,6 +79,27 @@ static uint8_t egui_view_master_detail_text_len(const char *text)
     return length;
 }
 
+static egui_dim_t egui_view_master_detail_measure_font_line_height(const egui_font_t *font)
+{
+    egui_dim_t dummy_width = 0;
+    egui_dim_t line_height = 0;
+
+    if (font == NULL || font->api == NULL || font->api->get_str_size == NULL)
+    {
+        return 0;
+    }
+
+    font->api->get_str_size(font, "A", 0, 0, &dummy_width, &line_height);
+    return line_height;
+}
+
+static egui_dim_t egui_view_master_detail_resolve_line_height(const egui_font_t *font, egui_dim_t fallback)
+{
+    egui_dim_t line_height = egui_view_master_detail_measure_font_line_height(font);
+
+    return line_height > fallback ? line_height : fallback;
+}
+
 static egui_color_t egui_view_master_detail_tone_color(egui_view_master_detail_t *local, uint8_t tone)
 {
     switch (tone)
@@ -418,13 +439,29 @@ static void egui_view_master_detail_on_draw(egui_view_t *self)
     egui_dim_t card_radius = local->compact_mode ? EGUI_VIEW_MASTER_DETAIL_COMPACT_RADIUS : EGUI_VIEW_MASTER_DETAIL_STANDARD_RADIUS;
     egui_dim_t detail_radius = local->compact_mode ? EGUI_VIEW_MASTER_DETAIL_COMPACT_DETAIL_RADIUS : EGUI_VIEW_MASTER_DETAIL_STANDARD_DETAIL_RADIUS;
     egui_dim_t divider_margin = local->compact_mode ? EGUI_VIEW_MASTER_DETAIL_COMPACT_DIVIDER_MARGIN : EGUI_VIEW_MASTER_DETAIL_STANDARD_DIVIDER_MARGIN;
-    egui_dim_t header_h = local->compact_mode ? EGUI_VIEW_MASTER_DETAIL_COMPACT_HEADER_HEIGHT : EGUI_VIEW_MASTER_DETAIL_STANDARD_HEADER_HEIGHT;
+    egui_dim_t header_h =
+            egui_view_master_detail_resolve_line_height(local->meta_font,
+                                                        local->compact_mode ? EGUI_VIEW_MASTER_DETAIL_COMPACT_HEADER_HEIGHT
+                                                                            : EGUI_VIEW_MASTER_DETAIL_STANDARD_HEADER_HEIGHT);
     egui_dim_t header_gap = local->compact_mode ? EGUI_VIEW_MASTER_DETAIL_COMPACT_HEADER_GAP : EGUI_VIEW_MASTER_DETAIL_STANDARD_HEADER_GAP;
-    egui_dim_t meta_h = local->compact_mode ? EGUI_VIEW_MASTER_DETAIL_COMPACT_META_HEIGHT : EGUI_VIEW_MASTER_DETAIL_STANDARD_META_HEIGHT;
+    egui_dim_t title_h =
+            egui_view_master_detail_resolve_line_height(local->font,
+                                                        local->compact_mode ? EGUI_VIEW_MASTER_DETAIL_COMPACT_HEADER_HEIGHT + 1
+                                                                            : EGUI_VIEW_MASTER_DETAIL_STANDARD_HEADER_HEIGHT + 3);
+    egui_dim_t meta_h =
+            egui_view_master_detail_resolve_line_height(local->meta_font,
+                                                        local->compact_mode ? EGUI_VIEW_MASTER_DETAIL_COMPACT_META_HEIGHT
+                                                                            : EGUI_VIEW_MASTER_DETAIL_STANDARD_META_HEIGHT);
     egui_dim_t meta_gap = local->compact_mode ? EGUI_VIEW_MASTER_DETAIL_COMPACT_META_GAP : EGUI_VIEW_MASTER_DETAIL_STANDARD_META_GAP;
-    egui_dim_t body_h = local->compact_mode ? EGUI_VIEW_MASTER_DETAIL_COMPACT_BODY_HEIGHT : EGUI_VIEW_MASTER_DETAIL_STANDARD_BODY_HEIGHT;
+    egui_dim_t body_h =
+            egui_view_master_detail_resolve_line_height(local->meta_font,
+                                                        local->compact_mode ? EGUI_VIEW_MASTER_DETAIL_COMPACT_BODY_HEIGHT
+                                                                            : EGUI_VIEW_MASTER_DETAIL_STANDARD_BODY_HEIGHT);
     egui_dim_t body_gap = EGUI_VIEW_MASTER_DETAIL_STANDARD_BODY_GAP;
-    egui_dim_t footer_h = local->compact_mode ? EGUI_VIEW_MASTER_DETAIL_COMPACT_FOOTER_HEIGHT : EGUI_VIEW_MASTER_DETAIL_STANDARD_FOOTER_HEIGHT;
+    egui_dim_t footer_h =
+            egui_view_master_detail_resolve_line_height(local->meta_font,
+                                                        local->compact_mode ? EGUI_VIEW_MASTER_DETAIL_COMPACT_FOOTER_HEIGHT
+                                                                            : EGUI_VIEW_MASTER_DETAIL_STANDARD_FOOTER_HEIGHT);
     egui_dim_t footer_w;
     egui_dim_t cursor_y;
     egui_dim_t divider_x;
@@ -511,10 +548,10 @@ static void egui_view_master_detail_on_draw(egui_view_t *self)
 
     if (local->compact_mode)
     {
-        text_region.size.height = 9;
+        text_region.size.height = title_h;
         egui_view_master_detail_draw_text(local->font, self, item->detail_title, &text_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, title_color);
 
-        cursor_y += 10;
+        cursor_y += title_h + 1;
         text_region.location.y = cursor_y;
         text_region.size.height = meta_h;
         egui_view_master_detail_draw_text(local->meta_font, self, item->detail_meta, &text_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, meta_color);
@@ -531,7 +568,7 @@ static void egui_view_master_detail_on_draw(egui_view_t *self)
 
         cursor_y += header_h + header_gap;
         text_region.location.y = cursor_y;
-        text_region.size.height = 12;
+        text_region.size.height = title_h;
         egui_view_master_detail_draw_text(local->font, self, item->detail_title, &text_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, title_color);
 
         cursor_y += text_region.size.height + meta_gap;
