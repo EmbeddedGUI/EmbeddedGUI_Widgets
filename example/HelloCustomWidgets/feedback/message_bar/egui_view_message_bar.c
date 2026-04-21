@@ -61,6 +61,27 @@ static uint8_t egui_view_message_bar_text_len(const char *text)
     return length;
 }
 
+static egui_dim_t egui_view_message_bar_measure_font_line_height(const egui_font_t *font)
+{
+    egui_dim_t dummy_width = 0;
+    egui_dim_t line_height = 0;
+
+    if (font == NULL || font->api == NULL || font->api->get_str_size == NULL)
+    {
+        return 0;
+    }
+
+    font->api->get_str_size(font, "A", 0, 0, &dummy_width, &line_height);
+    return line_height;
+}
+
+static egui_dim_t egui_view_message_bar_resolve_line_height(const egui_font_t *font, egui_dim_t fallback)
+{
+    egui_dim_t line_height = egui_view_message_bar_measure_font_line_height(font);
+
+    return line_height > fallback ? line_height : fallback;
+}
+
 static uint8_t egui_view_message_bar_clear_pressed_state(egui_view_t *self)
 {
     if (!self->is_pressed)
@@ -203,8 +224,11 @@ static void egui_view_message_bar_on_draw(egui_view_t *self)
     egui_dim_t close_x;
     egui_dim_t title_x;
     egui_dim_t title_w;
+    egui_dim_t title_slot_h;
     egui_dim_t title_h;
+    egui_dim_t title_y;
     egui_dim_t body_y;
+    egui_dim_t body_slot_h;
     egui_dim_t body_h;
     egui_dim_t action_h;
     egui_dim_t action_w;
@@ -280,8 +304,10 @@ static void egui_view_message_bar_on_draw(egui_view_t *self)
 
     title_x = icon_x + icon_size + 6;
     title_w = content_x + content_w - title_x - (show_close ? 12 : 0);
-    title_h = local->compact_mode ? 10 : 12;
-    egui_view_message_bar_draw_text(local, self, snapshot->title, title_x, content_y - 1, title_w, title_h, EGUI_ALIGN_LEFT, title_color);
+    title_slot_h = local->compact_mode ? 10 : 12;
+    title_h = egui_view_message_bar_resolve_line_height(local->font, title_slot_h);
+    title_y = content_y - 1 + (title_slot_h - title_h) / 2;
+    egui_view_message_bar_draw_text(local, self, snapshot->title, title_x, title_y, title_w, title_h, EGUI_ALIGN_LEFT, title_color);
 
     show_action = snapshot->show_action && snapshot->action != NULL && snapshot->action[0] != '\0' && !local->read_only_mode;
     action_h = local->compact_mode ? 12 : 14;
@@ -299,11 +325,12 @@ static void egui_view_message_bar_on_draw(egui_view_t *self)
         action_w = content_w - 12;
     }
     action_x = title_x;
-    body_y = content_y + title_h + (local->compact_mode ? 3 : 5);
+    body_y = content_y + title_slot_h + (local->compact_mode ? 3 : 5);
     if (show_action)
     {
-        body_h = local->compact_mode ? 12 : 15;
-        action_y = body_y + body_h + (local->compact_mode ? 3 : 7);
+        body_slot_h = local->compact_mode ? 12 : 15;
+        body_h = egui_view_message_bar_resolve_line_height(local->font, body_slot_h);
+        action_y = body_y + body_slot_h + (local->compact_mode ? 3 : 7);
         if (action_y + action_h > content_y + content_h - (local->compact_mode ? 0 : 2))
         {
             action_y = content_y + content_h - action_h - (local->compact_mode ? 0 : 2);
@@ -314,13 +341,14 @@ static void egui_view_message_bar_on_draw(egui_view_t *self)
         action_h = 0;
         action_y = 0;
         body_h = content_y + content_h - body_y;
+        body_slot_h = body_h;
     }
     if (body_h < (local->compact_mode ? 10 : 12))
     {
         body_h = local->compact_mode ? 10 : 12;
     }
 
-    egui_view_message_bar_draw_text(local, self, snapshot->body, title_x, body_y, title_w, body_h, EGUI_ALIGN_LEFT, body_color);
+    egui_view_message_bar_draw_text(local, self, snapshot->body, title_x, body_y + (body_slot_h - body_h) / 2, title_w, body_h, EGUI_ALIGN_LEFT, body_color);
 
     if (show_action)
     {
@@ -336,7 +364,7 @@ static void egui_view_message_bar_on_draw(egui_view_t *self)
     if (local->read_only_mode)
     {
         egui_dim_t pin_w = local->compact_mode ? 18 : 26;
-        egui_dim_t pin_h = local->compact_mode ? 10 : 11;
+        egui_dim_t pin_h = egui_view_message_bar_resolve_line_height(local->font, local->compact_mode ? 10 : 11);
         egui_dim_t pin_x = content_x + content_w - pin_w;
         egui_dim_t pin_y = content_y + content_h - pin_h - (local->compact_mode ? 2 : 1);
         egui_color_t pin_fill = egui_rgb_mix(local->surface_color, severity_color, 2);
