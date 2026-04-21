@@ -93,6 +93,27 @@ static uint8_t egui_view_data_grid_has_text(const char *text)
     return text != NULL && text[0] != '\0' ? 1 : 0;
 }
 
+static egui_dim_t egui_view_data_grid_measure_font_line_height(const egui_font_t *font)
+{
+    egui_dim_t width = 0;
+    egui_dim_t height = 0;
+
+    if (font == NULL || font->api == NULL || font->api->get_str_size == NULL)
+    {
+        return 0;
+    }
+
+    font->api->get_str_size(font, "A", 0, 0, &width, &height);
+    return height;
+}
+
+static egui_dim_t egui_view_data_grid_resolve_line_height(const egui_font_t *font, egui_dim_t fallback)
+{
+    egui_dim_t line_height = egui_view_data_grid_measure_font_line_height(font);
+
+    return line_height > fallback ? line_height : fallback;
+}
+
 static egui_color_t egui_view_data_grid_mix_disabled(egui_color_t color)
 {
     return egui_rgb_mix(color, EGUI_COLOR_DARK_GREY, 68);
@@ -282,15 +303,19 @@ static void egui_view_data_grid_get_metrics(egui_view_data_grid_t *local, egui_v
     egui_dim_t outer_pad_y = local->compact_mode ? EGUI_VIEW_DATA_GRID_COMPACT_OUTER_PAD_Y : EGUI_VIEW_DATA_GRID_STANDARD_OUTER_PAD_Y;
     egui_dim_t inner_pad_x = local->compact_mode ? EGUI_VIEW_DATA_GRID_COMPACT_INNER_PAD_X : EGUI_VIEW_DATA_GRID_STANDARD_INNER_PAD_X;
     egui_dim_t inner_pad_y = local->compact_mode ? EGUI_VIEW_DATA_GRID_COMPACT_INNER_PAD_Y : EGUI_VIEW_DATA_GRID_STANDARD_INNER_PAD_Y;
-    egui_dim_t badge_h = local->compact_mode ? EGUI_VIEW_DATA_GRID_COMPACT_BADGE_H : EGUI_VIEW_DATA_GRID_STANDARD_BADGE_H;
+    egui_dim_t badge_slot_h = local->compact_mode ? EGUI_VIEW_DATA_GRID_COMPACT_BADGE_H : EGUI_VIEW_DATA_GRID_STANDARD_BADGE_H;
+    egui_dim_t badge_h = egui_view_data_grid_resolve_line_height(local->meta_font, badge_slot_h);
     egui_dim_t badge_gap = local->compact_mode ? EGUI_VIEW_DATA_GRID_COMPACT_BADGE_GAP : EGUI_VIEW_DATA_GRID_STANDARD_BADGE_GAP;
-    egui_dim_t title_h = local->compact_mode ? EGUI_VIEW_DATA_GRID_COMPACT_TITLE_H : EGUI_VIEW_DATA_GRID_STANDARD_TITLE_H;
-    egui_dim_t summary_h = local->compact_mode ? EGUI_VIEW_DATA_GRID_COMPACT_SUMMARY_H : EGUI_VIEW_DATA_GRID_STANDARD_SUMMARY_H;
+    egui_dim_t title_slot_h = local->compact_mode ? EGUI_VIEW_DATA_GRID_COMPACT_TITLE_H : EGUI_VIEW_DATA_GRID_STANDARD_TITLE_H;
+    egui_dim_t title_h = egui_view_data_grid_resolve_line_height(local->font, title_slot_h);
+    egui_dim_t summary_slot_h = local->compact_mode ? EGUI_VIEW_DATA_GRID_COMPACT_SUMMARY_H : EGUI_VIEW_DATA_GRID_STANDARD_SUMMARY_H;
+    egui_dim_t summary_h = summary_slot_h > 0 ? egui_view_data_grid_resolve_line_height(local->meta_font, summary_slot_h) : 0;
     egui_dim_t title_gap = local->compact_mode ? EGUI_VIEW_DATA_GRID_COMPACT_TITLE_GAP : EGUI_VIEW_DATA_GRID_STANDARD_TITLE_GAP;
     egui_dim_t table_gap = local->compact_mode ? EGUI_VIEW_DATA_GRID_COMPACT_TABLE_GAP : EGUI_VIEW_DATA_GRID_STANDARD_TABLE_GAP;
     egui_dim_t header_h = local->compact_mode ? EGUI_VIEW_DATA_GRID_COMPACT_HEADER_H : EGUI_VIEW_DATA_GRID_STANDARD_HEADER_H;
     egui_dim_t row_h = local->compact_mode ? EGUI_VIEW_DATA_GRID_COMPACT_ROW_H : EGUI_VIEW_DATA_GRID_STANDARD_ROW_H;
-    egui_dim_t footer_h = local->compact_mode ? EGUI_VIEW_DATA_GRID_COMPACT_FOOTER_H : EGUI_VIEW_DATA_GRID_STANDARD_FOOTER_H;
+    egui_dim_t footer_slot_h = local->compact_mode ? EGUI_VIEW_DATA_GRID_COMPACT_FOOTER_H : EGUI_VIEW_DATA_GRID_STANDARD_FOOTER_H;
+    egui_dim_t footer_h = footer_slot_h > 0 ? egui_view_data_grid_resolve_line_height(local->meta_font, footer_slot_h) : 0;
     egui_dim_t footer_gap = local->compact_mode ? EGUI_VIEW_DATA_GRID_COMPACT_FOOTER_GAP : EGUI_VIEW_DATA_GRID_STANDARD_FOOTER_GAP;
     egui_dim_t inner_x;
     egui_dim_t inner_y;
@@ -302,8 +327,8 @@ static void egui_view_data_grid_get_metrics(egui_view_data_grid_t *local, egui_v
     egui_dim_t start_y;
     uint8_t row_count = egui_view_data_grid_get_row_count(snapshot);
     uint8_t has_badge = snapshot != NULL && egui_view_data_grid_has_text(snapshot->header) ? 1 : 0;
-    uint8_t has_summary = summary_h > 0 && snapshot != NULL && egui_view_data_grid_has_text(snapshot->summary) ? 1 : 0;
-    uint8_t has_footer = footer_h > 0 && snapshot != NULL && egui_view_data_grid_has_text(snapshot->footer) ? 1 : 0;
+    uint8_t has_summary = summary_slot_h > 0 && snapshot != NULL && egui_view_data_grid_has_text(snapshot->summary) ? 1 : 0;
+    uint8_t has_footer = footer_slot_h > 0 && snapshot != NULL && egui_view_data_grid_has_text(snapshot->footer) ? 1 : 0;
     uint8_t i;
 
     egui_view_get_work_region(self, &metrics->region);
@@ -354,12 +379,12 @@ static void egui_view_data_grid_get_metrics(egui_view_data_grid_t *local, egui_v
 
     if (has_badge)
     {
-        stack_h += badge_h + badge_gap;
+        stack_h += badge_slot_h + badge_gap;
     }
-    stack_h += title_h;
+    stack_h += title_slot_h;
     if (has_summary)
     {
-        stack_h += title_gap + summary_h;
+        stack_h += title_gap + summary_slot_h;
     }
     if (row_count > 0)
     {
@@ -368,13 +393,13 @@ static void egui_view_data_grid_get_metrics(egui_view_data_grid_t *local, egui_v
     }
     if (has_footer)
     {
-        stack_h += footer_gap + footer_h;
+        stack_h += footer_gap + footer_slot_h;
     }
 
     if (stack_h > inner_h && row_count > 0)
     {
-        available_rows_h = inner_h - (has_badge ? (badge_h + badge_gap) : 0) - title_h - (has_summary ? (title_gap + summary_h) : 0) -
-                           table_gap - (has_footer ? (footer_gap + footer_h) : 0) - header_h;
+        available_rows_h = inner_h - (has_badge ? (badge_slot_h + badge_gap) : 0) - title_slot_h - (has_summary ? (title_gap + summary_slot_h) : 0) -
+                           table_gap - (has_footer ? (footer_gap + footer_slot_h) : 0) - header_h;
         if (available_rows_h < row_count * (local->compact_mode ? 8 : 10))
         {
             available_rows_h = row_count * (local->compact_mode ? 8 : 10);
@@ -385,8 +410,8 @@ static void egui_view_data_grid_get_metrics(egui_view_data_grid_t *local, egui_v
             row_h = local->compact_mode ? 8 : 10;
         }
         table_h = header_h + row_count * row_h;
-        stack_h = (has_badge ? (badge_h + badge_gap) : 0) + title_h + (has_summary ? (title_gap + summary_h) : 0) + table_gap + table_h +
-                  (has_footer ? (footer_gap + footer_h) : 0);
+        stack_h = (has_badge ? (badge_slot_h + badge_gap) : 0) + title_slot_h + (has_summary ? (title_gap + summary_slot_h) : 0) + table_gap + table_h +
+                  (has_footer ? (footer_gap + footer_slot_h) : 0);
     }
 
     start_y = inner_y;
@@ -398,27 +423,27 @@ static void egui_view_data_grid_get_metrics(egui_view_data_grid_t *local, egui_v
     if (has_badge)
     {
         metrics->badge_region.location.x = inner_x;
-        metrics->badge_region.location.y = start_y;
+        metrics->badge_region.location.y = start_y + (badge_slot_h - badge_h) / 2;
         metrics->badge_region.size.width =
                 egui_view_data_grid_pill_width(snapshot->header, local->compact_mode, local->compact_mode ? 24 : 30, inner_w / 2);
         metrics->badge_region.size.height = badge_h;
-        start_y += badge_h + badge_gap;
+        start_y += badge_slot_h + badge_gap;
     }
 
     metrics->title_region.location.x = inner_x;
-    metrics->title_region.location.y = start_y;
+    metrics->title_region.location.y = start_y + (title_slot_h - title_h) / 2;
     metrics->title_region.size.width = inner_w;
     metrics->title_region.size.height = title_h;
-    start_y += title_h;
+    start_y += title_slot_h;
 
     if (has_summary)
     {
         start_y += title_gap;
         metrics->summary_region.location.x = inner_x + 2;
-        metrics->summary_region.location.y = start_y;
+        metrics->summary_region.location.y = start_y + (summary_slot_h - summary_h) / 2;
         metrics->summary_region.size.width = inner_w - 4;
         metrics->summary_region.size.height = summary_h;
-        start_y += summary_h;
+        start_y += summary_slot_h;
     }
 
     if (row_count > 0)
@@ -449,7 +474,7 @@ static void egui_view_data_grid_get_metrics(egui_view_data_grid_t *local, egui_v
     {
         start_y += footer_gap;
         metrics->footer_region.location.x = inner_x + 2;
-        metrics->footer_region.location.y = start_y;
+        metrics->footer_region.location.y = start_y + (footer_slot_h - footer_h) / 2;
         metrics->footer_region.size.width = inner_w - 4;
         metrics->footer_region.size.height = footer_h;
     }
