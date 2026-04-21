@@ -46,19 +46,18 @@ static const char *egui_view_message_bar_severity_glyph(uint8_t severity)
     }
 }
 
-static uint8_t egui_view_message_bar_text_len(const char *text)
+static egui_dim_t egui_view_message_bar_measure_text_width(const egui_font_t *font, const char *text)
 {
-    uint8_t length = 0;
+    egui_dim_t text_width = 0;
+    egui_dim_t dummy_height = 0;
 
-    if (text == NULL)
+    if (text == NULL || text[0] == '\0' || font == NULL || font->api == NULL || font->api->get_str_size == NULL)
     {
         return 0;
     }
-    while (text[length] != '\0')
-    {
-        length++;
-    }
-    return length;
+
+    font->api->get_str_size(font, text, 0, 0, &text_width, &dummy_height);
+    return text_width;
 }
 
 static egui_dim_t egui_view_message_bar_measure_font_line_height(const egui_font_t *font)
@@ -314,7 +313,7 @@ static void egui_view_message_bar_on_draw(egui_view_t *self)
     action_w = local->compact_mode ? 34 : 52;
     if (snapshot->action != NULL)
     {
-        egui_dim_t text_action_w = 14 + egui_view_message_bar_text_len(snapshot->action) * 4;
+        egui_dim_t text_action_w = 14 + egui_view_message_bar_measure_text_width(local->font, snapshot->action);
         if (text_action_w > action_w)
         {
             action_w = text_action_w;
@@ -363,16 +362,23 @@ static void egui_view_message_bar_on_draw(egui_view_t *self)
 
     if (local->read_only_mode)
     {
-        egui_dim_t pin_w = local->compact_mode ? 18 : 26;
+        const char *pin_label = "Read only";
+        egui_dim_t pin_w = 10 + egui_view_message_bar_measure_text_width(local->font, pin_label);
         egui_dim_t pin_h = egui_view_message_bar_resolve_line_height(local->font, local->compact_mode ? 10 : 11);
         egui_dim_t pin_x = content_x + content_w - pin_w;
         egui_dim_t pin_y = content_y + content_h - pin_h - (local->compact_mode ? 2 : 1);
         egui_color_t pin_fill = egui_rgb_mix(local->surface_color, severity_color, 2);
         egui_color_t pin_border = egui_rgb_mix(local->border_color, severity_color, 5);
 
+        if (pin_w > content_w)
+        {
+            pin_w = content_w;
+            pin_x = content_x;
+        }
+
         egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, pin_x, pin_y, pin_w, pin_h, 5, pin_fill, egui_color_alpha_mix(self->alpha, 26));
         egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, pin_x, pin_y, pin_w, pin_h, 5, 1, pin_border, egui_color_alpha_mix(self->alpha, 30));
-        egui_view_message_bar_draw_text(local, self, "Read", pin_x + 1, pin_y, pin_w - 2, pin_h, EGUI_ALIGN_CENTER, body_color);
+        egui_view_message_bar_draw_text(local, self, pin_label, pin_x + 1, pin_y, pin_w - 2, pin_h, EGUI_ALIGN_CENTER, body_color);
     }
 
     if (local->read_only_mode || !is_enabled)
