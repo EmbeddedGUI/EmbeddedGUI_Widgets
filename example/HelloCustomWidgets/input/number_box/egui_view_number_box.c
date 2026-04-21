@@ -59,6 +59,20 @@ static egui_color_t egui_view_number_box_mix_disabled(egui_color_t color)
     return egui_rgb_mix(color, EGUI_COLOR_DARK_GREY, 64);
 }
 
+static egui_dim_t egui_view_number_box_measure_font_line_height(const egui_font_t *font)
+{
+    egui_dim_t width = 0;
+    egui_dim_t height = 0;
+
+    if (font == NULL || font->api == NULL || font->api->get_str_size == NULL)
+    {
+        return 0;
+    }
+
+    font->api->get_str_size(font, "A", 0, 0, &width, &height);
+    return height;
+}
+
 static uint8_t egui_view_number_box_clear_pressed_state(egui_view_t *self)
 {
     EGUI_LOCAL_INIT(egui_view_number_box_t);
@@ -129,35 +143,66 @@ static void egui_view_number_box_get_metrics(egui_view_number_box_t *local, egui
     egui_region_t region;
     egui_dim_t pad_x = local->compact_mode ? EGUI_VIEW_NUMBER_BOX_COMPACT_CONTENT_PAD_X : EGUI_VIEW_NUMBER_BOX_STANDARD_CONTENT_PAD_X;
     egui_dim_t pad_y = local->compact_mode ? EGUI_VIEW_NUMBER_BOX_COMPACT_CONTENT_PAD_Y : EGUI_VIEW_NUMBER_BOX_STANDARD_CONTENT_PAD_Y;
+    egui_dim_t label_h = EGUI_VIEW_NUMBER_BOX_STANDARD_LABEL_HEIGHT;
+    egui_dim_t label_gap = EGUI_VIEW_NUMBER_BOX_STANDARD_LABEL_GAP;
     egui_dim_t row_h = local->compact_mode ? EGUI_VIEW_NUMBER_BOX_COMPACT_ROW_HEIGHT : EGUI_VIEW_NUMBER_BOX_STANDARD_ROW_HEIGHT;
+    egui_dim_t helper_gap = EGUI_VIEW_NUMBER_BOX_STANDARD_HELPER_GAP;
+    egui_dim_t helper_h = EGUI_VIEW_NUMBER_BOX_STANDARD_HELPER_HEIGHT;
     egui_dim_t button_w = local->compact_mode ? EGUI_VIEW_NUMBER_BOX_COMPACT_BUTTON_WIDTH : EGUI_VIEW_NUMBER_BOX_STANDARD_BUTTON_WIDTH;
     egui_dim_t button_gap = local->compact_mode ? EGUI_VIEW_NUMBER_BOX_COMPACT_BUTTON_GAP : EGUI_VIEW_NUMBER_BOX_STANDARD_BUTTON_GAP;
     egui_dim_t row_y;
     egui_dim_t row_x;
     egui_dim_t row_w;
+    egui_dim_t block_h = row_h;
+    egui_dim_t block_y;
+    egui_dim_t meta_line_height = egui_view_number_box_measure_font_line_height(local->meta_font);
 
     egui_view_get_work_region(self, &region);
+    if (meta_line_height > label_h)
+    {
+        label_h = meta_line_height;
+    }
+    if (meta_line_height > helper_h)
+    {
+        helper_h = meta_line_height;
+    }
+
     metrics->content.location.x = region.location.x + pad_x;
     metrics->content.location.y = region.location.y + pad_y;
     metrics->content.size.width = region.size.width - pad_x * 2;
     metrics->content.size.height = region.size.height - pad_y * 2;
     metrics->show_meta = local->compact_mode ? 0 : 1;
     metrics->show_buttons = local->read_only_mode ? 0 : 1;
+    if (metrics->show_meta)
+    {
+        block_h = label_h + label_gap + row_h + helper_gap + helper_h;
+        if (block_h > metrics->content.size.height && region.size.height >= block_h)
+        {
+            pad_y = (region.size.height - block_h) / 2;
+            metrics->content.location.y = region.location.y + pad_y;
+            metrics->content.size.height = region.size.height - pad_y * 2;
+        }
+    }
+
+    block_y = metrics->content.location.y;
+    if (metrics->show_meta && metrics->content.size.height > block_h)
+    {
+        block_y += (metrics->content.size.height - block_h) / 2;
+    }
 
     metrics->label_region.location.x = metrics->content.location.x;
-    metrics->label_region.location.y = metrics->content.location.y;
+    metrics->label_region.location.y = block_y;
     metrics->label_region.size.width = metrics->content.size.width;
-    metrics->label_region.size.height = EGUI_VIEW_NUMBER_BOX_STANDARD_LABEL_HEIGHT;
+    metrics->label_region.size.height = label_h;
 
     metrics->helper_region.location.x = metrics->content.location.x;
-    metrics->helper_region.location.y = metrics->content.location.y + EGUI_VIEW_NUMBER_BOX_STANDARD_LABEL_HEIGHT + EGUI_VIEW_NUMBER_BOX_STANDARD_LABEL_GAP +
-                                        EGUI_VIEW_NUMBER_BOX_STANDARD_ROW_HEIGHT + EGUI_VIEW_NUMBER_BOX_STANDARD_HELPER_GAP;
+    metrics->helper_region.location.y = block_y + label_h + label_gap + row_h + helper_gap;
     metrics->helper_region.size.width = metrics->content.size.width;
-    metrics->helper_region.size.height = EGUI_VIEW_NUMBER_BOX_STANDARD_HELPER_HEIGHT;
+    metrics->helper_region.size.height = helper_h;
 
     if (metrics->show_meta)
     {
-        row_y = metrics->content.location.y + EGUI_VIEW_NUMBER_BOX_STANDARD_LABEL_HEIGHT + EGUI_VIEW_NUMBER_BOX_STANDARD_LABEL_GAP;
+        row_y = block_y + label_h + label_gap;
     }
     else
     {
@@ -457,7 +502,7 @@ static void egui_view_number_box_on_draw(egui_view_t *self)
 
     if (metrics.show_meta && local->label != NULL)
     {
-        egui_view_number_box_draw_text(local->meta_font, self, local->label, &metrics.label_region, EGUI_ALIGN_LEFT, muted_text_color);
+        egui_view_number_box_draw_text(local->meta_font, self, local->label, &metrics.label_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, muted_text_color);
     }
 
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.field_region.location.x, metrics.field_region.location.y, metrics.field_region.size.width,
@@ -504,7 +549,7 @@ static void egui_view_number_box_on_draw(egui_view_t *self)
 
     if (metrics.show_meta && local->helper != NULL)
     {
-        egui_view_number_box_draw_text(local->meta_font, self, local->helper, &metrics.helper_region, EGUI_ALIGN_LEFT,
+        egui_view_number_box_draw_text(local->meta_font, self, local->helper, &metrics.helper_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER,
                                        local->read_only_mode ? egui_rgb_mix(muted_text_color, text_color, 12) : muted_text_color);
     }
 }
