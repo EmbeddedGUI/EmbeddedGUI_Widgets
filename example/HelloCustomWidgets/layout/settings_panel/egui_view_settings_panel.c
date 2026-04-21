@@ -95,6 +95,27 @@ static egui_dim_t egui_view_settings_panel_title_gap(uint8_t compact_mode)
     return compact_mode ? 6 : 4;
 }
 
+static egui_dim_t egui_view_settings_panel_measure_font_line_height(const egui_font_t *font)
+{
+    egui_dim_t dummy_width = 0;
+    egui_dim_t line_height = 0;
+
+    if (font == NULL || font->api == NULL || font->api->get_str_size == NULL)
+    {
+        return 0;
+    }
+
+    font->api->get_str_size(font, "A", 0, 0, &dummy_width, &line_height);
+    return line_height;
+}
+
+static egui_dim_t egui_view_settings_panel_resolve_line_height(const egui_font_t *font, egui_dim_t fallback)
+{
+    egui_dim_t line_height = egui_view_settings_panel_measure_font_line_height(font);
+
+    return line_height > fallback ? line_height : fallback;
+}
+
 static void egui_view_settings_panel_draw_text(const egui_font_t *font, egui_view_t *self, const char *text, const egui_region_t *region, uint8_t align,
                                                egui_color_t color)
 {
@@ -366,6 +387,7 @@ static void egui_view_settings_panel_on_draw(egui_view_t *self)
     egui_dim_t padding;
     egui_dim_t eyebrow_h;
     egui_dim_t eyebrow_w;
+    egui_dim_t title_h;
     egui_dim_t title_y;
     egui_dim_t body_y;
     egui_dim_t body_h;
@@ -455,10 +477,11 @@ static void egui_view_settings_panel_on_draw(egui_view_t *self)
     h = region.size.height;
     padding = local->compact_mode ? 7 : 9;
     eyebrow_h = local->compact_mode ? 11 : 13;
+    title_h = egui_view_settings_panel_resolve_line_height(local->font, local->compact_mode ? 11 : 12);
     eyebrow_w = egui_view_settings_panel_pill_width(snapshot->eyebrow, local->compact_mode, local->compact_mode ? 26 : 30, w / 2);
     title_y = y + padding + eyebrow_h + 4;
-    body_y = title_y + (local->compact_mode ? 11 : 12) + 1;
-    body_h = local->compact_mode ? 0 : 10;
+    body_y = title_y + title_h + 1;
+    body_h = local->compact_mode ? 0 : egui_view_settings_panel_resolve_line_height(local->meta_font, 10);
     group_y = body_y + body_h + (local->compact_mode ? 4 : 6);
     footer_h = local->compact_mode ? 12 : 16;
     footer_y = y + h - padding - footer_h;
@@ -487,7 +510,7 @@ static void egui_view_settings_panel_on_draw(egui_view_t *self)
     text_region.location.x = x + padding;
     text_region.location.y = title_y;
     text_region.size.width = w - padding * 2;
-    text_region.size.height = local->compact_mode ? 11 : 12;
+    text_region.size.height = title_h;
     egui_view_settings_panel_draw_text(local->font, self, snapshot->title, &text_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, title_color);
 
     if (!local->compact_mode)
