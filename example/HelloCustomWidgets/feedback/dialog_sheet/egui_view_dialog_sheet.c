@@ -91,6 +91,27 @@ static uint8_t egui_view_dialog_sheet_text_len(const char *text)
     return length;
 }
 
+static egui_dim_t egui_view_dialog_sheet_measure_font_line_height(const egui_font_t *font)
+{
+    egui_dim_t dummy_width = 0;
+    egui_dim_t line_height = 0;
+
+    if (font == NULL || font->api == NULL || font->api->get_str_size == NULL)
+    {
+        return 0;
+    }
+
+    font->api->get_str_size(font, "A", 0, 0, &dummy_width, &line_height);
+    return line_height;
+}
+
+static egui_dim_t egui_view_dialog_sheet_meta_height(egui_view_dialog_sheet_t *local, egui_dim_t fallback)
+{
+    egui_dim_t line_height = egui_view_dialog_sheet_measure_font_line_height(local->meta_font);
+
+    return line_height > fallback ? line_height : fallback;
+}
+
 static egui_color_t egui_view_dialog_sheet_mix_disabled(egui_color_t color)
 {
     return egui_rgb_mix(color, EGUI_COLOR_DARK_GREY, 68);
@@ -300,7 +321,7 @@ static void egui_view_dialog_sheet_get_metrics(egui_view_dialog_sheet_t *local, 
     egui_dim_t footer_h = local->compact_mode ? DIALOG_SHEET_COMPACT_FOOTER_H : DIALOG_SHEET_STANDARD_FOOTER_H;
     egui_dim_t action_h = local->compact_mode ? DIALOG_SHEET_COMPACT_ACTION_H : DIALOG_SHEET_STANDARD_ACTION_H;
     egui_dim_t action_gap = local->compact_mode ? DIALOG_SHEET_COMPACT_ACTION_GAP : DIALOG_SHEET_STANDARD_ACTION_GAP;
-    egui_dim_t tag_h = local->compact_mode ? DIALOG_SHEET_COMPACT_TAG_H : DIALOG_SHEET_STANDARD_TAG_H;
+    egui_dim_t tag_h = egui_view_dialog_sheet_meta_height(local, local->compact_mode ? DIALOG_SHEET_COMPACT_TAG_H : DIALOG_SHEET_STANDARD_TAG_H);
     egui_dim_t hero_size = local->compact_mode ? DIALOG_SHEET_COMPACT_HERO_SIZE : DIALOG_SHEET_STANDARD_HERO_SIZE;
     egui_dim_t close_size = show_close ? (local->compact_mode ? DIALOG_SHEET_COMPACT_CLOSE_SIZE : DIALOG_SHEET_STANDARD_CLOSE_SIZE) : 0;
     egui_dim_t min_footer_text_w = local->compact_mode ? DIALOG_SHEET_COMPACT_MIN_FOOTER_TEXT_W : DIALOG_SHEET_STANDARD_MIN_FOOTER_TEXT_W;
@@ -314,6 +335,7 @@ static void egui_view_dialog_sheet_get_metrics(egui_view_dialog_sheet_t *local, 
     egui_dim_t footer_text_start;
     egui_dim_t footer_text_end;
     egui_dim_t tag_w;
+    egui_dim_t eyebrow_h = local->compact_mode ? 0 : egui_view_dialog_sheet_meta_height(local, 8);
 
     egui_view_get_work_region(self, &region);
     metrics->backdrop_region = region;
@@ -391,7 +413,7 @@ static void egui_view_dialog_sheet_get_metrics(egui_view_dialog_sheet_t *local, 
     metrics->eyebrow_region.location.x = text_x;
     metrics->eyebrow_region.location.y = metrics->header_region.location.y;
     metrics->eyebrow_region.size.width = content_x + content_w - text_x - (show_close && close_size > 0 ? close_size + 6 : 0);
-    metrics->eyebrow_region.size.height = local->compact_mode ? 7 : 8;
+    metrics->eyebrow_region.size.height = eyebrow_h;
 
     metrics->title_region.location.x = text_x;
     metrics->title_region.location.y = metrics->hero_region.location.y + (local->compact_mode ? 1 : 0);
