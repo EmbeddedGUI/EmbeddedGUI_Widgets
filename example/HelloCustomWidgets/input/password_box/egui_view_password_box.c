@@ -72,6 +72,27 @@ static uint8_t password_box_has_text(const char *text)
     return (text != NULL && text[0] != '\0') ? 1 : 0;
 }
 
+static egui_dim_t password_box_measure_font_line_height(const egui_font_t *font)
+{
+    egui_dim_t dummy_width = 0;
+    egui_dim_t line_height = 0;
+
+    if (font == NULL || font->api == NULL || font->api->get_str_size == NULL)
+    {
+        return 0;
+    }
+
+    font->api->get_str_size(font, "A", 0, 0, &dummy_width, &line_height);
+    return line_height;
+}
+
+static egui_dim_t password_box_resolve_line_height(const egui_font_t *font, egui_dim_t fallback)
+{
+    egui_dim_t line_height = password_box_measure_font_line_height(font);
+
+    return line_height > fallback ? line_height : fallback;
+}
+
 static uint8_t password_box_is_reveal_visible(egui_view_password_box_t *local)
 {
     if (local->read_only_mode)
@@ -143,6 +164,8 @@ static void password_box_get_metrics(egui_view_password_box_t *local, egui_view_
     egui_dim_t row_h = local->compact_mode ? PASSWORD_BOX_COMPACT_ROW_H : PASSWORD_BOX_STD_ROW_H;
     egui_dim_t reveal_w = local->compact_mode ? PASSWORD_BOX_COMPACT_REVEAL_W : PASSWORD_BOX_STD_REVEAL_W;
     egui_dim_t reveal_gap = local->compact_mode ? PASSWORD_BOX_COMPACT_REVEAL_GAP : PASSWORD_BOX_STD_REVEAL_GAP;
+    egui_dim_t label_h = password_box_resolve_line_height(local->meta_font, PASSWORD_BOX_STD_LABEL_H);
+    egui_dim_t helper_h = password_box_resolve_line_height(local->meta_font, PASSWORD_BOX_STD_HELPER_H);
     egui_dim_t row_y;
     egui_dim_t row_w;
 
@@ -159,15 +182,15 @@ static void password_box_get_metrics(egui_view_password_box_t *local, egui_view_
     metrics->label_region.location.x = metrics->content_region.location.x;
     metrics->label_region.location.y = metrics->content_region.location.y;
     metrics->label_region.size.width = metrics->content_region.size.width;
-    metrics->label_region.size.height = metrics->show_meta ? PASSWORD_BOX_STD_LABEL_H : 0;
+    metrics->label_region.size.height = metrics->show_meta ? label_h : 0;
 
     metrics->helper_region.location.x = metrics->content_region.location.x;
     metrics->helper_region.location.y =
-            metrics->content_region.location.y + PASSWORD_BOX_STD_LABEL_H + PASSWORD_BOX_STD_LABEL_GAP + PASSWORD_BOX_STD_ROW_H + PASSWORD_BOX_STD_HELPER_GAP;
+            metrics->content_region.location.y + label_h + PASSWORD_BOX_STD_LABEL_GAP + PASSWORD_BOX_STD_ROW_H + PASSWORD_BOX_STD_HELPER_GAP;
     metrics->helper_region.size.width = metrics->content_region.size.width;
-    metrics->helper_region.size.height = metrics->show_meta ? PASSWORD_BOX_STD_HELPER_H : 0;
+    metrics->helper_region.size.height = metrics->show_meta ? helper_h : 0;
 
-    row_y = metrics->show_meta ? (metrics->content_region.location.y + PASSWORD_BOX_STD_LABEL_H + PASSWORD_BOX_STD_LABEL_GAP)
+    row_y = metrics->show_meta ? (metrics->content_region.location.y + label_h + PASSWORD_BOX_STD_LABEL_GAP)
                                : (metrics->content_region.location.y + (metrics->content_region.size.height - row_h) / 2);
     row_w = metrics->content_region.size.width;
 
