@@ -111,6 +111,20 @@ static egui_dim_t egui_view_command_bar_measure_font_line_height(const egui_font
     return height;
 }
 
+static egui_dim_t egui_view_command_bar_measure_text_width(const egui_font_t *font, const char *text)
+{
+    egui_dim_t width = 0;
+    egui_dim_t height = 0;
+
+    if (text == NULL || text[0] == '\0' || font == NULL || font->api == NULL || font->api->get_str_size == NULL)
+    {
+        return 0;
+    }
+
+    font->api->get_str_size(font, text, 0, 0, &width, &height);
+    return width;
+}
+
 static egui_color_t egui_view_command_bar_mix_disabled(egui_color_t color)
 {
     return egui_rgb_mix(color, EGUI_COLOR_DARK_GREY, 68);
@@ -204,17 +218,22 @@ static void egui_view_command_bar_draw_text(const egui_font_t *font, egui_view_t
     egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, font, text, &draw_region, align, color, self->alpha);
 }
 
-static egui_dim_t egui_view_command_bar_measure_scope_width(uint8_t compact_mode, const char *text, egui_dim_t max_w)
+static egui_dim_t egui_view_command_bar_measure_scope_width(const egui_font_t *font, uint8_t compact_mode, const char *text, egui_dim_t max_w)
 {
     egui_dim_t width;
+    egui_dim_t base_w = compact_mode ? EGUI_VIEW_COMMAND_BAR_COMPACT_SCOPE_BASE_W : EGUI_VIEW_COMMAND_BAR_STANDARD_SCOPE_BASE_W;
 
     if (text == NULL || text[0] == '\0')
     {
         return 0;
     }
 
-    width = (compact_mode ? EGUI_VIEW_COMMAND_BAR_COMPACT_SCOPE_BASE_W : EGUI_VIEW_COMMAND_BAR_STANDARD_SCOPE_BASE_W) +
-            egui_view_command_bar_text_len(text) * (compact_mode ? EGUI_VIEW_COMMAND_BAR_COMPACT_SCOPE_CHAR_W : EGUI_VIEW_COMMAND_BAR_STANDARD_SCOPE_CHAR_W);
+    width = base_w + egui_view_command_bar_measure_text_width(font, text);
+    if (width <= base_w)
+    {
+        width = base_w + egui_view_command_bar_text_len(text) *
+                          (compact_mode ? EGUI_VIEW_COMMAND_BAR_COMPACT_SCOPE_CHAR_W : EGUI_VIEW_COMMAND_BAR_STANDARD_SCOPE_CHAR_W);
+    }
     if (width > max_w)
     {
         width = max_w;
@@ -222,17 +241,22 @@ static egui_dim_t egui_view_command_bar_measure_scope_width(uint8_t compact_mode
     return width;
 }
 
-static egui_dim_t egui_view_command_bar_measure_pill_width(uint8_t compact_mode, const char *text, egui_dim_t max_w)
+static egui_dim_t egui_view_command_bar_measure_pill_width(const egui_font_t *font, uint8_t compact_mode, const char *text, egui_dim_t max_w)
 {
     egui_dim_t width;
+    egui_dim_t base_w = compact_mode ? EGUI_VIEW_COMMAND_BAR_COMPACT_PILL_BASE_W : EGUI_VIEW_COMMAND_BAR_STANDARD_PILL_BASE_W;
 
     if (text == NULL || text[0] == '\0')
     {
         return 0;
     }
 
-    width = (compact_mode ? EGUI_VIEW_COMMAND_BAR_COMPACT_PILL_BASE_W : EGUI_VIEW_COMMAND_BAR_STANDARD_PILL_BASE_W) +
-            egui_view_command_bar_text_len(text) * (compact_mode ? EGUI_VIEW_COMMAND_BAR_COMPACT_PILL_CHAR_W : EGUI_VIEW_COMMAND_BAR_STANDARD_PILL_CHAR_W);
+    width = base_w + egui_view_command_bar_measure_text_width(font, text);
+    if (width <= base_w)
+    {
+        width = base_w + egui_view_command_bar_text_len(text) *
+                          (compact_mode ? EGUI_VIEW_COMMAND_BAR_COMPACT_PILL_CHAR_W : EGUI_VIEW_COMMAND_BAR_STANDARD_PILL_CHAR_W);
+    }
     if (width > max_w)
     {
         width = max_w;
@@ -240,7 +264,7 @@ static egui_dim_t egui_view_command_bar_measure_pill_width(uint8_t compact_mode,
     return width;
 }
 
-static egui_dim_t egui_view_command_bar_measure_item_width(uint8_t compact_mode, const egui_view_command_bar_item_t *item)
+static egui_dim_t egui_view_command_bar_measure_item_width(const egui_font_t *font, uint8_t compact_mode, const egui_view_command_bar_item_t *item)
 {
     egui_dim_t width;
 
@@ -265,7 +289,12 @@ static egui_dim_t egui_view_command_bar_measure_item_width(uint8_t compact_mode,
     }
 
     width = EGUI_VIEW_COMMAND_BAR_STANDARD_ITEM_BASE_W + EGUI_VIEW_COMMAND_BAR_STANDARD_GLYPH_W + 5 +
-            egui_view_command_bar_text_len(item->label) * EGUI_VIEW_COMMAND_BAR_STANDARD_ITEM_CHAR_W + (item->emphasized ? 4 : 0);
+            egui_view_command_bar_measure_text_width(font, item->label) + (item->emphasized ? 4 : 0);
+    if (width <= EGUI_VIEW_COMMAND_BAR_STANDARD_ITEM_BASE_W + EGUI_VIEW_COMMAND_BAR_STANDARD_GLYPH_W + 5)
+    {
+        width = EGUI_VIEW_COMMAND_BAR_STANDARD_ITEM_BASE_W + EGUI_VIEW_COMMAND_BAR_STANDARD_GLYPH_W + 5 +
+                egui_view_command_bar_text_len(item->label) * EGUI_VIEW_COMMAND_BAR_STANDARD_ITEM_CHAR_W + (item->emphasized ? 4 : 0);
+    }
     if (width < EGUI_VIEW_COMMAND_BAR_STANDARD_ITEM_MIN_W)
     {
         width = EGUI_VIEW_COMMAND_BAR_STANDARD_ITEM_MIN_W;
@@ -372,7 +401,7 @@ static void egui_view_command_bar_get_metrics(egui_view_command_bar_t *local, eg
         return;
     }
 
-    scope_w = egui_view_command_bar_measure_scope_width(compact_mode, snapshot == NULL ? NULL : snapshot->scope, metrics->rail_region.size.width / 3);
+    scope_w = egui_view_command_bar_measure_scope_width(local->meta_font, compact_mode, snapshot == NULL ? NULL : snapshot->scope, metrics->rail_region.size.width / 3);
     metrics->scope_region.location.x = metrics->rail_region.location.x;
     metrics->scope_region.location.y = metrics->rail_region.location.y + (metrics->rail_region.size.height - scope_h) / 2;
     metrics->scope_region.size.width = scope_w;
@@ -387,7 +416,7 @@ static void egui_view_command_bar_get_metrics(egui_view_command_bar_t *local, eg
         else
         {
             normal_indices[normal_count++] = i;
-            widths[i] = egui_view_command_bar_measure_item_width(compact_mode, &snapshot->items[i]);
+            widths[i] = egui_view_command_bar_measure_item_width(local->font, compact_mode, &snapshot->items[i]);
             normal_total_w += widths[i];
         }
     }
@@ -398,7 +427,7 @@ static void egui_view_command_bar_get_metrics(egui_view_command_bar_t *local, eg
     for (i = 0; i < overflow_count; ++i)
     {
         uint8_t index = overflow_indices[overflow_count - 1 - i];
-        egui_dim_t width = egui_view_command_bar_measure_item_width(compact_mode, &snapshot->items[index]);
+        egui_dim_t width = egui_view_command_bar_measure_item_width(local->font, compact_mode, &snapshot->items[index]);
 
         if (right_x <= left_x)
         {
@@ -1037,7 +1066,7 @@ static void egui_view_command_bar_on_draw(egui_view_t *self)
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.content_region.location.x, metrics.content_region.location.y, metrics.content_region.size.width,
                                           local->compact_mode ? 3 : 4, 2, focus_color, egui_color_alpha_mix(self->alpha, local->disabled_mode ? 12 : 22));
 
-    eyebrow_w = egui_view_command_bar_measure_pill_width(local->compact_mode, snapshot->eyebrow, metrics.header_region.size.width / 2);
+    eyebrow_w = egui_view_command_bar_measure_pill_width(local->meta_font, local->compact_mode, snapshot->eyebrow, metrics.header_region.size.width / 2);
     if (eyebrow_w > 0)
     {
         egui_dim_t pill_h = local->compact_mode ? EGUI_VIEW_COMMAND_BAR_COMPACT_PILL_HEIGHT : EGUI_VIEW_COMMAND_BAR_STANDARD_PILL_HEIGHT;
