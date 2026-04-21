@@ -76,6 +76,72 @@ static uint8_t egui_view_settings_card_has_text(const char *text)
     return text != NULL && text[0] != '\0' ? 1 : 0;
 }
 
+static egui_dim_t egui_view_settings_card_measure_font_line_height(const egui_font_t *font)
+{
+    egui_dim_t dummy_width = 0;
+    egui_dim_t line_height = 0;
+
+    if (font == NULL || font->api == NULL || font->api->get_str_size == NULL)
+    {
+        return 0;
+    }
+
+    font->api->get_str_size(font, "A", 0, 0, &dummy_width, &line_height);
+    return line_height;
+}
+
+static egui_dim_t egui_view_settings_card_badge_height(egui_view_settings_card_t *local)
+{
+    egui_dim_t min_h = local->compact_mode ? EGUI_VIEW_SETTINGS_CARD_COMPACT_BADGE_H : EGUI_VIEW_SETTINGS_CARD_STANDARD_BADGE_H;
+    egui_dim_t line_height = egui_view_settings_card_measure_font_line_height(local->meta_font);
+
+    return line_height > min_h ? line_height : min_h;
+}
+
+static egui_dim_t egui_view_settings_card_title_height(egui_view_settings_card_t *local)
+{
+    egui_dim_t min_h = local->compact_mode ? EGUI_VIEW_SETTINGS_CARD_COMPACT_TITLE_H : EGUI_VIEW_SETTINGS_CARD_STANDARD_TITLE_H;
+    egui_dim_t line_height = egui_view_settings_card_measure_font_line_height(local->font);
+
+    return line_height > min_h ? line_height : min_h;
+}
+
+static egui_dim_t egui_view_settings_card_description_height(egui_view_settings_card_t *local)
+{
+    egui_dim_t min_h = local->compact_mode ? EGUI_VIEW_SETTINGS_CARD_COMPACT_DESCRIPTION_H : EGUI_VIEW_SETTINGS_CARD_STANDARD_DESCRIPTION_H;
+    egui_dim_t line_height;
+
+    if (min_h <= 0)
+    {
+        return 0;
+    }
+
+    line_height = egui_view_settings_card_measure_font_line_height(local->meta_font);
+    return line_height > min_h ? line_height : min_h;
+}
+
+static egui_dim_t egui_view_settings_card_footer_height(egui_view_settings_card_t *local)
+{
+    egui_dim_t min_h = local->compact_mode ? EGUI_VIEW_SETTINGS_CARD_COMPACT_FOOTER_H : EGUI_VIEW_SETTINGS_CARD_STANDARD_FOOTER_H;
+    egui_dim_t line_height;
+
+    if (min_h <= 0)
+    {
+        return 0;
+    }
+
+    line_height = egui_view_settings_card_measure_font_line_height(local->meta_font);
+    return line_height > min_h ? line_height : min_h;
+}
+
+static egui_dim_t egui_view_settings_card_value_height(egui_view_settings_card_t *local)
+{
+    egui_dim_t min_h = local->compact_mode ? 10 : 12;
+    egui_dim_t line_height = egui_view_settings_card_measure_font_line_height(local->meta_font);
+
+    return line_height > min_h ? line_height : min_h;
+}
+
 static egui_color_t egui_view_settings_card_mix_disabled(egui_color_t color)
 {
     return egui_rgb_mix(color, EGUI_COLOR_DARK_GREY, 68);
@@ -227,11 +293,11 @@ static void egui_view_settings_card_get_metrics(egui_view_settings_card_t *local
 {
     egui_dim_t pad_x = local->compact_mode ? EGUI_VIEW_SETTINGS_CARD_COMPACT_PAD_X : EGUI_VIEW_SETTINGS_CARD_STANDARD_PAD_X;
     egui_dim_t pad_y = local->compact_mode ? EGUI_VIEW_SETTINGS_CARD_COMPACT_PAD_Y : EGUI_VIEW_SETTINGS_CARD_STANDARD_PAD_Y;
-    egui_dim_t badge_h = local->compact_mode ? EGUI_VIEW_SETTINGS_CARD_COMPACT_BADGE_H : EGUI_VIEW_SETTINGS_CARD_STANDARD_BADGE_H;
+    egui_dim_t badge_h = egui_view_settings_card_badge_height(local);
     egui_dim_t icon_size = local->compact_mode ? EGUI_VIEW_SETTINGS_CARD_COMPACT_ICON_SIZE : EGUI_VIEW_SETTINGS_CARD_STANDARD_ICON_SIZE;
-    egui_dim_t title_h = local->compact_mode ? EGUI_VIEW_SETTINGS_CARD_COMPACT_TITLE_H : EGUI_VIEW_SETTINGS_CARD_STANDARD_TITLE_H;
-    egui_dim_t description_h = local->compact_mode ? EGUI_VIEW_SETTINGS_CARD_COMPACT_DESCRIPTION_H : EGUI_VIEW_SETTINGS_CARD_STANDARD_DESCRIPTION_H;
-    egui_dim_t footer_h = local->compact_mode ? EGUI_VIEW_SETTINGS_CARD_COMPACT_FOOTER_H : EGUI_VIEW_SETTINGS_CARD_STANDARD_FOOTER_H;
+    egui_dim_t title_h = egui_view_settings_card_title_height(local);
+    egui_dim_t description_h = egui_view_settings_card_description_height(local);
+    egui_dim_t footer_h = egui_view_settings_card_footer_height(local);
     egui_dim_t content_top_gap = local->compact_mode ? EGUI_VIEW_SETTINGS_CARD_COMPACT_CONTENT_TOP_GAP
                                                      : EGUI_VIEW_SETTINGS_CARD_STANDARD_CONTENT_TOP_GAP;
     egui_dim_t text_left_gap = local->compact_mode ? EGUI_VIEW_SETTINGS_CARD_COMPACT_TEXT_LEFT_GAP
@@ -336,7 +402,7 @@ static void egui_view_settings_card_get_metrics(egui_view_settings_card_t *local
         if (egui_view_settings_card_has_text(snapshot->value))
         {
             trailing_w = egui_view_settings_card_pill_width(snapshot->value, local->compact_mode, local->compact_mode ? 18 : 24, inner_w / 3);
-            trailing_h = local->compact_mode ? 10 : 12;
+            trailing_h = egui_view_settings_card_value_height(local);
         }
         break;
     }
