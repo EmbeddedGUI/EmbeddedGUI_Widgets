@@ -70,9 +70,20 @@ static egui_color_t egui_view_settings_panel_tone_color(egui_view_settings_panel
     }
 }
 
-static egui_dim_t egui_view_settings_panel_pill_width(const char *text, uint8_t compact_mode, egui_dim_t min_w, egui_dim_t max_w)
+static egui_dim_t egui_view_settings_panel_measure_text_width(const egui_font_t *font, const char *text);
+
+static egui_dim_t egui_view_settings_panel_pill_width(const egui_font_t *font, const char *text, uint8_t compact_mode, egui_dim_t min_w, egui_dim_t max_w)
 {
-    egui_dim_t width = min_w + egui_view_settings_panel_text_len(text) * (compact_mode ? 4 : 5);
+    egui_dim_t width = min_w;
+
+    if (text != NULL && text[0] != '\0')
+    {
+        width += egui_view_settings_panel_measure_text_width(font, text);
+        if (width <= min_w)
+        {
+            width = min_w + egui_view_settings_panel_text_len(text) * (compact_mode ? 4 : 5);
+        }
+    }
 
     if (width < min_w)
     {
@@ -107,6 +118,20 @@ static egui_dim_t egui_view_settings_panel_measure_font_line_height(const egui_f
 
     font->api->get_str_size(font, "A", 0, 0, &dummy_width, &line_height);
     return line_height;
+}
+
+static egui_dim_t egui_view_settings_panel_measure_text_width(const egui_font_t *font, const char *text)
+{
+    egui_dim_t text_width = 0;
+    egui_dim_t dummy_height = 0;
+
+    if (text == NULL || text[0] == '\0' || font == NULL || font->api == NULL || font->api->get_str_size == NULL)
+    {
+        return 0;
+    }
+
+    font->api->get_str_size(font, text, 0, 0, &text_width, &dummy_height);
+    return text_width;
 }
 
 static egui_dim_t egui_view_settings_panel_resolve_line_height(const egui_font_t *font, egui_dim_t fallback)
@@ -165,6 +190,8 @@ static void egui_view_settings_panel_draw_row(egui_view_t *self, egui_view_setti
     egui_color_t value_color = focused ? egui_rgb_mix(local->text_color, tone_color, 18) : egui_rgb_mix(local->muted_text_color, tone_color, 10);
     egui_dim_t icon_size = local->compact_mode ? 12 : 14;
     egui_dim_t title_x = x + icon_size + 10;
+    egui_dim_t trailing_inset = egui_view_settings_panel_trailing_inset(local->compact_mode);
+    egui_dim_t title_gap = egui_view_settings_panel_title_gap(local->compact_mode);
     egui_dim_t trailing_w = 0;
     egui_dim_t trailing_h = local->compact_mode ? 11 : 13;
     egui_dim_t trailing_x;
@@ -223,14 +250,23 @@ static void egui_view_settings_panel_draw_row(egui_view_t *self, egui_view_setti
         trailing_w = local->compact_mode ? 8 : 10;
         break;
     default:
-        trailing_w = egui_view_settings_panel_pill_width(item->value, local->compact_mode, local->compact_mode ? 20 : 26, width / 3);
+    {
+        egui_dim_t trailing_max_w = width - (title_x - x) - trailing_inset - title_gap - (local->compact_mode ? 18 : 30);
+        egui_dim_t trailing_min_w = local->compact_mode ? 20 : 26;
+
+        if (trailing_max_w < trailing_min_w)
+        {
+            trailing_max_w = trailing_min_w;
+        }
+        trailing_w = egui_view_settings_panel_pill_width(local->meta_font, item->value, local->compact_mode, trailing_min_w, trailing_max_w);
         break;
     }
-    trailing_x = x + width - trailing_w - egui_view_settings_panel_trailing_inset(local->compact_mode);
+    }
+    trailing_x = x + width - trailing_w - trailing_inset;
 
     text_region.location.x = title_x;
     text_region.location.y = y;
-    text_region.size.width = trailing_x - title_x - egui_view_settings_panel_title_gap(local->compact_mode);
+    text_region.size.width = trailing_x - title_x - title_gap;
     text_region.size.height = height;
     egui_view_settings_panel_draw_text(local->font, self, item->title, &text_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, title_color);
 
@@ -397,8 +433,10 @@ static void egui_view_settings_panel_on_draw(egui_view_t *self)
     egui_dim_t row_gap;
     egui_dim_t footer_h;
     egui_dim_t footer_y;
+    egui_dim_t footer_text_w;
     egui_dim_t focus_pill_h;
     egui_dim_t focus_pill_w;
+    egui_dim_t focus_pill_max_w;
     egui_dim_t focus_pill_x;
     egui_dim_t focus_pill_y;
     uint8_t item_count;
@@ -478,7 +516,7 @@ static void egui_view_settings_panel_on_draw(egui_view_t *self)
     padding = local->compact_mode ? 7 : 9;
     eyebrow_h = local->compact_mode ? 11 : 13;
     title_h = egui_view_settings_panel_resolve_line_height(local->font, local->compact_mode ? 11 : 12);
-    eyebrow_w = egui_view_settings_panel_pill_width(snapshot->eyebrow, local->compact_mode, local->compact_mode ? 26 : 30, w / 2);
+    eyebrow_w = egui_view_settings_panel_pill_width(local->meta_font, snapshot->eyebrow, local->compact_mode, local->compact_mode ? 26 : 30, w - padding * 2);
     title_y = y + padding + eyebrow_h + 4;
     body_y = title_y + title_h + 1;
     body_h = local->compact_mode ? 0 : egui_view_settings_panel_resolve_line_height(local->meta_font, 10);
@@ -489,7 +527,22 @@ static void egui_view_settings_panel_on_draw(egui_view_t *self)
     row_h = local->compact_mode ? 16 : 18;
     row_gap = local->compact_mode ? 2 : 3;
     focus_pill_h = local->compact_mode ? 0 : 12;
-    focus_pill_w = egui_view_settings_panel_pill_width(focus_item->title, local->compact_mode, 26, (w - padding * 2) / 3);
+    footer_text_w = egui_view_settings_panel_measure_text_width(local->meta_font, snapshot->footer);
+    focus_pill_max_w = w - padding * 2 - 8;
+    if (!local->compact_mode && footer_text_w > 0)
+    {
+        egui_dim_t reserved_footer_w = footer_text_w + 8;
+
+        if (focus_pill_max_w > reserved_footer_w + 26)
+        {
+            focus_pill_max_w -= reserved_footer_w;
+        }
+        else
+        {
+            focus_pill_max_w = 26;
+        }
+    }
+    focus_pill_w = egui_view_settings_panel_pill_width(local->meta_font, focus_item->title, local->compact_mode, 26, focus_pill_max_w);
     focus_pill_x = x + padding + 4;
     focus_pill_y = footer_y + 2;
 
