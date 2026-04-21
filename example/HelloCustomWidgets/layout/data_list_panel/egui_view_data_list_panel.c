@@ -74,6 +74,20 @@ static egui_dim_t egui_view_data_list_panel_measure_font_line_height(const egui_
     return line_height;
 }
 
+static egui_dim_t egui_view_data_list_panel_measure_text_width(const egui_font_t *font, const char *text)
+{
+    egui_dim_t text_width = 0;
+    egui_dim_t dummy_height = 0;
+
+    if (text == NULL || text[0] == '\0' || font == NULL || font->api == NULL || font->api->get_str_size == NULL)
+    {
+        return 0;
+    }
+
+    font->api->get_str_size(font, text, 0, 0, &text_width, &dummy_height);
+    return text_width;
+}
+
 static egui_dim_t egui_view_data_list_panel_meta_height(egui_view_data_list_panel_t *local, egui_dim_t fallback)
 {
     egui_dim_t line_height = egui_view_data_list_panel_measure_font_line_height(local->meta_font);
@@ -150,9 +164,18 @@ static void egui_view_data_list_panel_draw_text(const egui_font_t *font, egui_vi
     egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, font, text, &draw_region, align, color, self->alpha);
 }
 
-static egui_dim_t egui_view_data_list_panel_pill_width(const char *text, uint8_t compact_mode, egui_dim_t min_w, egui_dim_t max_w)
+static egui_dim_t egui_view_data_list_panel_pill_width(const egui_font_t *font, const char *text, uint8_t compact_mode, egui_dim_t min_w, egui_dim_t max_w)
 {
-    egui_dim_t width = min_w + egui_view_data_list_panel_text_len(text) * (compact_mode ? 4 : 5);
+    egui_dim_t width = min_w;
+
+    if (text != NULL && text[0] != '\0')
+    {
+        width += egui_view_data_list_panel_measure_text_width(font, text);
+        if (width <= min_w)
+        {
+            width = min_w + egui_view_data_list_panel_text_len(text) * (compact_mode ? 4 : 5);
+        }
+    }
 
     if (width < min_w)
     {
@@ -165,9 +188,18 @@ static egui_dim_t egui_view_data_list_panel_pill_width(const char *text, uint8_t
     return width;
 }
 
-static egui_dim_t egui_view_data_list_panel_footer_width(const char *text, uint8_t compact_mode, egui_dim_t max_w)
+static egui_dim_t egui_view_data_list_panel_footer_width(const egui_font_t *font, const char *text, uint8_t compact_mode, egui_dim_t max_w)
 {
-    egui_dim_t width = (compact_mode ? 18 : 22) + egui_view_data_list_panel_text_len(text) * (compact_mode ? 4 : 5);
+    egui_dim_t width = compact_mode ? 18 : 22;
+
+    if (text != NULL && text[0] != '\0')
+    {
+        width += egui_view_data_list_panel_measure_text_width(font, text);
+        if (width <= (compact_mode ? 18 : 22))
+        {
+            width = (compact_mode ? 18 : 22) + egui_view_data_list_panel_text_len(text) * (compact_mode ? 4 : 5);
+        }
+    }
 
     if (width > max_w)
     {
@@ -496,12 +528,17 @@ static void egui_view_data_list_panel_draw_row(egui_view_t *self, egui_view_data
     egui_dim_t glyph_y = region->location.y + (region->size.height - glyph_size) / 2;
     egui_dim_t title_x = glyph_x + glyph_size + (local->compact_mode ? 6 : 6);
     egui_dim_t value_h = egui_view_data_list_panel_meta_height(local, local->compact_mode ? 9 : 13);
-    egui_dim_t value_w = local->compact_mode ? (egui_dim_t)(egui_view_data_list_panel_text_len(item->value) * 4 + 6)
-                                             : egui_view_data_list_panel_pill_width(item->value, local->compact_mode, 24, region->size.width / 3);
+    egui_dim_t value_w = local->compact_mode ? (egui_dim_t)(egui_view_data_list_panel_measure_text_width(local->meta_font, item->value) + 6)
+                                             : egui_view_data_list_panel_pill_width(local->meta_font, item->value, local->compact_mode, 24, region->size.width / 3);
     egui_dim_t value_x = region->location.x + region->size.width - value_w - (local->compact_mode ? 4 : 6);
     egui_dim_t value_y = region->location.y + (region->size.height - value_h) / 2;
     egui_dim_t indicator_w = local->compact_mode ? 2 : 3;
     uint8_t draw_row_box = (!local->compact_mode) || selected || pressed;
+
+    if (local->compact_mode && item->value != NULL && item->value[0] != '\0' && value_w <= 6)
+    {
+        value_w = (egui_dim_t)(egui_view_data_list_panel_text_len(item->value) * 4 + 6);
+    }
 
     if (item->emphasized)
     {
@@ -677,7 +714,7 @@ static void egui_view_data_list_panel_on_draw(egui_view_t *self)
                                            i + 1 >= item_count);
     }
 
-    footer_w = egui_view_data_list_panel_footer_width(item->footer, local->compact_mode, metrics.footer_region.size.width);
+    footer_w = egui_view_data_list_panel_footer_width(local->meta_font, item->footer, local->compact_mode, metrics.footer_region.size.width);
     text_region = metrics.footer_region;
     text_region.location.x = metrics.content_region.location.x + (metrics.content_region.size.width - footer_w) / 2;
     text_region.size.width = footer_w;
