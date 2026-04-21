@@ -83,6 +83,27 @@ static uint8_t rich_edit_box_has_text(const char *text)
     return (text != NULL && text[0] != '\0') ? 1 : 0;
 }
 
+static egui_dim_t rich_edit_box_measure_font_line_height(const egui_font_t *font)
+{
+    egui_dim_t dummy_width = 0;
+    egui_dim_t line_height = 0;
+
+    if (font == NULL || font->api == NULL || font->api->get_str_size == NULL)
+    {
+        return 0;
+    }
+
+    font->api->get_str_size(font, "A", 0, 0, &dummy_width, &line_height);
+    return line_height;
+}
+
+static egui_dim_t rich_edit_box_resolve_line_height(const egui_font_t *font, egui_dim_t fallback)
+{
+    egui_dim_t line_height = rich_edit_box_measure_font_line_height(font);
+
+    return line_height > fallback ? line_height : fallback;
+}
+
 static uint8_t rich_edit_box_text_len(const char *text)
 {
     uint8_t length = 0;
@@ -396,16 +417,7 @@ static uint8_t rich_edit_box_pop_char(egui_view_t *self)
 
 static egui_dim_t rich_edit_box_get_line_height(const egui_font_t *font)
 {
-    egui_dim_t dummy_width = 0;
-    egui_dim_t line_height = 0;
-
-    if (font == NULL)
-    {
-        return 0;
-    }
-
-    font->api->get_str_size(font, "A", 0, 0, &dummy_width, &line_height);
-    return line_height;
+    return rich_edit_box_measure_font_line_height(font);
 }
 
 static void rich_edit_box_get_char_metrics(const egui_font_t *font, const char *text, int *out_bytes, egui_dim_t *out_width)
@@ -587,17 +599,25 @@ static void rich_edit_box_get_metrics(egui_view_rich_edit_box_t *local, egui_vie
     const egui_view_rich_edit_box_document_t *document = rich_edit_box_get_document(local);
     egui_dim_t pad_x = local->compact_mode ? EGUI_VIEW_RICH_EDIT_BOX_COMPACT_PAD_X : EGUI_VIEW_RICH_EDIT_BOX_STANDARD_PAD_X;
     egui_dim_t pad_y = local->compact_mode ? EGUI_VIEW_RICH_EDIT_BOX_COMPACT_PAD_Y : EGUI_VIEW_RICH_EDIT_BOX_STANDARD_PAD_Y;
-    egui_dim_t badge_h = local->compact_mode ? EGUI_VIEW_RICH_EDIT_BOX_COMPACT_BADGE_H : EGUI_VIEW_RICH_EDIT_BOX_STANDARD_BADGE_H;
+    egui_dim_t badge_h = rich_edit_box_resolve_line_height(local->meta_font,
+                                                           local->compact_mode ? EGUI_VIEW_RICH_EDIT_BOX_COMPACT_BADGE_H
+                                                                               : EGUI_VIEW_RICH_EDIT_BOX_STANDARD_BADGE_H);
     egui_dim_t badge_gap = local->compact_mode ? EGUI_VIEW_RICH_EDIT_BOX_COMPACT_BADGE_GAP : EGUI_VIEW_RICH_EDIT_BOX_STANDARD_BADGE_GAP;
-    egui_dim_t title_h = local->compact_mode ? EGUI_VIEW_RICH_EDIT_BOX_COMPACT_TITLE_H : EGUI_VIEW_RICH_EDIT_BOX_STANDARD_TITLE_H;
-    egui_dim_t summary_h = local->compact_mode ? EGUI_VIEW_RICH_EDIT_BOX_COMPACT_SUMMARY_H : EGUI_VIEW_RICH_EDIT_BOX_STANDARD_SUMMARY_H;
+    egui_dim_t title_h = rich_edit_box_resolve_line_height(local->font,
+                                                           local->compact_mode ? EGUI_VIEW_RICH_EDIT_BOX_COMPACT_TITLE_H
+                                                                               : EGUI_VIEW_RICH_EDIT_BOX_STANDARD_TITLE_H);
+    egui_dim_t summary_h = local->compact_mode ? EGUI_VIEW_RICH_EDIT_BOX_COMPACT_SUMMARY_H
+                                               : rich_edit_box_resolve_line_height(local->meta_font,
+                                                                                   EGUI_VIEW_RICH_EDIT_BOX_STANDARD_SUMMARY_H);
     egui_dim_t title_gap = local->compact_mode ? EGUI_VIEW_RICH_EDIT_BOX_COMPACT_TITLE_GAP : EGUI_VIEW_RICH_EDIT_BOX_STANDARD_TITLE_GAP;
     egui_dim_t editor_gap = local->compact_mode ? EGUI_VIEW_RICH_EDIT_BOX_COMPACT_EDITOR_GAP : EGUI_VIEW_RICH_EDIT_BOX_STANDARD_EDITOR_GAP;
     egui_dim_t editor_pad_x = local->compact_mode ? EGUI_VIEW_RICH_EDIT_BOX_COMPACT_EDITOR_PAD_X : EGUI_VIEW_RICH_EDIT_BOX_STANDARD_EDITOR_PAD_X;
     egui_dim_t editor_pad_y = local->compact_mode ? EGUI_VIEW_RICH_EDIT_BOX_COMPACT_EDITOR_PAD_Y : EGUI_VIEW_RICH_EDIT_BOX_STANDARD_EDITOR_PAD_Y;
     egui_dim_t preset_h = local->compact_mode ? EGUI_VIEW_RICH_EDIT_BOX_COMPACT_PRESET_H : EGUI_VIEW_RICH_EDIT_BOX_STANDARD_PRESET_H;
     egui_dim_t preset_gap = local->compact_mode ? EGUI_VIEW_RICH_EDIT_BOX_COMPACT_PRESET_GAP : EGUI_VIEW_RICH_EDIT_BOX_STANDARD_PRESET_GAP;
-    egui_dim_t footer_h = local->compact_mode ? EGUI_VIEW_RICH_EDIT_BOX_COMPACT_FOOTER_H : EGUI_VIEW_RICH_EDIT_BOX_STANDARD_FOOTER_H;
+    egui_dim_t footer_h = local->compact_mode ? EGUI_VIEW_RICH_EDIT_BOX_COMPACT_FOOTER_H
+                                              : rich_edit_box_resolve_line_height(local->meta_font,
+                                                                                  EGUI_VIEW_RICH_EDIT_BOX_STANDARD_FOOTER_H);
     egui_dim_t footer_gap = local->compact_mode ? EGUI_VIEW_RICH_EDIT_BOX_COMPACT_FOOTER_GAP : EGUI_VIEW_RICH_EDIT_BOX_STANDARD_FOOTER_GAP;
     egui_dim_t inner_x;
     egui_dim_t inner_y;
