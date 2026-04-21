@@ -46,6 +46,27 @@ static uint8_t shortcut_recorder_has_text(const char *text)
     return (text != NULL && text[0] != '\0') ? 1 : 0;
 }
 
+static egui_dim_t shortcut_recorder_measure_font_line_height(const egui_font_t *font)
+{
+    egui_dim_t dummy_width = 0;
+    egui_dim_t line_height = 0;
+
+    if (font == NULL || font->api == NULL || font->api->get_str_size == NULL)
+    {
+        return 0;
+    }
+
+    font->api->get_str_size(font, "A", 0, 0, &dummy_width, &line_height);
+    return line_height;
+}
+
+static egui_dim_t shortcut_recorder_resolve_line_height(const egui_font_t *font, egui_dim_t fallback)
+{
+    egui_dim_t line_height = shortcut_recorder_measure_font_line_height(font);
+
+    return line_height > fallback ? line_height : fallback;
+}
+
 static uint8_t shortcut_recorder_clear_pressed_state(egui_view_t *self, egui_view_shortcut_recorder_t *local)
 {
     uint8_t was_pressed = self->is_pressed ? 1 : 0;
@@ -471,6 +492,8 @@ static void shortcut_recorder_get_metrics(egui_view_shortcut_recorder_t *local, 
     egui_dim_t content_x;
     egui_dim_t content_y;
     egui_dim_t content_w;
+    egui_dim_t title_h = shortcut_recorder_resolve_line_height(local->meta_font, SR_STD_TITLE_H);
+    egui_dim_t helper_h = shortcut_recorder_resolve_line_height(local->meta_font, SR_STD_HELPER_H);
     egui_dim_t y;
     egui_dim_t row_h;
     uint8_t i;
@@ -502,8 +525,8 @@ static void shortcut_recorder_get_metrics(egui_view_shortcut_recorder_t *local, 
         metrics->title_region.location.x = content_x;
         metrics->title_region.location.y = y;
         metrics->title_region.size.width = content_w;
-        metrics->title_region.size.height = SR_STD_TITLE_H;
-        y += SR_STD_TITLE_H + 3;
+        metrics->title_region.size.height = title_h;
+        y += title_h + 3;
     }
 
     if (metrics->show_helper)
@@ -511,8 +534,8 @@ static void shortcut_recorder_get_metrics(egui_view_shortcut_recorder_t *local, 
         metrics->helper_region.location.x = content_x;
         metrics->helper_region.location.y = y;
         metrics->helper_region.size.width = content_w;
-        metrics->helper_region.size.height = SR_STD_HELPER_H;
-        y += SR_STD_HELPER_H + SR_STD_GAP;
+        metrics->helper_region.size.height = helper_h;
+        y += helper_h + SR_STD_GAP;
     }
 
     metrics->field_region.location.x = content_x;
@@ -562,7 +585,7 @@ static void shortcut_recorder_draw_text(const egui_font_t *font, egui_view_t *se
 {
     egui_region_t draw_region;
 
-    if (font == NULL || !shortcut_recorder_has_text(text) || region == NULL)
+    if (font == NULL || !shortcut_recorder_has_text(text) || region == NULL || region->size.width <= 0 || region->size.height <= 0)
     {
         return;
     }
