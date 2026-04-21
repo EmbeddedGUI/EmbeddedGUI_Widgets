@@ -85,6 +85,27 @@ static uint8_t sv_text_len(const char *text)
     return len;
 }
 
+static egui_dim_t sv_measure_font_line_height(const egui_font_t *font)
+{
+    egui_dim_t dummy_width = 0;
+    egui_dim_t line_height = 0;
+
+    if (font == NULL || font->api == NULL || font->api->get_str_size == NULL)
+    {
+        return 0;
+    }
+
+    font->api->get_str_size(font, "A", 0, 0, &dummy_width, &line_height);
+    return line_height;
+}
+
+static egui_dim_t sv_resolve_line_height(const egui_font_t *font, egui_dim_t fallback)
+{
+    egui_dim_t line_height = sv_measure_font_line_height(font);
+
+    return line_height > fallback ? line_height : fallback;
+}
+
 static egui_color_t sv_tone_color(egui_view_split_view_t *local, uint8_t tone)
 {
     switch (tone)
@@ -156,6 +177,7 @@ static void sv_get_metrics(egui_view_split_view_t *local, egui_view_t *self, egu
     egui_dim_t gap = local->compact_mode ? SV_COMPACT_GAP : SV_STD_GAP;
     egui_dim_t toggle_w = local->compact_mode ? SV_COMPACT_TOGGLE_W : SV_STD_TOGGLE_W;
     egui_dim_t toggle_h = local->compact_mode ? SV_COMPACT_TOGGLE_H : SV_STD_TOGGLE_H;
+    egui_dim_t pane_title_h = sv_resolve_line_height(local->meta_font, toggle_h);
     egui_dim_t row_h = local->compact_mode ? SV_COMPACT_ROW_H : SV_STD_ROW_H;
     egui_dim_t row_gap = local->compact_mode ? SV_COMPACT_ROW_GAP : SV_STD_ROW_GAP;
     egui_dim_t total_h;
@@ -204,10 +226,14 @@ static void sv_get_metrics(egui_view_split_view_t *local, egui_view_t *self, egu
     metrics->toggle.location.y = metrics->pane.location.y + 2;
     metrics->toggle.size.width = toggle_w;
     metrics->toggle.size.height = toggle_h;
+    if (pane_title_h + 4 > header_h)
+    {
+        header_h = pane_title_h + 4;
+    }
     metrics->title.location.x = metrics->toggle.location.x + toggle_w + 4;
     metrics->title.location.y = metrics->toggle.location.y;
     metrics->title.size.width = metrics->pane.location.x + metrics->pane.size.width - metrics->title.location.x - 3;
-    metrics->title.size.height = toggle_h;
+    metrics->title.size.height = pane_title_h;
     metrics->detail.location.x = metrics->pane.location.x + metrics->pane.size.width + gap;
     metrics->detail.location.y = metrics->content.location.y;
     metrics->detail.size.width = metrics->content.size.width - metrics->pane.size.width - gap;
@@ -485,7 +511,7 @@ static void sv_draw_row(egui_view_t *self, egui_view_split_view_t *local, const 
     egui_dim_t glyph_size = local->compact_mode ? SV_COMPACT_GLYPH : SV_STD_GLYPH;
     egui_dim_t radius = local->compact_mode ? 5 : 6;
     egui_dim_t meta_w = 0;
-    egui_dim_t meta_h = local->compact_mode ? 8 : 10;
+    egui_dim_t meta_h = sv_resolve_line_height(local->meta_font, local->compact_mode ? 8 : 10);
     egui_dim_t glyph_x;
     egui_dim_t glyph_y;
     egui_dim_t title_x;
@@ -610,11 +636,12 @@ static void egui_view_split_view_on_draw(egui_view_t *self)
     egui_dim_t detail_radius = local->compact_mode ? SV_COMPACT_DETAIL_RADIUS : SV_STD_DETAIL_RADIUS;
     egui_dim_t detail_pad_x = local->compact_mode ? SV_COMPACT_DETAIL_PAD_X : SV_STD_DETAIL_PAD_X;
     egui_dim_t detail_pad_y = local->compact_mode ? SV_COMPACT_DETAIL_PAD_Y : SV_STD_DETAIL_PAD_Y;
-    egui_dim_t title_h = local->compact_mode ? SV_COMPACT_TITLE_H : SV_STD_TITLE_H;
-    egui_dim_t meta_h = local->compact_mode ? SV_COMPACT_META_H : SV_STD_META_H;
-    egui_dim_t body_h = local->compact_mode ? SV_COMPACT_BODY_H : SV_STD_BODY_H;
+    egui_dim_t title_h = sv_resolve_line_height(local->font, local->compact_mode ? SV_COMPACT_TITLE_H : SV_STD_TITLE_H);
+    egui_dim_t meta_h = sv_resolve_line_height(local->meta_font, local->compact_mode ? SV_COMPACT_META_H : SV_STD_META_H);
+    egui_dim_t body_h = sv_resolve_line_height(local->meta_font, local->compact_mode ? SV_COMPACT_BODY_H : SV_STD_BODY_H);
     egui_dim_t body_gap = local->compact_mode ? SV_COMPACT_BODY_GAP : SV_STD_BODY_GAP;
-    egui_dim_t footer_h = local->compact_mode ? SV_COMPACT_FOOTER_H : SV_STD_FOOTER_H;
+    egui_dim_t eyebrow_h = meta_h;
+    egui_dim_t footer_h = sv_resolve_line_height(local->meta_font, local->compact_mode ? SV_COMPACT_FOOTER_H : SV_STD_FOOTER_H);
     egui_dim_t footer_w;
     egui_dim_t cursor_y;
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
@@ -738,9 +765,9 @@ static void egui_view_split_view_on_draw(egui_view_t *self)
         text_region.location.x = metrics.detail.location.x + detail_pad_x;
         text_region.location.y = cursor_y;
         text_region.size.width = metrics.detail.size.width - detail_pad_x * 2;
-        text_region.size.height = 8;
+        text_region.size.height = eyebrow_h;
         sv_draw_text(local->meta_font, self, item->detail_eyebrow, &text_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, eyebrow_color);
-        cursor_y += 10;
+        cursor_y += eyebrow_h + 2;
     }
 
     text_region.location.x = metrics.detail.location.x + detail_pad_x;
