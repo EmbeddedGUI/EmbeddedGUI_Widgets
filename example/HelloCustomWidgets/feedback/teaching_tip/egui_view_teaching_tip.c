@@ -102,6 +102,44 @@ static uint8_t egui_view_teaching_tip_has_text(const char *text)
     return (text != NULL && text[0] != '\0') ? 1 : 0;
 }
 
+static egui_dim_t egui_view_teaching_tip_measure_font_line_height(const egui_font_t *font)
+{
+    egui_dim_t dummy_width = 0;
+    egui_dim_t line_height = 0;
+
+    if (font == NULL || font->api == NULL || font->api->get_str_size == NULL)
+    {
+        return 0;
+    }
+
+    font->api->get_str_size(font, "A", 0, 0, &dummy_width, &line_height);
+    return line_height;
+}
+
+static egui_dim_t egui_view_teaching_tip_meta_height(egui_view_teaching_tip_t *local, egui_dim_t fallback)
+{
+    egui_dim_t line_height = egui_view_teaching_tip_measure_font_line_height(local->meta_font);
+
+    return line_height > fallback ? line_height : fallback;
+}
+
+static egui_dim_t egui_view_teaching_tip_title_height(egui_view_teaching_tip_t *local, uint8_t compact_with_primary)
+{
+    egui_dim_t fallback;
+    egui_dim_t line_height = egui_view_teaching_tip_measure_font_line_height(local->font);
+
+    if (local->compact_mode)
+    {
+        fallback = compact_with_primary ? 10 : 9;
+    }
+    else
+    {
+        fallback = 11;
+    }
+
+    return line_height > fallback ? line_height : fallback;
+}
+
 static egui_color_t egui_view_teaching_tip_mix_disabled(egui_color_t color)
 {
     return egui_rgb_mix(color, EGUI_COLOR_DARK_GREY, 68);
@@ -457,6 +495,11 @@ static void egui_view_teaching_tip_get_metrics(egui_view_teaching_tip_t *local, 
     egui_dim_t bubble_side_margin = local->compact_mode ? 0 : 6;
     egui_dim_t closed_panel_w = 0;
     egui_dim_t closed_panel_x = 0;
+    egui_dim_t eyebrow_h = egui_view_teaching_tip_meta_height(local, 8);
+    egui_dim_t compact_body_h = egui_view_teaching_tip_meta_height(local, 8);
+    egui_dim_t footer_h = egui_view_teaching_tip_meta_height(local, 8);
+    egui_dim_t closed_title_h = egui_view_teaching_tip_title_height(local, 0);
+    egui_dim_t closed_body_h = egui_view_teaching_tip_meta_height(local, 9);
 
     egui_view_get_work_region(self, &region);
     metrics->content_region.location.x = region.location.x + pad_x;
@@ -575,7 +618,7 @@ static void egui_view_teaching_tip_get_metrics(egui_view_teaching_tip_t *local, 
     metrics->eyebrow_region.location.x = metrics->bubble_region.location.x + inner_pad_x;
     metrics->eyebrow_region.location.y = metrics->bubble_region.location.y + inner_pad_y;
     metrics->eyebrow_region.size.width = bubble_inner_w - (metrics->show_close ? (close_size + 4) : 0);
-    metrics->eyebrow_region.size.height = metrics->show_eyebrow ? 8 : 0;
+    metrics->eyebrow_region.size.height = metrics->show_eyebrow ? eyebrow_h : 0;
 
     metrics->footer_region.location.x = metrics->bubble_region.location.x + inner_pad_x;
     metrics->footer_region.location.y = 0;
@@ -606,11 +649,11 @@ static void egui_view_teaching_tip_get_metrics(egui_view_teaching_tip_t *local, 
         metrics->closed_title_region.location.x = closed_panel_x + 10;
         metrics->closed_title_region.location.y = metrics->target_region.location.y + metrics->target_region.size.height + 10;
         metrics->closed_title_region.size.width = closed_panel_w - 20;
-        metrics->closed_title_region.size.height = 11;
+        metrics->closed_title_region.size.height = closed_title_h;
         metrics->closed_body_region.location.x = metrics->closed_title_region.location.x;
-        metrics->closed_body_region.location.y = metrics->closed_title_region.location.y + 12;
+        metrics->closed_body_region.location.y = metrics->closed_title_region.location.y + metrics->closed_title_region.size.height + 2;
         metrics->closed_body_region.size.width = metrics->closed_title_region.size.width;
-        metrics->closed_body_region.size.height = 9;
+        metrics->closed_body_region.size.height = closed_body_h;
     }
     else
     {
@@ -636,7 +679,8 @@ static void egui_view_teaching_tip_get_metrics(egui_view_teaching_tip_t *local, 
 
     if (local->compact_mode)
     {
-        title_y = metrics->bubble_region.location.y + inner_pad_y + 2;
+        title_h = egui_view_teaching_tip_title_height(local, metrics->show_primary);
+        title_y = metrics->bubble_region.location.y + inner_pad_y + 1;
         if (metrics->show_primary)
         {
             compact_button_w = 18 + egui_view_teaching_tip_text_len(snapshot == NULL ? NULL : snapshot->primary_action) * 4;
@@ -661,7 +705,7 @@ static void egui_view_teaching_tip_get_metrics(egui_view_teaching_tip_t *local, 
             metrics->title_region.location.x = metrics->bubble_region.location.x + inner_pad_x;
             metrics->title_region.location.y = title_y;
             metrics->title_region.size.width = metrics->primary_region.location.x - metrics->title_region.location.x - action_gap;
-            metrics->title_region.size.height = 10;
+            metrics->title_region.size.height = title_h;
 
             metrics->body_region.location.x = metrics->title_region.location.x;
             metrics->body_region.location.y = metrics->title_region.location.y;
@@ -673,25 +717,25 @@ static void egui_view_teaching_tip_get_metrics(egui_view_teaching_tip_t *local, 
             metrics->title_region.location.x = metrics->bubble_region.location.x + inner_pad_x;
             metrics->title_region.location.y = title_y;
             metrics->title_region.size.width = bubble_inner_w;
-            metrics->title_region.size.height = 9;
+            metrics->title_region.size.height = title_h;
 
             metrics->body_region.location.x = metrics->bubble_region.location.x + inner_pad_x;
-            metrics->body_region.location.y = metrics->title_region.location.y + metrics->title_region.size.height + 2;
+            metrics->body_region.location.y = metrics->title_region.location.y + metrics->title_region.size.height + 1;
             metrics->body_region.size.width = bubble_inner_w;
-            metrics->body_region.size.height = metrics->show_body ? 8 : 0;
+            metrics->body_region.size.height = metrics->show_body ? compact_body_h : 0;
         }
 
         return;
     }
 
-    title_y = metrics->bubble_region.location.y + inner_pad_y + (metrics->show_eyebrow ? 11 : 3);
-    title_h = 11;
+    title_y = metrics->bubble_region.location.y + inner_pad_y + (metrics->show_eyebrow ? (eyebrow_h + 2) : 3);
+    title_h = egui_view_teaching_tip_title_height(local, 0);
     metrics->title_region.location.x = metrics->bubble_region.location.x + inner_pad_x;
     metrics->title_region.location.y = title_y;
     metrics->title_region.size.width = bubble_inner_w - (metrics->show_close ? (close_size + 4) : 0);
     metrics->title_region.size.height = title_h;
 
-    actions_y = metrics->bubble_region.location.y + metrics->bubble_region.size.height - inner_pad_y - action_h;
+    actions_y = metrics->bubble_region.location.y + metrics->bubble_region.size.height - action_h - 5;
     if (metrics->show_secondary)
     {
         egui_dim_t min_primary_w = 56;
@@ -731,18 +775,18 @@ static void egui_view_teaching_tip_get_metrics(egui_view_teaching_tip_t *local, 
 
     if (metrics->show_footer)
     {
-        footer_y = actions_y - 12;
+        footer_y = actions_y - footer_h - 3;
         metrics->footer_region.location.x = metrics->bubble_region.location.x + inner_pad_x;
         metrics->footer_region.location.y = footer_y;
         metrics->footer_region.size.width = bubble_inner_w;
-        metrics->footer_region.size.height = 8;
+        metrics->footer_region.size.height = footer_h;
     }
 
     metrics->body_region.location.x = metrics->bubble_region.location.x + inner_pad_x;
-    metrics->body_region.location.y = metrics->title_region.location.y + metrics->title_region.size.height + 5;
+    metrics->body_region.location.y = metrics->title_region.location.y + metrics->title_region.size.height + 2;
     metrics->body_region.size.width = bubble_inner_w;
     body_y = metrics->body_region.location.y;
-    body_bottom = (metrics->show_footer ? metrics->footer_region.location.y - 4 : actions_y - 6);
+    body_bottom = (metrics->show_footer ? metrics->footer_region.location.y - 2 : actions_y - 3);
     if (body_bottom < body_y)
     {
         body_bottom = body_y;
