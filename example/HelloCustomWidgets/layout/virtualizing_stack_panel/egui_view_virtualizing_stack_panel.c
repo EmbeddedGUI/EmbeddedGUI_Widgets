@@ -134,6 +134,20 @@ static uint8_t virtualizing_stack_panel_has_text(const char *text)
     return text != NULL && text[0] != '\0' ? 1 : 0;
 }
 
+static egui_dim_t virtualizing_stack_panel_measure_font_line_height(const egui_font_t *font)
+{
+    egui_dim_t width = 0;
+    egui_dim_t height = 0;
+
+    if (font == NULL || font->api == NULL || font->api->get_str_size == NULL)
+    {
+        return 0;
+    }
+
+    font->api->get_str_size(font, "A", 0, 0, &width, &height);
+    return height;
+}
+
 static egui_color_t virtualizing_stack_panel_mix_disabled(egui_color_t color)
 {
     return egui_rgb_mix(color, EGUI_COLOR_DARK_GREY, 68);
@@ -288,6 +302,8 @@ static void virtualizing_stack_panel_get_metrics(egui_view_virtualizing_stack_pa
     egui_dim_t badge_gap = local->compact_mode ? EGUI_VIEW_VIRTUALIZING_STACK_PANEL_COMPACT_BADGE_GAP : EGUI_VIEW_VIRTUALIZING_STACK_PANEL_STANDARD_BADGE_GAP;
     egui_dim_t title_h = local->compact_mode ? EGUI_VIEW_VIRTUALIZING_STACK_PANEL_COMPACT_TITLE_H : EGUI_VIEW_VIRTUALIZING_STACK_PANEL_STANDARD_TITLE_H;
     egui_dim_t summary_h = local->compact_mode ? EGUI_VIEW_VIRTUALIZING_STACK_PANEL_COMPACT_SUMMARY_H : EGUI_VIEW_VIRTUALIZING_STACK_PANEL_STANDARD_SUMMARY_H;
+    egui_dim_t font_line_height = virtualizing_stack_panel_measure_font_line_height(local->font);
+    egui_dim_t meta_line_height = virtualizing_stack_panel_measure_font_line_height(local->meta_font);
     egui_dim_t title_gap = local->compact_mode ? EGUI_VIEW_VIRTUALIZING_STACK_PANEL_COMPACT_TITLE_GAP : EGUI_VIEW_VIRTUALIZING_STACK_PANEL_STANDARD_TITLE_GAP;
     egui_dim_t shell_gap = local->compact_mode ? EGUI_VIEW_VIRTUALIZING_STACK_PANEL_COMPACT_SHELL_GAP : EGUI_VIEW_VIRTUALIZING_STACK_PANEL_STANDARD_SHELL_GAP;
     egui_dim_t shell_pad_x = local->compact_mode ? EGUI_VIEW_VIRTUALIZING_STACK_PANEL_COMPACT_SHELL_PAD_X : EGUI_VIEW_VIRTUALIZING_STACK_PANEL_STANDARD_SHELL_PAD_X;
@@ -328,6 +344,38 @@ static void virtualizing_stack_panel_get_metrics(egui_view_virtualizing_stack_pa
     if (!virtualizing_stack_panel_region_has_size(&metrics->content_region) || snapshot == NULL)
     {
         return;
+    }
+
+    if (meta_line_height > badge_h)
+    {
+        badge_h = meta_line_height;
+    }
+    if (font_line_height > title_h)
+    {
+        title_h = font_line_height;
+    }
+    if (summary_h > 0 && meta_line_height > summary_h)
+    {
+        summary_h = meta_line_height;
+    }
+    if (footer_h > 0 && meta_line_height > footer_h)
+    {
+        footer_h = meta_line_height;
+    }
+    if (local->compact_mode)
+    {
+        if (meta_line_height > row_h)
+        {
+            row_h = meta_line_height;
+        }
+        if (font_line_height > row_h)
+        {
+            row_h = font_line_height;
+        }
+    }
+    else if (font_line_height + 1 + meta_line_height > row_h)
+    {
+        row_h = font_line_height + 1 + meta_line_height;
     }
 
     inner_x = metrics->content_region.location.x + inner_pad_x;
@@ -614,10 +662,29 @@ static void virtualizing_stack_panel_draw_item(egui_view_t *self, egui_view_virt
     egui_dim_t title_h = local->compact_mode ? 9 : 10;
     egui_dim_t meta_h = local->compact_mode ? 0 : 8;
     egui_dim_t value_h = local->compact_mode ? 9 : 10;
+    egui_dim_t font_line_height = virtualizing_stack_panel_measure_font_line_height(local->font);
+    egui_dim_t meta_line_height = virtualizing_stack_panel_measure_font_line_height(local->meta_font);
     egui_dim_t indicator_w = local->compact_mode ? 2 : 3;
     egui_dim_t text_left = region->location.x + pad_x;
     egui_dim_t text_right = region->location.x + region->size.width - pad_x;
     egui_dim_t vertical_gap = local->compact_mode ? 0 : 1;
+
+    if (meta_line_height > badge_h)
+    {
+        badge_h = meta_line_height;
+    }
+    if (font_line_height > title_h)
+    {
+        title_h = font_line_height;
+    }
+    if (meta_h > 0 && meta_line_height > meta_h)
+    {
+        meta_h = meta_line_height;
+    }
+    if (meta_line_height > value_h)
+    {
+        value_h = meta_line_height;
+    }
 
     if (!virtualizing_stack_panel_region_has_size(region))
     {
