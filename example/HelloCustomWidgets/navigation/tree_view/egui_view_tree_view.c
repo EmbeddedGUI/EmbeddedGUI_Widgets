@@ -104,6 +104,20 @@ static egui_dim_t egui_view_tree_view_measure_font_line_height(const egui_font_t
     return line_height;
 }
 
+static egui_dim_t egui_view_tree_view_measure_text_width(const egui_font_t *font, const char *text)
+{
+    egui_dim_t text_width = 0;
+    egui_dim_t dummy_height = 0;
+
+    if (text == NULL || text[0] == '\0' || font == NULL || font->api == NULL || font->api->get_str_size == NULL)
+    {
+        return 0;
+    }
+
+    font->api->get_str_size(font, text, 0, 0, &text_width, &dummy_height);
+    return text_width;
+}
+
 static egui_dim_t egui_view_tree_view_get_title_line_height(egui_view_tree_view_t *local)
 {
     egui_dim_t line_height = egui_view_tree_view_measure_font_line_height(local->font);
@@ -237,14 +251,18 @@ static uint8_t egui_view_tree_view_focus_index(const egui_view_tree_view_snapsho
     return snapshot->focus_index;
 }
 
-static egui_dim_t egui_view_tree_view_caption_width(const char *text, uint8_t compact_mode, egui_dim_t max_w)
+static egui_dim_t egui_view_tree_view_caption_width(const egui_font_t *font, const char *text, uint8_t compact_mode, egui_dim_t max_w)
 {
     egui_dim_t min_w = compact_mode ? EGUI_VIEW_TREE_VIEW_COMPACT_CAPTION_MIN_W : EGUI_VIEW_TREE_VIEW_STANDARD_CAPTION_MIN_W;
     egui_dim_t width = min_w;
 
     if (text != NULL && text[0] != '\0')
     {
-        width += egui_view_tree_view_text_len(text) * (compact_mode ? 4 : 5);
+        width += egui_view_tree_view_measure_text_width(font, text);
+        if (width <= min_w)
+        {
+            width = min_w + egui_view_tree_view_text_len(text) * (compact_mode ? 4 : 5);
+        }
     }
 
     if (width > max_w)
@@ -254,7 +272,7 @@ static egui_dim_t egui_view_tree_view_caption_width(const char *text, uint8_t co
     return width;
 }
 
-static egui_dim_t egui_view_tree_view_meta_width(const char *text, uint8_t compact_mode, egui_dim_t max_w)
+static egui_dim_t egui_view_tree_view_meta_width(const egui_font_t *font, const char *text, uint8_t compact_mode, egui_dim_t max_w)
 {
     egui_dim_t min_w = compact_mode ? EGUI_VIEW_TREE_VIEW_COMPACT_META_MIN_W : EGUI_VIEW_TREE_VIEW_STANDARD_META_MIN_W;
     egui_dim_t width;
@@ -264,7 +282,11 @@ static egui_dim_t egui_view_tree_view_meta_width(const char *text, uint8_t compa
         return 0;
     }
 
-    width = min_w + egui_view_tree_view_text_len(text) * (compact_mode ? 4 : 5);
+    width = min_w + egui_view_tree_view_measure_text_width(font, text);
+    if (width <= min_w)
+    {
+        width = min_w + egui_view_tree_view_text_len(text) * (compact_mode ? 4 : 5);
+    }
     if (width > max_w)
     {
         width = max_w;
@@ -713,7 +735,7 @@ static void egui_view_tree_view_draw_row(egui_view_t *self, egui_view_tree_view_
     egui_dim_t glyph_x = caret_x + caret_box_w + 3;
     egui_dim_t glyph_y = item_region->location.y + (item_region->size.height - glyph_h) / 2;
     egui_dim_t title_x = glyph_x + glyph_w + 6;
-    egui_dim_t meta_w = egui_view_tree_view_meta_width(item->meta, local->compact_mode, item_region->size.width / 3);
+    egui_dim_t meta_w = egui_view_tree_view_meta_width(local->meta_font, item->meta, local->compact_mode, item_region->size.width / 3);
     egui_dim_t meta_x = item_region->location.x + item_region->size.width - meta_w - 6;
     egui_dim_t mid_y = item_region->location.y + item_region->size.height / 2;
     egui_alpha_t guide_alpha = local->compact_mode ? 10 : 18;
@@ -928,7 +950,7 @@ static void egui_view_tree_view_on_draw(egui_view_t *self)
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, region.location.x + 2, region.location.y + 2, region.size.width - 4, local->compact_mode ? 3 : 4, radius, focus_color,
                                           egui_color_alpha_mix(self->alpha, local->read_only_mode ? 5 : 10));
 
-    caption_w = egui_view_tree_view_caption_width(snapshot->caption, local->compact_mode, metrics.header_region.size.width / 2);
+    caption_w = egui_view_tree_view_caption_width(local->meta_font, snapshot->caption, local->compact_mode, metrics.header_region.size.width / 2);
     if (snapshot->caption != NULL && snapshot->caption[0] != '\0')
     {
         egui_dim_t caption_h = egui_view_tree_view_get_meta_height(local);
