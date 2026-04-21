@@ -155,6 +155,13 @@ static egui_dim_t date_picker_measure_font_line_height(const egui_font_t *font)
     return height;
 }
 
+static egui_dim_t date_picker_resolve_line_height(const egui_font_t *font, egui_dim_t fallback)
+{
+    egui_dim_t line_height = date_picker_measure_font_line_height(font);
+
+    return line_height > fallback ? line_height : fallback;
+}
+
 static uint8_t date_picker_clear_pressed_state(egui_view_t *self, egui_view_date_picker_t *local)
 {
     uint8_t was_pressed = self->is_pressed ? 1 : 0;
@@ -710,6 +717,8 @@ static void date_picker_get_metrics(egui_view_date_picker_t *local, egui_view_t 
     egui_dim_t panel_h = EGUI_VIEW_DATE_PICKER_STANDARD_PANEL_HEIGHT;
     egui_dim_t helper_gap = EGUI_VIEW_DATE_PICKER_STANDARD_HELPER_GAP;
     egui_dim_t helper_h = EGUI_VIEW_DATE_PICKER_STANDARD_HELPER_HEIGHT;
+    egui_dim_t panel_title_h = date_picker_resolve_line_height(local->font, 14);
+    egui_dim_t panel_week_h = date_picker_resolve_line_height(local->meta_font, 12);
     egui_dim_t block_h;
     egui_dim_t cursor_y;
     egui_dim_t meta_line_height = date_picker_measure_font_line_height(local->meta_font);
@@ -722,6 +731,7 @@ static void date_picker_get_metrics(egui_view_date_picker_t *local, egui_view_t 
     {
         helper_h = meta_line_height;
     }
+    panel_h += (panel_title_h - 14) + (panel_week_h - 12);
 
     egui_view_get_work_region(self, &region);
     metrics->content_region.location.x = region.location.x + pad_x;
@@ -793,29 +803,29 @@ static void date_picker_get_metrics(egui_view_date_picker_t *local, egui_view_t 
     metrics->chevron_region.size.height = metrics->field_region.size.height;
 
     metrics->panel_prev_region.location.x = metrics->panel_region.location.x + 5;
-    metrics->panel_prev_region.location.y = metrics->panel_region.location.y + 3;
+    metrics->panel_prev_region.location.y = metrics->panel_region.location.y + 3 + (panel_title_h > 14 ? (panel_title_h - 14) / 2 : 0);
     metrics->panel_prev_region.size.width = 20;
     metrics->panel_prev_region.size.height = 16;
 
     metrics->panel_next_region.location.x = metrics->panel_region.location.x + metrics->panel_region.size.width - 25;
-    metrics->panel_next_region.location.y = metrics->panel_region.location.y + 3;
+    metrics->panel_next_region.location.y = metrics->panel_region.location.y + 3 + (panel_title_h > 14 ? (panel_title_h - 14) / 2 : 0);
     metrics->panel_next_region.size.width = 20;
     metrics->panel_next_region.size.height = 16;
 
     metrics->panel_title_region.location.x = metrics->panel_prev_region.location.x + metrics->panel_prev_region.size.width + 5;
     metrics->panel_title_region.location.y = metrics->panel_region.location.y + 4;
     metrics->panel_title_region.size.width = metrics->panel_region.size.width - 60;
-    metrics->panel_title_region.size.height = 14;
+    metrics->panel_title_region.size.height = panel_title_h;
 
     metrics->panel_week_region.location.x = metrics->panel_region.location.x + 6;
-    metrics->panel_week_region.location.y = metrics->panel_region.location.y + 22;
+    metrics->panel_week_region.location.y = metrics->panel_title_region.location.y + metrics->panel_title_region.size.height + 4;
     metrics->panel_week_region.size.width = metrics->panel_region.size.width - 12;
-    metrics->panel_week_region.size.height = 12;
+    metrics->panel_week_region.size.height = panel_week_h;
 
     metrics->panel_grid_region.location.x = metrics->panel_region.location.x + 6;
-    metrics->panel_grid_region.location.y = metrics->panel_region.location.y + 36;
+    metrics->panel_grid_region.location.y = metrics->panel_week_region.location.y + metrics->panel_week_region.size.height + 2;
     metrics->panel_grid_region.size.width = metrics->panel_region.size.width - 12;
-    metrics->panel_grid_region.size.height = metrics->panel_region.size.height - 42;
+    metrics->panel_grid_region.size.height = metrics->panel_region.size.height - (metrics->panel_grid_region.location.y - metrics->panel_region.location.y) - 6;
 }
 
 static uint8_t date_picker_get_start_cell(egui_view_date_picker_t *local)
