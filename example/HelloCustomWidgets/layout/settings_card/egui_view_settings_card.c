@@ -90,6 +90,20 @@ static egui_dim_t egui_view_settings_card_measure_font_line_height(const egui_fo
     return line_height;
 }
 
+static egui_dim_t egui_view_settings_card_measure_text_width(const egui_font_t *font, const char *text)
+{
+    egui_dim_t text_width = 0;
+    egui_dim_t dummy_height = 0;
+
+    if (text == NULL || text[0] == '\0' || font == NULL || font->api == NULL || font->api->get_str_size == NULL)
+    {
+        return 0;
+    }
+
+    font->api->get_str_size(font, text, 0, 0, &text_width, &dummy_height);
+    return text_width;
+}
+
 static egui_dim_t egui_view_settings_card_badge_height(egui_view_settings_card_t *local)
 {
     egui_dim_t min_h = local->compact_mode ? EGUI_VIEW_SETTINGS_CARD_COMPACT_BADGE_H : EGUI_VIEW_SETTINGS_CARD_STANDARD_BADGE_H;
@@ -213,13 +227,17 @@ static void egui_view_settings_card_sync_current_part(egui_view_settings_card_t 
     }
 }
 
-static egui_dim_t egui_view_settings_card_pill_width(const char *text, uint8_t compact_mode, egui_dim_t min_width, egui_dim_t max_width)
+static egui_dim_t egui_view_settings_card_pill_width(const egui_font_t *font, const char *text, uint8_t compact_mode, egui_dim_t min_width, egui_dim_t max_width)
 {
     egui_dim_t width = min_width;
 
     if (egui_view_settings_card_has_text(text))
     {
-        width += egui_view_settings_card_text_len(text) * (compact_mode ? 4 : 5);
+        width += egui_view_settings_card_measure_text_width(font, text);
+        if (width <= min_width)
+        {
+            width = min_width + egui_view_settings_card_text_len(text) * (compact_mode ? 4 : 5);
+        }
     }
 
     if (width > max_width)
@@ -305,6 +323,7 @@ static void egui_view_settings_card_get_metrics(egui_view_settings_card_t *local
     egui_dim_t trailing_gap = local->compact_mode ? EGUI_VIEW_SETTINGS_CARD_COMPACT_TRAILING_GAP
                                                   : EGUI_VIEW_SETTINGS_CARD_STANDARD_TRAILING_GAP;
     egui_dim_t trailing_w = 0;
+    egui_dim_t trailing_max_w;
     egui_dim_t trailing_h = title_h;
     egui_dim_t inner_x;
     egui_dim_t inner_y;
@@ -356,7 +375,7 @@ static void egui_view_settings_card_get_metrics(egui_view_settings_card_t *local
         metrics->badge_region.location.x = inner_x;
         metrics->badge_region.location.y = inner_y;
         metrics->badge_region.size.width =
-                egui_view_settings_card_pill_width(snapshot->eyebrow, local->compact_mode, local->compact_mode ? 24 : 30, inner_w / 2);
+                egui_view_settings_card_pill_width(local->meta_font, snapshot->eyebrow, local->compact_mode, local->compact_mode ? 24 : 30, inner_w);
         metrics->badge_region.size.height = badge_h;
     }
 
@@ -401,7 +420,13 @@ static void egui_view_settings_card_get_metrics(egui_view_settings_card_t *local
     default:
         if (egui_view_settings_card_has_text(snapshot->value))
         {
-            trailing_w = egui_view_settings_card_pill_width(snapshot->value, local->compact_mode, local->compact_mode ? 18 : 24, inner_w / 3);
+            trailing_max_w = inner_w - icon_size - text_left_gap - trailing_gap - (local->compact_mode ? 18 : 32);
+            if (trailing_max_w < (local->compact_mode ? 18 : 24))
+            {
+                trailing_max_w = local->compact_mode ? 18 : 24;
+            }
+            trailing_w = egui_view_settings_card_pill_width(local->meta_font, snapshot->value, local->compact_mode, local->compact_mode ? 18 : 24,
+                                                            trailing_max_w);
             trailing_h = egui_view_settings_card_value_height(local);
         }
         break;
