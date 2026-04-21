@@ -106,6 +106,20 @@ static egui_dim_t sv_resolve_line_height(const egui_font_t *font, egui_dim_t fal
     return line_height > fallback ? line_height : fallback;
 }
 
+static egui_dim_t sv_measure_text_width(const egui_font_t *font, const char *text)
+{
+    egui_dim_t text_width = 0;
+    egui_dim_t text_height = 0;
+
+    if (text == NULL || text[0] == '\0' || font == NULL || font->api == NULL || font->api->get_str_size == NULL)
+    {
+        return 0;
+    }
+
+    font->api->get_str_size(font, text, 0, 0, &text_width, &text_height);
+    return text_width;
+}
+
 static egui_color_t sv_tone_color(egui_view_split_view_t *local, uint8_t tone)
 {
     switch (tone)
@@ -148,7 +162,7 @@ static void sv_draw_text(const egui_font_t *font, egui_view_t *self, const char 
     egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, font, text, &draw_region, align, color, self->alpha);
 }
 
-static egui_dim_t sv_meta_width(const char *text, uint8_t compact_mode)
+static egui_dim_t sv_meta_width(const egui_font_t *font, const char *text, uint8_t compact_mode)
 {
     egui_dim_t width;
 
@@ -156,13 +170,26 @@ static egui_dim_t sv_meta_width(const char *text, uint8_t compact_mode)
     {
         return 0;
     }
-    width = (compact_mode ? 12 : 16) + sv_text_len(text) * (compact_mode ? 4 : 5);
+    width = (compact_mode ? 12 : 16) + sv_measure_text_width(font, text);
+    if (width <= (compact_mode ? 12 : 16))
+    {
+        width = (compact_mode ? 12 : 16) + sv_text_len(text) * (compact_mode ? 4 : 5);
+    }
     return width > (compact_mode ? 20 : 28) ? (compact_mode ? 20 : 28) : width;
 }
 
-static egui_dim_t sv_footer_width(const char *text, uint8_t compact_mode, egui_dim_t max_width)
+static egui_dim_t sv_footer_width(const egui_font_t *font, const char *text, uint8_t compact_mode, egui_dim_t max_width)
 {
-    egui_dim_t width = (compact_mode ? 18 : 22) + sv_text_len(text) * (compact_mode ? 4 : 5);
+    egui_dim_t width = compact_mode ? 18 : 22;
+
+    if (text != NULL && text[0] != '\0')
+    {
+        width += sv_measure_text_width(font, text);
+        if (width <= (compact_mode ? 18 : 22))
+        {
+            width = (compact_mode ? 18 : 22) + sv_text_len(text) * (compact_mode ? 4 : 5);
+        }
+    }
     return width > max_width ? max_width : width;
 }
 
@@ -565,7 +592,7 @@ static void sv_draw_row(egui_view_t *self, egui_view_split_view_t *local, const 
         glyph_x = region->location.x + (local->compact_mode ? 5 : 6);
         glyph_y = region->location.y + (region->size.height - glyph_size) / 2;
         title_x = glyph_x + glyph_size + (local->compact_mode ? 5 : 6);
-        meta_w = sv_meta_width(item->meta, local->compact_mode);
+        meta_w = sv_meta_width(local->meta_font, item->meta, local->compact_mode);
         value_x = region->location.x + region->size.width - meta_w - (local->compact_mode ? 4 : 5);
         egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, glyph_x, glyph_y, glyph_size, glyph_size, local->compact_mode ? 3 : 4, glyph_fill,
                                               egui_color_alpha_mix(self->alpha, 96));
@@ -796,7 +823,7 @@ static void egui_view_split_view_on_draw(egui_view_t *self)
         sv_draw_text(local->meta_font, self, item->detail_body_secondary, &text_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, body_color);
     }
 
-    footer_w = sv_footer_width(item->detail_footer, local->compact_mode, metrics.detail.size.width - detail_pad_x * 2);
+    footer_w = sv_footer_width(local->meta_font, item->detail_footer, local->compact_mode, metrics.detail.size.width - detail_pad_x * 2);
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.detail.location.x + detail_pad_x,
                                           metrics.detail.location.y + metrics.detail.size.height - footer_h - detail_pad_y, footer_w, footer_h, footer_h / 2,
                                           footer_fill, egui_color_alpha_mix(self->alpha, local->compact_mode ? 82 : 98));
