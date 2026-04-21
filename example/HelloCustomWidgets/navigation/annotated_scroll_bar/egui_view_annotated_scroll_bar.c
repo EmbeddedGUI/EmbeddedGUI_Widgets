@@ -58,6 +58,34 @@ static uint8_t annotated_scroll_bar_has_text(const char *text)
     return (text != NULL && text[0] != '\0') ? 1 : 0;
 }
 
+static egui_dim_t annotated_scroll_bar_measure_font_line_height(const egui_font_t *font)
+{
+    egui_dim_t dummy_width = 0;
+    egui_dim_t line_height = 0;
+
+    if (font == NULL || font->api == NULL || font->api->get_str_size == NULL)
+    {
+        return 0;
+    }
+
+    font->api->get_str_size(font, "A", 0, 0, &dummy_width, &line_height);
+    return line_height;
+}
+
+static egui_dim_t annotated_scroll_bar_meta_height(egui_view_annotated_scroll_bar_t *local, egui_dim_t fallback)
+{
+    egui_dim_t line_height = annotated_scroll_bar_measure_font_line_height(local->meta_font);
+
+    return line_height > fallback ? line_height : fallback;
+}
+
+static egui_dim_t annotated_scroll_bar_title_height(egui_view_annotated_scroll_bar_t *local, egui_dim_t fallback)
+{
+    egui_dim_t line_height = annotated_scroll_bar_measure_font_line_height(local->font);
+
+    return line_height > fallback ? line_height : fallback;
+}
+
 static uint8_t annotated_scroll_bar_clear_pressed_state(egui_view_t *self, egui_view_annotated_scroll_bar_t *local)
 {
     uint8_t had_pressed =
@@ -309,6 +337,10 @@ static void annotated_scroll_bar_get_metrics(egui_view_annotated_scroll_bar_t *l
     egui_dim_t marker_h;
     egui_dim_t indicator_y;
     egui_dim_t bubble_h = local->compact_mode ? ASB_COMPACT_SUMMARY_H : ASB_STD_BUBBLE_H;
+    egui_dim_t title_h = annotated_scroll_bar_meta_height(local, ASB_STD_TITLE_H);
+    egui_dim_t helper_h = annotated_scroll_bar_meta_height(local, ASB_STD_HELPER_H);
+    egui_dim_t count_h = annotated_scroll_bar_meta_height(local, 11);
+    egui_dim_t marker_label_h = annotated_scroll_bar_meta_height(local, 10);
     egui_dim_t last_visible_bottom = -32000;
     uint8_t i;
 
@@ -345,18 +377,18 @@ static void annotated_scroll_bar_get_metrics(egui_view_annotated_scroll_bar_t *l
         metrics->title_region.location.x = content_x;
         metrics->title_region.location.y = content_y;
         metrics->title_region.size.width = content_w;
-        metrics->title_region.size.height = ASB_STD_TITLE_H;
-        body_y += ASB_STD_TITLE_H + ASB_STD_TITLE_GAP;
-        body_h -= ASB_STD_TITLE_H + ASB_STD_TITLE_GAP;
+        metrics->title_region.size.height = title_h;
+        body_y += title_h + ASB_STD_TITLE_GAP;
+        body_h -= title_h + ASB_STD_TITLE_GAP;
     }
 
     if (metrics->show_helper)
     {
         metrics->helper_region.location.x = content_x;
-        metrics->helper_region.location.y = content_y + content_h - ASB_STD_HELPER_H;
+        metrics->helper_region.location.y = content_y + content_h - helper_h;
         metrics->helper_region.size.width = content_w;
-        metrics->helper_region.size.height = ASB_STD_HELPER_H;
-        body_h -= ASB_STD_HELPER_H + ASB_STD_HELPER_GAP;
+        metrics->helper_region.size.height = helper_h;
+        body_h -= helper_h + ASB_STD_HELPER_GAP;
     }
 
     if (body_h < 0)
@@ -427,7 +459,7 @@ static void annotated_scroll_bar_get_metrics(egui_view_annotated_scroll_bar_t *l
         metrics->count_region.location.x = metrics->summary_region.location.x + 5;
         metrics->count_region.location.y = metrics->summary_region.location.y + 5;
         metrics->count_region.size.width = metrics->summary_region.size.width - 10;
-        metrics->count_region.size.height = 11;
+        metrics->count_region.size.height = count_h;
 
         metrics->rail_panel_region.location.x = metrics->summary_region.location.x + metrics->summary_region.size.width + ASB_STD_SUMMARY_GAP;
         metrics->rail_panel_region.location.y = body_y;
@@ -555,9 +587,9 @@ static void annotated_scroll_bar_get_metrics(egui_view_annotated_scroll_bar_t *l
         if (!local->compact_mode && metrics->label_column_region.size.width > 0)
         {
             label_region->location.x = metrics->label_column_region.location.x;
-            label_region->location.y = marker_y - 5;
+            label_region->location.y = marker_y - marker_label_h / 2;
             label_region->size.width = metrics->label_column_region.size.width;
-            label_region->size.height = 10;
+            label_region->size.height = marker_label_h;
             if (label_region->location.y < metrics->label_column_region.location.y)
             {
                 label_region->location.y = metrics->label_column_region.location.y;
@@ -767,6 +799,8 @@ static void annotated_scroll_bar_draw_summary(egui_view_t *self, egui_view_annot
     char offset_text[24];
     const char *active_label = "No markers";
     const char *detail_text = "Add section labels to the rail";
+    egui_dim_t title_h = annotated_scroll_bar_title_height(local, 12);
+    egui_dim_t meta_h = annotated_scroll_bar_meta_height(local, 10);
 
     if (local->marker_count > 0)
     {
@@ -814,14 +848,14 @@ static void annotated_scroll_bar_draw_summary(egui_view_t *self, egui_view_annot
     annotated_scroll_bar_draw_text(local->meta_font, self, count_text, &metrics->count_region, EGUI_ALIGN_CENTER, egui_rgb_mix(text_color, accent_color, 8));
 
     label_region.location.x = metrics->summary_region.location.x + 7;
-    label_region.location.y = metrics->summary_region.location.y + 24;
+    label_region.location.y = metrics->count_region.location.y + metrics->count_region.size.height + 8;
     label_region.size.width = metrics->summary_region.size.width - 14;
-    label_region.size.height = 12;
+    label_region.size.height = title_h;
     annotated_scroll_bar_draw_text(local->font, self, active_label, &label_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, text_color);
 
     meta_region = label_region;
-    meta_region.location.y += 12;
-    meta_region.size.height = 10;
+    meta_region.location.y += label_region.size.height;
+    meta_region.size.height = meta_h;
     annotated_scroll_bar_draw_text(local->meta_font, self, "Current section", &meta_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, muted_text_color);
 
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics->bubble_region.location.x, metrics->bubble_region.location.y, metrics->bubble_region.size.width,
@@ -843,9 +877,9 @@ static void annotated_scroll_bar_draw_summary(egui_view_t *self, egui_view_annot
 
     annotated_scroll_bar_format_offset_pair(local->offset, annotated_scroll_bar_get_max_offset_inner(local), offset_text, sizeof(offset_text));
     footer_region.location.x = metrics->summary_region.location.x + 7;
-    footer_region.location.y = metrics->summary_region.location.y + metrics->summary_region.size.height - 16;
+    footer_region.location.y = metrics->summary_region.location.y + metrics->summary_region.size.height - meta_h - 6;
     footer_region.size.width = metrics->summary_region.size.width - 14;
-    footer_region.size.height = 10;
+    footer_region.size.height = meta_h;
     annotated_scroll_bar_draw_text(local->meta_font, self, offset_text, &footer_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER,
                                    egui_rgb_mix(text_color, muted_text_color, 28));
 }
