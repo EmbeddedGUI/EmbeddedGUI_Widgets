@@ -579,6 +579,18 @@ static void egui_view_tab_view_fit_label_to_width(egui_view_tab_view_t *local, c
     }
 }
 
+static void egui_view_tab_view_fit_text_to_width(const egui_font_t *font, const char *text, char *buffer, uint8_t buffer_size, egui_dim_t max_width)
+{
+    uint8_t max_chars = egui_view_tab_view_text_len(text);
+
+    egui_view_tab_view_copy_elided(buffer, buffer_size, text, max_chars);
+    while (max_chars > 1 && egui_view_tab_view_measure_text_width(font, buffer) > max_width)
+    {
+        max_chars--;
+        egui_view_tab_view_copy_elided(buffer, buffer_size, text, max_chars);
+    }
+}
+
 static void egui_view_tab_view_build_metrics(egui_view_t *self, egui_view_tab_view_metrics_t *metrics)
 {
     EGUI_LOCAL_INIT(egui_view_tab_view_t);
@@ -1101,11 +1113,12 @@ static void egui_view_tab_view_on_draw(egui_view_t *self)
     uint8_t show_eyebrow = 0;
     uint8_t show_body_primary = 0;
     uint8_t show_body_secondary = 0;
-    char eyebrow_buf[20];
-    char body_title_buf[20];
-    char body_primary_buf[32];
-    char body_secondary_buf[32];
-    char footer_buf[20];
+    char badge_buf[24];
+    char eyebrow_buf[24];
+    char body_title_buf[24];
+    char body_primary_buf[64];
+    char body_secondary_buf[64];
+    char footer_buf[24];
     uint8_t i;
 
     if (snapshot == NULL)
@@ -1143,11 +1156,12 @@ static void egui_view_tab_view_on_draw(egui_view_t *self)
         return;
     }
 
-    egui_view_tab_view_copy_elided(eyebrow_buf, sizeof(eyebrow_buf), tab ? tab->eyebrow : NULL, local->compact_mode ? 10 : 18);
-    egui_view_tab_view_copy_elided(body_title_buf, sizeof(body_title_buf), tab ? tab->title : NULL, local->compact_mode ? 12 : 18);
-    egui_view_tab_view_copy_elided(body_primary_buf, sizeof(body_primary_buf), tab ? tab->body_primary : NULL, local->compact_mode ? 14 : 28);
-    egui_view_tab_view_copy_elided(body_secondary_buf, sizeof(body_secondary_buf), tab ? tab->body_secondary : NULL, local->compact_mode ? 14 : 28);
-    egui_view_tab_view_copy_elided(footer_buf, sizeof(footer_buf), tab ? tab->footer : NULL, local->compact_mode ? 10 : 14);
+    badge_buf[0] = '\0';
+    eyebrow_buf[0] = '\0';
+    body_title_buf[0] = '\0';
+    body_primary_buf[0] = '\0';
+    body_secondary_buf[0] = '\0';
+    footer_buf[0] = '\0';
 
     tone_color = tab ? egui_view_tab_view_tone_color(local, tab->tone) : local->accent_color;
     card_fill = egui_rgb_mix(local->surface_color, tone_color, local->compact_mode ? 3 : 4);
@@ -1331,6 +1345,13 @@ static void egui_view_tab_view_on_draw(egui_view_t *self)
     text_region.location.x = metrics.body_region.location.x + body_pad_x;
     text_region.location.y = cursor_y;
     text_region.size.width = metrics.body_region.size.width - body_pad_x * 2;
+    egui_view_tab_view_fit_text_to_width(local->font, tab ? tab->title : NULL, body_title_buf, sizeof(body_title_buf), text_region.size.width);
+    egui_view_tab_view_fit_text_to_width(local->meta_font, tab ? tab->eyebrow : NULL, eyebrow_buf, sizeof(eyebrow_buf), text_region.size.width);
+    egui_view_tab_view_fit_text_to_width(local->meta_font, tab ? tab->body_primary : NULL, body_primary_buf, sizeof(body_primary_buf), text_region.size.width);
+    egui_view_tab_view_fit_text_to_width(local->meta_font, tab ? tab->body_secondary : NULL, body_secondary_buf, sizeof(body_secondary_buf), text_region.size.width);
+    egui_view_tab_view_fit_text_to_width(local->meta_font, tab ? tab->badge : NULL, badge_buf, sizeof(badge_buf), text_region.size.width - 18);
+    egui_view_tab_view_fit_text_to_width(local->meta_font, tab ? tab->footer : NULL, footer_buf, sizeof(footer_buf),
+                                         metrics.body_region.size.width - body_pad_x * 2 - 18);
 
     if (!local->compact_mode && tab->badge != NULL && tab->badge[0] != '\0')
     {
@@ -1376,7 +1397,7 @@ static void egui_view_tab_view_on_draw(egui_view_t *self)
 
     if (show_badge)
     {
-        egui_dim_t badge_w = 18 + egui_view_tab_view_measure_text_width(local->meta_font, tab->badge);
+        egui_dim_t badge_w = 18 + egui_view_tab_view_measure_text_width(local->meta_font, badge_buf);
         egui_region_t badge_region;
 
         if (badge_w > text_region.size.width)
@@ -1389,7 +1410,7 @@ static void egui_view_tab_view_on_draw(egui_view_t *self)
         badge_region.location.y = text_region.location.y;
         badge_region.size.width = badge_w;
         badge_region.size.height = badge_h;
-        egui_view_tab_view_draw_text(local->meta_font, self, tab->badge, &badge_region, EGUI_ALIGN_CENTER, badge_text);
+        egui_view_tab_view_draw_text(local->meta_font, self, badge_buf, &badge_region, EGUI_ALIGN_CENTER, badge_text);
         cursor_y += badge_h + badge_gap;
         text_region.location.y = cursor_y;
     }
