@@ -66,19 +66,32 @@ static uint8_t egui_view_tab_view_clamp_snapshot_count(uint8_t count)
     return count;
 }
 
-static uint8_t egui_view_tab_view_text_len(const char *text)
+static egui_dim_t egui_view_tab_view_measure_font_line_height(const egui_font_t *font)
 {
-    uint8_t length = 0;
+    egui_dim_t dummy_width = 0;
+    egui_dim_t line_height = 0;
 
-    if (text == NULL)
+    if (font == NULL || font->api == NULL || font->api->get_str_size == NULL)
     {
         return 0;
     }
-    while (text[length] != '\0')
+
+    font->api->get_str_size(font, "A", 0, 0, &dummy_width, &line_height);
+    return line_height;
+}
+
+static egui_dim_t egui_view_tab_view_measure_text_width(const egui_font_t *font, const char *text)
+{
+    egui_dim_t text_width = 0;
+    egui_dim_t dummy_height = 0;
+
+    if (text == NULL || text[0] == '\0' || font == NULL || font->api == NULL || font->api->get_str_size == NULL)
     {
-        length++;
+        return 0;
     }
-    return length;
+
+    font->api->get_str_size(font, text, 0, 0, &text_width, &dummy_height);
+    return text_width;
 }
 
 static void egui_view_tab_view_copy_elided(char *buffer, uint8_t buffer_size, const char *text, uint8_t max_chars)
@@ -496,9 +509,8 @@ static void egui_view_tab_view_draw_text(const egui_font_t *font, egui_view_t *s
 static egui_dim_t egui_view_tab_view_measure_tab_width(egui_view_tab_view_t *local, const egui_view_tab_view_tab_t *tab, uint8_t active, const char *label)
 {
     egui_dim_t width = local->compact_mode ? EGUI_VIEW_TAB_VIEW_COMPACT_TAB_BASE_WIDTH : EGUI_VIEW_TAB_VIEW_STANDARD_TAB_BASE_WIDTH;
-    uint8_t length = egui_view_tab_view_text_len(label);
 
-    width += (egui_dim_t)length * (local->compact_mode ? EGUI_VIEW_TAB_VIEW_COMPACT_TAB_CHAR_WIDTH : EGUI_VIEW_TAB_VIEW_STANDARD_TAB_CHAR_WIDTH);
+    width += egui_view_tab_view_measure_text_width(local->font, label);
     if (active)
     {
         width += local->compact_mode ? EGUI_VIEW_TAB_VIEW_COMPACT_TAB_ACTIVE_BONUS : EGUI_VIEW_TAB_VIEW_STANDARD_TAB_ACTIVE_BONUS;
@@ -1018,6 +1030,8 @@ static void egui_view_tab_view_on_draw(egui_view_t *self)
     egui_color_t footer_text;
     egui_dim_t radius = local->compact_mode ? EGUI_VIEW_TAB_VIEW_COMPACT_RADIUS : EGUI_VIEW_TAB_VIEW_STANDARD_RADIUS;
     egui_dim_t body_radius = local->compact_mode ? EGUI_VIEW_TAB_VIEW_COMPACT_BODY_RADIUS : EGUI_VIEW_TAB_VIEW_STANDARD_BODY_RADIUS;
+    egui_dim_t title_line_h = egui_view_tab_view_measure_font_line_height(local->font);
+    egui_dim_t meta_line_h = egui_view_tab_view_measure_font_line_height(local->meta_font);
     egui_dim_t footer_h = local->compact_mode ? 11 : 12;
     egui_dim_t footer_w;
     egui_dim_t footer_x;
@@ -1050,6 +1064,30 @@ static void egui_view_tab_view_on_draw(egui_view_t *self)
     if (snapshot == NULL)
     {
         return;
+    }
+
+    if (title_line_h > body_title_h)
+    {
+        body_title_h = title_line_h;
+    }
+    if (!local->compact_mode)
+    {
+        if (meta_line_h > body_line_h)
+        {
+            body_line_h = meta_line_h;
+        }
+        if (meta_line_h > badge_h)
+        {
+            badge_h = meta_line_h;
+        }
+        if (meta_line_h > eyebrow_h)
+        {
+            eyebrow_h = meta_line_h;
+        }
+    }
+    if (meta_line_h > footer_h)
+    {
+        footer_h = meta_line_h;
     }
 
     egui_view_tab_view_build_metrics(self, &metrics);
@@ -1226,10 +1264,10 @@ static void egui_view_tab_view_on_draw(egui_view_t *self)
         text_region.location.x = metrics.body_region.location.x + 8;
         text_region.location.y = metrics.body_region.location.y + 8;
         text_region.size.width = metrics.body_region.size.width - 16;
-        text_region.size.height = 12;
+        text_region.size.height = body_title_h;
         egui_view_tab_view_draw_text(local->font, self, "All tabs closed", &text_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, title_color);
-        text_region.location.y += 14;
-        text_region.size.height = 10;
+        text_region.location.y += body_title_h + 2;
+        text_region.size.height = footer_h;
         egui_view_tab_view_draw_text(local->meta_font, self, empty_body, &text_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, meta_color);
         return;
     }
@@ -1291,7 +1329,7 @@ static void egui_view_tab_view_on_draw(egui_view_t *self)
 
     if (show_badge)
     {
-        egui_dim_t badge_w = 18 + egui_view_tab_view_text_len(tab->badge) * 4;
+        egui_dim_t badge_w = 18 + egui_view_tab_view_measure_text_width(local->meta_font, tab->badge);
         egui_region_t badge_region;
 
         if (badge_w > text_region.size.width)
@@ -1345,7 +1383,7 @@ static void egui_view_tab_view_on_draw(egui_view_t *self)
         return;
     }
 
-    footer_w = (local->compact_mode ? 18 : 18) + egui_view_tab_view_text_len(footer_buf) * 4;
+    footer_w = 18 + egui_view_tab_view_measure_text_width(local->meta_font, footer_buf);
     if (footer_w > metrics.body_region.size.width - body_pad_x * 2)
     {
         footer_w = metrics.body_region.size.width - body_pad_x * 2;
