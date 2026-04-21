@@ -61,18 +61,18 @@ static const egui_view_scroll_presenter_item_t compact_items[] = {
 
 static const egui_view_scroll_presenter_snapshot_t primary_snapshots[] = {
         {"MAP", "Canvas overview", "Presenter keeps the viewport chrome light while preserving pan metrics.", "Origin focus", "Canvas extent",
-         canvas_items, 4, 292, 248, 148, 144, 18, 14},
+         canvas_items, 4, 292, 248, 148, 144, 0, 0},
         {"REL", "Timeline branch", "The surface can slide in both axes without exposing a full scrollbar lane.", "Milestone scan", "Branch extent",
          timeline_items, 4, 308, 228, 148, 144, 34, 46},
         {"OPS", "Far corner", "Preset snapshots jump straight to the lower-right canvas cluster.", "Corner target", "Pinned corner", canvas_items, 4, 292,
-         248, 148, 144, 104, 118},
+         248, 148, 144, 88, 122},
 };
 
 static const egui_view_scroll_presenter_snapshot_t compact_snapshot = {
-        "UI", "Compact pan", "", "", "Compact", compact_items, 3, 176, 148, 108, 82, 18, 12};
+        "UI", "Compact pan", "", "", "Compact", compact_items, 3, 176, 148, 108, 82, 0, 0};
 
 static const egui_view_scroll_presenter_snapshot_t read_only_snapshot = {
-        "LOCK", "Read only pan", "", "", "Static preview", compact_items, 3, 176, 148, 108, 82, 26, 14};
+        "LOCK", "Read only pan", "", "", "Static preview", compact_items, 3, 176, 148, 108, 82, 0, 0};
 
 static void apply_primary_snapshot(uint8_t index)
 {
