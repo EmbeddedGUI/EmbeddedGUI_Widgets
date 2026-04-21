@@ -96,6 +96,20 @@ static uint8_t egui_view_tab_strip_text_len(const char *text)
     return length;
 }
 
+static egui_dim_t egui_view_tab_strip_measure_text_width(const egui_font_t *font, const char *text)
+{
+    egui_dim_t text_width = 0;
+    egui_dim_t text_height = 0;
+
+    if (text == NULL || text[0] == '\0' || font == NULL || font->api == NULL || font->api->get_str_size == NULL)
+    {
+        return 0;
+    }
+
+    font->api->get_str_size(font, text, 0, 0, &text_width, &text_height);
+    return text_width;
+}
+
 static void egui_view_tab_strip_copy_elided(char *buffer, uint8_t buffer_size, const char *text, uint8_t max_chars)
 {
     uint8_t length = 0;
@@ -167,13 +181,18 @@ static void egui_view_tab_strip_copy_elided(char *buffer, uint8_t buffer_size, c
     buffer[copy_length + 3] = '\0';
 }
 
-static egui_dim_t egui_view_tab_strip_measure_tab_width(uint8_t compact_mode, uint8_t is_active, const char *text)
+static egui_dim_t egui_view_tab_strip_measure_tab_width(const egui_font_t *font, uint8_t compact_mode, uint8_t is_active, const char *text)
 {
     egui_dim_t width;
-    uint8_t length = egui_view_tab_strip_text_len(text);
+    egui_dim_t base_width = compact_mode ? EGUI_VIEW_TAB_STRIP_COMPACT_BASE_WIDTH : EGUI_VIEW_TAB_STRIP_STANDARD_BASE_WIDTH;
 
-    width = compact_mode ? EGUI_VIEW_TAB_STRIP_COMPACT_BASE_WIDTH : EGUI_VIEW_TAB_STRIP_STANDARD_BASE_WIDTH;
-    width += (egui_dim_t)length * (compact_mode ? EGUI_VIEW_TAB_STRIP_COMPACT_CHAR_WIDTH : EGUI_VIEW_TAB_STRIP_STANDARD_CHAR_WIDTH);
+    width = base_width + egui_view_tab_strip_measure_text_width(font, text);
+    if (width <= base_width)
+    {
+        uint8_t length = egui_view_tab_strip_text_len(text);
+
+        width += (egui_dim_t)length * (compact_mode ? EGUI_VIEW_TAB_STRIP_COMPACT_CHAR_WIDTH : EGUI_VIEW_TAB_STRIP_STANDARD_CHAR_WIDTH);
+    }
     if (is_active)
     {
         width += compact_mode ? EGUI_VIEW_TAB_STRIP_COMPACT_ACTIVE_BONUS : EGUI_VIEW_TAB_STRIP_STANDARD_ACTIVE_BONUS;
@@ -203,6 +222,19 @@ static egui_dim_t egui_view_tab_strip_measure_tab_width(uint8_t compact_mode, ui
     return width;
 }
 
+static void egui_view_tab_strip_fit_label_to_width(const egui_font_t *font, uint8_t compact_mode, uint8_t is_active, const char *text,
+                                                    char *buffer, uint8_t buffer_size, egui_dim_t max_width)
+{
+    uint8_t max_chars = egui_view_tab_strip_text_len(text);
+
+    egui_view_tab_strip_copy_elided(buffer, buffer_size, text, max_chars);
+    while (max_chars > 1 && egui_view_tab_strip_measure_tab_width(font, compact_mode, is_active, buffer) > max_width)
+    {
+        max_chars--;
+        egui_view_tab_strip_copy_elided(buffer, buffer_size, text, max_chars);
+    }
+}
+
 static egui_dim_t egui_view_tab_strip_item_gap(uint8_t compact_mode)
 {
     return compact_mode ? EGUI_VIEW_TAB_STRIP_COMPACT_GAP : EGUI_VIEW_TAB_STRIP_STANDARD_GAP;
@@ -227,7 +259,7 @@ static uint8_t egui_view_tab_strip_prepare_layout(egui_view_tab_strip_t *local, 
         uint8_t max_chars = local->compact_mode ? (is_active ? 6 : 5) : (is_active ? 10 : 8);
 
         egui_view_tab_strip_copy_elided(items[i].label, sizeof(items[i].label), local->tab_texts[i], max_chars);
-        items[i].width = egui_view_tab_strip_measure_tab_width(local->compact_mode, is_active, items[i].label);
+        items[i].width = egui_view_tab_strip_measure_tab_width(local->font, local->compact_mode, is_active, items[i].label);
         total_width += items[i].width;
     }
     if (count > 1)
@@ -252,6 +284,8 @@ static uint8_t egui_view_tab_strip_prepare_layout(egui_view_tab_strip_t *local, 
                                       (local->compact_mode ? EGUI_VIEW_TAB_STRIP_COMPACT_CHAR_WIDTH : EGUI_VIEW_TAB_STRIP_STANDARD_CHAR_WIDTH));
             }
             egui_view_tab_strip_copy_elided(items[i].label, sizeof(items[i].label), local->tab_texts[i], max_chars);
+            egui_view_tab_strip_fit_label_to_width(local->font, local->compact_mode, i == local->current_index, local->tab_texts[i], items[i].label,
+                                                   sizeof(items[i].label), fallback_width);
             items[i].width = fallback_width;
         }
         total_width = fallback_width * count + gap * (count - 1);
