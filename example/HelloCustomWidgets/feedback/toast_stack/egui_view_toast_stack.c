@@ -51,19 +51,18 @@ static const char *egui_view_toast_stack_severity_glyph(uint8_t severity)
     }
 }
 
-static uint8_t egui_view_toast_stack_text_len(const char *text)
+static egui_dim_t egui_view_toast_stack_measure_text_width(const egui_font_t *font, const char *text)
 {
-    uint8_t length = 0;
+    egui_dim_t text_width = 0;
+    egui_dim_t dummy_height = 0;
 
-    if (text == NULL)
+    if (text == NULL || text[0] == '\0' || font == NULL || font->api == NULL || font->api->get_str_size == NULL)
     {
         return 0;
     }
-    while (text[length] != '\0')
-    {
-        length++;
-    }
-    return length;
+
+    font->api->get_str_size(font, text, 0, 0, &text_width, &dummy_height);
+    return text_width;
 }
 
 static egui_dim_t egui_view_toast_stack_measure_font_line_height(const egui_font_t *font)
@@ -256,11 +255,14 @@ static void egui_view_toast_stack_draw_back_card(egui_view_t *self, const egui_f
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, card_region->location.x + 1, card_region->location.y + 1, strip_w, card_region->size.height - 2, radius - 2,
                                           strip_color, egui_color_alpha_mix(self->alpha, compact_mode ? 38 : 44));
 
-    title_region.location.x = card_region->location.x + strip_w + (compact_mode ? 5 : 7);
-    title_region.location.y = card_region->location.y;
-    title_region.size.width = card_region->size.width - strip_w - (compact_mode ? 10 : 14);
-    title_region.size.height = card_region->size.height;
-    egui_view_toast_stack_draw_text(font, self, title, &title_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, text_color);
+    if (!compact_mode)
+    {
+        title_region.location.x = card_region->location.x + strip_w + 7;
+        title_region.location.y = card_region->location.y;
+        title_region.size.width = card_region->size.width - strip_w - 14;
+        title_region.size.height = card_region->size.height;
+        egui_view_toast_stack_draw_text(font, self, title, &title_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, text_color);
+    }
 
     footer_w = card_region->size.width / (compact_mode ? 2 : 3);
     if (footer_w < 16)
@@ -471,8 +473,8 @@ static void egui_view_toast_stack_on_draw(egui_view_t *self)
     meta_h = egui_view_toast_stack_resolve_line_height(local->meta_font, local->compact_mode ? 10 : 12);
     footer_y = content_y + content_h - action_h;
     show_action = (snapshot->action != NULL && snapshot->action[0] != '\0' && !local->read_only_mode) ? 1 : 0;
-    action_w = 18 + egui_view_toast_stack_text_len(snapshot->action) * (local->compact_mode ? 4 : 5);
-    meta_w = 12 + egui_view_toast_stack_text_len(snapshot->meta) * (local->compact_mode ? 4 : 5);
+    action_w = 18 + egui_view_toast_stack_measure_text_width(local->meta_font, snapshot->action);
+    meta_w = 12 + egui_view_toast_stack_measure_text_width(local->meta_font, snapshot->meta);
 
     if (show_action)
     {
