@@ -49,6 +49,136 @@ static egui_dim_t egui_view_skeleton_measure_font_line_height(const egui_font_t 
     return line_height;
 }
 
+static egui_dim_t egui_view_skeleton_measure_text_width(const egui_font_t *font, const char *text)
+{
+    egui_dim_t text_width = 0;
+    egui_dim_t dummy_height = 0;
+
+    if (text == NULL || text[0] == '\0' || font == NULL || font->api == NULL || font->api->get_str_size == NULL)
+    {
+        return 0;
+    }
+
+    font->api->get_str_size(font, text, 0, 0, &text_width, &dummy_height);
+    return text_width;
+}
+
+static uint8_t egui_view_skeleton_text_len(const char *text)
+{
+    uint8_t length = 0;
+
+    if (text == NULL)
+    {
+        return 0;
+    }
+
+    while (text[length] != '\0')
+    {
+        length++;
+    }
+
+    return length;
+}
+
+static void egui_view_skeleton_copy_elided(char *buffer, uint8_t buffer_size, const char *text, uint8_t max_chars)
+{
+    uint8_t copy_length;
+    uint8_t index;
+    uint8_t length;
+
+    if (buffer == NULL || buffer_size == 0)
+    {
+        return;
+    }
+
+    buffer[0] = '\0';
+    if (text == NULL || max_chars == 0)
+    {
+        return;
+    }
+
+    length = egui_view_skeleton_text_len(text);
+    if (length <= max_chars)
+    {
+        copy_length = length;
+        if (copy_length >= buffer_size)
+        {
+            copy_length = buffer_size - 1;
+        }
+        for (index = 0; index < copy_length; ++index)
+        {
+            buffer[index] = text[index];
+        }
+        buffer[copy_length] = '\0';
+        return;
+    }
+
+    if (max_chars <= 3)
+    {
+        copy_length = max_chars;
+        if (copy_length >= buffer_size)
+        {
+            copy_length = buffer_size - 1;
+        }
+        for (index = 0; index < copy_length; ++index)
+        {
+            buffer[index] = '.';
+        }
+        buffer[copy_length] = '\0';
+        return;
+    }
+
+    copy_length = max_chars - 3;
+    if (copy_length > buffer_size - 4)
+    {
+        copy_length = buffer_size - 4;
+    }
+    for (index = 0; index < copy_length; ++index)
+    {
+        buffer[index] = text[index];
+    }
+    buffer[copy_length] = '.';
+    buffer[copy_length + 1] = '.';
+    buffer[copy_length + 2] = '.';
+    buffer[copy_length + 3] = '\0';
+}
+
+static void egui_view_skeleton_fit_text_to_width(const egui_font_t *font, const char *text, char *buffer, uint8_t buffer_size, egui_dim_t max_width,
+                                                 egui_dim_t fallback_char_width)
+{
+    uint8_t max_chars;
+
+    if (buffer == NULL || buffer_size == 0)
+    {
+        return;
+    }
+
+    buffer[0] = '\0';
+    if (text == NULL || text[0] == '\0' || max_width <= 0)
+    {
+        return;
+    }
+
+    max_chars = egui_view_skeleton_text_len(text);
+    egui_view_skeleton_copy_elided(buffer, buffer_size, text, max_chars);
+    while (max_chars > 0)
+    {
+        egui_dim_t text_width = egui_view_skeleton_measure_text_width(font, buffer);
+
+        if (text_width <= 0)
+        {
+            text_width = (egui_dim_t)egui_view_skeleton_text_len(buffer) * fallback_char_width;
+        }
+        if (text_width <= max_width)
+        {
+            break;
+        }
+
+        max_chars--;
+        egui_view_skeleton_copy_elided(buffer, buffer_size, text, max_chars);
+    }
+}
+
 static egui_dim_t egui_view_skeleton_resolve_line_height(const egui_font_t *font, egui_dim_t fallback)
 {
     egui_dim_t line_height = egui_view_skeleton_measure_font_line_height(font);
@@ -248,18 +378,20 @@ static uint8_t egui_view_skeleton_get_pulse_mix(uint8_t phase)
 static void egui_view_skeleton_draw_footer(egui_view_skeleton_t *local, egui_view_t *self, const char *text, egui_dim_t x, egui_dim_t y, egui_dim_t width,
                                            egui_dim_t height, egui_color_t color)
 {
+    char footer_text[48];
     egui_region_t text_region;
 
-    if (text == NULL)
+    if (local->font == NULL || text == NULL || width <= 0 || height <= 0)
     {
         return;
     }
 
+    egui_view_skeleton_fit_text_to_width(local->font, text, footer_text, sizeof(footer_text), width, local->compact_mode ? 4 : 5);
     text_region.location.x = x;
     text_region.location.y = y;
     text_region.size.width = width;
     text_region.size.height = height;
-    egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, local->font, text, &text_region, EGUI_ALIGN_LEFT, color, self->alpha);
+    egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, local->font, footer_text, &text_region, EGUI_ALIGN_LEFT, color, self->alpha);
 }
 
 static void egui_view_skeleton_on_draw(egui_view_t *self)

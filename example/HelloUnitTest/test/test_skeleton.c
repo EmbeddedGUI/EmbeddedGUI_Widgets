@@ -413,12 +413,26 @@ static void test_skeleton_snapshot_setters_and_timer_state_clear_pressed(void)
 
 static void test_skeleton_attach_detach_and_helper_functions(void)
 {
+    char label[24];
     egui_color_t sample = EGUI_COLOR_HEX(0x123456);
 
     setup_skeleton();
 
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_SKELETON_MAX_SNAPSHOTS, egui_view_skeleton_clamp_snapshot_count(9));
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_SKELETON_MAX_BLOCKS, egui_view_skeleton_clamp_block_count(20));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_skeleton_text_len(NULL));
+    EGUI_TEST_ASSERT_EQUAL_INT(7, egui_view_skeleton_text_len("Loading"));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_skeleton_measure_text_width(NULL, "Loading"));
+    egui_view_skeleton_copy_elided(label, sizeof(label), "Publish", 6);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Pub...", label) == 0);
+    egui_view_skeleton_copy_elided(label, sizeof(label), "Mode", 3);
+    EGUI_TEST_ASSERT_TRUE(strcmp("...", label) == 0);
+    egui_view_skeleton_fit_text_to_width(NULL, "Publish", label, sizeof(label), 20, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Pu...", label) == 0);
+    egui_view_skeleton_fit_text_to_width(NULL, "Publish", label, sizeof(label), 12, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("...", label) == 0);
+    egui_view_skeleton_fit_text_to_width(NULL, "Ready", label, sizeof(label), 20, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Ready", label) == 0);
     EGUI_TEST_ASSERT_EQUAL_INT(12, egui_view_skeleton_get_pulse_mix(0));
     EGUI_TEST_ASSERT_EQUAL_INT(42, egui_view_skeleton_get_pulse_mix(6));
     EGUI_TEST_ASSERT_EQUAL_INT(27, egui_view_skeleton_get_pulse_mix(9));
