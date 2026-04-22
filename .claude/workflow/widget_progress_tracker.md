@@ -160,6 +160,12 @@
 ## 最近完成的收口动作
 
 - `2026-04-22`
+  - 收口 `display/info_label` 文本宽度适配：在 `example/HelloCustomWidgets/display/info_label/egui_view_info_label.c` 新增 `hcw_info_label_text_len()`、`hcw_info_label_measure_text_width()`、`hcw_info_label_copy_elided()` 与 `hcw_info_label_fit_text_to_width()`，把 `label / info_title / info_body` 全部改为按宽度拟合后再绘制，消除主区气泡与底部 preview 里正文被硬截断的问题。
+  - 修正 `example/HelloUnitTest/test/test_info_label.c` 的 helper 回归：新增 `text_len / measure_text_width / copy_elided / fit_text_to_width` 断言，确认本轮没有再为 `info_label` 引入新的单测口径问题。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=display/info_label PORT=pc`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category display`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub display/info_label --timeout 10 --keep-screenshots` 与 `python scripts/code_runtime_check.py --app HelloCustomWidgets --category display --bits64`，确认本控件渲染正常且 `display` 分类 runtime 继续保持 `21 / 21` 通过。
+  - 已人工复核 `runtime_check_output/HelloCustomWidgets_display_info_label/default/frame_0000.png`、`frame_0002.png` 与 `frame_0006.png`，确认此前在主气泡与底部 `compact / read only` preview 中出现的半截字已收口为合理省略，没有新增错位、遮挡或异常溢出。
+  - `make all APP=HelloUnitTest PORT=pc_test` 当前继续保持通过；本轮 `info_label` 修复后没有引入新的 `HelloUnitTest` 编译或链接阻塞。
+- `2026-04-22`
   - 收口 `display/card_panel` 文本宽度适配：在 `example/HelloCustomWidgets/display/card_panel/egui_view_card_panel.c` 新增 `egui_view_card_panel_text_len()`、`egui_view_card_panel_copy_elided()` 与 `egui_view_card_panel_fit_text_to_width()`，把 `badge / action / title / body / value / value_label / detail_title / detail_body / footer` 全部改为按宽度拟合后再绘制，并为 `pill_width()` 补齐字体测量不可用时的字符宽度回退，消除主卡与底部 preview 窄区里的半截字风险。
   - 修正 `example/HelloUnitTest/test/test_card_panel.c` 的 helper 回归：补齐 `measure_text_width(NULL, ...)`、`copy_elided()` 与 `fit_text_to_width()` 断言，并把 `egui_view_card_panel_pill_width()` 调用更新为当前实现签名，确认本轮没有再为 `card_panel` 引入新的单测口径问题。
   - 已通过 `make all APP=HelloCustomWidgets APP_SUB=display/card_panel PORT=pc`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category display`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub display/card_panel --timeout 10 --keep-screenshots` 与 `python scripts/code_runtime_check.py --app HelloCustomWidgets --category display --bits64`，确认本控件渲染正常且 `display` 分类 runtime 继续保持 `21 / 21` 通过。

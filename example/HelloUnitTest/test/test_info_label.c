@@ -423,6 +423,21 @@ static void test_info_label_static_preview_consumes_input_and_keeps_state(void)
     EGUI_TEST_ASSERT_EQUAL_INT(0xFF, g_open_state);
 }
 
+static void test_info_label_text_helpers(void)
+{
+    char label[32];
+
+    EGUI_TEST_ASSERT_EQUAL_INT(0, hcw_info_label_text_len(NULL));
+    EGUI_TEST_ASSERT_EQUAL_INT(6, hcw_info_label_text_len("Review"));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, hcw_info_label_measure_text_width(NULL, "Review"));
+    hcw_info_label_copy_elided(label, sizeof(label), "Export guidance", 8);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Expor...", label) == 0);
+    hcw_info_label_fit_text_to_width(NULL, "Static preview keeps input disabled.", label, sizeof(label), 24, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Sta...", label) == 0);
+    hcw_info_label_fit_text_to_width(NULL, "Inline", label, sizeof(label), 24, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Inline", label) == 0);
+}
+
 void test_info_label_run(void)
 {
     EGUI_TEST_SUITE_BEGIN(info_label);
@@ -430,5 +445,6 @@ void test_info_label_run(void)
     EGUI_TEST_RUN(test_info_label_touch_same_target_release_and_cancel_behavior);
     EGUI_TEST_RUN(test_info_label_keyboard_toggle_and_escape_close);
     EGUI_TEST_RUN(test_info_label_static_preview_consumes_input_and_keeps_state);
+    EGUI_TEST_RUN(test_info_label_text_helpers);
     EGUI_TEST_SUITE_END();
 }

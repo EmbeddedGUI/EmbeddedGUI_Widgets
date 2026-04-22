@@ -69,6 +69,23 @@ static const egui_font_t *hcw_info_label_default_icon_font(void)
     return EGUI_FONT_ICON_MS_16;
 }
 
+static uint8_t hcw_info_label_text_len(const char *text)
+{
+    uint8_t length = 0;
+
+    if (text == NULL)
+    {
+        return 0;
+    }
+
+    while (text[length] != '\0')
+    {
+        length++;
+    }
+
+    return length;
+}
+
 static egui_color_t hcw_info_label_mix_disabled(egui_color_t color)
 {
     return egui_rgb_mix(color, EGUI_COLOR_HEX(0x7D8894), 58);
@@ -216,11 +233,123 @@ static egui_dim_t hcw_info_label_measure_font_line_height(const egui_font_t *fon
     return line_height;
 }
 
+static egui_dim_t hcw_info_label_measure_text_width(const egui_font_t *font, const char *text)
+{
+    egui_dim_t text_width = 0;
+    egui_dim_t dummy_height = 0;
+
+    if (font == NULL || font->api == NULL || font->api->get_str_size == NULL || text == NULL || text[0] == '\0')
+    {
+        return 0;
+    }
+
+    font->api->get_str_size(font, text, 0, 0, &text_width, &dummy_height);
+    return text_width;
+}
+
 static egui_dim_t hcw_info_label_resolve_line_height(const egui_font_t *font, egui_dim_t fallback)
 {
     egui_dim_t line_height = hcw_info_label_measure_font_line_height(font);
 
     return line_height > fallback ? line_height : fallback;
+}
+
+static void hcw_info_label_copy_elided(char *buffer, uint8_t buffer_size, const char *text, uint8_t max_chars)
+{
+    uint8_t capacity;
+    uint8_t allowed_chars;
+    uint8_t copy_length;
+    uint8_t index;
+    uint8_t length;
+
+    if (buffer == NULL || buffer_size == 0)
+    {
+        return;
+    }
+
+    buffer[0] = '\0';
+    if (text == NULL || max_chars == 0)
+    {
+        return;
+    }
+
+    capacity = buffer_size - 1;
+    length = hcw_info_label_text_len(text);
+    if (length <= max_chars && length <= capacity)
+    {
+        for (index = 0; index < length; ++index)
+        {
+            buffer[index] = text[index];
+        }
+        buffer[length] = '\0';
+        return;
+    }
+
+    allowed_chars = max_chars;
+    if (allowed_chars > capacity)
+    {
+        allowed_chars = capacity;
+    }
+    if (allowed_chars == 0)
+    {
+        return;
+    }
+
+    if (allowed_chars <= 3)
+    {
+        for (index = 0; index < allowed_chars; ++index)
+        {
+            buffer[index] = '.';
+        }
+        buffer[allowed_chars] = '\0';
+        return;
+    }
+
+    copy_length = allowed_chars - 3;
+    for (index = 0; index < copy_length; ++index)
+    {
+        buffer[index] = text[index];
+    }
+    buffer[copy_length] = '.';
+    buffer[copy_length + 1] = '.';
+    buffer[copy_length + 2] = '.';
+    buffer[copy_length + 3] = '\0';
+}
+
+static void hcw_info_label_fit_text_to_width(const egui_font_t *font, const char *text, char *buffer, uint8_t buffer_size, egui_dim_t max_width,
+                                             egui_dim_t fallback_char_width)
+{
+    uint8_t max_chars;
+
+    if (buffer == NULL || buffer_size == 0)
+    {
+        return;
+    }
+
+    buffer[0] = '\0';
+    if (text == NULL || text[0] == '\0' || max_width <= 0)
+    {
+        return;
+    }
+
+    max_chars = hcw_info_label_text_len(text);
+    hcw_info_label_copy_elided(buffer, buffer_size, text, max_chars);
+    while (max_chars > 0)
+    {
+        egui_dim_t text_width = hcw_info_label_measure_text_width(font, buffer);
+
+        if (text_width <= 0)
+        {
+            text_width = (egui_dim_t)hcw_info_label_text_len(buffer) * fallback_char_width;
+        }
+        if (text_width <= max_width)
+        {
+            break;
+        }
+
+        max_chars--;
+        hcw_info_label_copy_elided(buffer, buffer_size, text, max_chars);
+    }
 }
 
 static void hcw_info_label_draw_text(egui_view_t *self, const egui_font_t *font, const char *text, const egui_region_t *region, uint8_t align,
@@ -390,6 +519,9 @@ static void hcw_info_label_draw_bubble_arrow(egui_view_t *self, hcw_info_label_t
 static void hcw_info_label_on_draw(egui_view_t *self)
 {
     EGUI_LOCAL_INIT(hcw_info_label_t);
+    char fitted_label[24];
+    char fitted_title[24];
+    char fitted_body[40];
     hcw_info_label_metrics_t metrics;
     egui_color_t surface_color = local->surface_color;
     egui_color_t border_color = local->border_color;
@@ -460,7 +592,8 @@ static void hcw_info_label_on_draw(egui_view_t *self)
                               border_color, egui_color_alpha_mix(self->alpha, 18));
     }
 
-    hcw_info_label_draw_text(self, hcw_info_label_get_font(local), local->label, &metrics.label_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, text_color,
+    hcw_info_label_fit_text_to_width(hcw_info_label_get_font(local), local->label, fitted_label, sizeof(fitted_label), metrics.label_region.size.width, 5);
+    hcw_info_label_draw_text(self, hcw_info_label_get_font(local), fitted_label, &metrics.label_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, text_color,
                              EGUI_ALPHA_100);
 
     if (self->is_focused && egui_view_get_enable(self))
@@ -502,9 +635,11 @@ static void hcw_info_label_on_draw(egui_view_t *self)
                                           metrics.bubble_region.location.y + 6, local->compact_mode ? 12 : 16, 2, 1, accent_color,
                                           egui_color_alpha_mix(self->alpha, local->compact_mode ? 56 : 70));
 
-    hcw_info_label_draw_text(self, hcw_info_label_get_font(local), local->info_title, &metrics.title_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, text_color,
+    hcw_info_label_fit_text_to_width(hcw_info_label_get_font(local), local->info_title, fitted_title, sizeof(fitted_title), metrics.title_region.size.width, 5);
+    hcw_info_label_draw_text(self, hcw_info_label_get_font(local), fitted_title, &metrics.title_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, text_color,
                              EGUI_ALPHA_100);
-    hcw_info_label_draw_text(self, hcw_info_label_get_meta_font(local), local->info_body, &metrics.body_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_TOP,
+    hcw_info_label_fit_text_to_width(hcw_info_label_get_meta_font(local), local->info_body, fitted_body, sizeof(fitted_body), metrics.body_region.size.width, 4);
+    hcw_info_label_draw_text(self, hcw_info_label_get_meta_font(local), fitted_body, &metrics.body_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_TOP,
                              muted_text_color, EGUI_ALPHA_100);
 }
 
