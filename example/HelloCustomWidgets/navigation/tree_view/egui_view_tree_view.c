@@ -90,6 +90,11 @@ static uint8_t egui_view_tree_view_text_len(const char *text)
     return length;
 }
 
+static uint8_t egui_view_tree_view_has_text(const char *text)
+{
+    return text != NULL && text[0] != '\0' ? 1 : 0;
+}
+
 static egui_dim_t egui_view_tree_view_measure_font_line_height(const egui_font_t *font)
 {
     egui_dim_t dummy_width = 0;
@@ -109,13 +114,112 @@ static egui_dim_t egui_view_tree_view_measure_text_width(const egui_font_t *font
     egui_dim_t text_width = 0;
     egui_dim_t dummy_height = 0;
 
-    if (text == NULL || text[0] == '\0' || font == NULL || font->api == NULL || font->api->get_str_size == NULL)
+    if (!egui_view_tree_view_has_text(text) || font == NULL || font->api == NULL || font->api->get_str_size == NULL)
     {
         return 0;
     }
 
     font->api->get_str_size(font, text, 0, 0, &text_width, &dummy_height);
     return text_width;
+}
+
+static void egui_view_tree_view_copy_elided(char *buffer, uint8_t buffer_size, const char *text, uint8_t max_chars)
+{
+    uint8_t copy_length;
+    uint8_t index;
+    uint8_t length;
+
+    if (buffer == NULL || buffer_size == 0)
+    {
+        return;
+    }
+
+    buffer[0] = '\0';
+    if (text == NULL || max_chars == 0)
+    {
+        return;
+    }
+
+    length = egui_view_tree_view_text_len(text);
+    if (length <= max_chars)
+    {
+        copy_length = length;
+        if (copy_length >= buffer_size)
+        {
+            copy_length = buffer_size - 1;
+        }
+        for (index = 0; index < copy_length; index++)
+        {
+            buffer[index] = text[index];
+        }
+        buffer[copy_length] = '\0';
+        return;
+    }
+
+    if (max_chars <= 3)
+    {
+        copy_length = max_chars;
+        if (copy_length >= buffer_size)
+        {
+            copy_length = buffer_size - 1;
+        }
+        for (index = 0; index < copy_length; index++)
+        {
+            buffer[index] = '.';
+        }
+        buffer[copy_length] = '\0';
+        return;
+    }
+
+    copy_length = max_chars - 3;
+    if (copy_length > buffer_size - 4)
+    {
+        copy_length = buffer_size - 4;
+    }
+    for (index = 0; index < copy_length; index++)
+    {
+        buffer[index] = text[index];
+    }
+    buffer[copy_length] = '.';
+    buffer[copy_length + 1] = '.';
+    buffer[copy_length + 2] = '.';
+    buffer[copy_length + 3] = '\0';
+}
+
+static void egui_view_tree_view_fit_text_to_width(const egui_font_t *font, const char *text, char *buffer, uint8_t buffer_size, egui_dim_t max_width,
+                                                  egui_dim_t fallback_char_width)
+{
+    uint8_t max_chars;
+
+    if (buffer == NULL || buffer_size == 0)
+    {
+        return;
+    }
+
+    buffer[0] = '\0';
+    if (!egui_view_tree_view_has_text(text) || max_width <= 0)
+    {
+        return;
+    }
+
+    max_chars = egui_view_tree_view_text_len(text);
+    egui_view_tree_view_copy_elided(buffer, buffer_size, text, max_chars);
+    while (max_chars > 0)
+    {
+        egui_dim_t text_width = egui_view_tree_view_measure_text_width(font, buffer);
+
+        if (text_width <= 0)
+        {
+            text_width = (egui_dim_t)egui_view_tree_view_text_len(buffer) * fallback_char_width;
+        }
+        if (text_width <= max_width)
+        {
+            break;
+        }
+
+        max_chars--;
+        egui_view_tree_view_copy_elided(buffer, buffer_size, text, max_chars);
+    }
 }
 
 static egui_dim_t egui_view_tree_view_get_title_line_height(egui_view_tree_view_t *local)
@@ -256,7 +360,7 @@ static egui_dim_t egui_view_tree_view_caption_width(const egui_font_t *font, con
     egui_dim_t min_w = compact_mode ? EGUI_VIEW_TREE_VIEW_COMPACT_CAPTION_MIN_W : EGUI_VIEW_TREE_VIEW_STANDARD_CAPTION_MIN_W;
     egui_dim_t width = min_w;
 
-    if (text != NULL && text[0] != '\0')
+    if (egui_view_tree_view_has_text(text))
     {
         width += egui_view_tree_view_measure_text_width(font, text);
         if (width <= min_w)
@@ -277,7 +381,7 @@ static egui_dim_t egui_view_tree_view_meta_width(const egui_font_t *font, const 
     egui_dim_t min_w = compact_mode ? EGUI_VIEW_TREE_VIEW_COMPACT_META_MIN_W : EGUI_VIEW_TREE_VIEW_STANDARD_META_MIN_W;
     egui_dim_t width;
 
-    if (text == NULL || text[0] == '\0')
+    if (!egui_view_tree_view_has_text(text))
     {
         return 0;
     }
@@ -299,7 +403,7 @@ static void egui_view_tree_view_draw_text(const egui_font_t *font, egui_view_t *
 {
     egui_region_t draw_region = *region;
 
-    if (text == NULL || text[0] == '\0')
+    if (!egui_view_tree_view_has_text(text))
     {
         return;
     }
@@ -709,6 +813,8 @@ static void egui_view_tree_view_draw_row(egui_view_t *self, egui_view_tree_view_
                                          egui_color_t list_border, egui_color_t text_color, egui_color_t muted_text_color)
 {
     egui_region_t text_region;
+    char meta_label[32];
+    char title_label[64];
     egui_color_t tone_color = egui_view_tree_view_tone_color(local, item->tone);
     egui_color_t guide_color = egui_rgb_mix(list_border, tone_color, 6);
     egui_color_t row_fill =
@@ -833,14 +939,16 @@ static void egui_view_tree_view_draw_row(egui_view_t *self, egui_view_tree_view_
         text_region.location.y = item_region->location.y + (item_region->size.height - meta_h) / 2;
         text_region.size.width = meta_w;
         text_region.size.height = meta_h;
-        egui_view_tree_view_draw_text(local->meta_font, self, item->meta, &text_region, EGUI_ALIGN_CENTER, meta_color);
+        egui_view_tree_view_fit_text_to_width(local->meta_font, item->meta, meta_label, sizeof(meta_label), meta_w - 4, 4);
+        egui_view_tree_view_draw_text(local->meta_font, self, meta_label, &text_region, EGUI_ALIGN_CENTER, meta_color);
     }
 
     text_region.location.x = title_x;
     text_region.location.y = item_region->location.y;
     text_region.size.width = (meta_w > 0 ? meta_x : (item_region->location.x + item_region->size.width - 6)) - title_x - 4;
     text_region.size.height = item_region->size.height;
-    egui_view_tree_view_draw_text(local->font, self, item->title, &text_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, selected ? text_color : title_color);
+    egui_view_tree_view_fit_text_to_width(local->font, item->title, title_label, sizeof(title_label), text_region.size.width, local->compact_mode ? 4 : 5);
+    egui_view_tree_view_draw_text(local->font, self, title_label, &text_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, selected ? text_color : title_color);
 }
 
 static void egui_view_tree_view_on_draw(egui_view_t *self)
@@ -848,6 +956,9 @@ static void egui_view_tree_view_on_draw(egui_view_t *self)
     EGUI_LOCAL_INIT(egui_view_tree_view_t);
     egui_region_t region;
     egui_region_t text_region;
+    char caption_label[32];
+    char title_label[64];
+    char footer_label[64];
     egui_view_tree_view_metrics_t metrics;
     const egui_view_tree_view_snapshot_t *snapshot;
     const egui_view_tree_view_item_t *focus_item;
@@ -951,7 +1062,7 @@ static void egui_view_tree_view_on_draw(egui_view_t *self)
                                           egui_color_alpha_mix(self->alpha, local->read_only_mode ? 5 : 10));
 
     caption_w = egui_view_tree_view_caption_width(local->meta_font, snapshot->caption, local->compact_mode, metrics.header_region.size.width / 2);
-    if (snapshot->caption != NULL && snapshot->caption[0] != '\0')
+    if (egui_view_tree_view_has_text(snapshot->caption))
     {
         egui_dim_t caption_h = egui_view_tree_view_get_meta_height(local);
 
@@ -965,7 +1076,8 @@ static void egui_view_tree_view_on_draw(egui_view_t *self)
         text_region.location.y = metrics.header_region.location.y;
         text_region.size.width = caption_w;
         text_region.size.height = caption_h;
-        egui_view_tree_view_draw_text(local->meta_font, self, snapshot->caption, &text_region, EGUI_ALIGN_CENTER, caption_color);
+        egui_view_tree_view_fit_text_to_width(local->meta_font, snapshot->caption, caption_label, sizeof(caption_label), caption_w - 4, 4);
+        egui_view_tree_view_draw_text(local->meta_font, self, caption_label, &text_region, EGUI_ALIGN_CENTER, caption_color);
     }
     else
     {
@@ -976,7 +1088,8 @@ static void egui_view_tree_view_on_draw(egui_view_t *self)
     text_region.location.y = metrics.header_region.location.y;
     text_region.size.width = metrics.header_region.size.width - (caption_w > 0 ? caption_w + 6 : 0);
     text_region.size.height = metrics.header_region.size.height;
-    egui_view_tree_view_draw_text(local->font, self, snapshot->title, &text_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, title_color);
+    egui_view_tree_view_fit_text_to_width(local->font, snapshot->title, title_label, sizeof(title_label), text_region.size.width, local->compact_mode ? 4 : 5);
+    egui_view_tree_view_draw_text(local->font, self, title_label, &text_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, title_color);
 
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.list_region.location.x, metrics.list_region.location.y, metrics.list_region.size.width,
                                           metrics.list_region.size.height, local->compact_mode ? 6 : 7, list_fill, egui_color_alpha_mix(self->alpha, 80));
@@ -1000,7 +1113,8 @@ static void egui_view_tree_view_on_draw(egui_view_t *self)
     text_region.location.y = metrics.footer_region.location.y;
     text_region.size.width = metrics.footer_region.size.width - (local->compact_mode ? 8 : 12);
     text_region.size.height = metrics.footer_region.size.height;
-    egui_view_tree_view_draw_text(local->meta_font, self, snapshot->footer, &text_region,
+    egui_view_tree_view_fit_text_to_width(local->meta_font, snapshot->footer, footer_label, sizeof(footer_label), text_region.size.width, 4);
+    egui_view_tree_view_draw_text(local->meta_font, self, footer_label, &text_region,
                                   (local->compact_mode ? EGUI_ALIGN_CENTER : EGUI_ALIGN_LEFT) | EGUI_ALIGN_VCENTER, footer_color);
 }
 

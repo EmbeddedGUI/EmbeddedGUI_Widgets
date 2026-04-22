@@ -3378,6 +3378,11 @@
   - 修复 `HelloCustomWidgets_plan.md`、web 入口文档与脚本文案中的历史残留描述。
   - 当前默认维护入口统一为 `input/button`。
 
+- `2026-04-22`
+  - 修复 `navigation/tree_view` 文本截断：在不调整既有树形缩进、行高和导航交互的前提下，为 `example/HelloCustomWidgets/navigation/tree_view/egui_view_tree_view.c` 新增 `egui_view_tree_view_has_text()`、`egui_view_tree_view_copy_elided()` 与 `egui_view_tree_view_fit_text_to_width()`，把 row 的 `meta / title`、header 的 `caption / title` 以及 footer 的 `footer` 全部改成按宽度拟合后再绘制，避免窄行和 pill 区直接裁字。
+  - `example/HelloUnitTest/test/test_tree_view.c` 新增 helper 覆盖，补测 `text_len / caption_width / meta_width / copy_elided / fit_text_to_width`；已通过 `make all APP=HelloCustomWidgets APP_SUB=navigation/tree_view PORT=pc`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category navigation`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub navigation/tree_view --timeout 10 --keep-screenshots` 与 `python scripts/code_runtime_check.py --app HelloCustomWidgets --category navigation --bits64`。
+  - 当前环境再次执行 `make all APP=HelloUnitTest PORT=pc_test` 仍失败于仓库既有 `example/HelloUnitTest/test/test_card_control.c` 参数不匹配基线，和本轮 `tree_view` 修复无关；为避免掩盖当前回归，本轮额外抽出 `HelloUnitTest` 的实际编译命令，单独完成 `test_tree_view.c` 目标文件编译，确认新增 helper 单测本身可以通过编译。
+
 ## 已搁置 / 待恢复
 
 | 控件名 | 分类 | 日期 | 原因 | 恢复前提 |

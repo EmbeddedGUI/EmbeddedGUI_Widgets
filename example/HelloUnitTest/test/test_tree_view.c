@@ -291,6 +291,29 @@ static void test_tree_view_snapshot_switch_and_index_clamp(void)
     EGUI_TEST_ASSERT_EQUAL_INT(3, last_selection_index);
 }
 
+static void test_tree_view_internal_helpers_cover_text_fitting(void)
+{
+    char label[24];
+
+    setup_widget();
+
+    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_tree_view_text_len(NULL));
+    EGUI_TEST_ASSERT_EQUAL_INT(10, egui_view_tree_view_text_len("Operations"));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_TREE_VIEW_COMPACT_CAPTION_MIN_W, egui_view_tree_view_caption_width(NULL, "", 1, 32));
+    EGUI_TEST_ASSERT_EQUAL_INT(28, egui_view_tree_view_meta_width(NULL, "Draft", 0, 28));
+    EGUI_TEST_ASSERT_TRUE(egui_view_tree_view_caption_width(test_tree_view.meta_font, "4 rows", 0, 36) <= 36);
+    egui_view_tree_view_copy_elided(label, sizeof(label), "Documents", 6);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Doc...", label) == 0);
+    egui_view_tree_view_copy_elided(label, sizeof(label), "Mode", 3);
+    EGUI_TEST_ASSERT_TRUE(strcmp("...", label) == 0);
+    egui_view_tree_view_fit_text_to_width(NULL, "Controls open", label, sizeof(label), 28, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Cont...", label) == 0);
+    egui_view_tree_view_fit_text_to_width(NULL, "Controls open", label, sizeof(label), 12, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("...", label) == 0);
+    egui_view_tree_view_fit_text_to_width(NULL, "Ready", label, sizeof(label), 20, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Ready", label) == 0);
+}
+
 static void test_tree_view_touch_same_target_release_and_cancel_behavior(void)
 {
     egui_dim_t x2;
@@ -464,6 +487,7 @@ void test_tree_view_run(void)
     EGUI_TEST_RUN(test_tree_view_set_snapshots_clamps_and_clears_pressed_state);
     EGUI_TEST_RUN(test_tree_view_snapshot_index_and_setters_clear_pressed_state);
     EGUI_TEST_RUN(test_tree_view_snapshot_switch_and_index_clamp);
+    EGUI_TEST_RUN(test_tree_view_internal_helpers_cover_text_fitting);
     EGUI_TEST_RUN(test_tree_view_touch_same_target_release_and_cancel_behavior);
     EGUI_TEST_RUN(test_tree_view_keyboard_navigation);
     EGUI_TEST_RUN(test_tree_view_compact_mode_clears_pressed_and_keeps_selection_behavior);
