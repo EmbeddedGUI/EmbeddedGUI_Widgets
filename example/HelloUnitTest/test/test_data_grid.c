@@ -250,6 +250,27 @@ static void test_data_grid_set_snapshots_clamp_and_defaults(void)
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_DATA_GRID_ROW_NONE, egui_view_data_grid_get_current_row(EGUI_VIEW_OF(&test_widget)));
 }
 
+static void test_data_grid_text_helpers(void)
+{
+    char label[32];
+
+    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_data_grid_text_len(NULL));
+    EGUI_TEST_ASSERT_EQUAL_INT(4, egui_view_data_grid_text_len("Grid"));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_data_grid_measure_text_width(NULL, "OPS"));
+    EGUI_TEST_ASSERT_EQUAL_INT(40, egui_view_data_grid_pill_width(NULL, "OPS", 0, 30, 40));
+    EGUI_TEST_ASSERT_EQUAL_INT(32, egui_view_data_grid_pill_width(NULL, "RO", 1, 24, 40));
+
+    egui_view_data_grid_copy_elided(label, sizeof(label), "Rollout board", 7);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Roll...", label) == 0);
+    egui_view_data_grid_copy_elided(label, sizeof(label), "QA", 2);
+    EGUI_TEST_ASSERT_TRUE(strcmp("QA", label) == 0);
+
+    egui_view_data_grid_fit_text_to_width(NULL, "Selected", label, sizeof(label), 20, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Se...", label) == 0);
+    egui_view_data_grid_fit_text_to_width(NULL, "OPS", label, sizeof(label), 12, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("OPS", label) == 0);
+}
+
 static void test_data_grid_setters_clear_pressed_and_update_state(void)
 {
     setup_widget(g_snapshots, EGUI_ARRAY_SIZE(g_snapshots));
@@ -471,6 +492,7 @@ void test_data_grid_run(void)
 {
     EGUI_TEST_SUITE_BEGIN(data_grid);
     EGUI_TEST_RUN(test_data_grid_set_snapshots_clamp_and_defaults);
+    EGUI_TEST_RUN(test_data_grid_text_helpers);
     EGUI_TEST_RUN(test_data_grid_setters_clear_pressed_and_update_state);
     EGUI_TEST_RUN(test_data_grid_regions_activate_and_listener);
     EGUI_TEST_RUN(test_data_grid_touch_same_target_release_and_cancel_behavior);

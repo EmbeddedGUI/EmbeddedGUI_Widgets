@@ -32,9 +32,7 @@
 
 ## 当前进行中
 
-- `layout/data_grid`
-  - 开始日期：`2026-04-22`
-  - 目标：检查 header / title / summary / column title / footer 等固定窄区文本，消除截断和覆盖。
+- 暂无
 
 ## 当前保留的 Reference 主线控件
 
@@ -160,6 +158,13 @@
 - `toast_stack` -> `Toast`
 
 ## 最近完成的收口动作
+
+- `2026-04-22`
+  - 收口 `layout/data_grid` 文本宽度适配：在 `example/HelloCustomWidgets/layout/data_grid/egui_view_data_grid.c` 新增 `egui_view_data_grid_copy_elided()` 与 `egui_view_data_grid_fit_text_to_width()`，把顶部 `header / title / summary / footer`、表头列名以及表格单元格文本全部改为按可用宽度拟合后再绘制，消除主卡和底部 preview 固定窄区里的截断与覆盖。
+  - 补齐 `example/HelloUnitTest/test/test_data_grid.c` 的 helper 回归：新增 `test_data_grid_text_helpers()`，覆盖 `text_len / measure_text_width / pill_width / copy_elided / fit_text_to_width` 的基础行为，并确认本轮没有为 `data_grid` 引入新的单测语法问题。
+  - 已通过 `@'#include "example/HelloUnitTest/test/test_data_grid.c"'@ | C:/msys64/mingw64/bin/gcc.exe -x c -fsyntax-only -I sdk/EmbeddedGUI/src -I sdk/EmbeddedGUI -I example/HelloUnitTest -I example/HelloCustomWidgets -`、`make all APP=HelloCustomWidgets APP_SUB=layout/data_grid PORT=pc`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category layout`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub layout/data_grid --timeout 10 --keep-screenshots` 与 `python scripts/code_runtime_check.py --app HelloCustomWidgets --category layout --bits64`，确认本控件渲染正常且 layout 分类 runtime 继续保持 `29 / 29` 通过。
+  - 已人工复核 `runtime_check_output/HelloCustomWidgets_layout_data_grid/default/frame_0000.png` 与 `frame_0002.png`，确认主卡标题、summary、列名、footer 和底部 preview 都没有再出现半截字或互相压盖。
+  - `make all APP=HelloUnitTest PORT=pc_test` 仍受仓库既有 `example/HelloUnitTest/test/test_card_control.c` 问题阻塞：`egui_view_card_control_text_len` 仍为隐式声明，`egui_view_card_control_pill_width` 仍存在签名/参数不匹配；与本轮 `data_grid` 文本宽度适配无关。
 
 - `2026-04-22`
   - 收口 `layout/list` 文本宽度适配：在 `example/HelloCustomWidgets/layout/list/egui_view_list.c` 新增 `egui_view_reference_list_copy_elided()` 与 `egui_view_reference_list_fit_text_to_width()`，把主卡和底部 preview 的 `badge / title / meta` 全部改为按可用宽度拟合后再绘制；同时把 compact 行里原先会与右侧 `meta` 互相压盖的标题区改为先为右侧文本预留空间，再让左侧标题使用剩余宽度，消除固定窄区里的截断和压盖。
