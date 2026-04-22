@@ -20,6 +20,8 @@ struct egui_view_persona_metrics
     uint8_t show_presence;
 };
 
+#define EGUI_VIEW_PERSONA_MAX_DRAW_TEXT_LEN 63
+
 static const egui_font_t *egui_view_persona_default_font(void)
 {
     return (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT;
@@ -239,6 +241,28 @@ static uint8_t egui_view_persona_should_draw_presence(const egui_view_persona_t 
     return (uint8_t)(local->status != EGUI_VIEW_PERSONA_STATUS_NONE);
 }
 
+static uint8_t egui_view_persona_has_text(const char *text)
+{
+    return text != NULL && text[0] != '\0' ? 1 : 0;
+}
+
+static uint8_t egui_view_persona_text_len(const char *text)
+{
+    uint8_t length = 0;
+
+    if (text == NULL)
+    {
+        return 0;
+    }
+
+    while (text[length] != '\0')
+    {
+        length++;
+    }
+
+    return length;
+}
+
 static void egui_view_persona_measure_text(const egui_font_t *font, const char *text, egui_dim_t *width, egui_dim_t *height)
 {
     egui_dim_t measured_width = 0;
@@ -259,6 +283,117 @@ static void egui_view_persona_measure_text(const egui_font_t *font, const char *
     if (height != NULL)
     {
         *height = measured_height;
+    }
+}
+
+static egui_dim_t egui_view_persona_measure_text_width(const egui_font_t *font, const char *text)
+{
+    egui_dim_t text_width = 0;
+
+    if (!egui_view_persona_has_text(text))
+    {
+        return 0;
+    }
+
+    egui_view_persona_measure_text(font, text, &text_width, NULL);
+    return text_width;
+}
+
+static void egui_view_persona_copy_elided(char *buffer, uint8_t buffer_size, const char *text, uint8_t max_chars)
+{
+    uint8_t capacity;
+    uint8_t allowed_chars;
+    uint8_t copy_length;
+    uint8_t index;
+    uint8_t length;
+
+    if (buffer == NULL || buffer_size == 0)
+    {
+        return;
+    }
+
+    buffer[0] = '\0';
+    if (text == NULL || max_chars == 0)
+    {
+        return;
+    }
+
+    capacity = buffer_size - 1;
+    length = egui_view_persona_text_len(text);
+    if (length <= max_chars && length <= capacity)
+    {
+        for (index = 0; index < length; ++index)
+        {
+            buffer[index] = text[index];
+        }
+        buffer[length] = '\0';
+        return;
+    }
+
+    allowed_chars = max_chars;
+    if (allowed_chars > capacity)
+    {
+        allowed_chars = capacity;
+    }
+    if (allowed_chars == 0)
+    {
+        return;
+    }
+
+    if (allowed_chars <= 3)
+    {
+        for (index = 0; index < allowed_chars; ++index)
+        {
+            buffer[index] = '.';
+        }
+        buffer[allowed_chars] = '\0';
+        return;
+    }
+
+    copy_length = allowed_chars - 3;
+    for (index = 0; index < copy_length; ++index)
+    {
+        buffer[index] = text[index];
+    }
+    buffer[copy_length] = '.';
+    buffer[copy_length + 1] = '.';
+    buffer[copy_length + 2] = '.';
+    buffer[copy_length + 3] = '\0';
+}
+
+static void egui_view_persona_fit_text_to_width(const egui_font_t *font, const char *text, char *buffer, uint8_t buffer_size, egui_dim_t max_width,
+                                                egui_dim_t fallback_char_width)
+{
+    uint8_t max_chars;
+
+    if (buffer == NULL || buffer_size == 0)
+    {
+        return;
+    }
+
+    buffer[0] = '\0';
+    if (!egui_view_persona_has_text(text) || max_width <= 0)
+    {
+        return;
+    }
+
+    max_chars = egui_view_persona_text_len(text);
+    egui_view_persona_copy_elided(buffer, buffer_size, text, max_chars);
+    while (max_chars > 0)
+    {
+        egui_dim_t text_width = egui_view_persona_measure_text_width(font, buffer);
+
+        if (text_width <= 0)
+        {
+            text_width = (egui_dim_t)egui_view_persona_text_len(buffer) * fallback_char_width;
+        }
+        if (text_width <= max_width)
+        {
+            break;
+        }
+
+        max_chars--;
+        egui_view_persona_copy_elided(buffer, buffer_size, text, max_chars);
     }
 }
 
@@ -522,6 +657,10 @@ static void egui_view_persona_draw_do_not_disturb_glyph(egui_view_t *self, const
 static void egui_view_persona_on_draw(egui_view_t *self)
 {
     EGUI_LOCAL_INIT(egui_view_persona_t);
+    char title_label[EGUI_VIEW_PERSONA_MAX_DRAW_TEXT_LEN + 1];
+    char secondary_label[EGUI_VIEW_PERSONA_MAX_DRAW_TEXT_LEN + 1];
+    char tertiary_label[EGUI_VIEW_PERSONA_MAX_DRAW_TEXT_LEN + 1];
+    char quaternary_label[EGUI_VIEW_PERSONA_MAX_DRAW_TEXT_LEN + 1];
     egui_view_persona_metrics_t metrics;
     egui_color_t tone_color;
     egui_color_t surface_color;
@@ -666,21 +805,29 @@ static void egui_view_persona_on_draw(egui_view_t *self)
     }
 
     title_text = (local->display_name != NULL && local->display_name[0] != '\0') ? local->display_name : resolved_initials;
-    egui_view_persona_draw_text(self, egui_view_persona_get_font(local), title_text, &metrics.title_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, title_color,
+    egui_view_persona_fit_text_to_width(egui_view_persona_get_font(local), title_text, title_label, sizeof(title_label), metrics.title_region.size.width,
+                                        local->compact_mode ? 4 : 5);
+    egui_view_persona_draw_text(self, egui_view_persona_get_font(local), title_label, &metrics.title_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, title_color,
                                 EGUI_ALPHA_100);
     if (metrics.show_secondary)
     {
-        egui_view_persona_draw_text(self, egui_view_persona_get_meta_font(local), local->secondary_text, &metrics.secondary_region,
+        egui_view_persona_fit_text_to_width(egui_view_persona_get_meta_font(local), local->secondary_text, secondary_label, sizeof(secondary_label),
+                                            metrics.secondary_region.size.width, 4);
+        egui_view_persona_draw_text(self, egui_view_persona_get_meta_font(local), secondary_label, &metrics.secondary_region,
                                     EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, meta_color, EGUI_ALPHA_100);
     }
     if (metrics.show_tertiary)
     {
-        egui_view_persona_draw_text(self, egui_view_persona_get_meta_font(local), local->tertiary_text, &metrics.tertiary_region,
+        egui_view_persona_fit_text_to_width(egui_view_persona_get_meta_font(local), local->tertiary_text, tertiary_label, sizeof(tertiary_label),
+                                            metrics.tertiary_region.size.width, 4);
+        egui_view_persona_draw_text(self, egui_view_persona_get_meta_font(local), tertiary_label, &metrics.tertiary_region,
                                     EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, meta_color, 88);
     }
     if (metrics.show_quaternary)
     {
-        egui_view_persona_draw_text(self, egui_view_persona_get_meta_font(local), local->quaternary_text, &metrics.quaternary_region,
+        egui_view_persona_fit_text_to_width(egui_view_persona_get_meta_font(local), local->quaternary_text, quaternary_label, sizeof(quaternary_label),
+                                            metrics.quaternary_region.size.width, 4);
+        egui_view_persona_draw_text(self, egui_view_persona_get_meta_font(local), quaternary_label, &metrics.quaternary_region,
                                     EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, meta_color, 74);
     }
 }

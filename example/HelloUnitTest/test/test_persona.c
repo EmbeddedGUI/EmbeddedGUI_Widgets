@@ -368,6 +368,24 @@ static void test_persona_helpers_compute_regions_and_colors(void)
     EGUI_TEST_ASSERT_TRUE(avatar_region.size.width <= 32);
 }
 
+static void test_persona_text_helpers(void)
+{
+    char label[32];
+    char short_label[8];
+
+    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_persona_text_len(NULL));
+    EGUI_TEST_ASSERT_EQUAL_INT(10, egui_view_persona_text_len("Maya Stone"));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_persona_measure_text_width(NULL, "Assigned"));
+    egui_view_persona_copy_elided(label, sizeof(label), "Compliance archive", 8);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Compl...", label) == 0);
+    egui_view_persona_copy_elided(short_label, sizeof(short_label), "Review", 6);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Review", short_label) == 0);
+    egui_view_persona_fit_text_to_width(NULL, "Compliance archive", label, sizeof(label), 24, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Com...", label) == 0);
+    egui_view_persona_fit_text_to_width(NULL, "Maya Yu", label, sizeof(label), 28, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Maya Yu", label) == 0);
+}
+
 static void test_persona_static_preview_consumes_input_and_keeps_state(void)
 {
     persona_preview_snapshot_t initial_snapshot;
@@ -396,6 +414,7 @@ void test_persona_run(void)
     EGUI_TEST_RUN(test_persona_init_uses_defaults);
     EGUI_TEST_RUN(test_persona_setters_and_resolvers_clear_pressed_state);
     EGUI_TEST_RUN(test_persona_helpers_compute_regions_and_colors);
+    EGUI_TEST_RUN(test_persona_text_helpers);
     EGUI_TEST_RUN(test_persona_static_preview_consumes_input_and_keeps_state);
     EGUI_TEST_SUITE_END();
 }
