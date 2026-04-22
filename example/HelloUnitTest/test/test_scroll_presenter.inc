@@ -224,7 +224,23 @@ static void test_scroll_presenter_set_snapshots_clamp_and_defaults(void)
 
 static void test_scroll_presenter_setters_clear_pressed_and_update_state(void)
 {
+    char label[24];
+
     scroll_presenter_setup_widget(scroll_presenter_snapshots, EGUI_ARRAY_SIZE(scroll_presenter_snapshots));
+
+    EGUI_TEST_ASSERT_EQUAL_INT(0, scroll_presenter_text_len(NULL));
+    EGUI_TEST_ASSERT_EQUAL_INT(9, scroll_presenter_text_len("Presenter"));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, scroll_presenter_measure_text_width(NULL, "Ready"));
+    scroll_presenter_copy_elided(label, sizeof(label), "Presenter", 6);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Pre...", label) == 0);
+    scroll_presenter_copy_elided(label, sizeof(label), "Pane", 3);
+    EGUI_TEST_ASSERT_TRUE(strcmp("...", label) == 0);
+    scroll_presenter_fit_text_to_width(NULL, "Presenter", label, sizeof(label), 20, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Pr...", label) == 0);
+    scroll_presenter_fit_text_to_width(NULL, "Presenter", label, sizeof(label), 12, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("...", label) == 0);
+    scroll_presenter_fit_text_to_width(NULL, "Ready", label, sizeof(label), 24, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Ready", label) == 0);
 
     scroll_presenter_seed_pressed_state(&scroll_presenter_test_widget, 1);
     egui_view_scroll_presenter_set_font(EGUI_VIEW_OF(&scroll_presenter_test_widget), NULL);

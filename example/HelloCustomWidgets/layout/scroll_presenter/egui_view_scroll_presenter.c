@@ -53,6 +53,135 @@ static uint8_t scroll_presenter_has_text(const char *text)
     return (text != NULL && text[0] != '\0') ? 1 : 0;
 }
 
+static uint8_t scroll_presenter_text_len(const char *text)
+{
+    uint8_t len = 0;
+
+    if (text == NULL)
+    {
+        return 0;
+    }
+
+    while (text[len] != '\0')
+    {
+        len++;
+    }
+    return len;
+}
+
+static egui_dim_t scroll_presenter_measure_text_width(const egui_font_t *font, const char *text)
+{
+    egui_dim_t text_width = 0;
+    egui_dim_t dummy_height = 0;
+
+    if (!scroll_presenter_has_text(text) || font == NULL || font->api == NULL || font->api->get_str_size == NULL)
+    {
+        return 0;
+    }
+
+    font->api->get_str_size(font, text, 0, 0, &text_width, &dummy_height);
+    return text_width;
+}
+
+static void scroll_presenter_copy_elided(char *buffer, uint8_t buffer_size, const char *text, uint8_t max_chars)
+{
+    uint8_t copy_length;
+    uint8_t index;
+    uint8_t length;
+
+    if (buffer == NULL || buffer_size == 0)
+    {
+        return;
+    }
+
+    buffer[0] = '\0';
+    if (text == NULL || max_chars == 0)
+    {
+        return;
+    }
+
+    length = scroll_presenter_text_len(text);
+    if (length <= max_chars)
+    {
+        copy_length = length;
+        if (copy_length >= buffer_size)
+        {
+            copy_length = buffer_size - 1;
+        }
+        for (index = 0; index < copy_length; ++index)
+        {
+            buffer[index] = text[index];
+        }
+        buffer[copy_length] = '\0';
+        return;
+    }
+
+    if (max_chars <= 3)
+    {
+        copy_length = max_chars;
+        if (copy_length >= buffer_size)
+        {
+            copy_length = buffer_size - 1;
+        }
+        for (index = 0; index < copy_length; ++index)
+        {
+            buffer[index] = '.';
+        }
+        buffer[copy_length] = '\0';
+        return;
+    }
+
+    copy_length = max_chars - 3;
+    if (copy_length > buffer_size - 4)
+    {
+        copy_length = buffer_size - 4;
+    }
+    for (index = 0; index < copy_length; ++index)
+    {
+        buffer[index] = text[index];
+    }
+    buffer[copy_length] = '.';
+    buffer[copy_length + 1] = '.';
+    buffer[copy_length + 2] = '.';
+    buffer[copy_length + 3] = '\0';
+}
+
+static void scroll_presenter_fit_text_to_width(const egui_font_t *font, const char *text, char *buffer, uint8_t buffer_size, egui_dim_t max_width,
+                                               egui_dim_t fallback_char_width)
+{
+    uint8_t max_chars;
+
+    if (buffer == NULL || buffer_size == 0)
+    {
+        return;
+    }
+
+    buffer[0] = '\0';
+    if (!scroll_presenter_has_text(text) || max_width <= 0)
+    {
+        return;
+    }
+
+    max_chars = scroll_presenter_text_len(text);
+    scroll_presenter_copy_elided(buffer, buffer_size, text, max_chars);
+    while (max_chars > 0)
+    {
+        egui_dim_t text_width = scroll_presenter_measure_text_width(font, buffer);
+
+        if (text_width <= 0)
+        {
+            text_width = (egui_dim_t)scroll_presenter_text_len(buffer) * fallback_char_width;
+        }
+        if (text_width <= max_width)
+        {
+            break;
+        }
+
+        max_chars--;
+        scroll_presenter_copy_elided(buffer, buffer_size, text, max_chars);
+    }
+}
+
 static uint8_t scroll_presenter_clamp_snapshot_count(uint8_t count)
 {
     return count > EGUI_VIEW_SCROLL_PRESENTER_MAX_SNAPSHOTS ? EGUI_VIEW_SCROLL_PRESENTER_MAX_SNAPSHOTS : count;
@@ -378,12 +507,13 @@ static egui_color_t scroll_presenter_tone_color(egui_view_scroll_presenter_t *lo
 static void scroll_presenter_draw_text(const egui_font_t *font, egui_view_t *self, const char *text, const egui_region_t *region, uint8_t align,
                                        egui_color_t color)
 {
-    egui_region_t draw_region = *region;
+    egui_region_t draw_region;
 
-    if (!scroll_presenter_has_text(text))
+    if (font == NULL || region == NULL || region->size.width <= 0 || region->size.height <= 0 || !scroll_presenter_has_text(text))
     {
         return;
     }
+    draw_region = *region;
     egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, font, text, &draw_region, align, color, self->alpha);
 }
 
@@ -593,6 +723,9 @@ static void scroll_presenter_draw_item(egui_view_t *self, egui_view_scroll_prese
                                        const egui_region_t *viewport_content_region, egui_color_t surface_color, egui_color_t border_color,
                                        egui_color_t text_color, egui_color_t muted_color)
 {
+    char badge_label[16];
+    char title_label[32];
+    char meta_label[48];
     egui_region_t item_region;
     egui_region_t badge_region;
     egui_region_t title_region;
@@ -610,6 +743,8 @@ static void scroll_presenter_draw_item(egui_view_t *self, egui_view_scroll_prese
     egui_dim_t text_gap = 1;
     egui_dim_t content_y;
     egui_dim_t meta_y;
+    egui_dim_t title_char_width = local->compact_mode ? 4 : 5;
+    egui_dim_t meta_char_width = 4;
     uint8_t show_badge;
 
     if (item == NULL)
@@ -681,11 +816,14 @@ static void scroll_presenter_draw_item(egui_view_t *self, egui_view_scroll_prese
         }
         egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, pill_region.location.x, pill_region.location.y, pill_region.size.width, pill_region.size.height, 4,
                                               egui_rgb_mix(tone_color, EGUI_COLOR_WHITE, 20), egui_color_alpha_mix(self->alpha, 92));
-        scroll_presenter_draw_text(local->meta_font, self, item->badge, &pill_region, EGUI_ALIGN_CENTER, EGUI_COLOR_HEX(0xFFFFFF));
+        scroll_presenter_fit_text_to_width(local->meta_font, item->badge, badge_label, sizeof(badge_label), pill_region.size.width - 4, meta_char_width);
+        scroll_presenter_draw_text(local->meta_font, self, badge_label, &pill_region, EGUI_ALIGN_CENTER, EGUI_COLOR_HEX(0xFFFFFF));
     }
 
-    scroll_presenter_draw_text(local->font, self, item->title, &title_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, text_color);
-    scroll_presenter_draw_text(local->meta_font, self, item->meta, &meta_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER,
+    scroll_presenter_fit_text_to_width(local->font, item->title, title_label, sizeof(title_label), title_region.size.width, title_char_width);
+    scroll_presenter_draw_text(local->font, self, title_label, &title_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, text_color);
+    scroll_presenter_fit_text_to_width(local->meta_font, item->meta, meta_label, sizeof(meta_label), meta_region.size.width, meta_char_width);
+    scroll_presenter_draw_text(local->meta_font, self, meta_label, &meta_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER,
                                egui_rgb_mix(text_color, muted_color, 34));
 }
 
@@ -719,6 +857,8 @@ static void scroll_presenter_draw_surface(egui_view_t *self, egui_view_scroll_pr
                                           egui_color_t surface_color, egui_color_t border_color, egui_color_t viewport_color, egui_color_t text_color,
                                           egui_color_t muted_color, egui_color_t accent_color, egui_color_t preview_color)
 {
+    char minimap_label[32];
+    char empty_label[24];
     const egui_view_scroll_presenter_snapshot_t *snapshot = scroll_presenter_get_snapshot(local);
     const egui_region_t *prev_clip = egui_canvas_get_extra_clip(&uicode_get_core()->canvas);
     const egui_region_t *active_clip = NULL;
@@ -785,7 +925,9 @@ static void scroll_presenter_draw_surface(egui_view_t *self, egui_view_scroll_pr
     if (snapshot == NULL || snapshot->items == NULL || item_count == 0)
     {
         egui_region_t empty_region = metrics->viewport_content_region;
-        scroll_presenter_draw_text(local->meta_font, self, "No canvas", &empty_region, EGUI_ALIGN_CENTER, muted_color);
+
+        scroll_presenter_fit_text_to_width(local->meta_font, "No canvas", empty_label, sizeof(empty_label), empty_region.size.width, 4);
+        scroll_presenter_draw_text(local->meta_font, self, empty_label, &empty_region, EGUI_ALIGN_CENTER, muted_color);
     }
 
     if (prev_clip != NULL)
@@ -831,7 +973,8 @@ static void scroll_presenter_draw_surface(egui_view_t *self, egui_view_scroll_pr
 
     scroll_presenter_format_axes(local->vertical_offset, scroll_presenter_get_max_vertical_offset_inner(local), local->horizontal_offset,
                                  scroll_presenter_get_max_horizontal_offset_inner(local), minimap_text, (int)sizeof(minimap_text));
-    scroll_presenter_draw_text(local->meta_font, self, minimap_text, &metrics->minimap_region, EGUI_ALIGN_CENTER,
+    scroll_presenter_fit_text_to_width(local->meta_font, minimap_text, minimap_label, sizeof(minimap_label), metrics->minimap_region.size.width - 4, 4);
+    scroll_presenter_draw_text(local->meta_font, self, minimap_label, &metrics->minimap_region, EGUI_ALIGN_CENTER,
                                egui_rgb_mix(text_color, muted_color, 28));
 }
 
@@ -849,6 +992,16 @@ static void egui_view_scroll_presenter_on_draw(egui_view_t *self)
     egui_color_t accent_color = local->accent_color;
     egui_color_t preview_color = local->preview_color;
     egui_color_t shadow_color;
+    egui_region_t axes_region;
+    egui_region_t helper_region;
+    egui_dim_t title_char_width = local->compact_mode ? 4 : 5;
+    egui_dim_t meta_char_width = 4;
+    char eyebrow_label[24];
+    char title_label[40];
+    char summary_label[72];
+    char footer_label[40];
+    char axes_label[40];
+    char helper_label[40];
     char text_buffer[40];
     uint8_t enabled = egui_view_get_enable(self) ? 1 : 0;
 
@@ -897,50 +1050,72 @@ static void egui_view_scroll_presenter_on_draw(egui_view_t *self)
 
     if (metrics.show_eyebrow && snapshot != NULL)
     {
-        scroll_presenter_draw_text(local->meta_font, self, snapshot->eyebrow, &metrics.eyebrow_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER,
+        scroll_presenter_fit_text_to_width(local->meta_font, snapshot->eyebrow, eyebrow_label, sizeof(eyebrow_label), metrics.eyebrow_region.size.width,
+                                           meta_char_width);
+        scroll_presenter_draw_text(local->meta_font, self, eyebrow_label, &metrics.eyebrow_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER,
                                    egui_rgb_mix(text_color, accent_color, 20));
     }
     if (snapshot != NULL)
     {
-        scroll_presenter_draw_text(local->font, self, snapshot->title, &metrics.title_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, text_color);
+        scroll_presenter_fit_text_to_width(local->font, snapshot->title, title_label, sizeof(title_label), metrics.title_region.size.width, title_char_width);
+        scroll_presenter_draw_text(local->font, self, title_label, &metrics.title_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, text_color);
         if (metrics.show_summary)
         {
-            scroll_presenter_draw_text(local->meta_font, self, snapshot->summary, &metrics.summary_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER,
+            scroll_presenter_fit_text_to_width(local->meta_font, snapshot->summary, summary_label, sizeof(summary_label), metrics.summary_region.size.width,
+                                               meta_char_width);
+            scroll_presenter_draw_text(local->meta_font, self, summary_label, &metrics.summary_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER,
                                        egui_rgb_mix(text_color, muted_color, 34));
         }
     }
     else
     {
-        scroll_presenter_draw_text(local->font, self, "Scroll Presenter", &metrics.title_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, text_color);
+        scroll_presenter_fit_text_to_width(local->font, "Scroll Presenter", title_label, sizeof(title_label), metrics.title_region.size.width, title_char_width);
+        scroll_presenter_draw_text(local->font, self, title_label, &metrics.title_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, text_color);
     }
 
     scroll_presenter_draw_surface(self, local, &metrics, surface_color, border_color, viewport_color, text_color, muted_color, accent_color, preview_color);
 
     if (snapshot != NULL && scroll_presenter_has_text(snapshot->footer))
     {
-        scroll_presenter_draw_text(local->meta_font, self, snapshot->footer, &metrics.footer_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER,
+        scroll_presenter_fit_text_to_width(local->meta_font, snapshot->footer, footer_label, sizeof(footer_label), metrics.footer_region.size.width,
+                                           meta_char_width);
+        scroll_presenter_draw_text(local->meta_font, self, footer_label, &metrics.footer_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER,
                                    egui_rgb_mix(text_color, muted_color, 32));
     }
     else
     {
         scroll_presenter_format_pair(scroll_presenter_snapshot_viewport_height(snapshot), scroll_presenter_snapshot_content_height(snapshot), text_buffer,
                                      (int)sizeof(text_buffer));
-        scroll_presenter_draw_text(local->meta_font, self, text_buffer, &metrics.footer_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER,
+        scroll_presenter_fit_text_to_width(local->meta_font, text_buffer, footer_label, sizeof(footer_label), metrics.footer_region.size.width,
+                                           meta_char_width);
+        scroll_presenter_draw_text(local->meta_font, self, footer_label, &metrics.footer_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER,
                                    egui_rgb_mix(text_color, muted_color, 32));
+    }
+
+    axes_region = metrics.helper_region;
+    helper_region = metrics.helper_region;
+    if (!local->compact_mode && snapshot != NULL && scroll_presenter_has_text(snapshot->helper))
+    {
+        egui_dim_t split_width = metrics.helper_region.size.width / 2;
+
+        axes_region.size.width = split_width;
+        helper_region.location.x += split_width;
+        helper_region.size.width -= split_width;
     }
 
     scroll_presenter_format_axes(local->vertical_offset, scroll_presenter_get_max_vertical_offset_inner(local), local->horizontal_offset,
                                  scroll_presenter_get_max_horizontal_offset_inner(local), text_buffer, (int)sizeof(text_buffer));
-    scroll_presenter_draw_text(local->meta_font, self, text_buffer, &metrics.helper_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER,
+    scroll_presenter_fit_text_to_width(local->meta_font, text_buffer, axes_label, sizeof(axes_label), axes_region.size.width, meta_char_width);
+    scroll_presenter_draw_text(local->meta_font, self, axes_label, &axes_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER,
                                egui_rgb_mix(text_color, muted_color, local->compact_mode ? 26 : 30));
 
     if (!local->compact_mode && snapshot != NULL && scroll_presenter_has_text(snapshot->helper))
     {
-        egui_region_t helper_region = metrics.helper_region;
-        helper_region.size.width -= 6;
         if (helper_region.size.width > 8)
         {
-            scroll_presenter_draw_text(local->meta_font, self, snapshot->helper, &helper_region, EGUI_ALIGN_RIGHT | EGUI_ALIGN_VCENTER,
+            scroll_presenter_fit_text_to_width(local->meta_font, snapshot->helper, helper_label, sizeof(helper_label), helper_region.size.width,
+                                               meta_char_width);
+            scroll_presenter_draw_text(local->meta_font, self, helper_label, &helper_region, EGUI_ALIGN_RIGHT | EGUI_ALIGN_VCENTER,
                                        egui_rgb_mix(text_color, muted_color, 42));
         }
     }
