@@ -268,6 +268,29 @@ static void test_relative_panel_setters_clear_pressed_and_update_state(void)
     relative_panel_assert_pressed_cleared(&relative_panel_test_widget);
 }
 
+static void test_relative_panel_internal_helpers_cover_text_fitting(void)
+{
+    char label[24];
+
+    relative_panel_setup_widget(relative_panel_snapshots, EGUI_ARRAY_SIZE(relative_panel_snapshots));
+
+    EGUI_TEST_ASSERT_EQUAL_INT(0, relative_panel_text_len(NULL));
+    EGUI_TEST_ASSERT_EQUAL_INT(10, relative_panel_text_len("Operations"));
+    EGUI_TEST_ASSERT_EQUAL_INT(12, relative_panel_pill_width(NULL, "", 1, 12, 24));
+    EGUI_TEST_ASSERT_TRUE(relative_panel_pill_width(relative_panel_test_widget.meta_font, "OPS", 0, 12, 24) >= 12);
+    EGUI_TEST_ASSERT_TRUE(relative_panel_pill_width(relative_panel_test_widget.meta_font, "Operations", 0, 12, 24) <= 24);
+    relative_panel_copy_elided(label, sizeof(label), "Documents", 6);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Doc...", label) == 0);
+    relative_panel_copy_elided(label, sizeof(label), "Mode", 3);
+    EGUI_TEST_ASSERT_TRUE(strcmp("...", label) == 0);
+    relative_panel_fit_text_to_width(NULL, "Operations", label, sizeof(label), 28, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Oper...", label) == 0);
+    relative_panel_fit_text_to_width(NULL, "Operations", label, sizeof(label), 12, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("...", label) == 0);
+    relative_panel_fit_text_to_width(NULL, "Ready", label, sizeof(label), 20, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Ready", label) == 0);
+}
+
 static void test_relative_panel_regions_activate_and_listener(void)
 {
     egui_dim_t x;
@@ -444,6 +467,7 @@ void test_relative_panel_run(void)
     EGUI_TEST_SUITE_BEGIN(relative_panel);
     EGUI_TEST_RUN(test_relative_panel_set_snapshots_clamp_and_defaults);
     EGUI_TEST_RUN(test_relative_panel_setters_clear_pressed_and_update_state);
+    EGUI_TEST_RUN(test_relative_panel_internal_helpers_cover_text_fitting);
     EGUI_TEST_RUN(test_relative_panel_regions_activate_and_listener);
     EGUI_TEST_RUN(test_relative_panel_touch_same_target_release_and_cancel_behavior);
     EGUI_TEST_RUN(test_relative_panel_key_navigation_rule_focus_and_snapshot_cycle);
