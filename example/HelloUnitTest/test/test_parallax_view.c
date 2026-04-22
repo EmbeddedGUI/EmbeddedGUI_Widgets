@@ -228,6 +228,27 @@ static void test_parallax_view_font_setters_clear_pressed_state(void)
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_PARALLAX_VIEW_INDEX_NONE, test_parallax_view.pressed_row);
 }
 
+static void test_parallax_view_text_helpers(void)
+{
+    char label[32];
+
+    EGUI_TEST_ASSERT_EQUAL_INT(0, parallax_view_text_len(NULL));
+    EGUI_TEST_ASSERT_EQUAL_INT(4, parallax_view_text_len("Hold"));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, parallax_view_measure_text_width(NULL, "Hold"));
+
+    parallax_view_copy_elided(label, sizeof(label), "Parallax surface", 8);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Paral...", label) == 0);
+    parallax_view_copy_elided(label, sizeof(label), "Top", 3);
+    EGUI_TEST_ASSERT_TRUE(strcmp("...", label) == 0);
+
+    parallax_view_fit_text_to_width(NULL, "Hero layers move slower", label, sizeof(label), 28, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Hero...", label) == 0);
+    parallax_view_fit_text_to_width(NULL, "Hero layers move slower", label, sizeof(label), 20, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("He...", label) == 0);
+    parallax_view_fit_text_to_width(NULL, "Hold", label, sizeof(label), 20, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Hold", label) == 0);
+}
+
 static void test_parallax_view_clamps_metrics_and_offset(void)
 {
     setup_parallax_view();
@@ -482,6 +503,7 @@ void test_parallax_view_run(void)
 {
     EGUI_TEST_SUITE_BEGIN(parallax_view);
     EGUI_TEST_RUN(test_parallax_view_font_setters_clear_pressed_state);
+    EGUI_TEST_RUN(test_parallax_view_text_helpers);
     EGUI_TEST_RUN(test_parallax_view_clamps_metrics_and_offset);
     EGUI_TEST_RUN(test_parallax_view_active_row_tracks_offset);
     EGUI_TEST_RUN(test_parallax_view_keyboard_navigation);

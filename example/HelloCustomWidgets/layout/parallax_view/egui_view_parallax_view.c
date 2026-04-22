@@ -70,6 +70,119 @@ static uint8_t parallax_view_text_len(const char *text)
     return length;
 }
 
+static egui_dim_t parallax_view_measure_text_width(const egui_font_t *font, const char *text)
+{
+    egui_dim_t width = 0;
+    egui_dim_t height = 0;
+
+    if (!parallax_view_has_text(text) || font == NULL || font->api == NULL || font->api->get_str_size == NULL)
+    {
+        return 0;
+    }
+
+    font->api->get_str_size(font, text, 0, 0, &width, &height);
+    return width;
+}
+
+static void parallax_view_copy_elided(char *buffer, uint8_t buffer_size, const char *text, uint8_t max_chars)
+{
+    uint8_t copy_length;
+    uint8_t index;
+    uint8_t length;
+
+    if (buffer == NULL || buffer_size == 0)
+    {
+        return;
+    }
+
+    buffer[0] = '\0';
+    if (text == NULL || max_chars == 0)
+    {
+        return;
+    }
+
+    length = parallax_view_text_len(text);
+    if (length <= max_chars)
+    {
+        copy_length = length;
+        if (copy_length >= buffer_size)
+        {
+            copy_length = buffer_size - 1;
+        }
+        for (index = 0; index < copy_length; index++)
+        {
+            buffer[index] = text[index];
+        }
+        buffer[copy_length] = '\0';
+        return;
+    }
+
+    if (max_chars <= 3)
+    {
+        copy_length = max_chars;
+        if (copy_length >= buffer_size)
+        {
+            copy_length = buffer_size - 1;
+        }
+        for (index = 0; index < copy_length; index++)
+        {
+            buffer[index] = '.';
+        }
+        buffer[copy_length] = '\0';
+        return;
+    }
+
+    copy_length = max_chars - 3;
+    if (copy_length > buffer_size - 4)
+    {
+        copy_length = buffer_size - 4;
+    }
+    for (index = 0; index < copy_length; index++)
+    {
+        buffer[index] = text[index];
+    }
+    buffer[copy_length] = '.';
+    buffer[copy_length + 1] = '.';
+    buffer[copy_length + 2] = '.';
+    buffer[copy_length + 3] = '\0';
+}
+
+static void parallax_view_fit_text_to_width(const egui_font_t *font, const char *text, char *buffer, uint8_t buffer_size, egui_dim_t max_width,
+                                            egui_dim_t fallback_char_width)
+{
+    uint8_t max_chars;
+
+    if (buffer == NULL || buffer_size == 0)
+    {
+        return;
+    }
+
+    buffer[0] = '\0';
+    if (text == NULL || text[0] == '\0' || max_width <= 0)
+    {
+        return;
+    }
+
+    max_chars = parallax_view_text_len(text);
+    parallax_view_copy_elided(buffer, buffer_size, text, max_chars);
+    while (max_chars > 0)
+    {
+        egui_dim_t text_width = parallax_view_measure_text_width(font, buffer);
+
+        if (text_width <= 0)
+        {
+            text_width = (egui_dim_t)parallax_view_text_len(buffer) * fallback_char_width;
+        }
+        if (text_width <= max_width)
+        {
+            break;
+        }
+
+        max_chars--;
+        parallax_view_copy_elided(buffer, buffer_size, text, max_chars);
+    }
+}
+
 static egui_dim_t parallax_view_measure_font_line_height(const egui_font_t *font)
 {
     egui_dim_t width = 0;
@@ -364,7 +477,12 @@ static void parallax_view_get_metrics(egui_view_parallax_view_t *local, egui_vie
     metrics->subtitle_region.size.width = metrics->title_region.size.width;
     metrics->subtitle_region.size.height = subtitle_height;
 
-    progress_width = (egui_dim_t)(26 + parallax_view_text_len("999/999") * 4);
+    progress_width = parallax_view_measure_text_width(local->meta_font, "999/999");
+    if (progress_width <= 0)
+    {
+        progress_width = (egui_dim_t)(parallax_view_text_len("999/999") * (local->compact_mode ? 4 : 5));
+    }
+    progress_width += local->compact_mode ? 14 : 18;
     if (progress_width > metrics->hero_region.size.width - 16)
     {
         progress_width = metrics->hero_region.size.width - 16;
@@ -474,6 +592,8 @@ static void parallax_view_draw_hero_layers(egui_view_t *self, egui_view_parallax
 static void parallax_view_draw_row(egui_view_t *self, egui_view_parallax_view_t *local, const egui_region_t *row_region,
                                    const egui_view_parallax_view_row_t *row, uint8_t active, uint8_t pressed)
 {
+    char title_label[24];
+    char meta_label[16];
     egui_region_t text_region;
     egui_color_t tone_color = parallax_view_tone_color(local, row->tone);
     egui_color_t fill_color = egui_rgb_mix(local->surface_color, tone_color, active ? (local->compact_mode ? 4 : 6) : 2);
@@ -484,11 +604,28 @@ static void parallax_view_draw_row(egui_view_t *self, egui_view_parallax_view_t 
     egui_color_t meta_color = egui_rgb_mix(local->muted_text_color, tone_color, active ? (local->compact_mode ? 7 : 9) : 5);
     egui_dim_t radius = local->compact_mode ? 5 : 7;
     egui_dim_t meta_height = parallax_view_resolve_line_height(local->meta_font, local->compact_mode ? 7 : 9);
-    egui_dim_t meta_width = parallax_view_has_text(row->meta)
-                                    ? (egui_dim_t)(parallax_view_text_len(row->meta) * (local->compact_mode ? 4 : 5) + (local->compact_mode ? 10 : 14))
-                                    : 0;
+    egui_dim_t meta_padding_x = local->compact_mode ? 10 : 14;
+    egui_dim_t title_min_width = local->compact_mode ? 28 : 36;
+    egui_dim_t meta_text_width = 0;
+    egui_dim_t meta_text_max_width = row_region->size.width - (local->compact_mode ? 18 : 22) - title_min_width - meta_padding_x;
+    egui_dim_t meta_width = 0;
     egui_dim_t meta_x = row_region->location.x + row_region->size.width - meta_width - (local->compact_mode ? 5 : 7);
     egui_dim_t title_x = row_region->location.x + (local->compact_mode ? 9 : 11);
+
+    if (parallax_view_has_text(row->meta) && meta_text_max_width > 0)
+    {
+        parallax_view_fit_text_to_width(local->meta_font, row->meta, meta_label, sizeof(meta_label), meta_text_max_width, local->compact_mode ? 4 : 5);
+        meta_text_width = parallax_view_measure_text_width(local->meta_font, meta_label);
+        if (meta_text_width <= 0)
+        {
+            meta_text_width = (egui_dim_t)parallax_view_text_len(meta_label) * (local->compact_mode ? 4 : 5);
+        }
+        if (meta_text_width > 0)
+        {
+            meta_width = meta_text_width + meta_padding_x;
+        }
+    }
+    meta_x = row_region->location.x + row_region->size.width - meta_width - (local->compact_mode ? 5 : 7);
 
     if (local->read_only_mode)
     {
@@ -528,14 +665,15 @@ static void parallax_view_draw_row(egui_view_t *self, egui_view_parallax_view_t 
         text_region.location.y = row_region->location.y + (row_region->size.height - meta_height) / 2;
         text_region.size.width = meta_width;
         text_region.size.height = meta_height;
-        parallax_view_draw_text(local->meta_font, self, row->meta, &text_region, EGUI_ALIGN_CENTER, meta_color);
+        parallax_view_draw_text(local->meta_font, self, meta_label, &text_region, EGUI_ALIGN_CENTER, meta_color);
     }
 
     text_region.location.x = title_x;
     text_region.location.y = row_region->location.y;
     text_region.size.width = meta_width > 0 ? (meta_x - title_x - 4) : (row_region->size.width - (local->compact_mode ? 18 : 22));
     text_region.size.height = row_region->size.height;
-    parallax_view_draw_text(local->font, self, row->title, &text_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, title_color);
+    parallax_view_fit_text_to_width(local->font, row->title, title_label, sizeof(title_label), text_region.size.width, local->compact_mode ? 4 : 5);
+    parallax_view_draw_text(local->font, self, title_label, &text_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, title_color);
 }
 
 void egui_view_parallax_view_set_rows(egui_view_t *self, const egui_view_parallax_view_row_t *rows, uint8_t row_count)
@@ -686,8 +824,12 @@ static void egui_view_parallax_view_on_draw(egui_view_t *self)
     egui_region_t region;
     egui_region_t text_region;
     egui_view_parallax_view_metrics_t metrics;
+    char progress_label[12];
     char progress_text[24];
+    char title_label[24];
+    char subtitle_label[32];
     char footer_text[64];
+    char footer_label[40];
     uint8_t active_row;
     const egui_view_parallax_view_row_t *active = NULL;
     egui_color_t tone_color;
@@ -706,6 +848,7 @@ static void egui_view_parallax_view_on_draw(egui_view_t *self)
     egui_dim_t track_width;
     egui_dim_t thumb_width;
     egui_dim_t thumb_x;
+    egui_dim_t title_max_width;
     egui_dim_t max_offset;
     uint8_t i;
 
@@ -775,10 +918,25 @@ static void egui_view_parallax_view_on_draw(egui_view_t *self)
     parallax_view_draw_round_stroke_safe(metrics.progress_region.location.x, metrics.progress_region.location.y, metrics.progress_region.size.width,
                                          metrics.progress_region.size.height, metrics.progress_region.size.height / 2, 1,
                                          egui_rgb_mix(local->border_color, tone_color, 10), egui_color_alpha_mix(self->alpha, 26));
-    parallax_view_draw_text(local->meta_font, self, progress_text, &metrics.progress_region, EGUI_ALIGN_CENTER, tone_color);
+    parallax_view_fit_text_to_width(local->meta_font, progress_text, progress_label, sizeof(progress_label), metrics.progress_region.size.width - 4,
+                                    local->compact_mode ? 4 : 5);
+    parallax_view_draw_text(local->meta_font, self, progress_label, &metrics.progress_region, EGUI_ALIGN_CENTER, tone_color);
 
-    parallax_view_draw_text(local->font, self, local->title, &metrics.title_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, title_color);
-    parallax_view_draw_text(local->meta_font, self, local->subtitle, &metrics.subtitle_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, subtitle_color);
+    title_max_width = metrics.title_region.size.width;
+    if (metrics.progress_region.location.x > metrics.title_region.location.x &&
+        metrics.progress_region.location.x < metrics.title_region.location.x + metrics.title_region.size.width)
+    {
+        title_max_width = metrics.progress_region.location.x - metrics.title_region.location.x - 4;
+    }
+    text_region = metrics.title_region;
+    text_region.size.width = title_max_width;
+    parallax_view_fit_text_to_width(local->font, local->title, title_label, sizeof(title_label), text_region.size.width, local->compact_mode ? 4 : 5);
+    parallax_view_draw_text(local->font, self, title_label, &text_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, title_color);
+
+    text_region = metrics.subtitle_region;
+    parallax_view_fit_text_to_width(local->meta_font, local->subtitle, subtitle_label, sizeof(subtitle_label), text_region.size.width,
+                                    local->compact_mode ? 4 : 5);
+    parallax_view_draw_text(local->meta_font, self, subtitle_label, &text_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, subtitle_color);
 
     max_offset = parallax_view_get_max_offset_inner(local);
     track_x = metrics.hero_region.location.x + (local->compact_mode ? 7 : 9);
@@ -818,7 +976,8 @@ static void egui_view_parallax_view_on_draw(egui_view_t *self)
     text_region.location.y = metrics.footer_region.location.y;
     text_region.size.width = metrics.footer_region.size.width - (local->compact_mode ? 8 : 12);
     text_region.size.height = metrics.footer_region.size.height;
-    parallax_view_draw_text(local->meta_font, self, footer_text, &text_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, footer_color);
+    parallax_view_fit_text_to_width(local->meta_font, footer_text, footer_label, sizeof(footer_label), text_region.size.width, local->compact_mode ? 4 : 5);
+    parallax_view_draw_text(local->meta_font, self, footer_label, &text_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, footer_color);
 }
 
 #if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
