@@ -318,6 +318,7 @@ static void test_data_list_panel_snapshot_and_index_guards_notify(void)
 
 static void test_data_list_panel_font_modes_palette_and_helpers(void)
 {
+    char label[24];
     egui_color_t sample = EGUI_COLOR_HEX(0x123456);
 
     setup_panel();
@@ -380,11 +381,21 @@ static void test_data_list_panel_font_modes_palette_and_helpers(void)
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x808182).full, egui_view_data_list_panel_tone_color(&test_panel, EGUI_VIEW_DATA_LIST_PANEL_TONE_WARNING).full);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x909192).full, egui_view_data_list_panel_tone_color(&test_panel, EGUI_VIEW_DATA_LIST_PANEL_TONE_NEUTRAL).full);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x606162).full, egui_view_data_list_panel_tone_color(&test_panel, 9).full);
-    EGUI_TEST_ASSERT_EQUAL_INT(34, egui_view_data_list_panel_pill_width("18", 0, 24, 60));
-    EGUI_TEST_ASSERT_EQUAL_INT(24, egui_view_data_list_panel_pill_width("Long", 1, 20, 24));
-    EGUI_TEST_ASSERT_EQUAL_INT(57, egui_view_data_list_panel_footer_width("Blocked", 0, 60));
-    EGUI_TEST_ASSERT_EQUAL_INT(38, egui_view_data_list_panel_footer_width("Muted", 1, 40));
-    EGUI_TEST_ASSERT_EQUAL_INT(30, egui_view_data_list_panel_footer_width("LongFooter", 0, 30));
+    EGUI_TEST_ASSERT_EQUAL_INT(34, egui_view_data_list_panel_pill_width(NULL, "18", 0, 24, 60));
+    EGUI_TEST_ASSERT_EQUAL_INT(24, egui_view_data_list_panel_pill_width(NULL, "Long", 1, 20, 24));
+    EGUI_TEST_ASSERT_EQUAL_INT(57, egui_view_data_list_panel_footer_width(NULL, "Blocked", 0, 60));
+    EGUI_TEST_ASSERT_EQUAL_INT(38, egui_view_data_list_panel_footer_width(NULL, "Muted", 1, 40));
+    EGUI_TEST_ASSERT_EQUAL_INT(30, egui_view_data_list_panel_footer_width(NULL, "LongFooter", 0, 30));
+    egui_view_data_list_panel_copy_elided(label, sizeof(label), "Documents", 6);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Doc...", label) == 0);
+    egui_view_data_list_panel_copy_elided(label, sizeof(label), "Mode", 3);
+    EGUI_TEST_ASSERT_TRUE(strcmp("...", label) == 0);
+    egui_view_data_list_panel_fit_text_to_width(NULL, "Sync queue", label, sizeof(label), 28, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Sync...", label) == 0);
+    egui_view_data_list_panel_fit_text_to_width(NULL, "Sync queue", label, sizeof(label), 12, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("...", label) == 0);
+    egui_view_data_list_panel_fit_text_to_width(NULL, "Ready", label, sizeof(label), 20, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Ready", label) == 0);
     EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(sample, EGUI_COLOR_DARK_GREY, 68).full, egui_view_data_list_panel_mix_disabled(sample).full);
 
     EGUI_TEST_ASSERT_TRUE(egui_view_data_list_panel_get_snapshot(&test_panel) == &g_snapshots[0]);

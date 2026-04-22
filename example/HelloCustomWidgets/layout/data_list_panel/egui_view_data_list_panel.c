@@ -60,6 +60,69 @@ static uint8_t egui_view_data_list_panel_text_len(const char *text)
     return len;
 }
 
+static void egui_view_data_list_panel_copy_elided(char *buffer, uint8_t buffer_size, const char *text, uint8_t max_chars)
+{
+    uint8_t copy_length;
+    uint8_t index;
+    uint8_t length;
+
+    if (buffer == NULL || buffer_size == 0)
+    {
+        return;
+    }
+
+    buffer[0] = '\0';
+    if (text == NULL || max_chars == 0)
+    {
+        return;
+    }
+
+    length = egui_view_data_list_panel_text_len(text);
+    if (length <= max_chars)
+    {
+        copy_length = length;
+        if (copy_length >= buffer_size)
+        {
+            copy_length = buffer_size - 1;
+        }
+        for (index = 0; index < copy_length; index++)
+        {
+            buffer[index] = text[index];
+        }
+        buffer[copy_length] = '\0';
+        return;
+    }
+
+    if (max_chars <= 3)
+    {
+        copy_length = max_chars;
+        if (copy_length >= buffer_size)
+        {
+            copy_length = buffer_size - 1;
+        }
+        for (index = 0; index < copy_length; index++)
+        {
+            buffer[index] = '.';
+        }
+        buffer[copy_length] = '\0';
+        return;
+    }
+
+    copy_length = max_chars - 3;
+    if (copy_length > buffer_size - 4)
+    {
+        copy_length = buffer_size - 4;
+    }
+    for (index = 0; index < copy_length; index++)
+    {
+        buffer[index] = text[index];
+    }
+    buffer[copy_length] = '.';
+    buffer[copy_length + 1] = '.';
+    buffer[copy_length + 2] = '.';
+    buffer[copy_length + 3] = '\0';
+}
+
 static egui_dim_t egui_view_data_list_panel_measure_font_line_height(const egui_font_t *font)
 {
     egui_dim_t dummy_width = 0;
@@ -86,6 +149,42 @@ static egui_dim_t egui_view_data_list_panel_measure_text_width(const egui_font_t
 
     font->api->get_str_size(font, text, 0, 0, &text_width, &dummy_height);
     return text_width;
+}
+
+static void egui_view_data_list_panel_fit_text_to_width(const egui_font_t *font, const char *text, char *buffer, uint8_t buffer_size, egui_dim_t max_width,
+                                                        egui_dim_t fallback_char_width)
+{
+    uint8_t max_chars;
+
+    if (buffer == NULL || buffer_size == 0)
+    {
+        return;
+    }
+
+    buffer[0] = '\0';
+    if (text == NULL || text[0] == '\0' || max_width <= 0)
+    {
+        return;
+    }
+
+    max_chars = egui_view_data_list_panel_text_len(text);
+    egui_view_data_list_panel_copy_elided(buffer, buffer_size, text, max_chars);
+    while (max_chars > 0)
+    {
+        egui_dim_t text_width = egui_view_data_list_panel_measure_text_width(font, buffer);
+
+        if (text_width <= 0)
+        {
+            text_width = (egui_dim_t)egui_view_data_list_panel_text_len(buffer) * fallback_char_width;
+        }
+        if (text_width <= max_width)
+        {
+            break;
+        }
+
+        max_chars--;
+        egui_view_data_list_panel_copy_elided(buffer, buffer_size, text, max_chars);
+    }
 }
 
 static egui_dim_t egui_view_data_list_panel_meta_height(egui_view_data_list_panel_t *local, egui_dim_t fallback)
@@ -512,6 +611,8 @@ void egui_view_data_list_panel_set_palette(egui_view_t *self, egui_color_t surfa
 static void egui_view_data_list_panel_draw_row(egui_view_t *self, egui_view_data_list_panel_t *local, const egui_view_data_list_panel_item_t *item,
                                                const egui_region_t *region, uint8_t selected, uint8_t pressed, uint8_t last)
 {
+    char value_label[16];
+    char title_label[32];
     egui_region_t text_region;
     egui_color_t tone_color = egui_view_data_list_panel_tone_color(local, item->tone);
     egui_color_t row_fill = egui_rgb_mix(local->surface_color, tone_color, selected ? 12 : (local->compact_mode ? 4 : 7));
@@ -611,25 +712,32 @@ static void egui_view_data_list_panel_draw_row(egui_view_t *self, egui_view_data
     text_region.size.height = value_h;
     if (local->compact_mode)
     {
-        egui_view_data_list_panel_draw_text(local->meta_font, self, item->value, &text_region, EGUI_ALIGN_RIGHT | EGUI_ALIGN_VCENTER, value_color);
+        egui_view_data_list_panel_fit_text_to_width(local->meta_font, item->value, value_label, sizeof(value_label), text_region.size.width, 4);
+        egui_view_data_list_panel_draw_text(local->meta_font, self, value_label, &text_region, EGUI_ALIGN_RIGHT | EGUI_ALIGN_VCENTER, value_color);
     }
     else
     {
         egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, value_x, value_y, value_w, value_h, value_h / 2, value_fill, egui_color_alpha_mix(self->alpha, 94));
         egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, value_x, value_y, value_w, value_h, value_h / 2, 1, value_border, egui_color_alpha_mix(self->alpha, 36));
-        egui_view_data_list_panel_draw_text(local->meta_font, self, item->value, &text_region, EGUI_ALIGN_CENTER, value_color);
+        egui_view_data_list_panel_fit_text_to_width(local->meta_font, item->value, value_label, sizeof(value_label), text_region.size.width - 4, 5);
+        egui_view_data_list_panel_draw_text(local->meta_font, self, value_label, &text_region, EGUI_ALIGN_CENTER, value_color);
     }
 
     text_region.location.x = title_x;
     text_region.location.y = region->location.y;
     text_region.size.width = value_x - title_x - (local->compact_mode ? 4 : 6);
     text_region.size.height = region->size.height;
-    egui_view_data_list_panel_draw_text(local->font, self, item->title, &text_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, title_color);
+    egui_view_data_list_panel_fit_text_to_width(local->font, item->title, title_label, sizeof(title_label), text_region.size.width, local->compact_mode ? 4 : 5);
+    egui_view_data_list_panel_draw_text(local->font, self, title_label, &text_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, title_color);
 }
 
 static void egui_view_data_list_panel_on_draw(egui_view_t *self)
 {
     EGUI_LOCAL_INIT(egui_view_data_list_panel_t);
+    char eyebrow_label[16];
+    char title_label[24];
+    char summary_label[32];
+    char footer_label[16];
     const egui_view_data_list_panel_snapshot_t *snapshot = egui_view_data_list_panel_get_snapshot(local);
     const egui_view_data_list_panel_item_t *item = egui_view_data_list_panel_get_item(local);
     egui_view_data_list_panel_metrics_t metrics;
@@ -700,12 +808,15 @@ static void egui_view_data_list_panel_on_draw(egui_view_t *self)
 
     if (!local->compact_mode)
     {
-        egui_view_data_list_panel_draw_text(local->meta_font, self, snapshot->eyebrow, &metrics.eyebrow_region, EGUI_ALIGN_CENTER, eyebrow_color);
+        egui_view_data_list_panel_fit_text_to_width(local->meta_font, snapshot->eyebrow, eyebrow_label, sizeof(eyebrow_label), metrics.eyebrow_region.size.width - 4, 4);
+        egui_view_data_list_panel_draw_text(local->meta_font, self, eyebrow_label, &metrics.eyebrow_region, EGUI_ALIGN_CENTER, eyebrow_color);
     }
-    egui_view_data_list_panel_draw_text(local->font, self, snapshot->title, &metrics.title_region, EGUI_ALIGN_CENTER, title_color);
+    egui_view_data_list_panel_fit_text_to_width(local->font, snapshot->title, title_label, sizeof(title_label), metrics.title_region.size.width, local->compact_mode ? 4 : 5);
+    egui_view_data_list_panel_draw_text(local->font, self, title_label, &metrics.title_region, EGUI_ALIGN_CENTER, title_color);
     if (!local->compact_mode)
     {
-        egui_view_data_list_panel_draw_text(local->meta_font, self, snapshot->summary, &metrics.summary_region, EGUI_ALIGN_CENTER, summary_color);
+        egui_view_data_list_panel_fit_text_to_width(local->meta_font, snapshot->summary, summary_label, sizeof(summary_label), metrics.summary_region.size.width, 4);
+        egui_view_data_list_panel_draw_text(local->meta_font, self, summary_label, &metrics.summary_region, EGUI_ALIGN_CENTER, summary_color);
     }
 
     for (i = 0; i < item_count; i++)
@@ -726,7 +837,8 @@ static void egui_view_data_list_panel_on_draw(egui_view_t *self)
         egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, text_region.location.x, text_region.location.y, text_region.size.width, text_region.size.height,
                                          text_region.size.height / 2, 1, footer_border, egui_color_alpha_mix(self->alpha, 34));
     }
-    egui_view_data_list_panel_draw_text(local->meta_font, self, item->footer, &text_region, EGUI_ALIGN_CENTER, footer_text);
+    egui_view_data_list_panel_fit_text_to_width(local->meta_font, item->footer, footer_label, sizeof(footer_label), text_region.size.width - 4, 4);
+    egui_view_data_list_panel_draw_text(local->meta_font, self, footer_label, &text_region, EGUI_ALIGN_CENTER, footer_text);
 }
 
 #if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
