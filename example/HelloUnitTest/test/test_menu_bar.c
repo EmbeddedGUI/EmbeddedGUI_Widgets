@@ -251,6 +251,29 @@ static void assert_pressed_cleared(void)
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_MENU_BAR_ITEM_NONE, test_menu_bar.pressed_item);
 }
 
+static void test_menu_bar_text_helpers_elide_to_width(void)
+{
+    char label[16];
+
+    egui_view_menu_bar_copy_elided(label, sizeof(label), "Documents", 6);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Doc...", label) == 0);
+
+    egui_view_menu_bar_copy_elided(label, sizeof(label), "Tools", 3);
+    EGUI_TEST_ASSERT_TRUE(strcmp("...", label) == 0);
+
+    egui_view_menu_bar_fit_text_to_width(NULL, "Documents", label, sizeof(label), 30, 5);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Doc...", label) == 0);
+
+    egui_view_menu_bar_fit_text_to_width(NULL, "Documents", label, sizeof(label), 15, 5);
+    EGUI_TEST_ASSERT_TRUE(strcmp("...", label) == 0);
+
+    egui_view_menu_bar_fit_text_to_width(NULL, "Tools", label, sizeof(label), 30, 5);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Tools", label) == 0);
+
+    egui_view_menu_bar_fit_text_to_width(NULL, "Edit", label, sizeof(label), 0, 5);
+    EGUI_TEST_ASSERT_TRUE(strcmp("", label) == 0);
+}
+
 static void test_menu_bar_set_snapshots_resolves_disabled_focus_item(void)
 {
     setup_menu_bar(g_disabled_focus_snapshots, 1);
@@ -687,6 +710,7 @@ void test_menu_bar_run(void)
 {
     EGUI_TEST_SUITE_BEGIN(menu_bar);
 
+    EGUI_TEST_RUN(test_menu_bar_text_helpers_elide_to_width);
     EGUI_TEST_RUN(test_menu_bar_set_snapshots_resolves_disabled_focus_item);
     EGUI_TEST_RUN(test_menu_bar_set_snapshots_skips_disabled_initial_snapshot);
     EGUI_TEST_RUN(test_menu_bar_set_current_item_skips_disabled_target);

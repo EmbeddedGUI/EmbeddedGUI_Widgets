@@ -63,6 +63,105 @@ static uint8_t egui_view_menu_bar_text_len(const char *text)
     return length;
 }
 
+static void egui_view_menu_bar_copy_elided(char *buffer, uint8_t buffer_size, const char *text, uint8_t max_chars)
+{
+    uint8_t length = 0;
+    uint8_t copy_length;
+    uint8_t index;
+
+    if (buffer == NULL || buffer_size == 0)
+    {
+        return;
+    }
+
+    buffer[0] = '\0';
+    if (text == NULL || max_chars == 0)
+    {
+        return;
+    }
+
+    length = egui_view_menu_bar_text_len(text);
+    if (length <= max_chars)
+    {
+        copy_length = length;
+        if (copy_length >= buffer_size)
+        {
+            copy_length = buffer_size - 1;
+        }
+        for (index = 0; index < copy_length; index++)
+        {
+            buffer[index] = text[index];
+        }
+        buffer[copy_length] = '\0';
+        return;
+    }
+
+    if (max_chars <= 3)
+    {
+        copy_length = max_chars;
+        if (copy_length >= buffer_size)
+        {
+            copy_length = buffer_size - 1;
+        }
+        for (index = 0; index < copy_length; index++)
+        {
+            buffer[index] = '.';
+        }
+        buffer[copy_length] = '\0';
+        return;
+    }
+
+    copy_length = max_chars - 3;
+    if (copy_length > buffer_size - 4)
+    {
+        copy_length = buffer_size - 4;
+    }
+    for (index = 0; index < copy_length; index++)
+    {
+        buffer[index] = text[index];
+    }
+    buffer[copy_length] = '.';
+    buffer[copy_length + 1] = '.';
+    buffer[copy_length + 2] = '.';
+    buffer[copy_length + 3] = '\0';
+}
+
+static void egui_view_menu_bar_fit_text_to_width(const egui_font_t *font, const char *text, char *buffer, uint8_t buffer_size, egui_dim_t max_width,
+                                                 egui_dim_t fallback_char_width)
+{
+    uint8_t max_chars;
+
+    if (buffer == NULL || buffer_size == 0)
+    {
+        return;
+    }
+
+    buffer[0] = '\0';
+    if (text == NULL || text[0] == '\0' || max_width <= 0)
+    {
+        return;
+    }
+
+    max_chars = egui_view_menu_bar_text_len(text);
+    egui_view_menu_bar_copy_elided(buffer, buffer_size, text, max_chars);
+    while (max_chars > 1)
+    {
+        egui_dim_t text_width = egui_view_menu_bar_measure_text_width(font, buffer);
+
+        if (text_width <= 0)
+        {
+            text_width = (egui_dim_t)egui_view_menu_bar_text_len(buffer) * fallback_char_width;
+        }
+        if (text_width <= max_width)
+        {
+            break;
+        }
+
+        max_chars--;
+        egui_view_menu_bar_copy_elided(buffer, buffer_size, text, max_chars);
+    }
+}
+
 static egui_color_t egui_view_menu_bar_tone_color(egui_view_menu_bar_t *local, uint8_t tone)
 {
     switch (tone)
@@ -888,6 +987,8 @@ static void egui_view_menu_bar_draw_summary_strip(egui_view_t *self, egui_view_m
                                                   egui_region_t *region, egui_color_t fill_color, egui_color_t border_color, egui_color_t text_color,
                                                   egui_color_t muted_text_color)
 {
+    char title_label[32];
+    char chip_label[16];
     egui_region_t cue_region;
     egui_region_t lock_region;
     egui_region_t meta_chip_region;
@@ -1030,8 +1131,13 @@ static void egui_view_menu_bar_draw_summary_strip(egui_view_t *self, egui_view_m
                                          egui_color_alpha_mix(self->alpha, local->read_only_mode ? 28 : 44));
     }
 
-    egui_view_menu_bar_draw_text(local->font, self, snapshot->panel_items[0].title, &text_region, EGUI_ALIGN_LEFT, title_text_color, EGUI_ALPHA_100);
-    egui_view_menu_bar_draw_text(local->meta_font, self, snapshot->menus[menu_index].title, &meta_chip_region, EGUI_ALIGN_CENTER, meta_text_color,
+    egui_view_menu_bar_fit_text_to_width(local->font, snapshot->panel_items[0].title, title_label, sizeof(title_label), text_region.size.width,
+                                         local->compact_mode ? 4 : 5);
+    egui_view_menu_bar_fit_text_to_width(local->meta_font, snapshot->menus[menu_index].title, chip_label, sizeof(chip_label), meta_chip_region.size.width - 4,
+                                         local->compact_mode ? 3 : 4);
+
+    egui_view_menu_bar_draw_text(local->font, self, title_label, &text_region, EGUI_ALIGN_LEFT, title_text_color, EGUI_ALPHA_100);
+    egui_view_menu_bar_draw_text(local->meta_font, self, chip_label, &meta_chip_region, EGUI_ALIGN_CENTER, meta_text_color,
                                  EGUI_ALPHA_100);
 }
 
@@ -1407,6 +1513,7 @@ static void egui_view_menu_bar_on_draw(egui_view_t *self)
 
     for (index = 0; index < layout.menu_count; index++)
     {
+        char menu_label[16];
         egui_color_t item_text_color = text_color;
         egui_color_t current_fill;
         egui_dim_t current_pip_h;
@@ -1459,7 +1566,9 @@ static void egui_view_menu_bar_on_draw(egui_view_t *self)
             item_text_color = egui_rgb_mix(text_color, local->accent_color, 2);
         }
 
-        egui_view_menu_bar_draw_text(local->font, self, snapshot->menus[index].title, &layout.top_item_regions[index], EGUI_ALIGN_CENTER, item_text_color,
+        egui_view_menu_bar_fit_text_to_width(local->font, snapshot->menus[index].title, menu_label, sizeof(menu_label),
+                                             layout.top_item_regions[index].size.width - menu_padding_x, local->compact_mode ? 3 : 5);
+        egui_view_menu_bar_draw_text(local->font, self, menu_label, &layout.top_item_regions[index], EGUI_ALIGN_CENTER, item_text_color,
                                      EGUI_ALPHA_100);
     }
 
@@ -1521,6 +1630,8 @@ static void egui_view_menu_bar_on_draw(egui_view_t *self)
         for (index = 0; index < layout.panel_item_count; index++)
         {
             const egui_view_menu_bar_panel_item_t *item = &snapshot->panel_items[index];
+            char meta_label[24];
+            char title_label[32];
             egui_region_t title_region;
             egui_region_t meta_region;
             egui_region_t trailing_region;
@@ -1627,8 +1738,12 @@ static void egui_view_menu_bar_on_draw(egui_view_t *self)
                 row_meta_color = egui_rgb_mix(row_meta_color, muted_text_color, 22);
             }
 
-            egui_view_menu_bar_draw_text(local->font, self, item->title, &title_region, EGUI_ALIGN_LEFT, row_text_color, EGUI_ALPHA_100);
-            egui_view_menu_bar_draw_text(local->meta_font, self, item->meta, &meta_region, EGUI_ALIGN_RIGHT, row_meta_color, EGUI_ALPHA_100);
+            egui_view_menu_bar_fit_text_to_width(local->font, item->title, title_label, sizeof(title_label), title_region.size.width,
+                                                 local->compact_mode ? 4 : 5);
+            egui_view_menu_bar_fit_text_to_width(local->meta_font, item->meta, meta_label, sizeof(meta_label), meta_region.size.width,
+                                                 local->compact_mode ? 4 : 5);
+            egui_view_menu_bar_draw_text(local->font, self, title_label, &title_region, EGUI_ALIGN_LEFT, row_text_color, EGUI_ALPHA_100);
+            egui_view_menu_bar_draw_text(local->meta_font, self, meta_label, &meta_region, EGUI_ALIGN_RIGHT, row_meta_color, EGUI_ALPHA_100);
             if (item->trailing_kind == EGUI_VIEW_MENU_BAR_TRAILING_SUBMENU)
             {
                 egui_view_menu_bar_draw_submenu_affordance(self, local, &layout.panel_item_regions[index], &trailing_region, panel_fill_color, border_color,
