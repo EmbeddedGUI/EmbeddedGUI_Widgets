@@ -160,6 +160,11 @@
 ## 最近完成的收口动作
 
 - `2026-04-22`
+  - 修复 `layout/stack_panel` 文本截断：在不调整既有主区 panel、stack 卡片尺寸和底部 preview 布局的前提下，为 `example/HelloCustomWidgets/layout/stack_panel/test.c` 新增 `stack_panel_text_len()`、`stack_panel_measure_text_width()`、`stack_panel_copy_elided()`、`stack_panel_fit_text_to_width()` 与 `stack_panel_set_fitted_label_text()`，把主区 `heading / note`、各卡片标题以及底部 `horizontal / compact` preview 的标题与说明全部改成“按宽度拟合后再写入 label”，消除固定窄区里的半截字。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=layout/stack_panel PORT=pc`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category layout`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub layout/stack_panel --timeout 10 --keep-screenshots` 与 `python scripts/code_runtime_check.py --app HelloCustomWidgets --category layout --bits64`。
+  - 当前环境再次执行 `make all APP=HelloUnitTest PORT=pc_test` 仍失败于仓库既有 `example/HelloUnitTest/test/test_card_control.c` 签名不匹配基线，与本轮 `stack_panel` 修复无关；本轮未引入新的 unit / compile / runtime 失败记录。
+  - 本轮已把 `runtime_check_output/HelloCustomWidgets_layout_stack_panel/default` 中主区与底部 preview 的高风险文本路径统一收口到省略号拟合逻辑，layout 分类 runtime `29 / 29` 继续保持通过。
+- `2026-04-22`
   - 修复 `layout/grid` 文本截断：在不调整既有主区 panel、grid 卡片尺寸和底部 preview 布局的前提下，为 `example/HelloCustomWidgets/layout/grid/test.c` 新增 `grid_text_len()`、`grid_measure_text_width()`、`grid_copy_elided()`、`grid_fit_text_to_width()` 与 `grid_set_fitted_label_text()`，把主区 `heading / note`、各卡片 `eyebrow / title` 以及底部 `stack / dense` preview 的标题与说明全部改成“按宽度拟合后再写入 label”，消除 `Dense board` 窄卡片和 preview 固定宽区里的半截字。
   - 已通过 `make all APP=HelloCustomWidgets APP_SUB=layout/grid PORT=pc`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category layout`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub layout/grid --timeout 10 --keep-screenshots` 与 `python scripts/code_runtime_check.py --app HelloCustomWidgets --category layout --bits64`。
   - 当前环境再次执行 `make all APP=HelloUnitTest PORT=pc_test` 仍失败于仓库既有 `example/HelloUnitTest/test/test_card_control.c` 签名不匹配基线，与本轮 `grid` 修复无关；本轮未引入新的 unit / compile / runtime 失败记录。

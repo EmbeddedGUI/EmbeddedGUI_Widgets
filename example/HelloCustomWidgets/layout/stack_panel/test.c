@@ -79,6 +79,15 @@ static egui_view_label_t compact_note_label;
 static egui_view_api_t horizontal_preview_api;
 static egui_view_api_t compact_preview_api;
 static uint8_t ui_ready;
+static char primary_heading_text[24];
+static char primary_note_text[72];
+static char primary_card_title_text[STACK_PANEL_ITEM_CAPACITY][24];
+static char horizontal_heading_text[16];
+static char horizontal_note_text[24];
+static char horizontal_card_title_text[STACK_PANEL_HORIZONTAL_ITEMS][8];
+static char compact_heading_text[16];
+static char compact_note_text[24];
+static char compact_card_title_text[STACK_PANEL_COMPACT_ITEMS][16];
 
 EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
 EGUI_BACKGROUND_PARAM_INIT(bg_page_panel_params, &bg_page_panel_param, NULL, NULL);
@@ -105,6 +114,154 @@ EGUI_BACKGROUND_PARAM_INIT(bg_card_warm_params, &bg_card_warm_param, NULL, NULL)
 EGUI_BACKGROUND_COLOR_STATIC_CONST_INIT(bg_card_warm, &bg_card_warm_params);
 
 static const char *title_text = "StackPanel";
+
+static uint8_t stack_panel_has_text(const char *text)
+{
+    return (text != NULL && text[0] != '\0') ? 1 : 0;
+}
+
+static uint8_t stack_panel_text_len(const char *text)
+{
+    uint8_t len = 0;
+
+    if (text == NULL)
+    {
+        return 0;
+    }
+
+    while (text[len] != '\0')
+    {
+        len++;
+    }
+    return len;
+}
+
+static egui_dim_t stack_panel_measure_text_width(const egui_font_t *font, const char *text)
+{
+    egui_dim_t width = 0;
+    egui_dim_t height = 0;
+
+    if (!stack_panel_has_text(text) || font == NULL || font->api == NULL || font->api->get_str_size == NULL)
+    {
+        return 0;
+    }
+
+    font->api->get_str_size(font, text, 0, 0, &width, &height);
+    return width;
+}
+
+static void stack_panel_copy_elided(char *buffer, uint8_t buffer_size, const char *text, uint8_t max_chars)
+{
+    uint8_t copy_length;
+    uint8_t index;
+    uint8_t length;
+
+    if (buffer == NULL || buffer_size == 0)
+    {
+        return;
+    }
+
+    buffer[0] = '\0';
+    if (text == NULL || max_chars == 0)
+    {
+        return;
+    }
+
+    length = stack_panel_text_len(text);
+    if (length <= max_chars)
+    {
+        copy_length = length;
+        if (copy_length >= buffer_size)
+        {
+            copy_length = buffer_size - 1;
+        }
+        for (index = 0; index < copy_length; ++index)
+        {
+            buffer[index] = text[index];
+        }
+        buffer[copy_length] = '\0';
+        return;
+    }
+
+    if (max_chars <= 3)
+    {
+        copy_length = max_chars;
+        if (copy_length >= buffer_size)
+        {
+            copy_length = buffer_size - 1;
+        }
+        for (index = 0; index < copy_length; ++index)
+        {
+            buffer[index] = '.';
+        }
+        buffer[copy_length] = '\0';
+        return;
+    }
+
+    copy_length = max_chars - 3;
+    if (copy_length > buffer_size - 4)
+    {
+        copy_length = buffer_size - 4;
+    }
+    for (index = 0; index < copy_length; ++index)
+    {
+        buffer[index] = text[index];
+    }
+    buffer[copy_length] = '.';
+    buffer[copy_length + 1] = '.';
+    buffer[copy_length + 2] = '.';
+    buffer[copy_length + 3] = '\0';
+}
+
+static void stack_panel_fit_text_to_width(const egui_font_t *font, const char *text, char *buffer, uint8_t buffer_size, egui_dim_t max_width,
+                                          egui_dim_t fallback_char_width)
+{
+    uint8_t max_chars;
+
+    if (buffer == NULL || buffer_size == 0)
+    {
+        return;
+    }
+
+    buffer[0] = '\0';
+    if (!stack_panel_has_text(text) || max_width <= 0)
+    {
+        return;
+    }
+
+    max_chars = stack_panel_text_len(text);
+    stack_panel_copy_elided(buffer, buffer_size, text, max_chars);
+    while (max_chars > 0)
+    {
+        egui_dim_t text_width = stack_panel_measure_text_width(font, buffer);
+
+        if (text_width <= 0)
+        {
+            text_width = (egui_dim_t)stack_panel_text_len(buffer) * fallback_char_width;
+        }
+        if (text_width <= max_width)
+        {
+            break;
+        }
+
+        max_chars--;
+        stack_panel_copy_elided(buffer, buffer_size, text, max_chars);
+    }
+}
+
+static void stack_panel_set_fitted_label_text(egui_view_label_t *label, char *buffer, uint8_t buffer_size, const char *text, egui_dim_t fallback_char_width)
+{
+    egui_dim_t max_width;
+
+    if (label == NULL || buffer == NULL || buffer_size == 0)
+    {
+        return;
+    }
+
+    max_width = EGUI_VIEW_OF(label)->region.size.width;
+    stack_panel_fit_text_to_width(label->font, text, buffer, buffer_size, max_width, fallback_char_width);
+    egui_view_label_set_text(EGUI_VIEW_OF(label), buffer);
+}
 
 static const stack_snapshot_t primary_snapshots[] = {
         {
@@ -230,7 +387,8 @@ static void init_card(egui_view_linearlayout_t *card, egui_view_label_t *title_v
     egui_view_group_add_child(EGUI_VIEW_OF(card), EGUI_VIEW_OF(title_value));
 }
 
-static void set_card_state(egui_view_linearlayout_t *card, egui_view_label_t *title_value, const stack_item_t *item, uint8_t visible)
+static void set_card_state(egui_view_linearlayout_t *card, egui_view_label_t *title_value, char *title_buffer, uint8_t title_buffer_size,
+                           const stack_item_t *item, uint8_t visible)
 {
     if (!visible)
     {
@@ -242,7 +400,7 @@ static void set_card_state(egui_view_linearlayout_t *card, egui_view_label_t *ti
     egui_view_set_size(EGUI_VIEW_OF(card), item->width, item->height);
     egui_view_set_background(EGUI_VIEW_OF(card), stack_card_get_background(item->tone));
     egui_view_set_size(EGUI_VIEW_OF(title_value), item->width - 8, item->height - 4);
-    egui_view_label_set_text(EGUI_VIEW_OF(title_value), item->title);
+    stack_panel_set_fitted_label_text(title_value, title_buffer, title_buffer_size, item->title, 4);
     egui_view_label_set_font_color(EGUI_VIEW_OF(title_value), stack_card_get_title_color(item->tone), EGUI_ALPHA_100);
     egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(card));
 }
@@ -263,8 +421,8 @@ static void apply_stack_style_for_snapshot(egui_view_t *stack_panel, const stack
     }
 }
 
-static void apply_snapshot_to_stack_panel(egui_view_t *stack_panel, egui_view_linearlayout_t *cards, egui_view_label_t *titles, uint8_t capacity,
-                                          const stack_snapshot_t *snapshot)
+static void apply_snapshot_to_stack_panel(egui_view_t *stack_panel, egui_view_linearlayout_t *cards, egui_view_label_t *titles, char *card_title_text,
+                                          uint8_t title_text_size, uint8_t capacity, const stack_snapshot_t *snapshot)
 {
     uint8_t index;
 
@@ -272,7 +430,7 @@ static void apply_snapshot_to_stack_panel(egui_view_t *stack_panel, egui_view_li
     for (index = 0; index < capacity; index++)
     {
         uint8_t visible = index < snapshot->item_count;
-        set_card_state(&cards[index], &titles[index], &snapshot->items[index], visible);
+        set_card_state(&cards[index], &titles[index], &card_title_text[index * title_text_size], title_text_size, &snapshot->items[index], visible);
     }
     hcw_stack_panel_layout_childs(stack_panel);
 }
@@ -296,9 +454,10 @@ static void apply_primary_state(uint8_t index)
 {
     const stack_snapshot_t *snapshot = &primary_snapshots[index % PRIMARY_SNAPSHOT_COUNT];
 
-    egui_view_label_set_text(EGUI_VIEW_OF(&primary_heading_label), snapshot->heading);
-    egui_view_label_set_text(EGUI_VIEW_OF(&primary_note_label), snapshot->note);
-    apply_snapshot_to_stack_panel(EGUI_VIEW_OF(&primary_stack_panel), primary_cards, primary_card_titles, STACK_PANEL_ITEM_CAPACITY, snapshot);
+    stack_panel_set_fitted_label_text(&primary_heading_label, primary_heading_text, sizeof(primary_heading_text), snapshot->heading, 4);
+    stack_panel_set_fitted_label_text(&primary_note_label, primary_note_text, sizeof(primary_note_text), snapshot->note, 4);
+    apply_snapshot_to_stack_panel(EGUI_VIEW_OF(&primary_stack_panel), primary_cards, primary_card_titles, &primary_card_title_text[0][0],
+                                  sizeof(primary_card_title_text[0]), STACK_PANEL_ITEM_CAPACITY, snapshot);
     if (ui_ready)
     {
         layout_page();
@@ -312,10 +471,16 @@ static void apply_primary_default_state(void)
 
 static void apply_preview_states(void)
 {
-    apply_snapshot_to_stack_panel(EGUI_VIEW_OF(&horizontal_preview_stack), horizontal_cards, horizontal_card_titles, STACK_PANEL_HORIZONTAL_ITEMS,
-                                  &horizontal_preview_snapshot);
-    apply_snapshot_to_stack_panel(EGUI_VIEW_OF(&compact_preview_stack), compact_cards, compact_card_titles, STACK_PANEL_COMPACT_ITEMS,
-                                  &compact_preview_snapshot);
+    stack_panel_set_fitted_label_text(&horizontal_heading_label, horizontal_heading_text, sizeof(horizontal_heading_text),
+                                      horizontal_preview_snapshot.heading, 4);
+    stack_panel_set_fitted_label_text(&horizontal_note_label, horizontal_note_text, sizeof(horizontal_note_text), horizontal_preview_snapshot.note, 4);
+    stack_panel_set_fitted_label_text(&compact_heading_label, compact_heading_text, sizeof(compact_heading_text), compact_preview_snapshot.heading, 4);
+    stack_panel_set_fitted_label_text(&compact_note_label, compact_note_text, sizeof(compact_note_text), compact_preview_snapshot.note, 4);
+
+    apply_snapshot_to_stack_panel(EGUI_VIEW_OF(&horizontal_preview_stack), horizontal_cards, horizontal_card_titles, &horizontal_card_title_text[0][0],
+                                  sizeof(horizontal_card_title_text[0]), STACK_PANEL_HORIZONTAL_ITEMS, &horizontal_preview_snapshot);
+    apply_snapshot_to_stack_panel(EGUI_VIEW_OF(&compact_preview_stack), compact_cards, compact_card_titles, &compact_card_title_text[0][0],
+                                  sizeof(compact_card_title_text[0]), STACK_PANEL_COMPACT_ITEMS, &compact_preview_snapshot);
     if (ui_ready)
     {
         layout_page();
@@ -513,4 +678,3 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     }
 }
 #endif
-
