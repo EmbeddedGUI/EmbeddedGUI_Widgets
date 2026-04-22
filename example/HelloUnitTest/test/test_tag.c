@@ -396,6 +396,24 @@ static void test_tag_static_preview_consumes_input_and_keeps_state(void)
     EGUI_TEST_ASSERT_EQUAL_INT(0, g_dismiss_count);
 }
 
+static void test_tag_text_helpers(void)
+{
+    char label[32];
+    char short_label[8];
+
+    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_tag_text_len(NULL));
+    EGUI_TEST_ASSERT_EQUAL_INT(8, egui_view_tag_text_len("Assigned"));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_tag_measure_text_width(NULL, "Assigned"));
+    egui_view_tag_copy_elided(label, sizeof(label), "Needs review", 8);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Needs...", label) == 0);
+    egui_view_tag_copy_elided(short_label, sizeof(short_label), "Preview", 8);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Preview", short_label) == 0);
+    egui_view_tag_fit_text_to_width(NULL, "Status changed", label, sizeof(label), 24, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Sta...", label) == 0);
+    egui_view_tag_fit_text_to_width(NULL, "Today", label, sizeof(label), 20, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Today", label) == 0);
+}
+
 void test_tag_run(void)
 {
     EGUI_TEST_SUITE_BEGIN(tag);
@@ -406,5 +424,6 @@ void test_tag_run(void)
     EGUI_TEST_RUN(test_tag_keyboard_delete_and_enter_dismiss);
     EGUI_TEST_RUN(test_tag_read_only_and_disabled_input_do_not_dismiss);
     EGUI_TEST_RUN(test_tag_static_preview_consumes_input_and_keeps_state);
+    EGUI_TEST_RUN(test_tag_text_helpers);
     EGUI_TEST_SUITE_END();
 }

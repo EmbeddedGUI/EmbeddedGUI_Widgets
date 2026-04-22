@@ -19,6 +19,23 @@ static egui_color_t egui_view_tag_mix_disabled(egui_color_t color)
     return egui_rgb_mix(color, EGUI_COLOR_HEX(0x7B8794), 48);
 }
 
+static uint8_t egui_view_tag_text_len(const char *text)
+{
+    uint8_t length = 0;
+
+    if (text == NULL)
+    {
+        return 0;
+    }
+
+    while (text[length] != '\0')
+    {
+        length++;
+    }
+
+    return length;
+}
+
 static void egui_view_tag_copy_text(char *dst, uint8_t capacity, const char *src)
 {
     size_t length = 0;
@@ -44,6 +61,68 @@ static void egui_view_tag_copy_text(char *dst, uint8_t capacity, const char *src
     dst[length] = '\0';
 }
 
+static void egui_view_tag_copy_elided(char *buffer, uint8_t buffer_size, const char *text, uint8_t max_chars)
+{
+    uint8_t capacity;
+    uint8_t allowed_chars;
+    uint8_t copy_length;
+    uint8_t index;
+    uint8_t length;
+
+    if (buffer == NULL || buffer_size == 0)
+    {
+        return;
+    }
+
+    buffer[0] = '\0';
+    if (text == NULL || max_chars == 0)
+    {
+        return;
+    }
+
+    capacity = buffer_size - 1;
+    length = egui_view_tag_text_len(text);
+    if (length <= max_chars && length <= capacity)
+    {
+        for (index = 0; index < length; ++index)
+        {
+            buffer[index] = text[index];
+        }
+        buffer[length] = '\0';
+        return;
+    }
+
+    allowed_chars = max_chars;
+    if (allowed_chars > capacity)
+    {
+        allowed_chars = capacity;
+    }
+    if (allowed_chars == 0)
+    {
+        return;
+    }
+
+    if (allowed_chars <= 3)
+    {
+        for (index = 0; index < allowed_chars; ++index)
+        {
+            buffer[index] = '.';
+        }
+        buffer[allowed_chars] = '\0';
+        return;
+    }
+
+    copy_length = allowed_chars - 3;
+    for (index = 0; index < copy_length; ++index)
+    {
+        buffer[index] = text[index];
+    }
+    buffer[copy_length] = '.';
+    buffer[copy_length + 1] = '.';
+    buffer[copy_length + 2] = '.';
+    buffer[copy_length + 3] = '\0';
+}
+
 static void egui_view_tag_measure_text(const egui_font_t *font, const char *text, egui_dim_t *width, egui_dim_t *height)
 {
     egui_dim_t measured_width = 0;
@@ -66,6 +145,50 @@ static void egui_view_tag_measure_text(const egui_font_t *font, const char *text
     if (height != NULL)
     {
         *height = measured_height;
+    }
+}
+
+static egui_dim_t egui_view_tag_measure_text_width(const egui_font_t *font, const char *text)
+{
+    egui_dim_t text_width = 0;
+
+    egui_view_tag_measure_text(font, text, &text_width, NULL);
+    return text == NULL || text[0] == '\0' ? 0 : text_width;
+}
+
+static void egui_view_tag_fit_text_to_width(const egui_font_t *font, const char *text, char *buffer, uint8_t buffer_size, egui_dim_t max_width,
+                                            egui_dim_t fallback_char_width)
+{
+    uint8_t max_chars;
+
+    if (buffer == NULL || buffer_size == 0)
+    {
+        return;
+    }
+
+    buffer[0] = '\0';
+    if (text == NULL || text[0] == '\0' || max_width <= 0)
+    {
+        return;
+    }
+
+    max_chars = egui_view_tag_text_len(text);
+    egui_view_tag_copy_elided(buffer, buffer_size, text, max_chars);
+    while (max_chars > 0)
+    {
+        egui_dim_t text_width = egui_view_tag_measure_text_width(font, buffer);
+
+        if (text_width <= 0)
+        {
+            text_width = (egui_dim_t)egui_view_tag_text_len(buffer) * fallback_char_width;
+        }
+        if (text_width <= max_width)
+        {
+            break;
+        }
+
+        max_chars--;
+        egui_view_tag_copy_elided(buffer, buffer_size, text, max_chars);
     }
 }
 
@@ -200,7 +323,7 @@ static void egui_view_tag_draw_text(const egui_font_t *font, egui_view_t *self, 
 {
     egui_region_t draw_region = *region;
 
-    if (text == NULL || text[0] == '\0')
+    if (text == NULL || text[0] == '\0' || region->size.width <= 0 || region->size.height <= 0)
     {
         return;
     }
@@ -225,6 +348,8 @@ static void egui_view_tag_notify_dismiss(egui_view_t *self)
 static void egui_view_tag_on_draw(egui_view_t *self)
 {
     EGUI_LOCAL_INIT(egui_view_tag_t);
+    char primary_label[EGUI_VIEW_TAG_MAX_TEXT_LEN + 1];
+    char secondary_label[EGUI_VIEW_TAG_MAX_SECONDARY_TEXT_LEN + 1];
     egui_view_tag_metrics_t metrics;
     egui_region_t region;
     egui_color_t fill_color = local->surface_color;
@@ -273,10 +398,13 @@ static void egui_view_tag_on_draw(egui_view_t *self)
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, region.location.x, region.location.y, region.size.width, region.size.height, radius, 1, border_color,
                                      egui_color_alpha_mix(self->alpha, self->is_focused ? 88 : 64));
 
-    egui_view_tag_draw_text(egui_view_tag_get_text_font(local), self, local->text, &metrics.primary_region, text_color, EGUI_ALPHA_100);
+    egui_view_tag_fit_text_to_width(egui_view_tag_get_text_font(local), local->text, primary_label, sizeof(primary_label), metrics.primary_region.size.width, 5);
+    egui_view_tag_draw_text(egui_view_tag_get_text_font(local), self, primary_label, &metrics.primary_region, text_color, EGUI_ALPHA_100);
     if (metrics.show_secondary)
     {
-        egui_view_tag_draw_text(egui_view_tag_get_secondary_font(local), self, local->secondary_text, &metrics.secondary_region, secondary_color,
+        egui_view_tag_fit_text_to_width(egui_view_tag_get_secondary_font(local), local->secondary_text, secondary_label, sizeof(secondary_label),
+                                        metrics.secondary_region.size.width, 4);
+        egui_view_tag_draw_text(egui_view_tag_get_secondary_font(local), self, secondary_label, &metrics.secondary_region, secondary_color,
                                 EGUI_ALPHA_100);
     }
 
