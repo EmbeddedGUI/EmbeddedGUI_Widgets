@@ -14,6 +14,23 @@ static uint8_t egui_view_card_panel_has_text(const char *text)
     return text != NULL && text[0] != '\0' ? 1 : 0;
 }
 
+static uint8_t egui_view_card_panel_text_len(const char *text)
+{
+    uint8_t length = 0;
+
+    if (text == NULL)
+    {
+        return 0;
+    }
+
+    while (text[length] != '\0')
+    {
+        length++;
+    }
+
+    return length;
+}
+
 static egui_dim_t egui_view_card_panel_measure_font_line_height(const egui_font_t *font)
 {
     egui_dim_t dummy_width = 0;
@@ -40,6 +57,104 @@ static egui_dim_t egui_view_card_panel_measure_text_width(const egui_font_t *fon
 
     font->api->get_str_size(font, text, 0, 0, &text_width, &dummy_height);
     return text_width;
+}
+
+static void egui_view_card_panel_copy_elided(char *buffer, uint8_t buffer_size, const char *text, uint8_t max_chars)
+{
+    uint8_t capacity;
+    uint8_t allowed_chars;
+    uint8_t copy_length;
+    uint8_t index;
+    uint8_t length;
+
+    if (buffer == NULL || buffer_size == 0)
+    {
+        return;
+    }
+
+    buffer[0] = '\0';
+    if (text == NULL || max_chars == 0)
+    {
+        return;
+    }
+
+    capacity = buffer_size - 1;
+    length = egui_view_card_panel_text_len(text);
+    if (length <= max_chars && length <= capacity)
+    {
+        for (index = 0; index < length; ++index)
+        {
+            buffer[index] = text[index];
+        }
+        buffer[length] = '\0';
+        return;
+    }
+
+    allowed_chars = max_chars;
+    if (allowed_chars > capacity)
+    {
+        allowed_chars = capacity;
+    }
+    if (allowed_chars == 0)
+    {
+        return;
+    }
+
+    if (allowed_chars <= 3)
+    {
+        for (index = 0; index < allowed_chars; ++index)
+        {
+            buffer[index] = '.';
+        }
+        buffer[allowed_chars] = '\0';
+        return;
+    }
+
+    copy_length = allowed_chars - 3;
+    for (index = 0; index < copy_length; ++index)
+    {
+        buffer[index] = text[index];
+    }
+    buffer[copy_length] = '.';
+    buffer[copy_length + 1] = '.';
+    buffer[copy_length + 2] = '.';
+    buffer[copy_length + 3] = '\0';
+}
+
+static void egui_view_card_panel_fit_text_to_width(const egui_font_t *font, const char *text, char *buffer, uint8_t buffer_size, egui_dim_t max_width,
+                                                   egui_dim_t fallback_char_width)
+{
+    uint8_t max_chars;
+
+    if (buffer == NULL || buffer_size == 0)
+    {
+        return;
+    }
+
+    buffer[0] = '\0';
+    if (text == NULL || text[0] == '\0' || max_width <= 0)
+    {
+        return;
+    }
+
+    max_chars = egui_view_card_panel_text_len(text);
+    egui_view_card_panel_copy_elided(buffer, buffer_size, text, max_chars);
+    while (max_chars > 0)
+    {
+        egui_dim_t text_width = egui_view_card_panel_measure_text_width(font, buffer);
+
+        if (text_width <= 0)
+        {
+            text_width = (egui_dim_t)egui_view_card_panel_text_len(buffer) * fallback_char_width;
+        }
+        if (text_width <= max_width)
+        {
+            break;
+        }
+
+        max_chars--;
+        egui_view_card_panel_copy_elided(buffer, buffer_size, text, max_chars);
+    }
 }
 
 static egui_color_t egui_view_card_panel_mix_disabled(egui_color_t color)
@@ -77,7 +192,7 @@ static void egui_view_card_panel_draw_text(const egui_font_t *font, egui_view_t 
 {
     egui_region_t draw_region = *region;
 
-    if (text == NULL || text[0] == '\0')
+    if (text == NULL || text[0] == '\0' || region->size.width <= 0 || region->size.height <= 0)
     {
         return;
     }
@@ -91,6 +206,10 @@ static egui_dim_t egui_view_card_panel_pill_width(const egui_font_t *font, const
     if (egui_view_card_panel_has_text(text))
     {
         width += egui_view_card_panel_measure_text_width(font, text);
+        if (width <= min_w)
+        {
+            width = min_w + egui_view_card_panel_text_len(text) * 5;
+        }
     }
 
     if (width < min_w)
@@ -108,6 +227,7 @@ static void egui_view_card_panel_draw_pill(const egui_font_t *font, egui_view_t 
                                            egui_dim_t height, egui_dim_t radius, egui_color_t fill_color, egui_alpha_t fill_alpha, egui_color_t border_color,
                                            egui_alpha_t border_alpha, egui_color_t text_color)
 {
+    char fitted_text[20];
     egui_region_t text_region;
 
     if (text == NULL || text[0] == '\0' || width <= 0 || height <= 0)
@@ -122,7 +242,8 @@ static void egui_view_card_panel_draw_pill(const egui_font_t *font, egui_view_t 
     text_region.location.y = y;
     text_region.size.width = width;
     text_region.size.height = height;
-    egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, font, text, &text_region, EGUI_ALIGN_CENTER, text_color, self->alpha);
+    egui_view_card_panel_fit_text_to_width(font, text, fitted_text, sizeof(fitted_text), text_region.size.width - 4, 4);
+    egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, font, fitted_text, &text_region, EGUI_ALIGN_CENTER, text_color, self->alpha);
 }
 
 void egui_view_card_panel_set_snapshots(egui_view_t *self, const egui_view_card_panel_snapshot_t *snapshots, uint8_t snapshot_count)
@@ -232,6 +353,13 @@ void egui_view_card_panel_set_palette(egui_view_t *self, egui_color_t surface_co
 static void egui_view_card_panel_on_draw(egui_view_t *self)
 {
     EGUI_LOCAL_INIT(egui_view_card_panel_t);
+    char title_text[24];
+    char body_text[40];
+    char value_text[12];
+    char value_label_text[12];
+    char detail_title_text[24];
+    char detail_body_text[40];
+    char footer_text[32];
     egui_region_t region;
     egui_region_t text_region;
     const egui_view_card_panel_snapshot_t *snapshot;
@@ -417,13 +545,15 @@ static void egui_view_card_panel_on_draw(egui_view_t *self)
     text_region.location.y = title_y;
     text_region.size.width = title_w;
     text_region.size.height = title_h;
-    egui_view_card_panel_draw_text(local->font, self, snapshot->title, &text_region, EGUI_ALIGN_LEFT, title_color);
+    egui_view_card_panel_fit_text_to_width(local->font, snapshot->title, title_text, sizeof(title_text), text_region.size.width, 5);
+    egui_view_card_panel_draw_text(local->font, self, title_text, &text_region, EGUI_ALIGN_LEFT, title_color);
 
     text_region.location.x = title_x;
     text_region.location.y = body_y;
     text_region.size.width = title_w;
     text_region.size.height = body_h;
-    egui_view_card_panel_draw_text(local->font, self, snapshot->body, &text_region, EGUI_ALIGN_LEFT, body_color);
+    egui_view_card_panel_fit_text_to_width(local->font, snapshot->body, body_text, sizeof(body_text), text_region.size.width, 5);
+    egui_view_card_panel_draw_text(local->font, self, body_text, &text_region, EGUI_ALIGN_LEFT, body_color);
 
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, summary_x, summary_y, summary_w, summary_h, local->compact_mode ? 6 : 8, value_fill,
                                           egui_color_alpha_mix(self->alpha, local->compact_mode ? 22 : 26));
@@ -436,13 +566,15 @@ static void egui_view_card_panel_on_draw(egui_view_t *self)
     text_region.location.y = summary_y + (local->compact_mode ? 3 : 7);
     text_region.size.width = summary_w;
     text_region.size.height = value_h;
-    egui_view_card_panel_draw_text(local->font, self, snapshot->value, &text_region, EGUI_ALIGN_CENTER, value_color);
+    egui_view_card_panel_fit_text_to_width(local->font, snapshot->value, value_text, sizeof(value_text), text_region.size.width - 4, 5);
+    egui_view_card_panel_draw_text(local->font, self, value_text, &text_region, EGUI_ALIGN_CENTER, value_color);
 
     text_region.location.x = summary_x + 2;
     text_region.location.y = summary_y + summary_h - value_label_h - (local->compact_mode ? 2 : 3);
     text_region.size.width = summary_w - 4;
     text_region.size.height = value_label_h;
-    egui_view_card_panel_draw_text(local->meta_font, self, snapshot->value_label, &text_region, EGUI_ALIGN_CENTER, body_color);
+    egui_view_card_panel_fit_text_to_width(local->meta_font, snapshot->value_label, value_label_text, sizeof(value_label_text), text_region.size.width, 4);
+    egui_view_card_panel_draw_text(local->meta_font, self, value_label_text, &text_region, EGUI_ALIGN_CENTER, body_color);
 
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, x + padding, detail_y, w - padding * 2, detail_h, local->compact_mode ? 6 : 8, section_fill,
                                           egui_color_alpha_mix(self->alpha, local->compact_mode ? 16 : 20));
@@ -453,7 +585,8 @@ static void egui_view_card_panel_on_draw(egui_view_t *self)
     text_region.location.y = detail_y + (local->compact_mode ? 3 : 5);
     text_region.size.width = w - padding * 2 - 12;
     text_region.size.height = detail_title_h;
-    egui_view_card_panel_draw_text(local->meta_font, self, snapshot->detail_title, &text_region, EGUI_ALIGN_LEFT, tone_color);
+    egui_view_card_panel_fit_text_to_width(local->meta_font, snapshot->detail_title, detail_title_text, sizeof(detail_title_text), text_region.size.width, 4);
+    egui_view_card_panel_draw_text(local->meta_font, self, detail_title_text, &text_region, EGUI_ALIGN_LEFT, tone_color);
 
     if (!local->compact_mode)
     {
@@ -461,14 +594,16 @@ static void egui_view_card_panel_on_draw(egui_view_t *self)
         text_region.location.y = detail_y + detail_title_h + 5;
         text_region.size.width = w - padding * 2 - 12;
         text_region.size.height = detail_h - detail_title_h - 7;
-        egui_view_card_panel_draw_text(local->font, self, snapshot->detail_body, &text_region, EGUI_ALIGN_LEFT, body_color);
+        egui_view_card_panel_fit_text_to_width(local->font, snapshot->detail_body, detail_body_text, sizeof(detail_body_text), text_region.size.width, 5);
+        egui_view_card_panel_draw_text(local->font, self, detail_body_text, &text_region, EGUI_ALIGN_LEFT, body_color);
     }
 
     text_region.location.x = x + padding;
     text_region.location.y = footer_y;
     text_region.size.width = w - padding * 2;
     text_region.size.height = footer_h;
-    egui_view_card_panel_draw_text(local->meta_font, self, snapshot->footer, &text_region, EGUI_ALIGN_LEFT, footer_color);
+    egui_view_card_panel_fit_text_to_width(local->meta_font, snapshot->footer, footer_text, sizeof(footer_text), text_region.size.width, 4);
+    egui_view_card_panel_draw_text(local->meta_font, self, footer_text, &text_region, EGUI_ALIGN_LEFT, footer_color);
 
     if (local->read_only_mode || !is_enabled)
     {

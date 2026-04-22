@@ -374,6 +374,7 @@ static void test_card_panel_static_preview_consumes_input_and_keeps_snapshot(voi
 
 static void test_card_panel_internal_helpers_cover_tone_text_and_pill_width(void)
 {
+    char label[32];
     egui_color_t sample = EGUI_COLOR_HEX(0x123456);
     egui_color_t mixed = egui_view_card_panel_mix_disabled(sample);
 
@@ -385,14 +386,19 @@ static void test_card_panel_internal_helpers_cover_tone_text_and_pill_width(void
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_CARD_PANEL_MAX_SNAPSHOTS, egui_view_card_panel_clamp_snapshot_count(9));
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_card_panel_text_len(NULL));
     EGUI_TEST_ASSERT_EQUAL_INT(6, egui_view_card_panel_text_len("Review"));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_card_panel_measure_text_width(NULL, "Review"));
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x555555).full, egui_view_card_panel_tone_color(&test_panel, 0).full);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x666666).full, egui_view_card_panel_tone_color(&test_panel, 1).full);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x777777).full, egui_view_card_panel_tone_color(&test_panel, 2).full);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x888888).full, egui_view_card_panel_tone_color(&test_panel, 3).full);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x555555).full, egui_view_card_panel_tone_color(&test_panel, 9).full);
-    EGUI_TEST_ASSERT_EQUAL_INT(34, egui_view_card_panel_pill_width("", 1, 34, 64));
-    EGUI_TEST_ASSERT_EQUAL_INT(52, egui_view_card_panel_pill_width("AB", 0, 42, 78));
-    EGUI_TEST_ASSERT_EQUAL_INT(50, egui_view_card_panel_pill_width("Long label", 0, 42, 50));
+    EGUI_TEST_ASSERT_EQUAL_INT(34, egui_view_card_panel_pill_width(NULL, "", 34, 64));
+    EGUI_TEST_ASSERT_EQUAL_INT(52, egui_view_card_panel_pill_width(NULL, "AB", 42, 78));
+    EGUI_TEST_ASSERT_EQUAL_INT(50, egui_view_card_panel_pill_width(NULL, "Long label", 42, 50));
+    egui_view_card_panel_copy_elided(label, sizeof(label), "Workspace status", 8);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Works...", label) == 0);
+    egui_view_card_panel_fit_text_to_width(NULL, "Summary stays close.", label, sizeof(label), 24, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Sum...", label) == 0);
     EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(sample, EGUI_COLOR_DARK_GREY, 68).full, mixed.full);
 }
 
