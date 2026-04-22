@@ -67,6 +67,135 @@ static uint8_t scroll_viewer_has_text(const char *text)
     return (text != NULL && text[0] != '\0') ? 1 : 0;
 }
 
+static uint8_t scroll_viewer_text_len(const char *text)
+{
+    uint8_t len = 0;
+
+    if (text == NULL)
+    {
+        return 0;
+    }
+
+    while (text[len] != '\0')
+    {
+        len++;
+    }
+    return len;
+}
+
+static egui_dim_t scroll_viewer_measure_text_width(const egui_font_t *font, const char *text)
+{
+    egui_dim_t text_width = 0;
+    egui_dim_t dummy_height = 0;
+
+    if (!scroll_viewer_has_text(text) || font == NULL || font->api == NULL || font->api->get_str_size == NULL)
+    {
+        return 0;
+    }
+
+    font->api->get_str_size(font, text, 0, 0, &text_width, &dummy_height);
+    return text_width;
+}
+
+static void scroll_viewer_copy_elided(char *buffer, uint8_t buffer_size, const char *text, uint8_t max_chars)
+{
+    uint8_t copy_length;
+    uint8_t index;
+    uint8_t length;
+
+    if (buffer == NULL || buffer_size == 0)
+    {
+        return;
+    }
+
+    buffer[0] = '\0';
+    if (text == NULL || max_chars == 0)
+    {
+        return;
+    }
+
+    length = scroll_viewer_text_len(text);
+    if (length <= max_chars)
+    {
+        copy_length = length;
+        if (copy_length >= buffer_size)
+        {
+            copy_length = buffer_size - 1;
+        }
+        for (index = 0; index < copy_length; ++index)
+        {
+            buffer[index] = text[index];
+        }
+        buffer[copy_length] = '\0';
+        return;
+    }
+
+    if (max_chars <= 3)
+    {
+        copy_length = max_chars;
+        if (copy_length >= buffer_size)
+        {
+            copy_length = buffer_size - 1;
+        }
+        for (index = 0; index < copy_length; ++index)
+        {
+            buffer[index] = '.';
+        }
+        buffer[copy_length] = '\0';
+        return;
+    }
+
+    copy_length = max_chars - 3;
+    if (copy_length > buffer_size - 4)
+    {
+        copy_length = buffer_size - 4;
+    }
+    for (index = 0; index < copy_length; ++index)
+    {
+        buffer[index] = text[index];
+    }
+    buffer[copy_length] = '.';
+    buffer[copy_length + 1] = '.';
+    buffer[copy_length + 2] = '.';
+    buffer[copy_length + 3] = '\0';
+}
+
+static void scroll_viewer_fit_text_to_width(const egui_font_t *font, const char *text, char *buffer, uint8_t buffer_size, egui_dim_t max_width,
+                                            egui_dim_t fallback_char_width)
+{
+    uint8_t max_chars;
+
+    if (buffer == NULL || buffer_size == 0)
+    {
+        return;
+    }
+
+    buffer[0] = '\0';
+    if (!scroll_viewer_has_text(text) || max_width <= 0)
+    {
+        return;
+    }
+
+    max_chars = scroll_viewer_text_len(text);
+    scroll_viewer_copy_elided(buffer, buffer_size, text, max_chars);
+    while (max_chars > 0)
+    {
+        egui_dim_t text_width = scroll_viewer_measure_text_width(font, buffer);
+
+        if (text_width <= 0)
+        {
+            text_width = (egui_dim_t)scroll_viewer_text_len(buffer) * fallback_char_width;
+        }
+        if (text_width <= max_width)
+        {
+            break;
+        }
+
+        max_chars--;
+        scroll_viewer_copy_elided(buffer, buffer_size, text, max_chars);
+    }
+}
+
 static uint8_t scroll_viewer_clamp_snapshot_count(uint8_t count)
 {
     return count > EGUI_VIEW_SCROLL_VIEWER_MAX_SNAPSHOTS ? EGUI_VIEW_SCROLL_VIEWER_MAX_SNAPSHOTS : count;
@@ -413,12 +542,13 @@ static egui_color_t scroll_viewer_tone_color(egui_view_scroll_viewer_t *local, u
 static void scroll_viewer_draw_text(const egui_font_t *font, egui_view_t *self, const char *text, const egui_region_t *region, uint8_t align,
                                     egui_color_t color)
 {
-    egui_region_t draw_region = *region;
+    egui_region_t draw_region;
 
-    if (!scroll_viewer_has_text(text))
+    if (font == NULL || region == NULL || region->size.width <= 0 || region->size.height <= 0 || !scroll_viewer_has_text(text))
     {
         return;
     }
+    draw_region = *region;
     egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, font, text, &draw_region, align, color, self->alpha);
 }
 
@@ -674,6 +804,9 @@ static void scroll_viewer_draw_block(egui_view_t *self, egui_view_scroll_viewer_
                                      const egui_region_t *viewport_content_region, egui_color_t surface_color, egui_color_t border_color,
                                      egui_color_t text_color, egui_color_t muted_color)
 {
+    char badge_label[16];
+    char title_label[32];
+    char meta_label[48];
     egui_region_t block_region;
     egui_region_t badge_region;
     egui_region_t title_region;
@@ -694,6 +827,8 @@ static void scroll_viewer_draw_block(egui_view_t *self, egui_view_scroll_viewer_
     egui_dim_t meta_y;
     egui_dim_t required_h;
     egui_dim_t reduce;
+    egui_dim_t title_char_width = local->compact_mode ? 4 : 5;
+    egui_dim_t meta_char_width = 4;
     uint8_t show_badge;
 
     if (block == NULL)
@@ -813,11 +948,14 @@ static void scroll_viewer_draw_block(egui_view_t *self, egui_view_scroll_viewer_
         }
         egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, pill_region.location.x, pill_region.location.y, pill_region.size.width, pill_region.size.height, 4,
                                               egui_rgb_mix(tone_color, EGUI_COLOR_WHITE, 20), egui_color_alpha_mix(self->alpha, 92));
-        scroll_viewer_draw_text(local->meta_font, self, block->badge, &pill_region, EGUI_ALIGN_CENTER, EGUI_COLOR_HEX(0xFFFFFF));
+        scroll_viewer_fit_text_to_width(local->meta_font, block->badge, badge_label, sizeof(badge_label), pill_region.size.width - 4, meta_char_width);
+        scroll_viewer_draw_text(local->meta_font, self, badge_label, &pill_region, EGUI_ALIGN_CENTER, EGUI_COLOR_HEX(0xFFFFFF));
     }
 
-    scroll_viewer_draw_text(local->font, self, block->title, &title_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, text_color);
-    scroll_viewer_draw_text(local->meta_font, self, block->meta, &meta_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER,
+    scroll_viewer_fit_text_to_width(local->font, block->title, title_label, sizeof(title_label), title_region.size.width, title_char_width);
+    scroll_viewer_draw_text(local->font, self, title_label, &title_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, text_color);
+    scroll_viewer_fit_text_to_width(local->meta_font, block->meta, meta_label, sizeof(meta_label), meta_region.size.width, meta_char_width);
+    scroll_viewer_draw_text(local->meta_font, self, meta_label, &meta_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER,
                             egui_rgb_mix(text_color, muted_color, 34));
 }
 
@@ -825,6 +963,8 @@ static void scroll_viewer_draw_surface(egui_view_t *self, egui_view_scroll_viewe
                                        egui_color_t surface_color, egui_color_t border_color, egui_color_t viewport_color, egui_color_t text_color,
                                        egui_color_t muted_color, egui_color_t accent_color)
 {
+    char footer_label[40];
+    char empty_label[24];
     const egui_view_scroll_viewer_snapshot_t *snapshot = scroll_viewer_get_snapshot(local);
     const egui_region_t *prev_clip = egui_canvas_get_extra_clip(&uicode_get_core()->canvas);
     const egui_region_t *active_clip = NULL;
@@ -856,7 +996,8 @@ static void scroll_viewer_draw_surface(egui_view_t *self, egui_view_scroll_viewe
 
     if (snapshot != NULL && !local->compact_mode)
     {
-        scroll_viewer_draw_text(local->meta_font, self, snapshot->footer, &view_pill_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER,
+        scroll_viewer_fit_text_to_width(local->meta_font, snapshot->footer, footer_label, sizeof(footer_label), view_pill_region.size.width, 4);
+        scroll_viewer_draw_text(local->meta_font, self, footer_label, &view_pill_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER,
                                 egui_rgb_mix(text_color, muted_color, 28));
     }
 
@@ -879,7 +1020,9 @@ static void scroll_viewer_draw_surface(egui_view_t *self, egui_view_scroll_viewe
     if (snapshot == NULL || snapshot->blocks == NULL || scroll_viewer_clamp_block_count(snapshot->block_count) == 0)
     {
         egui_region_t empty_region = metrics->viewport_content_region;
-        scroll_viewer_draw_text(local->meta_font, self, "No content", &empty_region, EGUI_ALIGN_CENTER, muted_color);
+
+        scroll_viewer_fit_text_to_width(local->meta_font, "No content", empty_label, sizeof(empty_label), empty_region.size.width, 4);
+        scroll_viewer_draw_text(local->meta_font, self, empty_label, &empty_region, EGUI_ALIGN_CENTER, muted_color);
     }
 
     if (prev_clip != NULL)
@@ -1015,6 +1158,16 @@ static void egui_view_scroll_viewer_on_draw(egui_view_t *self)
     egui_color_t accent_color = local->accent_color;
     egui_color_t preview_color = local->preview_color;
     egui_color_t shadow_color;
+    egui_region_t axes_region;
+    egui_region_t helper_region;
+    egui_dim_t title_char_width = local->compact_mode ? 4 : 5;
+    egui_dim_t meta_char_width = 4;
+    char eyebrow_label[24];
+    char title_label[40];
+    char summary_label[72];
+    char footer_label[40];
+    char axes_label[40];
+    char helper_label[40];
     char footer_text[40];
     uint8_t enabled = egui_view_get_enable(self) ? 1 : 0;
 
@@ -1063,21 +1216,27 @@ static void egui_view_scroll_viewer_on_draw(egui_view_t *self)
 
     if (metrics.show_eyebrow && snapshot != NULL)
     {
-        scroll_viewer_draw_text(local->meta_font, self, snapshot->eyebrow, &metrics.eyebrow_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER,
+        scroll_viewer_fit_text_to_width(local->meta_font, snapshot->eyebrow, eyebrow_label, sizeof(eyebrow_label), metrics.eyebrow_region.size.width,
+                                        meta_char_width);
+        scroll_viewer_draw_text(local->meta_font, self, eyebrow_label, &metrics.eyebrow_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER,
                                 egui_rgb_mix(text_color, accent_color, 20));
     }
     if (snapshot != NULL)
     {
-        scroll_viewer_draw_text(local->font, self, snapshot->title, &metrics.title_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, text_color);
+        scroll_viewer_fit_text_to_width(local->font, snapshot->title, title_label, sizeof(title_label), metrics.title_region.size.width, title_char_width);
+        scroll_viewer_draw_text(local->font, self, title_label, &metrics.title_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, text_color);
         if (metrics.show_summary)
         {
-            scroll_viewer_draw_text(local->meta_font, self, snapshot->summary, &metrics.summary_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER,
+            scroll_viewer_fit_text_to_width(local->meta_font, snapshot->summary, summary_label, sizeof(summary_label), metrics.summary_region.size.width,
+                                            meta_char_width);
+            scroll_viewer_draw_text(local->meta_font, self, summary_label, &metrics.summary_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER,
                                     egui_rgb_mix(text_color, muted_color, 34));
         }
     }
     else
     {
-        scroll_viewer_draw_text(local->font, self, "Scroll Viewer", &metrics.title_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, text_color);
+        scroll_viewer_fit_text_to_width(local->font, "Scroll Viewer", title_label, sizeof(title_label), metrics.title_region.size.width, title_char_width);
+        scroll_viewer_draw_text(local->font, self, title_label, &metrics.title_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, text_color);
     }
 
     scroll_viewer_draw_surface(self, local, &metrics, surface_color, border_color, viewport_color, text_color, muted_color, accent_color);
@@ -1086,29 +1245,53 @@ static void egui_view_scroll_viewer_on_draw(egui_view_t *self)
 
     if (snapshot != NULL && scroll_viewer_has_text(snapshot->footer))
     {
-        scroll_viewer_draw_text(local->meta_font, self, snapshot->footer, &metrics.footer_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER,
+        scroll_viewer_fit_text_to_width(local->meta_font, snapshot->footer, footer_label, sizeof(footer_label), metrics.footer_region.size.width,
+                                        meta_char_width);
+        scroll_viewer_draw_text(local->meta_font, self, footer_label, &metrics.footer_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER,
                                 egui_rgb_mix(text_color, muted_color, 32));
     }
     else
     {
         scroll_viewer_format_pair(scroll_viewer_snapshot_viewport_height(snapshot), scroll_viewer_snapshot_content_height(snapshot), footer_text, (int)sizeof(footer_text));
-        scroll_viewer_draw_text(local->meta_font, self, footer_text, &metrics.footer_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER,
+        scroll_viewer_fit_text_to_width(local->meta_font, footer_text, footer_label, sizeof(footer_label), metrics.footer_region.size.width, meta_char_width);
+        scroll_viewer_draw_text(local->meta_font, self, footer_label, &metrics.footer_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER,
                                 egui_rgb_mix(text_color, muted_color, 32));
+    }
+
+    axes_region = metrics.helper_region;
+    helper_region = metrics.helper_region;
+    axes_region.size.width -= metrics.indicator_region.size.width + 6;
+    helper_region.size.width -= metrics.indicator_region.size.width + 6;
+    if (axes_region.size.width < 0)
+    {
+        axes_region.size.width = 0;
+    }
+    if (helper_region.size.width < 0)
+    {
+        helper_region.size.width = 0;
+    }
+    if (metrics.show_helper && snapshot != NULL && helper_region.size.width > 8)
+    {
+        egui_dim_t split_width = helper_region.size.width / 2;
+
+        axes_region.size.width = split_width;
+        helper_region.location.x += split_width;
+        helper_region.size.width -= split_width;
     }
 
     scroll_viewer_format_axes(local->vertical_offset, scroll_viewer_get_max_vertical_offset_inner(local), local->horizontal_offset,
                               scroll_viewer_get_max_horizontal_offset_inner(local), footer_text, (int)sizeof(footer_text));
-    scroll_viewer_draw_text(local->meta_font, self, footer_text, &metrics.helper_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER,
+    scroll_viewer_fit_text_to_width(local->meta_font, footer_text, axes_label, sizeof(axes_label), axes_region.size.width, meta_char_width);
+    scroll_viewer_draw_text(local->meta_font, self, axes_label, &axes_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER,
                             egui_rgb_mix(text_color, muted_color, local->compact_mode ? 26 : 30));
 
     if (metrics.show_helper && snapshot != NULL)
     {
-        egui_region_t helper_region = metrics.helper_region;
-
-        helper_region.size.width -= metrics.indicator_region.size.width + 6;
         if (helper_region.size.width > 8)
         {
-            scroll_viewer_draw_text(local->meta_font, self, snapshot->helper, &helper_region, EGUI_ALIGN_RIGHT | EGUI_ALIGN_VCENTER,
+            scroll_viewer_fit_text_to_width(local->meta_font, snapshot->helper, helper_label, sizeof(helper_label), helper_region.size.width,
+                                            meta_char_width);
+            scroll_viewer_draw_text(local->meta_font, self, helper_label, &helper_region, EGUI_ALIGN_RIGHT | EGUI_ALIGN_VCENTER,
                                     egui_rgb_mix(text_color, muted_color, 42));
         }
     }

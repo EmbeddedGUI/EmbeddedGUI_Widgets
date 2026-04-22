@@ -265,7 +265,23 @@ static void test_scroll_viewer_set_snapshots_clamp_and_defaults(void)
 
 static void test_scroll_viewer_setters_clear_pressed_and_update_state(void)
 {
+    char label[24];
+
     scroll_viewer_setup_widget(scroll_viewer_snapshots, EGUI_ARRAY_SIZE(scroll_viewer_snapshots));
+
+    EGUI_TEST_ASSERT_EQUAL_INT(0, scroll_viewer_text_len(NULL));
+    EGUI_TEST_ASSERT_EQUAL_INT(6, scroll_viewer_text_len("Viewer"));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, scroll_viewer_measure_text_width(NULL, "Ready"));
+    scroll_viewer_copy_elided(label, sizeof(label), "Viewer", 6);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Viewer", label) == 0);
+    scroll_viewer_copy_elided(label, sizeof(label), "Viewer", 3);
+    EGUI_TEST_ASSERT_TRUE(strcmp("...", label) == 0);
+    scroll_viewer_fit_text_to_width(NULL, "Viewer", label, sizeof(label), 20, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Vi...", label) == 0);
+    scroll_viewer_fit_text_to_width(NULL, "Viewer", label, sizeof(label), 12, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("...", label) == 0);
+    scroll_viewer_fit_text_to_width(NULL, "Ready", label, sizeof(label), 24, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Ready", label) == 0);
 
     scroll_viewer_seed_pressed_state(&scroll_viewer_test_widget, EGUI_VIEW_SCROLL_VIEWER_PART_THUMB, 1);
     egui_view_scroll_viewer_set_font(EGUI_VIEW_OF(&scroll_viewer_test_widget), NULL);
