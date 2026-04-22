@@ -13,6 +13,8 @@ struct egui_view_breadcrumb_bar_display_entry
 };
 
 static egui_dim_t egui_view_breadcrumb_bar_measure_entry(const egui_font_t *font, uint8_t compact_mode, uint8_t is_current, const char *text);
+static egui_dim_t egui_view_breadcrumb_bar_measure_entry_set(const egui_font_t *font, const egui_view_breadcrumb_bar_snapshot_t *snapshot, uint8_t compact_mode,
+                                                             uint8_t current_item, const egui_view_breadcrumb_bar_display_entry_t *entries, uint8_t entry_count);
 
 static uint8_t egui_view_breadcrumb_bar_clamp_snapshot_count(uint8_t count)
 {
@@ -151,6 +153,22 @@ static void egui_view_breadcrumb_bar_copy_elided(char *buffer, uint8_t buffer_si
     buffer[copy_length + 3] = '\0';
 }
 
+static uint8_t egui_view_breadcrumb_bar_text_len(const char *text)
+{
+    uint8_t length = 0;
+
+    if (text == NULL)
+    {
+        return 0;
+    }
+
+    while (text[length] != '\0')
+    {
+        length++;
+    }
+    return length;
+}
+
 static void egui_view_breadcrumb_bar_set_item_entry(egui_view_breadcrumb_bar_display_entry_t *entry, uint8_t item_index)
 {
     entry->kind = EGUI_VIEW_BREADCRUMB_BAR_ENTRY_ITEM;
@@ -163,8 +181,98 @@ static void egui_view_breadcrumb_bar_set_overflow_entry(egui_view_breadcrumb_bar
     entry->item_index = 0;
 }
 
-static uint8_t egui_view_breadcrumb_bar_prepare_entry_label(const egui_view_breadcrumb_bar_snapshot_t *snapshot, uint8_t compact_mode, uint8_t current_item,
-                                                            const egui_view_breadcrumb_bar_display_entry_t *entry, char *label, uint8_t label_size)
+static void egui_view_breadcrumb_bar_fit_label_to_width(const egui_font_t *font, uint8_t compact_mode, uint8_t is_current, const char *text, char *label,
+                                                        uint8_t label_size, egui_dim_t entry_width)
+{
+    uint8_t max_chars = egui_view_breadcrumb_bar_text_len(text);
+    egui_dim_t content_width = entry_width - (is_current ? 4 : 0);
+
+    egui_view_breadcrumb_bar_copy_elided(label, label_size, text, max_chars);
+    while (max_chars > 1)
+    {
+        egui_dim_t text_width = egui_view_breadcrumb_bar_measure_text_width(font, label);
+
+        if (text_width <= 0)
+        {
+            text_width = (egui_dim_t)egui_view_breadcrumb_bar_text_len(label) * (compact_mode ? 4 : 5);
+        }
+        if (text_width <= content_width)
+        {
+            break;
+        }
+
+        max_chars--;
+        egui_view_breadcrumb_bar_copy_elided(label, label_size, text, max_chars);
+    }
+}
+
+static uint8_t egui_view_breadcrumb_bar_text_equal(const char *lhs, const char *rhs)
+{
+    if (lhs == rhs)
+    {
+        return 1;
+    }
+    if (lhs == NULL || rhs == NULL)
+    {
+        return 0;
+    }
+
+    while (*lhs != '\0' && *rhs != '\0')
+    {
+        if (*lhs != *rhs)
+        {
+            return 0;
+        }
+        lhs++;
+        rhs++;
+    }
+    return *lhs == *rhs;
+}
+
+static uint8_t egui_view_breadcrumb_bar_candidate_has_elided_labels(const egui_font_t *font, const egui_view_breadcrumb_bar_snapshot_t *snapshot,
+                                                                    uint8_t compact_mode, uint8_t current_item,
+                                                                    const egui_view_breadcrumb_bar_display_entry_t *entries, uint8_t entry_count)
+{
+    uint8_t i;
+
+    for (i = 0; i < entry_count; i++)
+    {
+        char label[16];
+        const char *text;
+        uint8_t is_current;
+        egui_dim_t entry_width;
+
+        if (entries[i].kind == EGUI_VIEW_BREADCRUMB_BAR_ENTRY_OVERFLOW)
+        {
+            continue;
+        }
+
+        text = snapshot->items[entries[i].item_index];
+        is_current = entries[i].item_index == current_item;
+        entry_width = egui_view_breadcrumb_bar_measure_entry(font, compact_mode, is_current, text);
+        egui_view_breadcrumb_bar_fit_label_to_width(font, compact_mode, is_current, text, label, sizeof(label), entry_width);
+        if (!egui_view_breadcrumb_bar_text_equal(label, text))
+        {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+static uint8_t egui_view_breadcrumb_bar_candidate_fits_without_elision(const egui_font_t *font, const egui_view_breadcrumb_bar_snapshot_t *snapshot,
+                                                                       uint8_t compact_mode, uint8_t current_item, egui_dim_t available_width,
+                                                                       const egui_view_breadcrumb_bar_display_entry_t *entries, uint8_t entry_count)
+{
+    if (egui_view_breadcrumb_bar_measure_entry_set(font, snapshot, compact_mode, current_item, entries, entry_count) > available_width)
+    {
+        return 0;
+    }
+    return egui_view_breadcrumb_bar_candidate_has_elided_labels(font, snapshot, compact_mode, current_item, entries, entry_count) ? 0 : 1;
+}
+
+static uint8_t egui_view_breadcrumb_bar_prepare_entry_label(const egui_font_t *font, const egui_view_breadcrumb_bar_snapshot_t *snapshot, uint8_t compact_mode,
+                                                            uint8_t current_item, const egui_view_breadcrumb_bar_display_entry_t *entry, char *label,
+                                                            uint8_t label_size, egui_dim_t entry_width)
 {
     uint8_t is_current = 0;
 
@@ -178,7 +286,7 @@ static uint8_t egui_view_breadcrumb_bar_prepare_entry_label(const egui_view_brea
     }
 
     is_current = entry->item_index == current_item;
-    egui_view_breadcrumb_bar_copy_elided(label, label_size, snapshot->items[entry->item_index], compact_mode ? (is_current ? 6 : 5) : (is_current ? 10 : 8));
+    egui_view_breadcrumb_bar_fit_label_to_width(font, compact_mode, is_current, snapshot->items[entry->item_index], label, label_size, entry_width);
     return is_current;
 }
 
@@ -190,10 +298,20 @@ static egui_dim_t egui_view_breadcrumb_bar_measure_entry_set(const egui_font_t *
 
     for (i = 0; i < entry_count; i++)
     {
-        char label[16];
-        uint8_t is_current = egui_view_breadcrumb_bar_prepare_entry_label(snapshot, compact_mode, current_item, &entries[i], label, sizeof(label));
+        const char *text = NULL;
+        uint8_t is_current = 0;
 
-        total_width += egui_view_breadcrumb_bar_measure_entry(font, compact_mode, is_current, label);
+        if (entries[i].kind == EGUI_VIEW_BREADCRUMB_BAR_ENTRY_OVERFLOW)
+        {
+            text = "...";
+        }
+        else
+        {
+            text = snapshot->items[entries[i].item_index];
+            is_current = entries[i].item_index == current_item;
+        }
+
+        total_width += egui_view_breadcrumb_bar_measure_entry(font, compact_mode, is_current, text);
         if (i < entry_count - 1)
         {
             total_width += egui_view_breadcrumb_bar_separator_gap(compact_mode);
@@ -242,7 +360,10 @@ static uint8_t egui_view_breadcrumb_bar_build_entries(const egui_font_t *font, c
     }
     if (egui_view_breadcrumb_bar_measure_entry_set(font, snapshot, compact_mode, current_item, candidates, count) <= available_width)
     {
-        return egui_view_breadcrumb_bar_copy_entries(entries, candidates, count);
+        if (!compact_mode || !egui_view_breadcrumb_bar_candidate_has_elided_labels(font, snapshot, compact_mode, current_item, candidates, count))
+        {
+            return egui_view_breadcrumb_bar_copy_entries(entries, candidates, count);
+        }
     }
 
     count = 0;
@@ -261,9 +382,22 @@ static uint8_t egui_view_breadcrumb_bar_build_entries(const egui_font_t *font, c
             egui_view_breadcrumb_bar_set_item_entry(&candidates[count], current_item);
             count++;
         }
-        if (egui_view_breadcrumb_bar_measure_entry_set(font, snapshot, compact_mode, current_item, candidates, count) <= available_width)
+        if (egui_view_breadcrumb_bar_candidate_fits_without_elision(font, snapshot, compact_mode, current_item, available_width, candidates, count))
         {
             return egui_view_breadcrumb_bar_copy_entries(entries, candidates, count);
+        }
+
+        if (current_item > 1)
+        {
+            count = 0;
+            egui_view_breadcrumb_bar_set_overflow_entry(&candidates[count]);
+            count++;
+            egui_view_breadcrumb_bar_set_item_entry(&candidates[count], current_item);
+            count++;
+            if (egui_view_breadcrumb_bar_candidate_fits_without_elision(font, snapshot, compact_mode, current_item, available_width, candidates, count))
+            {
+                return egui_view_breadcrumb_bar_copy_entries(entries, candidates, count);
+            }
         }
 
         if (current_item > 0)
@@ -273,7 +407,7 @@ static uint8_t egui_view_breadcrumb_bar_build_entries(const egui_font_t *font, c
             count++;
             egui_view_breadcrumb_bar_set_item_entry(&candidates[count], current_item);
             count++;
-            if (egui_view_breadcrumb_bar_measure_entry_set(font, snapshot, compact_mode, current_item, candidates, count) <= available_width)
+            if (egui_view_breadcrumb_bar_candidate_fits_without_elision(font, snapshot, compact_mode, current_item, available_width, candidates, count))
             {
                 return egui_view_breadcrumb_bar_copy_entries(entries, candidates, count);
             }
@@ -332,10 +466,16 @@ static uint8_t egui_view_breadcrumb_bar_build_entries(const egui_font_t *font, c
 static egui_dim_t egui_view_breadcrumb_bar_measure_entry(const egui_font_t *font, uint8_t compact_mode, uint8_t is_current, const char *text)
 {
     egui_dim_t width;
+    egui_dim_t text_width = egui_view_breadcrumb_bar_measure_text_width(font, text);
+
+    if (text_width <= 0 && text != NULL && text[0] != '\0')
+    {
+        text_width = (egui_dim_t)egui_view_breadcrumb_bar_text_len(text) * (compact_mode ? 4 : 5);
+    }
 
     if (text != NULL && text[0] == '.' && text[1] == '.' && text[2] == '.')
     {
-        width = egui_view_breadcrumb_bar_measure_text_width(font, text) + (compact_mode ? 4 : 6);
+        width = text_width + (compact_mode ? 4 : 6);
         if (width < (compact_mode ? 10 : 14))
         {
             width = compact_mode ? 10 : 14;
@@ -343,7 +483,7 @@ static egui_dim_t egui_view_breadcrumb_bar_measure_entry(const egui_font_t *font
         return width;
     }
 
-    width = egui_view_breadcrumb_bar_measure_text_width(font, text) + 8;
+    width = text_width + 8;
     if (is_current)
     {
         width += compact_mode ? 10 : 12;
@@ -595,10 +735,15 @@ static void egui_view_breadcrumb_bar_on_draw(egui_view_t *self)
         egui_dim_t entry_width;
         egui_dim_t entry_y;
         uint8_t is_current = 0;
+        const char *entry_text = entries[i].kind == EGUI_VIEW_BREADCRUMB_BAR_ENTRY_OVERFLOW ? "..." : snapshot->items[entries[i].item_index];
 
-        is_current = egui_view_breadcrumb_bar_prepare_entry_label(snapshot, local->compact_mode, current_item, &entries[i], label, sizeof(label));
-
-        entry_width = egui_view_breadcrumb_bar_measure_entry(local->font, local->compact_mode, is_current, label);
+        if (entries[i].kind != EGUI_VIEW_BREADCRUMB_BAR_ENTRY_OVERFLOW)
+        {
+            is_current = entries[i].item_index == current_item;
+        }
+        entry_width = egui_view_breadcrumb_bar_measure_entry(local->font, local->compact_mode, is_current, entry_text);
+        is_current =
+                egui_view_breadcrumb_bar_prepare_entry_label(local->font, snapshot, local->compact_mode, current_item, &entries[i], label, sizeof(label), entry_width);
         entry_y = center_y - entry_height / 2;
 
         if (entries[i].kind == EGUI_VIEW_BREADCRUMB_BAR_ENTRY_OVERFLOW)

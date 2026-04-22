@@ -357,8 +357,13 @@ static void test_breadcrumb_bar_internal_helpers_cover_entries_and_labels(void)
     egui_view_breadcrumb_bar_display_entry_t entries[4];
     egui_view_breadcrumb_bar_display_entry_t copied[4];
     egui_view_breadcrumb_bar_display_entry_t entry;
+    const egui_font_t *font;
+    egui_dim_t entry_width;
     char label[16];
     egui_color_t sample = EGUI_COLOR_HEX(0x123456);
+
+    setup_bar();
+    font = test_bar.font;
 
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_BREADCRUMB_BAR_MAX_SNAPSHOTS, egui_view_breadcrumb_bar_clamp_snapshot_count(9));
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_BREADCRUMB_BAR_MAX_ITEMS, egui_view_breadcrumb_bar_clamp_item_count(9));
@@ -371,6 +376,8 @@ static void test_breadcrumb_bar_internal_helpers_cover_entries_and_labels(void)
     EGUI_TEST_ASSERT_TRUE(strcmp("Doc...", label) == 0);
     egui_view_breadcrumb_bar_copy_elided(label, sizeof(label), "Long", 3);
     EGUI_TEST_ASSERT_TRUE(strcmp("...", label) == 0);
+    EGUI_TEST_ASSERT_TRUE(egui_view_breadcrumb_bar_text_equal("Home", "Home"));
+    EGUI_TEST_ASSERT_FALSE(egui_view_breadcrumb_bar_text_equal("Home", "Docs"));
 
     egui_view_breadcrumb_bar_set_item_entry(&entry, 3);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_BREADCRUMB_BAR_ENTRY_ITEM, entry.kind);
@@ -387,25 +394,44 @@ static void test_breadcrumb_bar_internal_helpers_cover_entries_and_labels(void)
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_BREADCRUMB_BAR_ENTRY_OVERFLOW, copied[1].kind);
     EGUI_TEST_ASSERT_EQUAL_INT(3, copied[2].item_index);
 
-    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_breadcrumb_bar_prepare_entry_label(&g_snapshots[2], 0, 3, &entries[1], label, sizeof(label)));
+    entry_width = egui_view_breadcrumb_bar_measure_entry(font, 0, 0, "...");
+    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_breadcrumb_bar_prepare_entry_label(font, &g_snapshots[2], 0, 3, &entries[1], label, sizeof(label), entry_width));
     EGUI_TEST_ASSERT_TRUE(strcmp("...", label) == 0);
-    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_breadcrumb_bar_prepare_entry_label(&g_snapshots[2], 1, 3, &entries[2], label, sizeof(label)));
-    EGUI_TEST_ASSERT_TRUE(strcmp("Det...", label) == 0);
+    egui_view_breadcrumb_bar_set_item_entry(&entries[2], 2);
+    entry_width = egui_view_breadcrumb_bar_measure_entry(font, 1, 0, g_snapshots[2].items[2]);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_breadcrumb_bar_prepare_entry_label(font, &g_snapshots[2], 1, 3, &entries[2], label, sizeof(label), entry_width));
+    EGUI_TEST_ASSERT_FALSE(egui_view_breadcrumb_bar_text_equal(label, g_snapshots[2].items[2]));
 
-    EGUI_TEST_ASSERT_EQUAL_INT(14, egui_view_breadcrumb_bar_measure_entry(0, 0, "..."));
-    EGUI_TEST_ASSERT_EQUAL_INT(10, egui_view_breadcrumb_bar_measure_entry(1, 0, "..."));
-    EGUI_TEST_ASSERT_TRUE(egui_view_breadcrumb_bar_measure_entry_set(&g_snapshots[0], 0, 3, entries, 3) > 0);
+    EGUI_TEST_ASSERT_TRUE(egui_view_breadcrumb_bar_measure_entry(font, 0, 0, "...") > egui_view_breadcrumb_bar_measure_entry(font, 1, 0, "..."));
+    EGUI_TEST_ASSERT_TRUE(egui_view_breadcrumb_bar_measure_entry_set(font, &g_snapshots[0], 0, 3, entries, 3) > 0);
 
-    EGUI_TEST_ASSERT_EQUAL_INT(3, egui_view_breadcrumb_bar_build_entries(&g_snapshots[0], 0, 120, entries));
+    egui_view_breadcrumb_bar_set_item_entry(&entries[0], 0);
+    egui_view_breadcrumb_bar_set_item_entry(&entries[1], 1);
+    egui_view_breadcrumb_bar_set_item_entry(&entries[2], 2);
+    egui_view_breadcrumb_bar_set_item_entry(&entries[3], 3);
+    EGUI_TEST_ASSERT_TRUE(egui_view_breadcrumb_bar_candidate_has_elided_labels(font, &g_snapshots[2], 1, 3, entries, 4));
+    egui_view_breadcrumb_bar_set_item_entry(&entries[0], 0);
+    egui_view_breadcrumb_bar_set_overflow_entry(&entries[1]);
+    egui_view_breadcrumb_bar_set_item_entry(&entries[2], 3);
+    EGUI_TEST_ASSERT_FALSE(egui_view_breadcrumb_bar_candidate_fits_without_elision(font, &g_snapshots[2], 1, 3, 84, entries, 3));
+    egui_view_breadcrumb_bar_set_overflow_entry(&entries[0]);
+    egui_view_breadcrumb_bar_set_item_entry(&entries[1], 3);
+    EGUI_TEST_ASSERT_TRUE(egui_view_breadcrumb_bar_candidate_fits_without_elision(font, &g_snapshots[2], 1, 3, 84, entries, 2));
+
+    EGUI_TEST_ASSERT_EQUAL_INT(3, egui_view_breadcrumb_bar_build_entries(font, &g_snapshots[0], 0, 120, entries));
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_BREADCRUMB_BAR_ENTRY_ITEM, entries[0].kind);
     EGUI_TEST_ASSERT_EQUAL_INT(0, entries[0].item_index);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_BREADCRUMB_BAR_ENTRY_OVERFLOW, entries[1].kind);
     EGUI_TEST_ASSERT_EQUAL_INT(3, entries[2].item_index);
 
-    EGUI_TEST_ASSERT_EQUAL_INT(2, egui_view_breadcrumb_bar_build_entries(&g_snapshots[2], 1, 57, entries));
-    EGUI_TEST_ASSERT_EQUAL_INT(0, entries[0].item_index);
+    EGUI_TEST_ASSERT_EQUAL_INT(2, egui_view_breadcrumb_bar_build_entries(font, &g_snapshots[2], 1, 84, entries));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_BREADCRUMB_BAR_ENTRY_OVERFLOW, entries[0].kind);
     EGUI_TEST_ASSERT_EQUAL_INT(3, entries[1].item_index);
-    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_breadcrumb_bar_build_entries(&g_snapshots[2], 1, 29, entries));
+
+    EGUI_TEST_ASSERT_EQUAL_INT(2, egui_view_breadcrumb_bar_build_entries(font, &g_snapshots[2], 1, 57, entries));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_BREADCRUMB_BAR_ENTRY_OVERFLOW, entries[0].kind);
+    EGUI_TEST_ASSERT_EQUAL_INT(3, entries[1].item_index);
+    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_breadcrumb_bar_build_entries(font, &g_snapshots[2], 1, 29, entries));
     EGUI_TEST_ASSERT_EQUAL_INT(3, entries[0].item_index);
 
     EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(sample, EGUI_COLOR_DARK_GREY, 62).full, egui_view_breadcrumb_bar_mix_disabled(sample).full);
