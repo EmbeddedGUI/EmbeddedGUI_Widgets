@@ -366,6 +366,29 @@ static void test_virtualizing_wrap_panel_setters_clear_pressed_and_update_anchor
     EGUI_TEST_ASSERT_EQUAL_INT(2, egui_view_virtualizing_wrap_panel_get_window_anchor(EGUI_VIEW_OF(&test_widget)));
 }
 
+static void test_virtualizing_wrap_panel_internal_helpers_cover_text_fitting(void)
+{
+    char label[24];
+
+    setup_widget(g_snapshots, EGUI_ARRAY_SIZE(g_snapshots));
+
+    EGUI_TEST_ASSERT_EQUAL_INT(0, virtualizing_wrap_panel_text_len(NULL));
+    EGUI_TEST_ASSERT_EQUAL_INT(10, virtualizing_wrap_panel_text_len("Operations"));
+    EGUI_TEST_ASSERT_EQUAL_INT(12, virtualizing_wrap_panel_pill_width(NULL, "", 1, 12, 24));
+    EGUI_TEST_ASSERT_TRUE(virtualizing_wrap_panel_pill_width(test_widget.meta_font, "OPS", 0, 12, 24) >= 12);
+    EGUI_TEST_ASSERT_TRUE(virtualizing_wrap_panel_pill_width(test_widget.meta_font, "Operations", 0, 12, 24) <= 24);
+    virtualizing_wrap_panel_copy_elided(label, sizeof(label), "Documents", 6);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Doc...", label) == 0);
+    virtualizing_wrap_panel_copy_elided(label, sizeof(label), "Mode", 3);
+    EGUI_TEST_ASSERT_TRUE(strcmp("...", label) == 0);
+    virtualizing_wrap_panel_fit_text_to_width(NULL, "Operations", label, sizeof(label), 28, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Oper...", label) == 0);
+    virtualizing_wrap_panel_fit_text_to_width(NULL, "Operations", label, sizeof(label), 12, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("...", label) == 0);
+    virtualizing_wrap_panel_fit_text_to_width(NULL, "Ready", label, sizeof(label), 20, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Ready", label) == 0);
+}
+
 static void test_virtualizing_wrap_panel_regions_activate_and_listener_only_for_visible_items(void)
 {
     egui_dim_t x;
@@ -565,6 +588,7 @@ void test_virtualizing_wrap_panel_run(void)
     EGUI_TEST_SUITE_BEGIN(virtualizing_wrap_panel);
     EGUI_TEST_RUN(test_virtualizing_wrap_panel_set_snapshots_clamp_defaults_and_anchor);
     EGUI_TEST_RUN(test_virtualizing_wrap_panel_setters_clear_pressed_and_update_anchor);
+    EGUI_TEST_RUN(test_virtualizing_wrap_panel_internal_helpers_cover_text_fitting);
     EGUI_TEST_RUN(test_virtualizing_wrap_panel_regions_activate_and_listener_only_for_visible_items);
     EGUI_TEST_RUN(test_virtualizing_wrap_panel_touch_same_target_release_and_cancel_behavior);
     EGUI_TEST_RUN(test_virtualizing_wrap_panel_key_navigation_page_jump_and_tab);
