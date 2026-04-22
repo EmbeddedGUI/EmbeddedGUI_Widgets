@@ -127,6 +127,122 @@ static egui_dim_t egui_view_title_bar_measure_text_width(const egui_font_t *font
     return text_width;
 }
 
+static uint8_t egui_view_title_bar_text_len(const char *text)
+{
+    uint8_t length = 0;
+
+    if (text == NULL)
+    {
+        return 0;
+    }
+
+    while (text[length] != '\0')
+    {
+        length++;
+    }
+
+    return length;
+}
+
+static void egui_view_title_bar_copy_elided(char *buffer, uint8_t buffer_size, const char *text, uint8_t max_chars)
+{
+    uint8_t copy_length;
+    uint8_t index;
+    uint8_t length;
+
+    if (buffer == NULL || buffer_size == 0)
+    {
+        return;
+    }
+
+    buffer[0] = '\0';
+    if (text == NULL || max_chars == 0)
+    {
+        return;
+    }
+
+    length = egui_view_title_bar_text_len(text);
+    if (length <= max_chars)
+    {
+        copy_length = length;
+        if (copy_length >= buffer_size)
+        {
+            copy_length = buffer_size - 1;
+        }
+        for (index = 0; index < copy_length; ++index)
+        {
+            buffer[index] = text[index];
+        }
+        buffer[copy_length] = '\0';
+        return;
+    }
+
+    if (max_chars <= 3)
+    {
+        copy_length = max_chars;
+        if (copy_length >= buffer_size)
+        {
+            copy_length = buffer_size - 1;
+        }
+        for (index = 0; index < copy_length; ++index)
+        {
+            buffer[index] = '.';
+        }
+        buffer[copy_length] = '\0';
+        return;
+    }
+
+    copy_length = max_chars - 3;
+    if (copy_length > buffer_size - 4)
+    {
+        copy_length = buffer_size - 4;
+    }
+    for (index = 0; index < copy_length; ++index)
+    {
+        buffer[index] = text[index];
+    }
+    buffer[copy_length] = '.';
+    buffer[copy_length + 1] = '.';
+    buffer[copy_length + 2] = '.';
+    buffer[copy_length + 3] = '\0';
+}
+
+static void egui_view_title_bar_fit_text_to_width(const egui_font_t *font, const char *text, char *buffer, uint8_t buffer_size, egui_dim_t max_width,
+                                                  egui_dim_t fallback_char_width)
+{
+    uint8_t max_chars;
+
+    if (buffer == NULL || buffer_size == 0)
+    {
+        return;
+    }
+
+    buffer[0] = '\0';
+    if (!egui_view_title_bar_has_text(text) || max_width <= 0)
+    {
+        return;
+    }
+
+    max_chars = egui_view_title_bar_text_len(text);
+    egui_view_title_bar_copy_elided(buffer, buffer_size, text, max_chars);
+    while (max_chars > 0)
+    {
+        egui_dim_t text_width = egui_view_title_bar_measure_text_width(font, buffer);
+
+        if (text_width <= 0)
+        {
+            text_width = (egui_dim_t)egui_view_title_bar_text_len(buffer) * fallback_char_width;
+        }
+        if (text_width <= max_width)
+        {
+            break;
+        }
+
+        max_chars--;
+        egui_view_title_bar_copy_elided(buffer, buffer_size, text, max_chars);
+    }
+}
+
 static egui_dim_t egui_view_title_bar_get_meta_height(egui_view_title_bar_t *local)
 {
     egui_dim_t meta_h;
@@ -354,7 +470,7 @@ static void egui_view_title_bar_draw_text(const egui_font_t *font, egui_view_t *
 {
     egui_region_t draw_region = *region;
 
-    if (!egui_view_title_bar_has_text(text) || region->size.width <= 0 || region->size.height <= 0)
+    if (font == NULL || !egui_view_title_bar_has_text(text) || region->size.width <= 0 || region->size.height <= 0)
     {
         return;
     }
@@ -566,6 +682,7 @@ static void egui_view_title_bar_draw_action(egui_view_t *self, egui_view_title_b
                                             uint8_t emphasize, egui_color_t fill_color, egui_color_t border_color, egui_color_t text_color,
                                             egui_color_t accent_color)
 {
+    char action_label[24];
     uint8_t is_current = (uint8_t)(part == local->current_part);
     uint8_t is_pressed = (uint8_t)(self->is_pressed && local->pressed_part == part);
     egui_color_t resolved_fill = emphasize ? egui_rgb_mix(fill_color, accent_color, 10) : egui_rgb_mix(fill_color, accent_color, is_current ? 8 : 2);
@@ -593,7 +710,9 @@ static void egui_view_title_bar_draw_action(egui_view_t *self, egui_view_title_b
                                               region->size.height > 2 ? region->size.height - 2 : region->size.height, radius, EGUI_THEME_PRESS_OVERLAY,
                                               EGUI_THEME_PRESS_OVERLAY_ALPHA);
     }
-    egui_view_title_bar_draw_text(local->meta_font, self, text, region, EGUI_ALIGN_CENTER, resolved_text);
+    egui_view_title_bar_fit_text_to_width(local->meta_font, text, action_label, sizeof(action_label), region->size.width - (local->compact_mode ? 10 : 12),
+                                          local->compact_mode ? 4 : 5);
+    egui_view_title_bar_draw_text(local->meta_font, self, action_label, region, EGUI_ALIGN_CENTER, resolved_text);
 }
 
 static void egui_view_title_bar_draw_icon_badge(egui_view_t *self, egui_view_title_bar_t *local, const egui_region_t *region, const char *glyph,
@@ -620,6 +739,10 @@ static void egui_view_title_bar_on_draw(egui_view_t *self)
 {
     egui_view_title_bar_t *local = egui_view_title_bar_local(self);
     const egui_view_title_bar_snapshot_t *snapshot = egui_view_title_bar_get_snapshot(local);
+    char leading_header_text[32];
+    char trailing_header_text[24];
+    char title_text[48];
+    char subtitle_text[48];
     egui_view_title_bar_metrics_t metrics;
     egui_color_t surface_color = local->surface_color;
     egui_color_t border_color = local->border_color;
@@ -629,6 +752,7 @@ static void egui_view_title_bar_on_draw(egui_view_t *self)
     egui_color_t subtle_fill_color = local->subtle_fill_color;
     egui_color_t subtle_border_color = local->subtle_border_color;
     egui_color_t shadow_color = local->shadow_color;
+    egui_dim_t fallback_char_width = local->compact_mode ? 4 : 5;
     egui_dim_t radius = local->compact_mode ? EGUI_VIEW_TITLE_BAR_COMPACT_RADIUS : EGUI_VIEW_TITLE_BAR_STANDARD_RADIUS;
 
     if (snapshot == NULL)
@@ -679,7 +803,9 @@ static void egui_view_title_bar_on_draw(egui_view_t *self)
 
     if (metrics.show_leading_header)
     {
-        egui_view_title_bar_draw_text(local->meta_font, self, snapshot->leading_header, &metrics.leading_header_region,
+        egui_view_title_bar_fit_text_to_width(local->meta_font, snapshot->leading_header, leading_header_text, sizeof(leading_header_text),
+                                              metrics.leading_header_region.size.width, fallback_char_width);
+        egui_view_title_bar_draw_text(local->meta_font, self, leading_header_text, &metrics.leading_header_region,
                                       EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, muted_text_color);
     }
 
@@ -694,7 +820,9 @@ static void egui_view_title_bar_on_draw(egui_view_t *self)
         egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics.trailing_header_region.location.x, metrics.trailing_header_region.location.y,
                                          metrics.trailing_header_region.size.width, metrics.trailing_header_region.size.height, 5, 1, tag_border,
                                          egui_color_alpha_mix(self->alpha, 30));
-        egui_view_title_bar_draw_text(local->meta_font, self, snapshot->trailing_header, &metrics.trailing_header_region, EGUI_ALIGN_CENTER,
+        egui_view_title_bar_fit_text_to_width(local->meta_font, snapshot->trailing_header, trailing_header_text, sizeof(trailing_header_text),
+                                              metrics.trailing_header_region.size.width - 8, fallback_char_width);
+        egui_view_title_bar_draw_text(local->meta_font, self, trailing_header_text, &metrics.trailing_header_region, EGUI_ALIGN_CENTER,
                                       egui_rgb_mix(muted_text_color, accent_color, 16));
     }
 
@@ -715,10 +843,13 @@ static void egui_view_title_bar_on_draw(egui_view_t *self)
         egui_view_title_bar_draw_icon_badge(self, local, &metrics.icon_region, snapshot->leading_icon, subtle_fill_color, subtle_border_color, accent_color);
     }
 
-    egui_view_title_bar_draw_text(local->font, self, snapshot->title, &metrics.title_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, text_color);
+    egui_view_title_bar_fit_text_to_width(local->font, snapshot->title, title_text, sizeof(title_text), metrics.title_region.size.width, fallback_char_width);
+    egui_view_title_bar_draw_text(local->font, self, title_text, &metrics.title_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, text_color);
     if (metrics.show_subtitle)
     {
-        egui_view_title_bar_draw_text(local->meta_font, self, snapshot->subtitle, &metrics.subtitle_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER,
+        egui_view_title_bar_fit_text_to_width(local->meta_font, snapshot->subtitle, subtitle_text, sizeof(subtitle_text), metrics.subtitle_region.size.width,
+                                              fallback_char_width);
+        egui_view_title_bar_draw_text(local->meta_font, self, subtitle_text, &metrics.subtitle_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER,
                                       muted_text_color);
     }
 

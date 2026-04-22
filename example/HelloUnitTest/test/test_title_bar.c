@@ -158,6 +158,27 @@ static void assert_pressed_cleared(egui_view_title_bar_t *bar)
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(bar)->is_pressed);
 }
 
+static void test_title_bar_internal_helpers_cover_text_fitting(void)
+{
+    char label[24];
+
+    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_title_bar_text_len(NULL));
+    EGUI_TEST_ASSERT_EQUAL_INT(10, egui_view_title_bar_text_len("Operations"));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_title_bar_measure_text_width(NULL, "Ready"));
+
+    egui_view_title_bar_copy_elided(label, sizeof(label), "Documents", 6);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Doc...", label) == 0);
+    egui_view_title_bar_copy_elided(label, sizeof(label), "Mode", 3);
+    EGUI_TEST_ASSERT_TRUE(strcmp("...", label) == 0);
+
+    egui_view_title_bar_fit_text_to_width(NULL, "Operations", label, sizeof(label), 28, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Oper...", label) == 0);
+    egui_view_title_bar_fit_text_to_width(NULL, "Operations", label, sizeof(label), 12, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("...", label) == 0);
+    egui_view_title_bar_fit_text_to_width(NULL, "Ready", label, sizeof(label), 20, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Ready", label) == 0);
+}
+
 static void test_title_bar_set_snapshots_and_current_part_clamp(void)
 {
     setup_title_bar(g_primary_snapshots, 3);
@@ -392,6 +413,7 @@ static void test_title_bar_static_preview_consumes_input_and_keeps_state(void)
 void test_title_bar_run(void)
 {
     EGUI_TEST_SUITE_BEGIN(title_bar);
+    EGUI_TEST_RUN(test_title_bar_internal_helpers_cover_text_fitting);
     EGUI_TEST_RUN(test_title_bar_set_snapshots_and_current_part_clamp);
     EGUI_TEST_RUN(test_title_bar_setters_clear_pressed_state);
     EGUI_TEST_RUN(test_title_bar_metrics_and_hit_testing);
