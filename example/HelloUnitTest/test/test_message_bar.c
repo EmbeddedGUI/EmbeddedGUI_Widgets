@@ -478,6 +478,7 @@ static void test_message_bar_static_preview_consumes_input_and_keeps_state(void)
 
 static void test_message_bar_internal_helpers_cover_severity_and_text(void)
 {
+    char label[24];
     egui_color_t sample = EGUI_COLOR_HEX(0x123456);
     egui_color_t mixed = egui_view_message_bar_mix_disabled(sample);
 
@@ -489,6 +490,17 @@ static void test_message_bar_internal_helpers_cover_severity_and_text(void)
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_MESSAGE_BAR_MAX_SNAPSHOTS, egui_view_message_bar_clamp_snapshot_count(9));
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_message_bar_text_len(NULL));
     EGUI_TEST_ASSERT_EQUAL_INT(5, egui_view_message_bar_text_len("Retry"));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_message_bar_measure_text_width(NULL, "Retry"));
+    egui_view_message_bar_copy_elided(label, sizeof(label), "Documents", 6);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Doc...", label) == 0);
+    egui_view_message_bar_copy_elided(label, sizeof(label), "View", 3);
+    EGUI_TEST_ASSERT_TRUE(strcmp("...", label) == 0);
+    egui_view_message_bar_fit_text_to_width(NULL, "Open latest release notes.", label, sizeof(label), 28, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Open...", label) == 0);
+    egui_view_message_bar_fit_text_to_width(NULL, "Open latest release notes.", label, sizeof(label), 12, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("...", label) == 0);
+    egui_view_message_bar_fit_text_to_width(NULL, "Retry", label, sizeof(label), 24, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Retry", label) == 0);
     EGUI_TEST_ASSERT_TRUE(strcmp("i", egui_view_message_bar_severity_glyph(0)) == 0);
     EGUI_TEST_ASSERT_TRUE(strcmp("+", egui_view_message_bar_severity_glyph(1)) == 0);
     EGUI_TEST_ASSERT_TRUE(strcmp("!", egui_view_message_bar_severity_glyph(2)) == 0);

@@ -46,6 +46,21 @@ static const char *egui_view_message_bar_severity_glyph(uint8_t severity)
     }
 }
 
+static uint8_t egui_view_message_bar_text_len(const char *text)
+{
+    uint8_t length = 0;
+
+    if (text == NULL)
+    {
+        return 0;
+    }
+    while (text[length] != '\0')
+    {
+        length++;
+    }
+    return length;
+}
+
 static egui_dim_t egui_view_message_bar_measure_text_width(const egui_font_t *font, const char *text)
 {
     egui_dim_t text_width = 0;
@@ -58,6 +73,105 @@ static egui_dim_t egui_view_message_bar_measure_text_width(const egui_font_t *fo
 
     font->api->get_str_size(font, text, 0, 0, &text_width, &dummy_height);
     return text_width;
+}
+
+static void egui_view_message_bar_copy_elided(char *buffer, uint8_t buffer_size, const char *text, uint8_t max_chars)
+{
+    uint8_t copy_length;
+    uint8_t index;
+    uint8_t length;
+
+    if (buffer == NULL || buffer_size == 0)
+    {
+        return;
+    }
+
+    buffer[0] = '\0';
+    if (text == NULL || max_chars == 0)
+    {
+        return;
+    }
+
+    length = egui_view_message_bar_text_len(text);
+    if (length <= max_chars)
+    {
+        copy_length = length;
+        if (copy_length >= buffer_size)
+        {
+            copy_length = buffer_size - 1;
+        }
+        for (index = 0; index < copy_length; index++)
+        {
+            buffer[index] = text[index];
+        }
+        buffer[copy_length] = '\0';
+        return;
+    }
+
+    if (max_chars <= 3)
+    {
+        copy_length = max_chars;
+        if (copy_length >= buffer_size)
+        {
+            copy_length = buffer_size - 1;
+        }
+        for (index = 0; index < copy_length; index++)
+        {
+            buffer[index] = '.';
+        }
+        buffer[copy_length] = '\0';
+        return;
+    }
+
+    copy_length = max_chars - 3;
+    if (copy_length > buffer_size - 4)
+    {
+        copy_length = buffer_size - 4;
+    }
+    for (index = 0; index < copy_length; index++)
+    {
+        buffer[index] = text[index];
+    }
+    buffer[copy_length] = '.';
+    buffer[copy_length + 1] = '.';
+    buffer[copy_length + 2] = '.';
+    buffer[copy_length + 3] = '\0';
+}
+
+static void egui_view_message_bar_fit_text_to_width(const egui_font_t *font, const char *text, char *buffer, uint8_t buffer_size, egui_dim_t max_width,
+                                                    egui_dim_t fallback_char_width)
+{
+    uint8_t max_chars;
+
+    if (buffer == NULL || buffer_size == 0)
+    {
+        return;
+    }
+
+    buffer[0] = '\0';
+    if (text == NULL || text[0] == '\0' || max_width <= 0)
+    {
+        return;
+    }
+
+    max_chars = egui_view_message_bar_text_len(text);
+    egui_view_message_bar_copy_elided(buffer, buffer_size, text, max_chars);
+    while (max_chars > 0)
+    {
+        egui_dim_t text_width = egui_view_message_bar_measure_text_width(font, buffer);
+
+        if (text_width <= 0)
+        {
+            text_width = (egui_dim_t)egui_view_message_bar_text_len(buffer) * fallback_char_width;
+        }
+        if (text_width <= max_width)
+        {
+            break;
+        }
+
+        max_chars--;
+        egui_view_message_bar_copy_elided(buffer, buffer_size, text, max_chars);
+    }
 }
 
 static egui_dim_t egui_view_message_bar_measure_font_line_height(const egui_font_t *font)
@@ -201,8 +315,12 @@ static void egui_view_message_bar_draw_text(egui_view_message_bar_t *local, egui
 static void egui_view_message_bar_on_draw(egui_view_t *self)
 {
     EGUI_LOCAL_INIT(egui_view_message_bar_t);
+    char action_label[24];
+    char body_label[48];
+    char pin_label[16];
     egui_region_t region;
     const egui_view_message_bar_snapshot_t *snapshot;
+    char title_label[32];
     egui_color_t severity_color;
     egui_color_t fill_color;
     egui_color_t border_color;
@@ -306,7 +424,8 @@ static void egui_view_message_bar_on_draw(egui_view_t *self)
     title_slot_h = local->compact_mode ? 10 : 12;
     title_h = egui_view_message_bar_resolve_line_height(local->font, title_slot_h);
     title_y = content_y - 1 + (title_slot_h - title_h) / 2;
-    egui_view_message_bar_draw_text(local, self, snapshot->title, title_x, title_y, title_w, title_h, EGUI_ALIGN_LEFT, title_color);
+    egui_view_message_bar_fit_text_to_width(local->font, snapshot->title, title_label, sizeof(title_label), title_w, local->compact_mode ? 4 : 5);
+    egui_view_message_bar_draw_text(local, self, title_label, title_x, title_y, title_w, title_h, EGUI_ALIGN_LEFT, title_color);
 
     show_action = snapshot->show_action && snapshot->action != NULL && snapshot->action[0] != '\0' && !local->read_only_mode;
     action_h = local->compact_mode ? 12 : 14;
@@ -347,7 +466,8 @@ static void egui_view_message_bar_on_draw(egui_view_t *self)
         body_h = local->compact_mode ? 10 : 12;
     }
 
-    egui_view_message_bar_draw_text(local, self, snapshot->body, title_x, body_y + (body_slot_h - body_h) / 2, title_w, body_h, EGUI_ALIGN_LEFT, body_color);
+    egui_view_message_bar_fit_text_to_width(local->font, snapshot->body, body_label, sizeof(body_label), title_w, local->compact_mode ? 4 : 5);
+    egui_view_message_bar_draw_text(local, self, body_label, title_x, body_y + (body_slot_h - body_h) / 2, title_w, body_h, EGUI_ALIGN_LEFT, body_color);
 
     if (show_action)
     {
@@ -357,13 +477,14 @@ static void egui_view_message_bar_on_draw(egui_view_t *self)
 
         egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, action_x, action_y, action_w, action_h, 5, action_fill, egui_color_alpha_mix(self->alpha, 34));
         egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, action_x, action_y, action_w, action_h, 5, 1, action_border, egui_color_alpha_mix(self->alpha, 40));
-        egui_view_message_bar_draw_text(local, self, snapshot->action, action_x + 2, action_y, action_w - 4, action_h, EGUI_ALIGN_CENTER, action_text);
+        egui_view_message_bar_fit_text_to_width(local->font, snapshot->action, action_label, sizeof(action_label), action_w - 6, local->compact_mode ? 4 : 5);
+        egui_view_message_bar_draw_text(local, self, action_label, action_x + 2, action_y, action_w - 4, action_h, EGUI_ALIGN_CENTER, action_text);
     }
 
     if (local->read_only_mode)
     {
-        const char *pin_label = "Read only";
-        egui_dim_t pin_w = 10 + egui_view_message_bar_measure_text_width(local->font, pin_label);
+        const char *pin_text = "Read only";
+        egui_dim_t pin_w = 10 + egui_view_message_bar_measure_text_width(local->font, pin_text);
         egui_dim_t pin_h = egui_view_message_bar_resolve_line_height(local->font, local->compact_mode ? 10 : 11);
         egui_dim_t pin_x = content_x + content_w - pin_w;
         egui_dim_t pin_y = content_y + content_h - pin_h - (local->compact_mode ? 2 : 1);
@@ -378,6 +499,7 @@ static void egui_view_message_bar_on_draw(egui_view_t *self)
 
         egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, pin_x, pin_y, pin_w, pin_h, 5, pin_fill, egui_color_alpha_mix(self->alpha, 26));
         egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, pin_x, pin_y, pin_w, pin_h, 5, 1, pin_border, egui_color_alpha_mix(self->alpha, 30));
+        egui_view_message_bar_fit_text_to_width(local->font, pin_text, pin_label, sizeof(pin_label), pin_w - 4, local->compact_mode ? 4 : 5);
         egui_view_message_bar_draw_text(local, self, pin_label, pin_x + 1, pin_y, pin_w - 2, pin_h, EGUI_ALIGN_CENTER, body_color);
     }
 
