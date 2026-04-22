@@ -528,6 +528,27 @@ static void test_virtualizing_stack_panel_read_only_and_disabled_guards(void)
     EGUI_TEST_ASSERT_EQUAL_INT(0, g_action_item);
 }
 
+static void test_virtualizing_stack_panel_internal_helpers(void)
+{
+    char label[24];
+
+    EGUI_TEST_ASSERT_EQUAL_INT(0, virtualizing_stack_panel_text_len(NULL));
+    EGUI_TEST_ASSERT_EQUAL_INT(5, virtualizing_stack_panel_text_len("Stack"));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, virtualizing_stack_panel_measure_text_width(NULL, "Ready"));
+
+    virtualizing_stack_panel_copy_elided(label, sizeof(label), "Window", 6);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Window", label) == 0);
+    virtualizing_stack_panel_copy_elided(label, sizeof(label), "Window", 3);
+    EGUI_TEST_ASSERT_TRUE(strcmp("...", label) == 0);
+
+    virtualizing_stack_panel_fit_text_to_width(NULL, "Window", label, sizeof(label), 24, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Window", label) == 0);
+    virtualizing_stack_panel_fit_text_to_width(NULL, "Window", label, sizeof(label), 12, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("...", label) == 0);
+    virtualizing_stack_panel_fit_text_to_width(NULL, "Ready", label, sizeof(label), 20, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Ready", label) == 0);
+}
+
 static void test_virtualizing_stack_panel_static_preview_consumes_input_and_keeps_state(void)
 {
     egui_dim_t item_x;
@@ -572,6 +593,7 @@ void test_virtualizing_stack_panel_run(void)
     EGUI_TEST_RUN(test_virtualizing_stack_panel_touch_same_target_release_and_cancel_behavior);
     EGUI_TEST_RUN(test_virtualizing_stack_panel_key_navigation_page_jump_and_tab);
     EGUI_TEST_RUN(test_virtualizing_stack_panel_read_only_and_disabled_guards);
+    EGUI_TEST_RUN(test_virtualizing_stack_panel_internal_helpers);
     EGUI_TEST_RUN(test_virtualizing_stack_panel_static_preview_consumes_input_and_keeps_state);
     EGUI_TEST_SUITE_END();
 }

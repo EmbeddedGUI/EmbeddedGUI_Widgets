@@ -147,6 +147,121 @@ static egui_dim_t virtualizing_stack_panel_measure_text_width(const egui_font_t 
     return width;
 }
 
+static uint8_t virtualizing_stack_panel_text_len(const char *text)
+{
+    uint8_t len = 0;
+
+    if (text == NULL)
+    {
+        return 0;
+    }
+
+    while (text[len] != '\0')
+    {
+        len++;
+    }
+    return len;
+}
+
+static void virtualizing_stack_panel_copy_elided(char *buffer, uint8_t buffer_size, const char *text, uint8_t max_chars)
+{
+    uint8_t copy_length;
+    uint8_t index;
+    uint8_t length;
+
+    if (buffer == NULL || buffer_size == 0)
+    {
+        return;
+    }
+
+    buffer[0] = '\0';
+    if (text == NULL || max_chars == 0)
+    {
+        return;
+    }
+
+    length = virtualizing_stack_panel_text_len(text);
+    if (length <= max_chars)
+    {
+        copy_length = length;
+        if (copy_length >= buffer_size)
+        {
+            copy_length = buffer_size - 1;
+        }
+        for (index = 0; index < copy_length; ++index)
+        {
+            buffer[index] = text[index];
+        }
+        buffer[copy_length] = '\0';
+        return;
+    }
+
+    if (max_chars <= 3)
+    {
+        copy_length = max_chars;
+        if (copy_length >= buffer_size)
+        {
+            copy_length = buffer_size - 1;
+        }
+        for (index = 0; index < copy_length; ++index)
+        {
+            buffer[index] = '.';
+        }
+        buffer[copy_length] = '\0';
+        return;
+    }
+
+    copy_length = max_chars - 3;
+    if (copy_length > buffer_size - 4)
+    {
+        copy_length = buffer_size - 4;
+    }
+    for (index = 0; index < copy_length; ++index)
+    {
+        buffer[index] = text[index];
+    }
+    buffer[copy_length] = '.';
+    buffer[copy_length + 1] = '.';
+    buffer[copy_length + 2] = '.';
+    buffer[copy_length + 3] = '\0';
+}
+
+static void virtualizing_stack_panel_fit_text_to_width(const egui_font_t *font, const char *text, char *buffer, uint8_t buffer_size, egui_dim_t max_width,
+                                                       egui_dim_t fallback_char_width)
+{
+    uint8_t max_chars;
+
+    if (buffer == NULL || buffer_size == 0)
+    {
+        return;
+    }
+
+    buffer[0] = '\0';
+    if (!virtualizing_stack_panel_has_text(text) || max_width <= 0)
+    {
+        return;
+    }
+
+    max_chars = virtualizing_stack_panel_text_len(text);
+    virtualizing_stack_panel_copy_elided(buffer, buffer_size, text, max_chars);
+    while (max_chars > 0)
+    {
+        egui_dim_t text_width = virtualizing_stack_panel_measure_text_width(font, buffer);
+
+        if (text_width <= 0)
+        {
+            text_width = (egui_dim_t)virtualizing_stack_panel_text_len(buffer) * fallback_char_width;
+        }
+        if (text_width <= max_width)
+        {
+            break;
+        }
+
+        max_chars--;
+        virtualizing_stack_panel_copy_elided(buffer, buffer_size, text, max_chars);
+    }
+}
+
 static egui_color_t virtualizing_stack_panel_mix_disabled(egui_color_t color)
 {
     return egui_rgb_mix(color, EGUI_COLOR_DARK_GREY, 68);
@@ -647,6 +762,10 @@ static void virtualizing_stack_panel_draw_item(egui_view_t *self, egui_view_virt
     egui_region_t title_region;
     egui_region_t meta_region;
     egui_region_t value_region;
+    char badge_label[16];
+    char value_label[16];
+    char title_label[32];
+    char meta_label[48];
     egui_color_t tone_color = virtualizing_stack_panel_tone_color(local, item->tone);
     egui_color_t row_fill = egui_rgb_mix(local->surface_color, tone_color, item_index == local->current_item ? 12 : (local->compact_mode ? 4 : 7));
     egui_color_t row_border = egui_rgb_mix(local->border_color, tone_color, item_index == local->current_item ? 22 : (local->compact_mode ? 10 : 14));
@@ -748,7 +867,8 @@ static void virtualizing_stack_panel_draw_item(egui_view_t *self, egui_view_virt
                                               badge_region.size.height / 2, badge_fill, egui_color_alpha_mix(self->alpha, 94));
         egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, badge_region.location.x, badge_region.location.y, badge_region.size.width, badge_region.size.height,
                                          badge_region.size.height / 2, 1, row_border, egui_color_alpha_mix(self->alpha, 24));
-        virtualizing_stack_panel_draw_text(local->meta_font, self, item->badge, &badge_region, EGUI_ALIGN_CENTER, badge_text);
+        virtualizing_stack_panel_fit_text_to_width(local->meta_font, item->badge, badge_label, sizeof(badge_label), badge_region.size.width - 4, 4);
+        virtualizing_stack_panel_draw_text(local->meta_font, self, badge_label, &badge_region, EGUI_ALIGN_CENTER, badge_text);
         text_left = badge_region.location.x + badge_region.size.width + 5;
     }
 
@@ -762,7 +882,8 @@ static void virtualizing_stack_panel_draw_item(egui_view_t *self, egui_view_virt
 
         if (local->compact_mode)
         {
-            virtualizing_stack_panel_draw_text(local->meta_font, self, item->value, &value_region, EGUI_ALIGN_RIGHT | EGUI_ALIGN_VCENTER, value_text);
+            virtualizing_stack_panel_fit_text_to_width(local->meta_font, item->value, value_label, sizeof(value_label), value_region.size.width, 4);
+            virtualizing_stack_panel_draw_text(local->meta_font, self, value_label, &value_region, EGUI_ALIGN_RIGHT | EGUI_ALIGN_VCENTER, value_text);
         }
         else
         {
@@ -770,7 +891,8 @@ static void virtualizing_stack_panel_draw_item(egui_view_t *self, egui_view_virt
                                                   value_region.size.height / 2, value_fill, egui_color_alpha_mix(self->alpha, 96));
             egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, value_region.location.x, value_region.location.y, value_region.size.width, value_region.size.height,
                                              value_region.size.height / 2, 1, value_border, egui_color_alpha_mix(self->alpha, 34));
-            virtualizing_stack_panel_draw_text(local->meta_font, self, item->value, &value_region, EGUI_ALIGN_CENTER, value_text);
+            virtualizing_stack_panel_fit_text_to_width(local->meta_font, item->value, value_label, sizeof(value_label), value_region.size.width - 4, 4);
+            virtualizing_stack_panel_draw_text(local->meta_font, self, value_label, &value_region, EGUI_ALIGN_CENTER, value_text);
         }
         text_right = value_region.location.x - 5;
     }
@@ -796,8 +918,10 @@ static void virtualizing_stack_panel_draw_item(egui_view_t *self, egui_view_virt
         title_region.location.y = region->location.y + (region->size.height - title_h) / 2;
         virtualizing_stack_panel_reset_region(&meta_region);
     }
-    virtualizing_stack_panel_draw_text(local->font, self, item->title, &title_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, title_color);
-    virtualizing_stack_panel_draw_text(local->meta_font, self, item->meta, &meta_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, meta_color);
+    virtualizing_stack_panel_fit_text_to_width(local->font, item->title, title_label, sizeof(title_label), title_region.size.width, 5);
+    virtualizing_stack_panel_draw_text(local->font, self, title_label, &title_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, title_color);
+    virtualizing_stack_panel_fit_text_to_width(local->meta_font, item->meta, meta_label, sizeof(meta_label), meta_region.size.width, 4);
+    virtualizing_stack_panel_draw_text(local->meta_font, self, meta_label, &meta_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, meta_color);
 }
 
 static uint8_t virtualizing_stack_panel_hit_item(egui_view_virtualizing_stack_panel_t *local, egui_view_t *self, egui_dim_t x, egui_dim_t y)
@@ -833,6 +957,10 @@ static void egui_view_virtualizing_stack_panel_on_draw(egui_view_t *self)
     const egui_view_virtualizing_stack_panel_snapshot_t *snapshot = virtualizing_stack_panel_get_snapshot(local);
     const egui_view_virtualizing_stack_panel_item_t *current_item = virtualizing_stack_panel_get_item(snapshot, local->current_item);
     egui_view_virtualizing_stack_panel_metrics_t metrics;
+    char badge_label[16];
+    char title_label[32];
+    char summary_label[48];
+    char footer_label[32];
     egui_color_t card_fill;
     egui_color_t card_border;
     egui_color_t shell_fill;
@@ -932,11 +1060,14 @@ static void egui_view_virtualizing_stack_panel_on_draw(egui_view_t *self)
         egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics.badge_region.location.x, metrics.badge_region.location.y, metrics.badge_region.size.width,
                                          metrics.badge_region.size.height, metrics.badge_region.size.height / 2, 1, badge_border,
                                          egui_color_alpha_mix(self->alpha, 28));
-        virtualizing_stack_panel_draw_text(local->meta_font, self, snapshot->header, &metrics.badge_region, EGUI_ALIGN_CENTER, badge_text);
+        virtualizing_stack_panel_fit_text_to_width(local->meta_font, snapshot->header, badge_label, sizeof(badge_label), metrics.badge_region.size.width - 4, 4);
+        virtualizing_stack_panel_draw_text(local->meta_font, self, badge_label, &metrics.badge_region, EGUI_ALIGN_CENTER, badge_text);
     }
 
-    virtualizing_stack_panel_draw_text(local->font, self, snapshot->title, &metrics.title_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, title_color);
-    virtualizing_stack_panel_draw_text(local->meta_font, self, snapshot->summary, &metrics.summary_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, summary_color);
+    virtualizing_stack_panel_fit_text_to_width(local->font, snapshot->title, title_label, sizeof(title_label), metrics.title_region.size.width, 5);
+    virtualizing_stack_panel_draw_text(local->font, self, title_label, &metrics.title_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, title_color);
+    virtualizing_stack_panel_fit_text_to_width(local->meta_font, snapshot->summary, summary_label, sizeof(summary_label), metrics.summary_region.size.width, 4);
+    virtualizing_stack_panel_draw_text(local->meta_font, self, summary_label, &metrics.summary_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, summary_color);
 
     if (virtualizing_stack_panel_region_has_size(&metrics.shell_region))
     {
@@ -982,7 +1113,8 @@ static void egui_view_virtualizing_stack_panel_on_draw(egui_view_t *self)
         egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics.footer_region.location.x, metrics.footer_region.location.y, metrics.footer_region.size.width,
                                          metrics.footer_region.size.height, metrics.footer_region.size.height / 2, 1, footer_border,
                                          egui_color_alpha_mix(self->alpha, 34));
-        virtualizing_stack_panel_draw_text(local->meta_font, self, snapshot->footer, &metrics.footer_region, EGUI_ALIGN_CENTER, footer_text);
+        virtualizing_stack_panel_fit_text_to_width(local->meta_font, snapshot->footer, footer_label, sizeof(footer_label), metrics.footer_region.size.width - 4, 4);
+        virtualizing_stack_panel_draw_text(local->meta_font, self, footer_label, &metrics.footer_region, EGUI_ALIGN_CENTER, footer_text);
     }
 }
 
