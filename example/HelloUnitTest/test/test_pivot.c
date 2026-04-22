@@ -242,6 +242,27 @@ static void assert_preview_state_unchanged(const pivot_preview_snapshot_t *snaps
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->padding_bottom, EGUI_VIEW_OF(&preview_pivot)->padding.bottom);
 }
 
+static void test_pivot_internal_helpers_cover_text_fitting(void)
+{
+    char label[24];
+
+    EGUI_TEST_ASSERT_EQUAL_INT(0, hcw_pivot_text_len(NULL));
+    EGUI_TEST_ASSERT_EQUAL_INT(10, hcw_pivot_text_len("Operations"));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, hcw_pivot_measure_text_width(NULL, "Ready"));
+
+    hcw_pivot_copy_elided(label, sizeof(label), "Documents", 6);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Doc...", label) == 0);
+    hcw_pivot_copy_elided(label, sizeof(label), "Mode", 3);
+    EGUI_TEST_ASSERT_TRUE(strcmp("...", label) == 0);
+
+    hcw_pivot_fit_text_to_width(NULL, "Operations", label, sizeof(label), 28, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Oper...", label) == 0);
+    hcw_pivot_fit_text_to_width(NULL, "Operations", label, sizeof(label), 12, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("...", label) == 0);
+    hcw_pivot_fit_text_to_width(NULL, "Ready", label, sizeof(label), 20, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Ready", label) == 0);
+}
+
 static void test_pivot_style_helpers_and_setters_clear_pressed_state(void)
 {
     setup_widget();
@@ -406,6 +427,7 @@ static void test_pivot_static_preview_consumes_input_and_keeps_state(void)
 void test_pivot_run(void)
 {
     EGUI_TEST_SUITE_BEGIN(pivot);
+    EGUI_TEST_RUN(test_pivot_internal_helpers_cover_text_fitting);
     EGUI_TEST_RUN(test_pivot_style_helpers_and_setters_clear_pressed_state);
     EGUI_TEST_RUN(test_pivot_touch_same_target_release_and_cancel_behavior);
     EGUI_TEST_RUN(test_pivot_keyboard_navigation_and_guards);

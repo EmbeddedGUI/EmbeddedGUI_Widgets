@@ -246,6 +246,42 @@ static void hcw_pivot_fit_header_label_to_width(const egui_font_t *font, uint8_t
     }
 }
 
+static void hcw_pivot_fit_text_to_width(const egui_font_t *font, const char *text, char *buffer, uint8_t capacity, egui_dim_t max_width,
+                                        egui_dim_t fallback_char_width)
+{
+    uint8_t max_chars;
+
+    if (buffer == NULL || capacity == 0)
+    {
+        return;
+    }
+
+    buffer[0] = '\0';
+    if (text == NULL || text[0] == '\0' || max_width <= 0)
+    {
+        return;
+    }
+
+    max_chars = hcw_pivot_text_len(text);
+    hcw_pivot_copy_elided(buffer, capacity, text, max_chars);
+    while (max_chars > 0)
+    {
+        egui_dim_t text_width = hcw_pivot_measure_text_width(font, buffer);
+
+        if (text_width <= 0)
+        {
+            text_width = (egui_dim_t)hcw_pivot_text_len(buffer) * fallback_char_width;
+        }
+        if (text_width <= max_width)
+        {
+            break;
+        }
+
+        max_chars--;
+        hcw_pivot_copy_elided(buffer, capacity, text, max_chars);
+    }
+}
+
 static egui_dim_t hcw_pivot_pad_x(uint8_t compact_mode)
 {
     return compact_mode ? HCW_PIVOT_COMPACT_PAD_X : HCW_PIVOT_STANDARD_PAD_X;
@@ -460,6 +496,10 @@ static void hcw_pivot_draw_text(egui_view_t *self, const egui_font_t *font, cons
 static void hcw_pivot_draw_body(egui_view_t *self, hcw_pivot_t *local, egui_color_t text_color, egui_color_t muted_text_color, egui_color_t border_color,
                                 uint8_t is_enabled)
 {
+    char eyebrow_label[24];
+    char title_label[32];
+    char body_label[48];
+    char meta_label[24];
     const hcw_pivot_item_t *item = hcw_pivot_get_current_item(local);
     egui_region_t work_region;
     egui_region_t body_region;
@@ -481,6 +521,7 @@ static void hcw_pivot_draw_body(egui_view_t *self, hcw_pivot_t *local, egui_colo
     egui_dim_t title_gap;
     egui_dim_t body_gap;
     egui_dim_t bottom_inset;
+    egui_dim_t fallback_char_width;
     const egui_font_t *title_font;
     const egui_font_t *meta_font;
 
@@ -507,6 +548,7 @@ static void hcw_pivot_draw_body(egui_view_t *self, hcw_pivot_t *local, egui_colo
     body_fill = hcw_pivot_tone_fill(local, item->tone);
     title_font = hcw_pivot_get_font(local);
     meta_font = hcw_pivot_get_meta_font(local);
+    fallback_char_width = local->compact_mode ? HCW_PIVOT_COMPACT_CHAR_WIDTH : HCW_PIVOT_STANDARD_CHAR_WIDTH;
 
     if (local->read_only_mode)
     {
@@ -587,13 +629,17 @@ static void hcw_pivot_draw_body(egui_view_t *self, hcw_pivot_t *local, egui_colo
         }
     }
 
-    hcw_pivot_draw_text(self, meta_font, item->eyebrow, &eyebrow_region, EGUI_ALIGN_CENTER, accent_color);
-    hcw_pivot_draw_text(self, title_font, item->title, &title_region, EGUI_ALIGN_CENTER, text_color);
+    hcw_pivot_fit_text_to_width(meta_font, item->eyebrow, eyebrow_label, sizeof(eyebrow_label), eyebrow_region.size.width, fallback_char_width);
+    hcw_pivot_fit_text_to_width(title_font, item->title, title_label, sizeof(title_label), title_region.size.width, fallback_char_width);
+    hcw_pivot_fit_text_to_width(meta_font, item->meta, meta_label, sizeof(meta_label), meta_region.size.width, fallback_char_width);
+    hcw_pivot_draw_text(self, meta_font, eyebrow_label, &eyebrow_region, EGUI_ALIGN_CENTER, accent_color);
+    hcw_pivot_draw_text(self, title_font, title_label, &title_region, EGUI_ALIGN_CENTER, text_color);
     if (!local->compact_mode && body_text_region.size.height > 0)
     {
-        hcw_pivot_draw_text(self, meta_font, item->body, &body_text_region, EGUI_ALIGN_CENTER, muted_text_color);
+        hcw_pivot_fit_text_to_width(meta_font, item->body, body_label, sizeof(body_label), body_text_region.size.width, fallback_char_width);
+        hcw_pivot_draw_text(self, meta_font, body_label, &body_text_region, EGUI_ALIGN_CENTER, muted_text_color);
     }
-    hcw_pivot_draw_text(self, meta_font, item->meta, &meta_region, EGUI_ALIGN_CENTER, muted_text_color);
+    hcw_pivot_draw_text(self, meta_font, meta_label, &meta_region, EGUI_ALIGN_CENTER, muted_text_color);
 }
 
 static void hcw_pivot_on_draw(egui_view_t *self)
