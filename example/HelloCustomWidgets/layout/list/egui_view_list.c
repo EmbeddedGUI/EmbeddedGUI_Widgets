@@ -71,6 +71,105 @@ static egui_dim_t egui_view_reference_list_measure_text_width(const egui_font_t 
     return text_width;
 }
 
+static void egui_view_reference_list_copy_elided(char *buffer, uint8_t buffer_size, const char *text, uint8_t max_chars)
+{
+    uint8_t copy_length;
+    uint8_t index;
+    uint8_t length;
+
+    if (buffer == NULL || buffer_size == 0)
+    {
+        return;
+    }
+
+    buffer[0] = '\0';
+    if (text == NULL || max_chars == 0)
+    {
+        return;
+    }
+
+    length = egui_view_reference_list_text_len(text);
+    if (length <= max_chars)
+    {
+        copy_length = length;
+        if (copy_length >= buffer_size)
+        {
+            copy_length = buffer_size - 1;
+        }
+        for (index = 0; index < copy_length; index++)
+        {
+            buffer[index] = text[index];
+        }
+        buffer[copy_length] = '\0';
+        return;
+    }
+
+    if (max_chars <= 3)
+    {
+        copy_length = max_chars;
+        if (copy_length >= buffer_size)
+        {
+            copy_length = buffer_size - 1;
+        }
+        for (index = 0; index < copy_length; index++)
+        {
+            buffer[index] = '.';
+        }
+        buffer[copy_length] = '\0';
+        return;
+    }
+
+    copy_length = max_chars - 3;
+    if (copy_length > buffer_size - 4)
+    {
+        copy_length = buffer_size - 4;
+    }
+    for (index = 0; index < copy_length; index++)
+    {
+        buffer[index] = text[index];
+    }
+    buffer[copy_length] = '.';
+    buffer[copy_length + 1] = '.';
+    buffer[copy_length + 2] = '.';
+    buffer[copy_length + 3] = '\0';
+}
+
+static void egui_view_reference_list_fit_text_to_width(const egui_font_t *font, const char *text, char *buffer, uint8_t buffer_size, egui_dim_t max_width,
+                                                       egui_dim_t fallback_char_width)
+{
+    uint8_t max_chars;
+
+    if (buffer == NULL || buffer_size == 0)
+    {
+        return;
+    }
+
+    buffer[0] = '\0';
+    if (text == NULL || text[0] == '\0' || max_width <= 0)
+    {
+        return;
+    }
+
+    max_chars = egui_view_reference_list_text_len(text);
+    egui_view_reference_list_copy_elided(buffer, buffer_size, text, max_chars);
+    while (max_chars > 0)
+    {
+        egui_dim_t text_width = egui_view_reference_list_measure_text_width(font, buffer);
+
+        if (text_width <= 0)
+        {
+            text_width = (egui_dim_t)egui_view_reference_list_text_len(buffer) * fallback_char_width;
+        }
+        if (text_width <= max_width)
+        {
+            break;
+        }
+
+        max_chars--;
+        egui_view_reference_list_copy_elided(buffer, buffer_size, text, max_chars);
+    }
+}
+
 static egui_dim_t egui_view_reference_list_get_title_line_height(egui_view_reference_list_t *local)
 {
     egui_dim_t line_height = egui_view_reference_list_measure_font_line_height(local->font);
@@ -448,6 +547,9 @@ uint8_t egui_view_reference_list_get_item_region(egui_view_t *self, uint8_t inde
 static void egui_view_reference_list_draw_item(egui_view_t *self, egui_view_reference_list_t *local, const egui_view_reference_list_item_t *item,
                                                const egui_region_t *region, uint8_t selected, uint8_t pressed, uint8_t last)
 {
+    char badge_label[12];
+    char title_label[24];
+    char meta_label[24];
     egui_region_t text_region;
     egui_color_t tone_color = egui_view_reference_list_tone_color(local, item->tone);
     egui_color_t row_fill = egui_rgb_mix(local->surface_color, tone_color, selected ? (local->compact_mode ? 16 : 12) : (item->emphasized ? 5 : 2));
@@ -466,10 +568,24 @@ static void egui_view_reference_list_draw_item(egui_view_t *self, egui_view_refe
     egui_dim_t text_x = dot_x + dot_size + (local->compact_mode ? 5 : 7);
     egui_dim_t inset_right = local->compact_mode ? 4 : 6;
     egui_dim_t badge_h = egui_view_reference_list_get_badge_height(local);
-    egui_dim_t badge_w = egui_view_reference_list_badge_width(local->meta_font, item->badge, local->compact_mode, region->size.width / 3);
+    egui_dim_t badge_max_w = region->size.width / 3;
+    egui_dim_t badge_text_max_w = badge_max_w - (local->compact_mode ? 14 : 18);
+    egui_dim_t badge_w = 0;
     egui_dim_t badge_x = region->location.x + region->size.width - badge_w - inset_right;
     egui_dim_t badge_y = region->location.y + (region->size.height - badge_h) / 2;
     egui_dim_t indicator_w = local->compact_mode ? 2 : 3;
+    egui_dim_t text_right = region->location.x + region->size.width - inset_right;
+
+    if (item->badge != NULL && item->badge[0] != '\0' && badge_text_max_w > 0)
+    {
+        egui_view_reference_list_fit_text_to_width(local->meta_font, item->badge, badge_label, sizeof(badge_label), badge_text_max_w,
+                                                   local->compact_mode ? 4 : 5);
+        if (badge_label[0] != '\0')
+        {
+            badge_w = egui_view_reference_list_badge_width(local->meta_font, badge_label, local->compact_mode, badge_max_w);
+        }
+    }
+    badge_x = region->location.x + region->size.width - badge_w - inset_right;
 
     if (local->read_only_mode)
     {
@@ -523,22 +639,36 @@ static void egui_view_reference_list_draw_item(egui_view_t *self, egui_view_refe
         text_region.size.height = badge_h;
         egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, badge_x, badge_y, badge_w, badge_h, badge_h / 2, badge_fill, egui_color_alpha_mix(self->alpha, 98));
         egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, badge_x, badge_y, badge_w, badge_h, badge_h / 2, 1, badge_border, egui_color_alpha_mix(self->alpha, 30));
-        egui_view_reference_list_draw_text(local->meta_font, self, item->badge, &text_region, EGUI_ALIGN_CENTER, badge_text);
+        egui_view_reference_list_draw_text(local->meta_font, self, badge_label, &text_region, EGUI_ALIGN_CENTER, badge_text);
     }
 
     if (local->compact_mode)
     {
-        text_region.location.x = text_x;
-        text_region.location.y = region->location.y;
-        text_region.size.width = (badge_w > 0 ? badge_x : region->location.x + region->size.width - inset_right) - text_x - 4;
-        text_region.size.height = region->size.height;
-        egui_view_reference_list_draw_text(local->font, self, item->title, &text_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, title_color);
         if (badge_w == 0 && item->meta != NULL && item->meta[0] != '\0')
         {
-            text_region.location.x = region->location.x + region->size.width / 2;
-            text_region.size.width = region->size.width / 2 - inset_right;
-            egui_view_reference_list_draw_text(local->meta_font, self, item->meta, &text_region, EGUI_ALIGN_RIGHT | EGUI_ALIGN_VCENTER, meta_color);
+            egui_region_t meta_region;
+
+            meta_region.location.x = region->location.x + region->size.width / 2;
+            meta_region.location.y = region->location.y;
+            meta_region.size.width = region->location.x + region->size.width - inset_right - meta_region.location.x;
+            meta_region.size.height = region->size.height;
+            egui_view_reference_list_fit_text_to_width(local->meta_font, item->meta, meta_label, sizeof(meta_label), meta_region.size.width,
+                                                       local->compact_mode ? 4 : 5);
+            egui_view_reference_list_draw_text(local->meta_font, self, meta_label, &meta_region, EGUI_ALIGN_RIGHT | EGUI_ALIGN_VCENTER, meta_color);
+            text_right = meta_region.location.x;
         }
+        else if (badge_w > 0)
+        {
+            text_right = badge_x;
+        }
+
+        text_region.location.x = text_x;
+        text_region.location.y = region->location.y;
+        text_region.size.width = text_right - text_x - 4;
+        text_region.size.height = region->size.height;
+        egui_view_reference_list_fit_text_to_width(local->font, item->title, title_label, sizeof(title_label), text_region.size.width,
+                                                   local->compact_mode ? 4 : 5);
+        egui_view_reference_list_draw_text(local->font, self, title_label, &text_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, title_color);
         return;
     }
 
@@ -546,11 +676,14 @@ static void egui_view_reference_list_draw_item(egui_view_t *self, egui_view_refe
     text_region.location.y = region->location.y;
     text_region.size.width = (badge_w > 0 ? badge_x : region->location.x + region->size.width - inset_right) - text_x - 4;
     text_region.size.height = title_h;
-    egui_view_reference_list_draw_text(local->font, self, item->title, &text_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, title_color);
+    egui_view_reference_list_fit_text_to_width(local->font, item->title, title_label, sizeof(title_label), text_region.size.width, local->compact_mode ? 4 : 5);
+    egui_view_reference_list_draw_text(local->font, self, title_label, &text_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, title_color);
 
     text_region.location.y = region->location.y + region->size.height - meta_h;
     text_region.size.height = meta_h;
-    egui_view_reference_list_draw_text(local->meta_font, self, item->meta, &text_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, meta_color);
+    egui_view_reference_list_fit_text_to_width(local->meta_font, item->meta, meta_label, sizeof(meta_label), text_region.size.width,
+                                               local->compact_mode ? 4 : 5);
+    egui_view_reference_list_draw_text(local->meta_font, self, meta_label, &text_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, meta_color);
 }
 
 static void egui_view_reference_list_on_draw(egui_view_t *self)

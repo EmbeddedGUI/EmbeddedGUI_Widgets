@@ -179,6 +179,7 @@ static void setup_preview_widget(void)
 
 static void test_list_setters_clamp_getters_and_helpers(void)
 {
+    char label[24];
     egui_color_t sample = EGUI_COLOR_HEX(0x123456);
 
     setup_widget();
@@ -234,9 +235,18 @@ static void test_list_setters_clamp_getters_and_helpers(void)
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_REFERENCE_LIST_MAX_ITEMS, egui_view_reference_list_clamp_item_count(9));
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_reference_list_text_len(NULL));
     EGUI_TEST_ASSERT_EQUAL_INT(4, egui_view_reference_list_text_len("List"));
-    EGUI_TEST_ASSERT_EQUAL_INT(33, egui_view_reference_list_badge_width("Due", 0, 40));
-    EGUI_TEST_ASSERT_EQUAL_INT(22, egui_view_reference_list_badge_width("RO", 1, 40));
-    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_reference_list_badge_width("", 0, 40));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_reference_list_measure_text_width(NULL, "List"));
+    EGUI_TEST_ASSERT_EQUAL_INT(33, egui_view_reference_list_badge_width(NULL, "Due", 0, 40));
+    EGUI_TEST_ASSERT_EQUAL_INT(22, egui_view_reference_list_badge_width(NULL, "RO", 1, 40));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_reference_list_badge_width(NULL, "", 0, 40));
+    egui_view_reference_list_copy_elided(label, sizeof(label), "Approvals", 6);
+    EGUI_TEST_ASSERT_TRUE(strcmp("App...", label) == 0);
+    egui_view_reference_list_copy_elided(label, sizeof(label), "RO", 2);
+    EGUI_TEST_ASSERT_TRUE(strcmp("RO", label) == 0);
+    egui_view_reference_list_fit_text_to_width(NULL, "Owner review due", label, sizeof(label), 28, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Owne...", label) == 0);
+    egui_view_reference_list_fit_text_to_width(NULL, "Muted", label, sizeof(label), 20, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Muted", label) == 0);
     EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(sample, EGUI_COLOR_DARK_GREY, 68).full, egui_view_reference_list_mix_disabled(sample).full);
 }
 
