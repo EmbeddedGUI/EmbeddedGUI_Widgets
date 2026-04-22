@@ -47,6 +47,28 @@ struct egui_view_nav_panel_metrics
     uint8_t show_footer;
 };
 
+static uint8_t egui_view_nav_panel_has_text(const char *text)
+{
+    return text != NULL && text[0] != '\0' ? 1 : 0;
+}
+
+static uint8_t egui_view_nav_panel_text_len(const char *text)
+{
+    uint8_t length = 0;
+
+    if (text == NULL)
+    {
+        return 0;
+    }
+
+    while (text[length] != '\0')
+    {
+        length++;
+    }
+
+    return length;
+}
+
 static egui_color_t egui_view_nav_panel_mix_disabled(egui_color_t color)
 {
     return egui_rgb_mix(color, EGUI_COLOR_DARK_GREY, 68);
@@ -64,6 +86,20 @@ static egui_dim_t egui_view_nav_panel_measure_font_line_height(const egui_font_t
 
     font->api->get_str_size(font, "A", 0, 0, &width, &height);
     return height;
+}
+
+static egui_dim_t egui_view_nav_panel_measure_text_width(const egui_font_t *font, const char *text)
+{
+    egui_dim_t width = 0;
+    egui_dim_t height = 0;
+
+    if (!egui_view_nav_panel_has_text(text) || font == NULL || font->api == NULL || font->api->get_str_size == NULL)
+    {
+        return 0;
+    }
+
+    font->api->get_str_size(font, text, 0, 0, &width, &height);
+    return width;
 }
 
 static uint8_t egui_view_nav_panel_get_visible_item_count(egui_view_nav_panel_t *local)
@@ -86,15 +122,114 @@ static const char *egui_view_nav_panel_get_badge_text(const egui_view_nav_panel_
     {
         return "";
     }
-    if (item->badge != NULL && item->badge[0] != '\0')
+    if (egui_view_nav_panel_has_text(item->badge))
     {
         return item->badge;
     }
-    if (item->title != NULL && item->title[0] != '\0')
+    if (egui_view_nav_panel_has_text(item->title))
     {
         return item->title;
     }
     return "";
+}
+
+static void egui_view_nav_panel_copy_elided(char *buffer, uint8_t buffer_size, const char *text, uint8_t max_chars)
+{
+    uint8_t copy_length;
+    uint8_t index;
+    uint8_t length;
+
+    if (buffer == NULL || buffer_size == 0)
+    {
+        return;
+    }
+
+    buffer[0] = '\0';
+    if (text == NULL || max_chars == 0)
+    {
+        return;
+    }
+
+    length = egui_view_nav_panel_text_len(text);
+    if (length <= max_chars)
+    {
+        copy_length = length;
+        if (copy_length >= buffer_size)
+        {
+            copy_length = buffer_size - 1;
+        }
+        for (index = 0; index < copy_length; ++index)
+        {
+            buffer[index] = text[index];
+        }
+        buffer[copy_length] = '\0';
+        return;
+    }
+
+    if (max_chars <= 3)
+    {
+        copy_length = max_chars;
+        if (copy_length >= buffer_size)
+        {
+            copy_length = buffer_size - 1;
+        }
+        for (index = 0; index < copy_length; ++index)
+        {
+            buffer[index] = '.';
+        }
+        buffer[copy_length] = '\0';
+        return;
+    }
+
+    copy_length = max_chars - 3;
+    if (copy_length > buffer_size - 4)
+    {
+        copy_length = buffer_size - 4;
+    }
+    for (index = 0; index < copy_length; ++index)
+    {
+        buffer[index] = text[index];
+    }
+    buffer[copy_length] = '.';
+    buffer[copy_length + 1] = '.';
+    buffer[copy_length + 2] = '.';
+    buffer[copy_length + 3] = '\0';
+}
+
+static void egui_view_nav_panel_fit_text_to_width(const egui_font_t *font, const char *text, char *buffer, uint8_t buffer_size, egui_dim_t max_width,
+                                                  egui_dim_t fallback_char_width)
+{
+    uint8_t max_chars;
+
+    if (buffer == NULL || buffer_size == 0)
+    {
+        return;
+    }
+
+    buffer[0] = '\0';
+    if (!egui_view_nav_panel_has_text(text) || max_width <= 0)
+    {
+        return;
+    }
+
+    max_chars = egui_view_nav_panel_text_len(text);
+    egui_view_nav_panel_copy_elided(buffer, buffer_size, text, max_chars);
+    while (max_chars > 0)
+    {
+        egui_dim_t text_width = egui_view_nav_panel_measure_text_width(font, buffer);
+
+        if (text_width <= 0)
+        {
+            text_width = (egui_dim_t)egui_view_nav_panel_text_len(buffer) * fallback_char_width;
+        }
+        if (text_width <= max_width)
+        {
+            break;
+        }
+
+        max_chars--;
+        egui_view_nav_panel_copy_elided(buffer, buffer_size, text, max_chars);
+    }
 }
 
 static void egui_view_nav_panel_get_metrics(egui_view_nav_panel_t *local, egui_view_t *self, egui_view_nav_panel_metrics_t *metrics)
@@ -128,9 +263,8 @@ static void egui_view_nav_panel_get_metrics(egui_view_nav_panel_t *local, egui_v
     metrics->content.size.width = region.size.width - pad_x * 2;
     metrics->content.size.height = region.size.height - pad_y * 2;
     metrics->visible_item_count = egui_view_nav_panel_get_visible_item_count(local);
-    metrics->show_header = local->compact_mode ? 0 : ((local->header_text != NULL && local->header_text[0] != '\0') ? 1 : 0);
-    metrics->show_footer = (local->footer_badge != NULL && local->footer_badge[0] != '\0') ||
-                           (!local->compact_mode && local->footer_text != NULL && local->footer_text[0] != '\0');
+    metrics->show_header = local->compact_mode ? 0 : egui_view_nav_panel_has_text(local->header_text);
+    metrics->show_footer = egui_view_nav_panel_has_text(local->footer_badge) || (!local->compact_mode && egui_view_nav_panel_has_text(local->footer_text));
 
     metrics->header_region.location.x = metrics->content.location.x;
     metrics->header_region.location.y = metrics->content.location.y;
@@ -171,6 +305,12 @@ static void egui_view_nav_panel_draw_text(const egui_font_t *font, egui_view_t *
                                           egui_color_t color)
 {
     egui_region_t draw_region = *region;
+
+    if (!egui_view_nav_panel_has_text(text) || font == NULL || region->size.width <= 0 || region->size.height <= 0)
+    {
+        return;
+    }
+
     egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, font, text, &draw_region, align, color, self->alpha);
 }
 
@@ -371,6 +511,8 @@ static void egui_view_nav_panel_draw_standard_item(egui_view_t *self, egui_view_
                                                    const egui_view_nav_panel_item_t *item, uint8_t index, egui_color_t border_color, egui_color_t text_color,
                                                    egui_color_t muted_text_color, egui_color_t accent_color)
 {
+    char badge_label[16];
+    char title_label[48];
     egui_region_t badge_region;
     egui_region_t text_region = *item_region;
     egui_color_t badge_fill;
@@ -411,17 +553,21 @@ static void egui_view_nav_panel_draw_standard_item(egui_view_t *self, egui_view_
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, badge_region.location.x, badge_region.location.y, badge_region.size.width, badge_region.size.height,
                                      EGUI_VIEW_NAV_PANEL_STANDARD_BADGE_RADIUS, 1, badge_border,
                                      egui_color_alpha_mix(self->alpha, badge_border_alpha));
-    egui_view_nav_panel_draw_text(local->meta_font, self, egui_view_nav_panel_get_badge_text(item), &badge_region, EGUI_ALIGN_CENTER, badge_text);
+    egui_view_nav_panel_fit_text_to_width(local->meta_font, egui_view_nav_panel_get_badge_text(item), badge_label, sizeof(badge_label), badge_region.size.width - 4, 4);
+    egui_view_nav_panel_draw_text(local->meta_font, self, badge_label, &badge_region, EGUI_ALIGN_CENTER, badge_text);
 
     text_region.location.x = badge_region.location.x + badge_region.size.width + 8;
     text_region.size.width = item_region->location.x + item_region->size.width - text_region.location.x - 6;
-    egui_view_nav_panel_draw_text(local->font, self, item->title, &text_region, EGUI_ALIGN_LEFT, is_selected ? text_color : muted_text_color);
+    egui_view_nav_panel_fit_text_to_width(local->font, item->title, title_label, sizeof(title_label), text_region.size.width, 5);
+    egui_view_nav_panel_draw_text(local->font, self, title_label, &text_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER,
+                                  is_selected ? text_color : muted_text_color);
 }
 
 static void egui_view_nav_panel_draw_compact_item(egui_view_t *self, egui_view_nav_panel_t *local, const egui_region_t *item_region,
                                                   const egui_view_nav_panel_item_t *item, uint8_t index, egui_color_t border_color, egui_color_t text_color,
                                                   egui_color_t accent_color)
 {
+    char badge_label[24];
     uint8_t is_selected = index == local->current_index;
     uint8_t is_pressed = index == local->pressed_index;
     egui_color_t row_fill = egui_rgb_mix(local->surface_color, accent_color, is_selected ? (local->read_only_mode ? 6 : 10) : (is_pressed ? 4 : 0));
@@ -439,13 +585,17 @@ static void egui_view_nav_panel_draw_compact_item(egui_view_t *self, egui_view_n
                                               item_region->size.height - 4, 2, accent_color,
                                               egui_color_alpha_mix(self->alpha, local->read_only_mode ? 52 : 86));
     }
-    egui_view_nav_panel_draw_text(local->meta_font, self, egui_view_nav_panel_get_badge_text(item), item_region, EGUI_ALIGN_CENTER,
+    egui_view_nav_panel_fit_text_to_width(local->meta_font, egui_view_nav_panel_get_badge_text(item), badge_label, sizeof(badge_label), item_region->size.width - 4, 4);
+    egui_view_nav_panel_draw_text(local->meta_font, self, badge_label, item_region, EGUI_ALIGN_CENTER,
                                   is_selected ? accent_color : text_color);
 }
 
 static void egui_view_nav_panel_on_draw(egui_view_t *self)
 {
     EGUI_LOCAL_INIT(egui_view_nav_panel_t);
+    char header_label[48];
+    char footer_badge_label[16];
+    char footer_label[48];
     egui_region_t region;
     egui_view_nav_panel_metrics_t metrics;
     egui_color_t surface_color = local->surface_color;
@@ -492,7 +642,8 @@ static void egui_view_nav_panel_on_draw(egui_view_t *self)
 
     if (metrics.show_header)
     {
-        egui_view_nav_panel_draw_text(local->meta_font, self, local->header_text, &metrics.header_region, EGUI_ALIGN_LEFT, muted_text_color);
+        egui_view_nav_panel_fit_text_to_width(local->meta_font, local->header_text, header_label, sizeof(header_label), metrics.header_region.size.width, 4);
+        egui_view_nav_panel_draw_text(local->meta_font, self, header_label, &metrics.header_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, muted_text_color);
     }
 
     for (i = 0; i < metrics.visible_item_count; ++i)
@@ -522,7 +673,7 @@ static void egui_view_nav_panel_on_draw(egui_view_t *self)
                                   metrics.footer_region.location.x + metrics.footer_region.size.width, metrics.footer_region.location.y - 2, 1, border_color,
                                   egui_color_alpha_mix(self->alpha, local->read_only_mode ? 10 : 16));
 
-            if (local->footer_badge != NULL && local->footer_badge[0] != '\0')
+            if (egui_view_nav_panel_has_text(local->footer_badge))
             {
                 egui_region_t badge_region = metrics.footer_region;
 
@@ -536,19 +687,24 @@ static void egui_view_nav_panel_on_draw(egui_view_t *self)
                 egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, badge_region.location.x, badge_region.location.y, badge_region.size.width, badge_region.size.height,
                                                  EGUI_VIEW_NAV_PANEL_STANDARD_BADGE_RADIUS, 1, border_color,
                                                  egui_color_alpha_mix(self->alpha, local->read_only_mode ? 22 : EGUI_VIEW_NAV_PANEL_STANDARD_BADGE_BORDER_ALPHA));
-                egui_view_nav_panel_draw_text(local->meta_font, self, local->footer_badge, &badge_region, EGUI_ALIGN_CENTER, muted_text_color);
+                egui_view_nav_panel_fit_text_to_width(local->meta_font, local->footer_badge, footer_badge_label, sizeof(footer_badge_label), badge_region.size.width - 4, 4);
+                egui_view_nav_panel_draw_text(local->meta_font, self, footer_badge_label, &badge_region, EGUI_ALIGN_CENTER, muted_text_color);
             }
 
-            if (local->footer_text != NULL)
+            if (egui_view_nav_panel_has_text(local->footer_text))
             {
                 egui_region_t text_region = metrics.footer_region;
 
-                text_region.location.x += EGUI_VIEW_NAV_PANEL_STANDARD_BADGE_WIDTH + 8;
-                text_region.size.width -= EGUI_VIEW_NAV_PANEL_STANDARD_BADGE_WIDTH + 8;
-                egui_view_nav_panel_draw_text(local->meta_font, self, local->footer_text, &text_region, EGUI_ALIGN_LEFT, muted_text_color);
+                if (egui_view_nav_panel_has_text(local->footer_badge))
+                {
+                    text_region.location.x += EGUI_VIEW_NAV_PANEL_STANDARD_BADGE_WIDTH + 8;
+                    text_region.size.width -= EGUI_VIEW_NAV_PANEL_STANDARD_BADGE_WIDTH + 8;
+                }
+                egui_view_nav_panel_fit_text_to_width(local->meta_font, local->footer_text, footer_label, sizeof(footer_label), text_region.size.width, 4);
+                egui_view_nav_panel_draw_text(local->meta_font, self, footer_label, &text_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, muted_text_color);
             }
         }
-        else if (local->footer_badge != NULL && local->footer_badge[0] != '\0')
+        else if (egui_view_nav_panel_has_text(local->footer_badge))
         {
             egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.footer_region.location.x, metrics.footer_region.location.y, metrics.footer_region.size.width,
                                                   metrics.footer_region.size.height, EGUI_VIEW_NAV_PANEL_COMPACT_ROW_RADIUS,
@@ -557,7 +713,8 @@ static void egui_view_nav_panel_on_draw(egui_view_t *self)
             egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics.footer_region.location.x, metrics.footer_region.location.y, metrics.footer_region.size.width,
                                              metrics.footer_region.size.height, EGUI_VIEW_NAV_PANEL_COMPACT_ROW_RADIUS, 1, border_color,
                                              egui_color_alpha_mix(self->alpha, local->read_only_mode ? 22 : EGUI_VIEW_NAV_PANEL_COMPACT_BADGE_BORDER_ALPHA));
-            egui_view_nav_panel_draw_text(local->meta_font, self, local->footer_badge, &metrics.footer_region, EGUI_ALIGN_CENTER, muted_text_color);
+            egui_view_nav_panel_fit_text_to_width(local->meta_font, local->footer_badge, footer_badge_label, sizeof(footer_badge_label), metrics.footer_region.size.width - 4, 4);
+            egui_view_nav_panel_draw_text(local->meta_font, self, footer_badge_label, &metrics.footer_region, EGUI_ALIGN_CENTER, muted_text_color);
         }
     }
 }

@@ -249,6 +249,32 @@ static void test_nav_panel_setters_clear_pressed_state_and_helpers(void)
     EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(sample, EGUI_COLOR_DARK_GREY, 68).full, egui_view_nav_panel_mix_disabled(sample).full);
 }
 
+static void test_nav_panel_internal_helpers_cover_text_fitting(void)
+{
+    char label[24];
+
+    setup_nav_panel();
+
+    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_nav_panel_has_text(NULL));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_nav_panel_has_text(""));
+    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_nav_panel_has_text("Settings"));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_nav_panel_text_len(NULL));
+    EGUI_TEST_ASSERT_EQUAL_INT(10, egui_view_nav_panel_text_len("Operations"));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_nav_panel_measure_text_width(NULL, "Settings"));
+
+    egui_view_nav_panel_copy_elided(label, sizeof(label), "Documents", 6);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Doc...", label) == 0);
+    egui_view_nav_panel_copy_elided(label, sizeof(label), "Mode", 3);
+    EGUI_TEST_ASSERT_TRUE(strcmp("...", label) == 0);
+
+    egui_view_nav_panel_fit_text_to_width(NULL, "Operations", label, sizeof(label), 28, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Oper...", label) == 0);
+    egui_view_nav_panel_fit_text_to_width(NULL, "Operations", label, sizeof(label), 12, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("...", label) == 0);
+    egui_view_nav_panel_fit_text_to_width(NULL, "Ready", label, sizeof(label), 20, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Ready", label) == 0);
+}
+
 static void test_nav_panel_metrics_and_hit_testing(void)
 {
     egui_view_nav_panel_metrics_t metrics;
@@ -453,6 +479,7 @@ void test_nav_panel_run(void)
     EGUI_TEST_SUITE_BEGIN(nav_panel);
     EGUI_TEST_RUN(test_nav_panel_set_items_and_current_index_clamp);
     EGUI_TEST_RUN(test_nav_panel_setters_clear_pressed_state_and_helpers);
+    EGUI_TEST_RUN(test_nav_panel_internal_helpers_cover_text_fitting);
     EGUI_TEST_RUN(test_nav_panel_metrics_and_hit_testing);
     EGUI_TEST_RUN(test_nav_panel_touch_same_target_release_and_cancel_behavior);
     EGUI_TEST_RUN(test_nav_panel_keyboard_navigation);
