@@ -60,6 +60,136 @@ static egui_dim_t pips_pager_measure_font_line_height(const egui_font_t *font)
     return height;
 }
 
+static egui_dim_t pips_pager_measure_text_width(const egui_font_t *font, const char *text)
+{
+    egui_dim_t width = 0;
+    egui_dim_t height = 0;
+
+    if (font == NULL || text == NULL || text[0] == '\0' || font->api == NULL || font->api->get_str_size == NULL)
+    {
+        return 0;
+    }
+
+    font->api->get_str_size(font, text, 0, 0, &width, &height);
+    return width;
+}
+
+static uint8_t pips_pager_text_len(const char *text)
+{
+    uint8_t length = 0;
+
+    if (text == NULL)
+    {
+        return 0;
+    }
+
+    while (text[length] != '\0')
+    {
+        length++;
+    }
+
+    return length;
+}
+
+static void pips_pager_copy_elided(char *buffer, uint8_t buffer_size, const char *text, uint8_t max_chars)
+{
+    uint8_t copy_length;
+    uint8_t index;
+    uint8_t length;
+
+    if (buffer == NULL || buffer_size == 0)
+    {
+        return;
+    }
+
+    buffer[0] = '\0';
+    if (text == NULL || max_chars == 0)
+    {
+        return;
+    }
+
+    length = pips_pager_text_len(text);
+    if (length <= max_chars)
+    {
+        copy_length = length;
+        if (copy_length >= buffer_size)
+        {
+            copy_length = buffer_size - 1;
+        }
+        for (index = 0; index < copy_length; ++index)
+        {
+            buffer[index] = text[index];
+        }
+        buffer[copy_length] = '\0';
+        return;
+    }
+
+    if (max_chars <= 3)
+    {
+        copy_length = max_chars;
+        if (copy_length >= buffer_size)
+        {
+            copy_length = buffer_size - 1;
+        }
+        for (index = 0; index < copy_length; ++index)
+        {
+            buffer[index] = '.';
+        }
+        buffer[copy_length] = '\0';
+        return;
+    }
+
+    copy_length = max_chars - 3;
+    if (copy_length > buffer_size - 4)
+    {
+        copy_length = buffer_size - 4;
+    }
+    for (index = 0; index < copy_length; ++index)
+    {
+        buffer[index] = text[index];
+    }
+    buffer[copy_length] = '.';
+    buffer[copy_length + 1] = '.';
+    buffer[copy_length + 2] = '.';
+    buffer[copy_length + 3] = '\0';
+}
+
+static void pips_pager_fit_text_to_width(const egui_font_t *font, const char *text, char *buffer, uint8_t buffer_size, egui_dim_t max_width,
+                                         egui_dim_t fallback_char_width)
+{
+    uint8_t max_chars;
+
+    if (buffer == NULL || buffer_size == 0)
+    {
+        return;
+    }
+
+    buffer[0] = '\0';
+    if (!pips_pager_has_text(text) || max_width <= 0)
+    {
+        return;
+    }
+
+    max_chars = pips_pager_text_len(text);
+    pips_pager_copy_elided(buffer, buffer_size, text, max_chars);
+    while (max_chars > 0)
+    {
+        egui_dim_t text_width = pips_pager_measure_text_width(font, buffer);
+
+        if (text_width <= 0)
+        {
+            text_width = (egui_dim_t)pips_pager_text_len(buffer) * fallback_char_width;
+        }
+        if (text_width <= max_width)
+        {
+            break;
+        }
+
+        max_chars--;
+        pips_pager_copy_elided(buffer, buffer_size, text, max_chars);
+    }
+}
+
 static uint8_t pips_pager_clear_pressed_state(egui_view_t *self, egui_view_pips_pager_t *local)
 {
     uint8_t was_pressed = self->is_pressed ? 1 : 0;
@@ -718,7 +848,7 @@ static void pips_pager_draw_text(const egui_font_t *font, egui_view_t *self, con
 {
     egui_region_t draw_region = *region;
 
-    if (!pips_pager_has_text(text))
+    if (font == NULL || !pips_pager_has_text(text) || region->size.width <= 0 || region->size.height <= 0)
     {
         return;
     }
@@ -735,6 +865,8 @@ static void pips_pager_draw_focus(egui_view_t *self, const egui_region_t *region
 static void egui_view_pips_pager_on_draw(egui_view_t *self)
 {
     EGUI_LOCAL_INIT(egui_view_pips_pager_t);
+    char title_text[24];
+    char helper_text[48];
     egui_view_pips_pager_metrics_t metrics;
     egui_region_t pip_region;
     egui_color_t surface_color = local->surface_color;
@@ -742,6 +874,7 @@ static void egui_view_pips_pager_on_draw(egui_view_t *self)
     egui_color_t text_color = local->text_color;
     egui_color_t muted_text_color = local->muted_text_color;
     egui_color_t accent_color = local->accent_color;
+    egui_dim_t fallback_char_width = local->compact_mode ? 4 : 5;
     egui_dim_t outer_radius = local->compact_mode ? PP_COMPACT_RADIUS : PP_STD_RADIUS;
     egui_dim_t button_radius = local->compact_mode ? 5 : 7;
     egui_dim_t active_w = local->compact_mode ? PP_COMPACT_ACTIVE_W : PP_STD_ACTIVE_W;
@@ -765,8 +898,10 @@ static void egui_view_pips_pager_on_draw(egui_view_t *self)
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, self->region_screen.location.x, self->region_screen.location.y, self->region_screen.size.width,
                                      self->region_screen.size.height, outer_radius, 1, border_color, egui_color_alpha_mix(self->alpha, 44));
 
-    pips_pager_draw_text(local->meta_font, self, local->title, &metrics.title_region, muted_text_color);
-    pips_pager_draw_text(local->meta_font, self, local->helper, &metrics.helper_region, muted_text_color);
+    pips_pager_fit_text_to_width(local->meta_font, local->title, title_text, sizeof(title_text), metrics.title_region.size.width, fallback_char_width);
+    pips_pager_fit_text_to_width(local->meta_font, local->helper, helper_text, sizeof(helper_text), metrics.helper_region.size.width, fallback_char_width);
+    pips_pager_draw_text(local->meta_font, self, title_text, &metrics.title_region, muted_text_color);
+    pips_pager_draw_text(local->meta_font, self, helper_text, &metrics.helper_region, muted_text_color);
 
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.previous_region.location.x, metrics.previous_region.location.y, metrics.previous_region.size.width,
                                           metrics.previous_region.size.height, button_radius,

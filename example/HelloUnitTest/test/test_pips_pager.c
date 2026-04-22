@@ -153,6 +153,27 @@ static void assert_pressed_cleared(egui_view_pips_pager_t *pager)
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(pager)->is_pressed);
 }
 
+static void test_pips_pager_internal_helpers_cover_text_fitting(void)
+{
+    char label[24];
+
+    EGUI_TEST_ASSERT_EQUAL_INT(0, pips_pager_text_len(NULL));
+    EGUI_TEST_ASSERT_EQUAL_INT(10, pips_pager_text_len("Operations"));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, pips_pager_measure_text_width(NULL, "Ready"));
+
+    pips_pager_copy_elided(label, sizeof(label), "Documents", 6);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Doc...", label) == 0);
+    pips_pager_copy_elided(label, sizeof(label), "Mode", 3);
+    EGUI_TEST_ASSERT_TRUE(strcmp("...", label) == 0);
+
+    pips_pager_fit_text_to_width(NULL, "Operations", label, sizeof(label), 28, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Oper...", label) == 0);
+    pips_pager_fit_text_to_width(NULL, "Operations", label, sizeof(label), 12, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("...", label) == 0);
+    pips_pager_fit_text_to_width(NULL, "Ready", label, sizeof(label), 20, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Ready", label) == 0);
+}
+
 static void test_pips_pager_clamps_metrics_and_regions(void)
 {
     egui_region_t region;
@@ -486,6 +507,7 @@ static void test_pips_pager_static_preview_consumes_input_and_keeps_state(void)
 void test_pips_pager_run(void)
 {
     EGUI_TEST_SUITE_BEGIN(pips_pager);
+    EGUI_TEST_RUN(test_pips_pager_internal_helpers_cover_text_fitting);
     EGUI_TEST_RUN(test_pips_pager_clamps_metrics_and_regions);
     EGUI_TEST_RUN(test_pips_pager_setters_clear_pressed_state);
     EGUI_TEST_RUN(test_pips_pager_tab_and_keyboard_navigation);
