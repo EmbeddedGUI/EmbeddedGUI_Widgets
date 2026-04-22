@@ -350,6 +350,31 @@ static void test_rich_edit_box_set_documents_clamp_and_defaults(void)
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_rich_edit_box_get_text_length(EGUI_VIEW_OF(&rich_edit_box_test_widget)));
 }
 
+static void test_rich_edit_box_wrap_prefers_word_boundaries(void)
+{
+    const egui_font_t *font;
+    const char *next;
+    int line_len = 0;
+    egui_dim_t line_width = 0;
+
+    rich_edit_box_setup_widget(rich_edit_box_documents, EGUI_ARRAY_SIZE(rich_edit_box_documents));
+    font = rich_edit_box_test_widget.font;
+
+    EGUI_TEST_ASSERT_TRUE(font != NULL);
+
+    next = rich_edit_box_get_next_line(font, "scan first", rich_edit_box_measure_text_width(font, "scan f"), &line_len, &line_width);
+    EGUI_TEST_ASSERT_TRUE(next != NULL);
+    EGUI_TEST_ASSERT_TRUE(strcmp(next, "first") == 0);
+    EGUI_TEST_ASSERT_EQUAL_INT(4, line_len);
+    EGUI_TEST_ASSERT_EQUAL_INT(rich_edit_box_measure_text_width(font, "scan"), line_width);
+
+    next = rich_edit_box_get_next_line(font, "scan-first", rich_edit_box_measure_text_width(font, "scan-f"), &line_len, &line_width);
+    EGUI_TEST_ASSERT_TRUE(next != NULL);
+    EGUI_TEST_ASSERT_TRUE(strcmp(next, "first") == 0);
+    EGUI_TEST_ASSERT_EQUAL_INT(5, line_len);
+    EGUI_TEST_ASSERT_EQUAL_INT(rich_edit_box_measure_text_width(font, "scan-"), line_width);
+}
+
 static void test_rich_edit_box_setters_clear_pressed_and_update_state(void)
 {
     rich_edit_box_setup_widget(rich_edit_box_documents, EGUI_ARRAY_SIZE(rich_edit_box_documents));
@@ -547,6 +572,7 @@ void test_rich_edit_box_run(void)
 {
     EGUI_TEST_SUITE_BEGIN(rich_edit_box);
     EGUI_TEST_RUN(test_rich_edit_box_set_documents_clamp_and_defaults);
+    EGUI_TEST_RUN(test_rich_edit_box_wrap_prefers_word_boundaries);
     EGUI_TEST_RUN(test_rich_edit_box_setters_clear_pressed_and_update_state);
     EGUI_TEST_RUN(test_rich_edit_box_regions_apply_and_listener);
     EGUI_TEST_RUN(test_rich_edit_box_touch_same_target_release_and_cancel_behavior);

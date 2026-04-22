@@ -479,11 +479,33 @@ static void rich_edit_box_get_char_metrics(const egui_font_t *font, const char *
     }
 }
 
+static uint8_t rich_edit_box_is_space_char(char c)
+{
+    return (uint8_t)(c == ' ' || c == '\t');
+}
+
+static uint8_t rich_edit_box_is_break_after_char(char c)
+{
+    return (uint8_t)(c == '-' || c == '/');
+}
+
+static const char *rich_edit_box_skip_wrap_prefix(const char *cursor)
+{
+    while (cursor != NULL && (*cursor == '\r' || rich_edit_box_is_space_char(*cursor)))
+    {
+        cursor++;
+    }
+    return cursor;
+}
+
 static const char *rich_edit_box_get_next_line(const egui_font_t *font, const char *text, egui_dim_t max_width, int *out_line_len,
                                                egui_dim_t *out_line_width)
 {
     const char *cursor = text;
+    const char *wrap_line_end = NULL;
+    const char *wrap_next = NULL;
     egui_dim_t line_width = 0;
+    egui_dim_t wrap_line_width = 0;
 
     if (out_line_len != NULL)
     {
@@ -502,6 +524,8 @@ static const char *rich_edit_box_get_next_line(const egui_font_t *font, const ch
     {
         int glyph_bytes = 0;
         egui_dim_t glyph_width = 0;
+        egui_dim_t width_before_glyph = line_width;
+        const char *next_cursor;
 
         if (*cursor == '\r')
         {
@@ -518,14 +542,34 @@ static const char *rich_edit_box_get_next_line(const egui_font_t *font, const ch
         {
             break;
         }
+        next_cursor = cursor + glyph_bytes;
 
         if (max_width > 0 && line_width > 0 && (line_width + glyph_width) > max_width)
         {
+            if (wrap_line_end != NULL && wrap_line_end > text)
+            {
+                cursor = wrap_line_end;
+                line_width = wrap_line_width;
+                break;
+            }
             break;
         }
 
         line_width += glyph_width;
-        cursor += glyph_bytes;
+        if (rich_edit_box_is_space_char(*cursor))
+        {
+            wrap_line_end = cursor;
+            wrap_next = rich_edit_box_skip_wrap_prefix(next_cursor);
+            wrap_line_width = width_before_glyph;
+        }
+        else if (rich_edit_box_is_break_after_char(*cursor))
+        {
+            wrap_line_end = next_cursor;
+            wrap_next = rich_edit_box_skip_wrap_prefix(next_cursor);
+            wrap_line_width = line_width;
+        }
+
+        cursor = next_cursor;
     }
 
     if (out_line_len != NULL)
@@ -544,6 +588,10 @@ static const char *rich_edit_box_get_next_line(const egui_font_t *font, const ch
     if (*cursor == '\0')
     {
         return NULL;
+    }
+    if (wrap_next != NULL && wrap_line_end == cursor)
+    {
+        return wrap_next;
     }
     return cursor;
 }
