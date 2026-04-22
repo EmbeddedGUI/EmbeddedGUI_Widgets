@@ -102,6 +102,122 @@ static egui_dim_t egui_view_dialog_sheet_measure_text_width(const egui_font_t *f
     return text_width;
 }
 
+static uint8_t egui_view_dialog_sheet_text_len(const char *text)
+{
+    uint8_t length = 0;
+
+    if (text == NULL)
+    {
+        return 0;
+    }
+
+    while (text[length] != '\0')
+    {
+        length++;
+    }
+
+    return length;
+}
+
+static void egui_view_dialog_sheet_copy_elided(char *buffer, uint8_t buffer_size, const char *text, uint8_t max_chars)
+{
+    uint8_t copy_length;
+    uint8_t index;
+    uint8_t length;
+
+    if (buffer == NULL || buffer_size == 0)
+    {
+        return;
+    }
+
+    buffer[0] = '\0';
+    if (text == NULL || max_chars == 0)
+    {
+        return;
+    }
+
+    length = egui_view_dialog_sheet_text_len(text);
+    if (length <= max_chars)
+    {
+        copy_length = length;
+        if (copy_length >= buffer_size)
+        {
+            copy_length = buffer_size - 1;
+        }
+        for (index = 0; index < copy_length; ++index)
+        {
+            buffer[index] = text[index];
+        }
+        buffer[copy_length] = '\0';
+        return;
+    }
+
+    if (max_chars <= 3)
+    {
+        copy_length = max_chars;
+        if (copy_length >= buffer_size)
+        {
+            copy_length = buffer_size - 1;
+        }
+        for (index = 0; index < copy_length; ++index)
+        {
+            buffer[index] = '.';
+        }
+        buffer[copy_length] = '\0';
+        return;
+    }
+
+    copy_length = max_chars - 3;
+    if (copy_length > buffer_size - 4)
+    {
+        copy_length = buffer_size - 4;
+    }
+    for (index = 0; index < copy_length; ++index)
+    {
+        buffer[index] = text[index];
+    }
+    buffer[copy_length] = '.';
+    buffer[copy_length + 1] = '.';
+    buffer[copy_length + 2] = '.';
+    buffer[copy_length + 3] = '\0';
+}
+
+static void egui_view_dialog_sheet_fit_text_to_width(const egui_font_t *font, const char *text, char *buffer, uint8_t buffer_size, egui_dim_t max_width,
+                                                     egui_dim_t fallback_char_width)
+{
+    uint8_t max_chars;
+
+    if (buffer == NULL || buffer_size == 0)
+    {
+        return;
+    }
+
+    buffer[0] = '\0';
+    if (text == NULL || text[0] == '\0' || max_width <= 0)
+    {
+        return;
+    }
+
+    max_chars = egui_view_dialog_sheet_text_len(text);
+    egui_view_dialog_sheet_copy_elided(buffer, buffer_size, text, max_chars);
+    while (max_chars > 0)
+    {
+        egui_dim_t text_width = egui_view_dialog_sheet_measure_text_width(font, buffer);
+
+        if (text_width <= 0)
+        {
+            text_width = (egui_dim_t)egui_view_dialog_sheet_text_len(buffer) * fallback_char_width;
+        }
+        if (text_width <= max_width)
+        {
+            break;
+        }
+
+        max_chars--;
+        egui_view_dialog_sheet_copy_elided(buffer, buffer_size, text, max_chars);
+    }
+}
+
 static egui_dim_t egui_view_dialog_sheet_meta_height(egui_view_dialog_sheet_t *local, egui_dim_t fallback)
 {
     egui_dim_t line_height = egui_view_dialog_sheet_measure_font_line_height(local->meta_font);
@@ -236,7 +352,7 @@ static void egui_view_dialog_sheet_draw_text(const egui_font_t *font, egui_view_
 {
     egui_region_t draw_region = *region;
 
-    if (text == NULL || text[0] == '\0' || region->size.width <= 0 || region->size.height <= 0)
+    if (font == NULL || text == NULL || text[0] == '\0' || region->size.width <= 0 || region->size.height <= 0)
     {
         return;
     }
@@ -248,12 +364,15 @@ static void egui_view_dialog_sheet_draw_button(egui_view_dialog_sheet_t *local, 
                                                egui_color_t tone_color, egui_color_t border_color, egui_color_t idle_text_color, uint8_t focused,
                                                uint8_t pressed, uint8_t enabled)
 {
+    char button_text[32];
     egui_color_t fill_color;
     egui_color_t draw_border;
     egui_color_t text_color;
     egui_alpha_t fill_alpha;
     egui_alpha_t border_alpha;
     egui_dim_t radius = local->compact_mode ? 6 : 7;
+    egui_dim_t fallback_char_width = local->compact_mode ? 4 : 5;
+    egui_dim_t button_text_width = region->size.width - (local->compact_mode ? 8 : 10);
 
     if (region->size.width <= 0 || region->size.height <= 0 || text == NULL || text[0] == '\0')
     {
@@ -299,7 +418,8 @@ static void egui_view_dialog_sheet_draw_button(egui_view_dialog_sheet_t *local, 
                                           egui_color_alpha_mix(self->alpha, fill_alpha));
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, region->location.x, region->location.y, region->size.width, region->size.height, radius, 1, draw_border,
                                      egui_color_alpha_mix(self->alpha, border_alpha));
-    egui_view_dialog_sheet_draw_text(local->meta_font, self, text, region, EGUI_ALIGN_CENTER, text_color);
+    egui_view_dialog_sheet_fit_text_to_width(local->meta_font, text, button_text, sizeof(button_text), button_text_width, fallback_char_width);
+    egui_view_dialog_sheet_draw_text(local->meta_font, self, button_text, region, EGUI_ALIGN_CENTER, text_color);
 }
 
 static void egui_view_dialog_sheet_get_metrics(egui_view_dialog_sheet_t *local, egui_view_t *self, uint8_t show_secondary, uint8_t show_close,
@@ -663,6 +783,11 @@ void egui_view_dialog_sheet_set_palette(egui_view_t *self, egui_color_t surface_
 static void egui_view_dialog_sheet_on_draw(egui_view_t *self)
 {
     EGUI_LOCAL_INIT(egui_view_dialog_sheet_t);
+    char eyebrow_text[24];
+    char title_text_buf[48];
+    char body_text_buf[64];
+    char footer_text_buf[32];
+    char tag_text_buf[24];
     const egui_view_dialog_sheet_snapshot_t *snapshot;
     egui_view_dialog_sheet_metrics_t metrics;
     egui_color_t tone_color;
@@ -689,6 +814,7 @@ static void egui_view_dialog_sheet_on_draw(egui_view_t *self)
     uint8_t show_secondary;
     uint8_t show_close;
     uint8_t enabled;
+    egui_dim_t fallback_char_width = local->compact_mode ? 4 : 5;
     egui_dim_t radius = local->compact_mode ? DIALOG_SHEET_COMPACT_RADIUS : DIALOG_SHEET_STANDARD_RADIUS;
 
     snapshot = egui_view_dialog_sheet_get_snapshot(local);
@@ -821,11 +947,17 @@ static void egui_view_dialog_sheet_on_draw(egui_view_t *self)
 
     if (!local->compact_mode)
     {
-        egui_view_dialog_sheet_draw_text(local->meta_font, self, snapshot->eyebrow, &metrics.eyebrow_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER,
+        egui_view_dialog_sheet_fit_text_to_width(local->meta_font, snapshot->eyebrow, eyebrow_text, sizeof(eyebrow_text), metrics.eyebrow_region.size.width,
+                                                 fallback_char_width);
+        egui_view_dialog_sheet_draw_text(local->meta_font, self, eyebrow_text, &metrics.eyebrow_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER,
                                          eyebrow_color);
     }
-    egui_view_dialog_sheet_draw_text(local->font, self, snapshot->title, &metrics.title_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, title_color);
-    egui_view_dialog_sheet_draw_text(local->font, self, snapshot->body, &metrics.body_region, EGUI_ALIGN_LEFT, body_color);
+    egui_view_dialog_sheet_fit_text_to_width(local->font, snapshot->title, title_text_buf, sizeof(title_text_buf), metrics.title_region.size.width,
+                                             fallback_char_width);
+    egui_view_dialog_sheet_draw_text(local->font, self, title_text_buf, &metrics.title_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, title_color);
+    egui_view_dialog_sheet_fit_text_to_width(local->font, snapshot->body, body_text_buf, sizeof(body_text_buf), metrics.body_region.size.width,
+                                             fallback_char_width);
+    egui_view_dialog_sheet_draw_text(local->font, self, body_text_buf, &metrics.body_region, EGUI_ALIGN_LEFT, body_color);
 
     if (show_close && metrics.close_region.size.width > 0)
     {
@@ -853,7 +985,9 @@ static void egui_view_dialog_sheet_on_draw(egui_view_t *self)
             footer_text_draw_region.location.x += summary_pad_x;
             footer_text_draw_region.size.width -= summary_pad_x * 2;
         }
-        egui_view_dialog_sheet_draw_text(local->meta_font, self, snapshot->footer, &footer_text_draw_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER,
+        egui_view_dialog_sheet_fit_text_to_width(local->meta_font, snapshot->footer, footer_text_buf, sizeof(footer_text_buf), footer_text_draw_region.size.width,
+                                                 fallback_char_width);
+        egui_view_dialog_sheet_draw_text(local->meta_font, self, footer_text_buf, &footer_text_draw_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER,
                                          footer_color);
     }
 
@@ -868,7 +1002,9 @@ static void egui_view_dialog_sheet_on_draw(egui_view_t *self)
         egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics.tag_region.location.x, metrics.tag_region.location.y, metrics.tag_region.size.width,
                                          metrics.tag_region.size.height, metrics.tag_region.size.height / 2, 1, tag_border,
                                          egui_color_alpha_mix(self->alpha, tag_border_alpha));
-        egui_view_dialog_sheet_draw_text(local->meta_font, self, snapshot->tag, &metrics.tag_region, EGUI_ALIGN_CENTER, tag_text);
+        egui_view_dialog_sheet_fit_text_to_width(local->meta_font, snapshot->tag, tag_text_buf, sizeof(tag_text_buf),
+                                                 metrics.tag_region.size.width - (local->compact_mode ? 8 : 10), fallback_char_width);
+        egui_view_dialog_sheet_draw_text(local->meta_font, self, tag_text_buf, &metrics.tag_region, EGUI_ALIGN_CENTER, tag_text);
     }
 
     egui_view_dialog_sheet_draw_button(local, self, &metrics.primary_action_region, snapshot->primary_action, tone_color, sheet_border, title_color,

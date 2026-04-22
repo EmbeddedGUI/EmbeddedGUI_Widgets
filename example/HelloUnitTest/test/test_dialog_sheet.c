@@ -683,6 +683,7 @@ static void test_dialog_sheet_static_preview_consumes_input_and_keeps_state(void
 
 static void test_dialog_sheet_internal_helpers_cover_tone_glyph_metrics_and_regions(void)
 {
+    char label[24];
     egui_view_dialog_sheet_metrics_t metrics;
     egui_color_t sample = EGUI_COLOR_HEX(0x123456);
     egui_color_t mixed = egui_view_dialog_sheet_mix_disabled(sample);
@@ -696,6 +697,17 @@ static void test_dialog_sheet_internal_helpers_cover_tone_glyph_metrics_and_regi
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_DIALOG_SHEET_MAX_SNAPSHOTS, egui_view_dialog_sheet_clamp_snapshot_count(9));
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_dialog_sheet_text_len(NULL));
     EGUI_TEST_ASSERT_EQUAL_INT(5, egui_view_dialog_sheet_text_len("Retry"));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_dialog_sheet_measure_text_width(NULL, "Ready"));
+    egui_view_dialog_sheet_copy_elided(label, sizeof(label), "Reconnect", 6);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Rec...", label) == 0);
+    egui_view_dialog_sheet_copy_elided(label, sizeof(label), "Mode", 3);
+    EGUI_TEST_ASSERT_TRUE(strcmp("...", label) == 0);
+    egui_view_dialog_sheet_fit_text_to_width(NULL, "Reconnect", label, sizeof(label), 20, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Re...", label) == 0);
+    egui_view_dialog_sheet_fit_text_to_width(NULL, "Reconnect", label, sizeof(label), 12, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("...", label) == 0);
+    egui_view_dialog_sheet_fit_text_to_width(NULL, "Ready", label, sizeof(label), 20, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Ready", label) == 0);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x666666).full, egui_view_dialog_sheet_tone_color(&test_sheet, EGUI_VIEW_DIALOG_SHEET_TONE_ACCENT).full);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x777777).full, egui_view_dialog_sheet_tone_color(&test_sheet, EGUI_VIEW_DIALOG_SHEET_TONE_SUCCESS).full);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x888888).full, egui_view_dialog_sheet_tone_color(&test_sheet, EGUI_VIEW_DIALOG_SHEET_TONE_WARNING).full);
@@ -724,12 +736,12 @@ static void test_dialog_sheet_internal_helpers_cover_tone_glyph_metrics_and_regi
                                egui_view_dialog_sheet_normalize_action(&g_secondary_only_snapshot, EGUI_VIEW_DIALOG_SHEET_ACTION_PRIMARY));
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_DIALOG_SHEET_ACTION_NONE,
                                egui_view_dialog_sheet_normalize_action(&g_no_action_snapshot, EGUI_VIEW_DIALOG_SHEET_ACTION_PRIMARY));
-    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_dialog_sheet_pill_width(NULL, 0, 40));
-    EGUI_TEST_ASSERT_EQUAL_INT(28, egui_view_dialog_sheet_pill_width("Go", 0, 40));
-    EGUI_TEST_ASSERT_EQUAL_INT(24, egui_view_dialog_sheet_pill_width("Long", 1, 24));
-    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_dialog_sheet_button_width(NULL, 0, 40));
-    EGUI_TEST_ASSERT_EQUAL_INT(34, egui_view_dialog_sheet_button_width("Go", 0, 40));
-    EGUI_TEST_ASSERT_EQUAL_INT(24, egui_view_dialog_sheet_button_width("Long", 1, 24));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_dialog_sheet_pill_width(NULL, NULL, 0, 40));
+    EGUI_TEST_ASSERT_EQUAL_INT(28, egui_view_dialog_sheet_pill_width(test_sheet.meta_font, "Go", 0, 40));
+    EGUI_TEST_ASSERT_EQUAL_INT(24, egui_view_dialog_sheet_pill_width(test_sheet.meta_font, "Long", 1, 24));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_dialog_sheet_button_width(NULL, NULL, 0, 40));
+    EGUI_TEST_ASSERT_EQUAL_INT(34, egui_view_dialog_sheet_button_width(test_sheet.meta_font, "Go", 0, 40));
+    EGUI_TEST_ASSERT_EQUAL_INT(24, egui_view_dialog_sheet_button_width(test_sheet.meta_font, "Long", 1, 24));
     egui_view_dialog_sheet_zero_region(&region);
     EGUI_TEST_ASSERT_EQUAL_INT(0, region.location.x);
     EGUI_TEST_ASSERT_EQUAL_INT(0, region.location.y);
