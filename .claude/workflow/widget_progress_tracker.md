@@ -32,7 +32,9 @@
 
 ## 当前进行中
 
-- 暂无
+- `layout/data_grid`
+  - 开始日期：`2026-04-22`
+  - 目标：检查 header / title / summary / column title / footer 等固定窄区文本，消除截断和覆盖。
 
 ## 当前保留的 Reference 主线控件
 
