@@ -159,6 +159,11 @@
 
 ## 最近完成的收口动作
 
+- `2026-04-22`
+  - 修复 `layout/uniform_grid` 文本截断：在不调整既有页面结构和单元格尺寸的前提下，为 `example/HelloCustomWidgets/layout/uniform_grid/egui_view_uniform_grid.c` 新增 `uniform_grid_copy_elided()` 与 `uniform_grid_fit_text_to_width()`，把 snapshot 的 `header / title / summary / footer` 以及 cell 的 `badge / title / meta / body` 全部改成“按宽度拟合后再绘制”，避免窄列和 pill 区直接裁字。
+  - `example/HelloUnitTest/test/test_uniform_grid.inc` 补齐 helper 覆盖，新增 `text_len / pill_width / copy_elided / fit_text_to_width` 回归；已通过 `make all APP=HelloCustomWidgets APP_SUB=layout/uniform_grid PORT=pc`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category layout`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub layout/uniform_grid --timeout 10 --keep-screenshots` 与 `python scripts/code_runtime_check.py --app HelloCustomWidgets --category layout --bits64`。
+  - 当前环境再次执行 `make all APP=HelloUnitTest PORT=pc_test` 仍失败于仓库既有 `example/HelloUnitTest/test/test_card_control.c` 参数不匹配基线，和本轮 `uniform_grid` 修复无关；layout 分类 runtime `29 / 29` 保持通过，`HelloCustomWidgets_layout_uniform_grid` 本轮单控件 runtime 也已重新通过。
+
 - `2026-04-19`
   - 再次收口 `display/path_icon` reference 控件：在不修改 `sdk/EmbeddedGUI`、不改动既有示例实现和单测逻辑的前提下，把 README 从旧版 finalize 章节顺序继续收口到最新模板口径，继续保留主区默认 `Bookmark`、`Heart` 与 `Send` 这条 `PathIcon` reference 轨道，最终稳定帧回到默认 `Bookmark`；底部 `subtle / accent` preview 继续保持静态 reference 对照。
   - `example/HelloCustomWidgets/display/path_icon/test.c` 与 `example/HelloUnitTest/test/test_path_icon.c` 已保持统一 finalize 模板，无需再改录制轨道或交互实现；`example/HelloCustomWidgets/display/path_icon/readme.md` 已按当前实现重排为 `## 1` 至 `## 14` 的 finalize 章节，补齐 `## 7. 交互语义与单测口径`、`## 8. 录制动作设计`、`## 10. 验收重点`、`## 11. 截图复核口径`、`## 13. 本轮保留与删减` 与 `## 14. 当前验收结果`，并把 README 收口到 `2026-04-19` 口径；`.claude/workflow/widget_progress_tracker.md` 同步登记本轮 README 收口与复核结果；`HelloUnitTest` 本轮沿用已归档 unit 日志复核，未新增实现改动。
