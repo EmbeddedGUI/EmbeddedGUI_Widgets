@@ -80,9 +80,89 @@ static const egui_view_teaching_tip_snapshot_t *egui_view_teaching_tip_get_snaps
     return &local->snapshots[local->current_snapshot];
 }
 
+static uint8_t egui_view_teaching_tip_text_len(const char *text)
+{
+    uint8_t length = 0;
+
+    if (text == NULL)
+    {
+        return 0;
+    }
+
+    while (text[length] != '\0')
+    {
+        length++;
+    }
+
+    return length;
+}
+
 static uint8_t egui_view_teaching_tip_has_text(const char *text)
 {
     return (text != NULL && text[0] != '\0') ? 1 : 0;
+}
+
+static void egui_view_teaching_tip_copy_elided(char *buffer, uint8_t buffer_size, const char *text, uint8_t max_chars)
+{
+    uint8_t copy_length;
+    uint8_t index;
+    uint8_t length;
+
+    if (buffer == NULL || buffer_size == 0)
+    {
+        return;
+    }
+
+    buffer[0] = '\0';
+    if (text == NULL || max_chars == 0)
+    {
+        return;
+    }
+
+    length = egui_view_teaching_tip_text_len(text);
+    if (length <= max_chars)
+    {
+        copy_length = length;
+        if (copy_length >= buffer_size)
+        {
+            copy_length = buffer_size - 1;
+        }
+        for (index = 0; index < copy_length; index++)
+        {
+            buffer[index] = text[index];
+        }
+        buffer[copy_length] = '\0';
+        return;
+    }
+
+    if (max_chars <= 3)
+    {
+        copy_length = max_chars;
+        if (copy_length >= buffer_size)
+        {
+            copy_length = buffer_size - 1;
+        }
+        for (index = 0; index < copy_length; index++)
+        {
+            buffer[index] = '.';
+        }
+        buffer[copy_length] = '\0';
+        return;
+    }
+
+    copy_length = max_chars - 3;
+    if (copy_length > buffer_size - 4)
+    {
+        copy_length = buffer_size - 4;
+    }
+    for (index = 0; index < copy_length; index++)
+    {
+        buffer[index] = text[index];
+    }
+    buffer[copy_length] = '.';
+    buffer[copy_length + 1] = '.';
+    buffer[copy_length + 2] = '.';
+    buffer[copy_length + 3] = '\0';
 }
 
 static egui_dim_t egui_view_teaching_tip_measure_font_line_height(const egui_font_t *font)
@@ -111,6 +191,42 @@ static egui_dim_t egui_view_teaching_tip_measure_text_width(const egui_font_t *f
 
     font->api->get_str_size(font, text, 0, 0, &text_width, &dummy_height);
     return text_width;
+}
+
+static void egui_view_teaching_tip_fit_text_to_width(const egui_font_t *font, const char *text, char *buffer, uint8_t buffer_size, egui_dim_t max_width,
+                                                     egui_dim_t fallback_char_width)
+{
+    uint8_t max_chars;
+
+    if (buffer == NULL || buffer_size == 0)
+    {
+        return;
+    }
+
+    buffer[0] = '\0';
+    if (text == NULL || text[0] == '\0' || max_width <= 0)
+    {
+        return;
+    }
+
+    max_chars = egui_view_teaching_tip_text_len(text);
+    egui_view_teaching_tip_copy_elided(buffer, buffer_size, text, max_chars);
+    while (max_chars > 0)
+    {
+        egui_dim_t text_width = egui_view_teaching_tip_measure_text_width(font, buffer);
+
+        if (text_width <= 0)
+        {
+            text_width = (egui_dim_t)egui_view_teaching_tip_text_len(buffer) * fallback_char_width;
+        }
+        if (text_width <= max_width)
+        {
+            break;
+        }
+
+        max_chars--;
+        egui_view_teaching_tip_copy_elided(buffer, buffer_size, text, max_chars);
+    }
 }
 
 static egui_dim_t egui_view_teaching_tip_meta_height(egui_view_teaching_tip_t *local, egui_dim_t fallback)
@@ -932,6 +1048,7 @@ static void egui_view_teaching_tip_draw_target(egui_view_t *self, egui_view_teac
                                                const egui_view_teaching_tip_metrics_t *metrics, egui_color_t tone_color, egui_color_t border_color,
                                                egui_color_t text_color)
 {
+    char target_label[32];
     egui_color_t fill_color = egui_rgb_mix(local->surface_color, tone_color, snapshot != NULL && snapshot->open_mode ? 8 : 5);
     egui_color_t outline_color = egui_rgb_mix(border_color, tone_color, 20);
     egui_color_t focus_color = egui_rgb_mix(tone_color, EGUI_COLOR_WHITE, 6);
@@ -986,14 +1103,16 @@ static void egui_view_teaching_tip_draw_target(egui_view_t *self, egui_view_teac
     text_region.location.y = metrics->target_region.location.y;
     text_region.size.width = metrics->target_region.size.width - (text_region.location.x - metrics->target_region.location.x) - 8;
     text_region.size.height = metrics->target_region.size.height;
-    egui_view_teaching_tip_draw_text(local->font, self, snapshot == NULL ? NULL : snapshot->target_label, &text_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER,
-                                     text_color);
+    egui_view_teaching_tip_fit_text_to_width(local->font, snapshot == NULL ? NULL : snapshot->target_label, target_label, sizeof(target_label), text_region.size.width,
+                                             local->compact_mode ? 4 : 5);
+    egui_view_teaching_tip_draw_text(local->font, self, target_label, &text_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, text_color);
 }
 
 static void egui_view_teaching_tip_draw_action(egui_view_t *self, egui_view_teaching_tip_t *local, const egui_region_t *region, const char *label,
                                                egui_color_t tone_color, egui_color_t border_color, egui_color_t text_color, uint8_t emphasized, uint8_t focused,
                                                uint8_t pressed, uint8_t enabled)
 {
+    char action_label[20];
     egui_color_t fill_color = emphasized ? egui_rgb_mix(tone_color, local->surface_color, local->compact_mode ? 32 : 24)
                                          : egui_rgb_mix(local->surface_color, tone_color, focused ? 10 : 5);
     egui_color_t outline_color = emphasized ? egui_rgb_mix(border_color, tone_color, 22) : egui_rgb_mix(border_color, tone_color, focused ? 18 : 12);
@@ -1036,13 +1155,18 @@ static void egui_view_teaching_tip_draw_action(egui_view_t *self, egui_view_teac
         egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, region->location.x + 6, region->location.y + region->size.height - 4, region->size.width - 12, 2, 1,
                                               indicator_color, egui_color_alpha_mix(self->alpha, emphasized ? 68 : 60));
     }
-    egui_view_teaching_tip_draw_text(local->meta_font, self, label, region, EGUI_ALIGN_CENTER, label_color);
+    egui_view_teaching_tip_fit_text_to_width(local->meta_font, label, action_label, sizeof(action_label), region->size.width - 8, local->compact_mode ? 4 : 5);
+    egui_view_teaching_tip_draw_text(local->meta_font, self, action_label, region, EGUI_ALIGN_CENTER, label_color);
 }
 
 static void egui_view_teaching_tip_draw_bubble(egui_view_t *self, egui_view_teaching_tip_t *local, const egui_view_teaching_tip_snapshot_t *snapshot,
                                                const egui_view_teaching_tip_metrics_t *metrics, egui_color_t tone_color, egui_color_t border_color,
                                                egui_color_t text_color, egui_color_t muted_text_color, egui_color_t shadow_color)
 {
+    char eyebrow_label[20];
+    char title_label[32];
+    char body_label[48];
+    char footer_label[24];
     egui_color_t bubble_fill = egui_rgb_mix(local->surface_color, tone_color, local->compact_mode ? 7 : 8);
     egui_color_t bubble_border = egui_rgb_mix(border_color, tone_color, 14);
     egui_color_t body_color =
@@ -1075,17 +1199,21 @@ static void egui_view_teaching_tip_draw_bubble(egui_view_t *self, egui_view_teac
 
     if (metrics->show_eyebrow)
     {
-        egui_view_teaching_tip_draw_text(local->meta_font, self, snapshot->eyebrow, &metrics->eyebrow_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, tone_color);
+        egui_view_teaching_tip_fit_text_to_width(local->meta_font, snapshot->eyebrow, eyebrow_label, sizeof(eyebrow_label), metrics->eyebrow_region.size.width, 4);
+        egui_view_teaching_tip_draw_text(local->meta_font, self, eyebrow_label, &metrics->eyebrow_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, tone_color);
     }
-    egui_view_teaching_tip_draw_text(local->font, self, snapshot->title, &metrics->title_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, text_color);
+    egui_view_teaching_tip_fit_text_to_width(local->font, snapshot->title, title_label, sizeof(title_label), metrics->title_region.size.width, local->compact_mode ? 4 : 5);
+    egui_view_teaching_tip_draw_text(local->font, self, title_label, &metrics->title_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, text_color);
     if (metrics->show_body)
     {
-        egui_view_teaching_tip_draw_text(local->meta_font, self, snapshot->body, &metrics->body_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, body_color);
+        egui_view_teaching_tip_fit_text_to_width(local->meta_font, snapshot->body, body_label, sizeof(body_label), metrics->body_region.size.width, 4);
+        egui_view_teaching_tip_draw_text(local->meta_font, self, body_label, &metrics->body_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, body_color);
     }
 
     if (metrics->show_footer)
     {
-        egui_view_teaching_tip_draw_text(local->meta_font, self, snapshot->footer, &metrics->footer_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, footer_color);
+        egui_view_teaching_tip_fit_text_to_width(local->meta_font, snapshot->footer, footer_label, sizeof(footer_label), metrics->footer_region.size.width, 4);
+        egui_view_teaching_tip_draw_text(local->meta_font, self, footer_label, &metrics->footer_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, footer_color);
     }
     if (!local->compact_mode && metrics->show_primary)
     {
@@ -1136,6 +1264,8 @@ static void egui_view_teaching_tip_draw_closed_hint(egui_view_t *self, egui_view
                                                     const egui_view_teaching_tip_metrics_t *metrics, egui_color_t tone_color, egui_color_t text_color,
                                                     egui_color_t muted_text_color)
 {
+    char title_label[32];
+    char body_label[48];
     const char *hint_body;
     egui_region_t hint_panel_region;
     egui_color_t hint_fill;
@@ -1161,8 +1291,11 @@ static void egui_view_teaching_tip_draw_closed_hint(egui_view_t *self, egui_view
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, hint_panel_region.location.x + hint_panel_region.size.width / 2 - 9, hint_panel_region.location.y + 4, 18, 2, 1,
                                           tone_color, egui_color_alpha_mix(self->alpha, 48));
 
-    egui_view_teaching_tip_draw_text(local->font, self, snapshot->title, &metrics->closed_title_region, EGUI_ALIGN_CENTER, text_color);
-    egui_view_teaching_tip_draw_text(local->meta_font, self, hint_body, &metrics->closed_body_region, EGUI_ALIGN_CENTER,
+    egui_view_teaching_tip_fit_text_to_width(local->font, snapshot->title, title_label, sizeof(title_label), metrics->closed_title_region.size.width,
+                                             local->compact_mode ? 4 : 5);
+    egui_view_teaching_tip_draw_text(local->font, self, title_label, &metrics->closed_title_region, EGUI_ALIGN_CENTER, text_color);
+    egui_view_teaching_tip_fit_text_to_width(local->meta_font, hint_body, body_label, sizeof(body_label), metrics->closed_body_region.size.width, 4);
+    egui_view_teaching_tip_draw_text(local->meta_font, self, body_label, &metrics->closed_body_region, EGUI_ALIGN_CENTER,
                                      egui_rgb_mix(muted_text_color, tone_color, 8));
 }
 static void egui_view_teaching_tip_on_draw(egui_view_t *self)

@@ -435,6 +435,7 @@ static void test_teaching_tip_snapshot_and_part_guards(void)
 
 static void test_teaching_tip_font_palette_and_internal_helpers(void)
 {
+    char label[24];
     uint8_t parts[4];
     egui_color_t sample = EGUI_COLOR_HEX(0x123456);
     egui_color_t mixed = egui_view_teaching_tip_mix_disabled(sample);
@@ -512,6 +513,16 @@ static void test_teaching_tip_font_palette_and_internal_helpers(void)
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_TEACHING_TIP_PART_PRIMARY, parts[2]);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_TEACHING_TIP_PART_CLOSE, parts[3]);
     EGUI_TEST_ASSERT_EQUAL_INT(2, egui_view_teaching_tip_find_part_index(parts, 4, EGUI_VIEW_TEACHING_TIP_PART_PRIMARY));
+    egui_view_teaching_tip_copy_elided(label, sizeof(label), "Documents", 6);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Doc...", label) == 0);
+    egui_view_teaching_tip_copy_elided(label, sizeof(label), "Mode", 3);
+    EGUI_TEST_ASSERT_TRUE(strcmp("...", label) == 0);
+    egui_view_teaching_tip_fit_text_to_width(NULL, "Quick filters", label, sizeof(label), 28, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Quic...", label) == 0);
+    egui_view_teaching_tip_fit_text_to_width(NULL, "Quick filters", label, sizeof(label), 12, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("...", label) == 0);
+    egui_view_teaching_tip_fit_text_to_width(NULL, "Later", label, sizeof(label), 24, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Later", label) == 0);
     EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(sample, EGUI_COLOR_DARK_GREY, 68).full, mixed.full);
 
     egui_view_teaching_tip_set_read_only_mode(EGUI_VIEW_OF(&test_tip), 1);
