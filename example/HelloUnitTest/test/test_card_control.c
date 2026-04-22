@@ -462,6 +462,8 @@ static void test_card_control_static_preview_consumes_input_and_keeps_state(void
 
 static void test_card_control_internal_helpers(void)
 {
+    char label[32];
+    char short_label[6];
     egui_color_t sample = EGUI_COLOR_HEX(0x123456);
 
     setup_widget(g_snapshots, EGUI_ARRAY_SIZE(g_snapshots));
@@ -472,6 +474,7 @@ static void test_card_control_internal_helpers(void)
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_CARD_CONTROL_MAX_SNAPSHOTS, egui_view_card_control_clamp_snapshot_count(9));
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_card_control_text_len(NULL));
     EGUI_TEST_ASSERT_EQUAL_INT(6, egui_view_card_control_text_len("Review"));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_card_control_measure_text_width(NULL, "Review"));
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_card_control_has_text(NULL));
     EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_card_control_has_text("A"));
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x666666).full,
@@ -483,9 +486,21 @@ static void test_card_control_internal_helpers(void)
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x999999).full,
                                egui_view_card_control_tone_color(&test_widget, EGUI_VIEW_CARD_CONTROL_TONE_NEUTRAL).full);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x666666).full, egui_view_card_control_tone_color(&test_widget, 99).full);
-    EGUI_TEST_ASSERT_EQUAL_INT(24, egui_view_card_control_pill_width("", 1, 24, 60));
-    EGUI_TEST_ASSERT_EQUAL_INT(36, egui_view_card_control_pill_width("AB", 0, 26, 64));
-    EGUI_TEST_ASSERT_EQUAL_INT(32, egui_view_card_control_pill_width("Long label", 1, 20, 32));
+    EGUI_TEST_ASSERT_EQUAL_INT(24, egui_view_card_control_pill_width(NULL, "", 1, 24, 60));
+    EGUI_TEST_ASSERT_EQUAL_INT(36, egui_view_card_control_pill_width(NULL, "AB", 0, 26, 64));
+    EGUI_TEST_ASSERT_EQUAL_INT(32, egui_view_card_control_pill_width(NULL, "Long label", 1, 20, 32));
+    egui_view_card_control_copy_elided(label, sizeof(label), "Workspace flow", 8);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Works...", label) == 0);
+    egui_view_card_control_copy_elided(label, sizeof(label), "WF", 2);
+    EGUI_TEST_ASSERT_TRUE(strcmp("WF", label) == 0);
+    egui_view_card_control_copy_elided(short_label, sizeof(short_label), "Reviewers", 8);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Re...", short_label) == 0);
+    egui_view_card_control_fit_text_to_width(NULL, "Workspace flow", label, sizeof(label), 24, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Wor...", label) == 0);
+    egui_view_card_control_fit_text_to_width(NULL, "Live", label, sizeof(label), 20, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Live", label) == 0);
+    egui_view_card_control_fit_text_to_width(NULL, "Switch affordance remains available", short_label, sizeof(short_label), 20, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Sw...", short_label) == 0);
     EGUI_TEST_ASSERT_TRUE(egui_view_card_control_part_exists(&g_snapshots[0], EGUI_VIEW_CARD_CONTROL_PART_CARD));
     EGUI_TEST_ASSERT_FALSE(egui_view_card_control_part_exists(NULL, EGUI_VIEW_CARD_CONTROL_PART_CARD));
     EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(sample, EGUI_COLOR_DARK_GREY, 68).full, egui_view_card_control_mix_disabled(sample).full);

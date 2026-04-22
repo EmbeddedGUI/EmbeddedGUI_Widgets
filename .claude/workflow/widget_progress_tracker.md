@@ -160,6 +160,13 @@
 ## 最近完成的收口动作
 
 - `2026-04-22`
+  - 收口 `layout/card_control` 文本宽度适配：在 `example/HelloCustomWidgets/layout/card_control/egui_view_card_control.c` 新增 `egui_view_card_control_text_len()`、`egui_view_card_control_copy_elided()` 与 `egui_view_card_control_fit_text_to_width()`，把 `header / icon_text / title / body / control pill / meta` 全部改为按可用宽度拟合后再绘制，并补齐 buffer 边界下的统一省略号策略，消除主卡和底部 preview 固定窄区里的半截字与硬截断。
+  - 修正 `example/HelloUnitTest/test/test_card_control.c` 的 helper 回归：补齐 `measure_text_width / copy_elided / fit_text_to_width` 断言，并把 `egui_view_card_control_pill_width()` 调用更新为当前实现签名，确认本轮没有再为 `card_control` 引入新的单测语法问题。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=layout/card_control PORT=pc`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category layout`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub layout/card_control --timeout 10 --keep-screenshots` 与 `python scripts/code_runtime_check.py --app HelloCustomWidgets --category layout --bits64`，确认本控件渲染正常且 layout 分类 runtime 继续保持 `29 / 29` 通过。
+  - 已人工复核 `runtime_check_output/HelloCustomWidgets_layout_card_control/default/frame_0000.png`、`frame_0003.png` 与 `frame_0008.png`，确认主卡 `header / title / body / meta / control pill` 以及底部 `compact / read only` preview 都已改为省略号拟合，没有再出现半截字、硬截断或额外错位。
+  - `make all APP=HelloUnitTest PORT=pc_test` 当前已不再阻塞于 `example/HelloUnitTest/test/test_card_control.c`；本轮重跑后新的既有基线失败前移到 `example/HelloUnitTest/test/test_command_bar.c` helper 调用签名落后于实现，与本轮 `card_control` 文本宽度适配无关。
+
+- `2026-04-22`
   - 收口 `layout/data_grid` 文本宽度适配：在 `example/HelloCustomWidgets/layout/data_grid/egui_view_data_grid.c` 新增 `egui_view_data_grid_copy_elided()` 与 `egui_view_data_grid_fit_text_to_width()`，把顶部 `header / title / summary / footer`、表头列名以及表格单元格文本全部改为按可用宽度拟合后再绘制，消除主卡和底部 preview 固定窄区里的截断与覆盖。
   - 补齐 `example/HelloUnitTest/test/test_data_grid.c` 的 helper 回归：新增 `test_data_grid_text_helpers()`，覆盖 `text_len / measure_text_width / pill_width / copy_elided / fit_text_to_width` 的基础行为，并确认本轮没有为 `data_grid` 引入新的单测语法问题。
   - 已通过 `@'#include "example/HelloUnitTest/test/test_data_grid.c"'@ | C:/msys64/mingw64/bin/gcc.exe -x c -fsyntax-only -I sdk/EmbeddedGUI/src -I sdk/EmbeddedGUI -I example/HelloUnitTest -I example/HelloCustomWidgets -`、`make all APP=HelloCustomWidgets APP_SUB=layout/data_grid PORT=pc`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category layout`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub layout/data_grid --timeout 10 --keep-screenshots` 与 `python scripts/code_runtime_check.py --app HelloCustomWidgets --category layout --bits64`，确认本控件渲染正常且 layout 分类 runtime 继续保持 `29 / 29` 通过。
