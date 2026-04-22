@@ -160,6 +160,13 @@
 ## 最近完成的收口动作
 
 - `2026-04-22`
+  - 收口 `display/persona_group` 文本宽度适配：在 `example/HelloCustomWidgets/display/persona_group/egui_view_persona_group.c` 新增 `egui_view_persona_group_text_len()`、`egui_view_persona_group_copy_elided()` 与 `egui_view_persona_group_fit_text_to_width()`，把 `eyebrow / title / name / role / summary footer` 全部改为按宽度拟合后再绘制，并为 `footer_width()` 补齐空字体下的字符宽度回退，消除主卡和底部 preview 固定窄区里的半截字风险。
+  - 修正 `example/HelloUnitTest/test/test_persona_group.c` 的 helper 回归：把 `egui_view_persona_group_footer_width()` 调用更新为当前实现签名，并补齐 `measure_text_width / copy_elided / fit_text_to_width` 的边界断言，确认本轮没有再为 `persona_group` 引入新的单测语法问题。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=display/persona_group PORT=pc`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category display`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub display/persona_group --timeout 10 --keep-screenshots` 与 `python scripts/code_runtime_check.py --app HelloCustomWidgets --category display --bits64`，确认本控件渲染正常且 display 分类 runtime 继续保持 `21 / 21` 通过。
+  - 已人工复核 `runtime_check_output/HelloCustomWidgets_display_persona_group/default/frame_0000.png` 与 `frame_0004.png`，确认主卡 `eyebrow / title / name / role / summary footer` 以及底部 `compact / read only` preview 都没有新增半截字、错位或异常省略。
+  - `make all APP=HelloUnitTest PORT=pc_test` 当前已不再阻塞于 `example/HelloUnitTest/test/test_persona_group.c`；本轮重跑后新的既有基线失败前移到 `example/HelloUnitTest/test/test_tab_strip.c` helper 调用签名落后于实现，与本轮 `persona_group` 文本宽度适配无关。
+
+- `2026-04-22`
   - 收口 `input/command_bar` 文本宽度适配：在 `example/HelloCustomWidgets/input/command_bar/egui_view_command_bar.c` 新增 `egui_view_command_bar_copy_elided()` 与 `egui_view_command_bar_fit_text_to_width()`，把 `eyebrow / title / scope / item label / footer` 全部接入按宽度拟合绘制；其中标准命令项额外加了“仅在明显超宽时才省略”的阈值，避免把原本仍可完整显示的 `Clone / Share` 过度缩成单字母省略。
   - 修正 `example/HelloUnitTest/test/test_command_bar.c` 的 helper 回归：把 `measure_scope_width / measure_pill_width / measure_item_width` 调用更新为当前实现签名，并补齐 `measure_text_width / copy_elided / fit_text_to_width` 的边界断言，确认本轮没有再为 `command_bar` 引入新的单测语法问题。
   - 已通过 `make all APP=HelloCustomWidgets APP_SUB=input/command_bar PORT=pc`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category input`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/command_bar --timeout 10 --keep-screenshots` 与 `python scripts/code_runtime_check.py --app HelloCustomWidgets --category input --bits64`，确认本控件渲染正常且 input 分类 runtime 继续保持 `33 / 33` 通过。

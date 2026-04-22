@@ -61,6 +61,23 @@ static uint8_t egui_view_persona_group_has_text(const char *text)
     return text != NULL && text[0] != '\0' ? 1 : 0;
 }
 
+static uint8_t egui_view_persona_group_text_len(const char *text)
+{
+    uint8_t length = 0;
+
+    if (text == NULL)
+    {
+        return 0;
+    }
+
+    while (text[length] != '\0')
+    {
+        length++;
+    }
+
+    return length;
+}
+
 static egui_dim_t egui_view_persona_group_measure_font_line_height(const egui_font_t *font)
 {
     egui_dim_t dummy_width = 0;
@@ -87,6 +104,104 @@ static egui_dim_t egui_view_persona_group_measure_text_width(const egui_font_t *
 
     font->api->get_str_size(font, text, 0, 0, &text_width, &dummy_height);
     return text_width;
+}
+
+static void egui_view_persona_group_copy_elided(char *buffer, uint8_t buffer_size, const char *text, uint8_t max_chars)
+{
+    uint8_t capacity;
+    uint8_t allowed_chars;
+    uint8_t copy_length;
+    uint8_t index;
+    uint8_t length;
+
+    if (buffer == NULL || buffer_size == 0)
+    {
+        return;
+    }
+
+    buffer[0] = '\0';
+    if (text == NULL || max_chars == 0)
+    {
+        return;
+    }
+
+    capacity = buffer_size - 1;
+    length = egui_view_persona_group_text_len(text);
+    if (length <= max_chars && length <= capacity)
+    {
+        for (index = 0; index < length; ++index)
+        {
+            buffer[index] = text[index];
+        }
+        buffer[length] = '\0';
+        return;
+    }
+
+    allowed_chars = max_chars;
+    if (allowed_chars > capacity)
+    {
+        allowed_chars = capacity;
+    }
+    if (allowed_chars == 0)
+    {
+        return;
+    }
+
+    if (allowed_chars <= 3)
+    {
+        for (index = 0; index < allowed_chars; ++index)
+        {
+            buffer[index] = '.';
+        }
+        buffer[allowed_chars] = '\0';
+        return;
+    }
+
+    copy_length = allowed_chars - 3;
+    for (index = 0; index < copy_length; ++index)
+    {
+        buffer[index] = text[index];
+    }
+    buffer[copy_length] = '.';
+    buffer[copy_length + 1] = '.';
+    buffer[copy_length + 2] = '.';
+    buffer[copy_length + 3] = '\0';
+}
+
+static void egui_view_persona_group_fit_text_to_width(const egui_font_t *font, const char *text, char *buffer, uint8_t buffer_size, egui_dim_t max_width,
+                                                      egui_dim_t fallback_char_width)
+{
+    uint8_t max_chars;
+
+    if (buffer == NULL || buffer_size == 0)
+    {
+        return;
+    }
+
+    buffer[0] = '\0';
+    if (text == NULL || text[0] == '\0' || max_width <= 0)
+    {
+        return;
+    }
+
+    max_chars = egui_view_persona_group_text_len(text);
+    egui_view_persona_group_copy_elided(buffer, buffer_size, text, max_chars);
+    while (max_chars > 0)
+    {
+        egui_dim_t text_width = egui_view_persona_group_measure_text_width(font, buffer);
+
+        if (text_width <= 0)
+        {
+            text_width = (egui_dim_t)egui_view_persona_group_text_len(buffer) * fallback_char_width;
+        }
+        if (text_width <= max_width)
+        {
+            break;
+        }
+
+        max_chars--;
+        egui_view_persona_group_copy_elided(buffer, buffer_size, text, max_chars);
+    }
 }
 
 static egui_dim_t egui_view_persona_group_get_eyebrow_height(egui_view_persona_group_t *local)
@@ -228,6 +343,10 @@ static egui_dim_t egui_view_persona_group_footer_width(const egui_font_t *font, 
 {
     egui_dim_t width = (compact_mode ? 18 : 24) + egui_view_persona_group_measure_text_width(font, text);
 
+    if (width <= (compact_mode ? 18 : 24))
+    {
+        width = (compact_mode ? 18 : 24) + egui_view_persona_group_text_len(text) * (compact_mode ? 4 : 5);
+    }
     if (width > max_width)
     {
         width = max_width;
@@ -657,6 +776,11 @@ static void egui_view_persona_group_draw_overflow(egui_view_t *self, egui_view_p
 static void egui_view_persona_group_on_draw(egui_view_t *self)
 {
     EGUI_LOCAL_INIT(egui_view_persona_group_t);
+    char eyebrow_label[16];
+    char title_label[24];
+    char name_label[24];
+    char role_label[24];
+    char summary_label[24];
     const egui_view_persona_group_snapshot_t *snapshot = egui_view_persona_group_get_snapshot(local);
     const egui_view_persona_group_item_t *item = egui_view_persona_group_get_item(local);
     egui_view_persona_group_metrics_t metrics;
@@ -725,9 +849,11 @@ static void egui_view_persona_group_on_draw(egui_view_t *self)
 
     if (!local->compact_mode)
     {
-        egui_view_persona_group_draw_text(local->meta_font, self, snapshot->eyebrow, &metrics.eyebrow_region, EGUI_ALIGN_CENTER, eyebrow_color);
+        egui_view_persona_group_fit_text_to_width(local->meta_font, snapshot->eyebrow, eyebrow_label, sizeof(eyebrow_label), metrics.eyebrow_region.size.width, 4);
+        egui_view_persona_group_draw_text(local->meta_font, self, eyebrow_label, &metrics.eyebrow_region, EGUI_ALIGN_CENTER, eyebrow_color);
     }
-    egui_view_persona_group_draw_text(local->font, self, snapshot->title, &metrics.title_region, EGUI_ALIGN_CENTER, title_color);
+    egui_view_persona_group_fit_text_to_width(local->font, snapshot->title, title_label, sizeof(title_label), metrics.title_region.size.width, local->compact_mode ? 4 : 5);
+    egui_view_persona_group_draw_text(local->font, self, title_label, &metrics.title_region, EGUI_ALIGN_CENTER, title_color);
 
     if (snapshot->overflow_count > 0)
     {
@@ -749,11 +875,13 @@ static void egui_view_persona_group_on_draw(egui_view_t *self)
                                             (uint8_t)(self->is_pressed && local->current_index == local->pressed_index));
     }
 
-    egui_view_persona_group_draw_text(local->font, self, item->name, &metrics.name_region, EGUI_ALIGN_CENTER, title_color);
+    egui_view_persona_group_fit_text_to_width(local->font, item->name, name_label, sizeof(name_label), metrics.name_region.size.width, local->compact_mode ? 4 : 5);
+    egui_view_persona_group_draw_text(local->font, self, name_label, &metrics.name_region, EGUI_ALIGN_CENTER, title_color);
 
     if (!local->compact_mode)
     {
-        egui_view_persona_group_draw_text(local->meta_font, self, item->role, &metrics.role_region, EGUI_ALIGN_CENTER, role_color);
+        egui_view_persona_group_fit_text_to_width(local->meta_font, item->role, role_label, sizeof(role_label), metrics.role_region.size.width, 4);
+        egui_view_persona_group_draw_text(local->meta_font, self, role_label, &metrics.role_region, EGUI_ALIGN_CENTER, role_color);
     }
 
     footer_w = egui_view_persona_group_footer_width(local->meta_font, snapshot->summary, local->compact_mode, metrics.footer_region.size.width);
@@ -764,7 +892,9 @@ static void egui_view_persona_group_on_draw(egui_view_t *self)
                                           text_region.size.height / 2, footer_fill, egui_color_alpha_mix(self->alpha, 80));
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, text_region.location.x, text_region.location.y, text_region.size.width, text_region.size.height,
                                      text_region.size.height / 2, 1, footer_border, egui_color_alpha_mix(self->alpha, 20));
-    egui_view_persona_group_draw_text(local->meta_font, self, snapshot->summary, &text_region, EGUI_ALIGN_CENTER, footer_text);
+    egui_view_persona_group_fit_text_to_width(local->meta_font, snapshot->summary, summary_label, sizeof(summary_label), text_region.size.width - 4,
+                                              local->compact_mode ? 4 : 5);
+    egui_view_persona_group_draw_text(local->meta_font, self, summary_label, &text_region, EGUI_ALIGN_CENTER, footer_text);
 }
 #if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
 static int egui_view_persona_group_on_touch_event(egui_view_t *self, egui_motion_event_t *event)

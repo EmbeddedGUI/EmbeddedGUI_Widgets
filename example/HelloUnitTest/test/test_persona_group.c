@@ -443,6 +443,8 @@ static void test_persona_group_snapshot_and_setters_clear_pressed_state(void)
 
 static void test_persona_group_metrics_hit_testing_and_helpers(void)
 {
+    char label[32];
+    char short_label[6];
     egui_view_persona_group_metrics_t metrics;
     egui_color_t sample = EGUI_COLOR_HEX(0x123456);
     egui_dim_t x1;
@@ -460,6 +462,7 @@ static void test_persona_group_metrics_hit_testing_and_helpers(void)
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_PERSONA_GROUP_MAX_ITEMS, egui_view_persona_group_clamp_item_count(9));
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_persona_group_text_len(NULL));
     EGUI_TEST_ASSERT_EQUAL_INT(4, egui_view_persona_group_text_len("Lena"));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_persona_group_measure_text_width(NULL, "Lena"));
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_persona_group_focus_index(&g_invalid_focus_snapshot, 3));
     EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_persona_group_focus_index(&g_snapshots[1], 4));
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x0F7B45).full,
@@ -470,9 +473,17 @@ static void test_persona_group_metrics_hit_testing_and_helpers(void)
                                egui_view_persona_group_presence_color(&test_group, EGUI_VIEW_PERSONA_GROUP_PRESENCE_AWAY).full);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x7A8796).full,
                                egui_view_persona_group_presence_color(&test_group, EGUI_VIEW_PERSONA_GROUP_PRESENCE_IDLE).full);
-    EGUI_TEST_ASSERT_EQUAL_INT(54, egui_view_persona_group_footer_width("Design", 0, 60));
-    EGUI_TEST_ASSERT_EQUAL_INT(34, egui_view_persona_group_footer_width("Team", 1, 40));
-    EGUI_TEST_ASSERT_EQUAL_INT(30, egui_view_persona_group_footer_width("Long", 0, 30));
+    EGUI_TEST_ASSERT_EQUAL_INT(54, egui_view_persona_group_footer_width(NULL, "Design", 0, 60));
+    EGUI_TEST_ASSERT_EQUAL_INT(34, egui_view_persona_group_footer_width(NULL, "Team", 1, 40));
+    EGUI_TEST_ASSERT_EQUAL_INT(30, egui_view_persona_group_footer_width(NULL, "Long", 0, 30));
+    egui_view_persona_group_copy_elided(label, sizeof(label), "Design review", 8);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Desig...", label) == 0);
+    egui_view_persona_group_copy_elided(short_label, sizeof(short_label), "Restore desk", 5);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Re...", short_label) == 0);
+    egui_view_persona_group_fit_text_to_width(NULL, "Design review", label, sizeof(label), 24, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Des...", label) == 0);
+    egui_view_persona_group_fit_text_to_width(NULL, "Archive sweep", short_label, sizeof(short_label), 20, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Ar...", short_label) == 0);
     EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(sample, EGUI_COLOR_DARK_GREY, 66).full, egui_view_persona_group_mix_disabled(sample).full);
     EGUI_TEST_ASSERT_TRUE(metrics.content_region.size.width > 0);
     EGUI_TEST_ASSERT_TRUE(metrics.avatar_regions[0].size.width > 0);
