@@ -87,6 +87,69 @@ static uint8_t drawer_text_len(const char *text)
     return len;
 }
 
+static void drawer_copy_elided(char *buffer, uint8_t buffer_size, const char *text, uint8_t max_chars)
+{
+    uint8_t copy_length;
+    uint8_t index;
+    uint8_t length;
+
+    if (buffer == NULL || buffer_size == 0)
+    {
+        return;
+    }
+
+    buffer[0] = '\0';
+    if (text == NULL || max_chars == 0)
+    {
+        return;
+    }
+
+    length = drawer_text_len(text);
+    if (length <= max_chars)
+    {
+        copy_length = length;
+        if (copy_length >= buffer_size)
+        {
+            copy_length = buffer_size - 1;
+        }
+        for (index = 0; index < copy_length; ++index)
+        {
+            buffer[index] = text[index];
+        }
+        buffer[copy_length] = '\0';
+        return;
+    }
+
+    if (max_chars <= 3)
+    {
+        copy_length = max_chars;
+        if (copy_length >= buffer_size)
+        {
+            copy_length = buffer_size - 1;
+        }
+        for (index = 0; index < copy_length; ++index)
+        {
+            buffer[index] = '.';
+        }
+        buffer[copy_length] = '\0';
+        return;
+    }
+
+    copy_length = max_chars - 3;
+    if (copy_length > buffer_size - 4)
+    {
+        copy_length = buffer_size - 4;
+    }
+    for (index = 0; index < copy_length; ++index)
+    {
+        buffer[index] = text[index];
+    }
+    buffer[copy_length] = '.';
+    buffer[copy_length + 1] = '.';
+    buffer[copy_length + 2] = '.';
+    buffer[copy_length + 3] = '\0';
+}
+
 static void drawer_zero_region(egui_region_t *region)
 {
     region->location.x = 0;
@@ -234,6 +297,42 @@ static egui_dim_t drawer_measure_text_width(const egui_font_t *font, const char 
 
     font->api->get_str_size(font, text, 0, 0, &text_width, &text_height);
     return text_width;
+}
+
+static void drawer_fit_text_to_width(const egui_font_t *font, const char *text, char *buffer, uint8_t buffer_size, egui_dim_t max_width,
+                                     egui_dim_t fallback_char_width)
+{
+    uint8_t max_chars;
+
+    if (buffer == NULL || buffer_size == 0)
+    {
+        return;
+    }
+
+    buffer[0] = '\0';
+    if (text == NULL || text[0] == '\0' || max_width <= 0)
+    {
+        return;
+    }
+
+    max_chars = drawer_text_len(text);
+    drawer_copy_elided(buffer, buffer_size, text, max_chars);
+    while (max_chars > 0)
+    {
+        egui_dim_t text_width = drawer_measure_text_width(font, buffer);
+
+        if (text_width <= 0)
+        {
+            text_width = (egui_dim_t)drawer_text_len(buffer) * fallback_char_width;
+        }
+        if (text_width <= max_width)
+        {
+            break;
+        }
+
+        max_chars--;
+        drawer_copy_elided(buffer, buffer_size, text, max_chars);
+    }
 }
 
 static egui_dim_t drawer_title_line_height(const egui_view_drawer_t *local)
@@ -601,6 +700,9 @@ static void drawer_draw_close(egui_view_t *self, const egui_region_t *region, eg
 static void drawer_draw_host(egui_view_t *self, egui_view_drawer_t *local, const egui_view_drawer_metrics_t *metrics, egui_color_t host_surface,
                              egui_color_t border_color, egui_color_t accent_color, egui_color_t text_color, egui_color_t muted_text_color)
 {
+    char title_label[24];
+    char note_label[32];
+    char card_label[24];
     egui_dim_t pad_x = drawer_pad_x(local->compact_mode);
     egui_dim_t pad_y = drawer_pad_y(local->compact_mode);
     egui_dim_t card_h = drawer_card_h(local->compact_mode);
@@ -608,6 +710,7 @@ static void drawer_draw_host(egui_view_t *self, egui_view_drawer_t *local, const
     egui_dim_t title_h = drawer_host_title_h(local);
     egui_dim_t note_h = drawer_host_note_h(local);
     egui_dim_t card_line_h = drawer_host_card_line_h(local);
+    egui_dim_t fallback_char_width = local->compact_mode ? 4 : 5;
     egui_region_t accent_region;
     egui_region_t title_region;
     egui_region_t note_region;
@@ -637,16 +740,17 @@ static void drawer_draw_host(egui_view_t *self, egui_view_drawer_t *local, const
     title_region.location.y = accent_region.location.y + (local->compact_mode ? 6 : 8);
     title_region.size.width = metrics->body_region.size.width - pad_x * 2;
     title_region.size.height = title_h;
-    drawer_draw_text(self, drawer_font(local), local->presentation_mode == EGUI_VIEW_DRAWER_MODE_OVERLAY ? "Overlay surface" : "Inline surface",
-                     &title_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, text_color, EGUI_ALPHA_100);
+    drawer_fit_text_to_width(drawer_font(local), local->presentation_mode == EGUI_VIEW_DRAWER_MODE_OVERLAY ? "Overlay surface" : "Inline surface", title_label,
+                             sizeof(title_label), title_region.size.width, fallback_char_width);
+    drawer_draw_text(self, drawer_font(local), title_label, &title_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, text_color, EGUI_ALPHA_100);
 
     note_region.location.x = accent_region.location.x;
     note_region.location.y = title_region.location.y + title_region.size.height + 2;
     note_region.size.width = metrics->body_region.size.width - pad_x * 2;
     note_region.size.height = note_h;
-    drawer_draw_text(self, drawer_meta_font(local),
-                     local->anchor == EGUI_VIEW_DRAWER_ANCHOR_END ? "Anchored to the end edge." : "Anchored to the start edge.", &note_region,
-                     EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, muted_text_color, EGUI_ALPHA_100);
+    drawer_fit_text_to_width(drawer_meta_font(local), local->anchor == EGUI_VIEW_DRAWER_ANCHOR_END ? "Anchored to the end edge." : "Anchored to the start edge.",
+                             note_label, sizeof(note_label), note_region.size.width, fallback_char_width);
+    drawer_draw_text(self, drawer_meta_font(local), note_label, &note_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, muted_text_color, EGUI_ALPHA_100);
 
     card_region.location.x = metrics->body_region.location.x + pad_x;
     card_region.location.y = note_region.location.y + note_region.size.height + card_gap;
@@ -668,8 +772,10 @@ static void drawer_draw_host(egui_view_t *self, egui_view_drawer_t *local, const
         line_region.location.y = card_region.location.y + (card_region.size.height - card_line_h) / 2;
         line_region.size.width = EGUI_MIN((egui_dim_t)(card_region.size.width - 12), (egui_dim_t)(local->compact_mode ? 26 : 34));
         line_region.size.height = card_line_h;
-        drawer_draw_text(self, drawer_meta_font(local), i == 0 ? "Pinned summary" : "Context note", &line_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER,
-                         i == 0 ? text_color : muted_text_color, EGUI_ALPHA_100);
+        drawer_fit_text_to_width(drawer_meta_font(local), i == 0 ? "Pinned summary" : "Context note", card_label, sizeof(card_label), line_region.size.width,
+                                 fallback_char_width);
+        drawer_draw_text(self, drawer_meta_font(local), card_label, &line_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, i == 0 ? text_color : muted_text_color,
+                         EGUI_ALPHA_100);
         card_region.location.y += card_region.size.height + card_gap;
         card_region.size.height = local->compact_mode ? 11 : 14;
     }
@@ -678,6 +784,12 @@ static void drawer_draw_host(egui_view_t *self, egui_view_drawer_t *local, const
 static void drawer_on_draw(egui_view_t *self)
 {
     EGUI_LOCAL_INIT(egui_view_drawer_t);
+    char eyebrow_label[16];
+    char title_label[24];
+    char body_primary_label[24];
+    char body_secondary_label[24];
+    char tag_label[16];
+    char footer_label[24];
     egui_view_drawer_metrics_t metrics;
     egui_color_t surface_color = local->surface_color;
     egui_color_t overlay_color = local->overlay_color;
@@ -687,6 +799,8 @@ static void drawer_on_draw(egui_view_t *self)
     egui_color_t muted_text_color = local->muted_text_color;
     egui_color_t accent_color = local->accent_color;
     egui_color_t shadow_color = local->shadow_color;
+    egui_dim_t fallback_char_width = local->compact_mode ? 4 : 5;
+    egui_dim_t pill_padding = local->compact_mode ? 14 : 18;
     egui_region_t accent_strip;
     uint8_t toggle_pressed;
     uint8_t close_pressed;
@@ -772,12 +886,19 @@ static void drawer_on_draw(egui_view_t *self)
                               border_color, egui_color_alpha_mix(self->alpha, 22));
     }
 
-    drawer_draw_text(self, drawer_meta_font(local), local->eyebrow, &metrics.eyebrow_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, accent_color, EGUI_ALPHA_100);
-    drawer_draw_text(self, drawer_font(local), local->title, &metrics.title_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_TOP, text_color, EGUI_ALPHA_100);
-    drawer_draw_text(self, drawer_meta_font(local), local->body_primary, &metrics.body_primary_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_TOP, text_color, EGUI_ALPHA_100);
+    drawer_fit_text_to_width(drawer_meta_font(local), local->eyebrow, eyebrow_label, sizeof(eyebrow_label), metrics.eyebrow_region.size.width,
+                             fallback_char_width);
+    drawer_draw_text(self, drawer_meta_font(local), eyebrow_label, &metrics.eyebrow_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, accent_color, EGUI_ALPHA_100);
+    drawer_fit_text_to_width(drawer_font(local), local->title, title_label, sizeof(title_label), metrics.title_region.size.width, fallback_char_width);
+    drawer_draw_text(self, drawer_font(local), title_label, &metrics.title_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_TOP, text_color, EGUI_ALPHA_100);
+    drawer_fit_text_to_width(drawer_meta_font(local), local->body_primary, body_primary_label, sizeof(body_primary_label), metrics.body_primary_region.size.width,
+                             fallback_char_width);
+    drawer_draw_text(self, drawer_meta_font(local), body_primary_label, &metrics.body_primary_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_TOP, text_color, EGUI_ALPHA_100);
     if (metrics.show_secondary)
     {
-        drawer_draw_text(self, drawer_meta_font(local), local->body_secondary, &metrics.body_secondary_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_TOP, muted_text_color,
+        drawer_fit_text_to_width(drawer_meta_font(local), local->body_secondary, body_secondary_label, sizeof(body_secondary_label),
+                                 metrics.body_secondary_region.size.width, fallback_char_width);
+        drawer_draw_text(self, drawer_meta_font(local), body_secondary_label, &metrics.body_secondary_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_TOP, muted_text_color,
                          EGUI_ALPHA_100);
     }
     if (metrics.show_tag)
@@ -788,11 +909,15 @@ static void drawer_on_draw(egui_view_t *self)
         egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics.tag_region.location.x, metrics.tag_region.location.y, metrics.tag_region.size.width, metrics.tag_region.size.height,
                                          metrics.tag_region.size.height / 2, 1, egui_rgb_mix(border_color, accent_color, local->read_only_mode ? 12 : 20),
                                          egui_color_alpha_mix(self->alpha, 42));
-        drawer_draw_text(self, drawer_meta_font(local), local->tag, &metrics.tag_region, EGUI_ALIGN_CENTER, accent_color, EGUI_ALPHA_100);
+        drawer_fit_text_to_width(drawer_meta_font(local), local->tag, tag_label, sizeof(tag_label), metrics.tag_region.size.width - pill_padding,
+                                 fallback_char_width);
+        drawer_draw_text(self, drawer_meta_font(local), tag_label, &metrics.tag_region, EGUI_ALIGN_CENTER, accent_color, EGUI_ALPHA_100);
     }
     if (metrics.show_footer)
     {
-        drawer_draw_text(self, drawer_meta_font(local), local->footer, &metrics.footer_text_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, muted_text_color,
+        drawer_fit_text_to_width(drawer_meta_font(local), local->footer, footer_label, sizeof(footer_label), metrics.footer_text_region.size.width,
+                                 fallback_char_width);
+        drawer_draw_text(self, drawer_meta_font(local), footer_label, &metrics.footer_text_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, muted_text_color,
                          EGUI_ALPHA_100);
     }
     if (metrics.show_close)

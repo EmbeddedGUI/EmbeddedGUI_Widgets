@@ -159,6 +159,8 @@ static void setup_preview_widget(void)
 
 static void test_drawer_defaults_and_setters_clear_pressed_state(void)
 {
+    char label[24];
+
     setup_widget();
 
     EGUI_TEST_ASSERT_TRUE(egui_view_drawer_get_open(EGUI_VIEW_OF(&test_widget)));
@@ -167,6 +169,19 @@ static void test_drawer_defaults_and_setters_clear_pressed_state(void)
     EGUI_TEST_ASSERT_FALSE(egui_view_drawer_get_compact_mode(EGUI_VIEW_OF(&test_widget)));
     EGUI_TEST_ASSERT_FALSE(egui_view_drawer_get_read_only_mode(EGUI_VIEW_OF(&test_widget)));
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xFFFFFF).full, test_widget.surface_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, drawer_text_len(NULL));
+    EGUI_TEST_ASSERT_EQUAL_INT(7, drawer_text_len("Preview"));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, drawer_measure_text_width(NULL, "Open"));
+    drawer_copy_elided(label, sizeof(label), "Overlay", 6);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Ove...", label) == 0);
+    drawer_copy_elided(label, sizeof(label), "Panel", 3);
+    EGUI_TEST_ASSERT_TRUE(strcmp("...", label) == 0);
+    drawer_fit_text_to_width(NULL, "Overlay", label, sizeof(label), 20, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Ov...", label) == 0);
+    drawer_fit_text_to_width(NULL, "Overlay", label, sizeof(label), 12, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("...", label) == 0);
+    drawer_fit_text_to_width(NULL, "Pinned", label, sizeof(label), 24, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Pinned", label) == 0);
 
     seed_pressed_state(&test_widget, EGUI_VIEW_DRAWER_PART_TOGGLE);
     egui_view_drawer_set_title(EGUI_VIEW_OF(&test_widget), "Review notes");
