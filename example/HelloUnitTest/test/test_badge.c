@@ -287,6 +287,24 @@ static void test_badge_mode_setters_clear_pressed_state(void)
     EGUI_TEST_ASSERT_TRUE(local->read_only_mode);
 }
 
+static void test_badge_text_helpers(void)
+{
+    char label[32];
+    char short_label[8];
+
+    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_badge_text_len(NULL));
+    EGUI_TEST_ASSERT_EQUAL_INT(8, egui_view_badge_text_len("Verified"));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_badge_measure_text_width(NULL, "Verified"));
+    egui_view_badge_copy_elided(label, sizeof(label), "Needs review", 8);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Needs...", label) == 0);
+    egui_view_badge_copy_elided(short_label, sizeof(short_label), "Beta", 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Beta", short_label) == 0);
+    egui_view_badge_fit_text_to_width(NULL, "Needs review", label, sizeof(label), 24, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Nee...", label) == 0);
+    egui_view_badge_fit_text_to_width(NULL, "Beta", label, sizeof(label), 24, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Beta", label) == 0);
+}
+
 static void test_badge_static_preview_consumes_input_and_keeps_state(void)
 {
     badge_preview_snapshot_t initial_snapshot;
@@ -317,6 +335,7 @@ void test_badge_run(void)
     EGUI_TEST_RUN(test_badge_setters_clear_pressed_state_and_update_content);
     EGUI_TEST_RUN(test_badge_icon_region_visibility_tracks_icon_and_compact_mode);
     EGUI_TEST_RUN(test_badge_mode_setters_clear_pressed_state);
+    EGUI_TEST_RUN(test_badge_text_helpers);
     EGUI_TEST_RUN(test_badge_static_preview_consumes_input_and_keeps_state);
     EGUI_TEST_SUITE_END();
 }

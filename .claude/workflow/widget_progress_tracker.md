@@ -160,6 +160,13 @@
 ## 最近完成的收口动作
 
 - `2026-04-22`
+  - 收口 `display/badge` 文本宽度适配：在 `example/HelloCustomWidgets/display/badge/egui_view_badge.c` 新增 `egui_view_badge_text_len()`、`egui_view_badge_measure_text_width()`、`egui_view_badge_copy_elided()` 与 `egui_view_badge_fit_text_to_width()`，把主文本改为按可用宽度拟合后再绘制，消除主 badge 与底部 preview 窄区里的硬截断风险，同时保持现有图标与布局逻辑不变。
+  - 修正 `example/HelloUnitTest/test/test_badge.c` 的 helper 回归：新增 `test_badge_text_helpers()`，覆盖 `text_len / measure_text_width / copy_elided / fit_text_to_width` 的边界行为，确认本轮没有再为 `badge` 引入新的单测口径问题。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=display/badge PORT=pc`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category display`、`make all APP=HelloUnitTest PORT=pc_test`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub display/badge --timeout 10 --keep-screenshots` 与 `python scripts/code_runtime_check.py --app HelloCustomWidgets --category display --bits64`，确认本控件渲染正常且 `display` 分类 runtime 继续保持 `21 / 21` 通过。
+  - `make all APP=HelloUnitTest PORT=pc_test` 末尾仍打印 Windows 上超长命令触发 response-file fallback 的 `process_begin ... failed / Error 87` 旧日志，但本轮返回码为 `0`，并已完成 `example/HelloUnitTest/test/test_badge.c` 编译和 `output/main.exe` 链接，不构成阻塞。
+  - 已人工复核 `runtime_check_output/HelloCustomWidgets_display_badge/default/frame_0000.png`、`frame_0003.png` 与 `frame_0006.png`，确认主 badge、交互态和底部 preview 均无新增半截字、图标错位、遮挡或异常溢出。
+
+- `2026-04-22`
   - 收口 `display/persona` 文本宽度适配：在 `example/HelloCustomWidgets/display/persona/egui_view_persona.c` 新增 `egui_view_persona_has_text()`、`egui_view_persona_text_len()`、`egui_view_persona_measure_text_width()`、`egui_view_persona_copy_elided()` 与 `egui_view_persona_fit_text_to_width()`，把 `display_name / secondary_text / tertiary_text / quaternary_text` 全部改为按可用宽度拟合后再绘制，消除主卡和底部 preview 窄区里潜在的半截字风险。
   - 修正 `example/HelloUnitTest/test/test_persona.c` 的 helper 回归：新增 `test_persona_text_helpers()`，覆盖 `text_len / measure_text_width / copy_elided / fit_text_to_width` 的边界行为，确认本轮没有再为 `persona` 引入新的单测口径问题。
   - 已通过 `make all APP=HelloCustomWidgets APP_SUB=display/persona PORT=pc`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category display`、`make all APP=HelloUnitTest PORT=pc_test`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub display/persona --timeout 10 --keep-screenshots` 与 `python scripts/code_runtime_check.py --app HelloCustomWidgets --category display --bits64`，确认本控件渲染正常且 `display` 分类 runtime 继续保持 `21 / 21` 通过。
