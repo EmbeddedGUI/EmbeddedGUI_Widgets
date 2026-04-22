@@ -160,6 +160,13 @@
 ## 最近完成的收口动作
 
 - `2026-04-22`
+  - 收口 `input/command_bar` 文本宽度适配：在 `example/HelloCustomWidgets/input/command_bar/egui_view_command_bar.c` 新增 `egui_view_command_bar_copy_elided()` 与 `egui_view_command_bar_fit_text_to_width()`，把 `eyebrow / title / scope / item label / footer` 全部接入按宽度拟合绘制；其中标准命令项额外加了“仅在明显超宽时才省略”的阈值，避免把原本仍可完整显示的 `Clone / Share` 过度缩成单字母省略。
+  - 修正 `example/HelloUnitTest/test/test_command_bar.c` 的 helper 回归：把 `measure_scope_width / measure_pill_width / measure_item_width` 调用更新为当前实现签名，并补齐 `measure_text_width / copy_elided / fit_text_to_width` 的边界断言，确认本轮没有再为 `command_bar` 引入新的单测语法问题。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=input/command_bar PORT=pc`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category input`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/command_bar --timeout 10 --keep-screenshots` 与 `python scripts/code_runtime_check.py --app HelloCustomWidgets --category input --bits64`，确认本控件渲染正常且 input 分类 runtime 继续保持 `33 / 33` 通过。
+  - 已人工复核 `runtime_check_output/HelloCustomWidgets_input_command_bar/default/frame_0000.png` 与 `frame_0006.png`，确认主轨道 `scope / item / footer` 以及底部 `compact / disabled` preview 都没有新增半截字、错位或过度省略，标准轨道里的 `Clone / Share` 已恢复完整可读。
+  - `make all APP=HelloUnitTest PORT=pc_test` 当前已不再阻塞于 `example/HelloUnitTest/test/test_command_bar.c`；本轮重跑后新的既有基线失败前移到 `example/HelloUnitTest/test/test_persona_group.c` helper 调用签名落后于实现，与本轮 `command_bar` 文本宽度适配无关。
+
+- `2026-04-22`
   - 收口 `layout/card_control` 文本宽度适配：在 `example/HelloCustomWidgets/layout/card_control/egui_view_card_control.c` 新增 `egui_view_card_control_text_len()`、`egui_view_card_control_copy_elided()` 与 `egui_view_card_control_fit_text_to_width()`，把 `header / icon_text / title / body / control pill / meta` 全部改为按可用宽度拟合后再绘制，并补齐 buffer 边界下的统一省略号策略，消除主卡和底部 preview 固定窄区里的半截字与硬截断。
   - 修正 `example/HelloUnitTest/test/test_card_control.c` 的 helper 回归：补齐 `measure_text_width / copy_elided / fit_text_to_width` 断言，并把 `egui_view_card_control_pill_width()` 调用更新为当前实现签名，确认本轮没有再为 `card_control` 引入新的单测语法问题。
   - 已通过 `make all APP=HelloCustomWidgets APP_SUB=layout/card_control PORT=pc`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category layout`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub layout/card_control --timeout 10 --keep-screenshots` 与 `python scripts/code_runtime_check.py --app HelloCustomWidgets --category layout --bits64`，确认本控件渲染正常且 layout 分类 runtime 继续保持 `29 / 29` 通过。

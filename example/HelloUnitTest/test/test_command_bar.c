@@ -645,6 +645,8 @@ static void test_command_bar_keyboard_navigation_and_guards(void)
 
 static void test_command_bar_internal_helpers_cover_metrics_measurements_and_states(void)
 {
+    char label[32];
+    char short_label[6];
     egui_view_command_bar_metrics_t metrics;
     egui_color_t sample = EGUI_COLOR_HEX(0x123456);
     egui_color_t mixed = egui_view_command_bar_mix_disabled(sample);
@@ -658,6 +660,7 @@ static void test_command_bar_internal_helpers_cover_metrics_measurements_and_sta
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_COMMAND_BAR_MAX_ITEMS, egui_view_command_bar_clamp_item_count(9));
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_command_bar_text_len(NULL));
     EGUI_TEST_ASSERT_EQUAL_INT(6, egui_view_command_bar_text_len("Review"));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_command_bar_measure_text_width(NULL, "Build"));
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x666666).full, egui_view_command_bar_tone_color(&test_bar, EGUI_VIEW_COMMAND_BAR_TONE_ACCENT).full);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x777777).full, egui_view_command_bar_tone_color(&test_bar, EGUI_VIEW_COMMAND_BAR_TONE_SUCCESS).full);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x888888).full, egui_view_command_bar_tone_color(&test_bar, EGUI_VIEW_COMMAND_BAR_TONE_WARNING).full);
@@ -680,18 +683,26 @@ static void test_command_bar_internal_helpers_cover_metrics_measurements_and_sta
     EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_command_bar_resolve_default_index(&test_bar, EGUI_VIEW_OF(&test_bar), &g_snapshots[1], 4));
     EGUI_TEST_ASSERT_EQUAL_INT(2, egui_view_command_bar_resolve_default_index(&test_bar, EGUI_VIEW_OF(&test_bar), &g_snapshots[2], 3));
     EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_command_bar_resolve_default_index(&test_bar, EGUI_VIEW_OF(&test_bar), &g_invalid_focus_snapshot, 4));
-    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_command_bar_measure_scope_width(0, NULL, 30));
-    EGUI_TEST_ASSERT_EQUAL_INT(40, egui_view_command_bar_measure_scope_width(0, "Build", 40));
-    EGUI_TEST_ASSERT_EQUAL_INT(24, egui_view_command_bar_measure_scope_width(1, "Build", 24));
-    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_command_bar_measure_pill_width(0, NULL, 30));
-    EGUI_TEST_ASSERT_EQUAL_INT(32, egui_view_command_bar_measure_pill_width(0, "Edit", 40));
-    EGUI_TEST_ASSERT_EQUAL_INT(20, egui_view_command_bar_measure_pill_width(1, "Long", 20));
-    EGUI_TEST_ASSERT_EQUAL_INT(53, egui_view_command_bar_measure_item_width(0, &g_items_0[0]));
-    EGUI_TEST_ASSERT_EQUAL_INT(54, egui_view_command_bar_measure_item_width(0, &g_items_0[2]));
-    EGUI_TEST_ASSERT_EQUAL_INT(20, egui_view_command_bar_measure_item_width(1, &g_items_0[0]));
-    EGUI_TEST_ASSERT_EQUAL_INT(18, egui_view_command_bar_measure_item_width(1, &g_items_0[2]));
-    EGUI_TEST_ASSERT_EQUAL_INT(24, egui_view_command_bar_measure_item_width(0, &g_items_0[3]));
-    EGUI_TEST_ASSERT_EQUAL_INT(18, egui_view_command_bar_measure_item_width(1, &g_items_0[3]));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_command_bar_measure_scope_width(NULL, 0, NULL, 30));
+    EGUI_TEST_ASSERT_EQUAL_INT(40, egui_view_command_bar_measure_scope_width(NULL, 0, "Build", 40));
+    EGUI_TEST_ASSERT_EQUAL_INT(24, egui_view_command_bar_measure_scope_width(NULL, 1, "Build", 24));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_command_bar_measure_pill_width(NULL, 0, NULL, 30));
+    EGUI_TEST_ASSERT_EQUAL_INT(32, egui_view_command_bar_measure_pill_width(NULL, 0, "Edit", 40));
+    EGUI_TEST_ASSERT_EQUAL_INT(20, egui_view_command_bar_measure_pill_width(NULL, 1, "Long", 20));
+    EGUI_TEST_ASSERT_EQUAL_INT(53, egui_view_command_bar_measure_item_width(NULL, 0, &g_items_0[0]));
+    EGUI_TEST_ASSERT_EQUAL_INT(54, egui_view_command_bar_measure_item_width(NULL, 0, &g_items_0[2]));
+    EGUI_TEST_ASSERT_EQUAL_INT(20, egui_view_command_bar_measure_item_width(NULL, 1, &g_items_0[0]));
+    EGUI_TEST_ASSERT_EQUAL_INT(18, egui_view_command_bar_measure_item_width(NULL, 1, &g_items_0[2]));
+    EGUI_TEST_ASSERT_EQUAL_INT(24, egui_view_command_bar_measure_item_width(NULL, 0, &g_items_0[3]));
+    EGUI_TEST_ASSERT_EQUAL_INT(18, egui_view_command_bar_measure_item_width(NULL, 1, &g_items_0[3]));
+    egui_view_command_bar_copy_elided(label, sizeof(label), "Page commands", 8);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Page ...", label) == 0);
+    egui_view_command_bar_copy_elided(short_label, sizeof(short_label), "Review", 5);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Re...", short_label) == 0);
+    egui_view_command_bar_fit_text_to_width(NULL, "Save, share, or overflow", label, sizeof(label), 20, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Sa...", label) == 0);
+    egui_view_command_bar_fit_text_to_width(NULL, "Publish commands", short_label, sizeof(short_label), 20, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Pu...", short_label) == 0);
     egui_view_command_bar_reset_metrics(&metrics);
     EGUI_TEST_ASSERT_EQUAL_INT(0, metrics.visible_item_count);
     EGUI_TEST_ASSERT_EQUAL_INT(0, metrics.item_regions[0].size.width);
