@@ -81,6 +81,18 @@ static egui_view_label_t dense_note_label;
 static egui_view_api_t stack_preview_api;
 static egui_view_api_t dense_preview_api;
 static uint8_t ui_ready;
+static char primary_heading_text[32];
+static char primary_note_text[72];
+static char primary_card_eyebrow_text[GRID_CARD_CAPACITY][16];
+static char primary_card_title_text[GRID_CARD_CAPACITY][24];
+static char stack_heading_text[16];
+static char stack_note_text[24];
+static char stack_card_eyebrow_text[GRID_STACK_PREVIEW_CARDS][8];
+static char stack_card_title_text[GRID_STACK_PREVIEW_CARDS][16];
+static char dense_heading_text[16];
+static char dense_note_text[24];
+static char dense_card_eyebrow_text[GRID_DENSE_PREVIEW_CARDS][8];
+static char dense_card_title_text[GRID_DENSE_PREVIEW_CARDS][8];
 
 EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
 EGUI_BACKGROUND_PARAM_INIT(bg_page_panel_params, &bg_page_panel_param, NULL, NULL);
@@ -107,6 +119,154 @@ EGUI_BACKGROUND_PARAM_INIT(bg_card_warm_params, &bg_card_warm_param, NULL, NULL)
 EGUI_BACKGROUND_COLOR_STATIC_CONST_INIT(bg_card_warm, &bg_card_warm_params);
 
 static const char *title_text = "Grid";
+
+static uint8_t grid_has_text(const char *text)
+{
+    return (text != NULL && text[0] != '\0') ? 1 : 0;
+}
+
+static uint8_t grid_text_len(const char *text)
+{
+    uint8_t len = 0;
+
+    if (text == NULL)
+    {
+        return 0;
+    }
+
+    while (text[len] != '\0')
+    {
+        len++;
+    }
+    return len;
+}
+
+static egui_dim_t grid_measure_text_width(const egui_font_t *font, const char *text)
+{
+    egui_dim_t width = 0;
+    egui_dim_t height = 0;
+
+    if (!grid_has_text(text) || font == NULL || font->api == NULL || font->api->get_str_size == NULL)
+    {
+        return 0;
+    }
+
+    font->api->get_str_size(font, text, 0, 0, &width, &height);
+    return width;
+}
+
+static void grid_copy_elided(char *buffer, uint8_t buffer_size, const char *text, uint8_t max_chars)
+{
+    uint8_t copy_length;
+    uint8_t index;
+    uint8_t length;
+
+    if (buffer == NULL || buffer_size == 0)
+    {
+        return;
+    }
+
+    buffer[0] = '\0';
+    if (text == NULL || max_chars == 0)
+    {
+        return;
+    }
+
+    length = grid_text_len(text);
+    if (length <= max_chars)
+    {
+        copy_length = length;
+        if (copy_length >= buffer_size)
+        {
+            copy_length = buffer_size - 1;
+        }
+        for (index = 0; index < copy_length; ++index)
+        {
+            buffer[index] = text[index];
+        }
+        buffer[copy_length] = '\0';
+        return;
+    }
+
+    if (max_chars <= 3)
+    {
+        copy_length = max_chars;
+        if (copy_length >= buffer_size)
+        {
+            copy_length = buffer_size - 1;
+        }
+        for (index = 0; index < copy_length; ++index)
+        {
+            buffer[index] = '.';
+        }
+        buffer[copy_length] = '\0';
+        return;
+    }
+
+    copy_length = max_chars - 3;
+    if (copy_length > buffer_size - 4)
+    {
+        copy_length = buffer_size - 4;
+    }
+    for (index = 0; index < copy_length; ++index)
+    {
+        buffer[index] = text[index];
+    }
+    buffer[copy_length] = '.';
+    buffer[copy_length + 1] = '.';
+    buffer[copy_length + 2] = '.';
+    buffer[copy_length + 3] = '\0';
+}
+
+static void grid_fit_text_to_width(const egui_font_t *font, const char *text, char *buffer, uint8_t buffer_size, egui_dim_t max_width,
+                                   egui_dim_t fallback_char_width)
+{
+    uint8_t max_chars;
+
+    if (buffer == NULL || buffer_size == 0)
+    {
+        return;
+    }
+
+    buffer[0] = '\0';
+    if (!grid_has_text(text) || max_width <= 0)
+    {
+        return;
+    }
+
+    max_chars = grid_text_len(text);
+    grid_copy_elided(buffer, buffer_size, text, max_chars);
+    while (max_chars > 0)
+    {
+        egui_dim_t text_width = grid_measure_text_width(font, buffer);
+
+        if (text_width <= 0)
+        {
+            text_width = (egui_dim_t)grid_text_len(buffer) * fallback_char_width;
+        }
+        if (text_width <= max_width)
+        {
+            break;
+        }
+
+        max_chars--;
+        grid_copy_elided(buffer, buffer_size, text, max_chars);
+    }
+}
+
+static void grid_set_fitted_label_text(egui_view_label_t *label, char *buffer, uint8_t buffer_size, const char *text, egui_dim_t fallback_char_width)
+{
+    egui_dim_t max_width;
+
+    if (label == NULL || buffer == NULL || buffer_size == 0)
+    {
+        return;
+    }
+
+    max_width = EGUI_VIEW_OF(label)->region.size.width;
+    grid_fit_text_to_width(label->font, text, buffer, buffer_size, max_width, fallback_char_width);
+    egui_view_label_set_text(EGUI_VIEW_OF(label), buffer);
+}
 
 static const grid_snapshot_t primary_snapshots[] = {
         {
@@ -248,8 +408,9 @@ static void init_card(egui_view_linearlayout_t *card, egui_view_label_t *eyebrow
     egui_view_group_add_child(EGUI_VIEW_OF(card), EGUI_VIEW_OF(card_title_label));
 }
 
-static void set_card_state(egui_view_linearlayout_t *card, egui_view_label_t *eyebrow_label, egui_view_label_t *card_title_label,
-                           const grid_card_t *item, egui_dim_t width, egui_dim_t height, uint8_t visible)
+static void set_card_state(egui_view_linearlayout_t *card, egui_view_label_t *eyebrow_label, char *eyebrow_buffer, uint8_t eyebrow_buffer_size,
+                           egui_view_label_t *card_title_label, char *title_buffer, uint8_t title_buffer_size, const grid_card_t *item, egui_dim_t width,
+                           egui_dim_t height, uint8_t visible)
 {
     if (!visible)
     {
@@ -263,17 +424,18 @@ static void set_card_state(egui_view_linearlayout_t *card, egui_view_label_t *ey
     egui_view_set_padding(EGUI_VIEW_OF(card), 6, 5, 6, 5);
 
     egui_view_set_size(EGUI_VIEW_OF(eyebrow_label), width - 12, 8);
-    egui_view_label_set_text(EGUI_VIEW_OF(eyebrow_label), item->eyebrow);
+    grid_set_fitted_label_text(eyebrow_label, eyebrow_buffer, eyebrow_buffer_size, item->eyebrow, 4);
     egui_view_label_set_font_color(EGUI_VIEW_OF(eyebrow_label), grid_card_get_eyebrow_color(item->tone), EGUI_ALPHA_100);
 
     egui_view_set_size(EGUI_VIEW_OF(card_title_label), width - 12, 10);
-    egui_view_label_set_text(EGUI_VIEW_OF(card_title_label), item->title);
+    grid_set_fitted_label_text(card_title_label, title_buffer, title_buffer_size, item->title, 4);
 
     egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(card));
 }
 
 static void apply_snapshot_to_grid(egui_view_t *grid, egui_view_linearlayout_t *cards, egui_view_label_t *eyebrows, egui_view_label_t *titles,
-                                   uint8_t capacity, const grid_snapshot_t *snapshot)
+                                   char *eyebrow_text, uint8_t eyebrow_text_size, char *card_title_text, uint8_t title_text_size, uint8_t capacity,
+                                   const grid_snapshot_t *snapshot)
 {
     uint8_t index;
 
@@ -281,7 +443,9 @@ static void apply_snapshot_to_grid(egui_view_t *grid, egui_view_linearlayout_t *
     for (index = 0; index < capacity; index++)
     {
         uint8_t visible = index < snapshot->card_count;
-        set_card_state(&cards[index], &eyebrows[index], &titles[index], &snapshot->cards[index], snapshot->card_width, snapshot->card_height, visible);
+        set_card_state(&cards[index], &eyebrows[index], &eyebrow_text[index * eyebrow_text_size], eyebrow_text_size, &titles[index],
+                       &card_title_text[index * title_text_size], title_text_size, &snapshot->cards[index], snapshot->card_width, snapshot->card_height,
+                       visible);
     }
     hcw_grid_layout_childs(grid);
 }
@@ -305,9 +469,11 @@ static void apply_primary_state(uint8_t index)
 {
     const grid_snapshot_t *snapshot = &primary_snapshots[index % PRIMARY_SNAPSHOT_COUNT];
 
-    egui_view_label_set_text(EGUI_VIEW_OF(&primary_heading_label), snapshot->heading);
-    egui_view_label_set_text(EGUI_VIEW_OF(&primary_note_label), snapshot->note);
-    apply_snapshot_to_grid(EGUI_VIEW_OF(&primary_grid), primary_cards, primary_card_eyebrows, primary_card_titles, GRID_CARD_CAPACITY, snapshot);
+    grid_set_fitted_label_text(&primary_heading_label, primary_heading_text, sizeof(primary_heading_text), snapshot->heading, 4);
+    grid_set_fitted_label_text(&primary_note_label, primary_note_text, sizeof(primary_note_text), snapshot->note, 4);
+    apply_snapshot_to_grid(EGUI_VIEW_OF(&primary_grid), primary_cards, primary_card_eyebrows, primary_card_titles, &primary_card_eyebrow_text[0][0],
+                           sizeof(primary_card_eyebrow_text[0]), &primary_card_title_text[0][0], sizeof(primary_card_title_text[0]), GRID_CARD_CAPACITY,
+                           snapshot);
     if (ui_ready)
     {
         layout_page();
@@ -321,9 +487,16 @@ static void apply_primary_default_state(void)
 
 static void apply_preview_states(void)
 {
-    apply_snapshot_to_grid(EGUI_VIEW_OF(&stack_preview_grid), stack_cards, stack_card_eyebrows, stack_card_titles, GRID_STACK_PREVIEW_CARDS,
+    grid_set_fitted_label_text(&stack_heading_label, stack_heading_text, sizeof(stack_heading_text), stack_preview_snapshot.heading, 4);
+    grid_set_fitted_label_text(&stack_note_label, stack_note_text, sizeof(stack_note_text), stack_preview_snapshot.note, 4);
+    grid_set_fitted_label_text(&dense_heading_label, dense_heading_text, sizeof(dense_heading_text), dense_preview_snapshot.heading, 4);
+    grid_set_fitted_label_text(&dense_note_label, dense_note_text, sizeof(dense_note_text), dense_preview_snapshot.note, 4);
+
+    apply_snapshot_to_grid(EGUI_VIEW_OF(&stack_preview_grid), stack_cards, stack_card_eyebrows, stack_card_titles, &stack_card_eyebrow_text[0][0],
+                           sizeof(stack_card_eyebrow_text[0]), &stack_card_title_text[0][0], sizeof(stack_card_title_text[0]), GRID_STACK_PREVIEW_CARDS,
                            &stack_preview_snapshot);
-    apply_snapshot_to_grid(EGUI_VIEW_OF(&dense_preview_grid), dense_cards, dense_card_eyebrows, dense_card_titles, GRID_DENSE_PREVIEW_CARDS,
+    apply_snapshot_to_grid(EGUI_VIEW_OF(&dense_preview_grid), dense_cards, dense_card_eyebrows, dense_card_titles, &dense_card_eyebrow_text[0][0],
+                           sizeof(dense_card_eyebrow_text[0]), &dense_card_title_text[0][0], sizeof(dense_card_title_text[0]), GRID_DENSE_PREVIEW_CARDS,
                            &dense_preview_snapshot);
     if (ui_ready)
     {
@@ -519,4 +692,3 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     }
 }
 #endif
-
