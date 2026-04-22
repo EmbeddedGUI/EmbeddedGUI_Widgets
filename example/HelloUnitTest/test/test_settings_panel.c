@@ -364,6 +364,7 @@ static void test_settings_panel_disabled_ignores_input_and_clears_pressed_state(
 
 static void test_settings_panel_internal_helpers_cover_focus_tone_and_spacing(void)
 {
+    char label[24];
     egui_color_t sample = EGUI_COLOR_HEX(0x123456);
     egui_color_t mixed = egui_view_settings_panel_mix_disabled(sample);
 
@@ -384,9 +385,19 @@ static void test_settings_panel_internal_helpers_cover_focus_tone_and_spacing(vo
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x888888).full, egui_view_settings_panel_tone_color(&test_panel, 2).full);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x999999).full, egui_view_settings_panel_tone_color(&test_panel, 3).full);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x666666).full, egui_view_settings_panel_tone_color(&test_panel, 9).full);
-    EGUI_TEST_ASSERT_EQUAL_INT(20, egui_view_settings_panel_pill_width("", 1, 20, 64));
-    EGUI_TEST_ASSERT_EQUAL_INT(36, egui_view_settings_panel_pill_width("AB", 0, 26, 64));
-    EGUI_TEST_ASSERT_EQUAL_INT(32, egui_view_settings_panel_pill_width("Long label", 1, 20, 32));
+    EGUI_TEST_ASSERT_EQUAL_INT(20, egui_view_settings_panel_pill_width(NULL, "", 1, 20, 64));
+    EGUI_TEST_ASSERT_EQUAL_INT(36, egui_view_settings_panel_pill_width(NULL, "AB", 0, 26, 64));
+    EGUI_TEST_ASSERT_EQUAL_INT(32, egui_view_settings_panel_pill_width(NULL, "Long label", 1, 20, 32));
+    egui_view_settings_panel_copy_elided(label, sizeof(label), "Documents", 6);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Doc...", label) == 0);
+    egui_view_settings_panel_copy_elided(label, sizeof(label), "Mode", 3);
+    EGUI_TEST_ASSERT_TRUE(strcmp("...", label) == 0);
+    egui_view_settings_panel_fit_text_to_width(NULL, "Workspace settings", label, sizeof(label), 28, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Work...", label) == 0);
+    egui_view_settings_panel_fit_text_to_width(NULL, "Workspace settings", label, sizeof(label), 12, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("...", label) == 0);
+    egui_view_settings_panel_fit_text_to_width(NULL, "Review", label, sizeof(label), 24, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Review", label) == 0);
     EGUI_TEST_ASSERT_EQUAL_INT(7, egui_view_settings_panel_trailing_inset(1));
     EGUI_TEST_ASSERT_EQUAL_INT(6, egui_view_settings_panel_trailing_inset(0));
     EGUI_TEST_ASSERT_EQUAL_INT(6, egui_view_settings_panel_title_gap(1));
