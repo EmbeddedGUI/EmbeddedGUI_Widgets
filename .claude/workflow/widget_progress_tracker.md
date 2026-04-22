@@ -160,6 +160,13 @@
 ## 最近完成的收口动作
 
 - `2026-04-22`
+  - 收口 `display/rich_text_block` 段落断行渲染：在 `example/HelloCustomWidgets/display/rich_text_block/egui_view_rich_text_block.c` 为自绘换行路径补上 `egui_view_rich_text_block_is_space_char()`、`egui_view_rich_text_block_is_break_after_char()` 与 `egui_view_rich_text_block_skip_wrap_prefix()`，并把 `egui_view_rich_text_block_get_next_line()` 从纯字符截断改为优先按空格和连字符断行，消除英文长词被拆成半截的渲染问题。
+  - 修正 `example/HelloUnitTest/test/test_rich_text_block.c` 的换行 helper 回归：新增 `test_rich_text_block_wrap_prefers_word_boundaries()`，覆盖空格断行与连字符断行边界，确认本轮没有再为 `rich_text_block` 引入新的单测口径问题。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=display/rich_text_block PORT=pc`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category display`、`make all APP=HelloUnitTest PORT=pc_test`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub display/rich_text_block --timeout 10 --keep-screenshots` 与 `python scripts/code_runtime_check.py --app HelloCustomWidgets --category display --bits64`，确认本控件渲染正常且 `display` 分类 runtime 继续保持 `21 / 21` 通过。
+  - `make all APP=HelloUnitTest PORT=pc_test` 末尾仍打印 Windows 上超长命令触发 response-file fallback 的 `process_begin ... failed / Error 87` 旧日志，但本轮返回码为 `0`，并已完成 `example/HelloUnitTest/test/test_rich_text_block.c` 编译和 `output/main.exe` 链接，不构成阻塞。
+  - 已人工复核 `runtime_check_output/HelloCustomWidgets_display_rich_text_block/default/frame_0000.png`、`frame_0003.png` 与 `frame_0006.png`，确认主段落里的英文长词不再被硬拆成半截，底部 `compact / read only` preview 也没有新增错位、遮挡或异常溢出。
+
+- `2026-04-22`
   - 收口 `display/badge` 文本宽度适配：在 `example/HelloCustomWidgets/display/badge/egui_view_badge.c` 新增 `egui_view_badge_text_len()`、`egui_view_badge_measure_text_width()`、`egui_view_badge_copy_elided()` 与 `egui_view_badge_fit_text_to_width()`，把主文本改为按可用宽度拟合后再绘制，消除主 badge 与底部 preview 窄区里的硬截断风险，同时保持现有图标与布局逻辑不变。
   - 修正 `example/HelloUnitTest/test/test_badge.c` 的 helper 回归：新增 `test_badge_text_helpers()`，覆盖 `text_len / measure_text_width / copy_elided / fit_text_to_width` 的边界行为，确认本轮没有再为 `badge` 引入新的单测口径问题。
   - 已通过 `make all APP=HelloCustomWidgets APP_SUB=display/badge PORT=pc`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category display`、`make all APP=HelloUnitTest PORT=pc_test`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub display/badge --timeout 10 --keep-screenshots` 与 `python scripts/code_runtime_check.py --app HelloCustomWidgets --category display --bits64`，确认本控件渲染正常且 `display` 分类 runtime 继续保持 `21 / 21` 通过。

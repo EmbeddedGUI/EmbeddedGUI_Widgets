@@ -311,6 +311,33 @@ static void test_rich_text_block_layout_helpers_measure_paragraphs(void)
     EGUI_TEST_ASSERT_TRUE(content_height > body_layout.text_region.size.height);
 }
 
+static void test_rich_text_block_wrap_prefers_word_boundaries(void)
+{
+    const egui_font_t *font = (const egui_font_t *)&egui_res_font_montserrat_8_4;
+    const char *text = "Alpha beta gamma";
+    const char *hyphen_text = "scan-first reading";
+    const char *next;
+    int line_len = 0;
+    egui_dim_t line_width = 0;
+    egui_dim_t max_width = 0;
+    egui_dim_t dummy_height = 0;
+
+    font->api->get_str_size(font, "Alpha beta", 0, 0, &max_width, &dummy_height);
+    next = egui_view_rich_text_block_get_next_line(font, text, max_width - 1, &line_len, &line_width);
+    EGUI_TEST_ASSERT_EQUAL_INT(5, line_len);
+    EGUI_TEST_ASSERT_TRUE(strncmp(text, "Alpha", line_len) == 0);
+    EGUI_TEST_ASSERT_TRUE(next != NULL);
+    EGUI_TEST_ASSERT_TRUE(strcmp(next, "beta gamma") == 0);
+    EGUI_TEST_ASSERT_TRUE(line_width > 0);
+
+    font->api->get_str_size(font, "scan-fir", 0, 0, &max_width, &dummy_height);
+    next = egui_view_rich_text_block_get_next_line(font, hyphen_text, max_width - 1, &line_len, NULL);
+    EGUI_TEST_ASSERT_EQUAL_INT(5, line_len);
+    EGUI_TEST_ASSERT_TRUE(strncmp(hyphen_text, "scan-", line_len) == 0);
+    EGUI_TEST_ASSERT_TRUE(next != NULL);
+    EGUI_TEST_ASSERT_TRUE(strcmp(next, "first reading") == 0);
+}
+
 static void test_rich_text_block_static_preview_consumes_input_and_keeps_state(void)
 {
     rich_text_block_preview_snapshot_t initial_snapshot;
@@ -339,6 +366,7 @@ void test_rich_text_block_run(void)
     EGUI_TEST_RUN(test_rich_text_block_init_uses_defaults);
     EGUI_TEST_RUN(test_rich_text_block_setters_clamp_content_and_clear_pressed_state);
     EGUI_TEST_RUN(test_rich_text_block_layout_helpers_measure_paragraphs);
+    EGUI_TEST_RUN(test_rich_text_block_wrap_prefers_word_boundaries);
     EGUI_TEST_RUN(test_rich_text_block_static_preview_consumes_input_and_keeps_state);
     EGUI_TEST_SUITE_END();
 }
