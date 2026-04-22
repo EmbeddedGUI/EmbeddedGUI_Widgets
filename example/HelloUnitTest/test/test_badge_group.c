@@ -521,6 +521,7 @@ static void test_badge_group_static_preview_consumes_input_and_keeps_state(void)
 
 static void test_badge_group_internal_helpers_cover_focus_tone_text_and_width(void)
 {
+    char label[32];
     egui_color_t sample = EGUI_COLOR_HEX(0x123456);
     egui_color_t mixed = egui_view_badge_group_mix_disabled(sample);
 
@@ -533,6 +534,7 @@ static void test_badge_group_internal_helpers_cover_focus_tone_text_and_width(vo
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_BADGE_GROUP_MAX_ITEMS, egui_view_badge_group_clamp_item_count(9));
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_badge_group_text_len(NULL));
     EGUI_TEST_ASSERT_EQUAL_INT(6, egui_view_badge_group_text_len("Review"));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_badge_group_measure_text_width(NULL, "Review"));
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_badge_group_focus_index(NULL, 1));
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_badge_group_focus_index(&g_invalid_focus_snapshot, 4));
     EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_badge_group_focus_index(&g_snapshots[2], 4));
@@ -541,9 +543,13 @@ static void test_badge_group_internal_helpers_cover_focus_tone_text_and_width(vo
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x777777).full, egui_view_badge_group_tone_color(&test_group, 2).full);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x888888).full, egui_view_badge_group_tone_color(&test_group, 3).full);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x555555).full, egui_view_badge_group_tone_color(&test_group, 9).full);
-    EGUI_TEST_ASSERT_EQUAL_INT(24, egui_view_badge_group_pill_width("", 1, 24, 64));
-    EGUI_TEST_ASSERT_EQUAL_INT(38, egui_view_badge_group_pill_width("AB", 0, 28, 50));
-    EGUI_TEST_ASSERT_EQUAL_INT(40, egui_view_badge_group_pill_width("Long label", 0, 28, 40));
+    EGUI_TEST_ASSERT_EQUAL_INT(24, egui_view_badge_group_pill_width(NULL, "", 24, 64));
+    EGUI_TEST_ASSERT_EQUAL_INT(38, egui_view_badge_group_pill_width(NULL, "AB", 28, 50));
+    EGUI_TEST_ASSERT_EQUAL_INT(40, egui_view_badge_group_pill_width(NULL, "Long label", 28, 40));
+    egui_view_badge_group_copy_elided(label, sizeof(label), "Release lanes", 8);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Relea...", label) == 0);
+    egui_view_badge_group_fit_text_to_width(NULL, "Summary follows focus.", label, sizeof(label), 24, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Sum...", label) == 0);
     EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(sample, EGUI_COLOR_DARK_GREY, 68).full, mixed.full);
 }
 
