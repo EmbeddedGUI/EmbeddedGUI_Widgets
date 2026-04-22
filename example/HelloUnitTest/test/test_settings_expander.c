@@ -592,6 +592,7 @@ static void test_settings_expander_static_preview_consumes_input_and_keeps_state
 
 static void test_settings_expander_internal_helpers(void)
 {
+    char label[24];
     egui_color_t sample = EGUI_COLOR_HEX(0x123456);
 
     setup_widget(g_snapshots, EGUI_ARRAY_SIZE(g_snapshots));
@@ -614,9 +615,6 @@ static void test_settings_expander_internal_helpers(void)
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x999999).full,
                                egui_view_settings_expander_tone_color(&test_widget, EGUI_VIEW_SETTINGS_EXPANDER_TONE_NEUTRAL).full);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x666666).full, egui_view_settings_expander_tone_color(&test_widget, 99).full);
-    EGUI_TEST_ASSERT_EQUAL_INT(24, egui_view_settings_expander_pill_width("", 1, 24, 60));
-    EGUI_TEST_ASSERT_EQUAL_INT(36, egui_view_settings_expander_pill_width("AB", 0, 26, 64));
-    EGUI_TEST_ASSERT_EQUAL_INT(32, egui_view_settings_expander_pill_width("Long label", 1, 20, 32));
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_SETTINGS_EXPANDER_MAX_ROWS,
                                egui_view_settings_expander_part_to_row_index(EGUI_VIEW_SETTINGS_EXPANDER_PART_HEADER));
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_SETTINGS_EXPANDER_PART_ROW_BASE + 2, egui_view_settings_expander_row_part(2));
@@ -625,6 +623,19 @@ static void test_settings_expander_internal_helpers(void)
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_SETTINGS_EXPANDER_PART_ROW_BASE + 3,
                                egui_view_settings_expander_find_last_row(&g_snapshots[3], 1));
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_SETTINGS_EXPANDER_PART_NONE, egui_view_settings_expander_find_last_row(&g_snapshots[2], 0));
+    EGUI_TEST_ASSERT_EQUAL_INT(24, egui_view_settings_expander_pill_width(NULL, "", 1, 24, 60));
+    EGUI_TEST_ASSERT_EQUAL_INT(36, egui_view_settings_expander_pill_width(NULL, "AB", 0, 26, 64));
+    EGUI_TEST_ASSERT_EQUAL_INT(32, egui_view_settings_expander_pill_width(NULL, "Long label", 1, 20, 32));
+    egui_view_settings_expander_copy_elided(label, sizeof(label), "Documents", 6);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Doc...", label) == 0);
+    egui_view_settings_expander_copy_elided(label, sizeof(label), "Mode", 3);
+    EGUI_TEST_ASSERT_TRUE(strcmp("...", label) == 0);
+    egui_view_settings_expander_fit_text_to_width(NULL, "Backup options", label, sizeof(label), 28, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Back...", label) == 0);
+    egui_view_settings_expander_fit_text_to_width(NULL, "Backup options", label, sizeof(label), 12, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("...", label) == 0);
+    egui_view_settings_expander_fit_text_to_width(NULL, "Review", label, sizeof(label), 24, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Review", label) == 0);
     EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(sample, EGUI_COLOR_DARK_GREY, 68).full, egui_view_settings_expander_mix_disabled(sample).full);
 }
 
