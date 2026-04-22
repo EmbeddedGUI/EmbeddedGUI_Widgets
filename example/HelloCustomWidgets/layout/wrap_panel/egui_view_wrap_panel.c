@@ -89,6 +89,84 @@ static uint8_t wrap_panel_has_text(const char *text)
     return text != NULL && text[0] != '\0' ? 1 : 0;
 }
 
+static uint8_t wrap_panel_text_len(const char *text)
+{
+    uint8_t length = 0;
+
+    if (text == NULL)
+    {
+        return 0;
+    }
+    while (text[length] != '\0')
+    {
+        length++;
+    }
+    return length;
+}
+
+static void wrap_panel_copy_elided(char *buffer, uint8_t buffer_size, const char *text, uint8_t max_chars)
+{
+    uint8_t copy_length;
+    uint8_t index;
+    uint8_t length;
+
+    if (buffer == NULL || buffer_size == 0)
+    {
+        return;
+    }
+
+    buffer[0] = '\0';
+    if (text == NULL || max_chars == 0)
+    {
+        return;
+    }
+
+    length = wrap_panel_text_len(text);
+    if (length <= max_chars)
+    {
+        copy_length = length;
+        if (copy_length >= buffer_size)
+        {
+            copy_length = buffer_size - 1;
+        }
+        for (index = 0; index < copy_length; index++)
+        {
+            buffer[index] = text[index];
+        }
+        buffer[copy_length] = '\0';
+        return;
+    }
+
+    if (max_chars <= 3)
+    {
+        copy_length = max_chars;
+        if (copy_length >= buffer_size)
+        {
+            copy_length = buffer_size - 1;
+        }
+        for (index = 0; index < copy_length; index++)
+        {
+            buffer[index] = '.';
+        }
+        buffer[copy_length] = '\0';
+        return;
+    }
+
+    copy_length = max_chars - 3;
+    if (copy_length > buffer_size - 4)
+    {
+        copy_length = buffer_size - 4;
+    }
+    for (index = 0; index < copy_length; index++)
+    {
+        buffer[index] = text[index];
+    }
+    buffer[copy_length] = '.';
+    buffer[copy_length + 1] = '.';
+    buffer[copy_length + 2] = '.';
+    buffer[copy_length + 3] = '\0';
+}
+
 static egui_dim_t wrap_panel_measure_font_line_height(const egui_font_t *font)
 {
     egui_dim_t dummy_width = 0;
@@ -115,6 +193,42 @@ static egui_dim_t wrap_panel_measure_text_width(const egui_font_t *font, const c
 
     font->api->get_str_size(font, text, 0, 0, &text_width, &dummy_height);
     return text_width;
+}
+
+static void wrap_panel_fit_text_to_width(const egui_font_t *font, const char *text, char *buffer, uint8_t buffer_size, egui_dim_t max_width,
+                                         egui_dim_t fallback_char_width)
+{
+    uint8_t max_chars;
+
+    if (buffer == NULL || buffer_size == 0)
+    {
+        return;
+    }
+
+    buffer[0] = '\0';
+    if (!wrap_panel_has_text(text) || max_width <= 0)
+    {
+        return;
+    }
+
+    max_chars = wrap_panel_text_len(text);
+    wrap_panel_copy_elided(buffer, buffer_size, text, max_chars);
+    while (max_chars > 0)
+    {
+        egui_dim_t text_width = wrap_panel_measure_text_width(font, buffer);
+
+        if (text_width <= 0)
+        {
+            text_width = (egui_dim_t)wrap_panel_text_len(buffer) * fallback_char_width;
+        }
+        if (text_width <= max_width)
+        {
+            break;
+        }
+
+        max_chars--;
+        wrap_panel_copy_elided(buffer, buffer_size, text, max_chars);
+    }
 }
 
 static egui_dim_t wrap_panel_get_title_height(egui_view_wrap_panel_t *local)
@@ -658,6 +772,9 @@ static void wrap_panel_set_current_item_inner(egui_view_t *self, uint8_t item_in
 static void wrap_panel_draw_item(egui_view_t *self, egui_view_wrap_panel_t *local, const egui_view_wrap_panel_item_t *item, const egui_region_t *region,
                                  uint8_t item_index)
 {
+    char badge_label[16];
+    char title_label[24];
+    char meta_label[16];
     egui_color_t tone_color = wrap_panel_tone_color(local, item->tone);
     egui_color_t fill_color =
             egui_rgb_mix(local->surface_color, tone_color,
@@ -742,7 +859,8 @@ static void wrap_panel_draw_item(egui_view_t *self, egui_view_wrap_panel_t *loca
         badge_region.size.height = badge_h;
         egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, badge_region.location.x, badge_region.location.y, badge_region.size.width, badge_region.size.height,
                                               badge_region.size.height / 2, badge_fill, egui_color_alpha_mix(self->alpha, 98));
-        wrap_panel_draw_text(local->meta_font, self, item->badge, &badge_region, EGUI_ALIGN_CENTER, badge_text);
+        wrap_panel_fit_text_to_width(local->meta_font, item->badge, badge_label, sizeof(badge_label), badge_region.size.width - 4, 4);
+        wrap_panel_draw_text(local->meta_font, self, badge_label, &badge_region, EGUI_ALIGN_CENTER, badge_text);
     }
 
     if (wrap_panel_has_text(item->meta))
@@ -776,8 +894,10 @@ static void wrap_panel_draw_item(egui_view_t *self, egui_view_wrap_panel_t *loca
         title_region.size.height = title_h;
     }
 
-    wrap_panel_draw_text(local->font, self, item->title, &title_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, title_color);
-    wrap_panel_draw_text(local->meta_font, self, item->meta, &meta_region, EGUI_ALIGN_RIGHT | EGUI_ALIGN_VCENTER, meta_color);
+    wrap_panel_fit_text_to_width(local->font, item->title, title_label, sizeof(title_label), title_region.size.width, local->compact_mode ? 4 : 5);
+    wrap_panel_draw_text(local->font, self, title_label, &title_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, title_color);
+    wrap_panel_fit_text_to_width(local->meta_font, item->meta, meta_label, sizeof(meta_label), meta_region.size.width - 2, 4);
+    wrap_panel_draw_text(local->meta_font, self, meta_label, &meta_region, EGUI_ALIGN_RIGHT | EGUI_ALIGN_VCENTER, meta_color);
 
     if (item_index == local->current_item && egui_view_get_enable(self) && !local->read_only_mode)
     {
@@ -789,6 +909,10 @@ static void wrap_panel_draw_item(egui_view_t *self, egui_view_wrap_panel_t *loca
 static void egui_view_wrap_panel_on_draw(egui_view_t *self)
 {
     EGUI_LOCAL_INIT(egui_view_wrap_panel_t);
+    char header_label[16];
+    char title_label[32];
+    char summary_label[32];
+    char footer_label[24];
     const egui_view_wrap_panel_snapshot_t *snapshot = wrap_panel_get_snapshot(local);
     egui_view_wrap_panel_metrics_t metrics;
     egui_color_t card_fill = local->surface_color;
@@ -859,13 +983,16 @@ static void egui_view_wrap_panel_on_draw(egui_view_t *self)
         egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.badge_region.location.x, metrics.badge_region.location.y, metrics.badge_region.size.width,
                                               metrics.badge_region.size.height, metrics.badge_region.size.height / 2, badge_fill,
                                               egui_color_alpha_mix(self->alpha, 98));
-        wrap_panel_draw_text(local->meta_font, self, snapshot->header, &metrics.badge_region, EGUI_ALIGN_CENTER, badge_text);
+        wrap_panel_fit_text_to_width(local->meta_font, snapshot->header, header_label, sizeof(header_label), metrics.badge_region.size.width - 4, 4);
+        wrap_panel_draw_text(local->meta_font, self, header_label, &metrics.badge_region, EGUI_ALIGN_CENTER, badge_text);
     }
 
     if (snapshot != NULL)
     {
-        wrap_panel_draw_text(local->font, self, snapshot->title, &metrics.title_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, title_color);
-        wrap_panel_draw_text(local->meta_font, self, snapshot->summary, &metrics.summary_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, summary_color);
+        wrap_panel_fit_text_to_width(local->font, snapshot->title, title_label, sizeof(title_label), metrics.title_region.size.width, local->compact_mode ? 4 : 5);
+        wrap_panel_draw_text(local->font, self, title_label, &metrics.title_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, title_color);
+        wrap_panel_fit_text_to_width(local->meta_font, snapshot->summary, summary_label, sizeof(summary_label), metrics.summary_region.size.width, 4);
+        wrap_panel_draw_text(local->meta_font, self, summary_label, &metrics.summary_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, summary_color);
     }
 
     if (wrap_panel_region_has_size(&metrics.shell_region))
@@ -896,7 +1023,8 @@ static void egui_view_wrap_panel_on_draw(egui_view_t *self)
         egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics.footer_region.location.x, metrics.footer_region.location.y, metrics.footer_region.size.width,
                                          metrics.footer_region.size.height, metrics.footer_region.size.height / 2, 1, footer_border,
                                          egui_color_alpha_mix(self->alpha, 36));
-        wrap_panel_draw_text(local->meta_font, self, snapshot->footer, &metrics.footer_region, EGUI_ALIGN_CENTER, footer_text);
+        wrap_panel_fit_text_to_width(local->meta_font, snapshot->footer, footer_label, sizeof(footer_label), metrics.footer_region.size.width - 4, 4);
+        wrap_panel_draw_text(local->meta_font, self, footer_label, &metrics.footer_region, EGUI_ALIGN_CENTER, footer_text);
     }
 }
 
