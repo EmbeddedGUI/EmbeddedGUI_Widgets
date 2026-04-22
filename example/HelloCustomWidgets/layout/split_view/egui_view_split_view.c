@@ -85,6 +85,69 @@ static uint8_t sv_text_len(const char *text)
     return len;
 }
 
+static void sv_copy_elided(char *buffer, uint8_t buffer_size, const char *text, uint8_t max_chars)
+{
+    uint8_t copy_length;
+    uint8_t index;
+    uint8_t length;
+
+    if (buffer == NULL || buffer_size == 0)
+    {
+        return;
+    }
+
+    buffer[0] = '\0';
+    if (text == NULL || max_chars == 0)
+    {
+        return;
+    }
+
+    length = sv_text_len(text);
+    if (length <= max_chars)
+    {
+        copy_length = length;
+        if (copy_length >= buffer_size)
+        {
+            copy_length = buffer_size - 1;
+        }
+        for (index = 0; index < copy_length; index++)
+        {
+            buffer[index] = text[index];
+        }
+        buffer[copy_length] = '\0';
+        return;
+    }
+
+    if (max_chars <= 3)
+    {
+        copy_length = max_chars;
+        if (copy_length >= buffer_size)
+        {
+            copy_length = buffer_size - 1;
+        }
+        for (index = 0; index < copy_length; index++)
+        {
+            buffer[index] = '.';
+        }
+        buffer[copy_length] = '\0';
+        return;
+    }
+
+    copy_length = max_chars - 3;
+    if (copy_length > buffer_size - 4)
+    {
+        copy_length = buffer_size - 4;
+    }
+    for (index = 0; index < copy_length; index++)
+    {
+        buffer[index] = text[index];
+    }
+    buffer[copy_length] = '.';
+    buffer[copy_length + 1] = '.';
+    buffer[copy_length + 2] = '.';
+    buffer[copy_length + 3] = '\0';
+}
+
 static egui_dim_t sv_measure_font_line_height(const egui_font_t *font)
 {
     egui_dim_t dummy_width = 0;
@@ -118,6 +181,42 @@ static egui_dim_t sv_measure_text_width(const egui_font_t *font, const char *tex
 
     font->api->get_str_size(font, text, 0, 0, &text_width, &text_height);
     return text_width;
+}
+
+static void sv_fit_text_to_width(const egui_font_t *font, const char *text, char *buffer, uint8_t buffer_size, egui_dim_t max_width,
+                                 egui_dim_t fallback_char_width)
+{
+    uint8_t max_chars;
+
+    if (buffer == NULL || buffer_size == 0)
+    {
+        return;
+    }
+
+    buffer[0] = '\0';
+    if (text == NULL || text[0] == '\0' || max_width <= 0)
+    {
+        return;
+    }
+
+    max_chars = sv_text_len(text);
+    sv_copy_elided(buffer, buffer_size, text, max_chars);
+    while (max_chars > 0)
+    {
+        egui_dim_t text_width = sv_measure_text_width(font, buffer);
+
+        if (text_width <= 0)
+        {
+            text_width = (egui_dim_t)sv_text_len(buffer) * fallback_char_width;
+        }
+        if (text_width <= max_width)
+        {
+            break;
+        }
+
+        max_chars--;
+        sv_copy_elided(buffer, buffer_size, text, max_chars);
+    }
 }
 
 static egui_color_t sv_tone_color(egui_view_split_view_t *local, uint8_t tone)
@@ -525,6 +624,8 @@ static void sv_draw_toggle(egui_view_t *self, egui_view_split_view_t *local, con
 static void sv_draw_row(egui_view_t *self, egui_view_split_view_t *local, const egui_view_split_view_item_t *item, const egui_region_t *region,
                         uint8_t selected, uint8_t pressed)
 {
+    char title_label[24];
+    char meta_label[16];
     egui_region_t text_region;
     egui_color_t tone_color = sv_tone_color(local, item->tone);
     egui_color_t row_fill = egui_rgb_mix(local->surface_color, tone_color, selected ? 14 : (local->pane_expanded ? 7 : 11));
@@ -611,7 +712,8 @@ static void sv_draw_row(egui_view_t *self, egui_view_split_view_t *local, const 
             text_region.location.y = region->location.y + (region->size.height - meta_h) / 2;
             text_region.size.width = meta_w;
             text_region.size.height = meta_h;
-            sv_draw_text(local->meta_font, self, item->meta, &text_region, EGUI_ALIGN_CENTER, meta_color);
+            sv_fit_text_to_width(local->meta_font, item->meta, meta_label, sizeof(meta_label), text_region.size.width - 4, local->compact_mode ? 4 : 5);
+            sv_draw_text(local->meta_font, self, meta_label, &text_region, EGUI_ALIGN_CENTER, meta_color);
         }
         else
         {
@@ -621,7 +723,8 @@ static void sv_draw_row(egui_view_t *self, egui_view_split_view_t *local, const 
         text_region.location.y = region->location.y;
         text_region.size.width = value_x - title_x - 4;
         text_region.size.height = region->size.height;
-        sv_draw_text(local->font, self, item->title, &text_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, title_color);
+        sv_fit_text_to_width(local->font, item->title, title_label, sizeof(title_label), text_region.size.width, local->compact_mode ? 4 : 5);
+        sv_draw_text(local->font, self, title_label, &text_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, title_color);
     }
     else
     {
@@ -642,6 +745,12 @@ static void egui_view_split_view_on_draw(egui_view_t *self)
     EGUI_LOCAL_INIT(egui_view_split_view_t);
     const egui_view_split_view_item_t *item = sv_get_current_item(local);
     egui_view_split_view_metrics_t metrics;
+    char eyebrow_label[16];
+    char detail_title_label[24];
+    char detail_meta_label[24];
+    char body_primary_label[32];
+    char body_secondary_label[32];
+    char footer_label[16];
     egui_region_t text_region;
     egui_color_t tone_color;
     egui_color_t focus_color = EGUI_THEME_FOCUS;
@@ -793,7 +902,8 @@ static void egui_view_split_view_on_draw(egui_view_t *self)
         text_region.location.y = cursor_y;
         text_region.size.width = metrics.detail.size.width - detail_pad_x * 2;
         text_region.size.height = eyebrow_h;
-        sv_draw_text(local->meta_font, self, item->detail_eyebrow, &text_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, eyebrow_color);
+        sv_fit_text_to_width(local->meta_font, item->detail_eyebrow, eyebrow_label, sizeof(eyebrow_label), text_region.size.width, local->compact_mode ? 4 : 5);
+        sv_draw_text(local->meta_font, self, eyebrow_label, &text_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, eyebrow_color);
         cursor_y += eyebrow_h + 2;
     }
 
@@ -801,26 +911,32 @@ static void egui_view_split_view_on_draw(egui_view_t *self)
     text_region.location.y = cursor_y;
     text_region.size.width = metrics.detail.size.width - detail_pad_x * 2;
     text_region.size.height = title_h;
-    sv_draw_text(local->font, self, item->detail_title, &text_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, title_color);
+    sv_fit_text_to_width(local->font, item->detail_title, detail_title_label, sizeof(detail_title_label), text_region.size.width, local->compact_mode ? 4 : 5);
+    sv_draw_text(local->font, self, detail_title_label, &text_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, title_color);
     cursor_y += title_h + 2;
 
     if (metrics.show_meta)
     {
         text_region.location.y = cursor_y;
         text_region.size.height = meta_h;
-        sv_draw_text(local->meta_font, self, item->detail_meta, &text_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, meta_color);
+        sv_fit_text_to_width(local->meta_font, item->detail_meta, detail_meta_label, sizeof(detail_meta_label), text_region.size.width, local->compact_mode ? 4 : 5);
+        sv_draw_text(local->meta_font, self, detail_meta_label, &text_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, meta_color);
         cursor_y += meta_h + 2;
     }
 
     text_region.location.y = cursor_y;
     text_region.size.height = body_h;
-    sv_draw_text(local->meta_font, self, item->detail_body_primary, &text_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, body_color);
+    sv_fit_text_to_width(local->meta_font, item->detail_body_primary, body_primary_label, sizeof(body_primary_label), text_region.size.width,
+                         local->compact_mode ? 4 : 5);
+    sv_draw_text(local->meta_font, self, body_primary_label, &text_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, body_color);
     if (metrics.show_secondary_body)
     {
         cursor_y += body_h + body_gap;
         text_region.location.y = cursor_y;
         text_region.size.height = body_h;
-        sv_draw_text(local->meta_font, self, item->detail_body_secondary, &text_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, body_color);
+        sv_fit_text_to_width(local->meta_font, item->detail_body_secondary, body_secondary_label, sizeof(body_secondary_label), text_region.size.width,
+                             local->compact_mode ? 4 : 5);
+        sv_draw_text(local->meta_font, self, body_secondary_label, &text_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, body_color);
     }
 
     footer_w = sv_footer_width(local->meta_font, item->detail_footer, local->compact_mode, metrics.detail.size.width - detail_pad_x * 2);
@@ -833,7 +949,8 @@ static void egui_view_split_view_on_draw(egui_view_t *self)
     text_region.location.y = metrics.detail.location.y + metrics.detail.size.height - footer_h - detail_pad_y;
     text_region.size.width = footer_w;
     text_region.size.height = footer_h;
-    sv_draw_text(local->meta_font, self, item->detail_footer, &text_region, EGUI_ALIGN_CENTER, footer_text);
+    sv_fit_text_to_width(local->meta_font, item->detail_footer, footer_label, sizeof(footer_label), text_region.size.width - 4, local->compact_mode ? 4 : 5);
+    sv_draw_text(local->meta_font, self, footer_label, &text_region, EGUI_ALIGN_CENTER, footer_text);
 }
 #if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
 static int egui_view_split_view_on_touch_event(egui_view_t *self, egui_motion_event_t *event)

@@ -305,6 +305,7 @@ static void test_split_view_set_items_clamp_and_listener_guards(void)
 
 static void test_split_view_font_palette_helpers_and_pane_listener(void)
 {
+    char label[24];
     egui_color_t sample = EGUI_COLOR_HEX(0x123456);
 
     setup_split_view();
@@ -363,17 +364,27 @@ static void test_split_view_font_palette_helpers_and_pane_listener(void)
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_SPLIT_VIEW_MAX_ITEMS, sv_clamp_count(9));
     EGUI_TEST_ASSERT_EQUAL_INT(0, sv_text_len(NULL));
     EGUI_TEST_ASSERT_EQUAL_INT(6, sv_text_len("Review"));
-    EGUI_TEST_ASSERT_EQUAL_INT(28, sv_meta_width("LongLabel", 0));
-    EGUI_TEST_ASSERT_EQUAL_INT(20, sv_meta_width("LongLabel", 1));
+    EGUI_TEST_ASSERT_EQUAL_INT(28, sv_meta_width(NULL, "LongLabel", 0));
+    EGUI_TEST_ASSERT_EQUAL_INT(20, sv_meta_width(NULL, "LongLabel", 1));
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x606162).full, sv_tone_color(&test_split_view, EGUI_VIEW_SPLIT_VIEW_TONE_ACCENT).full);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x707172).full, sv_tone_color(&test_split_view, EGUI_VIEW_SPLIT_VIEW_TONE_SUCCESS).full);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x808182).full, sv_tone_color(&test_split_view, EGUI_VIEW_SPLIT_VIEW_TONE_WARNING).full);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x909192).full, sv_tone_color(&test_split_view, EGUI_VIEW_SPLIT_VIEW_TONE_NEUTRAL).full);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x606162).full, sv_tone_color(&test_split_view, 99).full);
-    EGUI_TEST_ASSERT_EQUAL_INT(22, sv_footer_width(NULL, 0, 50));
-    EGUI_TEST_ASSERT_EQUAL_INT(42, sv_footer_width("Open", 0, 60));
-    EGUI_TEST_ASSERT_EQUAL_INT(34, sv_footer_width("Open", 1, 40));
-    EGUI_TEST_ASSERT_EQUAL_INT(30, sv_footer_width("Long", 0, 30));
+    EGUI_TEST_ASSERT_EQUAL_INT(22, sv_footer_width(NULL, NULL, 0, 50));
+    EGUI_TEST_ASSERT_EQUAL_INT(42, sv_footer_width(NULL, "Open", 0, 60));
+    EGUI_TEST_ASSERT_EQUAL_INT(34, sv_footer_width(NULL, "Open", 1, 40));
+    EGUI_TEST_ASSERT_EQUAL_INT(30, sv_footer_width(NULL, "Long", 0, 30));
+    sv_copy_elided(label, sizeof(label), "Overview board", 7);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Over...", label) == 0);
+    sv_copy_elided(label, sizeof(label), "View", 3);
+    EGUI_TEST_ASSERT_TRUE(strcmp("...", label) == 0);
+    sv_fit_text_to_width(NULL, "Pinned modules stay visible", label, sizeof(label), 28, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Pinn...", label) == 0);
+    sv_fit_text_to_width(NULL, "Pinned modules stay visible", label, sizeof(label), 12, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("...", label) == 0);
+    sv_fit_text_to_width(NULL, "Open", label, sizeof(label), 20, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Open", label) == 0);
     EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(sample, EGUI_COLOR_DARK_GREY, 68).full, sv_mix_disabled(sample).full);
 
     egui_view_split_view_toggle_pane(EGUI_VIEW_OF(&test_split_view));
