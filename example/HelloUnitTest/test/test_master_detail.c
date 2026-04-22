@@ -243,6 +243,7 @@ static void test_master_detail_set_items_clamp_and_listener_guards(void)
 
 static void test_master_detail_font_modes_palette_and_helpers(void)
 {
+    char label[24];
     egui_color_t sample = EGUI_COLOR_HEX(0x123456);
 
     setup_master_detail();
@@ -299,6 +300,17 @@ static void test_master_detail_font_modes_palette_and_helpers(void)
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_MASTER_DETAIL_MAX_ITEMS, egui_view_master_detail_clamp_item_count(9));
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_master_detail_text_len(NULL));
     EGUI_TEST_ASSERT_EQUAL_INT(6, egui_view_master_detail_text_len("Review"));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_master_detail_measure_text_width(NULL, "Ready"));
+    egui_view_master_detail_copy_elided(label, sizeof(label), "Publish", 6);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Pub...", label) == 0);
+    egui_view_master_detail_copy_elided(label, sizeof(label), "Mode", 3);
+    EGUI_TEST_ASSERT_TRUE(strcmp("...", label) == 0);
+    egui_view_master_detail_fit_text_to_width(NULL, "Publish", label, sizeof(label), 20, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Pu...", label) == 0);
+    egui_view_master_detail_fit_text_to_width(NULL, "Publish", label, sizeof(label), 12, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("...", label) == 0);
+    egui_view_master_detail_fit_text_to_width(NULL, "Ready", label, sizeof(label), 20, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Ready", label) == 0);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x606162).full,
                                egui_view_master_detail_tone_color(&test_master_detail, EGUI_VIEW_MASTER_DETAIL_TONE_ACCENT).full);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x707172).full,
@@ -308,10 +320,10 @@ static void test_master_detail_font_modes_palette_and_helpers(void)
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x909192).full,
                                egui_view_master_detail_tone_color(&test_master_detail, EGUI_VIEW_MASTER_DETAIL_TONE_NEUTRAL).full);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x606162).full, egui_view_master_detail_tone_color(&test_master_detail, 99).full);
-    EGUI_TEST_ASSERT_EQUAL_INT(22, egui_view_master_detail_footer_width(NULL, 0, 50));
-    EGUI_TEST_ASSERT_EQUAL_INT(42, egui_view_master_detail_footer_width("Open", 0, 60));
-    EGUI_TEST_ASSERT_EQUAL_INT(34, egui_view_master_detail_footer_width("Open", 1, 40));
-    EGUI_TEST_ASSERT_EQUAL_INT(30, egui_view_master_detail_footer_width("Long", 0, 30));
+    EGUI_TEST_ASSERT_EQUAL_INT(22, egui_view_master_detail_footer_width(NULL, NULL, 0, 50));
+    EGUI_TEST_ASSERT_EQUAL_INT(42, egui_view_master_detail_footer_width(NULL, "Open", 0, 60));
+    EGUI_TEST_ASSERT_EQUAL_INT(34, egui_view_master_detail_footer_width(NULL, "Open", 1, 40));
+    EGUI_TEST_ASSERT_EQUAL_INT(30, egui_view_master_detail_footer_width(NULL, "Long", 0, 30));
     EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(sample, EGUI_COLOR_DARK_GREY, 68).full, egui_view_master_detail_mix_disabled(sample).full);
 }
 
