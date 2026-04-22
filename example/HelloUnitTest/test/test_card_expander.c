@@ -187,6 +187,43 @@ static void assert_pressed_cleared(egui_view_card_expander_t *widget)
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(widget)->is_pressed);
 }
 
+static void test_card_expander_internal_helpers_cover_text_fitting_and_tones(void)
+{
+    char label[24];
+    egui_color_t sample = EGUI_COLOR_HEX(0x123456);
+    egui_color_t mixed = egui_view_card_expander_mix_disabled(sample);
+
+    setup_widget(g_snapshots, EGUI_ARRAY_SIZE(g_snapshots));
+    egui_view_card_expander_set_palette(EGUI_VIEW_OF(&test_widget), EGUI_COLOR_HEX(0x111111), EGUI_COLOR_HEX(0x222222), EGUI_COLOR_HEX(0x333333),
+                                        EGUI_COLOR_HEX(0x444444), EGUI_COLOR_HEX(0x555555), EGUI_COLOR_HEX(0x666666), EGUI_COLOR_HEX(0x777777),
+                                        EGUI_COLOR_HEX(0x888888), EGUI_COLOR_HEX(0x999999));
+
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_CARD_EXPANDER_MAX_SNAPSHOTS, egui_view_card_expander_clamp_snapshot_count(9));
+    EGUI_TEST_ASSERT_FALSE(egui_view_card_expander_has_text(NULL));
+    EGUI_TEST_ASSERT_TRUE(egui_view_card_expander_has_text("Ready"));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_card_expander_text_len(NULL));
+    EGUI_TEST_ASSERT_EQUAL_INT(6, egui_view_card_expander_text_len("Review"));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_card_expander_measure_text_width(NULL, "Ready"));
+    egui_view_card_expander_copy_elided(label, sizeof(label), "Publish", 6);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Pub...", label) == 0);
+    egui_view_card_expander_copy_elided(label, sizeof(label), "Mode", 3);
+    EGUI_TEST_ASSERT_TRUE(strcmp("...", label) == 0);
+    egui_view_card_expander_fit_text_to_width(NULL, "Publish", label, sizeof(label), 20, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Pu...", label) == 0);
+    egui_view_card_expander_fit_text_to_width(NULL, "Publish", label, sizeof(label), 12, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("...", label) == 0);
+    egui_view_card_expander_fit_text_to_width(NULL, "Ready", label, sizeof(label), 20, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Ready", label) == 0);
+    EGUI_TEST_ASSERT_EQUAL_INT(24, egui_view_card_expander_pill_width(NULL, "", 1, 24, 60));
+    EGUI_TEST_ASSERT_EQUAL_INT(20, egui_view_card_expander_pill_width(NULL, "Ready", 1, 24, 20));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x666666).full, egui_view_card_expander_tone_color(&test_widget, EGUI_VIEW_CARD_EXPANDER_TONE_ACCENT).full);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x777777).full, egui_view_card_expander_tone_color(&test_widget, EGUI_VIEW_CARD_EXPANDER_TONE_SUCCESS).full);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x888888).full, egui_view_card_expander_tone_color(&test_widget, EGUI_VIEW_CARD_EXPANDER_TONE_WARNING).full);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x999999).full, egui_view_card_expander_tone_color(&test_widget, EGUI_VIEW_CARD_EXPANDER_TONE_NEUTRAL).full);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x666666).full, egui_view_card_expander_tone_color(&test_widget, 99).full);
+    EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(sample, EGUI_COLOR_DARK_GREY, 68).full, mixed.full);
+}
+
 static void test_card_expander_set_snapshots_clamp_and_defaults(void)
 {
     setup_widget(g_overflow_snapshots, EGUI_ARRAY_SIZE(g_overflow_snapshots));
@@ -460,6 +497,7 @@ static void test_card_expander_static_preview_consumes_input_and_keeps_state(voi
 void test_card_expander_run(void)
 {
     EGUI_TEST_SUITE_BEGIN(card_expander);
+    EGUI_TEST_RUN(test_card_expander_internal_helpers_cover_text_fitting_and_tones);
     EGUI_TEST_RUN(test_card_expander_set_snapshots_clamp_and_defaults);
     EGUI_TEST_RUN(test_card_expander_setters_clear_pressed_and_update_state);
     EGUI_TEST_RUN(test_card_expander_regions_activate_and_listener);
