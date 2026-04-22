@@ -187,6 +187,7 @@ static void test_tab_strip_current_index_and_setters_clear_pressed_state(void)
 {
     egui_color_t sample = EGUI_COLOR_HEX(0x123456);
     egui_view_tab_strip_layout_item_t items[EGUI_VIEW_TAB_STRIP_MAX_TABS];
+    char short_label[6];
     egui_dim_t width_standard;
     egui_dim_t width_compact;
     uint8_t count;
@@ -231,6 +232,7 @@ static void test_tab_strip_current_index_and_setters_clear_pressed_state(void)
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_TAB_STRIP_MAX_TABS, egui_view_tab_strip_clamp_tab_count(9));
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_tab_strip_text_len(NULL));
     EGUI_TEST_ASSERT_EQUAL_INT(5, egui_view_tab_strip_text_len("Usage"));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_tab_strip_measure_text_width(NULL, "Overview"));
     EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(sample, EGUI_COLOR_DARK_GREY, 64).full, egui_view_tab_strip_mix_disabled(sample).full);
 
     memset(items, 0, sizeof(items));
@@ -238,13 +240,17 @@ static void test_tab_strip_current_index_and_setters_clear_pressed_state(void)
     EGUI_TEST_ASSERT_TRUE(strcmp("Doc...", items[0].label) == 0);
     egui_view_tab_strip_copy_elided(items[1].label, sizeof(items[1].label), "Usage", 3);
     EGUI_TEST_ASSERT_TRUE(strcmp("...", items[1].label) == 0);
+    egui_view_tab_strip_copy_elided(short_label, sizeof(short_label), "Overview", 6);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Ov...", short_label) == 0);
 
-    width_standard = egui_view_tab_strip_measure_tab_width(0, 1, "Overview");
-    width_compact = egui_view_tab_strip_measure_tab_width(1, 0, "Overview");
+    width_standard = egui_view_tab_strip_measure_tab_width(NULL, 0, 1, "Overview");
+    width_compact = egui_view_tab_strip_measure_tab_width(NULL, 1, 0, "Overview");
     EGUI_TEST_ASSERT_TRUE(width_standard >= EGUI_VIEW_TAB_STRIP_STANDARD_MIN_WIDTH);
     EGUI_TEST_ASSERT_TRUE(width_compact >= EGUI_VIEW_TAB_STRIP_COMPACT_MIN_WIDTH);
     EGUI_TEST_ASSERT_TRUE(width_standard > width_compact);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_TAB_STRIP_COMPACT_GAP, egui_view_tab_strip_item_gap(1));
+    egui_view_tab_strip_fit_label_to_width(NULL, 0, 1, "Administration", short_label, sizeof(short_label), 47);
+    EGUI_TEST_ASSERT_TRUE(strcmp("A...", short_label) == 0);
 
     egui_view_tab_strip_set_compact_mode(EGUI_VIEW_OF(&test_tab_strip), 0);
     egui_view_tab_strip_set_read_only_mode(EGUI_VIEW_OF(&test_tab_strip), 0);

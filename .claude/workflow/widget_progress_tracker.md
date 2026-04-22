@@ -160,6 +160,13 @@
 ## 最近完成的收口动作
 
 - `2026-04-22`
+  - 收口 `navigation/tab_strip` helper 与文本拟合边界：在 `example/HelloCustomWidgets/navigation/tab_strip/egui_view_tab_strip.c` 补稳 `egui_view_tab_strip_copy_elided()` 的 buffer 容量边界，并为 `egui_view_tab_strip_fit_label_to_width()` 增加空指针 / 空文本 / 零宽保护，避免极窄 tab 文本在小 buffer 下退化为硬截断。
+  - 修正 `example/HelloUnitTest/test/test_tab_strip.c` 的 helper 回归：把 `egui_view_tab_strip_measure_tab_width()` 调用更新为当前实现签名，并补齐 `measure_text_width / copy_elided / fit_label_to_width` 的边界断言，确认本轮没有再为 `tab_strip` 引入新的单测语法问题。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=navigation/tab_strip PORT=pc`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category navigation`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub navigation/tab_strip --timeout 10 --keep-screenshots` 与 `python scripts/code_runtime_check.py --app HelloCustomWidgets --category navigation --bits64`，确认本控件渲染正常且 navigation 分类 runtime 继续保持 `13 / 13` 通过。
+  - 已人工复核 `runtime_check_output/HelloCustomWidgets_navigation_tab_strip/default/frame_0000.png` 与 `frame_0004.png`，确认主轨道与底部 `compact / read only` preview 都没有新增半截字、错位或异常省略。
+  - `make all APP=HelloUnitTest PORT=pc_test` 当前已不再阻塞于 `example/HelloUnitTest/test/test_tab_strip.c`；本轮重跑后新的既有基线失败前移到 `example/HelloUnitTest/test/test_badge_group.c` 与 `example/HelloUnitTest/test/test_card_panel.c` 的 helper 链接缺口，与本轮 `tab_strip` 收口无关。
+
+- `2026-04-22`
   - 收口 `display/persona_group` 文本宽度适配：在 `example/HelloCustomWidgets/display/persona_group/egui_view_persona_group.c` 新增 `egui_view_persona_group_text_len()`、`egui_view_persona_group_copy_elided()` 与 `egui_view_persona_group_fit_text_to_width()`，把 `eyebrow / title / name / role / summary footer` 全部改为按宽度拟合后再绘制，并为 `footer_width()` 补齐空字体下的字符宽度回退，消除主卡和底部 preview 固定窄区里的半截字风险。
   - 修正 `example/HelloUnitTest/test/test_persona_group.c` 的 helper 回归：把 `egui_view_persona_group_footer_width()` 调用更新为当前实现签名，并补齐 `measure_text_width / copy_elided / fit_text_to_width` 的边界断言，确认本轮没有再为 `persona_group` 引入新的单测语法问题。
   - 已通过 `make all APP=HelloCustomWidgets APP_SUB=display/persona_group PORT=pc`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category display`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub display/persona_group --timeout 10 --keep-screenshots` 与 `python scripts/code_runtime_check.py --app HelloCustomWidgets --category display --bits64`，确认本控件渲染正常且 display 分类 runtime 继续保持 `21 / 21` 通过。

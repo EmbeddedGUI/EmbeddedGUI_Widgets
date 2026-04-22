@@ -112,11 +112,13 @@ static egui_dim_t egui_view_tab_strip_measure_text_width(const egui_font_t *font
 
 static void egui_view_tab_strip_copy_elided(char *buffer, uint8_t buffer_size, const char *text, uint8_t max_chars)
 {
+    uint8_t capacity;
+    uint8_t allowed_chars;
     uint8_t length = 0;
     uint8_t copy_length;
     uint8_t i;
 
-    if (buffer_size == 0)
+    if (buffer == NULL || buffer_size == 0)
     {
         return;
     }
@@ -136,13 +138,10 @@ static void egui_view_tab_strip_copy_elided(char *buffer, uint8_t buffer_size, c
         return;
     }
 
-    if (length <= max_chars)
+    capacity = buffer_size - 1;
+    if (length <= max_chars && length <= capacity)
     {
         copy_length = length;
-        if (copy_length >= buffer_size)
-        {
-            copy_length = buffer_size - 1;
-        }
         for (i = 0; i < copy_length; i++)
         {
             buffer[i] = text[i];
@@ -151,13 +150,19 @@ static void egui_view_tab_strip_copy_elided(char *buffer, uint8_t buffer_size, c
         return;
     }
 
-    if (max_chars <= 3)
+    allowed_chars = max_chars;
+    if (allowed_chars > capacity)
     {
-        copy_length = max_chars;
-        if (copy_length >= buffer_size)
-        {
-            copy_length = buffer_size - 1;
-        }
+        allowed_chars = capacity;
+    }
+    if (allowed_chars == 0)
+    {
+        return;
+    }
+
+    if (allowed_chars <= 3)
+    {
+        copy_length = allowed_chars;
         for (i = 0; i < copy_length; i++)
         {
             buffer[i] = '.';
@@ -166,11 +171,7 @@ static void egui_view_tab_strip_copy_elided(char *buffer, uint8_t buffer_size, c
         return;
     }
 
-    copy_length = max_chars - 3;
-    if (copy_length > buffer_size - 4)
-    {
-        copy_length = buffer_size - 4;
-    }
+    copy_length = allowed_chars - 3;
     for (i = 0; i < copy_length; i++)
     {
         buffer[i] = text[i];
@@ -225,8 +226,20 @@ static egui_dim_t egui_view_tab_strip_measure_tab_width(const egui_font_t *font,
 static void egui_view_tab_strip_fit_label_to_width(const egui_font_t *font, uint8_t compact_mode, uint8_t is_active, const char *text,
                                                     char *buffer, uint8_t buffer_size, egui_dim_t max_width)
 {
-    uint8_t max_chars = egui_view_tab_strip_text_len(text);
+    uint8_t max_chars;
 
+    if (buffer == NULL || buffer_size == 0)
+    {
+        return;
+    }
+
+    buffer[0] = '\0';
+    if (text == NULL || text[0] == '\0' || max_width <= 0)
+    {
+        return;
+    }
+
+    max_chars = egui_view_tab_strip_text_len(text);
     egui_view_tab_strip_copy_elided(buffer, buffer_size, text, max_chars);
     while (max_chars > 1 && egui_view_tab_strip_measure_tab_width(font, compact_mode, is_active, buffer) > max_width)
     {
