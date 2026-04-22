@@ -79,6 +79,15 @@ static egui_view_label_t footer_note_label;
 static egui_view_api_t rail_preview_api;
 static egui_view_api_t footer_preview_api;
 static uint8_t ui_ready;
+static char primary_heading_text[24];
+static char primary_note_text[72];
+static char primary_card_title_text[DOCK_PANEL_ITEM_CAPACITY][16];
+static char rail_heading_text[16];
+static char rail_note_text[24];
+static char rail_card_title_text[DOCK_PANEL_RAIL_ITEM_COUNT][8];
+static char footer_heading_text[16];
+static char footer_note_text[24];
+static char footer_card_title_text[DOCK_PANEL_FOOTER_ITEM_COUNT][8];
 
 EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
 EGUI_BACKGROUND_PARAM_INIT(bg_page_panel_params, &bg_page_panel_param, NULL, NULL);
@@ -113,6 +122,154 @@ EGUI_BACKGROUND_PARAM_INIT(bg_card_warm_params, &bg_card_warm_param, NULL, NULL)
 EGUI_BACKGROUND_COLOR_STATIC_CONST_INIT(bg_card_warm, &bg_card_warm_params);
 
 static const char *title_text = "DockPanel";
+
+static uint8_t dock_panel_has_text(const char *text)
+{
+    return (text != NULL && text[0] != '\0') ? 1 : 0;
+}
+
+static uint8_t dock_panel_text_len(const char *text)
+{
+    uint8_t len = 0;
+
+    if (text == NULL)
+    {
+        return 0;
+    }
+
+    while (text[len] != '\0')
+    {
+        len++;
+    }
+    return len;
+}
+
+static egui_dim_t dock_panel_measure_text_width(const egui_font_t *font, const char *text)
+{
+    egui_dim_t width = 0;
+    egui_dim_t height = 0;
+
+    if (!dock_panel_has_text(text) || font == NULL || font->api == NULL || font->api->get_str_size == NULL)
+    {
+        return 0;
+    }
+
+    font->api->get_str_size(font, text, 0, 0, &width, &height);
+    return width;
+}
+
+static void dock_panel_copy_elided(char *buffer, uint8_t buffer_size, const char *text, uint8_t max_chars)
+{
+    uint8_t copy_length;
+    uint8_t index;
+    uint8_t length;
+
+    if (buffer == NULL || buffer_size == 0)
+    {
+        return;
+    }
+
+    buffer[0] = '\0';
+    if (text == NULL || max_chars == 0)
+    {
+        return;
+    }
+
+    length = dock_panel_text_len(text);
+    if (length <= max_chars)
+    {
+        copy_length = length;
+        if (copy_length >= buffer_size)
+        {
+            copy_length = buffer_size - 1;
+        }
+        for (index = 0; index < copy_length; ++index)
+        {
+            buffer[index] = text[index];
+        }
+        buffer[copy_length] = '\0';
+        return;
+    }
+
+    if (max_chars <= 3)
+    {
+        copy_length = max_chars;
+        if (copy_length >= buffer_size)
+        {
+            copy_length = buffer_size - 1;
+        }
+        for (index = 0; index < copy_length; ++index)
+        {
+            buffer[index] = '.';
+        }
+        buffer[copy_length] = '\0';
+        return;
+    }
+
+    copy_length = max_chars - 3;
+    if (copy_length > buffer_size - 4)
+    {
+        copy_length = buffer_size - 4;
+    }
+    for (index = 0; index < copy_length; ++index)
+    {
+        buffer[index] = text[index];
+    }
+    buffer[copy_length] = '.';
+    buffer[copy_length + 1] = '.';
+    buffer[copy_length + 2] = '.';
+    buffer[copy_length + 3] = '\0';
+}
+
+static void dock_panel_fit_text_to_width(const egui_font_t *font, const char *text, char *buffer, uint8_t buffer_size, egui_dim_t max_width,
+                                         egui_dim_t fallback_char_width)
+{
+    uint8_t max_chars;
+
+    if (buffer == NULL || buffer_size == 0)
+    {
+        return;
+    }
+
+    buffer[0] = '\0';
+    if (!dock_panel_has_text(text) || max_width <= 0)
+    {
+        return;
+    }
+
+    max_chars = dock_panel_text_len(text);
+    dock_panel_copy_elided(buffer, buffer_size, text, max_chars);
+    while (max_chars > 0)
+    {
+        egui_dim_t text_width = dock_panel_measure_text_width(font, buffer);
+
+        if (text_width <= 0)
+        {
+            text_width = (egui_dim_t)dock_panel_text_len(buffer) * fallback_char_width;
+        }
+        if (text_width <= max_width)
+        {
+            break;
+        }
+
+        max_chars--;
+        dock_panel_copy_elided(buffer, buffer_size, text, max_chars);
+    }
+}
+
+static void dock_panel_set_fitted_label_text(egui_view_label_t *label, char *buffer, uint8_t buffer_size, const char *text, egui_dim_t fallback_char_width)
+{
+    egui_dim_t max_width;
+
+    if (label == NULL || buffer == NULL || buffer_size == 0)
+    {
+        return;
+    }
+
+    max_width = EGUI_VIEW_OF(label)->region.size.width;
+    dock_panel_fit_text_to_width(label->font, text, buffer, buffer_size, max_width, fallback_char_width);
+    egui_view_label_set_text(EGUI_VIEW_OF(label), buffer);
+}
 
 static const dock_snapshot_t primary_snapshots[] = {
         {
@@ -241,7 +398,8 @@ static void init_card(egui_view_linearlayout_t *card, egui_view_label_t *title_v
     egui_view_group_add_child(EGUI_VIEW_OF(card), EGUI_VIEW_OF(title_value));
 }
 
-static void set_card_state(egui_view_linearlayout_t *card, egui_view_label_t *title_value, const dock_item_t *item, uint8_t visible)
+static void set_card_state(egui_view_linearlayout_t *card, egui_view_label_t *title_value, char *title_buffer, uint8_t title_buffer_size,
+                           const dock_item_t *item, uint8_t visible)
 {
     if (!visible)
     {
@@ -253,7 +411,7 @@ static void set_card_state(egui_view_linearlayout_t *card, egui_view_label_t *ti
     egui_view_set_size(EGUI_VIEW_OF(card), item->width, item->height);
     egui_view_set_background(EGUI_VIEW_OF(card), dock_card_get_background(item->tone));
     egui_view_set_size(EGUI_VIEW_OF(title_value), item->width - 8, item->height - 4);
-    egui_view_label_set_text(EGUI_VIEW_OF(title_value), item->title);
+    dock_panel_set_fitted_label_text(title_value, title_buffer, title_buffer_size, item->title, 4);
     egui_view_label_set_font_color(EGUI_VIEW_OF(title_value), dock_card_get_title_color(item->tone), EGUI_ALPHA_100);
     hcw_dock_panel_set_child_dock(EGUI_VIEW_OF(card), item->dock_type);
     egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(card));
@@ -274,8 +432,8 @@ static void apply_dock_style_for_snapshot(egui_view_t *dock_panel, const dock_sn
     hcw_dock_panel_set_last_child_fill(dock_panel, snapshot->last_child_fill);
 }
 
-static void apply_snapshot_to_dock_panel(egui_view_t *dock_panel, egui_view_linearlayout_t *cards, egui_view_label_t *titles, uint8_t capacity,
-                                         const dock_snapshot_t *snapshot)
+static void apply_snapshot_to_dock_panel(egui_view_t *dock_panel, egui_view_linearlayout_t *cards, egui_view_label_t *titles, char *card_title_text,
+                                         uint8_t title_text_size, uint8_t capacity, const dock_snapshot_t *snapshot)
 {
     uint8_t index;
 
@@ -283,7 +441,7 @@ static void apply_snapshot_to_dock_panel(egui_view_t *dock_panel, egui_view_line
     for (index = 0; index < capacity; index++)
     {
         uint8_t visible = index < snapshot->item_count;
-        set_card_state(&cards[index], &titles[index], &snapshot->items[index], visible);
+        set_card_state(&cards[index], &titles[index], &card_title_text[index * title_text_size], title_text_size, &snapshot->items[index], visible);
     }
     hcw_dock_panel_layout_childs(dock_panel);
 }
@@ -326,9 +484,10 @@ static void apply_primary_state(uint8_t index)
 {
     const dock_snapshot_t *snapshot = &primary_snapshots[index % PRIMARY_SNAPSHOT_COUNT];
 
-    egui_view_label_set_text(EGUI_VIEW_OF(&primary_heading_label), snapshot->heading);
-    egui_view_label_set_text(EGUI_VIEW_OF(&primary_note_label), snapshot->note);
-    apply_snapshot_to_dock_panel(EGUI_VIEW_OF(&primary_dock_panel), primary_cards, primary_card_titles, DOCK_PANEL_ITEM_CAPACITY, snapshot);
+    dock_panel_set_fitted_label_text(&primary_heading_label, primary_heading_text, sizeof(primary_heading_text), snapshot->heading, 4);
+    dock_panel_set_fitted_label_text(&primary_note_label, primary_note_text, sizeof(primary_note_text), snapshot->note, 4);
+    apply_snapshot_to_dock_panel(EGUI_VIEW_OF(&primary_dock_panel), primary_cards, primary_card_titles, &primary_card_title_text[0][0],
+                                 sizeof(primary_card_title_text[0]), DOCK_PANEL_ITEM_CAPACITY, snapshot);
     if (ui_ready)
     {
         layout_page();
@@ -342,8 +501,15 @@ static void apply_primary_default_state(void)
 
 static void apply_preview_states(void)
 {
-    apply_snapshot_to_dock_panel(EGUI_VIEW_OF(&rail_preview_panel), rail_cards, rail_card_titles, DOCK_PANEL_RAIL_ITEM_COUNT, &rail_preview_snapshot);
-    apply_snapshot_to_dock_panel(EGUI_VIEW_OF(&footer_preview_panel), footer_cards, footer_card_titles, DOCK_PANEL_FOOTER_ITEM_COUNT, &footer_preview_snapshot);
+    dock_panel_set_fitted_label_text(&rail_heading_label, rail_heading_text, sizeof(rail_heading_text), rail_preview_snapshot.heading, 4);
+    dock_panel_set_fitted_label_text(&rail_note_label, rail_note_text, sizeof(rail_note_text), rail_preview_snapshot.note, 4);
+    dock_panel_set_fitted_label_text(&footer_heading_label, footer_heading_text, sizeof(footer_heading_text), footer_preview_snapshot.heading, 4);
+    dock_panel_set_fitted_label_text(&footer_note_label, footer_note_text, sizeof(footer_note_text), footer_preview_snapshot.note, 4);
+
+    apply_snapshot_to_dock_panel(EGUI_VIEW_OF(&rail_preview_panel), rail_cards, rail_card_titles, &rail_card_title_text[0][0],
+                                 sizeof(rail_card_title_text[0]), DOCK_PANEL_RAIL_ITEM_COUNT, &rail_preview_snapshot);
+    apply_snapshot_to_dock_panel(EGUI_VIEW_OF(&footer_preview_panel), footer_cards, footer_card_titles, &footer_card_title_text[0][0],
+                                 sizeof(footer_card_title_text[0]), DOCK_PANEL_FOOTER_ITEM_COUNT, &footer_preview_snapshot);
     if (ui_ready)
     {
         layout_page();
@@ -533,4 +699,3 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     }
 }
 #endif
-

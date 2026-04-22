@@ -160,6 +160,10 @@
 ## 最近完成的收口动作
 
 - `2026-04-22`
+  - 修复 `layout/dock_panel` 文本截断：在不调整既有主区 panel、dock 卡片尺寸和底部 `rail / footer` preview 布局的前提下，为 `example/HelloCustomWidgets/layout/dock_panel/test.c` 新增 `dock_panel_has_text()`、`dock_panel_text_len()`、`dock_panel_measure_text_width()`、`dock_panel_copy_elided()`、`dock_panel_fit_text_to_width()` 与 `dock_panel_set_fitted_label_text()`，把主区 `heading / note`、dock item `title` 以及底部 `rail / footer` preview 的标题、说明、卡片标题统一改成“按宽度拟合后再写入 label”，消除固定窄卡宽里的半截字。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=layout/dock_panel PORT=pc`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category layout`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub layout/dock_panel --timeout 10 --keep-screenshots` 与 `python scripts/code_runtime_check.py --app HelloCustomWidgets --category layout --bits64`。
+  - 当前环境再次执行 `make all APP=HelloUnitTest PORT=pc_test` 仍失败于仓库既有 `example/HelloUnitTest/test/test_card_control.c` 基线问题，包括 `egui_view_card_control_pill_width` 签名不匹配与 `egui_view_card_control_text_len` 隐式声明，与本轮 `dock_panel` 修复无关；layout 分类 runtime `29 / 29` 继续保持通过。
+- `2026-04-22`
   - 修复 `layout/stack_panel` 文本截断：在不调整既有主区 panel、stack 卡片尺寸和底部 preview 布局的前提下，为 `example/HelloCustomWidgets/layout/stack_panel/test.c` 新增 `stack_panel_text_len()`、`stack_panel_measure_text_width()`、`stack_panel_copy_elided()`、`stack_panel_fit_text_to_width()` 与 `stack_panel_set_fitted_label_text()`，把主区 `heading / note`、各卡片标题以及底部 `horizontal / compact` preview 的标题与说明全部改成“按宽度拟合后再写入 label”，消除固定窄区里的半截字。
   - 已通过 `make all APP=HelloCustomWidgets APP_SUB=layout/stack_panel PORT=pc`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category layout`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub layout/stack_panel --timeout 10 --keep-screenshots` 与 `python scripts/code_runtime_check.py --app HelloCustomWidgets --category layout --bits64`。
   - 当前环境再次执行 `make all APP=HelloUnitTest PORT=pc_test` 仍失败于仓库既有 `example/HelloUnitTest/test/test_card_control.c` 签名不匹配基线，与本轮 `stack_panel` 修复无关；本轮未引入新的 unit / compile / runtime 失败记录。
