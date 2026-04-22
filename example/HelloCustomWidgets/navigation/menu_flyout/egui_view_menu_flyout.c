@@ -18,6 +18,11 @@ static uint8_t egui_view_menu_flyout_clamp_item_count(uint8_t count)
     return count;
 }
 
+static uint8_t egui_view_menu_flyout_has_text(const char *text)
+{
+    return text != NULL && text[0] != '\0' ? 1 : 0;
+}
+
 static uint8_t egui_view_menu_flyout_text_len(const char *text)
 {
     uint8_t length = 0;
@@ -54,7 +59,7 @@ static egui_dim_t egui_view_menu_flyout_measure_text_width(const egui_font_t *fo
     egui_dim_t text_width = 0;
     egui_dim_t dummy_height = 0;
 
-    if (text == NULL || text[0] == '\0' || font == NULL || font->api == NULL || font->api->get_str_size == NULL)
+    if (!egui_view_menu_flyout_has_text(text) || font == NULL || font->api == NULL || font->api->get_str_size == NULL)
     {
         return 0;
     }
@@ -76,6 +81,105 @@ static uint8_t egui_view_menu_flyout_focus_index(const egui_view_menu_flyout_sna
 static egui_color_t egui_view_menu_flyout_mix_disabled(egui_color_t color)
 {
     return egui_rgb_mix(color, EGUI_COLOR_DARK_GREY, 68);
+}
+
+static void egui_view_menu_flyout_copy_elided(char *buffer, uint8_t buffer_size, const char *text, uint8_t max_chars)
+{
+    uint8_t copy_length;
+    uint8_t index;
+    uint8_t length;
+
+    if (buffer == NULL || buffer_size == 0)
+    {
+        return;
+    }
+
+    buffer[0] = '\0';
+    if (text == NULL || max_chars == 0)
+    {
+        return;
+    }
+
+    length = egui_view_menu_flyout_text_len(text);
+    if (length <= max_chars)
+    {
+        copy_length = length;
+        if (copy_length >= buffer_size)
+        {
+            copy_length = buffer_size - 1;
+        }
+        for (index = 0; index < copy_length; ++index)
+        {
+            buffer[index] = text[index];
+        }
+        buffer[copy_length] = '\0';
+        return;
+    }
+
+    if (max_chars <= 3)
+    {
+        copy_length = max_chars;
+        if (copy_length >= buffer_size)
+        {
+            copy_length = buffer_size - 1;
+        }
+        for (index = 0; index < copy_length; ++index)
+        {
+            buffer[index] = '.';
+        }
+        buffer[copy_length] = '\0';
+        return;
+    }
+
+    copy_length = max_chars - 3;
+    if (copy_length > buffer_size - 4)
+    {
+        copy_length = buffer_size - 4;
+    }
+    for (index = 0; index < copy_length; ++index)
+    {
+        buffer[index] = text[index];
+    }
+    buffer[copy_length] = '.';
+    buffer[copy_length + 1] = '.';
+    buffer[copy_length + 2] = '.';
+    buffer[copy_length + 3] = '\0';
+}
+
+static void egui_view_menu_flyout_fit_text_to_width(const egui_font_t *font, const char *text, char *buffer, uint8_t buffer_size, egui_dim_t max_width,
+                                                    egui_dim_t fallback_char_width)
+{
+    uint8_t max_chars;
+
+    if (buffer == NULL || buffer_size == 0)
+    {
+        return;
+    }
+
+    buffer[0] = '\0';
+    if (!egui_view_menu_flyout_has_text(text) || max_width <= 0)
+    {
+        return;
+    }
+
+    max_chars = egui_view_menu_flyout_text_len(text);
+    egui_view_menu_flyout_copy_elided(buffer, buffer_size, text, max_chars);
+    while (max_chars > 0)
+    {
+        egui_dim_t text_width = egui_view_menu_flyout_measure_text_width(font, buffer);
+
+        if (text_width <= 0)
+        {
+            text_width = (egui_dim_t)egui_view_menu_flyout_text_len(buffer) * fallback_char_width;
+        }
+        if (text_width <= max_width)
+        {
+            break;
+        }
+
+        max_chars--;
+        egui_view_menu_flyout_copy_elided(buffer, buffer_size, text, max_chars);
+    }
 }
 
 static uint8_t egui_view_menu_flyout_clear_pressed_state(egui_view_t *self)
@@ -110,7 +214,7 @@ static egui_dim_t egui_view_menu_flyout_meta_width(const egui_font_t *font, cons
 {
     egui_dim_t width;
 
-    if (text == NULL || text[0] == '\0')
+    if (!egui_view_menu_flyout_has_text(text))
     {
         return 0;
     }
@@ -133,7 +237,7 @@ static void egui_view_menu_flyout_draw_text(const egui_font_t *font, egui_view_t
 {
     egui_region_t draw_region = *region;
 
-    if (text == NULL || text[0] == '\0')
+    if (!egui_view_menu_flyout_has_text(text) || font == NULL || region->size.width <= 0 || region->size.height <= 0)
     {
         return;
     }
@@ -144,6 +248,9 @@ static void egui_view_menu_flyout_draw_text(const egui_font_t *font, egui_view_t
 static void egui_view_menu_flyout_draw_row(egui_view_t *self, egui_view_menu_flyout_t *local, const egui_view_menu_flyout_item_t *item, egui_dim_t x,
                                            egui_dim_t y, egui_dim_t width, egui_dim_t height, uint8_t focused)
 {
+    char icon_label[8];
+    char title_label[48];
+    char meta_label[24];
     egui_region_t text_region;
     egui_color_t tone_color = egui_view_menu_flyout_tone_color(local, item->tone);
     egui_color_t icon_fill = egui_rgb_mix(local->surface_color, tone_color, focused ? 10 : 6);
@@ -197,13 +304,15 @@ static void egui_view_menu_flyout_draw_row(egui_view_t *self, egui_view_menu_fly
     text_region.location.y = icon_y;
     text_region.size.width = icon_size;
     text_region.size.height = icon_size;
-    egui_view_menu_flyout_draw_text(local->meta_font, self, item->icon_text, &text_region, EGUI_ALIGN_CENTER, icon_text);
+    egui_view_menu_flyout_fit_text_to_width(local->meta_font, item->icon_text, icon_label, sizeof(icon_label), text_region.size.width - 2, 4);
+    egui_view_menu_flyout_draw_text(local->meta_font, self, icon_label, &text_region, EGUI_ALIGN_CENTER, icon_text);
 
     text_region.location.x = title_x;
     text_region.location.y = y;
     text_region.size.width = meta_x - title_x - (local->compact_mode ? 5 : 6);
     text_region.size.height = height;
-    egui_view_menu_flyout_draw_text(local->font, self, item->title, &text_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, title_color);
+    egui_view_menu_flyout_fit_text_to_width(local->font, item->title, title_label, sizeof(title_label), text_region.size.width, local->compact_mode ? 4 : 5);
+    egui_view_menu_flyout_draw_text(local->font, self, title_label, &text_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, title_color);
 
     if (meta_w > 0)
     {
@@ -211,7 +320,8 @@ static void egui_view_menu_flyout_draw_row(egui_view_t *self, egui_view_menu_fly
         text_region.location.y = y;
         text_region.size.width = meta_w;
         text_region.size.height = height;
-        egui_view_menu_flyout_draw_text(local->meta_font, self, item->meta, &text_region, EGUI_ALIGN_RIGHT | EGUI_ALIGN_VCENTER, meta_color);
+        egui_view_menu_flyout_fit_text_to_width(local->meta_font, item->meta, meta_label, sizeof(meta_label), text_region.size.width, 4);
+        egui_view_menu_flyout_draw_text(local->meta_font, self, meta_label, &text_region, EGUI_ALIGN_RIGHT | EGUI_ALIGN_VCENTER, meta_color);
     }
 
     if (item->trailing_kind == EGUI_VIEW_MENU_FLYOUT_TRAILING_SUBMENU)

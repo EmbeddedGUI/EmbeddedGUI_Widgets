@@ -376,8 +376,30 @@ static void test_menu_flyout_internal_helpers_clamp_focus_and_meta(void)
     EGUI_TEST_ASSERT_EQUAL_INT(4, egui_view_menu_flyout_text_len("Ctrl"));
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_menu_flyout_focus_index(NULL, 3));
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_menu_flyout_focus_index(&snapshot, 3));
-    EGUI_TEST_ASSERT_EQUAL_INT(20, egui_view_menu_flyout_meta_width("Ctrl+Shift+P", 0, 20));
-    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_menu_flyout_meta_width(NULL, 1, 20));
+    EGUI_TEST_ASSERT_EQUAL_INT(20, egui_view_menu_flyout_meta_width(NULL, "Ctrl+Shift+P", 0, 20));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_menu_flyout_meta_width(NULL, NULL, 1, 20));
+}
+
+static void test_menu_flyout_internal_helpers_cover_text_fitting(void)
+{
+    char label[24];
+
+    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_menu_flyout_has_text(NULL));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_menu_flyout_has_text(""));
+    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_menu_flyout_has_text("Ctrl"));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_menu_flyout_measure_text_width(NULL, "Ctrl"));
+
+    egui_view_menu_flyout_copy_elided(label, sizeof(label), "Documents", 6);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Doc...", label) == 0);
+    egui_view_menu_flyout_copy_elided(label, sizeof(label), "Mode", 3);
+    EGUI_TEST_ASSERT_TRUE(strcmp("...", label) == 0);
+
+    egui_view_menu_flyout_fit_text_to_width(NULL, "Ctrl+Shift+P", label, sizeof(label), 28, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Ctrl...", label) == 0);
+    egui_view_menu_flyout_fit_text_to_width(NULL, "Ctrl+Shift+P", label, sizeof(label), 12, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("...", label) == 0);
+    egui_view_menu_flyout_fit_text_to_width(NULL, "Ready", label, sizeof(label), 20, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Ready", label) == 0);
 }
 
 void test_menu_flyout_run(void)
@@ -391,5 +413,6 @@ void test_menu_flyout_run(void)
     EGUI_TEST_RUN(test_menu_flyout_disabled_and_view_disabled_guards_clear_pressed_state);
     EGUI_TEST_RUN(test_menu_flyout_static_preview_consumes_input_and_keeps_state);
     EGUI_TEST_RUN(test_menu_flyout_internal_helpers_clamp_focus_and_meta);
+    EGUI_TEST_RUN(test_menu_flyout_internal_helpers_cover_text_fitting);
     EGUI_TEST_SUITE_END();
 }
