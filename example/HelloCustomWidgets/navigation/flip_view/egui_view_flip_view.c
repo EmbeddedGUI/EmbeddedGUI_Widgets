@@ -40,6 +40,23 @@ static uint8_t flip_view_has_text(const char *text)
     return (text != NULL && text[0] != '\0') ? 1 : 0;
 }
 
+static uint8_t flip_view_text_len(const char *text)
+{
+    uint8_t length = 0;
+
+    if (text == NULL)
+    {
+        return 0;
+    }
+
+    while (text[length] != '\0')
+    {
+        length++;
+    }
+
+    return length;
+}
+
 static egui_dim_t flip_view_measure_font_line_height(const egui_font_t *font)
 {
     egui_dim_t dummy_width = 0;
@@ -66,6 +83,105 @@ static egui_dim_t flip_view_measure_text_width(const egui_font_t *font, const ch
 
     font->api->get_str_size(font, text, 0, 0, &text_width, &dummy_height);
     return text_width;
+}
+
+static void flip_view_copy_elided(char *buffer, uint8_t buffer_size, const char *text, uint8_t max_chars)
+{
+    uint8_t copy_length;
+    uint8_t index;
+    uint8_t length;
+
+    if (buffer == NULL || buffer_size == 0)
+    {
+        return;
+    }
+
+    buffer[0] = '\0';
+    if (text == NULL || max_chars == 0)
+    {
+        return;
+    }
+
+    length = flip_view_text_len(text);
+    if (length <= max_chars)
+    {
+        copy_length = length;
+        if (copy_length >= buffer_size)
+        {
+            copy_length = buffer_size - 1;
+        }
+        for (index = 0; index < copy_length; ++index)
+        {
+            buffer[index] = text[index];
+        }
+        buffer[copy_length] = '\0';
+        return;
+    }
+
+    if (max_chars <= 3)
+    {
+        copy_length = max_chars;
+        if (copy_length >= buffer_size)
+        {
+            copy_length = buffer_size - 1;
+        }
+        for (index = 0; index < copy_length; ++index)
+        {
+            buffer[index] = '.';
+        }
+        buffer[copy_length] = '\0';
+        return;
+    }
+
+    copy_length = max_chars - 3;
+    if (copy_length > buffer_size - 4)
+    {
+        copy_length = buffer_size - 4;
+    }
+    for (index = 0; index < copy_length; ++index)
+    {
+        buffer[index] = text[index];
+    }
+    buffer[copy_length] = '.';
+    buffer[copy_length + 1] = '.';
+    buffer[copy_length + 2] = '.';
+    buffer[copy_length + 3] = '\0';
+}
+
+static void flip_view_fit_text_to_width(const egui_font_t *font, const char *text, char *buffer, uint8_t buffer_size, egui_dim_t max_width,
+                                        egui_dim_t fallback_char_width)
+{
+    uint8_t max_chars;
+
+    if (buffer == NULL || buffer_size == 0)
+    {
+        return;
+    }
+
+    buffer[0] = '\0';
+    if (!flip_view_has_text(text) || max_width <= 0)
+    {
+        return;
+    }
+
+    max_chars = flip_view_text_len(text);
+    flip_view_copy_elided(buffer, buffer_size, text, max_chars);
+    while (max_chars > 0)
+    {
+        egui_dim_t text_width = flip_view_measure_text_width(font, buffer);
+
+        if (text_width <= 0)
+        {
+            text_width = (egui_dim_t)flip_view_text_len(buffer) * fallback_char_width;
+        }
+        if (text_width <= max_width)
+        {
+            break;
+        }
+
+        max_chars--;
+        flip_view_copy_elided(buffer, buffer_size, text, max_chars);
+    }
 }
 
 static egui_dim_t flip_view_meta_height(const egui_view_flip_view_t *local, egui_dim_t fallback)
@@ -630,7 +746,7 @@ static void flip_view_draw_text(const egui_font_t *font, egui_view_t *self, cons
 {
     egui_region_t draw_region = *region;
 
-    if (!flip_view_has_text(text))
+    if (!flip_view_has_text(text) || font == NULL || region->size.width <= 0 || region->size.height <= 0)
     {
         return;
     }
@@ -648,6 +764,7 @@ static void flip_view_draw_counter(egui_view_t *self, const egui_view_flip_view_
 {
     egui_region_t region;
     char counter_text[16];
+    char counter_label[16];
     egui_dim_t pill_w;
     egui_dim_t pill_h = flip_view_meta_height(local, local->compact_mode ? 11 : 12);
     egui_color_t counter_color = local->read_only_mode ? egui_rgb_mix(item->accent_color, local->inactive_color, 54) : item->accent_color;
@@ -676,12 +793,17 @@ static void flip_view_draw_counter(egui_view_t *self, const egui_view_flip_view_
                                    egui_rgb_mix(local->surface_color, counter_color, 8), egui_color_alpha_mix(self->alpha, 90));
     flip_view_draw_round_stroke_safe(region.location.x, region.location.y, region.size.width, region.size.height, region.size.height / 2, 1,
                                      egui_rgb_mix(local->border_color, counter_color, 8), egui_color_alpha_mix(self->alpha, 32));
-    flip_view_draw_text(meta_font, self, counter_text, &region, EGUI_ALIGN_CENTER, counter_color);
+    flip_view_fit_text_to_width(meta_font, counter_text, counter_label, sizeof(counter_label), region.size.width - 4, 4);
+    flip_view_draw_text(meta_font, self, counter_label, &region, EGUI_ALIGN_CENTER, counter_color);
 }
 
 static void flip_view_draw_surface(egui_view_t *self, egui_view_flip_view_t *local, const egui_view_flip_view_item_t *item,
                                    const egui_view_flip_view_metrics_t *metrics)
 {
+    char eyebrow_label[32];
+    char title_label[48];
+    char description_label[64];
+    char footer_label[32];
     egui_region_t text_region;
     egui_color_t shell_color;
     egui_color_t title_color = local->text_color;
@@ -741,7 +863,8 @@ static void flip_view_draw_surface(egui_view_t *self, egui_view_flip_view_t *loc
                                    egui_color_alpha_mix(self->alpha, 94));
     flip_view_draw_round_stroke_safe(text_region.location.x, text_region.location.y, text_region.size.width, text_region.size.height, text_region.size.height / 2, 1,
                                      egui_rgb_mix(local->border_color, accent_color, 8), egui_color_alpha_mix(self->alpha, 32));
-    flip_view_draw_text(meta_font, self, item->eyebrow, &text_region, EGUI_ALIGN_CENTER, accent_color);
+    flip_view_fit_text_to_width(meta_font, item->eyebrow, eyebrow_label, sizeof(eyebrow_label), text_region.size.width - 4, 4);
+    flip_view_draw_text(meta_font, self, eyebrow_label, &text_region, EGUI_ALIGN_CENTER, accent_color);
 
     flip_view_draw_counter(self, local, item, &metrics->surface_region, meta_font);
 
@@ -757,20 +880,23 @@ static void flip_view_draw_surface(egui_view_t *self, egui_view_flip_view_t *loc
     text_region.location.y = metrics->surface_region.location.y + 10 + eyebrow_h + (local->compact_mode ? 9 : 12);
     text_region.size.width = content_w;
     text_region.size.height = local->compact_mode ? 14 : 16;
-    flip_view_draw_text(title_font, self, item->title, &text_region, EGUI_ALIGN_LEFT, title_color);
+    flip_view_fit_text_to_width(title_font, item->title, title_label, sizeof(title_label), text_region.size.width, local->compact_mode ? 4 : 5);
+    flip_view_draw_text(title_font, self, title_label, &text_region, EGUI_ALIGN_LEFT, title_color);
 
     if (!local->compact_mode)
     {
         description_y = text_region.location.y + 21;
         text_region.location.y = description_y;
         text_region.size.height = 24;
-        flip_view_draw_text(meta_font, self, item->description, &text_region, EGUI_ALIGN_LEFT, body_color);
+        flip_view_fit_text_to_width(meta_font, item->description, description_label, sizeof(description_label), text_region.size.width, 4);
+        flip_view_draw_text(meta_font, self, description_label, &text_region, EGUI_ALIGN_LEFT, body_color);
 
         text_region.location.x = content_x;
         text_region.location.y = metrics->surface_region.location.y + metrics->surface_region.size.height - footer_h - 10;
         text_region.size.width = content_w;
         text_region.size.height = footer_h;
-        flip_view_draw_text(meta_font, self, item->footer, &text_region, EGUI_ALIGN_LEFT, egui_rgb_mix(body_color, accent_color, 10));
+        flip_view_fit_text_to_width(meta_font, item->footer, footer_label, sizeof(footer_label), text_region.size.width, 4);
+        flip_view_draw_text(meta_font, self, footer_label, &text_region, EGUI_ALIGN_LEFT, egui_rgb_mix(body_color, accent_color, 10));
 
         egui_canvas_draw_line(&uicode_get_core()->canvas, metrics->surface_region.location.x + 12, text_region.location.y - 8,
                               metrics->surface_region.location.x + metrics->surface_region.size.width - 12,
@@ -783,7 +909,8 @@ static void flip_view_draw_surface(egui_view_t *self, egui_view_flip_view_t *loc
         text_region.location.y = metrics->surface_region.location.y + metrics->surface_region.size.height - footer_h - 8;
         text_region.size.width = content_w;
         text_region.size.height = footer_h;
-        flip_view_draw_text(meta_font, self, item->footer, &text_region, EGUI_ALIGN_LEFT, egui_rgb_mix(body_color, accent_color, 10));
+        flip_view_fit_text_to_width(meta_font, item->footer, footer_label, sizeof(footer_label), text_region.size.width, 4);
+        flip_view_draw_text(meta_font, self, footer_label, &text_region, EGUI_ALIGN_LEFT, egui_rgb_mix(body_color, accent_color, 10));
     }
 }
 static void flip_view_draw_button(egui_view_t *self, egui_view_flip_view_t *local, const egui_region_t *region, const egui_view_flip_view_item_t *item,
@@ -818,6 +945,8 @@ static void flip_view_draw_button(egui_view_t *self, egui_view_flip_view_t *loca
 static void egui_view_flip_view_on_draw(egui_view_t *self)
 {
     EGUI_LOCAL_INIT(egui_view_flip_view_t);
+    char title_label[48];
+    char helper_label[48];
     egui_view_flip_view_metrics_t metrics;
     const egui_view_flip_view_item_t *item;
     egui_color_t surface_color = local->surface_color;
@@ -848,11 +977,13 @@ static void egui_view_flip_view_on_draw(egui_view_t *self)
         return;
     }
 
-    flip_view_draw_text(local->meta_font, self, local->title, &metrics.title_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, muted_text_color);
+    flip_view_fit_text_to_width(local->meta_font, local->title, title_label, sizeof(title_label), metrics.title_region.size.width, 4);
+    flip_view_draw_text(local->meta_font, self, title_label, &metrics.title_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, muted_text_color);
     flip_view_draw_surface(self, local, item, &metrics);
     flip_view_draw_button(self, local, &metrics.previous_region, item, EGUI_VIEW_FLIP_VIEW_PART_PREVIOUS, 0);
     flip_view_draw_button(self, local, &metrics.next_region, item, EGUI_VIEW_FLIP_VIEW_PART_NEXT, 1);
-    flip_view_draw_text(local->meta_font, self, local->helper, &metrics.helper_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, muted_text_color);
+    flip_view_fit_text_to_width(local->meta_font, local->helper, helper_label, sizeof(helper_label), metrics.helper_region.size.width, 4);
+    flip_view_draw_text(local->meta_font, self, helper_label, &metrics.helper_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, muted_text_color);
 
     if (!local->read_only_mode)
     {

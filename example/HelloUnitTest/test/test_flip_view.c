@@ -242,6 +242,30 @@ static void test_flip_view_setters_clear_pressed_state(void)
     assert_pressed_cleared(&test_flip_view, EGUI_VIEW_OF(&test_flip_view));
 }
 
+static void test_flip_view_internal_helpers_cover_text_fitting(void)
+{
+    char label[24];
+
+    EGUI_TEST_ASSERT_EQUAL_INT(0, flip_view_has_text(NULL));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, flip_view_has_text(""));
+    EGUI_TEST_ASSERT_EQUAL_INT(1, flip_view_has_text("Ready"));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, flip_view_text_len(NULL));
+    EGUI_TEST_ASSERT_EQUAL_INT(10, flip_view_text_len("Operations"));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, flip_view_measure_text_width(NULL, "Ready"));
+
+    flip_view_copy_elided(label, sizeof(label), "Documents", 6);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Doc...", label) == 0);
+    flip_view_copy_elided(label, sizeof(label), "Mode", 3);
+    EGUI_TEST_ASSERT_TRUE(strcmp("...", label) == 0);
+
+    flip_view_fit_text_to_width(NULL, "Operations", label, sizeof(label), 28, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Oper...", label) == 0);
+    flip_view_fit_text_to_width(NULL, "Operations", label, sizeof(label), 12, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("...", label) == 0);
+    flip_view_fit_text_to_width(NULL, "Ready", label, sizeof(label), 20, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Ready", label) == 0);
+}
+
 static void test_flip_view_tab_cycles_parts(void)
 {
     setup_widget(4, 1);
@@ -487,6 +511,7 @@ void test_flip_view_run(void)
     EGUI_TEST_SUITE_BEGIN(flip_view);
     EGUI_TEST_RUN(test_flip_view_clamps_items_and_current_index);
     EGUI_TEST_RUN(test_flip_view_setters_clear_pressed_state);
+    EGUI_TEST_RUN(test_flip_view_internal_helpers_cover_text_fitting);
     EGUI_TEST_RUN(test_flip_view_tab_cycles_parts);
     EGUI_TEST_RUN(test_flip_view_keyboard_navigation);
     EGUI_TEST_RUN(test_flip_view_plus_minus_steps_items_without_boundary_notify);
