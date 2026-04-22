@@ -264,6 +264,7 @@ static void test_expander_set_items_clamp_and_listener_guards(void)
 static void test_expander_font_palette_helpers_and_expand_listener(void)
 {
     egui_color_t sample = EGUI_COLOR_HEX(0x123456);
+    char label[24];
 
     setup_expander();
     assert_widget_state(&test_expander, 0, 0, 0, 0);
@@ -324,10 +325,21 @@ static void test_expander_font_palette_helpers_and_expand_listener(void)
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_EXPANDER_MAX_ITEMS, expander_clamp_item_count(9));
     EGUI_TEST_ASSERT_EQUAL_INT(0, expander_text_len(NULL));
     EGUI_TEST_ASSERT_EQUAL_INT(6, expander_text_len("Review"));
-    EGUI_TEST_ASSERT_EQUAL_INT(47, expander_meta_width("Ready", 0, 80));
-    EGUI_TEST_ASSERT_EQUAL_INT(20, expander_meta_width("A", 1, 80));
-    EGUI_TEST_ASSERT_EQUAL_INT(20, expander_pill_width(NULL, 0, 20, 80));
-    EGUI_TEST_ASSERT_EQUAL_INT(28, expander_pill_width("Open", 1, 12, 28));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, expander_measure_text_width(NULL, "Ready"));
+    EGUI_TEST_ASSERT_EQUAL_INT(47, expander_meta_width(NULL, "Ready", 0, 80));
+    EGUI_TEST_ASSERT_EQUAL_INT(20, expander_meta_width(NULL, "A", 1, 80));
+    EGUI_TEST_ASSERT_EQUAL_INT(20, expander_pill_width(NULL, NULL, 0, 20, 80));
+    EGUI_TEST_ASSERT_EQUAL_INT(28, expander_pill_width(NULL, "Open", 1, 12, 28));
+    expander_copy_elided(label, sizeof(label), "Workspace", 6);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Wor...", label) == 0);
+    expander_copy_elided(label, sizeof(label), "Mode", 3);
+    EGUI_TEST_ASSERT_TRUE(strcmp("...", label) == 0);
+    expander_fit_text_to_width(NULL, "Workspace", label, sizeof(label), 28, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Work...", label) == 0);
+    expander_fit_text_to_width(NULL, "Workspace", label, sizeof(label), 12, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("...", label) == 0);
+    expander_fit_text_to_width(NULL, "Ready", label, sizeof(label), 20, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Ready", label) == 0);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x606162).full, expander_tone_color(&test_expander, EGUI_VIEW_EXPANDER_TONE_ACCENT).full);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x707172).full, expander_tone_color(&test_expander, EGUI_VIEW_EXPANDER_TONE_SUCCESS).full);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x808182).full, expander_tone_color(&test_expander, EGUI_VIEW_EXPANDER_TONE_WARNING).full);

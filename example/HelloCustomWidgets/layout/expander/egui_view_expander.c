@@ -90,6 +90,104 @@ static egui_dim_t expander_measure_text_width(const egui_font_t *font, const cha
     return text_width;
 }
 
+static void expander_copy_elided(char *buffer, uint8_t buffer_size, const char *text, uint8_t max_chars)
+{
+    uint8_t copy_length;
+    uint8_t index;
+    uint8_t length;
+
+    if (buffer == NULL || buffer_size == 0)
+    {
+        return;
+    }
+
+    buffer[0] = '\0';
+    if (text == NULL || max_chars == 0)
+    {
+        return;
+    }
+
+    length = expander_text_len(text);
+    if (length <= max_chars)
+    {
+        copy_length = length;
+        if (copy_length >= buffer_size)
+        {
+            copy_length = buffer_size - 1;
+        }
+        for (index = 0; index < copy_length; ++index)
+        {
+            buffer[index] = text[index];
+        }
+        buffer[copy_length] = '\0';
+        return;
+    }
+
+    if (max_chars <= 3)
+    {
+        copy_length = max_chars;
+        if (copy_length >= buffer_size)
+        {
+            copy_length = buffer_size - 1;
+        }
+        for (index = 0; index < copy_length; ++index)
+        {
+            buffer[index] = '.';
+        }
+        buffer[copy_length] = '\0';
+        return;
+    }
+
+    copy_length = max_chars - 3;
+    if (copy_length > buffer_size - 4)
+    {
+        copy_length = buffer_size - 4;
+    }
+    for (index = 0; index < copy_length; ++index)
+    {
+        buffer[index] = text[index];
+    }
+    buffer[copy_length] = '.';
+    buffer[copy_length + 1] = '.';
+    buffer[copy_length + 2] = '.';
+    buffer[copy_length + 3] = '\0';
+}
+
+static void expander_fit_text_to_width(const egui_font_t *font, const char *text, char *buffer, uint8_t buffer_size, egui_dim_t max_width, egui_dim_t fallback_char_width)
+{
+    uint8_t max_chars;
+
+    if (buffer == NULL || buffer_size == 0)
+    {
+        return;
+    }
+
+    buffer[0] = '\0';
+    if (text == NULL || text[0] == '\0' || max_width <= 0)
+    {
+        return;
+    }
+
+    max_chars = expander_text_len(text);
+    expander_copy_elided(buffer, buffer_size, text, max_chars);
+    while (max_chars > 0)
+    {
+        egui_dim_t text_width = expander_measure_text_width(font, buffer);
+
+        if (text_width <= 0)
+        {
+            text_width = (egui_dim_t)expander_text_len(buffer) * fallback_char_width;
+        }
+        if (text_width <= max_width)
+        {
+            break;
+        }
+
+        max_chars--;
+        expander_copy_elided(buffer, buffer_size, text, max_chars);
+    }
+}
+
 static egui_dim_t expander_get_title_line_height(egui_view_expander_t *local)
 {
     egui_dim_t line_height = expander_measure_font_line_height(local->font);
@@ -585,6 +683,8 @@ static void expander_draw_header(egui_view_t *self, egui_view_expander_t *local,
                                  uint8_t selected, uint8_t expanded, uint8_t pressed)
 {
     egui_region_t text_region;
+    char meta_label[16];
+    char title_label[32];
     egui_color_t tone_color = expander_tone_color(local, item->tone);
     egui_color_t header_fill = egui_rgb_mix(local->section_color, tone_color, expanded ? 14 : (selected ? 10 : (item->emphasized ? 8 : 4)));
     egui_color_t header_border = egui_rgb_mix(local->border_color, tone_color, expanded ? 24 : (selected ? 18 : 10));
@@ -665,19 +765,25 @@ static void expander_draw_header(egui_view_t *self, egui_view_expander_t *local,
         text_region.location.y = region->location.y + (region->size.height - meta_h) / 2;
         text_region.size.width = meta_w;
         text_region.size.height = meta_h;
-        expander_draw_text(local->meta_font, self, item->meta, &text_region, EGUI_ALIGN_CENTER, meta_color);
+        expander_fit_text_to_width(local->meta_font, item->meta, meta_label, sizeof(meta_label), meta_w - 4, local->compact_mode ? 4 : 5);
+        expander_draw_text(local->meta_font, self, meta_label, &text_region, EGUI_ALIGN_CENTER, meta_color);
     }
 
     text_region.location.x = title_x;
     text_region.location.y = region->location.y;
     text_region.size.width = (meta_w > 0 ? meta_x - 4 : region->location.x + region->size.width - inset) - title_x;
     text_region.size.height = region->size.height;
-    expander_draw_text(local->font, self, item->title, &text_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, header_text);
+    expander_fit_text_to_width(local->font, item->title, title_label, sizeof(title_label), text_region.size.width, local->compact_mode ? 4 : 5);
+    expander_draw_text(local->font, self, title_label, &text_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, header_text);
 }
 
 static void expander_draw_body(egui_view_t *self, egui_view_expander_t *local, const egui_view_expander_item_t *item, const egui_region_t *region)
 {
     egui_region_t text_region;
+    char eyebrow_label[20];
+    char primary_label[48];
+    char secondary_label[48];
+    char footer_label[32];
     egui_color_t tone_color = expander_tone_color(local, item->tone);
     egui_color_t body_fill = egui_rgb_mix(local->surface_color, tone_color, item->emphasized ? 16 : 12);
     egui_color_t body_border = egui_rgb_mix(local->border_color, tone_color, item->emphasized ? 26 : 20);
@@ -744,7 +850,8 @@ static void expander_draw_body(egui_view_t *self, egui_view_expander_t *local, c
         text_region.location.y = inner_y;
         text_region.size.width = eyebrow_w;
         text_region.size.height = eyebrow_h;
-        expander_draw_text(local->meta_font, self, item->eyebrow, &text_region, EGUI_ALIGN_CENTER, eyebrow_color);
+        expander_fit_text_to_width(local->meta_font, item->eyebrow, eyebrow_label, sizeof(eyebrow_label), eyebrow_w - 4, local->compact_mode ? 4 : 5);
+        expander_draw_text(local->meta_font, self, eyebrow_label, &text_region, EGUI_ALIGN_CENTER, eyebrow_color);
     }
     else
     {
@@ -755,7 +862,8 @@ static void expander_draw_body(egui_view_t *self, egui_view_expander_t *local, c
     text_region.location.y = local->compact_mode ? (region->location.y + (region->size.height - body_text_h) / 2) : (inner_y + eyebrow_h + 3);
     text_region.size.width = inner_w;
     text_region.size.height = body_text_h;
-    expander_draw_text(local->meta_font, self, item->body_primary, &text_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, primary_color);
+    expander_fit_text_to_width(local->meta_font, item->body_primary, primary_label, sizeof(primary_label), text_region.size.width, local->compact_mode ? 4 : 5);
+    expander_draw_text(local->meta_font, self, primary_label, &text_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, primary_color);
 
     if (local->compact_mode)
     {
@@ -766,7 +874,8 @@ static void expander_draw_body(egui_view_t *self, egui_view_expander_t *local, c
     {
         text_region.location.y += text_region.size.height;
         text_region.size.height = body_text_h;
-        expander_draw_text(local->meta_font, self, item->body_secondary, &text_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, secondary_color);
+        expander_fit_text_to_width(local->meta_font, item->body_secondary, secondary_label, sizeof(secondary_label), text_region.size.width, 5);
+        expander_draw_text(local->meta_font, self, secondary_label, &text_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, secondary_color);
     }
 
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, inner_x, footer_y, inner_w, footer_h, footer_h / 2, footer_fill, egui_color_alpha_mix(self->alpha, 90));
@@ -776,7 +885,8 @@ static void expander_draw_body(egui_view_t *self, egui_view_expander_t *local, c
     text_region.location.y = footer_y;
     text_region.size.width = inner_w - (local->compact_mode ? 6 : 10);
     text_region.size.height = footer_h;
-    expander_draw_text(local->meta_font, self, item->footer, &text_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, footer_color);
+    expander_fit_text_to_width(local->meta_font, item->footer, footer_label, sizeof(footer_label), text_region.size.width, 5);
+    expander_draw_text(local->meta_font, self, footer_label, &text_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, footer_color);
 }
 
 static void egui_view_expander_on_draw(egui_view_t *self)
