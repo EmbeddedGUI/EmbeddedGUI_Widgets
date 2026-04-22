@@ -103,6 +103,44 @@ static uint8_t egui_view_flyout_has_text(const char *text)
     return (text != NULL && text[0] != '\0') ? 1 : 0;
 }
 
+static uint8_t egui_view_flyout_is_space_char(char c)
+{
+    return (uint8_t)(c == ' ' || c == '\t');
+}
+
+static uint8_t egui_view_flyout_is_break_after_char(char c)
+{
+    return (uint8_t)(c == '-' || c == '/');
+}
+
+static uint8_t egui_view_flyout_find_elide_boundary(const char *text, uint8_t visible_chars)
+{
+    uint8_t index;
+
+    if (text == NULL || visible_chars == 0)
+    {
+        return 0;
+    }
+
+    for (index = visible_chars; index > 0; --index)
+    {
+        if (egui_view_flyout_is_space_char(text[index - 1]))
+        {
+            return (uint8_t)(index - 1);
+        }
+    }
+
+    for (index = visible_chars; index > 0; --index)
+    {
+        if (egui_view_flyout_is_break_after_char(text[index - 1]))
+        {
+            return index;
+        }
+    }
+
+    return visible_chars;
+}
+
 static egui_dim_t egui_view_flyout_measure_font_line_height(const egui_font_t *font)
 {
     egui_dim_t dummy_width = 0;
@@ -179,7 +217,11 @@ static void egui_view_flyout_copy_elided(char *buffer, uint8_t buffer_size, cons
         return;
     }
 
-    copy_length = max_chars - 3;
+    copy_length = egui_view_flyout_find_elide_boundary(text, (uint8_t)(max_chars - 3));
+    if (copy_length == 0)
+    {
+        copy_length = (uint8_t)(max_chars - 3);
+    }
     if (copy_length > buffer_size - 4)
     {
         copy_length = buffer_size - 4;

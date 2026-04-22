@@ -310,10 +310,16 @@ static void test_flyout_internal_helpers_cover_text_fitting_and_tones(void)
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_flyout_measure_text_width(NULL, "Ready"));
     egui_view_flyout_copy_elided(label, sizeof(label), "Publish", 6);
     EGUI_TEST_ASSERT_TRUE(strcmp("Pub...", label) == 0);
+    egui_view_flyout_copy_elided(label, sizeof(label), "Keep actions anchored", 17);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Keep actions...", label) == 0);
+    egui_view_flyout_copy_elided(label, sizeof(label), "scan-first review", 10);
+    EGUI_TEST_ASSERT_TRUE(strcmp("scan-...", label) == 0);
     egui_view_flyout_copy_elided(label, sizeof(label), "Mode", 3);
     EGUI_TEST_ASSERT_TRUE(strcmp("...", label) == 0);
     egui_view_flyout_fit_text_to_width(NULL, "Publish", label, sizeof(label), 20, 4);
     EGUI_TEST_ASSERT_TRUE(strcmp("Pu...", label) == 0);
+    egui_view_flyout_fit_text_to_width(NULL, "Keep actions anchored", label, sizeof(label), 60, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Keep actions...", label) == 0);
     egui_view_flyout_fit_text_to_width(NULL, "Publish", label, sizeof(label), 12, 4);
     EGUI_TEST_ASSERT_TRUE(strcmp("...", label) == 0);
     egui_view_flyout_fit_text_to_width(NULL, "Ready", label, sizeof(label), 20, 4);
