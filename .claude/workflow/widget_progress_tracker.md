@@ -160,6 +160,12 @@
 ## 最近完成的收口动作
 
 - `2026-04-22`
+  - 收口 `layout/viewbox` 文本宽度适配：在 `example/HelloCustomWidgets/layout/viewbox/egui_view_viewbox.c` 新增 `viewbox_text_len()`、`viewbox_copy_elided()` 与 `viewbox_fit_text_to_width()`，把顶部 `header / title / summary / footer`、viewport 内容区 `content_title / content_meta / content_footer`、preset 的 `label / meta` 以及 detail 区 `source / scale` 全部改为按宽度拟合后再绘制，消除固定窄区里的半截字。
+  - 补齐 `example/HelloUnitTest/test/test_viewbox.inc` 的 helper 回归：新增并注册 `test_viewbox_internal_helpers()`，覆盖 `text_len / measure_text_width / copy_elided / fit_text_to_width`；同时把 preset 标准态左右文本拆成独立宽度，先为右侧 `meta` 预留空间，再让左侧 `label` 使用剩余宽度，避免两段文本互相覆盖。
+  - 已通过 `@'#include "example/HelloUnitTest/test/test_viewbox.inc"'@ | C:/msys64/mingw64/bin/gcc.exe -x c -fsyntax-only -I sdk/EmbeddedGUI/src -I sdk/EmbeddedGUI -I example/HelloUnitTest -I example/HelloCustomWidgets -`、`make all APP=HelloCustomWidgets APP_SUB=layout/viewbox PORT=pc`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category layout`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub layout/viewbox --timeout 10 --keep-screenshots` 与 `python scripts/code_runtime_check.py --app HelloCustomWidgets --category layout --bits64`，确认本控件渲染正常且 layout 分类 runtime 继续保持 `29 / 29` 通过。
+  - `make all APP=HelloUnitTest PORT=pc_test` 仍受仓库既有 `example/HelloUnitTest/test/test_card_control.c` 问题阻塞：`egui_view_card_control_text_len` 仍为隐式声明，`egui_view_card_control_pill_width` 仍存在签名/参数不匹配；与本轮 `viewbox` 文本宽度适配无关。
+
+- `2026-04-22`
   - 收口 `layout/expander` 文本宽度适配：在 `example/HelloCustomWidgets/layout/expander/egui_view_expander.c` 新增 `expander_copy_elided()` 与 `expander_fit_text_to_width()`，把 header 的 `meta / title` 以及 body 的 `eyebrow / body_primary / body_secondary / footer` 全部改为按宽度拟合后再绘制，消除主区和底部 preview 窄区里的半截字。
   - 修正 `example/HelloUnitTest/test/test_expander.c` 里既有 helper 参数口径，并补充 `measure_text_width / copy_elided / fit_text_to_width` 断言；最小语法检查 `#include "example/HelloUnitTest/test/test_expander.c"` 已通过，确认本轮没有为 `expander` 引入新的单测语法问题。
   - 已通过 `make all APP=HelloCustomWidgets APP_SUB=layout/expander PORT=pc`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category layout`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub layout/expander --timeout 10 --keep-screenshots` 与 `python scripts/code_runtime_check.py --app HelloCustomWidgets --category layout --bits64`，确认本控件渲染正常且 layout 分类 runtime 继续保持 `29 / 29` 通过。

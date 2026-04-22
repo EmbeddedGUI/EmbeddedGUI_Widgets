@@ -130,6 +130,120 @@ static egui_dim_t viewbox_measure_text_width(const egui_font_t *font, const char
     return text_width;
 }
 
+static uint8_t viewbox_text_len(const char *text)
+{
+    uint8_t length = 0;
+
+    if (text == NULL)
+    {
+        return 0;
+    }
+
+    while (text[length] != '\0')
+    {
+        length++;
+    }
+    return length;
+}
+
+static void viewbox_copy_elided(char *buffer, uint8_t buffer_size, const char *text, uint8_t max_chars)
+{
+    uint8_t copy_length;
+    uint8_t index;
+    uint8_t length;
+
+    if (buffer == NULL || buffer_size == 0)
+    {
+        return;
+    }
+
+    buffer[0] = '\0';
+    if (text == NULL || max_chars == 0)
+    {
+        return;
+    }
+
+    length = viewbox_text_len(text);
+    if (length <= max_chars)
+    {
+        copy_length = length;
+        if (copy_length >= buffer_size)
+        {
+            copy_length = buffer_size - 1;
+        }
+        for (index = 0; index < copy_length; ++index)
+        {
+            buffer[index] = text[index];
+        }
+        buffer[copy_length] = '\0';
+        return;
+    }
+
+    if (max_chars <= 3)
+    {
+        copy_length = max_chars;
+        if (copy_length >= buffer_size)
+        {
+            copy_length = buffer_size - 1;
+        }
+        for (index = 0; index < copy_length; ++index)
+        {
+            buffer[index] = '.';
+        }
+        buffer[copy_length] = '\0';
+        return;
+    }
+
+    copy_length = max_chars - 3;
+    if (copy_length > buffer_size - 4)
+    {
+        copy_length = buffer_size - 4;
+    }
+    for (index = 0; index < copy_length; ++index)
+    {
+        buffer[index] = text[index];
+    }
+    buffer[copy_length] = '.';
+    buffer[copy_length + 1] = '.';
+    buffer[copy_length + 2] = '.';
+    buffer[copy_length + 3] = '\0';
+}
+
+static void viewbox_fit_text_to_width(const egui_font_t *font, const char *text, char *buffer, uint8_t buffer_size, egui_dim_t max_width, egui_dim_t fallback_char_width)
+{
+    uint8_t max_chars;
+
+    if (buffer == NULL || buffer_size == 0)
+    {
+        return;
+    }
+
+    buffer[0] = '\0';
+    if (!viewbox_has_text(text) || max_width <= 0)
+    {
+        return;
+    }
+
+    max_chars = viewbox_text_len(text);
+    viewbox_copy_elided(buffer, buffer_size, text, max_chars);
+    while (max_chars > 0)
+    {
+        egui_dim_t text_width = viewbox_measure_text_width(font, buffer);
+
+        if (text_width <= 0)
+        {
+            text_width = (egui_dim_t)viewbox_text_len(buffer) * fallback_char_width;
+        }
+        if (text_width <= max_width)
+        {
+            break;
+        }
+
+        max_chars--;
+        viewbox_copy_elided(buffer, buffer_size, text, max_chars);
+    }
+}
+
 static egui_dim_t viewbox_get_badge_height(egui_view_viewbox_t *local)
 {
     egui_dim_t badge_h = viewbox_measure_font_line_height(local->meta_font);
@@ -671,6 +785,9 @@ static void viewbox_set_current_preset_inner(egui_view_t *self, uint8_t preset_i
 static void viewbox_draw_content_block(egui_view_t *self, egui_view_viewbox_t *local, const egui_view_viewbox_snapshot_t *snapshot,
                                        const egui_region_t *content_region)
 {
+    char title_label[32];
+    char meta_label[24];
+    char footer_label[24];
     egui_color_t fill_color = egui_rgb_mix(local->surface_color, local->accent_color, 10);
     egui_color_t border_color = egui_rgb_mix(local->border_color, local->accent_color, 28);
     egui_color_t band_color = local->accent_color;
@@ -755,10 +872,12 @@ static void viewbox_draw_content_block(egui_view_t *self, egui_view_viewbox_t *l
         meta_region.size.height = meta_h;
     }
 
-    viewbox_draw_text(local->font, self, snapshot->content_title, &title_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, title_color);
+    viewbox_fit_text_to_width(local->font, snapshot->content_title, title_label, sizeof(title_label), title_region.size.width, local->compact_mode ? 4 : 5);
+    viewbox_draw_text(local->font, self, title_label, &title_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, title_color);
     if (meta_h > 0)
     {
-        viewbox_draw_text(local->meta_font, self, snapshot->content_meta, &meta_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, meta_color);
+        viewbox_fit_text_to_width(local->meta_font, snapshot->content_meta, meta_label, sizeof(meta_label), meta_region.size.width, local->compact_mode ? 4 : 5);
+        viewbox_draw_text(local->meta_font, self, meta_label, &meta_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, meta_color);
     }
 
     if (footer_h > 0 && viewbox_has_text(snapshot->content_footer))
@@ -767,7 +886,8 @@ static void viewbox_draw_content_block(egui_view_t *self, egui_view_viewbox_t *l
         footer_region.location.y = content_region->location.y + content_region->size.height - pad_y - footer_h;
         footer_region.size.width = content_region->size.width - pad_x * 2;
         footer_region.size.height = footer_h;
-        viewbox_draw_text(local->meta_font, self, snapshot->content_footer, &footer_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, meta_color);
+        viewbox_fit_text_to_width(local->meta_font, snapshot->content_footer, footer_label, sizeof(footer_label), footer_region.size.width, local->compact_mode ? 4 : 5);
+        viewbox_draw_text(local->meta_font, self, footer_label, &footer_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, meta_color);
     }
 
     if (content_region->size.height > (local->compact_mode ? 18 : 26))
@@ -795,11 +915,15 @@ static void viewbox_draw_preset(egui_view_t *self, egui_view_viewbox_t *local, c
 {
     uint8_t selected = preset_index == local->current_preset;
     uint8_t pressed = preset_index == local->pressed_preset && self->is_pressed;
+    char label_text[20];
+    char meta_text[20];
     egui_color_t fill_color = egui_rgb_mix(local->surface_color, local->accent_color, selected ? 12 : (pressed ? 8 : 4));
     egui_color_t border_color = egui_rgb_mix(local->border_color, local->accent_color, selected ? 30 : (pressed ? 22 : 10));
     egui_color_t label_color = egui_rgb_mix(local->text_color, local->accent_color, selected ? 18 : 4);
     egui_color_t meta_color = egui_rgb_mix(local->muted_text_color, local->accent_color, selected ? 18 : 8);
     egui_dim_t radius = region->size.height / 2;
+    egui_dim_t content_w = region->size.width - 8;
+    egui_dim_t meta_w = 0;
     egui_region_t label_region = *region;
     egui_region_t meta_region = *region;
 
@@ -837,15 +961,47 @@ static void viewbox_draw_preset(egui_view_t *self, egui_view_viewbox_t *local, c
 
     if (local->compact_mode || !viewbox_has_text(preset->meta))
     {
-        viewbox_draw_text(local->meta_font != NULL ? local->meta_font : local->font, self, preset->label, &label_region,
+        viewbox_fit_text_to_width(local->meta_font != NULL ? local->meta_font : local->font, preset->label, label_text, sizeof(label_text), label_region.size.width,
+                                  local->compact_mode ? 4 : 5);
+        viewbox_draw_text(local->meta_font != NULL ? local->meta_font : local->font, self, label_text, &label_region,
                           EGUI_ALIGN_CENTER | EGUI_ALIGN_VCENTER, label_color);
         return;
     }
 
-    meta_region.location.x = region->location.x + 4;
-    meta_region.size.width = region->size.width - 8;
-    viewbox_draw_text(local->font, self, preset->label, &label_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, label_color);
-    viewbox_draw_text(local->meta_font, self, preset->meta, &meta_region, EGUI_ALIGN_RIGHT | EGUI_ALIGN_VCENTER, meta_color);
+    if (content_w > 0)
+    {
+        meta_w = viewbox_measure_text_width(local->meta_font, preset->meta);
+        if (meta_w <= 0)
+        {
+            meta_w = (egui_dim_t)viewbox_text_len(preset->meta) * 4;
+        }
+        meta_w += 4;
+        if (meta_w > content_w / 2)
+        {
+            meta_w = content_w / 2;
+        }
+        if (meta_w < 12)
+        {
+            meta_w = 12;
+        }
+        if (meta_w > content_w)
+        {
+            meta_w = content_w;
+        }
+    }
+
+    label_region.location.x = region->location.x + 4;
+    label_region.size.width = content_w - meta_w - 4;
+    meta_region.location.x = region->location.x + region->size.width - 4 - meta_w;
+    meta_region.size.width = meta_w;
+    if (label_region.size.width <= 0 || meta_region.size.width <= 0)
+    {
+        return;
+    }
+    viewbox_fit_text_to_width(local->font, preset->label, label_text, sizeof(label_text), label_region.size.width, 5);
+    viewbox_fit_text_to_width(local->meta_font, preset->meta, meta_text, sizeof(meta_text), meta_region.size.width, 4);
+    viewbox_draw_text(local->font, self, label_text, &label_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, label_color);
+    viewbox_draw_text(local->meta_font, self, meta_text, &meta_region, EGUI_ALIGN_RIGHT | EGUI_ALIGN_VCENTER, meta_color);
 }
 
 static void egui_view_viewbox_on_draw(egui_view_t *self)
@@ -868,6 +1024,12 @@ static void egui_view_viewbox_on_draw(egui_view_t *self)
     egui_color_t footer_border = egui_rgb_mix(local->border_color, local->accent_color, 20);
     egui_color_t footer_text = egui_rgb_mix(local->muted_text_color, local->accent_color, 18);
     egui_color_t detail_text = egui_rgb_mix(local->muted_text_color, local->accent_color, 12);
+    char badge_label[16];
+    char title_label[32];
+    char summary_label[32];
+    char footer_label[24];
+    char source_label[24];
+    char scale_label[24];
     egui_color_t focus_color = local->accent_color;
     egui_dim_t radius = local->compact_mode ? EGUI_VIEW_VIEWBOX_COMPACT_RADIUS : EGUI_VIEW_VIEWBOX_STANDARD_RADIUS;
     egui_dim_t viewport_radius = local->compact_mode ? EGUI_VIEW_VIEWBOX_COMPACT_VIEWPORT_R : EGUI_VIEW_VIEWBOX_STANDARD_VIEWPORT_R;
@@ -939,13 +1101,16 @@ static void egui_view_viewbox_on_draw(egui_view_t *self)
         egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.badge_region.location.x, metrics.badge_region.location.y, metrics.badge_region.size.width,
                                               metrics.badge_region.size.height, metrics.badge_region.size.height / 2, badge_fill,
                                               egui_color_alpha_mix(self->alpha, 98));
-        viewbox_draw_text(local->meta_font, self, snapshot->header, &metrics.badge_region, EGUI_ALIGN_CENTER, badge_text);
+        viewbox_fit_text_to_width(local->meta_font, snapshot->header, badge_label, sizeof(badge_label), metrics.badge_region.size.width - 4, 4);
+        viewbox_draw_text(local->meta_font, self, badge_label, &metrics.badge_region, EGUI_ALIGN_CENTER, badge_text);
     }
 
     if (snapshot != NULL)
     {
-        viewbox_draw_text(local->font, self, snapshot->title, &metrics.title_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, title_color);
-        viewbox_draw_text(local->meta_font, self, snapshot->summary, &metrics.summary_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, summary_color);
+        viewbox_fit_text_to_width(local->font, snapshot->title, title_label, sizeof(title_label), metrics.title_region.size.width, local->compact_mode ? 4 : 5);
+        viewbox_fit_text_to_width(local->meta_font, snapshot->summary, summary_label, sizeof(summary_label), metrics.summary_region.size.width, 4);
+        viewbox_draw_text(local->font, self, title_label, &metrics.title_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, title_color);
+        viewbox_draw_text(local->meta_font, self, summary_label, &metrics.summary_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, summary_color);
     }
 
     if (snapshot != NULL && viewbox_region_has_size(&metrics.viewport_region))
@@ -997,8 +1162,16 @@ static void egui_view_viewbox_on_draw(egui_view_t *self)
             source_region.size.height = detail_h;
             source_region.size.width -= local->compact_mode ? 8 : 12;
             scale_region = source_region;
-            viewbox_draw_text(local->meta_font, self, source_text, &source_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_TOP, detail_text);
-            viewbox_draw_text(local->meta_font, self, scale_text, &scale_region, EGUI_ALIGN_RIGHT | EGUI_ALIGN_TOP, detail_text);
+            scale_region.size.width = source_region.size.width / 2;
+            scale_region.location.x = source_region.location.x + source_region.size.width - scale_region.size.width;
+            source_region.size.width -= scale_region.size.width + 2;
+            if (source_region.size.width > 0 && scale_region.size.width > 0)
+            {
+                viewbox_fit_text_to_width(local->meta_font, source_text, source_label, sizeof(source_label), source_region.size.width, 4);
+                viewbox_fit_text_to_width(local->meta_font, scale_text, scale_label, sizeof(scale_label), scale_region.size.width, 4);
+                viewbox_draw_text(local->meta_font, self, source_label, &source_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_TOP, detail_text);
+                viewbox_draw_text(local->meta_font, self, scale_label, &scale_region, EGUI_ALIGN_RIGHT | EGUI_ALIGN_TOP, detail_text);
+            }
         }
     }
 
@@ -1016,7 +1189,8 @@ static void egui_view_viewbox_on_draw(egui_view_t *self)
         egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics.footer_region.location.x, metrics.footer_region.location.y, metrics.footer_region.size.width,
                                          metrics.footer_region.size.height, metrics.footer_region.size.height / 2, 1, footer_border,
                                          egui_color_alpha_mix(self->alpha, 34));
-        viewbox_draw_text(local->meta_font, self, snapshot->footer, &metrics.footer_region, EGUI_ALIGN_CENTER, footer_text);
+        viewbox_fit_text_to_width(local->meta_font, snapshot->footer, footer_label, sizeof(footer_label), metrics.footer_region.size.width - 4, 4);
+        viewbox_draw_text(local->meta_font, self, footer_label, &metrics.footer_region, EGUI_ALIGN_CENTER, footer_text);
     }
 }
 

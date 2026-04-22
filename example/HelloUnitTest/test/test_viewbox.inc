@@ -448,6 +448,29 @@ static void test_viewbox_read_only_and_disabled_guards(void)
     viewbox_assert_action_state(1, initial_snapshot, 2, EGUI_VIEW_VIEWBOX_STRETCH_DOWNSCALE_ONLY);
 }
 
+static void test_viewbox_internal_helpers(void)
+{
+    char label[24];
+
+    EGUI_TEST_ASSERT_EQUAL_INT(0, viewbox_text_len(NULL));
+    EGUI_TEST_ASSERT_EQUAL_INT(6, viewbox_text_len("Device"));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, viewbox_measure_text_width(NULL, "Ready"));
+
+    viewbox_copy_elided(label, sizeof(label), "Uniform", 7);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Uniform", label) == 0);
+    viewbox_copy_elided(label, sizeof(label), "Uniform", 6);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Uni...", label) == 0);
+    viewbox_copy_elided(label, sizeof(label), "Mode", 3);
+    EGUI_TEST_ASSERT_TRUE(strcmp("...", label) == 0);
+
+    viewbox_fit_text_to_width(NULL, "Uniform", label, sizeof(label), 28, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Uniform", label) == 0);
+    viewbox_fit_text_to_width(NULL, "Uniform", label, sizeof(label), 24, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Uni...", label) == 0);
+    viewbox_fit_text_to_width(NULL, "Uniform", label, sizeof(label), 12, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("...", label) == 0);
+}
+
 static void test_viewbox_static_preview_consumes_input_and_keeps_state(void)
 {
     egui_dim_t preset_x;
@@ -488,6 +511,7 @@ void test_viewbox_run(void)
     EGUI_TEST_RUN(test_viewbox_touch_same_target_release_and_cancel_behavior);
     EGUI_TEST_RUN(test_viewbox_key_navigation_activate_and_tab);
     EGUI_TEST_RUN(test_viewbox_read_only_and_disabled_guards);
+    EGUI_TEST_RUN(test_viewbox_internal_helpers);
     EGUI_TEST_RUN(test_viewbox_static_preview_consumes_input_and_keeps_state);
     EGUI_TEST_SUITE_END();
 }
