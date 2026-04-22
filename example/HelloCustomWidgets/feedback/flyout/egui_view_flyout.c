@@ -131,6 +131,105 @@ static egui_dim_t egui_view_flyout_measure_text_width(const egui_font_t *font, c
     return text_width;
 }
 
+static void egui_view_flyout_copy_elided(char *buffer, uint8_t buffer_size, const char *text, uint8_t max_chars)
+{
+    uint8_t copy_length;
+    uint8_t index;
+    uint8_t length;
+
+    if (buffer == NULL || buffer_size == 0)
+    {
+        return;
+    }
+
+    buffer[0] = '\0';
+    if (text == NULL || max_chars == 0)
+    {
+        return;
+    }
+
+    length = egui_view_flyout_text_len(text);
+    if (length <= max_chars)
+    {
+        copy_length = length;
+        if (copy_length >= buffer_size)
+        {
+            copy_length = buffer_size - 1;
+        }
+        for (index = 0; index < copy_length; ++index)
+        {
+            buffer[index] = text[index];
+        }
+        buffer[copy_length] = '\0';
+        return;
+    }
+
+    if (max_chars <= 3)
+    {
+        copy_length = max_chars;
+        if (copy_length >= buffer_size)
+        {
+            copy_length = buffer_size - 1;
+        }
+        for (index = 0; index < copy_length; ++index)
+        {
+            buffer[index] = '.';
+        }
+        buffer[copy_length] = '\0';
+        return;
+    }
+
+    copy_length = max_chars - 3;
+    if (copy_length > buffer_size - 4)
+    {
+        copy_length = buffer_size - 4;
+    }
+    for (index = 0; index < copy_length; ++index)
+    {
+        buffer[index] = text[index];
+    }
+    buffer[copy_length] = '.';
+    buffer[copy_length + 1] = '.';
+    buffer[copy_length + 2] = '.';
+    buffer[copy_length + 3] = '\0';
+}
+
+static void egui_view_flyout_fit_text_to_width(const egui_font_t *font, const char *text, char *buffer, uint8_t buffer_size, egui_dim_t max_width,
+                                               egui_dim_t fallback_char_width)
+{
+    uint8_t max_chars;
+
+    if (buffer == NULL || buffer_size == 0)
+    {
+        return;
+    }
+
+    buffer[0] = '\0';
+    if (!egui_view_flyout_has_text(text) || max_width <= 0)
+    {
+        return;
+    }
+
+    max_chars = egui_view_flyout_text_len(text);
+    egui_view_flyout_copy_elided(buffer, buffer_size, text, max_chars);
+    while (max_chars > 0)
+    {
+        egui_dim_t text_width = egui_view_flyout_measure_text_width(font, buffer);
+
+        if (text_width <= 0)
+        {
+            text_width = (egui_dim_t)egui_view_flyout_text_len(buffer) * fallback_char_width;
+        }
+        if (text_width <= max_width)
+        {
+            break;
+        }
+
+        max_chars--;
+        egui_view_flyout_copy_elided(buffer, buffer_size, text, max_chars);
+    }
+}
+
 static egui_dim_t egui_view_flyout_meta_height(egui_view_flyout_t *local, egui_dim_t fallback)
 {
     egui_dim_t line_height = egui_view_flyout_measure_font_line_height(local->meta_font);
@@ -331,7 +430,7 @@ static void egui_view_flyout_draw_text(const egui_font_t *font, egui_view_t *sel
 {
     egui_region_t draw_region = *region;
 
-    if (text == NULL || text[0] == '\0' || region->size.width <= 0 || region->size.height <= 0)
+    if (font == NULL || text == NULL || text[0] == '\0' || region->size.width <= 0 || region->size.height <= 0)
     {
         return;
     }
@@ -626,11 +725,13 @@ static void egui_view_flyout_draw_target(egui_view_t *self, egui_view_flyout_t *
                                          const egui_view_flyout_metrics_t *metrics, egui_color_t tone_color, egui_color_t text_color,
                                          egui_color_t border_color)
 {
+    char target_label[32];
     egui_color_t fill = egui_rgb_mix(local->target_fill_color, tone_color, local->open_state ? 10 : 4);
     egui_color_t outline = egui_rgb_mix(local->target_border_color, tone_color, local->open_state ? 16 : 8);
     egui_color_t label = egui_rgb_mix(text_color, tone_color, local->open_state ? 10 : 4);
     egui_color_t focus = egui_rgb_mix(tone_color, EGUI_COLOR_WHITE, 10);
     egui_dim_t radius = local->compact_mode ? 6 : 8;
+    egui_dim_t fallback_char_width = local->compact_mode ? 4 : 5;
     egui_region_t text_region;
     egui_dim_t dot_x;
     egui_dim_t dot_y;
@@ -684,18 +785,22 @@ static void egui_view_flyout_draw_target(egui_view_t *self, egui_view_flyout_t *
     text_region.location.y = metrics->target_region.location.y;
     text_region.size.width = metrics->target_region.size.width - (text_region.location.x - metrics->target_region.location.x) - 8;
     text_region.size.height = metrics->target_region.size.height;
-    egui_view_flyout_draw_text(local->font, self, snapshot != NULL ? snapshot->target_label : "", &text_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, label);
+    egui_view_flyout_fit_text_to_width(local->font, snapshot != NULL ? snapshot->target_label : "", target_label, sizeof(target_label), text_region.size.width,
+                                       fallback_char_width);
+    egui_view_flyout_draw_text(local->font, self, target_label, &text_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, label);
 }
 
 static void egui_view_flyout_draw_action(egui_view_t *self, egui_view_flyout_t *local, const egui_region_t *region, const char *label,
                                          egui_color_t tone_color, egui_color_t border_color, egui_color_t text_color, uint8_t emphasized, uint8_t focused,
                                          uint8_t pressed, uint8_t enabled)
 {
+    char action_label[24];
     egui_color_t fill = emphasized ? egui_rgb_mix(tone_color, local->surface_color, local->compact_mode ? 34 : 26)
                                    : egui_rgb_mix(local->surface_color, tone_color, focused ? 12 : 6);
     egui_color_t outline = emphasized ? egui_rgb_mix(border_color, tone_color, 20) : egui_rgb_mix(border_color, tone_color, focused ? 18 : 12);
     egui_color_t label_color = emphasized ? egui_rgb_mix(EGUI_COLOR_WHITE, text_color, 12) : (focused ? tone_color : text_color);
     egui_color_t focus_color = emphasized ? egui_rgb_mix(EGUI_COLOR_WHITE, tone_color, 18) : egui_rgb_mix(tone_color, EGUI_COLOR_WHITE, 8);
+    egui_dim_t fallback_char_width = local->compact_mode ? 4 : 5;
 
     if (!enabled || local->disabled_mode)
     {
@@ -724,19 +829,26 @@ static void egui_view_flyout_draw_action(egui_view_t *self, egui_view_flyout_t *
                                           egui_color_alpha_mix(self->alpha, emphasized ? 90 : 80));
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, region->location.x, region->location.y, region->size.width, region->size.height, local->compact_mode ? 5 : 6, 1, outline,
                                      egui_color_alpha_mix(self->alpha, 40));
-    egui_view_flyout_draw_text(local->meta_font, self, label, region, EGUI_ALIGN_CENTER, label_color);
+    egui_view_flyout_fit_text_to_width(local->meta_font, label, action_label, sizeof(action_label), region->size.width - (local->compact_mode ? 8 : 10),
+                                       fallback_char_width);
+    egui_view_flyout_draw_text(local->meta_font, self, action_label, region, EGUI_ALIGN_CENTER, label_color);
 }
 
 static void egui_view_flyout_draw_bubble(egui_view_t *self, egui_view_flyout_t *local, const egui_view_flyout_snapshot_t *snapshot,
                                          const egui_view_flyout_metrics_t *metrics, egui_color_t tone_color, egui_color_t text_color,
                                          egui_color_t muted_text_color, egui_color_t border_color, egui_color_t shadow_color)
 {
+    char hint_label[24];
+    char title_label[32];
+    char body_label[64];
+    char footer_label[32];
     egui_color_t bubble_fill = egui_rgb_mix(local->surface_color, tone_color, local->compact_mode ? 8 : 10);
     egui_color_t bubble_border = egui_rgb_mix(border_color, tone_color, local->compact_mode ? 12 : 16);
     egui_color_t body_color = egui_rgb_mix(text_color, muted_text_color, local->compact_mode ? 60 : 56);
     egui_color_t footer_color = egui_rgb_mix(muted_text_color, tone_color, 8);
     egui_color_t divider_color = egui_rgb_mix(bubble_border, tone_color, 8);
     egui_dim_t bubble_radius = local->compact_mode ? EGUI_VIEW_FLYOUT_COMPACT_BUBBLE_RADIUS : EGUI_VIEW_FLYOUT_STANDARD_BUBBLE_RADIUS;
+    egui_dim_t fallback_char_width = local->compact_mode ? 4 : 5;
 
     if (!metrics->show_bubble || snapshot == NULL)
     {
@@ -774,16 +886,21 @@ static void egui_view_flyout_draw_bubble(egui_view_t *self, egui_view_flyout_t *
 
     if (metrics->show_hint)
     {
-        egui_view_flyout_draw_text(local->meta_font, self, snapshot->hint, &metrics->hint_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, tone_color);
+        egui_view_flyout_fit_text_to_width(local->meta_font, snapshot->hint, hint_label, sizeof(hint_label), metrics->hint_region.size.width, fallback_char_width);
+        egui_view_flyout_draw_text(local->meta_font, self, hint_label, &metrics->hint_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, tone_color);
     }
-    egui_view_flyout_draw_text(local->font, self, snapshot->title, &metrics->title_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, text_color);
+    egui_view_flyout_fit_text_to_width(local->font, snapshot->title, title_label, sizeof(title_label), metrics->title_region.size.width, fallback_char_width);
+    egui_view_flyout_draw_text(local->font, self, title_label, &metrics->title_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, text_color);
     if (metrics->show_body)
     {
-        egui_view_flyout_draw_text(local->meta_font, self, snapshot->body, &metrics->body_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_TOP, body_color);
+        egui_view_flyout_fit_text_to_width(local->meta_font, snapshot->body, body_label, sizeof(body_label), metrics->body_region.size.width, fallback_char_width);
+        egui_view_flyout_draw_text(local->meta_font, self, body_label, &metrics->body_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_TOP, body_color);
     }
     if (metrics->show_footer)
     {
-        egui_view_flyout_draw_text(local->meta_font, self, snapshot->footer, &metrics->footer_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, footer_color);
+        egui_view_flyout_fit_text_to_width(local->meta_font, snapshot->footer, footer_label, sizeof(footer_label), metrics->footer_region.size.width,
+                                           fallback_char_width);
+        egui_view_flyout_draw_text(local->meta_font, self, footer_label, &metrics->footer_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, footer_color);
     }
     if (!local->compact_mode && (metrics->show_primary || metrics->show_secondary))
     {
