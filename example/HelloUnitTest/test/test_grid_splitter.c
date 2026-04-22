@@ -218,7 +218,26 @@ static void test_grid_splitter_set_snapshots_clamp_and_defaults(void)
 
 static void test_grid_splitter_setters_clear_pressed_and_update_state(void)
 {
+    char label[24];
+
     setup_widget(g_snapshots, EGUI_ARRAY_SIZE(g_snapshots));
+
+    EGUI_TEST_ASSERT_EQUAL_INT(0, grid_splitter_text_len(NULL));
+    EGUI_TEST_ASSERT_EQUAL_INT(5, grid_splitter_text_len("Ready"));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, grid_splitter_measure_text_width(NULL, "Ready"));
+    EGUI_TEST_ASSERT_EQUAL_INT(24, grid_splitter_pill_width(NULL, "", 1, 24, 60));
+    EGUI_TEST_ASSERT_EQUAL_INT(36, grid_splitter_pill_width(NULL, "AB", 0, 26, 64));
+    EGUI_TEST_ASSERT_EQUAL_INT(32, grid_splitter_pill_width(NULL, "Long label", 1, 20, 32));
+    grid_splitter_copy_elided(label, sizeof(label), "Splitter", 6);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Spl...", label) == 0);
+    grid_splitter_copy_elided(label, sizeof(label), "Pane", 3);
+    EGUI_TEST_ASSERT_TRUE(strcmp("...", label) == 0);
+    grid_splitter_fit_text_to_width(NULL, "Canvas", label, sizeof(label), 20, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Ca...", label) == 0);
+    grid_splitter_fit_text_to_width(NULL, "Canvas", label, sizeof(label), 12, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("...", label) == 0);
+    grid_splitter_fit_text_to_width(NULL, "Ready", label, sizeof(label), 24, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Ready", label) == 0);
 
     seed_pressed_state(&test_widget, 1, 1);
     egui_view_grid_splitter_set_font(EGUI_VIEW_OF(&test_widget), NULL);

@@ -73,6 +73,22 @@ static uint8_t grid_splitter_clamp_ratio(uint8_t ratio)
 
 static uint8_t grid_splitter_has_text(const char *text);
 
+static uint8_t grid_splitter_text_len(const char *text)
+{
+    uint8_t len = 0;
+
+    if (text == NULL)
+    {
+        return 0;
+    }
+
+    while (text[len] != '\0')
+    {
+        len++;
+    }
+    return len;
+}
+
 static egui_dim_t grid_splitter_measure_font_line_height(const egui_font_t *font)
 {
     egui_dim_t dummy_width = 0;
@@ -99,6 +115,105 @@ static egui_dim_t grid_splitter_measure_text_width(const egui_font_t *font, cons
 
     font->api->get_str_size(font, text, 0, 0, &text_width, &dummy_height);
     return text_width;
+}
+
+static void grid_splitter_copy_elided(char *buffer, uint8_t buffer_size, const char *text, uint8_t max_chars)
+{
+    uint8_t copy_length;
+    uint8_t index;
+    uint8_t length;
+
+    if (buffer == NULL || buffer_size == 0)
+    {
+        return;
+    }
+
+    buffer[0] = '\0';
+    if (text == NULL || max_chars == 0)
+    {
+        return;
+    }
+
+    length = grid_splitter_text_len(text);
+    if (length <= max_chars)
+    {
+        copy_length = length;
+        if (copy_length >= buffer_size)
+        {
+            copy_length = buffer_size - 1;
+        }
+        for (index = 0; index < copy_length; ++index)
+        {
+            buffer[index] = text[index];
+        }
+        buffer[copy_length] = '\0';
+        return;
+    }
+
+    if (max_chars <= 3)
+    {
+        copy_length = max_chars;
+        if (copy_length >= buffer_size)
+        {
+            copy_length = buffer_size - 1;
+        }
+        for (index = 0; index < copy_length; ++index)
+        {
+            buffer[index] = '.';
+        }
+        buffer[copy_length] = '\0';
+        return;
+    }
+
+    copy_length = max_chars - 3;
+    if (copy_length > buffer_size - 4)
+    {
+        copy_length = buffer_size - 4;
+    }
+    for (index = 0; index < copy_length; ++index)
+    {
+        buffer[index] = text[index];
+    }
+    buffer[copy_length] = '.';
+    buffer[copy_length + 1] = '.';
+    buffer[copy_length + 2] = '.';
+    buffer[copy_length + 3] = '\0';
+}
+
+static void grid_splitter_fit_text_to_width(const egui_font_t *font, const char *text, char *buffer, uint8_t buffer_size, egui_dim_t max_width,
+                                            egui_dim_t fallback_char_width)
+{
+    uint8_t max_chars;
+
+    if (buffer == NULL || buffer_size == 0)
+    {
+        return;
+    }
+
+    buffer[0] = '\0';
+    if (text == NULL || text[0] == '\0' || max_width <= 0)
+    {
+        return;
+    }
+
+    max_chars = grid_splitter_text_len(text);
+    grid_splitter_copy_elided(buffer, buffer_size, text, max_chars);
+    while (max_chars > 0)
+    {
+        egui_dim_t text_width = grid_splitter_measure_text_width(font, buffer);
+
+        if (text_width <= 0)
+        {
+            text_width = (egui_dim_t)grid_splitter_text_len(buffer) * fallback_char_width;
+        }
+        if (text_width <= max_width)
+        {
+            break;
+        }
+
+        max_chars--;
+        grid_splitter_copy_elided(buffer, buffer_size, text, max_chars);
+    }
 }
 
 static uint8_t grid_splitter_has_text(const char *text)
@@ -243,8 +358,8 @@ static void grid_splitter_draw_text(const egui_font_t *font, egui_view_t *self, 
 static egui_dim_t grid_splitter_pill_width(const egui_font_t *font, const char *text, uint8_t compact_mode, egui_dim_t min_width, egui_dim_t max_width)
 {
     egui_dim_t width = min_width;
+    egui_dim_t text_width = 0;
 
-    (void)compact_mode;
     if (max_width <= 0)
     {
         return 0;
@@ -252,7 +367,12 @@ static egui_dim_t grid_splitter_pill_width(const egui_font_t *font, const char *
 
     if (grid_splitter_has_text(text))
     {
-        width += grid_splitter_measure_text_width(font, text);
+        text_width = grid_splitter_measure_text_width(font, text);
+        if (text_width <= 0)
+        {
+            text_width = (egui_dim_t)grid_splitter_text_len(text) * (compact_mode ? 4 : 5);
+        }
+        width += text_width;
     }
     if (width > max_width)
     {
@@ -420,6 +540,9 @@ static void grid_splitter_get_metrics(egui_view_grid_splitter_t *local, egui_vie
 static void grid_splitter_draw_pane(egui_view_t *self, egui_view_grid_splitter_t *local, const egui_region_t *region, const char *title, const char *meta,
                                     const char *body, uint8_t emphasized)
 {
+    char title_label[24];
+    char meta_label[24];
+    char body_label[64];
     egui_color_t fill_color = egui_rgb_mix(local->surface_color, local->accent_color, emphasized ? 14 : 5);
     egui_color_t border_color = egui_rgb_mix(local->border_color, local->accent_color, emphasized ? 24 : 10);
     egui_color_t stripe_color = egui_rgb_mix(local->section_color, local->accent_color, emphasized ? 34 : 16);
@@ -429,6 +552,8 @@ static void grid_splitter_draw_pane(egui_view_t *self, egui_view_grid_splitter_t
     egui_dim_t radius = local->compact_mode ? 5 : 6;
     egui_dim_t pad_x = local->compact_mode ? 5 : 6;
     egui_dim_t pad_y = local->compact_mode ? 4 : 5;
+    egui_dim_t title_char_width = local->compact_mode ? 4 : 5;
+    egui_dim_t meta_char_width = 4;
     egui_dim_t title_h = grid_splitter_get_pane_title_height(local);
     egui_dim_t meta_h = grid_splitter_get_pane_meta_height(local);
     egui_dim_t body_h = grid_splitter_get_pane_body_height(local);
@@ -492,11 +617,14 @@ static void grid_splitter_draw_pane(egui_view_t *self, egui_view_grid_splitter_t
     body_region.location.y += meta_h + 1;
     body_region.size.height = body_h;
 
-    grid_splitter_draw_text(local->font, self, title, &title_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, title_color);
-    grid_splitter_draw_text(local->meta_font, self, meta, &meta_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, meta_color);
+    grid_splitter_fit_text_to_width(local->font, title, title_label, sizeof(title_label), title_region.size.width, title_char_width);
+    grid_splitter_draw_text(local->font, self, title_label, &title_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, title_color);
+    grid_splitter_fit_text_to_width(local->meta_font, meta, meta_label, sizeof(meta_label), meta_region.size.width, meta_char_width);
+    grid_splitter_draw_text(local->meta_font, self, meta_label, &meta_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, meta_color);
     if (body_h > 0)
     {
-        grid_splitter_draw_text(local->meta_font, self, body, &body_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, body_color);
+        grid_splitter_fit_text_to_width(local->meta_font, body, body_label, sizeof(body_label), body_region.size.width, meta_char_width);
+        grid_splitter_draw_text(local->meta_font, self, body_label, &body_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, body_color);
     }
 
     if (region->size.height > (local->compact_mode ? 20 : 26))
@@ -749,6 +877,10 @@ uint8_t egui_view_grid_splitter_get_handle_region(egui_view_t *self, egui_region
 static void egui_view_grid_splitter_on_draw(egui_view_t *self)
 {
     EGUI_LOCAL_INIT(egui_view_grid_splitter_t);
+    char header_label[24];
+    char title_label[32];
+    char summary_label[72];
+    char footer_label[32];
     const egui_view_grid_splitter_snapshot_t *snapshot = grid_splitter_get_snapshot(local);
     egui_view_grid_splitter_metrics_t metrics;
     egui_color_t card_fill = local->surface_color;
@@ -765,6 +897,10 @@ static void egui_view_grid_splitter_on_draw(egui_view_t *self)
     egui_color_t footer_border = egui_rgb_mix(local->border_color, local->accent_color, 20);
     egui_color_t footer_text = egui_rgb_mix(local->muted_text_color, local->accent_color, 18);
     egui_color_t focus_color = local->accent_color;
+    egui_dim_t title_char_width = local->compact_mode ? 4 : 5;
+    egui_dim_t meta_char_width = 4;
+    egui_dim_t badge_min_width = local->compact_mode ? 18 : 24;
+    egui_dim_t footer_min_width = local->compact_mode ? 18 : 26;
     egui_dim_t radius = local->compact_mode ? EGUI_VIEW_GRID_SPLITTER_COMPACT_RADIUS : EGUI_VIEW_GRID_SPLITTER_STANDARD_RADIUS;
     egui_dim_t shell_radius = local->compact_mode ? EGUI_VIEW_GRID_SPLITTER_COMPACT_SHELL_RADIUS : EGUI_VIEW_GRID_SPLITTER_STANDARD_SHELL_RADIUS;
     uint8_t emphasized_left = snapshot != NULL && snapshot->emphasis == EGUI_VIEW_GRID_SPLITTER_EMPHASIS_LEFT ? 1 : 0;
@@ -826,13 +962,17 @@ static void egui_view_grid_splitter_on_draw(egui_view_t *self)
         egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.badge_region.location.x, metrics.badge_region.location.y, metrics.badge_region.size.width,
                                               metrics.badge_region.size.height, metrics.badge_region.size.height / 2, badge_fill,
                                               egui_color_alpha_mix(self->alpha, 98));
-        grid_splitter_draw_text(local->meta_font, self, snapshot->header, &metrics.badge_region, EGUI_ALIGN_CENTER, badge_text);
+        grid_splitter_fit_text_to_width(local->meta_font, snapshot->header, header_label, sizeof(header_label), metrics.badge_region.size.width - badge_min_width,
+                                        meta_char_width);
+        grid_splitter_draw_text(local->meta_font, self, header_label, &metrics.badge_region, EGUI_ALIGN_CENTER, badge_text);
     }
 
     if (snapshot != NULL)
     {
-        grid_splitter_draw_text(local->font, self, snapshot->title, &metrics.title_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, title_color);
-        grid_splitter_draw_text(local->meta_font, self, snapshot->summary, &metrics.summary_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, summary_color);
+        grid_splitter_fit_text_to_width(local->font, snapshot->title, title_label, sizeof(title_label), metrics.title_region.size.width, title_char_width);
+        grid_splitter_draw_text(local->font, self, title_label, &metrics.title_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, title_color);
+        grid_splitter_fit_text_to_width(local->meta_font, snapshot->summary, summary_label, sizeof(summary_label), metrics.summary_region.size.width, meta_char_width);
+        grid_splitter_draw_text(local->meta_font, self, summary_label, &metrics.summary_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, summary_color);
     }
 
     if (metrics.shell_region.size.width > 0 && metrics.shell_region.size.height > 0)
@@ -891,7 +1031,9 @@ static void egui_view_grid_splitter_on_draw(egui_view_t *self)
         egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics.footer_region.location.x, metrics.footer_region.location.y, metrics.footer_region.size.width,
                                          metrics.footer_region.size.height, metrics.footer_region.size.height / 2, 1, footer_border,
                                          egui_color_alpha_mix(self->alpha, 36));
-        grid_splitter_draw_text(local->meta_font, self, snapshot->footer, &metrics.footer_region, EGUI_ALIGN_CENTER, footer_text);
+        grid_splitter_fit_text_to_width(local->meta_font, snapshot->footer, footer_label, sizeof(footer_label), metrics.footer_region.size.width - footer_min_width,
+                                        meta_char_width);
+        grid_splitter_draw_text(local->meta_font, self, footer_label, &metrics.footer_region, EGUI_ALIGN_CENTER, footer_text);
     }
 }
 
