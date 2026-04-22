@@ -518,6 +518,34 @@ static void test_tool_tip_attach_and_detach_restore_pending_timer(void)
     EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_tool_tip_get_open(EGUI_VIEW_OF(&test_widget)));
 }
 
+static void test_tool_tip_internal_helpers(void)
+{
+    char label[24];
+    egui_color_t sample = EGUI_COLOR_HEX(0x123456);
+
+    setup_widget();
+
+    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_tool_tip_text_len(NULL));
+    EGUI_TEST_ASSERT_EQUAL_INT(4, egui_view_tool_tip_text_len("Save"));
+    EGUI_TEST_ASSERT_FALSE(egui_view_tool_tip_has_text(NULL));
+    EGUI_TEST_ASSERT_FALSE(egui_view_tool_tip_has_text(""));
+    EGUI_TEST_ASSERT_TRUE(egui_view_tool_tip_has_text("Tip"));
+    egui_view_tool_tip_copy_elided(label, sizeof(label), "Documents", 6);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Doc...", label) == 0);
+    egui_view_tool_tip_copy_elided(label, sizeof(label), "Mode", 3);
+    EGUI_TEST_ASSERT_TRUE(strcmp("...", label) == 0);
+    egui_view_tool_tip_fit_text_to_width(NULL, "Quick save", label, sizeof(label), 28, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Quic...", label) == 0);
+    egui_view_tool_tip_fit_text_to_width(NULL, "Quick save", label, sizeof(label), 12, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("...", label) == 0);
+    egui_view_tool_tip_fit_text_to_width(NULL, "Save", label, sizeof(label), 24, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Save", label) == 0);
+    EGUI_TEST_ASSERT_EQUAL_INT(420, egui_view_tool_tip_resolve_delay(0));
+    EGUI_TEST_ASSERT_EQUAL_INT(120, egui_view_tool_tip_resolve_delay(10));
+    EGUI_TEST_ASSERT_EQUAL_INT(540, egui_view_tool_tip_resolve_delay(540));
+    EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(sample, EGUI_COLOR_HEX(0x7D8894), 60).full, egui_view_tool_tip_mix_disabled(sample).full);
+}
+
 void test_tool_tip_run(void)
 {
     EGUI_TEST_SUITE_BEGIN(tool_tip);
@@ -530,5 +558,6 @@ void test_tool_tip_run(void)
     EGUI_TEST_RUN(test_tool_tip_disabled_and_read_only_guard_prevent_open);
     EGUI_TEST_RUN(test_tool_tip_static_preview_consumes_input_and_keeps_state);
     EGUI_TEST_RUN(test_tool_tip_attach_and_detach_restore_pending_timer);
+    EGUI_TEST_RUN(test_tool_tip_internal_helpers);
     EGUI_TEST_SUITE_END();
 }

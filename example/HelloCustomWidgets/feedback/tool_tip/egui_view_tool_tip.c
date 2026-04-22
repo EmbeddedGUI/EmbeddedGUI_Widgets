@@ -57,9 +57,89 @@ static const egui_view_tool_tip_snapshot_t *egui_view_tool_tip_get_snapshot(egui
     return &local->snapshots[local->current_snapshot];
 }
 
+static uint8_t egui_view_tool_tip_text_len(const char *text)
+{
+    uint8_t length = 0;
+
+    if (text == NULL)
+    {
+        return 0;
+    }
+
+    while (text[length] != '\0')
+    {
+        length++;
+    }
+
+    return length;
+}
+
 static uint8_t egui_view_tool_tip_has_text(const char *text)
 {
     return (text != NULL && text[0] != '\0') ? 1 : 0;
+}
+
+static void egui_view_tool_tip_copy_elided(char *buffer, uint8_t buffer_size, const char *text, uint8_t max_chars)
+{
+    uint8_t copy_length;
+    uint8_t index;
+    uint8_t length;
+
+    if (buffer == NULL || buffer_size == 0)
+    {
+        return;
+    }
+
+    buffer[0] = '\0';
+    if (text == NULL || max_chars == 0)
+    {
+        return;
+    }
+
+    length = egui_view_tool_tip_text_len(text);
+    if (length <= max_chars)
+    {
+        copy_length = length;
+        if (copy_length >= buffer_size)
+        {
+            copy_length = buffer_size - 1;
+        }
+        for (index = 0; index < copy_length; index++)
+        {
+            buffer[index] = text[index];
+        }
+        buffer[copy_length] = '\0';
+        return;
+    }
+
+    if (max_chars <= 3)
+    {
+        copy_length = max_chars;
+        if (copy_length >= buffer_size)
+        {
+            copy_length = buffer_size - 1;
+        }
+        for (index = 0; index < copy_length; index++)
+        {
+            buffer[index] = '.';
+        }
+        buffer[copy_length] = '\0';
+        return;
+    }
+
+    copy_length = max_chars - 3;
+    if (copy_length > buffer_size - 4)
+    {
+        copy_length = buffer_size - 4;
+    }
+    for (index = 0; index < copy_length; index++)
+    {
+        buffer[index] = text[index];
+    }
+    buffer[copy_length] = '.';
+    buffer[copy_length + 1] = '.';
+    buffer[copy_length + 2] = '.';
+    buffer[copy_length + 3] = '\0';
 }
 
 static egui_dim_t egui_view_tool_tip_measure_font_line_height(const egui_font_t *font)
@@ -120,6 +200,42 @@ static egui_dim_t egui_view_tool_tip_measure_text_width(const egui_font_t *font,
 
     font->api->get_str_size(font, text, 0, 0, &text_width, &dummy_height);
     return text_width;
+}
+
+static void egui_view_tool_tip_fit_text_to_width(const egui_font_t *font, const char *text, char *buffer, uint8_t buffer_size, egui_dim_t max_width,
+                                                 egui_dim_t fallback_char_width)
+{
+    uint8_t max_chars;
+
+    if (buffer == NULL || buffer_size == 0)
+    {
+        return;
+    }
+
+    buffer[0] = '\0';
+    if (text == NULL || text[0] == '\0' || max_width <= 0)
+    {
+        return;
+    }
+
+    max_chars = egui_view_tool_tip_text_len(text);
+    egui_view_tool_tip_copy_elided(buffer, buffer_size, text, max_chars);
+    while (max_chars > 0)
+    {
+        egui_dim_t text_width = egui_view_tool_tip_measure_text_width(font, buffer);
+
+        if (text_width <= 0)
+        {
+            text_width = (egui_dim_t)egui_view_tool_tip_text_len(buffer) * fallback_char_width;
+        }
+        if (text_width <= max_width)
+        {
+            break;
+        }
+
+        max_chars--;
+        egui_view_tool_tip_copy_elided(buffer, buffer_size, text, max_chars);
+    }
 }
 
 static egui_dim_t egui_view_tool_tip_read_only_badge_width(egui_view_tool_tip_t *local)
@@ -425,6 +541,7 @@ static void egui_view_tool_tip_draw_target(egui_view_t *self, egui_view_tool_tip
                                            const egui_view_tool_tip_metrics_t *metrics, egui_color_t tone_color, egui_color_t text_color,
                                            egui_color_t border_color)
 {
+    char target_label[24];
     egui_color_t target_fill = egui_rgb_mix(local->target_fill_color, tone_color, local->open ? 10 : 4);
     egui_color_t target_outline = egui_rgb_mix(local->target_border_color, tone_color, local->open ? 14 : 6);
     egui_color_t target_text = egui_rgb_mix(text_color, tone_color, local->open ? 10 : 3);
@@ -460,13 +577,19 @@ static void egui_view_tool_tip_draw_target(egui_view_t *self, egui_view_tool_tip
                                               metrics->target_region.size.width - 16, 2, 1, tone_color, egui_color_alpha_mix(self->alpha, 70));
     }
 
-    egui_view_tool_tip_draw_text(local->font, self, snapshot != NULL ? snapshot->target_label : "", &metrics->target_region, EGUI_ALIGN_CENTER, target_text);
+    egui_view_tool_tip_fit_text_to_width(local->font, snapshot != NULL ? snapshot->target_label : "", target_label, sizeof(target_label), metrics->target_region.size.width - 16,
+                                         local->compact_mode ? 4 : 5);
+    egui_view_tool_tip_draw_text(local->font, self, target_label, &metrics->target_region, EGUI_ALIGN_CENTER, target_text);
 }
 
 static void egui_view_tool_tip_draw_bubble(egui_view_t *self, egui_view_tool_tip_t *local, const egui_view_tool_tip_snapshot_t *snapshot,
                                            const egui_view_tool_tip_metrics_t *metrics, egui_color_t tone_color, egui_color_t text_color,
                                            egui_color_t muted_text_color, egui_color_t border_color, egui_color_t shadow_color)
 {
+    char hint_label[20];
+    char title_label[24];
+    char body_label[40];
+    char badge_label[16];
     egui_color_t bubble_fill = egui_rgb_mix(local->surface_color, tone_color, local->compact_mode ? 6 : 8);
     egui_color_t bubble_border = egui_rgb_mix(border_color, tone_color, local->compact_mode ? 10 : 14);
     egui_color_t body_color = egui_rgb_mix(text_color, muted_text_color, local->compact_mode ? 62 : 56);
@@ -505,13 +628,16 @@ static void egui_view_tool_tip_draw_bubble(egui_view_t *self, egui_view_tool_tip
 
     if (metrics->show_hint)
     {
-        egui_view_tool_tip_draw_text(local->meta_font, self, snapshot->hint, &metrics->hint_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, tone_color);
+        egui_view_tool_tip_fit_text_to_width(local->meta_font, snapshot->hint, hint_label, sizeof(hint_label), metrics->hint_region.size.width, 4);
+        egui_view_tool_tip_draw_text(local->meta_font, self, hint_label, &metrics->hint_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, tone_color);
     }
-    egui_view_tool_tip_draw_text(local->font, self, snapshot->title, &metrics->title_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, text_color);
+    egui_view_tool_tip_fit_text_to_width(local->font, snapshot->title, title_label, sizeof(title_label), metrics->title_region.size.width, local->compact_mode ? 4 : 5);
+    egui_view_tool_tip_draw_text(local->font, self, title_label, &metrics->title_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, text_color);
 
     if (metrics->show_body)
     {
-        egui_view_tool_tip_draw_text(local->meta_font, self, snapshot->body, &metrics->body_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_TOP, body_color);
+        egui_view_tool_tip_fit_text_to_width(local->meta_font, snapshot->body, body_label, sizeof(body_label), metrics->body_region.size.width, 4);
+        egui_view_tool_tip_draw_text(local->meta_font, self, body_label, &metrics->body_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_TOP, body_color);
     }
     else if (local->compact_mode && egui_view_tool_tip_has_text(snapshot->body))
     {
@@ -524,12 +650,12 @@ static void egui_view_tool_tip_draw_bubble(egui_view_t *self, egui_view_tool_tip
         {
             compact_body_region.size.width -= badge_reserved_w;
         }
-        egui_view_tool_tip_draw_text(local->meta_font, self, snapshot->body, &compact_body_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, body_color);
+        egui_view_tool_tip_fit_text_to_width(local->meta_font, snapshot->body, body_label, sizeof(body_label), compact_body_region.size.width, 4);
+        egui_view_tool_tip_draw_text(local->meta_font, self, body_label, &compact_body_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, body_color);
     }
 
     if (local->read_only_mode)
     {
-        static const char *badge_label = "Read only";
         egui_region_t badge_region;
         egui_color_t badge_fill = egui_rgb_mix(local->surface_color, tone_color, 4);
         egui_color_t badge_text_color = egui_rgb_mix(muted_text_color, text_color, 18);
@@ -548,6 +674,7 @@ static void egui_view_tool_tip_draw_bubble(egui_view_t *self, egui_view_tool_tip
                                               egui_color_alpha_mix(self->alpha, 46));
         egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, badge_region.location.x, badge_region.location.y, badge_region.size.width, badge_region.size.height, 5, 1, bubble_border,
                                          egui_color_alpha_mix(self->alpha, 28));
+        egui_view_tool_tip_fit_text_to_width(local->meta_font, "Read only", badge_label, sizeof(badge_label), badge_region.size.width - 4, 4);
         egui_view_tool_tip_draw_text(local->meta_font, self, badge_label, &badge_region, EGUI_ALIGN_CENTER, badge_text_color);
     }
 }
