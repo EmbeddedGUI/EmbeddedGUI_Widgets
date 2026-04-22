@@ -137,6 +137,35 @@ static int send_preview_key(uint8_t key_code)
     return send_key_to_view(EGUI_VIEW_OF(&preview_bar), key_code);
 }
 
+static void test_annotated_scroll_bar_text_helpers_fit_width(void)
+{
+    char label[24];
+
+    EGUI_TEST_ASSERT_FALSE(annotated_scroll_bar_has_text(NULL));
+    EGUI_TEST_ASSERT_TRUE(annotated_scroll_bar_has_text("Rail"));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, annotated_scroll_bar_text_len(NULL));
+    EGUI_TEST_ASSERT_EQUAL_INT(4, annotated_scroll_bar_text_len("Rail"));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, annotated_scroll_bar_measure_text_width(NULL, "Rail"));
+
+    annotated_scroll_bar_copy_elided(label, sizeof(label), "Milestone", 6);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Mil...", label) == 0);
+
+    annotated_scroll_bar_copy_elided(label, sizeof(label), "Wrap", 3);
+    EGUI_TEST_ASSERT_TRUE(strcmp("...", label) == 0);
+
+    annotated_scroll_bar_fit_text_to_width(NULL, "Archive cleanup", label, sizeof(label), 28, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Arch...", label) == 0);
+
+    annotated_scroll_bar_fit_text_to_width(NULL, "Archive cleanup", label, sizeof(label), 12, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("...", label) == 0);
+
+    annotated_scroll_bar_fit_text_to_width(NULL, "Focus", label, sizeof(label), 24, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Focus", label) == 0);
+
+    annotated_scroll_bar_fit_text_to_width(NULL, "Focus", label, sizeof(label), 0, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("", label) == 0);
+}
+
 static void test_annotated_scroll_bar_clamps_metrics_and_regions(void)
 {
     egui_region_t region;
@@ -537,6 +566,7 @@ static void test_annotated_scroll_bar_static_preview_consumes_input_and_keeps_st
 void test_annotated_scroll_bar_run(void)
 {
     EGUI_TEST_SUITE_BEGIN(annotated_scroll_bar);
+    EGUI_TEST_RUN(test_annotated_scroll_bar_text_helpers_fit_width);
     EGUI_TEST_RUN(test_annotated_scroll_bar_clamps_metrics_and_regions);
     EGUI_TEST_RUN(test_annotated_scroll_bar_setters_clear_pressed_state_and_clamp);
     EGUI_TEST_RUN(test_annotated_scroll_bar_tab_cycles_parts);
