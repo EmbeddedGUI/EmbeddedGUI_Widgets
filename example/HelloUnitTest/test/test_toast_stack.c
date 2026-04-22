@@ -486,6 +486,7 @@ static void test_toast_stack_static_preview_consumes_input_and_keeps_state(void)
 
 static void test_toast_stack_internal_helpers_cover_severity_and_text(void)
 {
+    char label[24];
     egui_color_t sample = EGUI_COLOR_HEX(0x123456);
     egui_color_t mixed = egui_view_toast_stack_mix_disabled(sample);
 
@@ -497,6 +498,17 @@ static void test_toast_stack_internal_helpers_cover_severity_and_text(void)
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_TOAST_STACK_MAX_SNAPSHOTS, egui_view_toast_stack_clamp_snapshot_count(9));
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_toast_stack_text_len(NULL));
     EGUI_TEST_ASSERT_EQUAL_INT(5, egui_view_toast_stack_text_len("Retry"));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_toast_stack_measure_text_width(NULL, "Retry"));
+    egui_view_toast_stack_copy_elided(label, sizeof(label), "Publish", 6);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Pub...", label) == 0);
+    egui_view_toast_stack_copy_elided(label, sizeof(label), "Mode", 3);
+    EGUI_TEST_ASSERT_TRUE(strcmp("...", label) == 0);
+    egui_view_toast_stack_fit_text_to_width(NULL, "Publish", label, sizeof(label), 20, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Pu...", label) == 0);
+    egui_view_toast_stack_fit_text_to_width(NULL, "Publish", label, sizeof(label), 12, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("...", label) == 0);
+    egui_view_toast_stack_fit_text_to_width(NULL, "Ready", label, sizeof(label), 20, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Ready", label) == 0);
     EGUI_TEST_ASSERT_TRUE(strcmp("i", egui_view_toast_stack_severity_glyph(0)) == 0);
     EGUI_TEST_ASSERT_TRUE(strcmp("+", egui_view_toast_stack_severity_glyph(1)) == 0);
     EGUI_TEST_ASSERT_TRUE(strcmp("!", egui_view_toast_stack_severity_glyph(2)) == 0);

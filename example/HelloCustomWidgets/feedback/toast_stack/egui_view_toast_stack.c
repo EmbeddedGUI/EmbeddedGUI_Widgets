@@ -65,6 +65,122 @@ static egui_dim_t egui_view_toast_stack_measure_text_width(const egui_font_t *fo
     return text_width;
 }
 
+static uint8_t egui_view_toast_stack_text_len(const char *text)
+{
+    uint8_t length = 0;
+
+    if (text == NULL)
+    {
+        return 0;
+    }
+
+    while (text[length] != '\0')
+    {
+        length++;
+    }
+
+    return length;
+}
+
+static void egui_view_toast_stack_copy_elided(char *buffer, uint8_t buffer_size, const char *text, uint8_t max_chars)
+{
+    uint8_t copy_length;
+    uint8_t index;
+    uint8_t length;
+
+    if (buffer == NULL || buffer_size == 0)
+    {
+        return;
+    }
+
+    buffer[0] = '\0';
+    if (text == NULL || max_chars == 0)
+    {
+        return;
+    }
+
+    length = egui_view_toast_stack_text_len(text);
+    if (length <= max_chars)
+    {
+        copy_length = length;
+        if (copy_length >= buffer_size)
+        {
+            copy_length = buffer_size - 1;
+        }
+        for (index = 0; index < copy_length; ++index)
+        {
+            buffer[index] = text[index];
+        }
+        buffer[copy_length] = '\0';
+        return;
+    }
+
+    if (max_chars <= 3)
+    {
+        copy_length = max_chars;
+        if (copy_length >= buffer_size)
+        {
+            copy_length = buffer_size - 1;
+        }
+        for (index = 0; index < copy_length; ++index)
+        {
+            buffer[index] = '.';
+        }
+        buffer[copy_length] = '\0';
+        return;
+    }
+
+    copy_length = max_chars - 3;
+    if (copy_length > buffer_size - 4)
+    {
+        copy_length = buffer_size - 4;
+    }
+    for (index = 0; index < copy_length; ++index)
+    {
+        buffer[index] = text[index];
+    }
+    buffer[copy_length] = '.';
+    buffer[copy_length + 1] = '.';
+    buffer[copy_length + 2] = '.';
+    buffer[copy_length + 3] = '\0';
+}
+
+static void egui_view_toast_stack_fit_text_to_width(const egui_font_t *font, const char *text, char *buffer, uint8_t buffer_size, egui_dim_t max_width,
+                                                    egui_dim_t fallback_char_width)
+{
+    uint8_t max_chars;
+
+    if (buffer == NULL || buffer_size == 0)
+    {
+        return;
+    }
+
+    buffer[0] = '\0';
+    if (text == NULL || text[0] == '\0' || max_width <= 0)
+    {
+        return;
+    }
+
+    max_chars = egui_view_toast_stack_text_len(text);
+    egui_view_toast_stack_copy_elided(buffer, buffer_size, text, max_chars);
+    while (max_chars > 0)
+    {
+        egui_dim_t text_width = egui_view_toast_stack_measure_text_width(font, buffer);
+
+        if (text_width <= 0)
+        {
+            text_width = (egui_dim_t)egui_view_toast_stack_text_len(buffer) * fallback_char_width;
+        }
+        if (text_width <= max_width)
+        {
+            break;
+        }
+
+        max_chars--;
+        egui_view_toast_stack_copy_elided(buffer, buffer_size, text, max_chars);
+    }
+}
+
 static egui_dim_t egui_view_toast_stack_measure_font_line_height(const egui_font_t *font)
 {
     egui_dim_t dummy_width = 0;
@@ -206,7 +322,7 @@ static void egui_view_toast_stack_draw_text(const egui_font_t *font, egui_view_t
 {
     egui_region_t draw_region = *region;
 
-    if (text == NULL || text[0] == '\0')
+    if (font == NULL || text == NULL || text[0] == '\0' || region->size.width <= 0 || region->size.height <= 0)
     {
         return;
     }
@@ -215,14 +331,17 @@ static void egui_view_toast_stack_draw_text(const egui_font_t *font, egui_view_t
 
 static void egui_view_toast_stack_draw_pill(const egui_font_t *font, egui_view_t *self, const char *text, egui_dim_t x, egui_dim_t y, egui_dim_t width,
                                             egui_dim_t height, egui_dim_t radius, egui_color_t fill_color, egui_alpha_t fill_alpha, egui_color_t border_color,
-                                            egui_alpha_t border_alpha, egui_color_t text_color)
+                                            egui_alpha_t border_alpha, egui_color_t text_color, egui_dim_t fallback_char_width)
 {
+    char pill_text[24];
     egui_region_t text_region;
 
-    if (width <= 0 || height <= 0 || text == NULL || text[0] == '\0')
+    if (font == NULL || width <= 0 || height <= 0 || text == NULL || text[0] == '\0')
     {
         return;
     }
+
+    egui_view_toast_stack_fit_text_to_width(font, text, pill_text, sizeof(pill_text), width - (height <= 11 ? 8 : 10), fallback_char_width);
 
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, x, y, width, height, radius, fill_color, egui_color_alpha_mix(self->alpha, fill_alpha));
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, x, y, width, height, radius, 1, border_color, egui_color_alpha_mix(self->alpha, border_alpha));
@@ -231,17 +350,19 @@ static void egui_view_toast_stack_draw_pill(const egui_font_t *font, egui_view_t
     text_region.location.y = y;
     text_region.size.width = width;
     text_region.size.height = height;
-    egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, font, text, &text_region, EGUI_ALIGN_CENTER, text_color, self->alpha);
+    egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, font, pill_text, &text_region, EGUI_ALIGN_CENTER, text_color, self->alpha);
 }
 
 static void egui_view_toast_stack_draw_back_card(egui_view_t *self, const egui_font_t *font, const egui_region_t *card_region, const char *title,
                                                  egui_color_t fill_color, egui_color_t border_color, egui_color_t strip_color, egui_color_t text_color,
                                                  uint8_t compact_mode)
 {
+    char title_label[32];
     egui_region_t title_region;
     egui_dim_t radius = compact_mode ? 5 : 6;
     egui_dim_t strip_w = compact_mode ? 3 : 4;
     egui_dim_t footer_w;
+    egui_dim_t fallback_char_width = compact_mode ? 4 : 5;
 
     if (card_region->size.width <= 12 || card_region->size.height <= 12)
     {
@@ -261,7 +382,8 @@ static void egui_view_toast_stack_draw_back_card(egui_view_t *self, const egui_f
         title_region.location.y = card_region->location.y;
         title_region.size.width = card_region->size.width - strip_w - 14;
         title_region.size.height = card_region->size.height;
-        egui_view_toast_stack_draw_text(font, self, title, &title_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, text_color);
+        egui_view_toast_stack_fit_text_to_width(font, title, title_label, sizeof(title_label), title_region.size.width, fallback_char_width);
+        egui_view_toast_stack_draw_text(font, self, title_label, &title_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, text_color);
     }
 
     footer_w = card_region->size.width / (compact_mode ? 2 : 3);
@@ -277,6 +399,8 @@ static void egui_view_toast_stack_draw_back_card(egui_view_t *self, const egui_f
 static void egui_view_toast_stack_on_draw(egui_view_t *self)
 {
     EGUI_LOCAL_INIT(egui_view_toast_stack_t);
+    char title_label[32];
+    char body_label[48];
     egui_region_t region;
     egui_region_t front_region;
     egui_region_t mid_region;
@@ -321,6 +445,7 @@ static void egui_view_toast_stack_on_draw(egui_view_t *self)
     egui_dim_t meta_h;
     egui_dim_t meta_w;
     egui_dim_t footer_gap;
+    egui_dim_t fallback_char_width;
 
     egui_view_get_work_region(self, &region);
     if (region.size.width <= 0 || region.size.height <= 0 || local->snapshots == NULL || local->snapshot_count == 0)
@@ -427,6 +552,7 @@ static void egui_view_toast_stack_on_draw(egui_view_t *self)
     title_w = content_w - icon_size - 6 - (show_close ? 12 : 0);
     title_slot_h = local->compact_mode ? 11 : 12;
     title_h = egui_view_toast_stack_resolve_line_height(local->font, title_slot_h);
+    fallback_char_width = local->compact_mode ? 4 : 5;
 
     egui_canvas_draw_circle_fill(&uicode_get_core()->canvas, content_x + icon_size / 2, content_y + icon_size / 2, icon_size / 2, severity_color,
                                  egui_color_alpha_mix(self->alpha, local->read_only_mode ? 22 : 74));
@@ -441,7 +567,8 @@ static void egui_view_toast_stack_on_draw(egui_view_t *self)
     text_region.location.y = content_y - 1 + (title_slot_h - title_h) / 2;
     text_region.size.width = title_w;
     text_region.size.height = title_h;
-    egui_view_toast_stack_draw_text(local->font, self, snapshot->title, &text_region, EGUI_ALIGN_LEFT, title_color);
+    egui_view_toast_stack_fit_text_to_width(local->font, snapshot->title, title_label, sizeof(title_label), text_region.size.width, fallback_char_width);
+    egui_view_toast_stack_draw_text(local->font, self, title_label, &text_region, EGUI_ALIGN_LEFT, title_color);
 
     if (show_close)
     {
@@ -466,7 +593,8 @@ static void egui_view_toast_stack_on_draw(egui_view_t *self)
     text_region.location.y = body_y;
     text_region.size.width = content_w - icon_size - 6;
     text_region.size.height = body_h;
-    egui_view_toast_stack_draw_text(local->font, self, snapshot->body, &text_region, EGUI_ALIGN_LEFT, body_color);
+    egui_view_toast_stack_fit_text_to_width(local->font, snapshot->body, body_label, sizeof(body_label), text_region.size.width, fallback_char_width);
+    egui_view_toast_stack_draw_text(local->font, self, body_label, &text_region, EGUI_ALIGN_LEFT, body_color);
 
     footer_gap = local->compact_mode ? 2 : 4;
     action_h = local->compact_mode ? 11 : 13;
@@ -488,7 +616,8 @@ static void egui_view_toast_stack_on_draw(egui_view_t *self)
         }
         egui_view_toast_stack_draw_pill(local->meta_font, self, snapshot->action, title_x, footer_y, action_w, action_h, 5, action_fill,
                                         local->read_only_mode ? (local->compact_mode ? 16 : 20) : (local->compact_mode ? 24 : 30), action_border,
-                                        local->read_only_mode ? (local->compact_mode ? 20 : 24) : (local->compact_mode ? 32 : 38), action_text);
+                                        local->read_only_mode ? (local->compact_mode ? 20 : 24) : (local->compact_mode ? 32 : 38), action_text,
+                                        fallback_char_width);
     }
 
     if (snapshot->meta != NULL && snapshot->meta[0] != '\0')
@@ -515,7 +644,8 @@ static void egui_view_toast_stack_on_draw(egui_view_t *self)
                                         egui_rgb_mix(local->surface_color, local->border_color, 4),
                                         local->read_only_mode ? (local->compact_mode ? 14 : 18) : (local->compact_mode ? 20 : 24),
                                         egui_rgb_mix(local->border_color, severity_color, 5),
-                                        local->read_only_mode ? (local->compact_mode ? 18 : 22) : (local->compact_mode ? 26 : 30), meta_color);
+                                        local->read_only_mode ? (local->compact_mode ? 18 : 22) : (local->compact_mode ? 26 : 30), meta_color,
+                                        fallback_char_width);
     }
 
     if (local->read_only_mode || !is_enabled)
