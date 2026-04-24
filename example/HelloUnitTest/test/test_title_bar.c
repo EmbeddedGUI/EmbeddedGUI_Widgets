@@ -164,13 +164,28 @@ static void test_title_bar_internal_helpers_cover_text_fitting(void)
 
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_title_bar_text_len(NULL));
     EGUI_TEST_ASSERT_EQUAL_INT(10, egui_view_title_bar_text_len("Operations"));
+    EGUI_TEST_ASSERT_TRUE(egui_view_title_bar_is_space_char(' '));
+    EGUI_TEST_ASSERT_FALSE(egui_view_title_bar_is_space_char('O'));
+    EGUI_TEST_ASSERT_TRUE(egui_view_title_bar_is_break_after_char('-'));
+    EGUI_TEST_ASSERT_TRUE(egui_view_title_bar_is_break_after_char('/'));
+    EGUI_TEST_ASSERT_FALSE(egui_view_title_bar_is_break_after_char('x'));
+    EGUI_TEST_ASSERT_EQUAL_INT(4, egui_view_title_bar_find_elide_boundary("Open latest release notes.", 7));
+    EGUI_TEST_ASSERT_EQUAL_INT(5, egui_view_title_bar_find_elide_boundary("scan-first review", 5));
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_title_bar_measure_text_width(NULL, "Ready"));
 
     egui_view_title_bar_copy_elided(label, sizeof(label), "Documents", 6);
     EGUI_TEST_ASSERT_TRUE(strcmp("Doc...", label) == 0);
+    egui_view_title_bar_copy_elided(label, sizeof(label), "Open latest release notes.", 8);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Open...", label) == 0);
+    egui_view_title_bar_copy_elided(label, sizeof(label), "scan-first review", 10);
+    EGUI_TEST_ASSERT_TRUE(strcmp("scan-...", label) == 0);
     egui_view_title_bar_copy_elided(label, sizeof(label), "Mode", 3);
     EGUI_TEST_ASSERT_TRUE(strcmp("...", label) == 0);
 
+    egui_view_title_bar_fit_text_to_width(NULL, "Open latest release notes.", label, sizeof(label), 28, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Open...", label) == 0);
+    egui_view_title_bar_fit_text_to_width(NULL, "scan-first review", label, sizeof(label), 32, 4);
+    EGUI_TEST_ASSERT_TRUE(strcmp("scan-...", label) == 0);
     egui_view_title_bar_fit_text_to_width(NULL, "Operations", label, sizeof(label), 28, 4);
     EGUI_TEST_ASSERT_TRUE(strcmp("Oper...", label) == 0);
     egui_view_title_bar_fit_text_to_width(NULL, "Operations", label, sizeof(label), 12, 4);
