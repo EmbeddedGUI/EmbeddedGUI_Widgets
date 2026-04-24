@@ -159,6 +159,13 @@
 
 ## 最近完成的收口动作
 
+- `2026-04-24`
+  - 收口 `feedback/message_bar` 长句省略渲染：在 `example/HelloCustomWidgets/feedback/message_bar/egui_view_message_bar.c` 为 title、body 与 action 共用的省略路径补上 `egui_view_message_bar_is_space_char()`、`egui_view_message_bar_is_break_after_char()` 与 `egui_view_message_bar_find_elide_boundary()`，让 `egui_view_message_bar_copy_elided()` 在需要加省略号时优先退回到空格或连字符边界，避免 message bar 窄正文区和动作按钮里留下半截词，同时保持既有条高、图标区、按钮尺寸和 `compact / read only` preview 布局不变。
+  - 修正 `example/HelloUnitTest/test/test_message_bar.c` 的 helper 回归：为 `test_message_bar_internal_helpers_cover_severity_and_text()` 新增空格边界、连字符边界和按词边界省略断言，并补齐 `scan-first review` 的连字符场景；过滤 `output/main.exe` 输出后已确认 `message_bar` suite `8 / 8` 全部通过。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=feedback/message_bar PORT=pc`、`python scripts/checks/check_touch_release_semantics.py --scope custom --category feedback`、`make all APP=HelloUnitTest PORT=pc_test`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub feedback/message_bar --track reference --timeout 10 --keep-screenshots` 与 `python scripts/code_runtime_check.py --app HelloCustomWidgets --category feedback --track reference --bits64`，确认本控件渲染正常且 `feedback` 分类 runtime 继续保持 `10 / 10` 通过。
+  - `make all APP=HelloUnitTest PORT=pc_test` 本轮返回码为 `0`，并再次出现 Windows 长链接命令触发的 `Error 87` + response-file fallback；`output/main.exe` 全量 runner 仍有仓库既有基线失败，因此本轮按约定仅过滤确认 `message_bar` suite `8 / 8` 通过，不构成本控件收口阻塞。
+  - 已复核 `runtime_check_output/HelloCustomWidgets_feedback_message_bar/default` 的 `11` 帧输出：当前共有 `4` 组稳定帧分组 `[0,1,8,9,10] / [2,3] / [4,5] / [6,7]`，对应默认 `Updates ready`、`Settings saved`、`Storage almost full` 与 `Connection lost` 四组主区状态；本轮未再出现黑白屏、主体缺失或新的 preview 异常。
+
 - `2026-04-22`
   - 收口 `feedback/teaching_tip` 长句省略渲染：在 `example/HelloCustomWidgets/feedback/teaching_tip/egui_view_teaching_tip.c` 为 target、title、body、footer 与 action 共用的省略路径补上 `egui_view_teaching_tip_is_space_char()`、`egui_view_teaching_tip_is_break_after_char()` 与 `egui_view_teaching_tip_find_elide_boundary()`，让 `egui_view_teaching_tip_copy_elided()` 在需要加省略号时优先退回到空格或连字符边界，避免 teaching tip 窄气泡和窄动作按钮里留下半截词，同时保持既有气泡布局、动作区尺寸和 `compact / read only` preview 不变。
   - 修正 `example/HelloUnitTest/test/test_teaching_tip.c` 的 helper 回归：为 `test_teaching_tip_font_palette_and_internal_helpers()` 新增空格边界、连字符边界和按词边界省略断言，并把 `fit_text_to_width()` 的预期拆分为“宽度足够时优先保留完整词边界”和“宽度继续收紧时进一步回退”的两段验证；过滤 `output/main.exe` 输出后已确认 `teaching_tip` suite `10 / 10` 全部通过。
