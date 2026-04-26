@@ -6,6 +6,7 @@
 
 #include "../../HelloCustomWidgets/input/command_bar/egui_view_command_bar.h"
 #include "../../HelloCustomWidgets/input/command_bar/egui_view_command_bar.c"
+#include "test_layout_font_stub.h"
 
 static egui_view_command_bar_t test_bar;
 static egui_view_command_bar_t preview_bar;
@@ -110,6 +111,8 @@ static void setup_bar(void)
 {
     egui_view_command_bar_init(EGUI_VIEW_OF(&test_bar));
     egui_view_set_size(EGUI_VIEW_OF(&test_bar), 196, 88);
+    egui_view_command_bar_set_font(EGUI_VIEW_OF(&test_bar), egui_test_layout_get_font());
+    egui_view_command_bar_set_meta_font(EGUI_VIEW_OF(&test_bar), egui_test_layout_get_font());
     egui_view_command_bar_set_snapshots(EGUI_VIEW_OF(&test_bar), g_snapshots, 3);
     egui_view_command_bar_set_on_selection_changed_listener(EGUI_VIEW_OF(&test_bar), on_selection_changed);
     reset_changed_state();
@@ -131,6 +134,8 @@ static void setup_preview_bar(void)
 {
     egui_view_command_bar_init(EGUI_VIEW_OF(&preview_bar));
     egui_view_set_size(EGUI_VIEW_OF(&preview_bar), 104, 64);
+    egui_view_command_bar_set_font(EGUI_VIEW_OF(&preview_bar), egui_test_layout_get_font());
+    egui_view_command_bar_set_meta_font(EGUI_VIEW_OF(&preview_bar), egui_test_layout_get_font());
     egui_view_command_bar_set_snapshots(EGUI_VIEW_OF(&preview_bar), &g_preview_snapshot, 1);
     egui_view_command_bar_set_compact_mode(EGUI_VIEW_OF(&preview_bar), 1);
     egui_view_command_bar_set_on_selection_changed_listener(EGUI_VIEW_OF(&preview_bar), on_selection_changed);

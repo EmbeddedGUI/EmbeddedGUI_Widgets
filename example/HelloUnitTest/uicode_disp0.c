@@ -1,3 +1,5 @@
+#include <string.h>
+
 #include "egui.h"
 #include "uicode_disp0.h"
 
@@ -121,6 +123,65 @@
 #include "test/test_scroll_viewer.inc"
 
 static egui_core_t *s_core;
+static const char *s_test_filter;
+
+static int uicode_is_filter_separator(char ch)
+{
+    return ch == ',' || ch == ';' || ch == ' ' || ch == '\t' || ch == '\r' || ch == '\n';
+}
+
+static int uicode_should_run_suite(const char *suite_name)
+{
+    const char *cursor = s_test_filter;
+
+    if (cursor == NULL || cursor[0] == '\0')
+    {
+        return 1;
+    }
+
+    while (*cursor != '\0')
+    {
+        const char *token_start;
+        const char *token_end;
+
+        while (*cursor != '\0' && uicode_is_filter_separator(*cursor))
+        {
+            cursor++;
+        }
+        if (*cursor == '\0')
+        {
+            break;
+        }
+
+        token_start = cursor;
+        while (*cursor != '\0' && !uicode_is_filter_separator(*cursor))
+        {
+            cursor++;
+        }
+        token_end = cursor;
+
+        if ((size_t)(token_end - token_start) == strlen(suite_name) && strncmp(token_start, suite_name, (size_t)(token_end - token_start)) == 0)
+        {
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
+void uicode_set_test_filter(const char *filter)
+{
+    s_test_filter = filter;
+}
+
+#define RUN_TEST_SUITE(_name)             \
+    do                                    \
+    {                                     \
+        if (uicode_should_run_suite(#_name)) \
+        {                                 \
+            test_##_name##_run();         \
+        }                                 \
+    } while (0)
 
 static void uicode_disp0_init_ui(egui_core_t *core)
 {
@@ -131,114 +192,113 @@ void uicode_disp0_init(egui_core_t *core)
 {
     s_core = core;
     uicode_disp0_init_ui(core);
-
-    test_annotated_scroll_bar_run();
-    test_activity_ring_run();
-    test_arc_run();
-    test_animated_icon_run();
-    test_auto_suggest_box_run();
-    test_badge_run();
-    test_badge_group_run();
-    test_bitmap_icon_run();
-    test_breadcrumb_bar_run();
-    test_button_run();
-    test_calendar_view_run();
-    test_canvas_run();
-    test_dock_panel_run();
-    test_drawer_run();
-    test_list_run();
-    test_card_action_run();
-    test_card_expander_run();
-    test_card_control_run();
-    test_card_panel_run();
-    test_check_box_run();
-    test_color_picker_run();
-    test_combo_box_run();
-    test_counter_badge_run();
-    test_command_bar_run();
-    test_command_bar_flyout_run();
-    test_data_grid_run();
-    test_data_list_panel_run();
-    test_demo_scaffold_run();
-    test_divider_run();
-    test_date_picker_run();
-    test_dialog_sheet_run();
-    test_drop_down_button_run();
-    test_expander_run();
-    test_field_run();
-    test_flip_view_run();
-    test_flyout_run();
-    test_font_icon_run();
-    test_grid_splitter_run();
-    test_grid_run();
-    test_hyperlink_button_run();
-    test_image_icon_run();
-    test_info_badge_run();
-    test_info_label_run();
-    test_master_detail_run();
-    test_menu_bar_run();
-    test_menu_flyout_run();
-    test_message_bar_run();
-    test_nav_panel_run();
-    test_number_box_run();
-    test_parallax_view_run();
-    test_path_icon_run();
-    test_password_box_run();
-    test_radio_button_run();
-    test_radio_buttons_run();
-    test_persona_group_run();
-    test_persona_run();
-    test_person_picture_run();
-    test_presence_badge_run();
-    test_pips_pager_run();
-    test_pivot_run();
-    test_progress_bar_run();
-    test_rating_control_run();
-    test_relative_panel_run();
-    test_repeat_button_run();
-    test_rich_edit_box_run();
-    test_rich_text_block_run();
-    test_scroll_bar_run();
-    test_search_box_run();
-    test_scroll_presenter_run();
-    test_scroll_viewer_run();
-    test_selector_bar_run();
-    test_segmented_control_run();
-    test_settings_card_run();
-    test_settings_expander_run();
-    test_settings_panel_run();
-    test_shortcut_recorder_run();
-    test_skeleton_run();
-    test_slider_run();
-    test_spinner_run();
-    test_symbol_icon_run();
-    test_split_button_run();
-    test_split_view_run();
-    test_stack_panel_run();
-    test_swipe_control_run();
-    test_switch_run();
-    test_tag_run();
-    test_tab_strip_run();
-    test_tab_view_run();
-    test_teaching_tip_run();
-    test_tool_tip_run();
-    test_text_box_run();
-    test_text_block_run();
-    test_thumb_rate_run();
-    test_time_picker_run();
-    test_title_bar_run();
-    test_toast_stack_run();
-    test_toggle_button_run();
-    test_toggle_split_button_run();
-    test_token_input_run();
-    test_tree_view_run();
-    test_uniform_grid_run();
-    test_viewbox_run();
-    test_virtualizing_stack_panel_run();
-    test_virtualizing_wrap_panel_run();
-    test_wrap_panel_run();
-    test_items_repeater_run();
-    test_grid_view_run();
+    RUN_TEST_SUITE(annotated_scroll_bar);
+    RUN_TEST_SUITE(activity_ring);
+    RUN_TEST_SUITE(arc);
+    RUN_TEST_SUITE(animated_icon);
+    RUN_TEST_SUITE(auto_suggest_box);
+    RUN_TEST_SUITE(badge);
+    RUN_TEST_SUITE(badge_group);
+    RUN_TEST_SUITE(bitmap_icon);
+    RUN_TEST_SUITE(breadcrumb_bar);
+    RUN_TEST_SUITE(button);
+    RUN_TEST_SUITE(calendar_view);
+    RUN_TEST_SUITE(canvas);
+    RUN_TEST_SUITE(dock_panel);
+    RUN_TEST_SUITE(drawer);
+    RUN_TEST_SUITE(list);
+    RUN_TEST_SUITE(card_action);
+    RUN_TEST_SUITE(card_expander);
+    RUN_TEST_SUITE(card_control);
+    RUN_TEST_SUITE(card_panel);
+    RUN_TEST_SUITE(check_box);
+    RUN_TEST_SUITE(color_picker);
+    RUN_TEST_SUITE(combo_box);
+    RUN_TEST_SUITE(counter_badge);
+    RUN_TEST_SUITE(command_bar);
+    RUN_TEST_SUITE(command_bar_flyout);
+    RUN_TEST_SUITE(data_grid);
+    RUN_TEST_SUITE(data_list_panel);
+    RUN_TEST_SUITE(demo_scaffold);
+    RUN_TEST_SUITE(divider);
+    RUN_TEST_SUITE(date_picker);
+    RUN_TEST_SUITE(dialog_sheet);
+    RUN_TEST_SUITE(drop_down_button);
+    RUN_TEST_SUITE(expander);
+    RUN_TEST_SUITE(field);
+    RUN_TEST_SUITE(flip_view);
+    RUN_TEST_SUITE(flyout);
+    RUN_TEST_SUITE(font_icon);
+    RUN_TEST_SUITE(grid_splitter);
+    RUN_TEST_SUITE(grid);
+    RUN_TEST_SUITE(hyperlink_button);
+    RUN_TEST_SUITE(image_icon);
+    RUN_TEST_SUITE(info_badge);
+    RUN_TEST_SUITE(info_label);
+    RUN_TEST_SUITE(master_detail);
+    RUN_TEST_SUITE(menu_bar);
+    RUN_TEST_SUITE(menu_flyout);
+    RUN_TEST_SUITE(message_bar);
+    RUN_TEST_SUITE(nav_panel);
+    RUN_TEST_SUITE(number_box);
+    RUN_TEST_SUITE(parallax_view);
+    RUN_TEST_SUITE(path_icon);
+    RUN_TEST_SUITE(password_box);
+    RUN_TEST_SUITE(radio_button);
+    RUN_TEST_SUITE(radio_buttons);
+    RUN_TEST_SUITE(persona_group);
+    RUN_TEST_SUITE(persona);
+    RUN_TEST_SUITE(person_picture);
+    RUN_TEST_SUITE(presence_badge);
+    RUN_TEST_SUITE(pips_pager);
+    RUN_TEST_SUITE(pivot);
+    RUN_TEST_SUITE(progress_bar);
+    RUN_TEST_SUITE(rating_control);
+    RUN_TEST_SUITE(relative_panel);
+    RUN_TEST_SUITE(repeat_button);
+    RUN_TEST_SUITE(rich_edit_box);
+    RUN_TEST_SUITE(rich_text_block);
+    RUN_TEST_SUITE(scroll_bar);
+    RUN_TEST_SUITE(search_box);
+    RUN_TEST_SUITE(scroll_presenter);
+    RUN_TEST_SUITE(scroll_viewer);
+    RUN_TEST_SUITE(selector_bar);
+    RUN_TEST_SUITE(segmented_control);
+    RUN_TEST_SUITE(settings_card);
+    RUN_TEST_SUITE(settings_expander);
+    RUN_TEST_SUITE(settings_panel);
+    RUN_TEST_SUITE(shortcut_recorder);
+    RUN_TEST_SUITE(skeleton);
+    RUN_TEST_SUITE(slider);
+    RUN_TEST_SUITE(spinner);
+    RUN_TEST_SUITE(symbol_icon);
+    RUN_TEST_SUITE(split_button);
+    RUN_TEST_SUITE(split_view);
+    RUN_TEST_SUITE(stack_panel);
+    RUN_TEST_SUITE(swipe_control);
+    RUN_TEST_SUITE(switch);
+    RUN_TEST_SUITE(tag);
+    RUN_TEST_SUITE(tab_strip);
+    RUN_TEST_SUITE(tab_view);
+    RUN_TEST_SUITE(teaching_tip);
+    RUN_TEST_SUITE(tool_tip);
+    RUN_TEST_SUITE(text_box);
+    RUN_TEST_SUITE(text_block);
+    RUN_TEST_SUITE(thumb_rate);
+    RUN_TEST_SUITE(time_picker);
+    RUN_TEST_SUITE(title_bar);
+    RUN_TEST_SUITE(toast_stack);
+    RUN_TEST_SUITE(toggle_button);
+    RUN_TEST_SUITE(toggle_split_button);
+    RUN_TEST_SUITE(token_input);
+    RUN_TEST_SUITE(tree_view);
+    RUN_TEST_SUITE(uniform_grid);
+    RUN_TEST_SUITE(viewbox);
+    RUN_TEST_SUITE(virtualizing_stack_panel);
+    RUN_TEST_SUITE(virtualizing_wrap_panel);
+    RUN_TEST_SUITE(wrap_panel);
+    RUN_TEST_SUITE(items_repeater);
+    RUN_TEST_SUITE(grid_view);
 }
 
 egui_core_t *uicode_get_core(void)

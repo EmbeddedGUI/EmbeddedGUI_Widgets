@@ -6,6 +6,7 @@
 
 #include "../../HelloCustomWidgets/layout/relative_panel/egui_view_relative_panel.h"
 #include "../../HelloCustomWidgets/layout/relative_panel/egui_view_relative_panel.c"
+#include "test_layout_font_stub.h"
 
 static egui_view_relative_panel_t relative_panel_test_widget;
 static egui_view_relative_panel_t relative_panel_preview_widget;
@@ -67,9 +68,9 @@ static void relative_panel_setup_widget(const egui_view_relative_panel_snapshot_
 {
     egui_view_relative_panel_init(EGUI_VIEW_OF(&relative_panel_test_widget));
     egui_view_set_size(EGUI_VIEW_OF(&relative_panel_test_widget), 196, 160);
+    egui_view_relative_panel_set_font(EGUI_VIEW_OF(&relative_panel_test_widget), egui_test_layout_get_font());
+    egui_view_relative_panel_set_meta_font(EGUI_VIEW_OF(&relative_panel_test_widget), egui_test_layout_get_font());
     egui_view_relative_panel_set_snapshots(EGUI_VIEW_OF(&relative_panel_test_widget), snapshots, snapshot_count);
-    egui_view_relative_panel_set_font(EGUI_VIEW_OF(&relative_panel_test_widget), NULL);
-    egui_view_relative_panel_set_meta_font(EGUI_VIEW_OF(&relative_panel_test_widget), NULL);
     egui_view_relative_panel_set_on_action_listener(EGUI_VIEW_OF(&relative_panel_test_widget), relative_panel_on_action);
     relative_panel_reset_action_state();
 }
@@ -78,9 +79,9 @@ static void relative_panel_setup_preview_widget(void)
 {
     egui_view_relative_panel_init(EGUI_VIEW_OF(&relative_panel_preview_widget));
     egui_view_set_size(EGUI_VIEW_OF(&relative_panel_preview_widget), 104, 88);
+    egui_view_relative_panel_set_font(EGUI_VIEW_OF(&relative_panel_preview_widget), egui_test_layout_get_font());
+    egui_view_relative_panel_set_meta_font(EGUI_VIEW_OF(&relative_panel_preview_widget), egui_test_layout_get_font());
     egui_view_relative_panel_set_snapshots(EGUI_VIEW_OF(&relative_panel_preview_widget), &relative_panel_preview_snapshot, 1);
-    egui_view_relative_panel_set_font(EGUI_VIEW_OF(&relative_panel_preview_widget), NULL);
-    egui_view_relative_panel_set_meta_font(EGUI_VIEW_OF(&relative_panel_preview_widget), NULL);
     egui_view_relative_panel_set_compact_mode(EGUI_VIEW_OF(&relative_panel_preview_widget), 1);
     egui_view_relative_panel_override_static_preview_api(EGUI_VIEW_OF(&relative_panel_preview_widget), &relative_panel_preview_api);
     relative_panel_reset_action_state();

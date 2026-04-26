@@ -6,6 +6,7 @@
 
 #include "../../HelloCustomWidgets/layout/data_list_panel/egui_view_data_list_panel.h"
 #include "../../HelloCustomWidgets/layout/data_list_panel/egui_view_data_list_panel.c"
+#include "test_layout_font_stub.h"
 
 static egui_view_data_list_panel_t test_panel;
 static egui_view_data_list_panel_t preview_panel;
@@ -86,6 +87,8 @@ static void setup_panel(void)
 {
     egui_view_data_list_panel_init(EGUI_VIEW_OF(&test_panel));
     egui_view_set_size(EGUI_VIEW_OF(&test_panel), 196, 132);
+    egui_view_data_list_panel_set_font(EGUI_VIEW_OF(&test_panel), egui_test_layout_get_font());
+    egui_view_data_list_panel_set_meta_font(EGUI_VIEW_OF(&test_panel), egui_test_layout_get_font());
     egui_view_data_list_panel_set_snapshots(EGUI_VIEW_OF(&test_panel), g_snapshots, 3);
     egui_view_data_list_panel_set_on_selection_changed_listener(EGUI_VIEW_OF(&test_panel), on_selection_changed);
     reset_listener_state();
@@ -95,6 +98,8 @@ static void setup_preview_panel(void)
 {
     egui_view_data_list_panel_init(EGUI_VIEW_OF(&preview_panel));
     egui_view_set_size(EGUI_VIEW_OF(&preview_panel), 104, 80);
+    egui_view_data_list_panel_set_font(EGUI_VIEW_OF(&preview_panel), egui_test_layout_get_font());
+    egui_view_data_list_panel_set_meta_font(EGUI_VIEW_OF(&preview_panel), egui_test_layout_get_font());
     egui_view_data_list_panel_set_snapshots(EGUI_VIEW_OF(&preview_panel), g_snapshots, 3);
     egui_view_data_list_panel_set_current_snapshot(EGUI_VIEW_OF(&preview_panel), 1);
     egui_view_data_list_panel_set_current_index(EGUI_VIEW_OF(&preview_panel), 1);

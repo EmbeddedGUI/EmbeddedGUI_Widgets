@@ -6,6 +6,7 @@
 
 #include "../../HelloCustomWidgets/layout/virtualizing_wrap_panel/egui_view_virtualizing_wrap_panel.h"
 #include "../../HelloCustomWidgets/layout/virtualizing_wrap_panel/egui_view_virtualizing_wrap_panel.c"
+#include "test_layout_font_stub.h"
 
 #define test_widget                  virtualizing_wrap_panel_test_widget
 #define preview_widget               virtualizing_wrap_panel_preview_widget
@@ -138,9 +139,9 @@ static void setup_widget(const egui_view_virtualizing_wrap_panel_snapshot_t *sna
 {
     egui_view_virtualizing_wrap_panel_init(EGUI_VIEW_OF(&test_widget));
     egui_view_set_size(EGUI_VIEW_OF(&test_widget), 196, 132);
+    egui_view_virtualizing_wrap_panel_set_font(EGUI_VIEW_OF(&test_widget), egui_test_layout_get_font());
+    egui_view_virtualizing_wrap_panel_set_meta_font(EGUI_VIEW_OF(&test_widget), egui_test_layout_get_font());
     egui_view_virtualizing_wrap_panel_set_snapshots(EGUI_VIEW_OF(&test_widget), snapshots, snapshot_count);
-    egui_view_virtualizing_wrap_panel_set_font(EGUI_VIEW_OF(&test_widget), NULL);
-    egui_view_virtualizing_wrap_panel_set_meta_font(EGUI_VIEW_OF(&test_widget), NULL);
     egui_view_virtualizing_wrap_panel_set_on_action_listener(EGUI_VIEW_OF(&test_widget), on_action);
     reset_action_state();
 }
@@ -149,9 +150,9 @@ static void setup_preview_widget(void)
 {
     egui_view_virtualizing_wrap_panel_init(EGUI_VIEW_OF(&preview_widget));
     egui_view_set_size(EGUI_VIEW_OF(&preview_widget), 104, 82);
+    egui_view_virtualizing_wrap_panel_set_font(EGUI_VIEW_OF(&preview_widget), egui_test_layout_get_font());
+    egui_view_virtualizing_wrap_panel_set_meta_font(EGUI_VIEW_OF(&preview_widget), egui_test_layout_get_font());
     egui_view_virtualizing_wrap_panel_set_snapshots(EGUI_VIEW_OF(&preview_widget), &g_preview_snapshot, 1);
-    egui_view_virtualizing_wrap_panel_set_font(EGUI_VIEW_OF(&preview_widget), NULL);
-    egui_view_virtualizing_wrap_panel_set_meta_font(EGUI_VIEW_OF(&preview_widget), NULL);
     egui_view_virtualizing_wrap_panel_set_compact_mode(EGUI_VIEW_OF(&preview_widget), 1);
     egui_view_virtualizing_wrap_panel_override_static_preview_api(EGUI_VIEW_OF(&preview_widget), &preview_api);
     reset_action_state();
@@ -323,11 +324,13 @@ static void test_virtualizing_wrap_panel_setters_clear_pressed_and_update_anchor
     egui_view_virtualizing_wrap_panel_set_font(EGUI_VIEW_OF(&test_widget), NULL);
     EGUI_TEST_ASSERT_TRUE(test_widget.font == (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT);
     assert_pressed_cleared(&test_widget);
+    egui_view_virtualizing_wrap_panel_set_font(EGUI_VIEW_OF(&test_widget), egui_test_layout_get_font());
 
     seed_pressed_state(&test_widget, 1, 1);
     egui_view_virtualizing_wrap_panel_set_meta_font(EGUI_VIEW_OF(&test_widget), NULL);
     EGUI_TEST_ASSERT_TRUE(test_widget.meta_font == (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT);
     assert_pressed_cleared(&test_widget);
+    egui_view_virtualizing_wrap_panel_set_meta_font(EGUI_VIEW_OF(&test_widget), egui_test_layout_get_font());
 
     seed_pressed_state(&test_widget, 1, 1);
     egui_view_virtualizing_wrap_panel_set_compact_mode(EGUI_VIEW_OF(&test_widget), 2);
@@ -466,7 +469,7 @@ static void test_virtualizing_wrap_panel_key_navigation_page_jump_and_tab(void)
     EGUI_TEST_ASSERT_TRUE(send_key(EGUI_KEY_CODE_RIGHT));
     EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_virtualizing_wrap_panel_get_current_item(EGUI_VIEW_OF(&test_widget)));
     EGUI_TEST_ASSERT_TRUE(send_key(EGUI_KEY_CODE_DOWN));
-    EGUI_TEST_ASSERT_EQUAL_INT(3, egui_view_virtualizing_wrap_panel_get_current_item(EGUI_VIEW_OF(&test_widget)));
+    EGUI_TEST_ASSERT_EQUAL_INT(2, egui_view_virtualizing_wrap_panel_get_current_item(EGUI_VIEW_OF(&test_widget)));
 
     EGUI_TEST_ASSERT_TRUE(send_ctrl_key(EGUI_KEY_CODE_DOWN));
     EGUI_TEST_ASSERT_TRUE(egui_view_virtualizing_wrap_panel_get_current_item(EGUI_VIEW_OF(&test_widget)) > 3);

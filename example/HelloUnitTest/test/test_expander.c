@@ -6,6 +6,7 @@
 
 #include "../../HelloCustomWidgets/layout/expander/egui_view_expander.h"
 #include "../../HelloCustomWidgets/layout/expander/egui_view_expander.c"
+#include "test_layout_font_stub.h"
 
 static egui_view_expander_t test_expander;
 static egui_view_expander_t preview_expander;
@@ -58,6 +59,8 @@ static void setup_expander(void)
 {
     egui_view_expander_init(EGUI_VIEW_OF(&test_expander));
     egui_view_set_size(EGUI_VIEW_OF(&test_expander), 194, 110);
+    egui_view_expander_set_font(EGUI_VIEW_OF(&test_expander), egui_test_layout_get_font());
+    egui_view_expander_set_meta_font(EGUI_VIEW_OF(&test_expander), egui_test_layout_get_font());
     egui_view_expander_set_items(EGUI_VIEW_OF(&test_expander), g_items, 3);
     egui_view_expander_set_on_selection_changed_listener(EGUI_VIEW_OF(&test_expander), on_selection_changed);
     egui_view_expander_set_on_expanded_changed_listener(EGUI_VIEW_OF(&test_expander), on_expanded_changed);
@@ -71,6 +74,8 @@ static void setup_preview_expander(void)
 {
     egui_view_expander_init(EGUI_VIEW_OF(&preview_expander));
     egui_view_set_size(EGUI_VIEW_OF(&preview_expander), 104, 76);
+    egui_view_expander_set_font(EGUI_VIEW_OF(&preview_expander), egui_test_layout_get_font());
+    egui_view_expander_set_meta_font(EGUI_VIEW_OF(&preview_expander), egui_test_layout_get_font());
     egui_view_expander_set_items(EGUI_VIEW_OF(&preview_expander), g_items, 3);
     egui_view_expander_set_current_index(EGUI_VIEW_OF(&preview_expander), 1);
     egui_view_expander_set_expanded_index(EGUI_VIEW_OF(&preview_expander), 1);
@@ -361,7 +366,7 @@ static void test_expander_metrics_and_hit_testing(void)
     egui_dim_t y2;
 
     setup_expander();
-    layout_expander(194, 110);
+    layout_expander(194, 132);
     get_metrics(&metrics);
     EGUI_TEST_ASSERT_TRUE(metrics.content_region.size.width > 0);
     EGUI_TEST_ASSERT_TRUE(metrics.content_region.size.height > 0);

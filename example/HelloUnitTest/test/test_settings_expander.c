@@ -6,6 +6,7 @@
 
 #include "../../HelloCustomWidgets/layout/settings_expander/egui_view_settings_expander.h"
 #include "../../HelloCustomWidgets/layout/settings_expander/egui_view_settings_expander.c"
+#include "test_layout_font_stub.h"
 
 static egui_view_settings_expander_t test_widget;
 static egui_view_settings_expander_t preview_widget;
@@ -78,9 +79,9 @@ static void setup_widget(const egui_view_settings_expander_snapshot_t *snapshots
 {
     egui_view_settings_expander_init(EGUI_VIEW_OF(&test_widget));
     egui_view_set_size(EGUI_VIEW_OF(&test_widget), 196, 146);
+    egui_view_settings_expander_set_font(EGUI_VIEW_OF(&test_widget), egui_test_layout_get_font());
+    egui_view_settings_expander_set_meta_font(EGUI_VIEW_OF(&test_widget), egui_test_layout_get_font());
     egui_view_settings_expander_set_snapshots(EGUI_VIEW_OF(&test_widget), snapshots, snapshot_count);
-    egui_view_settings_expander_set_font(EGUI_VIEW_OF(&test_widget), NULL);
-    egui_view_settings_expander_set_meta_font(EGUI_VIEW_OF(&test_widget), NULL);
     egui_view_settings_expander_set_on_action_listener(EGUI_VIEW_OF(&test_widget), on_action);
     reset_action_state();
 }
@@ -89,9 +90,9 @@ static void setup_preview_widget(void)
 {
     egui_view_settings_expander_init(EGUI_VIEW_OF(&preview_widget));
     egui_view_set_size(EGUI_VIEW_OF(&preview_widget), 104, 88);
+    egui_view_settings_expander_set_font(EGUI_VIEW_OF(&preview_widget), egui_test_layout_get_font());
+    egui_view_settings_expander_set_meta_font(EGUI_VIEW_OF(&preview_widget), egui_test_layout_get_font());
     egui_view_settings_expander_set_snapshots(EGUI_VIEW_OF(&preview_widget), &g_snapshots[0], 1);
-    egui_view_settings_expander_set_font(EGUI_VIEW_OF(&preview_widget), NULL);
-    egui_view_settings_expander_set_meta_font(EGUI_VIEW_OF(&preview_widget), NULL);
     egui_view_settings_expander_set_on_action_listener(EGUI_VIEW_OF(&preview_widget), on_action);
     egui_view_settings_expander_set_compact_mode(EGUI_VIEW_OF(&preview_widget), 1);
     egui_view_settings_expander_override_static_preview_api(EGUI_VIEW_OF(&preview_widget), &preview_api);

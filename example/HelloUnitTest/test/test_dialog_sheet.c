@@ -6,6 +6,7 @@
 
 #include "../../HelloCustomWidgets/feedback/dialog_sheet/egui_view_dialog_sheet.h"
 #include "../../HelloCustomWidgets/feedback/dialog_sheet/egui_view_dialog_sheet.c"
+#include "test_layout_font_stub.h"
 
 typedef struct dialog_sheet_preview_snapshot dialog_sheet_preview_snapshot_t;
 struct dialog_sheet_preview_snapshot
@@ -128,6 +129,8 @@ static void setup_sheet(void)
 {
     egui_view_dialog_sheet_init(EGUI_VIEW_OF(&test_sheet));
     egui_view_set_size(EGUI_VIEW_OF(&test_sheet), 196, 132);
+    egui_view_dialog_sheet_set_font(EGUI_VIEW_OF(&test_sheet), egui_test_layout_get_font());
+    egui_view_dialog_sheet_set_meta_font(EGUI_VIEW_OF(&test_sheet), egui_test_layout_get_font());
     egui_view_dialog_sheet_set_snapshots(EGUI_VIEW_OF(&test_sheet), g_snapshots, 4);
     egui_view_dialog_sheet_set_on_action_changed_listener(EGUI_VIEW_OF(&test_sheet), on_action_changed);
     reset_changed_state();
@@ -137,6 +140,8 @@ static void setup_preview_sheet(void)
 {
     egui_view_dialog_sheet_init(EGUI_VIEW_OF(&preview_sheet));
     egui_view_set_size(EGUI_VIEW_OF(&preview_sheet), 104, 86);
+    egui_view_dialog_sheet_set_font(EGUI_VIEW_OF(&preview_sheet), egui_test_layout_get_font());
+    egui_view_dialog_sheet_set_meta_font(EGUI_VIEW_OF(&preview_sheet), egui_test_layout_get_font());
     egui_view_dialog_sheet_set_snapshots(EGUI_VIEW_OF(&preview_sheet), g_snapshots, 4);
     egui_view_dialog_sheet_set_current_snapshot(EGUI_VIEW_OF(&preview_sheet), 2);
     egui_view_dialog_sheet_set_compact_mode(EGUI_VIEW_OF(&preview_sheet), 1);
@@ -752,10 +757,10 @@ static void test_dialog_sheet_internal_helpers_cover_tone_glyph_metrics_and_regi
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_DIALOG_SHEET_ACTION_NONE,
                                egui_view_dialog_sheet_normalize_action(&g_no_action_snapshot, EGUI_VIEW_DIALOG_SHEET_ACTION_PRIMARY));
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_dialog_sheet_pill_width(NULL, NULL, 0, 40));
-    EGUI_TEST_ASSERT_EQUAL_INT(28, egui_view_dialog_sheet_pill_width(test_sheet.meta_font, "Go", 0, 40));
+    EGUI_TEST_ASSERT_EQUAL_INT(26, egui_view_dialog_sheet_pill_width(test_sheet.meta_font, "Go", 0, 40));
     EGUI_TEST_ASSERT_EQUAL_INT(24, egui_view_dialog_sheet_pill_width(test_sheet.meta_font, "Long", 1, 24));
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_dialog_sheet_button_width(NULL, NULL, 0, 40));
-    EGUI_TEST_ASSERT_EQUAL_INT(34, egui_view_dialog_sheet_button_width(test_sheet.meta_font, "Go", 0, 40));
+    EGUI_TEST_ASSERT_EQUAL_INT(32, egui_view_dialog_sheet_button_width(test_sheet.meta_font, "Go", 0, 40));
     EGUI_TEST_ASSERT_EQUAL_INT(24, egui_view_dialog_sheet_button_width(test_sheet.meta_font, "Long", 1, 24));
     egui_view_dialog_sheet_zero_region(&region);
     EGUI_TEST_ASSERT_EQUAL_INT(0, region.location.x);

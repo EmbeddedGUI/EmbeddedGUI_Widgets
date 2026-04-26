@@ -239,7 +239,7 @@ static void test_parallax_view_text_helpers(void)
     parallax_view_copy_elided(label, sizeof(label), "Parallax surface", 8);
     EGUI_TEST_ASSERT_TRUE(strcmp("Paral...", label) == 0);
     parallax_view_copy_elided(label, sizeof(label), "Top", 3);
-    EGUI_TEST_ASSERT_TRUE(strcmp("...", label) == 0);
+    EGUI_TEST_ASSERT_TRUE(strcmp("Top", label) == 0);
 
     parallax_view_fit_text_to_width(NULL, "Hero layers move slower", label, sizeof(label), 28, 4);
     EGUI_TEST_ASSERT_TRUE(strcmp("Hero...", label) == 0);

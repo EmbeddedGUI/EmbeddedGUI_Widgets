@@ -6,6 +6,7 @@
 
 #include "../../HelloCustomWidgets/navigation/breadcrumb_bar/egui_view_breadcrumb_bar.h"
 #include "../../HelloCustomWidgets/navigation/breadcrumb_bar/egui_view_breadcrumb_bar.c"
+#include "test_layout_font_stub.h"
 
 static egui_view_breadcrumb_bar_t test_bar;
 static egui_view_breadcrumb_bar_t preview_bar;
@@ -42,6 +43,7 @@ static void setup_bar(void)
 {
     egui_view_breadcrumb_bar_init(EGUI_VIEW_OF(&test_bar));
     egui_view_set_size(EGUI_VIEW_OF(&test_bar), 196, 48);
+    egui_view_breadcrumb_bar_set_font(EGUI_VIEW_OF(&test_bar), egui_test_layout_get_font());
     egui_view_breadcrumb_bar_set_snapshots(EGUI_VIEW_OF(&test_bar), g_snapshots, 3);
     egui_view_set_on_click_listener(EGUI_VIEW_OF(&test_bar), on_bar_click);
     reset_click_count();
@@ -51,6 +53,7 @@ static void setup_preview_bar(void)
 {
     egui_view_breadcrumb_bar_init(EGUI_VIEW_OF(&preview_bar));
     egui_view_set_size(EGUI_VIEW_OF(&preview_bar), 104, 36);
+    egui_view_breadcrumb_bar_set_font(EGUI_VIEW_OF(&preview_bar), egui_test_layout_get_font());
     egui_view_breadcrumb_bar_set_snapshots(EGUI_VIEW_OF(&preview_bar), g_snapshots, 3);
     egui_view_breadcrumb_bar_set_current_snapshot(EGUI_VIEW_OF(&preview_bar), 1);
     egui_view_breadcrumb_bar_set_compact_mode(EGUI_VIEW_OF(&preview_bar), 1);
@@ -413,7 +416,7 @@ static void test_breadcrumb_bar_internal_helpers_cover_entries_and_labels(void)
     egui_view_breadcrumb_bar_set_item_entry(&entries[0], 0);
     egui_view_breadcrumb_bar_set_overflow_entry(&entries[1]);
     egui_view_breadcrumb_bar_set_item_entry(&entries[2], 3);
-    EGUI_TEST_ASSERT_FALSE(egui_view_breadcrumb_bar_candidate_fits_without_elision(font, &g_snapshots[2], 1, 3, 84, entries, 3));
+    EGUI_TEST_ASSERT_FALSE(egui_view_breadcrumb_bar_candidate_fits_without_elision(font, &g_snapshots[2], 1, 3, 62, entries, 3));
     egui_view_breadcrumb_bar_set_overflow_entry(&entries[0]);
     egui_view_breadcrumb_bar_set_item_entry(&entries[1], 3);
     EGUI_TEST_ASSERT_TRUE(egui_view_breadcrumb_bar_candidate_fits_without_elision(font, &g_snapshots[2], 1, 3, 84, entries, 2));
@@ -424,7 +427,7 @@ static void test_breadcrumb_bar_internal_helpers_cover_entries_and_labels(void)
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_BREADCRUMB_BAR_ENTRY_OVERFLOW, entries[1].kind);
     EGUI_TEST_ASSERT_EQUAL_INT(3, entries[2].item_index);
 
-    EGUI_TEST_ASSERT_EQUAL_INT(2, egui_view_breadcrumb_bar_build_entries(font, &g_snapshots[2], 1, 84, entries));
+    EGUI_TEST_ASSERT_EQUAL_INT(2, egui_view_breadcrumb_bar_build_entries(font, &g_snapshots[2], 1, 62, entries));
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_BREADCRUMB_BAR_ENTRY_OVERFLOW, entries[0].kind);
     EGUI_TEST_ASSERT_EQUAL_INT(3, entries[1].item_index);
 

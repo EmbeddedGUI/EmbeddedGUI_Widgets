@@ -386,12 +386,15 @@ static egui_dim_t egui_view_command_bar_measure_item_width(const egui_font_t *fo
         return width;
     }
 
-    width = EGUI_VIEW_COMMAND_BAR_STANDARD_ITEM_BASE_W + EGUI_VIEW_COMMAND_BAR_STANDARD_GLYPH_W + 5 +
-            egui_view_command_bar_measure_text_width(font, item->label) + (item->emphasized ? 4 : 0);
-    if (width <= EGUI_VIEW_COMMAND_BAR_STANDARD_ITEM_BASE_W + EGUI_VIEW_COMMAND_BAR_STANDARD_GLYPH_W + 5)
     {
-        width = EGUI_VIEW_COMMAND_BAR_STANDARD_ITEM_BASE_W + EGUI_VIEW_COMMAND_BAR_STANDARD_GLYPH_W + 5 +
-                egui_view_command_bar_text_len(item->label) * EGUI_VIEW_COMMAND_BAR_STANDARD_ITEM_CHAR_W + (item->emphasized ? 4 : 0);
+        egui_dim_t text_width = egui_view_command_bar_measure_text_width(font, item->label);
+
+        width = EGUI_VIEW_COMMAND_BAR_STANDARD_ITEM_BASE_W + EGUI_VIEW_COMMAND_BAR_STANDARD_GLYPH_W + 5 + text_width + (item->emphasized ? 4 : 0);
+        if (text_width <= 0)
+        {
+            width = EGUI_VIEW_COMMAND_BAR_STANDARD_ITEM_BASE_W + EGUI_VIEW_COMMAND_BAR_STANDARD_GLYPH_W + 5 +
+                    egui_view_command_bar_text_len(item->label) * EGUI_VIEW_COMMAND_BAR_STANDARD_ITEM_CHAR_W + (item->emphasized ? 4 : 0);
+        }
     }
     if (width < EGUI_VIEW_COMMAND_BAR_STANDARD_ITEM_MIN_W)
     {

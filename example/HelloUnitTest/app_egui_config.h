@@ -15,6 +15,7 @@ extern "C" {
 #define EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS 1
 #define EGUI_CONFIG_FUNCTION_SUPPORT_LAYER 1
 #define EGUI_CONFIG_FUNCTION_SUPPORT_MASK  1
+#define EGUI_CONFIG_FUNCTION_SUPPORT_MARGIN_PADDING 0
 /* Ends C function definitions when using C++ */
 #ifdef __cplusplus
 }

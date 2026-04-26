@@ -6,6 +6,7 @@
 
 #include "../../HelloCustomWidgets/input/command_bar_flyout/egui_view_command_bar_flyout.h"
 #include "../../HelloCustomWidgets/input/command_bar_flyout/egui_view_command_bar_flyout.c"
+#include "test_layout_font_stub.h"
 
 static egui_view_command_bar_flyout_t test_flyout;
 static egui_view_command_bar_flyout_t preview_flyout;
@@ -142,6 +143,8 @@ static void setup_flyout(const egui_view_command_bar_flyout_snapshot_t *snapshot
 {
     egui_view_command_bar_flyout_init(EGUI_VIEW_OF(&test_flyout));
     egui_view_set_size(EGUI_VIEW_OF(&test_flyout), 196, 160);
+    egui_view_command_bar_flyout_set_font(EGUI_VIEW_OF(&test_flyout), egui_test_layout_get_font());
+    egui_view_command_bar_flyout_set_meta_font(EGUI_VIEW_OF(&test_flyout), egui_test_layout_get_font());
     egui_view_command_bar_flyout_set_snapshots(EGUI_VIEW_OF(&test_flyout), snapshots, snapshot_count);
     egui_view_command_bar_flyout_set_on_action_listener(EGUI_VIEW_OF(&test_flyout), on_action);
     reset_action_state();
@@ -151,6 +154,8 @@ static void setup_preview_flyout(void)
 {
     egui_view_command_bar_flyout_init(EGUI_VIEW_OF(&preview_flyout));
     egui_view_set_size(EGUI_VIEW_OF(&preview_flyout), 104, 72);
+    egui_view_command_bar_flyout_set_font(EGUI_VIEW_OF(&preview_flyout), egui_test_layout_get_font());
+    egui_view_command_bar_flyout_set_meta_font(EGUI_VIEW_OF(&preview_flyout), egui_test_layout_get_font());
     egui_view_command_bar_flyout_set_snapshots(EGUI_VIEW_OF(&preview_flyout), &g_preview_snapshot, 1);
     egui_view_command_bar_flyout_set_compact_mode(EGUI_VIEW_OF(&preview_flyout), 1);
     egui_view_command_bar_flyout_set_on_action_listener(EGUI_VIEW_OF(&preview_flyout), on_action);

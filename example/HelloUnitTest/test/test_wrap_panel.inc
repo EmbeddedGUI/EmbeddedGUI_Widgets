@@ -6,6 +6,7 @@
 
 #include "../../HelloCustomWidgets/layout/wrap_panel/egui_view_wrap_panel.h"
 #include "../../HelloCustomWidgets/layout/wrap_panel/egui_view_wrap_panel.c"
+#include "test_layout_font_stub.h"
 
 #define test_widget                  wrap_panel_test_widget
 #define preview_widget               wrap_panel_preview_widget
@@ -115,9 +116,9 @@ static void setup_widget(const egui_view_wrap_panel_snapshot_t *snapshots, uint8
 {
     egui_view_wrap_panel_init(EGUI_VIEW_OF(&test_widget));
     egui_view_set_size(EGUI_VIEW_OF(&test_widget), 196, 124);
+    egui_view_wrap_panel_set_font(EGUI_VIEW_OF(&test_widget), egui_test_layout_get_font());
+    egui_view_wrap_panel_set_meta_font(EGUI_VIEW_OF(&test_widget), egui_test_layout_get_font());
     egui_view_wrap_panel_set_snapshots(EGUI_VIEW_OF(&test_widget), snapshots, snapshot_count);
-    egui_view_wrap_panel_set_font(EGUI_VIEW_OF(&test_widget), NULL);
-    egui_view_wrap_panel_set_meta_font(EGUI_VIEW_OF(&test_widget), NULL);
     egui_view_wrap_panel_set_on_action_listener(EGUI_VIEW_OF(&test_widget), on_action);
     reset_action_state();
 }
@@ -126,9 +127,9 @@ static void setup_preview_widget(void)
 {
     egui_view_wrap_panel_init(EGUI_VIEW_OF(&preview_widget));
     egui_view_set_size(EGUI_VIEW_OF(&preview_widget), 104, 78);
+    egui_view_wrap_panel_set_font(EGUI_VIEW_OF(&preview_widget), egui_test_layout_get_font());
+    egui_view_wrap_panel_set_meta_font(EGUI_VIEW_OF(&preview_widget), egui_test_layout_get_font());
     egui_view_wrap_panel_set_snapshots(EGUI_VIEW_OF(&preview_widget), &g_preview_snapshot, 1);
-    egui_view_wrap_panel_set_font(EGUI_VIEW_OF(&preview_widget), NULL);
-    egui_view_wrap_panel_set_meta_font(EGUI_VIEW_OF(&preview_widget), NULL);
     egui_view_wrap_panel_set_compact_mode(EGUI_VIEW_OF(&preview_widget), 1);
     egui_view_wrap_panel_override_static_preview_api(EGUI_VIEW_OF(&preview_widget), &preview_api);
     reset_action_state();
@@ -280,11 +281,13 @@ static void test_wrap_panel_setters_clear_pressed_and_update_state(void)
     egui_view_wrap_panel_set_font(EGUI_VIEW_OF(&test_widget), NULL);
     EGUI_TEST_ASSERT_TRUE(test_widget.font == (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT);
     assert_pressed_cleared(&test_widget);
+    egui_view_wrap_panel_set_font(EGUI_VIEW_OF(&test_widget), egui_test_layout_get_font());
 
     seed_pressed_state(&test_widget, 1, 1);
     egui_view_wrap_panel_set_meta_font(EGUI_VIEW_OF(&test_widget), NULL);
     EGUI_TEST_ASSERT_TRUE(test_widget.meta_font == (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT);
     assert_pressed_cleared(&test_widget);
+    egui_view_wrap_panel_set_meta_font(EGUI_VIEW_OF(&test_widget), egui_test_layout_get_font());
 
     seed_pressed_state(&test_widget, 1, 1);
     egui_view_wrap_panel_set_compact_mode(EGUI_VIEW_OF(&test_widget), 2);

@@ -6,6 +6,7 @@
 
 #include "../../HelloCustomWidgets/display/persona_group/egui_view_persona_group.h"
 #include "../../HelloCustomWidgets/display/persona_group/egui_view_persona_group.c"
+#include "test_layout_font_stub.h"
 
 typedef struct persona_group_preview_snapshot persona_group_preview_snapshot_t;
 struct persona_group_preview_snapshot
@@ -121,6 +122,8 @@ static void setup_group(void)
 {
     egui_view_persona_group_init(EGUI_VIEW_OF(&test_group));
     egui_view_set_size(EGUI_VIEW_OF(&test_group), 194, 114);
+    egui_view_persona_group_set_font(EGUI_VIEW_OF(&test_group), egui_test_layout_get_font());
+    egui_view_persona_group_set_meta_font(EGUI_VIEW_OF(&test_group), egui_test_layout_get_font());
     egui_view_persona_group_set_snapshots(EGUI_VIEW_OF(&test_group), g_snapshots, 3);
     egui_view_persona_group_set_on_focus_changed_listener(EGUI_VIEW_OF(&test_group), on_focus_changed);
     reset_listener_state();

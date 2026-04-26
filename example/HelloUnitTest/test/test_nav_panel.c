@@ -6,6 +6,7 @@
 
 #include "../../HelloCustomWidgets/navigation/nav_panel/egui_view_nav_panel.h"
 #include "../../HelloCustomWidgets/navigation/nav_panel/egui_view_nav_panel.c"
+#include "test_layout_font_stub.h"
 
 static egui_view_nav_panel_t test_nav_panel;
 static egui_view_nav_panel_t preview_nav_panel;
@@ -40,6 +41,8 @@ static void setup_nav_panel(void)
 {
     egui_view_nav_panel_init(EGUI_VIEW_OF(&test_nav_panel));
     egui_view_set_size(EGUI_VIEW_OF(&test_nav_panel), 198, 112);
+    egui_view_nav_panel_set_font(EGUI_VIEW_OF(&test_nav_panel), egui_test_layout_get_font());
+    egui_view_nav_panel_set_meta_font(EGUI_VIEW_OF(&test_nav_panel), egui_test_layout_get_font());
     egui_view_nav_panel_set_items(EGUI_VIEW_OF(&test_nav_panel), g_items_primary, 3);
     egui_view_nav_panel_set_header_text(EGUI_VIEW_OF(&test_nav_panel), "Workspace");
     egui_view_nav_panel_set_footer_text(EGUI_VIEW_OF(&test_nav_panel), "Settings");
@@ -52,6 +55,8 @@ static void setup_preview_nav_panel(uint8_t current_index)
 {
     egui_view_nav_panel_init(EGUI_VIEW_OF(&preview_nav_panel));
     egui_view_set_size(EGUI_VIEW_OF(&preview_nav_panel), 58, 74);
+    egui_view_nav_panel_set_font(EGUI_VIEW_OF(&preview_nav_panel), egui_test_layout_get_font());
+    egui_view_nav_panel_set_meta_font(EGUI_VIEW_OF(&preview_nav_panel), egui_test_layout_get_font());
     egui_view_nav_panel_set_items(EGUI_VIEW_OF(&preview_nav_panel), g_items_primary, 3);
     egui_view_nav_panel_set_footer_badge(EGUI_VIEW_OF(&preview_nav_panel), "S");
     egui_view_nav_panel_set_compact_mode(EGUI_VIEW_OF(&preview_nav_panel), 1);

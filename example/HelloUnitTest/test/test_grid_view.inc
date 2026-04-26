@@ -6,6 +6,7 @@
 
 #include "../../HelloCustomWidgets/layout/grid_view/egui_view_grid_view.h"
 #include "../../HelloCustomWidgets/layout/grid_view/egui_view_grid_view.c"
+#include "test_layout_font_stub.h"
 
 static hcw_grid_view_t grid_view_test_widget;
 static hcw_grid_view_t grid_view_preview_widget;
@@ -86,9 +87,9 @@ static void grid_view_setup_widget(const hcw_grid_view_snapshot_t *snapshots, ui
 {
     hcw_grid_view_init(EGUI_VIEW_OF(&grid_view_test_widget));
     egui_view_set_size(EGUI_VIEW_OF(&grid_view_test_widget), 196, 148);
+    hcw_grid_view_set_font(EGUI_VIEW_OF(&grid_view_test_widget), egui_test_layout_get_font());
+    hcw_grid_view_set_meta_font(EGUI_VIEW_OF(&grid_view_test_widget), egui_test_layout_get_font());
     hcw_grid_view_set_snapshots(EGUI_VIEW_OF(&grid_view_test_widget), snapshots, snapshot_count);
-    hcw_grid_view_set_font(EGUI_VIEW_OF(&grid_view_test_widget), NULL);
-    hcw_grid_view_set_meta_font(EGUI_VIEW_OF(&grid_view_test_widget), NULL);
     hcw_grid_view_set_on_action_listener(EGUI_VIEW_OF(&grid_view_test_widget), grid_view_on_action);
     grid_view_reset_action_state();
 }
@@ -97,9 +98,9 @@ static void grid_view_setup_preview_widget(void)
 {
     hcw_grid_view_init(EGUI_VIEW_OF(&grid_view_preview_widget));
     egui_view_set_size(EGUI_VIEW_OF(&grid_view_preview_widget), 104, 86);
+    hcw_grid_view_set_font(EGUI_VIEW_OF(&grid_view_preview_widget), egui_test_layout_get_font());
+    hcw_grid_view_set_meta_font(EGUI_VIEW_OF(&grid_view_preview_widget), egui_test_layout_get_font());
     hcw_grid_view_set_snapshots(EGUI_VIEW_OF(&grid_view_preview_widget), &grid_view_preview_snapshot, 1);
-    hcw_grid_view_set_font(EGUI_VIEW_OF(&grid_view_preview_widget), NULL);
-    hcw_grid_view_set_meta_font(EGUI_VIEW_OF(&grid_view_preview_widget), NULL);
     hcw_grid_view_set_compact_mode(EGUI_VIEW_OF(&grid_view_preview_widget), 1);
     hcw_grid_view_override_static_preview_api(EGUI_VIEW_OF(&grid_view_preview_widget), &grid_view_preview_api);
     grid_view_reset_action_state();
@@ -254,11 +255,13 @@ static void test_grid_view_setters_clear_pressed_and_update_state(void)
     hcw_grid_view_set_font(EGUI_VIEW_OF(&grid_view_test_widget), NULL);
     EGUI_TEST_ASSERT_TRUE(grid_view_test_widget.font == (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT);
     grid_view_assert_pressed_cleared(&grid_view_test_widget);
+    hcw_grid_view_set_font(EGUI_VIEW_OF(&grid_view_test_widget), egui_test_layout_get_font());
 
     grid_view_seed_pressed_state(&grid_view_test_widget, 1, 1);
     hcw_grid_view_set_meta_font(EGUI_VIEW_OF(&grid_view_test_widget), NULL);
     EGUI_TEST_ASSERT_TRUE(grid_view_test_widget.meta_font == (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT);
     grid_view_assert_pressed_cleared(&grid_view_test_widget);
+    hcw_grid_view_set_meta_font(EGUI_VIEW_OF(&grid_view_test_widget), egui_test_layout_get_font());
 
     grid_view_seed_pressed_state(&grid_view_test_widget, 1, 1);
     hcw_grid_view_set_compact_mode(EGUI_VIEW_OF(&grid_view_test_widget), 2);
