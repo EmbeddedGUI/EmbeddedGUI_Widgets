@@ -81,6 +81,7 @@
 #include "test/test_settings_panel.h"
 #include "test/test_shortcut_recorder.h"
 #include "test/test_skeleton.h"
+#include "test/test_snackbar.h"
 #include "test/test_slider.h"
 #include "test/test_spinner.h"
 #include "test/test_symbol_icon.h"
@@ -269,6 +270,7 @@ void uicode_disp0_init(egui_core_t *core)
     RUN_TEST_SUITE(settings_panel);
     RUN_TEST_SUITE(shortcut_recorder);
     RUN_TEST_SUITE(skeleton);
+    RUN_TEST_SUITE(snackbar);
     RUN_TEST_SUITE(slider);
     RUN_TEST_SUITE(spinner);
     RUN_TEST_SUITE(symbol_icon);

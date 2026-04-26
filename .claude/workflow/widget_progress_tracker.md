@@ -9,13 +9,13 @@
 
 ## 当前快照
 
-- 截至 `2026-04-14`，`example/HelloCustomWidgets/` 当前保留 `106` 个控件目录。
+- 截至 `2026-04-26`，`example/HelloCustomWidgets/` 当前保留 `107` 个控件目录。
 - 所有保留控件均来自 `reference` 主线：
   - `input = 33`
   - `layout = 29`
   - `navigation = 13`
   - `display = 21`
-  - `feedback = 10`
+  - `feedback = 11`
 - `widget_catalog.json`、`web/catalog-policy.json` 与默认 web 入口已同步到 `reference-only` 状态。
 - 已清退轨道：
   - 全部 `deprecated`
@@ -144,7 +144,7 @@
 - `tag` -> `Tag`
 - `text_block` -> `TextBlock`
 
-### Feedback（10）
+### Feedback（11）
 
 - `activity_ring` -> `ProgressRing`
 - `dialog_sheet` -> `ContentDialog`
@@ -152,12 +152,20 @@
 - `message_bar` -> `MessageBar`
 - `progress_bar` -> `ProgressBar`
 - `skeleton` -> `Skeleton`
+- `snackbar` -> `Snackbar`
 - `spinner` -> `Spinner`
 - `teaching_tip` -> `TeachingTip`
 - `tool_tip` -> `ToolTip`
 - `toast_stack` -> `Toast`
 
 ## 最近完成的收口动作
+
+- `2026-04-26`
+  - 收口 `feedback/snackbar` reference 控件：新增 `example/HelloCustomWidgets/feedback/snackbar/egui_view_snackbar.h`、`egui_view_snackbar.c`、`test.c` 与 `readme.md`，按 Fluent / WPF UI 的底部临时反馈语义实现短消息、可选动作、关闭按钮、tone 状态和 `compact / read only` 静态 preview，与 `toast_stack` 堆叠通知和 `message_bar` 内嵌横幅保持区分。
+  - 新增 `example/HelloUnitTest/test/test_snackbar.h` 与 `test_snackbar.c`，并在 `example/HelloUnitTest/uicode_disp0.c` 注册 `snackbar` suite；同步 `example/HelloCustomWidgets/widget_catalog.json` 与 `web/catalog-policy.json` 到 `107` 个 reference 控件。
+  - 修复 `scripts/code_runtime_check.py` 的录制构建宏注入：runtime build signature 增加 `recording_flag_schema = 2`，并同时注入 `EGUI_CONFIG_RECORDING_TEST` 与新版 SDK action dispatcher 使用的 `EGUI_CONFIG_FUNCTION_RECORDING_TEST`，避免录制轨道只停留在默认态。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=feedback/snackbar PORT=pc`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe snackbar`（`snackbar 8/8`）、`python scripts/checks/check_touch_release_semantics.py --scope custom --category feedback`、`python scripts/checks/check_docs_encoding.py`、`python scripts/checks/check_widget_catalog.py`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub feedback/snackbar --track reference --timeout 10 --keep-screenshots`、`python scripts/code_compile_check.py --custom-widgets --category feedback --bits64`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --category feedback --track reference --bits64`、`python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub feedback/snackbar` 与 `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_feedback_snackbar`。
+  - 已复核 `runtime_check_output/HelloCustomWidgets_feedback_snackbar/default` 的 `11` 帧输出：关键帧覆盖 `Saved / Undo`、`Offline / Retry`、`Sync failed / Retry`、`Queued / Open` 并回到 `Saved / Undo`，底部 `compact / read only` preview 静态正常；web smoke 返回 `PASS status=Running canvas=480x480 ratio=0.1479 colors=122`。
 
 - `2026-04-24`
   - 收口 `navigation/title_bar` 长句省略渲染：在 `example/HelloCustomWidgets/navigation/title_bar/egui_view_title_bar.c` 为 title bar 标题与附属文案共用的省略路径补上 `egui_view_title_bar_is_space_char()`、`egui_view_title_bar_is_break_after_char()` 与 `egui_view_title_bar_find_elide_boundary()`，让 `egui_view_title_bar_copy_elided()` 在需要加省略号时优先退回到空格、连字符或斜杠边界，避免窄标题区里留下半截词，同时保持既有 leading icon、右侧动作区和 `compact / read only` preview 布局不变。

@@ -445,6 +445,7 @@ def get_runtime_build_signature(app, app_sub=None, bits64=False, user_cflags="",
         "app_sub": app_sub or "",
         "bits64": bool(bits64),
         "recording_test": bool(recording_test),
+        "recording_flag_schema": 2,
         "user_cflags": normalized_user_cflags,
         "compile_fast_flags": COMPILE_FAST_FLAGS,
     }
@@ -584,8 +585,14 @@ def compile_app(app, app_sub=None, bits64=False, user_cflags="", recording_test=
             recording_test=recording_test,
         )
 
-    # Always inject RECORDING_TEST into the build signature so cached outputs stay isolated.
-    recording_flag = '-DEGUI_CONFIG_RECORDING_TEST=%d' % (1 if recording_test else 0)
+    # Always inject recording flags into the build signature so cached outputs stay isolated.
+    # EGUI_CONFIG_RECORDING_TEST is kept for app-side guards; newer SDK ports use
+    # EGUI_CONFIG_FUNCTION_RECORDING_TEST to compile the action dispatcher.
+    recording_value = 1 if recording_test else 0
+    recording_flag = (
+        '-DEGUI_CONFIG_RECORDING_TEST=%d -DEGUI_CONFIG_FUNCTION_RECORDING_TEST=%d'
+        % (recording_value, recording_value)
+    )
     combined_cflags = ('%s %s' % (recording_flag, user_cflags)).strip()
     cmd = ['make', get_make_job_arg(make_jobs), 'all', 'APP=%s' % app, 'PORT=pc'] + COMPILE_FAST_FLAGS
     if app_sub:
