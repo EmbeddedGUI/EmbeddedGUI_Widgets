@@ -90,6 +90,16 @@
     "doc_state": "ok"
   },
   {
+    "id": "display/image_control",
+    "track": "reference",
+    "visibility": "public",
+    "reference_system": "Fluent 2 / WPF UI",
+    "reference_library": "WinUI / WPF UI",
+    "reference_component": "Image",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
     "id": "display/image_icon",
     "track": "reference",
     "visibility": "public",
