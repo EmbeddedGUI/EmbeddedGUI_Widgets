@@ -9,10 +9,10 @@
 
 ## 当前快照
 
-- 截至 `2026-04-26`，`example/HelloCustomWidgets/` 当前保留 `121` 个控件目录。
+- 截至 `2026-04-26`，`example/HelloCustomWidgets/` 当前保留 `122` 个控件目录。
 - 所有保留控件均来自 `reference` 主线：
   - `input = 38`
-  - `layout = 36`
+  - `layout = 37`
   - `navigation = 13`
   - `display = 22`
   - `feedback = 12`
@@ -77,7 +77,7 @@
 - `token_input` -> `TokenInput`
 - `toolbar` -> `Toolbar`
 
-### Layout（36）
+### Layout（37）
 
 - `accordion` -> `Accordion`
 - `border` -> `Border`
@@ -96,6 +96,7 @@
 - `grid_splitter` -> `GridSplitter`
 - `grid_view` -> `GridView`
 - `headered_content_control` -> `HeaderedContentControl`
+- `headered_items_control` -> `HeaderedItemsControl`
 - `items_control` -> `ItemsControl`
 - `items_repeater` -> `ItemsRepeater`
 - `list` -> `List`
@@ -174,6 +175,11 @@
 
 ## 最近完成的收口动作
 
+- `2026-04-26`
+  - 收口 `layout/headered_items_control` reference 控件：新增 `example/HelloCustomWidgets/layout/headered_items_control/egui_view_headered_items_control.h`、`egui_view_headered_items_control.c`、`test.c` 与 `readme.md`，按 WPF `HeaderedItemsControl` 语义实现 header + 多 item child 承载、vertical / horizontal / wrap items 布局、浅色 header band、item slot、compact 与 read only 静态 preview。
+  - 新增 `example/HelloUnitTest/test/test_headered_items_control.h` 与 `test_headered_items_control.c`，并在 `example/HelloUnitTest/uicode_disp0.c` 注册 `headered_items_control` suite；同步 `example/HelloCustomWidgets/widget_catalog.json` 与 `web/catalog-policy.json` 到 `122` 个 reference 控件，其中 `layout = 37`。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=layout/headered_items_control PORT=pc`、`make all APP=HelloUnitTest PORT=pc_test`（Windows 长链接 `Error 87` 后 response-file fallback 成功）、`output\main.exe headered_items_control`（`headered_items_control 5/5`）、`python scripts/checks/check_touch_release_semantics.py --scope custom --category layout`、`python scripts/checks/check_widget_catalog.py`、`python scripts/sync_widget_catalog.py --check`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub layout/headered_items_control --track reference --timeout 10 --keep-screenshots`、`python scripts/code_compile_check.py --custom-widgets --category layout --bits64`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --category layout --track reference --bits64`、`python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub layout/headered_items_control` 与 `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_layout_headered_items_control`。
+  - 已复核 `runtime_check_output/HelloCustomWidgets_layout_headered_items_control/default` 的关键帧输出：覆盖 `Header / vertical items`、`Header / horizontal strip`、`Header / wrap chips`、`Header / muted list` 并回到默认状态；初版 wrap 主区未明显换行，已调大 item width 后复核通过，底部 `wrap / read only` preview 全程静态，未出现文字重叠、裁切、黑屏或白屏；web smoke 返回 `PASS status=Running canvas=480x480 ratio=0.1895 colors=149`。
 - `2026-04-26`
   - 收口 `layout/items_control` reference 控件：新增 `example/HelloCustomWidgets/layout/items_control/egui_view_items_control.h`、`egui_view_items_control.c`、`test.c` 与 `readme.md`，按 WPF `ItemsControl` 语义实现多 item child 承载、vertical / horizontal / wrap 三种布局、浅色 item host、compact 与 read only 静态 preview。
   - 新增 `example/HelloUnitTest/test/test_items_control.h` 与 `test_items_control.c`，并在 `example/HelloUnitTest/uicode_disp0.c` 注册 `items_control` suite；同步 `example/HelloCustomWidgets/widget_catalog.json` 与 `web/catalog-policy.json` 到 `121` 个 reference 控件，其中 `layout = 36`。

@@ -890,6 +890,16 @@
     "doc_state": "ok"
   },
   {
+    "id": "layout/headered_items_control",
+    "track": "reference",
+    "visibility": "public",
+    "reference_system": "Fluent 2 / WPF UI",
+    "reference_library": "WPF",
+    "reference_component": "HeaderedItemsControl",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
     "id": "layout/items_control",
     "track": "reference",
     "visibility": "public",
