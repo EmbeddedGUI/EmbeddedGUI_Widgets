@@ -59,6 +59,7 @@
 #include "test/test_info_badge.h"
 #include "test/test_info_label.h"
 #include "test/test_items_control.h"
+#include "test/test_label_control.h"
 #include "test/test_master_detail.h"
 #include "test/test_menu_bar.h"
 #include "test/test_menu_button.h"
@@ -265,6 +266,7 @@ void uicode_disp0_init(egui_core_t *core)
     RUN_TEST_SUITE(info_badge);
     RUN_TEST_SUITE(info_label);
     RUN_TEST_SUITE(items_control);
+    RUN_TEST_SUITE(label_control);
     RUN_TEST_SUITE(master_detail);
     RUN_TEST_SUITE(menu_bar);
     RUN_TEST_SUITE(menu_button);

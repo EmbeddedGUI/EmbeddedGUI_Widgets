@@ -9,12 +9,12 @@
 
 ## 当前快照
 
-- 截至 `2026-04-26`，`example/HelloCustomWidgets/` 当前保留 `124` 个控件目录。
+- 截至 `2026-04-26`，`example/HelloCustomWidgets/` 当前保留 `125` 个控件目录。
 - 所有保留控件均来自 `reference` 主线：
   - `input = 38`
   - `layout = 38`
   - `navigation = 13`
-  - `display = 23`
+  - `display = 24`
   - `feedback = 12`
 - `widget_catalog.json`、`web/catalog-policy.json` 与默认 web 入口已同步到 `reference-only` 状态。
 - 已清退轨道：
@@ -134,7 +134,7 @@
 - `title_bar` -> `TitleBar`
 - `tree_view` -> `TreeView`
 
-### Display（23）
+### Display（24）
 
 - `badge` -> `Badge`
 - `badge_group` -> `BadgeGroup`
@@ -149,6 +149,7 @@
 - `image_icon` -> `ImageIcon`
 - `info_badge` -> `InfoBadge`
 - `info_label` -> `InfoLabel`
+- `label_control` -> `Label`
 - `path_icon` -> `PathIcon`
 - `person_picture` -> `PersonPicture`
 - `persona` -> `Persona`
@@ -177,6 +178,11 @@
 
 ## 最近完成的收口动作
 
+- `2026-04-26`
+  - 收口 `display/label_control` reference 控件：新增 `example/HelloCustomWidgets/display/label_control/egui_view_label_control.h`、`egui_view_label_control.c`、`test.c` 与 `readme.md`，按 WPF `Label` 语义实现表单 caption、access key underline、required marker、target hint、target highlighted、standard / accent / compact / read only 样式与静态 preview。
+  - 新增 `example/HelloUnitTest/test/test_label_control.h` 与 `test_label_control.c`，并在 `example/HelloUnitTest/uicode_disp0.c` 注册 `label_control` suite；同步 `example/HelloCustomWidgets/widget_catalog.json` 与 `web/catalog-policy.json` 到 `125` 个 reference 控件，其中 `display = 24`。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=display/label_control PORT=pc`、`make all APP=HelloUnitTest PORT=pc_test`（Windows 长链接 `Error 87` 后 response-file fallback 成功）、`output\main.exe label_control`（`label_control 5/5`）、`python scripts\sync_widget_catalog.py --check`、`python scripts\checks\check_widget_catalog.py`、`python scripts\checks\check_docs_encoding.py`、`python scripts\checks\check_touch_release_semantics.py --scope custom --category display`、`python scripts\code_runtime_check.py --app HelloCustomWidgets --app-sub display/label_control --track reference --timeout 10 --keep-screenshots`、`python scripts\code_compile_check.py --custom-widgets --category display --bits64`、`python scripts\code_runtime_check.py --app HelloCustomWidgets --category display --track reference --bits64`、`python scripts\web\wasm_build_demos.py --app HelloCustomWidgets --app-sub display/label_control` 与 `python scripts\web\web_smoke_check.py --web-root web --manifest web\demos\demos.json --demo HelloCustomWidgets_display_label_control`。
+  - 已复核 `runtime_check_output/HelloCustomWidgets_display_label_control/default` 的关键帧输出：覆盖 caption/access key、required、accent target highlighted、read only muted 并回到默认状态，底部 compact/read only preview 全程静态，未出现文字重叠、裁切、黑屏或白屏；web smoke 返回 `PASS status=Running canvas=480x480 ratio=0.1438 colors=104`。
 - `2026-04-26`
   - 收口 `display/status_bar` reference 控件：新增 `example/HelloCustomWidgets/display/status_bar/egui_view_status_bar.h`、`egui_view_status_bar.c`、`test.c` 与 `readme.md`，按 WPF `StatusBar` 语义实现底部状态栏容器、weighted item 分段、状态点、label/value 文本、standard / accent / compact / read only 样式与静态 preview。
   - 新增 `example/HelloUnitTest/test/test_status_bar.h` 与 `test_status_bar.c`，并在 `example/HelloUnitTest/uicode_disp0.c` 注册 `status_bar` suite；同步 `example/HelloCustomWidgets/widget_catalog.json` 与 `web/catalog-policy.json` 到 `124` 个 reference 控件，其中 `display = 23`。

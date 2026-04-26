@@ -130,6 +130,16 @@
     "doc_state": "ok"
   },
   {
+    "id": "display/label_control",
+    "track": "reference",
+    "visibility": "public",
+    "reference_system": "Fluent 2 / WPF UI",
+    "reference_library": "WPF",
+    "reference_component": "Label",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
     "id": "display/path_icon",
     "track": "reference",
     "visibility": "public",
