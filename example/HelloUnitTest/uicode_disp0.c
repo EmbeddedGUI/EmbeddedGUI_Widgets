@@ -30,6 +30,7 @@
 #include "test/test_combo_box.h"
 #include "test/test_compound_button.h"
 #include "test/test_content_control.h"
+#include "test/test_content_presenter.h"
 #include "test/test_counter_badge.h"
 #include "test/test_command_bar.h"
 #include "test/test_command_bar_flyout.h"
@@ -231,6 +232,7 @@ void uicode_disp0_init(egui_core_t *core)
     RUN_TEST_SUITE(combo_box);
     RUN_TEST_SUITE(compound_button);
     RUN_TEST_SUITE(content_control);
+    RUN_TEST_SUITE(content_presenter);
     RUN_TEST_SUITE(counter_badge);
     RUN_TEST_SUITE(command_bar);
     RUN_TEST_SUITE(command_bar_flyout);

@@ -790,6 +790,16 @@
     "doc_state": "ok"
   },
   {
+    "id": "layout/content_presenter",
+    "track": "reference",
+    "visibility": "public",
+    "reference_system": "Fluent 2 / WPF UI",
+    "reference_library": "WPF / WinUI",
+    "reference_component": "ContentPresenter",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
     "id": "layout/data_grid",
     "track": "reference",
     "visibility": "public",
