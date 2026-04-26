@@ -9,9 +9,9 @@
 
 ## 当前快照
 
-- 截至 `2026-04-26`，`example/HelloCustomWidgets/` 当前保留 `107` 个控件目录。
+- 截至 `2026-04-26`，`example/HelloCustomWidgets/` 当前保留 `108` 个控件目录。
 - 所有保留控件均来自 `reference` 主线：
-  - `input = 33`
+  - `input = 34`
   - `layout = 29`
   - `navigation = 13`
   - `display = 21`
@@ -36,10 +36,11 @@
 
 ## 当前保留的 Reference 主线控件
 
-### Input（33）
+### Input（34）
 
 - `auto_suggest_box` -> `AutoSuggestBox`
 - `button` -> `Button`
+- `calendar_date_picker` -> `CalendarDatePicker`
 - `calendar_view` -> `CalendarView`
 - `check_box` -> `CheckBox`
 - `combo_box` -> `ComboBox`
@@ -159,6 +160,12 @@
 - `toast_stack` -> `Toast`
 
 ## 最近完成的收口动作
+
+- `2026-04-26`
+  - 收口 `input/calendar_date_picker` reference 控件：新增 `example/HelloCustomWidgets/input/calendar_date_picker/egui_view_calendar_date_picker.h`、`egui_view_calendar_date_picker.c`、`test.c` 与 `readme.md`，按 WPF UI / Fluent 的 `CalendarDatePicker` 语义实现日期字段、日历弹层、月份浏览、今日标记、已选日期、单日提交和 `compact / read only` 静态 preview。
+  - 新增 `example/HelloUnitTest/test/test_calendar_date_picker.h` 与 `test_calendar_date_picker.c`，并在 `example/HelloUnitTest/uicode_disp0.c` 注册 `calendar_date_picker` suite；同步 `example/HelloCustomWidgets/widget_catalog.json` 与 `web/catalog-policy.json` 到 `108` 个 reference 控件，其中 `input = 34`。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=input/calendar_date_picker PORT=pc`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe calendar_date_picker`（`calendar_date_picker 8/8`）、`python scripts/checks/check_touch_release_semantics.py --scope custom --category input`、`python scripts/checks/check_docs_encoding.py`、`python scripts/checks/check_widget_catalog.py`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/calendar_date_picker --track reference --timeout 10 --keep-screenshots`、`python scripts/code_compile_check.py --custom-widgets --category input --bits64`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --category input --track reference --bits64`、`python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub input/calendar_date_picker` 与 `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_input_calendar_date_picker`。
+  - 已复核 `runtime_check_output/HelloCustomWidgets_input_calendar_date_picker/default` 的 `9` 帧输出：全帧分组为 `[0,1,6,7,8] / [2,3] / [4,5]`，对应默认 `2026-03-18 / Mar 2026`、浏览 `2026-03-18 / Apr 2026` 和提交 `2026-04-02 / Apr 2026` 三组主区状态；主区 RGB 差分边界为 `(164, 100) - (317, 213)`，按 `y >= 250` 裁切底部 preview 后全程保持单一哈希；web smoke 返回 `PASS status=Running canvas=480x480 ratio=0.2013 colors=146`。
 
 - `2026-04-26`
   - 收口 `feedback/snackbar` reference 控件：新增 `example/HelloCustomWidgets/feedback/snackbar/egui_view_snackbar.h`、`egui_view_snackbar.c`、`test.c` 与 `readme.md`，按 Fluent / WPF UI 的底部临时反馈语义实现短消息、可选动作、关闭按钮、tone 状态和 `compact / read only` 静态 preview，与 `toast_stack` 堆叠通知和 `message_bar` 内嵌横幅保持区分。
