@@ -9,10 +9,10 @@
 
 ## 当前快照
 
-- 截至 `2026-04-26`，`example/HelloCustomWidgets/` 当前保留 `110` 个控件目录。
+- 截至 `2026-04-26`，`example/HelloCustomWidgets/` 当前保留 `111` 个控件目录。
 - 所有保留控件均来自 `reference` 主线：
   - `input = 34`
-  - `layout = 30`
+  - `layout = 31`
   - `navigation = 13`
   - `display = 21`
   - `feedback = 12`
@@ -73,8 +73,9 @@
 - `toggle_split_button` -> `ToggleSplitButton`
 - `token_input` -> `TokenInput`
 
-### Layout（30）
+### Layout（31）
 
+- `accordion` -> `Accordion`
 - `canvas` -> `Canvas`
 - `card_action` -> `CardAction`
 - `card_control` -> `CardControl`
@@ -162,6 +163,12 @@
 - `toast_stack` -> `Toast`
 
 ## 最近完成的收口动作
+
+- `2026-04-26`
+  - 收口 `layout/accordion` reference 控件：新增 `example/HelloCustomWidgets/layout/accordion/egui_view_accordion.h`、`egui_view_accordion.c`、`test.c` 与 `readme.md`，按 Fluent 2 / Fluent UI React 的 `Accordion` 语义实现多 section 单项展开、标题 / 描述 / 正文摘要、tone rail、meta glyph、chevron、`compact` 与 `read only` 静态 preview。
+  - 新增 `example/HelloUnitTest/test/test_accordion.h` 与 `test_accordion.c`，并在 `example/HelloUnitTest/uicode_disp0.c` 注册 `accordion` suite；同步 `example/HelloCustomWidgets/widget_catalog.json` 与 `web/catalog-policy.json` 到 `111` 个 reference 控件，其中 `layout = 31`。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=layout/accordion PORT=pc`、`make all APP=HelloUnitTest PORT=pc_test`（Windows 长链接 `Error 87` 后 response-file fallback 成功）、`output\main.exe accordion`（`accordion 8/8`）、`python scripts/checks/check_touch_release_semantics.py --scope custom --category layout`、`python scripts/checks/check_docs_encoding.py`、`python scripts/checks/check_widget_catalog.py`、`python scripts/sync_widget_catalog.py --check`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub layout/accordion --track reference --timeout 10 --keep-screenshots`、`python scripts/code_compile_check.py --custom-widgets --category layout --bits64`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --category layout --track reference --bits64`、`python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub layout/accordion` 与 `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_layout_accordion`。
+  - 已复核 `runtime_check_output/HelloCustomWidgets_layout_accordion/default` 的 `9` 帧输出：关键帧覆盖 `Workspace`、`Identity`、`Release` 并回到默认 `Workspace`，底部 `Compact / Read only` preview 全程静态，未出现文字重叠、裁切、黑屏或白屏；web smoke 返回 `PASS status=Running canvas=480x480 ratio=0.1998 colors=167`。
 
 - `2026-04-26`
   - 收口 `feedback/info_bar` reference 控件：新增 `example/HelloCustomWidgets/feedback/info_bar/egui_view_info_bar.h`、`egui_view_info_bar.c`、`test.c` 与 `readme.md`，按 WinUI / Fluent 的 `InfoBar` 语义实现内联反馈、`IsOpen`、信息 / 成功 / 警告 / 错误 severity、action、close、`compact` 与 `read only` 静态 preview。

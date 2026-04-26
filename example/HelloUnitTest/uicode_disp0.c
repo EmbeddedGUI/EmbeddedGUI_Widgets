@@ -3,6 +3,7 @@
 #include "egui.h"
 #include "uicode_disp0.h"
 
+#include "test/test_accordion.h"
 #include "test/test_annotated_scroll_bar.h"
 #include "test/test_activity_ring.h"
 #include "test/test_arc.h"
@@ -196,6 +197,7 @@ void uicode_disp0_init(egui_core_t *core)
 {
     s_core = core;
     uicode_disp0_init_ui(core);
+    RUN_TEST_SUITE(accordion);
     RUN_TEST_SUITE(annotated_scroll_bar);
     RUN_TEST_SUITE(activity_ring);
     RUN_TEST_SUITE(arc);
