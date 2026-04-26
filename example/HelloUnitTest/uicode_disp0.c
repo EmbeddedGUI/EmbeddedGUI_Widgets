@@ -42,6 +42,7 @@
 #include "test/test_data_list_panel.h"
 #include "test/test_demo_scaffold.h"
 #include "test/test_divider.h"
+#include "test/test_ellipse.h"
 #include "test/test_date_picker.h"
 #include "test/test_dialog_sheet.h"
 #include "test/test_drop_down_button.h"
@@ -254,6 +255,7 @@ void uicode_disp0_init(egui_core_t *core)
     RUN_TEST_SUITE(data_list_panel);
     RUN_TEST_SUITE(demo_scaffold);
     RUN_TEST_SUITE(divider);
+    RUN_TEST_SUITE(ellipse);
     RUN_TEST_SUITE(date_picker);
     RUN_TEST_SUITE(dialog_sheet);
     RUN_TEST_SUITE(drop_down_button);
