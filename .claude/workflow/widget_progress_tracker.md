@@ -9,13 +9,13 @@
 
 ## 当前快照
 
-- 截至 `2026-04-26`，`example/HelloCustomWidgets/` 当前保留 `109` 个控件目录。
+- 截至 `2026-04-26`，`example/HelloCustomWidgets/` 当前保留 `110` 个控件目录。
 - 所有保留控件均来自 `reference` 主线：
   - `input = 34`
   - `layout = 30`
   - `navigation = 13`
   - `display = 21`
-  - `feedback = 11`
+  - `feedback = 12`
 - `widget_catalog.json`、`web/catalog-policy.json` 与默认 web 入口已同步到 `reference-only` 状态。
 - 已清退轨道：
   - 全部 `deprecated`
@@ -146,11 +146,12 @@
 - `tag` -> `Tag`
 - `text_block` -> `TextBlock`
 
-### Feedback（11）
+### Feedback（12）
 
 - `activity_ring` -> `ProgressRing`
 - `dialog_sheet` -> `ContentDialog`
 - `flyout` -> `Flyout`
+- `info_bar` -> `InfoBar`
 - `message_bar` -> `MessageBar`
 - `progress_bar` -> `ProgressBar`
 - `skeleton` -> `Skeleton`
@@ -161,6 +162,12 @@
 - `toast_stack` -> `Toast`
 
 ## 最近完成的收口动作
+
+- `2026-04-26`
+  - 收口 `feedback/info_bar` reference 控件：新增 `example/HelloCustomWidgets/feedback/info_bar/egui_view_info_bar.h`、`egui_view_info_bar.c`、`test.c` 与 `readme.md`，按 WinUI / Fluent 的 `InfoBar` 语义实现内联反馈、`IsOpen`、信息 / 成功 / 警告 / 错误 severity、action、close、`compact` 与 `read only` 静态 preview。
+  - 新增 `example/HelloUnitTest/test/test_info_bar.h` 与 `test_info_bar.c`，并在 `example/HelloUnitTest/uicode_disp0.c` 注册 `info_bar` suite；同步 `example/HelloCustomWidgets/widget_catalog.json`、`web/catalog-policy.json` 与 `web/demos/demos.json` 到 `110` 个 reference 控件，其中 `feedback = 12`。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=feedback/info_bar PORT=pc`、`make all APP=HelloUnitTest PORT=pc_test`（Windows 长链接 `Error 87` 后 response-file fallback 成功）、`output\main.exe info_bar`（`info_bar 8/8`）、`python scripts/checks/check_touch_release_semantics.py --scope custom --category feedback`、`python scripts/checks/check_docs_encoding.py`、`python scripts/checks/check_widget_catalog.py`、`python scripts/sync_widget_catalog.py --check`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub feedback/info_bar --track reference --timeout 10 --keep-screenshots`、`python scripts/code_compile_check.py --custom-widgets --category feedback --bits64`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --category feedback --track reference --bits64`、`python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub feedback/info_bar` 与 `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_feedback_info_bar`。
+  - 已复核 `runtime_check_output/HelloCustomWidgets_feedback_info_bar/default` 的 `11` 帧输出：关键帧覆盖 `Sync complete / Details`、`Policy update / Review`、`Storage warning / Archive`、`Sign-in required / Sign in` 并回到默认状态，底部 `compact / read only` preview 全程完整可见且无文字重叠；web smoke 返回 `PASS status=Running canvas=480x480 ratio=0.1556 colors=127`。
 
 - `2026-04-26`
   - 收口 `layout/two_pane_view` reference 控件：新增 `example/HelloCustomWidgets/layout/two_pane_view/egui_view_two_pane_view.h`、`egui_view_two_pane_view.c`、`test.c` 与 `readme.md`，按 WinUI / Fluent 的 `TwoPaneView` 语义实现 `Wide / Tall / SinglePane` 自适应双窗格、`P1 / P2` 单窗格优先级、focus、pressed、read only 与 static preview。

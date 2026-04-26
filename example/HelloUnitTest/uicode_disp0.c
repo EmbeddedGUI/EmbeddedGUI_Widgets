@@ -46,6 +46,7 @@
 #include "test/test_grid_view.h"
 #include "test/test_hyperlink_button.h"
 #include "test/test_image_icon.h"
+#include "test/test_info_bar.h"
 #include "test/test_info_badge.h"
 #include "test/test_info_label.h"
 #include "test/test_master_detail.h"
@@ -237,6 +238,7 @@ void uicode_disp0_init(egui_core_t *core)
     RUN_TEST_SUITE(grid);
     RUN_TEST_SUITE(hyperlink_button);
     RUN_TEST_SUITE(image_icon);
+    RUN_TEST_SUITE(info_bar);
     RUN_TEST_SUITE(info_badge);
     RUN_TEST_SUITE(info_label);
     RUN_TEST_SUITE(master_detail);
