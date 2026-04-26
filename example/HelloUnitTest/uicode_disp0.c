@@ -84,6 +84,7 @@
 #include "test/test_rating_control.h"
 #include "test/test_relative_panel.h"
 #include "test/test_repeat_button.h"
+#include "test/test_rectangle.h"
 #include "test/test_resize_grip.h"
 #include "test/test_rich_edit_box.h"
 #include "test/test_rich_text_block.h"
@@ -294,6 +295,7 @@ void uicode_disp0_init(egui_core_t *core)
     RUN_TEST_SUITE(rating_control);
     RUN_TEST_SUITE(relative_panel);
     RUN_TEST_SUITE(repeat_button);
+    RUN_TEST_SUITE(rectangle);
     RUN_TEST_SUITE(resize_grip);
     RUN_TEST_SUITE(rich_edit_box);
     RUN_TEST_SUITE(rich_text_block);

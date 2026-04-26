@@ -9,12 +9,12 @@
 
 ## 当前快照
 
-- 截至 `2026-04-26`，`example/HelloCustomWidgets/` 当前保留 `128` 个控件目录。
+- 截至 `2026-04-26`，`example/HelloCustomWidgets/` 当前保留 `129` 个控件目录。
 - 所有保留控件均来自 `reference` 主线：
   - `input = 38`
   - `layout = 40`
   - `navigation = 13`
-  - `display = 25`
+  - `display = 26`
   - `feedback = 12`
 - `widget_catalog.json`、`web/catalog-policy.json` 与默认 web 入口已同步到 `reference-only` 状态。
 - 已清退轨道：
@@ -136,7 +136,7 @@
 - `title_bar` -> `TitleBar`
 - `tree_view` -> `TreeView`
 
-### Display（25）
+### Display（26）
 
 - `access_text` -> `AccessText`
 - `badge` -> `Badge`
@@ -158,6 +158,7 @@
 - `persona` -> `Persona`
 - `persona_group` -> `AvatarGroup`
 - `presence_badge` -> `PresenceBadge`
+- `rectangle` -> `Rectangle`
 - `rich_text_block` -> `RichTextBlock`
 - `status_bar` -> `StatusBar`
 - `symbol_icon` -> `SymbolIcon`
@@ -181,6 +182,11 @@
 
 ## 最近完成的收口动作
 
+- `2026-04-26`
+  - 收口 `display/rectangle` reference 控件：新增 `example/HelloCustomWidgets/display/rectangle/egui_view_rectangle.h`、`egui_view_rectangle.c`、`test.c` 与 `readme.md`，按 WPF `Rectangle` / `Shape` 语义实现 fill、stroke、stroke width、corner radius、standard / accent / compact / read only 样式与静态 preview。
+  - 新增 `example/HelloUnitTest/test/test_rectangle.h` 与 `test_rectangle.c`，并在 `example/HelloUnitTest/uicode_disp0.c` 注册 `rectangle` suite；同步 `example/HelloCustomWidgets/widget_catalog.json` 与 `web/catalog-policy.json` 到 `129` 个 reference 控件，其中 `display = 26`。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=display/rectangle PORT=pc`、`make all APP=HelloUnitTest PORT=pc_test`（Windows 长链接 `Error 87` 后 response-file fallback 成功）、`output\main.exe rectangle`（`rectangle 4/4`）、`python scripts\sync_widget_catalog.py --check`、`python scripts\checks\check_widget_catalog.py`、`python scripts\checks\check_docs_encoding.py`、`python scripts\checks\check_touch_release_semantics.py --scope custom --category display`、`python scripts\code_runtime_check.py --app HelloCustomWidgets --app-sub display/rectangle --track reference --timeout 10 --keep-screenshots`、`python scripts\code_compile_check.py --custom-widgets --category display --bits64`、`python scripts\code_runtime_check.py --app HelloCustomWidgets --category display --track reference --bits64`、`python scripts\web\wasm_build_demos.py --app HelloCustomWidgets --app-sub display/rectangle` 与 `python scripts\web\web_smoke_check.py --web-root web --manifest web\demos\demos.json --demo HelloCustomWidgets_display_rectangle`。
+  - 已复核 `runtime_check_output/HelloCustomWidgets_display_rectangle/default` 的关键帧输出：覆盖 standard fill + stroke、accent rounded、compact thin stroke、read only muted 并回到默认状态，底部 compact/read only preview 全程静态，矩形 fill、stroke、corner radius 与 caption 完整可见，未出现重叠、裁切、黑屏或白屏；web smoke 返回 `PASS status=Running canvas=480x480 ratio=0.1471 colors=75`。
 - `2026-04-26`
   - 收口 `layout/resize_grip` reference 控件：新增 `example/HelloCustomWidgets/layout/resize_grip/egui_view_resize_grip.h`、`egui_view_resize_grip.c`、`test.c` 与 `readme.md`，按 WPF `ResizeGrip` 语义实现 resize corner affordance、diagonal dots、bottom right / bottom left 角落锚定、standard / accent / compact / disabled / read only 样式与静态 preview。
   - 新增 `example/HelloUnitTest/test/test_resize_grip.h` 与 `test_resize_grip.c`，并在 `example/HelloUnitTest/uicode_disp0.c` 注册 `resize_grip` suite；同步 `example/HelloCustomWidgets/widget_catalog.json` 与 `web/catalog-policy.json` 到 `128` 个 reference 控件，其中 `layout = 40`。
