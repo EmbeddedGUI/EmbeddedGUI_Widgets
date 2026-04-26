@@ -9,10 +9,10 @@
 
 ## 当前快照
 
-- 截至 `2026-04-26`，`example/HelloCustomWidgets/` 当前保留 `127` 个控件目录。
+- 截至 `2026-04-26`，`example/HelloCustomWidgets/` 当前保留 `128` 个控件目录。
 - 所有保留控件均来自 `reference` 主线：
   - `input = 38`
-  - `layout = 39`
+  - `layout = 40`
   - `navigation = 13`
   - `display = 25`
   - `feedback = 12`
@@ -77,7 +77,7 @@
 - `token_input` -> `TokenInput`
 - `toolbar` -> `Toolbar`
 
-### Layout（39）
+### Layout（40）
 
 - `accordion` -> `Accordion`
 - `border` -> `Border`
@@ -105,6 +105,7 @@
 - `master_detail` -> `MasterDetail`
 - `parallax_view` -> `ParallaxView`
 - `relative_panel` -> `RelativePanel`
+- `resize_grip` -> `ResizeGrip`
 - `scroll_presenter` -> `ScrollPresenter`
 - `scroll_viewer` -> `ScrollViewer`
 - `settings_card` -> `SettingCard`
@@ -180,6 +181,11 @@
 
 ## 最近完成的收口动作
 
+- `2026-04-26`
+  - 收口 `layout/resize_grip` reference 控件：新增 `example/HelloCustomWidgets/layout/resize_grip/egui_view_resize_grip.h`、`egui_view_resize_grip.c`、`test.c` 与 `readme.md`，按 WPF `ResizeGrip` 语义实现 resize corner affordance、diagonal dots、bottom right / bottom left 角落锚定、standard / accent / compact / disabled / read only 样式与静态 preview。
+  - 新增 `example/HelloUnitTest/test/test_resize_grip.h` 与 `test_resize_grip.c`，并在 `example/HelloUnitTest/uicode_disp0.c` 注册 `resize_grip` suite；同步 `example/HelloCustomWidgets/widget_catalog.json` 与 `web/catalog-policy.json` 到 `128` 个 reference 控件，其中 `layout = 40`。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=layout/resize_grip PORT=pc`、`make all APP=HelloUnitTest PORT=pc_test`（Windows 长链接 `Error 87` 后 response-file fallback 成功）、`output\main.exe resize_grip`（`resize_grip 4/4`）、`python scripts\sync_widget_catalog.py --check`、`python scripts\checks\check_widget_catalog.py`、`python scripts\checks\check_docs_encoding.py`、`python scripts\checks\check_touch_release_semantics.py --scope custom --category layout`、`python scripts\code_runtime_check.py --app HelloCustomWidgets --app-sub layout/resize_grip --track reference --timeout 10 --keep-screenshots`、`python scripts\code_compile_check.py --custom-widgets --category layout --bits64`、`python scripts\code_runtime_check.py --app HelloCustomWidgets --category layout --track reference --bits64`、`python scripts\web\wasm_build_demos.py --app HelloCustomWidgets --app-sub layout/resize_grip` 与 `python scripts\web\web_smoke_check.py --web-root web --manifest web\demos\demos.json --demo HelloCustomWidgets_layout_resize_grip`。
+  - 已复核 `runtime_check_output/HelloCustomWidgets_layout_resize_grip/default` 的关键帧输出：覆盖 standard bottom right、accent bottom left、compact、disabled 主区状态并回到默认状态，底部 compact/read only preview 全程静态，角标 surface、对角点阵与 caption 完整可见，未出现重叠、裁切、黑屏或白屏；web smoke 返回 `PASS status=Running canvas=480x480 ratio=0.1454 colors=73`。
 - `2026-04-26`
   - 收口 `layout/bullet_decorator` reference 控件：新增 `example/HelloCustomWidgets/layout/bullet_decorator/egui_view_bullet_decorator.h`、`egui_view_bullet_decorator.c`、`test.c` 与 `readme.md`，按 WPF `BulletDecorator` 语义实现 bullet slot + content slot、dot bullet、square bullet、numbered bullet、standard / accent / compact / read only 样式与静态 preview。
   - 新增 `example/HelloUnitTest/test/test_bullet_decorator.h` 与 `test_bullet_decorator.c`，并在 `example/HelloUnitTest/uicode_disp0.c` 注册 `bullet_decorator` suite；同步 `example/HelloCustomWidgets/widget_catalog.json` 与 `web/catalog-policy.json` 到 `127` 个 reference 控件，其中 `layout = 39`。
