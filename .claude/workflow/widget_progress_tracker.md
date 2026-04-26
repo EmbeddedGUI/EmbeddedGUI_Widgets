@@ -9,10 +9,10 @@
 
 ## 当前快照
 
-- 截至 `2026-04-26`，`example/HelloCustomWidgets/` 当前保留 `119` 个控件目录。
+- 截至 `2026-04-26`，`example/HelloCustomWidgets/` 当前保留 `120` 个控件目录。
 - 所有保留控件均来自 `reference` 主线：
   - `input = 38`
-  - `layout = 34`
+  - `layout = 35`
   - `navigation = 13`
   - `display = 22`
   - `feedback = 12`
@@ -77,7 +77,7 @@
 - `token_input` -> `TokenInput`
 - `toolbar` -> `Toolbar`
 
-### Layout（34）
+### Layout（35）
 
 - `accordion` -> `Accordion`
 - `border` -> `Border`
@@ -95,6 +95,7 @@
 - `grid` -> `Grid`
 - `grid_splitter` -> `GridSplitter`
 - `grid_view` -> `GridView`
+- `headered_content_control` -> `HeaderedContentControl`
 - `items_repeater` -> `ItemsRepeater`
 - `list` -> `List`
 - `master_detail` -> `MasterDetail`
@@ -172,6 +173,11 @@
 
 ## 最近完成的收口动作
 
+- `2026-04-26`
+  - 收口 `layout/headered_content_control` reference 控件：新增 `example/HelloCustomWidgets/layout/headered_content_control/egui_view_headered_content_control.h`、`egui_view_headered_content_control.c`、`test.c` 与 `readme.md`，按 WPF `HeaderedContentControl` 语义实现 header/content 双槽、header gap、标题与内容对齐、浅色 header band、compact 与 read only 静态 preview。
+  - 新增 `example/HelloUnitTest/test/test_headered_content_control.h` 与 `test_headered_content_control.c`，并在 `example/HelloUnitTest/uicode_disp0.c` 注册 `headered_content_control` suite；同步 `example/HelloCustomWidgets/widget_catalog.json` 与 `web/catalog-policy.json` 到 `120` 个 reference 控件，其中 `layout = 35`。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=layout/headered_content_control PORT=pc`、`make all APP=HelloUnitTest PORT=pc_test`（Windows 长链接 `Error 87` 后 response-file fallback 成功）、`output\main.exe headered_content_control`（`headered_content_control 4/4`）、`python scripts/checks/check_touch_release_semantics.py --scope custom --category layout`、`python scripts/checks/check_docs_encoding.py`、`python scripts/checks/check_widget_catalog.py`、`python scripts/sync_widget_catalog.py --check`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub layout/headered_content_control --track reference --timeout 10 --keep-screenshots`、`python scripts/code_compile_check.py --custom-widgets --category layout --bits64`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --category layout --track reference --bits64`、`python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub layout/headered_content_control` 与 `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_layout_headered_content_control`。
+  - 已复核 `runtime_check_output/HelloCustomWidgets_layout_headered_content_control/default` 的关键帧输出：覆盖 `Header / centered content`、`Accent / leading content`、`Compact / stacked`、`Read only / muted header` 并回到默认状态，底部 `compact / read only` preview 全程静态，未出现文字重叠、裁切、黑屏或白屏；web smoke 返回 `PASS status=Running canvas=480x480 ratio=0.1895 colors=169`。
 - `2026-04-26`
   - 收口 `layout/content_presenter` reference 控件：新增 `example/HelloCustomWidgets/layout/content_presenter/egui_view_content_presenter.h`、`egui_view_content_presenter.c`、`test.c` 与 `readme.md`，按 WPF / WinUI `ContentPresenter` 语义实现模板内容槽、单 child 呈现、内容对齐、浅色 slot guide、compact 与 read only 静态 preview。
   - 新增 `example/HelloUnitTest/test/test_content_presenter.h` 与 `test_content_presenter.c`，并在 `example/HelloUnitTest/uicode_disp0.c` 注册 `content_presenter` suite；同步 `example/HelloCustomWidgets/widget_catalog.json` 与 `web/catalog-policy.json` 到 `119` 个 reference 控件，其中 `layout = 34`。
