@@ -9,10 +9,10 @@
 
 ## 当前快照
 
-- 截至 `2026-04-26`，`example/HelloCustomWidgets/` 当前保留 `122` 个控件目录。
+- 截至 `2026-04-26`，`example/HelloCustomWidgets/` 当前保留 `123` 个控件目录。
 - 所有保留控件均来自 `reference` 主线：
   - `input = 38`
-  - `layout = 37`
+  - `layout = 38`
   - `navigation = 13`
   - `display = 22`
   - `feedback = 12`
@@ -77,7 +77,7 @@
 - `token_input` -> `TokenInput`
 - `toolbar` -> `Toolbar`
 
-### Layout（37）
+### Layout（38）
 
 - `accordion` -> `Accordion`
 - `border` -> `Border`
@@ -95,6 +95,7 @@
 - `grid` -> `Grid`
 - `grid_splitter` -> `GridSplitter`
 - `grid_view` -> `GridView`
+- `group_box` -> `GroupBox`
 - `headered_content_control` -> `HeaderedContentControl`
 - `headered_items_control` -> `HeaderedItemsControl`
 - `items_control` -> `ItemsControl`
@@ -175,6 +176,11 @@
 
 ## 最近完成的收口动作
 
+- `2026-04-26`
+  - 收口 `layout/group_box` reference 控件：新增 `example/HelloCustomWidgets/layout/group_box/egui_view_group_box.h`、`egui_view_group_box.c`、`test.c` 与 `readme.md`，按 WPF `GroupBox` 语义实现 header + framed content 容器、header/content 双槽、padding、header gap、标题与内容对齐、standard / accent / compact / read only 样式与静态 preview。
+  - 新增 `example/HelloUnitTest/test/test_group_box.h` 与 `test_group_box.c`，并在 `example/HelloUnitTest/uicode_disp0.c` 注册 `group_box` suite；同步 `example/HelloCustomWidgets/widget_catalog.json` 与 `web/catalog-policy.json` 到 `123` 个 reference 控件，其中 `layout = 38`。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=layout/group_box PORT=pc`、`make all APP=HelloUnitTest PORT=pc_test`（Windows 长链接 `Error 87` 后 response-file fallback 成功）、`output\main.exe group_box`（`group_box 4/4`）、`python scripts/checks/check_touch_release_semantics.py --scope custom --category layout`、`python scripts/checks/check_docs_encoding.py`、`python scripts/checks/check_widget_catalog.py`、`python scripts/sync_widget_catalog.py --check`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub layout/group_box --track reference --timeout 10 --keep-screenshots`、`python scripts/code_compile_check.py --custom-widgets --category layout --bits64`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --category layout --track reference --bits64`、`python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub layout/group_box` 与 `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_layout_group_box`。
+  - 已复核 `runtime_check_output/HelloCustomWidgets_layout_group_box/default` 的关键帧输出：覆盖 standard、accent、compact、read only 主区状态并回到默认状态，底部 compact/read only preview 全程静态，header、border 与 content 区域完整可见，未出现文字重叠、裁切、黑屏或白屏；web smoke 返回 `PASS status=Running canvas=480x480 ratio=0.1895 colors=145`。
 - `2026-04-26`
   - 收口 `layout/headered_items_control` reference 控件：新增 `example/HelloCustomWidgets/layout/headered_items_control/egui_view_headered_items_control.h`、`egui_view_headered_items_control.c`、`test.c` 与 `readme.md`，按 WPF `HeaderedItemsControl` 语义实现 header + 多 item child 承载、vertical / horizontal / wrap items 布局、浅色 header band、item slot、compact 与 read only 静态 preview。
   - 新增 `example/HelloUnitTest/test/test_headered_items_control.h` 与 `test_headered_items_control.c`，并在 `example/HelloUnitTest/uicode_disp0.c` 注册 `headered_items_control` suite；同步 `example/HelloCustomWidgets/widget_catalog.json` 与 `web/catalog-policy.json` 到 `122` 个 reference 控件，其中 `layout = 37`。

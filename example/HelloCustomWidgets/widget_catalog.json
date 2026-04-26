@@ -880,6 +880,16 @@
     "doc_state": "ok"
   },
   {
+    "id": "layout/group_box",
+    "track": "reference",
+    "visibility": "public",
+    "reference_system": "Fluent 2 / WPF UI",
+    "reference_library": "WPF",
+    "reference_component": "GroupBox",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
     "id": "layout/headered_content_control",
     "track": "reference",
     "visibility": "public",
