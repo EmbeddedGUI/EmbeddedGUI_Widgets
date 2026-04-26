@@ -9,9 +9,9 @@
 
 ## 当前快照
 
-- 截至 `2026-04-26`，`example/HelloCustomWidgets/` 当前保留 `112` 个控件目录。
+- 截至 `2026-04-26`，`example/HelloCustomWidgets/` 当前保留 `113` 个控件目录。
 - 所有保留控件均来自 `reference` 主线：
-  - `input = 35`
+  - `input = 36`
   - `layout = 31`
   - `navigation = 13`
   - `display = 21`
@@ -36,7 +36,7 @@
 
 ## 当前保留的 Reference 主线控件
 
-### Input（35）
+### Input（36）
 
 - `auto_suggest_box` -> `AutoSuggestBox`
 - `button` -> `Button`
@@ -73,6 +73,7 @@
 - `toggle_button` -> `ToggleButton`
 - `toggle_split_button` -> `ToggleSplitButton`
 - `token_input` -> `TokenInput`
+- `toolbar` -> `Toolbar`
 
 ### Layout（31）
 
@@ -164,6 +165,12 @@
 - `toast_stack` -> `Toast`
 
 ## 最近完成的收口动作
+
+- `2026-04-26`
+  - 收口 `input/toolbar` reference 控件：新增 `example/HelloCustomWidgets/input/toolbar/egui_view_toolbar.h`、`egui_view_toolbar.c`、`test.c` 与 `readme.md`，按 Fluent 2 / Fluent UI React 的 `Toolbar` 语义实现嵌入式工具栏、icon+label 工具项、单选 checked、same-target release、键盘 `Left / Right / Home / End / Enter / Space`、`compact` 与 `read only` 静态 preview。
+  - 新增 `example/HelloUnitTest/test/test_toolbar.h` 与 `test_toolbar.c`，并在 `example/HelloUnitTest/uicode_disp0.c` 注册 `toolbar` suite；同步 `example/HelloCustomWidgets/widget_catalog.json` 与 `web/catalog-policy.json` 到 `113` 个 reference 控件，其中 `input = 36`。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=input/toolbar PORT=pc`、`make all APP=HelloUnitTest PORT=pc_test`（Windows 长链接 `Error 87` 后 response-file fallback 成功）、`output\main.exe toolbar`（`toolbar 7/7`）、`python scripts/checks/check_touch_release_semantics.py --scope custom --category input`、`python scripts/checks/check_docs_encoding.py`、`python scripts/checks/check_widget_catalog.py`、`python scripts/sync_widget_catalog.py --check`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/toolbar --track reference --timeout 10 --keep-screenshots`、`python scripts/code_compile_check.py --custom-widgets --category input --bits64`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --category input --track reference --bits64`、`python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub input/toolbar` 与 `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_input_toolbar`。
+  - 已复核 `runtime_check_output/HelloCustomWidgets_input_toolbar/default` 的 `8` 帧输出：关键帧覆盖 `Edit`、`Find`、`Sync`、`Done` 并回到默认 `Edit`，底部 `compact / read only` preview 全程静态，未出现文字重叠、裁切、黑屏或白屏；web smoke 返回 `PASS status=Running canvas=480x480 ratio=0.1157 colors=109`。
 
 - `2026-04-26`
   - 收口 `input/compound_button` reference 控件：新增 `example/HelloCustomWidgets/input/compound_button/egui_view_compound_button.h`、`egui_view_compound_button.c`、`test.c` 与 `readme.md`，按 Fluent 2 / Fluent UI React 的 `CompoundButton` 语义实现主标题、次级说明、leading icon、`default / primary / subtle` tone、same-target release、键盘激活、`compact` 与 `read only` 静态 preview。

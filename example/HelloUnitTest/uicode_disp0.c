@@ -103,6 +103,7 @@
 #include "test/test_text_block.h"
 #include "test/test_thumb_rate.h"
 #include "test/test_time_picker.h"
+#include "test/test_toolbar.h"
 #include "test/test_title_bar.h"
 #include "test/test_toast_stack.h"
 #include "test/test_toggle_button.h"
@@ -297,6 +298,7 @@ void uicode_disp0_init(egui_core_t *core)
     RUN_TEST_SUITE(text_block);
     RUN_TEST_SUITE(thumb_rate);
     RUN_TEST_SUITE(time_picker);
+    RUN_TEST_SUITE(toolbar);
     RUN_TEST_SUITE(title_bar);
     RUN_TEST_SUITE(toast_stack);
     RUN_TEST_SUITE(toggle_button);
