@@ -9,9 +9,9 @@
 
 ## 当前快照
 
-- 截至 `2026-04-26`，`example/HelloCustomWidgets/` 当前保留 `111` 个控件目录。
+- 截至 `2026-04-26`，`example/HelloCustomWidgets/` 当前保留 `112` 个控件目录。
 - 所有保留控件均来自 `reference` 主线：
-  - `input = 34`
+  - `input = 35`
   - `layout = 31`
   - `navigation = 13`
   - `display = 21`
@@ -36,7 +36,7 @@
 
 ## 当前保留的 Reference 主线控件
 
-### Input（34）
+### Input（35）
 
 - `auto_suggest_box` -> `AutoSuggestBox`
 - `button` -> `Button`
@@ -44,6 +44,7 @@
 - `calendar_view` -> `CalendarView`
 - `check_box` -> `CheckBox`
 - `combo_box` -> `ComboBox`
+- `compound_button` -> `CompoundButton`
 - `color_picker` -> `ColorPicker`
 - `command_bar` -> `CommandBar`
 - `command_bar_flyout` -> `CommandBarFlyout`
@@ -163,6 +164,12 @@
 - `toast_stack` -> `Toast`
 
 ## 最近完成的收口动作
+
+- `2026-04-26`
+  - 收口 `input/compound_button` reference 控件：新增 `example/HelloCustomWidgets/input/compound_button/egui_view_compound_button.h`、`egui_view_compound_button.c`、`test.c` 与 `readme.md`，按 Fluent 2 / Fluent UI React 的 `CompoundButton` 语义实现主标题、次级说明、leading icon、`default / primary / subtle` tone、same-target release、键盘激活、`compact` 与 `read only` 静态 preview。
+  - 新增 `example/HelloUnitTest/test/test_compound_button.h` 与 `test_compound_button.c`，并在 `example/HelloUnitTest/uicode_disp0.c` 注册 `compound_button` suite；同步 `example/HelloCustomWidgets/widget_catalog.json` 与 `web/catalog-policy.json` 到 `112` 个 reference 控件，其中 `input = 35`。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=input/compound_button PORT=pc`、`make all APP=HelloUnitTest PORT=pc_test`（Windows 长链接 `Error 87` 后 response-file fallback 成功）、`output\main.exe compound_button`（`compound_button 7/7`）、`python scripts/checks/check_touch_release_semantics.py --scope custom --category input`、`python scripts/checks/check_docs_encoding.py`、`python scripts/checks/check_widget_catalog.py`、`python scripts/sync_widget_catalog.py --check`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/compound_button --track reference --timeout 10 --keep-screenshots`、`python scripts/code_compile_check.py --custom-widgets --category input --bits64`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --category input --track reference --bits64`、`python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub input/compound_button` 与 `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_input_compound_button`。
+  - 已复核 `runtime_check_output/HelloCustomWidgets_input_compound_button/default` 的 `8` 帧输出：关键帧覆盖 `Create workspace`、`Sync changes`、`Approve access`、`Publish rollout` 并回到默认 `Create workspace`，底部 `Compact / Read only` preview 全程静态，未出现文字重叠、裁切、黑屏或白屏；web smoke 返回 `PASS status=Running canvas=480x480 ratio=0.1281 colors=141`。
 
 - `2026-04-26`
   - 收口 `layout/accordion` reference 控件：新增 `example/HelloCustomWidgets/layout/accordion/egui_view_accordion.h`、`egui_view_accordion.c`、`test.c` 与 `readme.md`，按 Fluent 2 / Fluent UI React 的 `Accordion` 语义实现多 section 单项展开、标题 / 描述 / 正文摘要、tone rail、meta glyph、chevron、`compact` 与 `read only` 静态 preview。
