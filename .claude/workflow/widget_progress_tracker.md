@@ -9,10 +9,10 @@
 
 ## 当前快照
 
-- 截至 `2026-04-26`，`example/HelloCustomWidgets/` 当前保留 `108` 个控件目录。
+- 截至 `2026-04-26`，`example/HelloCustomWidgets/` 当前保留 `109` 个控件目录。
 - 所有保留控件均来自 `reference` 主线：
   - `input = 34`
-  - `layout = 29`
+  - `layout = 30`
   - `navigation = 13`
   - `display = 21`
   - `feedback = 11`
@@ -73,7 +73,7 @@
 - `toggle_split_button` -> `ToggleSplitButton`
 - `token_input` -> `TokenInput`
 
-### Layout（29）
+### Layout（30）
 
 - `canvas` -> `Canvas`
 - `card_action` -> `CardAction`
@@ -99,6 +99,7 @@
 - `settings_panel` -> `SettingCardGroup`
 - `split_view` -> `SplitView`
 - `stack_panel` -> `StackPanel`
+- `two_pane_view` -> `TwoPaneView`
 - `uniform_grid` -> `UniformGrid`
 - `viewbox` -> `Viewbox`
 - `virtualizing_stack_panel` -> `VirtualizingStackPanel`
@@ -160,6 +161,12 @@
 - `toast_stack` -> `Toast`
 
 ## 最近完成的收口动作
+
+- `2026-04-26`
+  - 收口 `layout/two_pane_view` reference 控件：新增 `example/HelloCustomWidgets/layout/two_pane_view/egui_view_two_pane_view.h`、`egui_view_two_pane_view.c`、`test.c` 与 `readme.md`，按 WinUI / Fluent 的 `TwoPaneView` 语义实现 `Wide / Tall / SinglePane` 自适应双窗格、`P1 / P2` 单窗格优先级、focus、pressed、read only 与 static preview。
+  - 新增 `example/HelloUnitTest/test/test_two_pane_view.h` 与 `test_two_pane_view.c`，并在 `example/HelloUnitTest/uicode_disp0.c` 注册 `two_pane_view` suite；同步 `example/HelloCustomWidgets/widget_catalog.json`、`web/catalog-policy.json` 与 `web/demos/demos.json` 到 `109` 个 reference 控件，其中 `layout = 30`。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=layout/two_pane_view PORT=pc`、`make all APP=HelloUnitTest PORT=pc_test`（Windows 长链接 `Error 87` 后 response-file fallback 成功）、`output\main.exe two_pane_view`（`two_pane_view 5/5`）、`python scripts/checks/check_touch_release_semantics.py --scope custom --category layout`、`python scripts/checks/check_docs_encoding.py`、`python scripts/checks/check_widget_catalog.py`、`python scripts/sync_widget_catalog.py --check`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub layout/two_pane_view --track reference --timeout 10 --keep-screenshots`、`python scripts/code_compile_check.py --custom-widgets --category layout --bits64`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --category layout --track reference --bits64`、`python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub layout/two_pane_view` 与 `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_layout_two_pane_view`。
+  - 已复核 `runtime_check_output/HelloCustomWidgets_layout_two_pane_view/default` 的 `7` 帧输出：主区覆盖默认 `Wide + P1`、`Tall + P1`、`Single + P2`、`Wide + P2` 并回到默认状态，底部 compact / read only preview 全程完整可见且无文字重叠；web smoke 返回 `PASS status=Running canvas=480x480 ratio=0.1647 colors=192`。
 
 - `2026-04-26`
   - 收口 `input/calendar_date_picker` reference 控件：新增 `example/HelloCustomWidgets/input/calendar_date_picker/egui_view_calendar_date_picker.h`、`egui_view_calendar_date_picker.c`、`test.c` 与 `readme.md`，按 WPF UI / Fluent 的 `CalendarDatePicker` 语义实现日期字段、日历弹层、月份浏览、今日标记、已选日期、单日提交和 `compact / read only` 静态 preview。

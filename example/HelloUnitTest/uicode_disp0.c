@@ -106,6 +106,7 @@
 #include "test/test_toggle_split_button.h"
 #include "test/test_token_input.h"
 #include "test/test_tree_view.h"
+#include "test/test_two_pane_view.h"
 #include "test/test_uniform_grid.h"
 #include "test/test_viewbox.h"
 #include "test/test_virtualizing_stack_panel.h"
@@ -296,6 +297,7 @@ void uicode_disp0_init(egui_core_t *core)
     RUN_TEST_SUITE(toggle_split_button);
     RUN_TEST_SUITE(token_input);
     RUN_TEST_SUITE(tree_view);
+    RUN_TEST_SUITE(two_pane_view);
     RUN_TEST_SUITE(uniform_grid);
     RUN_TEST_SUITE(viewbox);
     RUN_TEST_SUITE(virtualizing_stack_panel);
