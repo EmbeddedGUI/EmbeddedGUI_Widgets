@@ -98,6 +98,7 @@
 #include "test/test_slider.h"
 #include "test/test_spin_button.h"
 #include "test/test_spinner.h"
+#include "test/test_status_bar.h"
 #include "test/test_symbol_icon.h"
 #include "test/test_split_button.h"
 #include "test/test_split_view.h"
@@ -303,6 +304,7 @@ void uicode_disp0_init(egui_core_t *core)
     RUN_TEST_SUITE(slider);
     RUN_TEST_SUITE(spin_button);
     RUN_TEST_SUITE(spinner);
+    RUN_TEST_SUITE(status_bar);
     RUN_TEST_SUITE(symbol_icon);
     RUN_TEST_SUITE(split_button);
     RUN_TEST_SUITE(split_view);

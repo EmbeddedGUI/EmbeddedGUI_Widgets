@@ -9,12 +9,12 @@
 
 ## 当前快照
 
-- 截至 `2026-04-26`，`example/HelloCustomWidgets/` 当前保留 `123` 个控件目录。
+- 截至 `2026-04-26`，`example/HelloCustomWidgets/` 当前保留 `124` 个控件目录。
 - 所有保留控件均来自 `reference` 主线：
   - `input = 38`
   - `layout = 38`
   - `navigation = 13`
-  - `display = 22`
+  - `display = 23`
   - `feedback = 12`
 - `widget_catalog.json`、`web/catalog-policy.json` 与默认 web 入口已同步到 `reference-only` 状态。
 - 已清退轨道：
@@ -134,7 +134,7 @@
 - `title_bar` -> `TitleBar`
 - `tree_view` -> `TreeView`
 
-### Display（22）
+### Display（23）
 
 - `badge` -> `Badge`
 - `badge_group` -> `BadgeGroup`
@@ -155,6 +155,7 @@
 - `persona_group` -> `AvatarGroup`
 - `presence_badge` -> `PresenceBadge`
 - `rich_text_block` -> `RichTextBlock`
+- `status_bar` -> `StatusBar`
 - `symbol_icon` -> `SymbolIcon`
 - `tag` -> `Tag`
 - `text_block` -> `TextBlock`
@@ -176,6 +177,11 @@
 
 ## 最近完成的收口动作
 
+- `2026-04-26`
+  - 收口 `display/status_bar` reference 控件：新增 `example/HelloCustomWidgets/display/status_bar/egui_view_status_bar.h`、`egui_view_status_bar.c`、`test.c` 与 `readme.md`，按 WPF `StatusBar` 语义实现底部状态栏容器、weighted item 分段、状态点、label/value 文本、standard / accent / compact / read only 样式与静态 preview。
+  - 新增 `example/HelloUnitTest/test/test_status_bar.h` 与 `test_status_bar.c`，并在 `example/HelloUnitTest/uicode_disp0.c` 注册 `status_bar` suite；同步 `example/HelloCustomWidgets/widget_catalog.json` 与 `web/catalog-policy.json` 到 `124` 个 reference 控件，其中 `display = 23`。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=display/status_bar PORT=pc`、`make all APP=HelloUnitTest PORT=pc_test`（Windows 长链接 `Error 87` 后 response-file fallback 成功）、`output\main.exe status_bar`（`status_bar 5/5`）、`python scripts/checks/check_touch_release_semantics.py --scope custom --category display`、`python scripts/checks/check_docs_encoding.py`、`python scripts/checks/check_widget_catalog.py`、`python scripts/sync_widget_catalog.py --check`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub display/status_bar --track reference --timeout 10 --keep-screenshots`、`python scripts/code_compile_check.py --custom-widgets --category display --bits64`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --category display --track reference --bits64`、`python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub display/status_bar` 与 `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_display_status_bar`。
+  - 已复核 `runtime_check_output/HelloCustomWidgets_display_status_bar/default` 的关键帧输出：覆盖 standard、accent、compact、read only 主区状态并回到默认状态，底部 compact/read only preview 全程静态，分段状态项、状态点和 caption 均完整可见，未出现文字重叠、裁切、黑屏或白屏；web smoke 返回 `PASS status=Running canvas=480x480 ratio=0.1275 colors=130`。
 - `2026-04-26`
   - 收口 `layout/group_box` reference 控件：新增 `example/HelloCustomWidgets/layout/group_box/egui_view_group_box.h`、`egui_view_group_box.c`、`test.c` 与 `readme.md`，按 WPF `GroupBox` 语义实现 header + framed content 容器、header/content 双槽、padding、header gap、标题与内容对齐、standard / accent / compact / read only 样式与静态 preview。
   - 新增 `example/HelloUnitTest/test/test_group_box.h` 与 `test_group_box.c`，并在 `example/HelloUnitTest/uicode_disp0.c` 注册 `group_box` suite；同步 `example/HelloCustomWidgets/widget_catalog.json` 与 `web/catalog-policy.json` 到 `123` 个 reference 控件，其中 `layout = 38`。
