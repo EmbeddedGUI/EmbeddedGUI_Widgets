@@ -9,10 +9,10 @@
 
 ## 当前快照
 
-- 截至 `2026-04-26`，`example/HelloCustomWidgets/` 当前保留 `126` 个控件目录。
+- 截至 `2026-04-26`，`example/HelloCustomWidgets/` 当前保留 `127` 个控件目录。
 - 所有保留控件均来自 `reference` 主线：
   - `input = 38`
-  - `layout = 38`
+  - `layout = 39`
   - `navigation = 13`
   - `display = 25`
   - `feedback = 12`
@@ -77,10 +77,11 @@
 - `token_input` -> `TokenInput`
 - `toolbar` -> `Toolbar`
 
-### Layout（38）
+### Layout（39）
 
 - `accordion` -> `Accordion`
 - `border` -> `Border`
+- `bullet_decorator` -> `BulletDecorator`
 - `canvas` -> `Canvas`
 - `card_action` -> `CardAction`
 - `card_control` -> `CardControl`
@@ -179,6 +180,11 @@
 
 ## 最近完成的收口动作
 
+- `2026-04-26`
+  - 收口 `layout/bullet_decorator` reference 控件：新增 `example/HelloCustomWidgets/layout/bullet_decorator/egui_view_bullet_decorator.h`、`egui_view_bullet_decorator.c`、`test.c` 与 `readme.md`，按 WPF `BulletDecorator` 语义实现 bullet slot + content slot、dot bullet、square bullet、numbered bullet、standard / accent / compact / read only 样式与静态 preview。
+  - 新增 `example/HelloUnitTest/test/test_bullet_decorator.h` 与 `test_bullet_decorator.c`，并在 `example/HelloUnitTest/uicode_disp0.c` 注册 `bullet_decorator` suite；同步 `example/HelloCustomWidgets/widget_catalog.json` 与 `web/catalog-policy.json` 到 `127` 个 reference 控件，其中 `layout = 39`。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=layout/bullet_decorator PORT=pc`、`make all APP=HelloUnitTest PORT=pc_test`（Windows 长链接 `Error 87` 后 response-file fallback 成功）、`output\main.exe bullet_decorator`（`bullet_decorator 5/5`）、`python scripts\sync_widget_catalog.py --check`、`python scripts\checks\check_widget_catalog.py`、`python scripts\checks\check_docs_encoding.py`、`python scripts\checks\check_touch_release_semantics.py --scope custom --category layout`、`python scripts\code_runtime_check.py --app HelloCustomWidgets --app-sub layout/bullet_decorator --track reference --timeout 10 --keep-screenshots`、`python scripts\code_compile_check.py --custom-widgets --category layout --bits64`、`python scripts\code_runtime_check.py --app HelloCustomWidgets --category layout --track reference --bits64`、`python scripts\web\wasm_build_demos.py --app HelloCustomWidgets --app-sub layout/bullet_decorator` 与 `python scripts\web\web_smoke_check.py --web-root web --manifest web\demos\demos.json --demo HelloCustomWidgets_layout_bullet_decorator`。
+  - 已复核 `runtime_check_output/HelloCustomWidgets_layout_bullet_decorator/default` 的关键帧输出：覆盖 dot、square、numbered、read only 主区状态并回到默认状态，底部 compact/read only preview 全程静态，bullet slot、content slot、marker 与文本完整可见，未出现文字重叠、裁切、黑屏或白屏；web smoke 返回 `PASS status=Running canvas=480x480 ratio=0.1438 colors=90`。
 - `2026-04-26`
   - 收口 `display/access_text` reference 控件：新增 `example/HelloCustomWidgets/display/access_text/egui_view_access_text.h`、`egui_view_access_text.c`、`test.c` 与 `readme.md`，按 WPF `AccessText` 语义实现 underscore marker 解析、escaped underscore、access key index、keyboard cue underline、standard / accent / compact / read only 样式与静态 preview。
   - 新增 `example/HelloUnitTest/test/test_access_text.h` 与 `test_access_text.c`，并在 `example/HelloUnitTest/uicode_disp0.c` 注册 `access_text` suite；同步 `example/HelloCustomWidgets/widget_catalog.json` 与 `web/catalog-policy.json` 到 `126` 个 reference 控件，其中 `display = 25`。

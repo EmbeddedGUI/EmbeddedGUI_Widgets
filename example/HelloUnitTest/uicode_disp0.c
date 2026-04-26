@@ -15,6 +15,7 @@
 #include "test/test_bitmap_icon.h"
 #include "test/test_border.h"
 #include "test/test_breadcrumb_bar.h"
+#include "test/test_bullet_decorator.h"
 #include "test/test_button.h"
 #include "test/test_calendar_date_picker.h"
 #include "test/test_calendar_view.h"
@@ -224,6 +225,7 @@ void uicode_disp0_init(egui_core_t *core)
     RUN_TEST_SUITE(bitmap_icon);
     RUN_TEST_SUITE(border);
     RUN_TEST_SUITE(breadcrumb_bar);
+    RUN_TEST_SUITE(bullet_decorator);
     RUN_TEST_SUITE(button);
     RUN_TEST_SUITE(calendar_date_picker);
     RUN_TEST_SUITE(calendar_view);

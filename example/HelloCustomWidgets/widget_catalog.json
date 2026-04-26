@@ -770,6 +770,16 @@
     "doc_state": "ok"
   },
   {
+    "id": "layout/bullet_decorator",
+    "track": "reference",
+    "visibility": "public",
+    "reference_system": "Fluent 2 / WPF UI",
+    "reference_library": "WPF",
+    "reference_component": "BulletDecorator",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
     "id": "layout/canvas",
     "track": "reference",
     "visibility": "public",
