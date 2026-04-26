@@ -9,9 +9,9 @@
 
 ## 当前快照
 
-- 截至 `2026-04-26`，`example/HelloCustomWidgets/` 当前保留 `114` 个控件目录。
+- 截至 `2026-04-26`，`example/HelloCustomWidgets/` 当前保留 `115` 个控件目录。
 - 所有保留控件均来自 `reference` 主线：
-  - `input = 37`
+  - `input = 38`
   - `layout = 31`
   - `navigation = 13`
   - `display = 21`
@@ -36,7 +36,7 @@
 
 ## 当前保留的 Reference 主线控件
 
-### Input（37）
+### Input（38）
 
 - `auto_suggest_box` -> `AutoSuggestBox`
 - `button` -> `Button`
@@ -65,6 +65,7 @@
 - `segmented_control` -> `SegmentedControl`
 - `shortcut_recorder` -> `KeyboardAcceleratorRecorder`
 - `slider` -> `Slider`
+- `spin_button` -> `SpinButton`
 - `split_button` -> `SplitButton`
 - `swipe_control` -> `SwipeControl`
 - `switch` -> `ToggleSwitch`
@@ -166,6 +167,12 @@
 - `toast_stack` -> `Toast`
 
 ## 最近完成的收口动作
+
+- `2026-04-26`
+  - 收口 `input/spin_button` reference 控件：新增 `example/HelloCustomWidgets/input/spin_button/egui_view_spin_button.h`、`egui_view_spin_button.c`、`test.c` 与 `readme.md`，按 Fluent 2 / Fluent UI React 的 `SpinButton` 语义实现步进数值输入、右侧上下 stepper、`range / step / large_step`、same-target release、键盘 `Up / Down / Home / End / Left / Right / Enter / Space`、`compact` 与 `read only` 静态 preview。
+  - 新增 `example/HelloUnitTest/test/test_spin_button.h` 与 `test_spin_button.c`，并在 `example/HelloUnitTest/uicode_disp0.c` 注册 `spin_button` suite；同步 `example/HelloCustomWidgets/widget_catalog.json` 与 `web/catalog-policy.json` 到 `115` 个 reference 控件，其中 `input = 38`。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=input/spin_button PORT=pc`、`make all APP=HelloUnitTest PORT=pc_test`（Windows 长链接 `Error 87` 后 response-file fallback 成功）、`output\main.exe spin_button`（`spin_button 11/11`）、`python scripts/checks/check_touch_release_semantics.py --scope custom --category input`、`python scripts/checks/check_docs_encoding.py`、`python scripts/checks/check_widget_catalog.py`、`python scripts/sync_widget_catalog.py --check`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/spin_button --track reference --timeout 10 --keep-screenshots`、`python scripts/code_compile_check.py --custom-widgets --category input --bits64`、`python scripts/code_runtime_check.py --app HelloCustomWidgets --category input --track reference --bits64`、`python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub input/spin_button` 与 `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_input_spin_button`。
+  - 已复核 `runtime_check_output/HelloCustomWidgets_input_spin_button/default` 的关键帧输出：覆盖默认 `6 cols`、触控增加 `8 cols`、键盘增加 `10 cols`、键盘 `End` 到 `12 cols`、触控减少并回到默认，底部 `compact / read only` preview 全程静态，未出现文字重叠、裁切、黑屏或白屏；web smoke 返回 `PASS status=Running canvas=480x480 ratio=0.119 colors=92`。
 
 - `2026-04-26`
   - 收口 `input/menu_button` reference 控件：新增 `example/HelloCustomWidgets/input/menu_button/egui_view_menu_button.h`、`egui_view_menu_button.c`、`test.c` 与 `readme.md`，按 Fluent 2 / Fluent UI React 的 `MenuButton` 语义实现无主动作的菜单入口、trigger + menu panel、菜单项图标 / 快捷键 / check mark、same-target release、键盘 `Down / Up / Home / End / Enter / Space / Escape`、`compact` 与 `read only` 静态 preview。
