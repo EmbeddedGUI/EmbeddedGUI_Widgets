@@ -1,0 +1,685 @@
+#include "egui_view_access_text.h"
+
+#include <string.h>
+
+#define EGUI_VIEW_ACCESS_TEXT_RADIUS         8
+#define EGUI_VIEW_ACCESS_TEXT_COMPACT_RADIUS 6
+
+static egui_view_access_text_t *egui_view_access_text_local(egui_view_t *self)
+{
+    return (egui_view_access_text_t *)self;
+}
+
+static uint8_t egui_view_access_text_clear_pressed_state(egui_view_t *self)
+{
+    uint8_t had_pressed = egui_view_get_pressed(self);
+
+    egui_view_set_pressed(self, 0);
+    return had_pressed;
+}
+
+static uint8_t egui_view_access_text_has_text(const char *text)
+{
+    return text != NULL && text[0] != '\0' ? 1 : 0;
+}
+
+static uint8_t egui_view_access_text_text_len(const char *text)
+{
+    uint8_t length = 0;
+
+    if (text == NULL)
+    {
+        return 0;
+    }
+    while (text[length] != '\0')
+    {
+        length++;
+    }
+    return length;
+}
+
+static void egui_view_access_text_copy_text(char *dst, uint8_t capacity, const char *src)
+{
+    size_t length = 0;
+
+    if (dst == NULL || capacity == 0)
+    {
+        return;
+    }
+
+    if (src != NULL)
+    {
+        length = strlen(src);
+        if (length >= capacity)
+        {
+            length = capacity - 1;
+        }
+        if (length > 0)
+        {
+            memcpy(dst, src, length);
+        }
+    }
+    dst[length] = '\0';
+}
+
+static void egui_view_access_text_parse_markup(const char *markup_text, char *display_text, uint8_t display_capacity,
+                                               uint8_t *access_key_index)
+{
+    uint8_t read_index = 0;
+    uint8_t write_index = 0;
+    uint8_t resolved_access = EGUI_VIEW_ACCESS_TEXT_ACCESS_NONE;
+
+    if (display_text == NULL || display_capacity == 0)
+    {
+        return;
+    }
+    display_text[0] = '\0';
+
+    if (markup_text == NULL)
+    {
+        if (access_key_index != NULL)
+        {
+            *access_key_index = EGUI_VIEW_ACCESS_TEXT_ACCESS_NONE;
+        }
+        return;
+    }
+
+    while (markup_text[read_index] != '\0' && write_index < display_capacity - 1)
+    {
+        if (markup_text[read_index] == '_')
+        {
+            char next_char = markup_text[read_index + 1];
+
+            if (next_char == '_')
+            {
+                display_text[write_index++] = '_';
+                read_index = (uint8_t)(read_index + 2);
+                continue;
+            }
+            if (next_char != '\0' && resolved_access == EGUI_VIEW_ACCESS_TEXT_ACCESS_NONE)
+            {
+                resolved_access = write_index;
+                display_text[write_index++] = next_char;
+                read_index = (uint8_t)(read_index + 2);
+                continue;
+            }
+        }
+
+        display_text[write_index++] = markup_text[read_index++];
+    }
+
+    display_text[write_index] = '\0';
+    if (access_key_index != NULL)
+    {
+        if (resolved_access >= write_index)
+        {
+            resolved_access = EGUI_VIEW_ACCESS_TEXT_ACCESS_NONE;
+        }
+        *access_key_index = resolved_access;
+    }
+}
+
+static void egui_view_access_text_copy_elided(char *buffer, uint8_t buffer_size, const char *text, uint8_t max_chars)
+{
+    uint8_t length;
+    uint8_t copy_length;
+    uint8_t index;
+
+    if (buffer == NULL || buffer_size == 0)
+    {
+        return;
+    }
+
+    buffer[0] = '\0';
+    if (text == NULL || max_chars == 0)
+    {
+        return;
+    }
+
+    length = egui_view_access_text_text_len(text);
+    if (length <= max_chars)
+    {
+        copy_length = length;
+        if (copy_length >= buffer_size)
+        {
+            copy_length = buffer_size - 1;
+        }
+        for (index = 0; index < copy_length; ++index)
+        {
+            buffer[index] = text[index];
+        }
+        buffer[copy_length] = '\0';
+        return;
+    }
+
+    if (max_chars <= 3)
+    {
+        copy_length = max_chars;
+        if (copy_length >= buffer_size)
+        {
+            copy_length = buffer_size - 1;
+        }
+        for (index = 0; index < copy_length; ++index)
+        {
+            buffer[index] = '.';
+        }
+        buffer[copy_length] = '\0';
+        return;
+    }
+
+    copy_length = (uint8_t)(max_chars - 3);
+    if (copy_length > buffer_size - 4)
+    {
+        copy_length = buffer_size - 4;
+    }
+    for (index = 0; index < copy_length; ++index)
+    {
+        buffer[index] = text[index];
+    }
+    buffer[copy_length] = '.';
+    buffer[copy_length + 1] = '.';
+    buffer[copy_length + 2] = '.';
+    buffer[copy_length + 3] = '\0';
+}
+
+static egui_dim_t egui_view_access_text_measure_text_width(const egui_font_t *font, const char *text)
+{
+    egui_dim_t width = 0;
+    egui_dim_t height = 0;
+
+    if (!egui_view_access_text_has_text(text) || font == NULL || font->api == NULL || font->api->get_str_size == NULL)
+    {
+        return 0;
+    }
+    font->api->get_str_size(font, text, 0, 0, &width, &height);
+    return width;
+}
+
+static void egui_view_access_text_fit_text_to_width(const egui_font_t *font, const char *text, char *buffer, uint8_t buffer_size,
+                                                    egui_dim_t max_width, egui_dim_t fallback_char_width)
+{
+    uint8_t max_chars;
+
+    if (buffer == NULL || buffer_size == 0)
+    {
+        return;
+    }
+    buffer[0] = '\0';
+    if (!egui_view_access_text_has_text(text) || max_width <= 0)
+    {
+        return;
+    }
+
+    max_chars = egui_view_access_text_text_len(text);
+    egui_view_access_text_copy_elided(buffer, buffer_size, text, max_chars);
+    while (max_chars > 0)
+    {
+        egui_dim_t width = egui_view_access_text_measure_text_width(font, buffer);
+
+        if (width <= 0)
+        {
+            width = (egui_dim_t)egui_view_access_text_text_len(buffer) * fallback_char_width;
+        }
+        if (width <= max_width)
+        {
+            break;
+        }
+        max_chars--;
+        egui_view_access_text_copy_elided(buffer, buffer_size, text, max_chars);
+    }
+}
+
+static egui_color_t egui_view_access_text_mix_disabled(egui_color_t color)
+{
+    return egui_rgb_mix(color, EGUI_COLOR_HEX(0x8A97A5), 58);
+}
+
+static void egui_view_access_text_get_text_region(egui_view_t *self, egui_view_access_text_t *local, egui_region_t *text_region)
+{
+    egui_region_t work_region;
+    egui_dim_t h_gap = local->compact_mode ? 7 : 10;
+    egui_dim_t v_gap = local->compact_mode ? 2 : 4;
+
+    egui_view_get_work_region(self, &work_region);
+    if (work_region.size.width < h_gap * 2)
+    {
+        work_region.size.width = h_gap * 2;
+    }
+    if (work_region.size.height < v_gap * 2)
+    {
+        work_region.size.height = v_gap * 2;
+    }
+
+    text_region->location.x = work_region.location.x + h_gap;
+    text_region->location.y = work_region.location.y + v_gap;
+    text_region->size.width = work_region.size.width - h_gap * 2;
+    text_region->size.height = work_region.size.height - v_gap * 2;
+}
+
+static egui_dim_t egui_view_access_text_resolve_text_start_x(const egui_region_t *region, uint8_t align_type, egui_dim_t text_width)
+{
+    egui_dim_t start_x = region->location.x;
+
+    if ((align_type & EGUI_ALIGN_HCENTER) == EGUI_ALIGN_HCENTER)
+    {
+        start_x = region->location.x + (region->size.width - text_width) / 2;
+    }
+    else if ((align_type & EGUI_ALIGN_RIGHT) == EGUI_ALIGN_RIGHT)
+    {
+        start_x = region->location.x + region->size.width - text_width;
+    }
+    if (start_x < region->location.x)
+    {
+        start_x = region->location.x;
+    }
+    return start_x;
+}
+
+static void egui_view_access_text_draw_access_underline(egui_view_t *self, egui_view_access_text_t *local, const egui_region_t *text_region,
+                                                        const char *draw_text, egui_color_t color)
+{
+    char prefix[EGUI_VIEW_ACCESS_TEXT_MAX_TEXT_LEN + 1];
+    char access_char[2];
+    egui_dim_t text_width;
+    egui_dim_t prefix_width;
+    egui_dim_t char_width;
+    egui_dim_t start_x;
+    egui_dim_t underline_x;
+    egui_dim_t underline_y;
+    uint8_t index;
+    uint8_t draw_length;
+
+    if (!local->keyboard_cue_visible || local->read_only_mode || local->access_key_index == EGUI_VIEW_ACCESS_TEXT_ACCESS_NONE ||
+        !egui_view_access_text_has_text(draw_text))
+    {
+        return;
+    }
+
+    draw_length = egui_view_access_text_text_len(draw_text);
+    if (local->access_key_index >= draw_length || text_region->size.width <= 0)
+    {
+        return;
+    }
+
+    for (index = 0; index < local->access_key_index && index < sizeof(prefix) - 1; ++index)
+    {
+        prefix[index] = draw_text[index];
+    }
+    prefix[index] = '\0';
+    access_char[0] = draw_text[local->access_key_index];
+    access_char[1] = '\0';
+
+    text_width = egui_view_access_text_measure_text_width(local->text_font, draw_text);
+    if (text_width <= 0)
+    {
+        text_width = (egui_dim_t)draw_length * 6;
+    }
+    prefix_width = egui_view_access_text_measure_text_width(local->text_font, prefix);
+    char_width = egui_view_access_text_measure_text_width(local->text_font, access_char);
+    if (char_width <= 2)
+    {
+        char_width = local->compact_mode ? 4 : 5;
+    }
+
+    start_x = egui_view_access_text_resolve_text_start_x(text_region, local->align_type, text_width);
+    underline_x = start_x + prefix_width;
+    if (underline_x + char_width > text_region->location.x + text_region->size.width)
+    {
+        return;
+    }
+
+    underline_y = text_region->location.y + text_region->size.height - (local->compact_mode ? 3 : 4);
+    egui_canvas_draw_rectangle_fill(&uicode_get_core()->canvas, underline_x, underline_y, char_width, 1, color,
+                                    egui_color_alpha_mix(self->alpha, 90));
+}
+
+static void egui_view_access_text_draw_text(const egui_font_t *font, egui_view_t *self, const char *text, const egui_region_t *region,
+                                            uint8_t align, egui_color_t color, egui_alpha_t alpha)
+{
+    egui_region_t draw_region = *region;
+
+    if (font == NULL || !egui_view_access_text_has_text(text) || region->size.width <= 0 || region->size.height <= 0)
+    {
+        return;
+    }
+    egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, font, text, &draw_region, align, color, egui_color_alpha_mix(self->alpha, alpha));
+}
+
+static void egui_view_access_text_on_draw(egui_view_t *self)
+{
+    egui_view_access_text_t *local = egui_view_access_text_local(self);
+    egui_region_t region;
+    egui_region_t text_region;
+    egui_color_t surface_color = local->surface_color;
+    egui_color_t border_color = local->border_color;
+    egui_color_t text_color = local->text_color;
+    egui_color_t accent_color = local->accent_color;
+    egui_color_t cue_color = local->cue_color;
+    egui_dim_t radius = local->compact_mode ? EGUI_VIEW_ACCESS_TEXT_COMPACT_RADIUS : EGUI_VIEW_ACCESS_TEXT_RADIUS;
+    char draw_text[EGUI_VIEW_ACCESS_TEXT_MAX_TEXT_LEN + 1];
+
+    egui_view_get_work_region(self, &region);
+    if (region.size.width <= 0 || region.size.height <= 0)
+    {
+        return;
+    }
+
+    if (local->read_only_mode)
+    {
+        surface_color = egui_rgb_mix(surface_color, EGUI_COLOR_HEX(0xF5F7FA), 45);
+        border_color = egui_rgb_mix(border_color, EGUI_COLOR_HEX(0xAAB5C0), 48);
+        text_color = egui_rgb_mix(text_color, EGUI_COLOR_HEX(0x8A97A5), 42);
+        accent_color = egui_rgb_mix(accent_color, EGUI_COLOR_HEX(0x8A97A5), 46);
+        cue_color = egui_rgb_mix(cue_color, EGUI_COLOR_HEX(0x8A97A5), 50);
+    }
+    if (!egui_view_get_enable(self))
+    {
+        surface_color = egui_view_access_text_mix_disabled(surface_color);
+        border_color = egui_view_access_text_mix_disabled(border_color);
+        text_color = egui_view_access_text_mix_disabled(text_color);
+        accent_color = egui_view_access_text_mix_disabled(accent_color);
+        cue_color = egui_view_access_text_mix_disabled(cue_color);
+    }
+
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, region.location.x, region.location.y, region.size.width, region.size.height, radius,
+                                          surface_color, egui_color_alpha_mix(self->alpha, local->compact_mode ? 70 : 88));
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, region.location.x, region.location.y, region.size.width, region.size.height, radius, 1,
+                                     border_color, egui_color_alpha_mix(self->alpha, local->compact_mode ? 32 : 42));
+
+    if (local->keyboard_cue_visible && local->access_key_index != EGUI_VIEW_ACCESS_TEXT_ACCESS_NONE && !local->read_only_mode)
+    {
+        egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, region.location.x + 4, region.location.y + 5, local->compact_mode ? 2 : 3,
+                                              region.size.height - 10, 1, cue_color, egui_color_alpha_mix(self->alpha, 54));
+    }
+    else
+    {
+        egui_canvas_draw_rectangle_fill(&uicode_get_core()->canvas, region.location.x + 8, region.location.y + region.size.height - 4,
+                                        region.size.width - 16, 1, accent_color, egui_color_alpha_mix(self->alpha, local->read_only_mode ? 18 : 28));
+    }
+
+    egui_view_access_text_get_text_region(self, local, &text_region);
+    egui_view_access_text_fit_text_to_width(local->text_font, local->display_text, draw_text, sizeof(draw_text), text_region.size.width,
+                                            local->compact_mode ? 5 : 6);
+    egui_view_access_text_draw_text(local->text_font, self, draw_text, &text_region, local->align_type, text_color, EGUI_ALPHA_100);
+    egui_view_access_text_draw_access_underline(self, local, &text_region, draw_text, cue_color);
+}
+
+void egui_view_access_text_set_markup_text(egui_view_t *self, const char *markup_text)
+{
+    egui_view_access_text_t *local = egui_view_access_text_local(self);
+
+    egui_view_access_text_clear_pressed_state(self);
+    egui_view_access_text_copy_text(local->markup_text, sizeof(local->markup_text), markup_text);
+    egui_view_access_text_parse_markup(local->markup_text, local->display_text, sizeof(local->display_text), &local->access_key_index);
+    egui_view_invalidate(self);
+}
+
+const char *egui_view_access_text_get_markup_text(egui_view_t *self)
+{
+    egui_view_access_text_t *local = egui_view_access_text_local(self);
+
+    return local->markup_text;
+}
+
+void egui_view_access_text_set_plain_text(egui_view_t *self, const char *plain_text)
+{
+    egui_view_access_text_t *local = egui_view_access_text_local(self);
+
+    egui_view_access_text_clear_pressed_state(self);
+    egui_view_access_text_copy_text(local->markup_text, sizeof(local->markup_text), plain_text);
+    egui_view_access_text_copy_text(local->display_text, sizeof(local->display_text), plain_text);
+    local->access_key_index = EGUI_VIEW_ACCESS_TEXT_ACCESS_NONE;
+    egui_view_invalidate(self);
+}
+
+const char *egui_view_access_text_get_display_text(egui_view_t *self)
+{
+    egui_view_access_text_t *local = egui_view_access_text_local(self);
+
+    return local->display_text;
+}
+
+uint8_t egui_view_access_text_get_access_key_index(egui_view_t *self)
+{
+    egui_view_access_text_t *local = egui_view_access_text_local(self);
+
+    return local->access_key_index;
+}
+
+char egui_view_access_text_get_access_key_char(egui_view_t *self)
+{
+    egui_view_access_text_t *local = egui_view_access_text_local(self);
+
+    if (local->access_key_index == EGUI_VIEW_ACCESS_TEXT_ACCESS_NONE ||
+        local->access_key_index >= egui_view_access_text_text_len(local->display_text))
+    {
+        return '\0';
+    }
+    return local->display_text[local->access_key_index];
+}
+
+void egui_view_access_text_set_font(egui_view_t *self, const egui_font_t *font)
+{
+    egui_view_access_text_t *local = egui_view_access_text_local(self);
+
+    egui_view_access_text_clear_pressed_state(self);
+    local->text_font = font == NULL ? (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT : font;
+    egui_view_invalidate(self);
+}
+
+void egui_view_access_text_set_palette(egui_view_t *self, egui_color_t surface_color, egui_color_t border_color,
+                                       egui_color_t text_color, egui_color_t accent_color, egui_color_t cue_color)
+{
+    egui_view_access_text_t *local = egui_view_access_text_local(self);
+
+    egui_view_access_text_clear_pressed_state(self);
+    local->surface_color = surface_color;
+    local->border_color = border_color;
+    local->text_color = text_color;
+    local->accent_color = accent_color;
+    local->cue_color = cue_color;
+    egui_view_invalidate(self);
+}
+
+void egui_view_access_text_set_align_type(egui_view_t *self, uint8_t align_type)
+{
+    egui_view_access_text_t *local = egui_view_access_text_local(self);
+
+    egui_view_access_text_clear_pressed_state(self);
+    local->align_type = align_type;
+    egui_view_invalidate(self);
+}
+
+uint8_t egui_view_access_text_get_align_type(egui_view_t *self)
+{
+    egui_view_access_text_t *local = egui_view_access_text_local(self);
+
+    return local->align_type;
+}
+
+void egui_view_access_text_set_keyboard_cue_visible(egui_view_t *self, uint8_t visible)
+{
+    egui_view_access_text_t *local = egui_view_access_text_local(self);
+
+    egui_view_access_text_clear_pressed_state(self);
+    local->keyboard_cue_visible = visible ? 1 : 0;
+    egui_view_invalidate(self);
+}
+
+uint8_t egui_view_access_text_get_keyboard_cue_visible(egui_view_t *self)
+{
+    egui_view_access_text_t *local = egui_view_access_text_local(self);
+
+    return local->keyboard_cue_visible;
+}
+
+void egui_view_access_text_set_compact_mode(egui_view_t *self, uint8_t compact_mode)
+{
+    egui_view_access_text_t *local = egui_view_access_text_local(self);
+
+    egui_view_access_text_clear_pressed_state(self);
+    local->compact_mode = compact_mode ? 1 : 0;
+    egui_view_invalidate(self);
+}
+
+uint8_t egui_view_access_text_get_compact_mode(egui_view_t *self)
+{
+    egui_view_access_text_t *local = egui_view_access_text_local(self);
+
+    return local->compact_mode;
+}
+
+void egui_view_access_text_set_read_only_mode(egui_view_t *self, uint8_t read_only_mode)
+{
+    egui_view_access_text_t *local = egui_view_access_text_local(self);
+
+    egui_view_access_text_clear_pressed_state(self);
+    local->read_only_mode = read_only_mode ? 1 : 0;
+    egui_view_invalidate(self);
+}
+
+uint8_t egui_view_access_text_get_read_only_mode(egui_view_t *self)
+{
+    egui_view_access_text_t *local = egui_view_access_text_local(self);
+
+    return local->read_only_mode;
+}
+
+void egui_view_access_text_apply_standard_style(egui_view_t *self)
+{
+    egui_view_access_text_set_palette(self, EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD6DFE8), EGUI_COLOR_HEX(0x1F2A36),
+                                      EGUI_COLOR_HEX(0xD7E3EE), EGUI_COLOR_HEX(0x0F6CBD));
+    egui_view_access_text_set_align_type(self, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER);
+    egui_view_access_text_set_keyboard_cue_visible(self, 1);
+    egui_view_access_text_set_compact_mode(self, 0);
+    egui_view_access_text_set_read_only_mode(self, 0);
+}
+
+void egui_view_access_text_apply_accent_style(egui_view_t *self)
+{
+    egui_view_access_text_set_palette(self, EGUI_COLOR_HEX(0xF6FAFF), EGUI_COLOR_HEX(0xB9D6F0), EGUI_COLOR_HEX(0x173247),
+                                      EGUI_COLOR_HEX(0xCFE2F3), EGUI_COLOR_HEX(0x0F6CBD));
+    egui_view_access_text_set_align_type(self, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER);
+    egui_view_access_text_set_keyboard_cue_visible(self, 1);
+    egui_view_access_text_set_compact_mode(self, 0);
+    egui_view_access_text_set_read_only_mode(self, 0);
+}
+
+void egui_view_access_text_apply_compact_style(egui_view_t *self)
+{
+    egui_view_access_text_set_palette(self, EGUI_COLOR_HEX(0xF8FBFD), EGUI_COLOR_HEX(0xD2DCE6), EGUI_COLOR_HEX(0x22313C),
+                                      EGUI_COLOR_HEX(0xD9E7E5), EGUI_COLOR_HEX(0x0C7C73));
+    egui_view_access_text_set_align_type(self, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER);
+    egui_view_access_text_set_keyboard_cue_visible(self, 1);
+    egui_view_access_text_set_compact_mode(self, 1);
+    egui_view_access_text_set_read_only_mode(self, 0);
+}
+
+void egui_view_access_text_apply_read_only_style(egui_view_t *self)
+{
+    egui_view_access_text_set_palette(self, EGUI_COLOR_HEX(0xF5F7FA), EGUI_COLOR_HEX(0xD7DEE6), EGUI_COLOR_HEX(0x687684),
+                                      EGUI_COLOR_HEX(0xE1E6EB), EGUI_COLOR_HEX(0x788593));
+    egui_view_access_text_set_align_type(self, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER);
+    egui_view_access_text_set_keyboard_cue_visible(self, 0);
+    egui_view_access_text_set_compact_mode(self, 1);
+    egui_view_access_text_set_read_only_mode(self, 1);
+}
+
+#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
+static int egui_view_access_text_on_touch_event(egui_view_t *self, egui_motion_event_t *event)
+{
+    EGUI_UNUSED(event);
+    if (egui_view_access_text_clear_pressed_state(self))
+    {
+        egui_view_invalidate(self);
+    }
+    return 0;
+}
+
+static int egui_view_access_text_on_static_touch_event(egui_view_t *self, egui_motion_event_t *event)
+{
+    EGUI_UNUSED(event);
+    if (egui_view_access_text_clear_pressed_state(self))
+    {
+        egui_view_invalidate(self);
+    }
+    return 1;
+}
+#endif
+
+#if EGUI_CONFIG_FUNCTION_SUPPORT_KEY
+static int egui_view_access_text_on_key_event(egui_view_t *self, egui_key_event_t *event)
+{
+    EGUI_UNUSED(event);
+    if (egui_view_access_text_clear_pressed_state(self))
+    {
+        egui_view_invalidate(self);
+    }
+    return 0;
+}
+
+static int egui_view_access_text_on_static_key_event(egui_view_t *self, egui_key_event_t *event)
+{
+    EGUI_UNUSED(event);
+    if (egui_view_access_text_clear_pressed_state(self))
+    {
+        egui_view_invalidate(self);
+    }
+    return 1;
+}
+#endif
+
+void egui_view_access_text_override_static_preview_api(egui_view_t *self, egui_view_api_t *api)
+{
+    egui_view_copy_api(self, api);
+#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
+    api->on_touch_event = egui_view_access_text_on_static_touch_event;
+#endif
+#if EGUI_CONFIG_FUNCTION_SUPPORT_KEY
+    api->on_key_event = egui_view_access_text_on_static_key_event;
+#endif
+}
+
+static const egui_view_api_t EGUI_VIEW_API_TABLE_NAME(egui_view_access_text_t) = {
+        .draw = egui_view_draw,
+        .compute_scroll = egui_view_compute_scroll,
+        .calculate_layout = egui_view_calculate_layout,
+        .request_layout = egui_view_request_layout,
+        .dispatch_touch_event = egui_view_dispatch_touch_event,
+#if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
+        .on_touch_event = egui_view_access_text_on_touch_event,
+#else
+        .on_touch_event = egui_view_on_touch_event,
+#endif
+        .on_intercept_touch_event = egui_view_on_intercept_touch_event,
+        .on_draw = egui_view_access_text_on_draw,
+        .on_attach_to_window = egui_view_on_attach_to_window,
+        .on_detach_from_window = egui_view_on_detach_from_window,
+#if EGUI_CONFIG_FUNCTION_SUPPORT_KEY
+        .dispatch_key_event = egui_view_dispatch_key_event,
+        .on_key_event = egui_view_access_text_on_key_event,
+#endif
+};
+
+void egui_view_access_text_init(egui_view_t *self)
+{
+    egui_view_access_text_t *local = egui_view_access_text_local(self);
+
+    egui_view_init(self, uicode_get_core());
+    self->api = &EGUI_VIEW_API_TABLE_NAME(egui_view_access_text_t);
+    egui_view_set_padding_all(self, 2);
+#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
+    egui_view_set_focusable(self, 0);
+#endif
+
+    local->text_font = (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT;
+    local->align_type = EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER;
+    local->access_key_index = EGUI_VIEW_ACCESS_TEXT_ACCESS_NONE;
+    local->keyboard_cue_visible = 1;
+    local->compact_mode = 0;
+    local->read_only_mode = 0;
+    egui_view_access_text_copy_text(local->markup_text, sizeof(local->markup_text), "_Save");
+    egui_view_access_text_parse_markup(local->markup_text, local->display_text, sizeof(local->display_text), &local->access_key_index);
+    egui_view_access_text_apply_standard_style(self);
+    egui_view_set_view_name(self, "egui_view_access_text");
+}

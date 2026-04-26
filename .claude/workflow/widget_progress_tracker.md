@@ -9,12 +9,12 @@
 
 ## 当前快照
 
-- 截至 `2026-04-26`，`example/HelloCustomWidgets/` 当前保留 `125` 个控件目录。
+- 截至 `2026-04-26`，`example/HelloCustomWidgets/` 当前保留 `126` 个控件目录。
 - 所有保留控件均来自 `reference` 主线：
   - `input = 38`
   - `layout = 38`
   - `navigation = 13`
-  - `display = 24`
+  - `display = 25`
   - `feedback = 12`
 - `widget_catalog.json`、`web/catalog-policy.json` 与默认 web 入口已同步到 `reference-only` 状态。
 - 已清退轨道：
@@ -134,8 +134,9 @@
 - `title_bar` -> `TitleBar`
 - `tree_view` -> `TreeView`
 
-### Display（24）
+### Display（25）
 
+- `access_text` -> `AccessText`
 - `badge` -> `Badge`
 - `badge_group` -> `BadgeGroup`
 - `arc` -> `Arc`
@@ -178,6 +179,11 @@
 
 ## 最近完成的收口动作
 
+- `2026-04-26`
+  - 收口 `display/access_text` reference 控件：新增 `example/HelloCustomWidgets/display/access_text/egui_view_access_text.h`、`egui_view_access_text.c`、`test.c` 与 `readme.md`，按 WPF `AccessText` 语义实现 underscore marker 解析、escaped underscore、access key index、keyboard cue underline、standard / accent / compact / read only 样式与静态 preview。
+  - 新增 `example/HelloUnitTest/test/test_access_text.h` 与 `test_access_text.c`，并在 `example/HelloUnitTest/uicode_disp0.c` 注册 `access_text` suite；同步 `example/HelloCustomWidgets/widget_catalog.json` 与 `web/catalog-policy.json` 到 `126` 个 reference 控件，其中 `display = 25`。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=display/access_text PORT=pc`、`make all APP=HelloUnitTest PORT=pc_test`（Windows 长链接 `Error 87` 后 response-file fallback 成功）、`output\main.exe access_text`（`access_text 5/5`）、`python scripts\sync_widget_catalog.py --check`、`python scripts\checks\check_widget_catalog.py`、`python scripts\checks\check_docs_encoding.py`、`python scripts\checks\check_touch_release_semantics.py --scope custom --category display`、`python scripts\code_runtime_check.py --app HelloCustomWidgets --app-sub display/access_text --track reference --timeout 10 --keep-screenshots`、`python scripts\code_compile_check.py --custom-widgets --category display --bits64`、`python scripts\code_runtime_check.py --app HelloCustomWidgets --category display --track reference --bits64`、`python scripts\web\wasm_build_demos.py --app HelloCustomWidgets --app-sub display/access_text` 与 `python scripts\web\web_smoke_check.py --web-root web --manifest web\demos\demos.json --demo HelloCustomWidgets_display_access_text`。
+  - 已复核 `runtime_check_output/HelloCustomWidgets_display_access_text/default` 的关键帧输出：覆盖 `_Save changes`、`E_xport report`、`File__name field`、`Locked _field` 并回到默认状态，底部 compact/read only preview 全程静态，未出现文字重叠、裁切、黑屏或白屏；web smoke 返回 `PASS status=Running canvas=480x480 ratio=0.1307 colors=94`。
 - `2026-04-26`
   - 收口 `display/label_control` reference 控件：新增 `example/HelloCustomWidgets/display/label_control/egui_view_label_control.h`、`egui_view_label_control.c`、`test.c` 与 `readme.md`，按 WPF `Label` 语义实现表单 caption、access key underline、required marker、target hint、target highlighted、standard / accent / compact / read only 样式与静态 preview。
   - 新增 `example/HelloUnitTest/test/test_label_control.h` 与 `test_label_control.c`，并在 `example/HelloUnitTest/uicode_disp0.c` 注册 `label_control` suite；同步 `example/HelloCustomWidgets/widget_catalog.json` 与 `web/catalog-policy.json` 到 `125` 个 reference 控件，其中 `display = 24`。
