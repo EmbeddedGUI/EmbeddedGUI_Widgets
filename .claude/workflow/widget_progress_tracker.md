@@ -9,10 +9,10 @@
 
 ## 当前快照
 
-- 截至 `2026-04-27`，`example/HelloCustomWidgets/` 当前保留 `139` 个控件目录。
+- 截至 `2026-04-27`，`example/HelloCustomWidgets/` 当前保留 `140` 个控件目录。
 - 所有保留控件均来自 `reference` 主线：
   - `input = 39`
-  - `layout = 43`
+  - `layout = 44`
   - `navigation = 13`
   - `display = 32`
   - `feedback = 12`
@@ -78,7 +78,7 @@
 - `token_input` -> `TokenInput`
 - `toolbar` -> `Toolbar`
 
-### Layout（43）
+### Layout（44）
 
 - `accordion` -> `Accordion`
 - `adorner_decorator` -> `AdornerDecorator`
@@ -96,6 +96,7 @@
 - `dock_panel` -> `DockPanel`
 - `drawer` -> `Drawer`
 - `expander` -> `Expander`
+- `figure` -> `Figure`
 - `grid` -> `Grid`
 - `grid_splitter` -> `GridSplitter`
 - `grid_view` -> `GridView`
@@ -191,6 +192,12 @@
 - `toast_stack` -> `Toast`
 
 ## 最近完成的收口动作
+
+- `2026-04-27`
+  - 收口 `layout/figure` reference 控件：新增 `example/HelloCustomWidgets/layout/figure/egui_view_figure.h`、`egui_view_figure.c`、`test.c` 与 `readme.md`，按 WPF `Figure` 语义实现 floating child host、left / right / center anchor、wrapped text context、compact 与 read only 静态 preview。
+  - 新增 `example/HelloUnitTest/test/test_figure.h` 与 `test_figure.c`，并在 `example/HelloUnitTest/uicode_disp0.c` 注册 `figure` suite；同步 `example/HelloCustomWidgets/widget_catalog.json` 与 `web/catalog-policy.json` 到 `140` 个 reference demo，layout 计数更新为 `44`。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=layout/figure PORT=pc`、`make all APP=HelloUnitTest PORT=pc_test`（Windows 长链接 `Error 87` 后 response-file fallback 成功）、`output\main.exe figure`（`4 / 4`）、`python scripts\sync_widget_catalog.py --check`、`python scripts\checks\check_widget_catalog.py`、`python scripts\checks\check_docs_encoding.py`、`python scripts\checks\check_touch_release_semantics.py --scope custom --category layout`、`python scripts\code_runtime_check.py --app HelloCustomWidgets --app-sub layout/figure --track reference --timeout 10 --keep-screenshots`、`python scripts\code_compile_check.py --custom-widgets --category layout --bits64`、`python scripts\code_runtime_check.py --app HelloCustomWidgets --category layout --track reference --bits64`、`python scripts\web\wasm_build_demos.py --app HelloCustomWidgets --app-sub layout/figure` 与 `python scripts\web\web_smoke_check.py --web-root web --manifest web\demos\demos.json --demo HelloCustomWidgets_layout_figure`。
+  - 已复核 `runtime_check_output/HelloCustomWidgets_layout_figure/default` 的关键帧 `frame_0000`、`frame_0003`、`frame_0005`、`frame_0007`：主体非空，standard / accent / compact / read only 主状态有差异；主区差分边界覆盖 `(56, 124) - (424, 271)`，底部 `compact / read only` preview 区保持静态；web smoke 结果为 `PASS status=Running canvas=480x480 ratio=0.1552 colors=132`。
 
 - `2026-04-27`
   - 收口 `layout/block_ui_container` reference 控件：新增 `example/HelloCustomWidgets/layout/block_ui_container/egui_view_block_ui_container.h`、`egui_view_block_ui_container.c`、`test.c` 与 `readme.md`，按 WPF `BlockUIContainer` 语义实现 block-level child host、leading / trailing text context、host padding、compact 与 read only 静态 preview。
