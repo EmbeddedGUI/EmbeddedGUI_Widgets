@@ -123,6 +123,7 @@
 #include "test/test_tool_tip.h"
 #include "test/test_text_box.h"
 #include "test/test_text_block.h"
+#include "test/test_tick_bar.h"
 #include "test/test_thumb_rate.h"
 #include "test/test_time_picker.h"
 #include "test/test_toolbar.h"
@@ -340,6 +341,7 @@ void uicode_disp0_init(egui_core_t *core)
     RUN_TEST_SUITE(tool_tip);
     RUN_TEST_SUITE(text_box);
     RUN_TEST_SUITE(text_block);
+    RUN_TEST_SUITE(tick_bar);
     RUN_TEST_SUITE(thumb_rate);
     RUN_TEST_SUITE(time_picker);
     RUN_TEST_SUITE(toolbar);

@@ -9,9 +9,9 @@
 
 ## 当前快照
 
-- 截至 `2026-04-27`，`example/HelloCustomWidgets/` 当前保留 `135` 个控件目录。
+- 截至 `2026-04-27`，`example/HelloCustomWidgets/` 当前保留 `136` 个控件目录。
 - 所有保留控件均来自 `reference` 主线：
-  - `input = 38`
+  - `input = 39`
   - `layout = 40`
   - `navigation = 13`
   - `display = 32`
@@ -36,7 +36,7 @@
 
 ## 当前保留的 Reference 主线控件
 
-### Input（38）
+### Input（39）
 
 - `auto_suggest_box` -> `AutoSuggestBox`
 - `button` -> `Button`
@@ -70,6 +70,7 @@
 - `swipe_control` -> `SwipeControl`
 - `switch` -> `ToggleSwitch`
 - `text_box` -> `TextBox`
+- `tick_bar` -> `TickBar`
 - `thumb_rate` -> `ThumbRate`
 - `time_picker` -> `TimePicker`
 - `toggle_button` -> `ToggleButton`
@@ -188,6 +189,11 @@
 
 ## 最近完成的收口动作
 
+- `2026-04-27`
+  - 收口 `input/tick_bar` reference 控件：新增 `example/HelloCustomWidgets/input/tick_bar/egui_view_tick_bar.h`、`egui_view_tick_bar.c`、`test.c` 与 `readme.md`，按 WPF `TickBar` 语义实现 `Minimum`、`Maximum`、`Value`、`TickFrequency`、top / bottom / left / right `Placement`、selected range、`IsDirectionReversed`、compact / read only 静态 preview，并保持只呈现刻度参照，不扩展为 slider thumb 拖拽或任意 ticks 集合。
+  - 新增 `example/HelloUnitTest/test/test_tick_bar.h` 与 `test_tick_bar.c`，并在 `example/HelloUnitTest/uicode_disp0.c` 注册 `tick_bar` suite；同步 `example/HelloCustomWidgets/widget_catalog.json` 与 `web/catalog-policy.json` 到 `136` 个 reference 控件，其中 `input = 39`。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=input/tick_bar PORT=pc`、`make all APP=HelloUnitTest PORT=pc_test`（Windows 长链接 `Error 87` 后 response-file fallback 成功）、`output\main.exe tick_bar`（`tick_bar 4/4`）、`python scripts\sync_widget_catalog.py --check`、`python scripts\checks\check_widget_catalog.py`、`python scripts\checks\check_docs_encoding.py`、`python scripts\checks\check_touch_release_semantics.py --scope custom --category input`、`python scripts\code_runtime_check.py --app HelloCustomWidgets --app-sub input/tick_bar --track reference --timeout 10 --keep-screenshots`、`python scripts\code_compile_check.py --custom-widgets --category input --bits64`、`python scripts\code_runtime_check.py --app HelloCustomWidgets --category input --track reference --bits64`、`python scripts\web\wasm_build_demos.py --app HelloCustomWidgets --app-sub input/tick_bar` 与 `python scripts\web\web_smoke_check.py --web-root web --manifest web\demos\demos.json --demo HelloCustomWidgets_input_tick_bar`。
+  - 已复核 `runtime_check_output/HelloCustomWidgets_input_tick_bar/default` 的关键帧输出：覆盖 bottom frequency、top selected range、left reversed、right read only 并回到默认状态，底部 compact/read only preview 全程静态，rail、ticks、selected range、value marker 与 caption 完整可见，未出现重叠、裁切、黑屏或白屏；web smoke 返回 `PASS status=Running canvas=480x480 ratio=0.1487 colors=76`。
 - `2026-04-27`
   - 收口 `display/glyphs` reference 控件：新增 `example/HelloCustomWidgets/display/glyphs/egui_view_glyphs.h`、`egui_view_glyphs.c`、`test.c` 与 `readme.md`，按 WPF `Glyphs` 语义实现 `UnicodeString`、`FontRenderingEmSize`、`Fill`、`OriginX / OriginY`、standard / accent / compact / read only 静态 preview，并保留低层字形运行定位语义，不扩展为编辑、选择、bidi 或 complex shaping。
   - 新增 `example/HelloUnitTest/test/test_glyphs.h` 与 `test_glyphs.c`，并在 `example/HelloUnitTest/uicode_disp0.c` 注册 `glyphs` suite；同步 `example/HelloCustomWidgets/widget_catalog.json` 与 `web/catalog-policy.json` 到 `135` 个 reference 控件，其中 `display = 32`。
