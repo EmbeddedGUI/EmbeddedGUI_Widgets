@@ -51,6 +51,7 @@
 #include "test/test_expander.h"
 #include "test/test_field.h"
 #include "test/test_figure.h"
+#include "test/test_floater.h"
 #include "test/test_flip_view.h"
 #include "test/test_flyout.h"
 #include "test/test_font_icon.h"
@@ -274,6 +275,7 @@ void uicode_disp0_init(egui_core_t *core)
     RUN_TEST_SUITE(expander);
     RUN_TEST_SUITE(field);
     RUN_TEST_SUITE(figure);
+    RUN_TEST_SUITE(floater);
     RUN_TEST_SUITE(flip_view);
     RUN_TEST_SUITE(flyout);
     RUN_TEST_SUITE(font_icon);
