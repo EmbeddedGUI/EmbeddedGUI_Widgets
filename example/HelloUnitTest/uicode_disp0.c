@@ -72,6 +72,7 @@
 #include "test/test_nav_panel.h"
 #include "test/test_number_box.h"
 #include "test/test_parallax_view.h"
+#include "test/test_path.h"
 #include "test/test_path_icon.h"
 #include "test/test_password_box.h"
 #include "test/test_radio_button.h"
@@ -287,6 +288,7 @@ void uicode_disp0_init(egui_core_t *core)
     RUN_TEST_SUITE(nav_panel);
     RUN_TEST_SUITE(number_box);
     RUN_TEST_SUITE(parallax_view);
+    RUN_TEST_SUITE(path);
     RUN_TEST_SUITE(path_icon);
     RUN_TEST_SUITE(password_box);
     RUN_TEST_SUITE(radio_button);
