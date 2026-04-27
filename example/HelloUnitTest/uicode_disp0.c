@@ -79,6 +79,7 @@
 #include "test/test_persona_group.h"
 #include "test/test_persona.h"
 #include "test/test_person_picture.h"
+#include "test/test_polygon.h"
 #include "test/test_presence_badge.h"
 #include "test/test_pips_pager.h"
 #include "test/test_pivot.h"
@@ -292,6 +293,7 @@ void uicode_disp0_init(egui_core_t *core)
     RUN_TEST_SUITE(persona_group);
     RUN_TEST_SUITE(persona);
     RUN_TEST_SUITE(person_picture);
+    RUN_TEST_SUITE(polygon);
     RUN_TEST_SUITE(presence_badge);
     RUN_TEST_SUITE(pips_pager);
     RUN_TEST_SUITE(pivot);
