@@ -9,10 +9,10 @@
 
 ## 当前快照
 
-- 截至 `2026-04-27`，`example/HelloCustomWidgets/` 当前保留 `136` 个控件目录。
+- 截至 `2026-04-27`，`example/HelloCustomWidgets/` 当前保留 `137` 个控件目录。
 - 所有保留控件均来自 `reference` 主线：
   - `input = 39`
-  - `layout = 40`
+  - `layout = 41`
   - `navigation = 13`
   - `display = 32`
   - `feedback = 12`
@@ -78,9 +78,10 @@
 - `token_input` -> `TokenInput`
 - `toolbar` -> `Toolbar`
 
-### Layout（40）
+### Layout（41）
 
 - `accordion` -> `Accordion`
+- `adorner_decorator` -> `AdornerDecorator`
 - `border` -> `Border`
 - `bullet_decorator` -> `BulletDecorator`
 - `canvas` -> `Canvas`
@@ -188,6 +189,12 @@
 - `toast_stack` -> `Toast`
 
 ## 最近完成的收口动作
+
+- `2026-04-27`
+  - 收口 `layout/adorner_decorator` reference 控件：新增 `example/HelloCustomWidgets/layout/adorner_decorator/egui_view_adorner_decorator.h`、`egui_view_adorner_decorator.c`、`test.c` 与 `readme.md`，按 WPF `AdornerDecorator` 语义实现 child host、adorner layer、focus / validation / resize adorners、compact 与 read only 静态 preview。
+  - 新增 `example/HelloUnitTest/test/test_adorner_decorator.h` 与 `test_adorner_decorator.c`，并在 `example/HelloUnitTest/uicode_disp0.c` 注册 `adorner_decorator` suite；同步 `example/HelloCustomWidgets/widget_catalog.json` 与 `web/catalog-policy.json` 到 `137` 个 reference demo，layout 计数更新为 `41`。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=layout/adorner_decorator PORT=pc`、`make all APP=HelloUnitTest PORT=pc_test`（Windows 长链接 `Error 87` 后 response-file fallback 成功）、`output\main.exe adorner_decorator`（`4 / 4`）、`python scripts\sync_widget_catalog.py --check`、`python scripts\checks\check_widget_catalog.py`、`python scripts\checks\check_docs_encoding.py`、`python scripts\checks\check_touch_release_semantics.py --scope custom --category layout`、`python scripts\code_runtime_check.py --app HelloCustomWidgets --app-sub layout/adorner_decorator --track reference --timeout 10 --keep-screenshots`、`python scripts\code_compile_check.py --custom-widgets --category layout --bits64`、`python scripts\code_runtime_check.py --app HelloCustomWidgets --category layout --track reference --bits64`、`python scripts\web\wasm_build_demos.py --app HelloCustomWidgets --app-sub layout/adorner_decorator` 与 `python scripts\web\web_smoke_check.py --web-root web --manifest web\demos\demos.json --demo HelloCustomWidgets_layout_adorner_decorator`。
+  - 已复核 `runtime_check_output/HelloCustomWidgets_layout_adorner_decorator/default` 的关键帧 `frame_0000`、`frame_0003`、`frame_0005`、`frame_0007`：主体非空，focus / validation / resize / read-only 主状态有差异；主区差分边界位于 `(74, 109) - (406, 259)`，底部 `compact / read only` preview 区保持静态；web smoke 结果为 `PASS status=Running canvas=480x480 ratio=0.1716 colors=124`。
 
 - `2026-04-27`
   - 收口 `input/tick_bar` reference 控件：新增 `example/HelloCustomWidgets/input/tick_bar/egui_view_tick_bar.h`、`egui_view_tick_bar.c`、`test.c` 与 `readme.md`，按 WPF `TickBar` 语义实现 `Minimum`、`Maximum`、`Value`、`TickFrequency`、top / bottom / left / right `Placement`、selected range、`IsDirectionReversed`、compact / read only 静态 preview，并保持只呈现刻度参照，不扩展为 slider thumb 拖拽或任意 ticks 集合。
