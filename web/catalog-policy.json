@@ -1,14 +1,14 @@
 {
   "generatedFrom": "example/HelloCustomWidgets/widget_catalog.json",
-  "total": 132,
-  "defaultWebTotal": 132,
+  "total": 133,
+  "defaultWebTotal": 133,
   "tracks": {
-    "reference": 132,
+    "reference": 133,
     "showcase": 0,
     "deprecated": 0
   },
   "visibility": {
-    "public": 132,
+    "public": 133,
     "internal": 0,
     "hidden": 0
   },
@@ -36,8 +36,8 @@
     },
     {
       "id": "display",
-      "total": 29,
-      "reference": 29,
+      "total": 30,
+      "reference": 30,
       "showcase": 0,
       "deprecated": 0
     },
