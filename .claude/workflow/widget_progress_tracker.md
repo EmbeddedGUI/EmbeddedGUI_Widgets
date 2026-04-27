@@ -9,12 +9,12 @@
 
 ## 当前快照
 
-- 截至 `2026-04-26`，`example/HelloCustomWidgets/` 当前保留 `130` 个控件目录。
+- 截至 `2026-04-27`，`example/HelloCustomWidgets/` 当前保留 `131` 个控件目录。
 - 所有保留控件均来自 `reference` 主线：
   - `input = 38`
   - `layout = 40`
   - `navigation = 13`
-  - `display = 27`
+  - `display = 28`
   - `feedback = 12`
 - `widget_catalog.json`、`web/catalog-policy.json` 与默认 web 入口已同步到 `reference-only` 状态。
 - 已清退轨道：
@@ -136,7 +136,7 @@
 - `title_bar` -> `TitleBar`
 - `tree_view` -> `TreeView`
 
-### Display（27）
+### Display（28）
 
 - `access_text` -> `AccessText`
 - `badge` -> `Badge`
@@ -154,6 +154,7 @@
 - `info_badge` -> `InfoBadge`
 - `info_label` -> `InfoLabel`
 - `label_control` -> `Label`
+- `line` -> `Line`
 - `path_icon` -> `PathIcon`
 - `person_picture` -> `PersonPicture`
 - `persona` -> `Persona`
@@ -183,6 +184,11 @@
 
 ## 最近完成的收口动作
 
+- `2026-04-27`
+  - 收口 `display/line` reference 控件：新增 `example/HelloCustomWidgets/display/line/egui_view_shape_line.h`、`egui_view_shape_line.c`、`test.c` 与 `readme.md`，按 WPF `Line` / `Shape` 语义实现 `X1/Y1/X2/Y2`、stroke、stroke thickness、horizontal / vertical / diagonal、standard / accent / compact / read only 样式与静态 preview。
+  - 新增 `example/HelloUnitTest/test/test_line.h` 与 `test_line.c`，并在 `example/HelloUnitTest/uicode_disp0.c` 注册 `line` suite；同步 `example/HelloCustomWidgets/widget_catalog.json` 与 `web/catalog-policy.json` 到 `131` 个 reference 控件，其中 `display = 28`。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=display/line PORT=pc`、`make all APP=HelloUnitTest PORT=pc_test`（Windows 长链接 `Error 87` 后 response-file fallback 成功）、`output\main.exe line`（`line 4/4`）、`python scripts\sync_widget_catalog.py --check`、`python scripts\checks\check_widget_catalog.py`、`python scripts\checks\check_docs_encoding.py`、`python scripts\checks\check_touch_release_semantics.py --scope custom --category display`、`python scripts\code_runtime_check.py --app HelloCustomWidgets --app-sub display/line --track reference --timeout 10 --keep-screenshots`、`python scripts\code_compile_check.py --custom-widgets --category display --bits64`、`python scripts\code_runtime_check.py --app HelloCustomWidgets --category display --track reference --bits64`、`python scripts\web\wasm_build_demos.py --app HelloCustomWidgets --app-sub display/line` 与 `python scripts\web\web_smoke_check.py --web-root web --manifest web\demos\demos.json --demo HelloCustomWidgets_display_line`。
+  - 已复核 `runtime_check_output/HelloCustomWidgets_display_line/default` 的关键帧输出：覆盖 standard horizontal、accent diagonal、compact vertical、read only muted 并回到默认状态，底部 compact/read only preview 全程静态，线段端点、stroke thickness 与 caption 完整可见，未出现重叠、裁切、黑屏或白屏；web smoke 返回 `PASS status=Running canvas=480x480 ratio=0.1471 colors=65`。
 - `2026-04-26`
   - 收口 `display/ellipse` reference 控件：新增 `example/HelloCustomWidgets/display/ellipse/egui_view_ellipse.h`、`egui_view_ellipse.c`、`test.c` 与 `readme.md`，按 WPF `Ellipse` / `Shape` 语义实现 fill、stroke、stroke width、oval / circle mode、standard / accent / compact / read only 样式与静态 preview。
   - 新增 `example/HelloUnitTest/test/test_ellipse.h` 与 `test_ellipse.c`，并在 `example/HelloUnitTest/uicode_disp0.c` 注册 `ellipse` suite；同步 `example/HelloCustomWidgets/widget_catalog.json` 与 `web/catalog-policy.json` 到 `130` 个 reference 控件，其中 `display = 27`。
