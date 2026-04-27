@@ -850,6 +850,16 @@
     "doc_state": "ok"
   },
   {
+    "id": "layout/block_ui_container",
+    "track": "reference",
+    "visibility": "public",
+    "reference_system": "Fluent 2 / WPF UI",
+    "reference_library": "WPF",
+    "reference_component": "BlockUIContainer",
+    "replacement": null,
+    "doc_state": "ok"
+  },
+  {
     "id": "layout/border",
     "track": "reference",
     "visibility": "public",
