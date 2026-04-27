@@ -9,12 +9,12 @@
 
 ## 当前快照
 
-- 截至 `2026-04-27`，`example/HelloCustomWidgets/` 当前保留 `134` 个控件目录。
+- 截至 `2026-04-27`，`example/HelloCustomWidgets/` 当前保留 `135` 个控件目录。
 - 所有保留控件均来自 `reference` 主线：
   - `input = 38`
   - `layout = 40`
   - `navigation = 13`
-  - `display = 31`
+  - `display = 32`
   - `feedback = 12`
 - `widget_catalog.json`、`web/catalog-policy.json` 与默认 web 入口已同步到 `reference-only` 状态。
 - 已清退轨道：
@@ -136,7 +136,7 @@
 - `title_bar` -> `TitleBar`
 - `tree_view` -> `TreeView`
 
-### Display（31）
+### Display（32）
 
 - `access_text` -> `AccessText`
 - `badge` -> `Badge`
@@ -149,6 +149,7 @@
 - `divider` -> `Separator`
 - `ellipse` -> `Ellipse`
 - `font_icon` -> `FontIcon`
+- `glyphs` -> `Glyphs`
 - `image_control` -> `Image`
 - `image_icon` -> `ImageIcon`
 - `info_badge` -> `InfoBadge`
@@ -187,6 +188,11 @@
 
 ## 最近完成的收口动作
 
+- `2026-04-27`
+  - 收口 `display/glyphs` reference 控件：新增 `example/HelloCustomWidgets/display/glyphs/egui_view_glyphs.h`、`egui_view_glyphs.c`、`test.c` 与 `readme.md`，按 WPF `Glyphs` 语义实现 `UnicodeString`、`FontRenderingEmSize`、`Fill`、`OriginX / OriginY`、standard / accent / compact / read only 静态 preview，并保留低层字形运行定位语义，不扩展为编辑、选择、bidi 或 complex shaping。
+  - 新增 `example/HelloUnitTest/test/test_glyphs.h` 与 `test_glyphs.c`，并在 `example/HelloUnitTest/uicode_disp0.c` 注册 `glyphs` suite；同步 `example/HelloCustomWidgets/widget_catalog.json` 与 `web/catalog-policy.json` 到 `135` 个 reference 控件，其中 `display = 32`。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=display/glyphs PORT=pc`、`make all APP=HelloUnitTest PORT=pc_test`（Windows 长链接 `Error 87` 后 response-file fallback 成功）、`output\main.exe glyphs`（`glyphs 4/4`）、`python scripts\sync_widget_catalog.py --check`、`python scripts\checks\check_widget_catalog.py`、`python scripts\checks\check_docs_encoding.py`、`python scripts\checks\check_touch_release_semantics.py --scope custom --category display`、`python scripts\code_runtime_check.py --app HelloCustomWidgets --app-sub display/glyphs --track reference --timeout 10 --keep-screenshots`、`python scripts\code_compile_check.py --custom-widgets --category display --bits64`、`python scripts\code_runtime_check.py --app HelloCustomWidgets --category display --track reference --bits64`、`python scripts\web\wasm_build_demos.py --app HelloCustomWidgets --app-sub display/glyphs` 与 `python scripts\web\web_smoke_check.py --web-root web --manifest web\demos\demos.json --demo HelloCustomWidgets_display_glyphs`。
+  - 已复核 `runtime_check_output/HelloCustomWidgets_display_glyphs/default` 的关键帧输出：覆盖 standard glyph run、accent glyph run、compact run 与 read only run 并回到默认状态，底部 compact/read only preview 全程静态，glyph text、fill、font size、origin marker 与 caption 完整可见，未出现重叠、裁切、黑屏或白屏；web smoke 返回 `PASS status=Running canvas=480x480 ratio=0.1471 colors=71`。
 - `2026-04-27`
   - 收口 `display/path` reference 控件：新增 `example/HelloCustomWidgets/display/path/egui_view_path.h`、`egui_view_path.c`、`test.c` 与 `readme.md`，按 WPF `Path` / `Shape` 语义实现 path data、move / line / quadratic / cubic / close 命令、fill、stroke、stroke thickness、standard / accent / compact / read only 样式与静态 preview。
   - 新增 `example/HelloUnitTest/test/test_path.h` 与 `test_path.c`，并在 `example/HelloUnitTest/uicode_disp0.c` 注册 `path` suite；同步 `example/HelloCustomWidgets/widget_catalog.json` 与 `web/catalog-policy.json` 到 `134` 个 reference 控件，其中 `display = 31`。

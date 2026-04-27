@@ -51,6 +51,7 @@
 #include "test/test_flip_view.h"
 #include "test/test_flyout.h"
 #include "test/test_font_icon.h"
+#include "test/test_glyphs.h"
 #include "test/test_grid_splitter.h"
 #include "test/test_grid.h"
 #include "test/test_grid_view.h"
@@ -268,6 +269,7 @@ void uicode_disp0_init(egui_core_t *core)
     RUN_TEST_SUITE(flip_view);
     RUN_TEST_SUITE(flyout);
     RUN_TEST_SUITE(font_icon);
+    RUN_TEST_SUITE(glyphs);
     RUN_TEST_SUITE(grid_splitter);
     RUN_TEST_SUITE(grid);
     RUN_TEST_SUITE(group_box);
