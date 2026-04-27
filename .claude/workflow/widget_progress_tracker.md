@@ -9,10 +9,10 @@
 
 ## 当前快照
 
-- 截至 `2026-04-27`，`example/HelloCustomWidgets/` 当前保留 `137` 个控件目录。
+- 截至 `2026-04-27`，`example/HelloCustomWidgets/` 当前保留 `138` 个控件目录。
 - 所有保留控件均来自 `reference` 主线：
   - `input = 39`
-  - `layout = 41`
+  - `layout = 42`
   - `navigation = 13`
   - `display = 32`
   - `feedback = 12`
@@ -78,7 +78,7 @@
 - `token_input` -> `TokenInput`
 - `toolbar` -> `Toolbar`
 
-### Layout（41）
+### Layout（42）
 
 - `accordion` -> `Accordion`
 - `adorner_decorator` -> `AdornerDecorator`
@@ -101,6 +101,7 @@
 - `group_box` -> `GroupBox`
 - `headered_content_control` -> `HeaderedContentControl`
 - `headered_items_control` -> `HeaderedItemsControl`
+- `inline_ui_container` -> `InlineUIContainer`
 - `items_control` -> `ItemsControl`
 - `items_repeater` -> `ItemsRepeater`
 - `list` -> `List`
@@ -189,6 +190,12 @@
 - `toast_stack` -> `Toast`
 
 ## 最近完成的收口动作
+
+- `2026-04-27`
+  - 收口 `layout/inline_ui_container` reference 控件：新增 `example/HelloCustomWidgets/layout/inline_ui_container/egui_view_inline_ui_container.h`、`egui_view_inline_ui_container.c`、`test.c` 与 `readme.md`，按 WPF `InlineUIContainer` 语义实现 inline text run、child host、baseline offset、standard / accent / compact / read only 静态 preview。
+  - 新增 `example/HelloUnitTest/test/test_inline_ui_container.h` 与 `test_inline_ui_container.c`，并在 `example/HelloUnitTest/uicode_disp0.c` 注册 `inline_ui_container` suite；同步 `example/HelloCustomWidgets/widget_catalog.json` 与 `web/catalog-policy.json` 到 `138` 个 reference demo，layout 计数更新为 `42`。
+  - 已通过 `make all APP=HelloCustomWidgets APP_SUB=layout/inline_ui_container PORT=pc`、`make all APP=HelloUnitTest PORT=pc_test`、`output\main.exe inline_ui_container`（`4 / 4`）、`python scripts\sync_widget_catalog.py --check`、`python scripts\checks\check_widget_catalog.py`、`python scripts\checks\check_docs_encoding.py`、`python scripts\checks\check_touch_release_semantics.py --scope custom --category layout`、`python scripts\code_runtime_check.py --app HelloCustomWidgets --app-sub layout/inline_ui_container --track reference --timeout 10 --keep-screenshots`、`python scripts\code_compile_check.py --custom-widgets --category layout --bits64`、`python scripts\code_runtime_check.py --app HelloCustomWidgets --category layout --track reference --bits64`、`python scripts\web\wasm_build_demos.py --app HelloCustomWidgets --app-sub layout/inline_ui_container` 与 `python scripts\web\web_smoke_check.py --web-root web --manifest web\demos\demos.json --demo HelloCustomWidgets_layout_inline_ui_container`。
+  - 已复核 `runtime_check_output/HelloCustomWidgets_layout_inline_ui_container/default` 的关键帧 `frame_0000`、`frame_0003`、`frame_0005`、`frame_0007`：主体非空，standard / accent / compact / read only 主状态有差异；主区差分边界覆盖 `(56, 132) - (424, 222)`，底部 `compact / read only` preview 区保持静态；web smoke 结果为 `PASS status=Running canvas=480x480 ratio=0.1471 colors=121`。
 
 - `2026-04-27`
   - 收口 `layout/adorner_decorator` reference 控件：新增 `example/HelloCustomWidgets/layout/adorner_decorator/egui_view_adorner_decorator.h`、`egui_view_adorner_decorator.c`、`test.c` 与 `readme.md`，按 WPF `AdornerDecorator` 语义实现 child host、adorner layer、focus / validation / resize adorners、compact 与 read only 静态 preview。
