@@ -81,7 +81,7 @@ clean resource resource_refresh:
 
 ifneq ($(WINDOWS_PC_TEST_RSP_WORKAROUND),)
 all:
-	$(MAKE) -C $(SDK_ROOT) all $(FORWARD_ARGS) || $(PYTHON) scripts/windows_link_rsp.py --sdk-root "$(SDK_ROOT)" -- $(FORWARD_ARGS)
+	$(PYTHON) scripts/windows_link_rsp.py --sdk-root "$(SDK_ROOT)" -- $(FORWARD_ARGS)
 else
 all:
 	$(MAKE) -C $(SDK_ROOT) all $(FORWARD_ARGS)
