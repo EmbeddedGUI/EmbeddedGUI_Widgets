@@ -13,6 +13,7 @@ on:
       - 'scripts/checks/check_touch_release_semantics.py'
       - 'scripts/code_compile_check.py'
       - 'scripts/code_runtime_check.py'
+      - 'scripts/windows_link_rsp.py'
       - 'scripts/widget_catalog.py'
       - 'requirements.txt'
 
@@ -31,11 +32,8 @@ on:
           - input
           - display
           - layout
-          - chart
           - navigation
           - feedback
-          - media
-          - decoration
 
 jobs:
   resolve-categories:
@@ -49,7 +47,7 @@ jobs:
           DISPATCH_CATEGORY: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.category || 'all' }}
         run: |
           if [ "$DISPATCH_CATEGORY" = "all" ]; then
-            echo 'categories=["input","display","layout","chart","navigation","feedback","media","decoration"]' >> "$GITHUB_OUTPUT"
+            echo 'categories=["input","display","layout","navigation","feedback"]' >> "$GITHUB_OUTPUT"
           else
             echo "categories=[\"$DISPATCH_CATEGORY\"]" >> "$GITHUB_OUTPUT"
           fi

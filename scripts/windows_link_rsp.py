@@ -33,6 +33,35 @@ def command_length(tokens) -> int:
     return sum(len(str(token)) + 3 for token in tokens)
 
 
+def parse_make_vars(make_args):
+    values = {}
+    for token in make_args:
+        if "=" not in token:
+            continue
+        name, value = token.split("=", 1)
+        if not name:
+            continue
+        values[name] = strip_quotes(value)
+    return values
+
+
+def resolve_make_path(sdk_root: str, value: str) -> pathlib.Path:
+    path = pathlib.Path(value)
+    if path.is_absolute():
+        return path
+    return pathlib.Path(sdk_root) / path
+
+
+def prepare_dry_run_stamp_dir(sdk_root: str, make_args) -> None:
+    make_vars = parse_make_vars(make_args)
+    objroot_path = make_vars.get("OBJROOT_PATH") or make_vars.get("OUTPUT_PATH") or "output"
+    app_obj_suffix = make_vars.get("APP_OBJ_SUFFIX") or make_vars.get("APP") or "default"
+    port = make_vars.get("PORT", "")
+    build_obj_suffix = app_obj_suffix + (f"_{port}" if port else "")
+    objdir = resolve_make_path(sdk_root, objroot_path) / "obj" / build_obj_suffix
+    objdir.mkdir(parents=True, exist_ok=True)
+
+
 def chunk_targets(base_cmd, targets, make_args, length_limit: int):
     chunk = []
     for target in targets:
@@ -67,6 +96,8 @@ def main() -> int:
     make_args = list(args.make_args)
     if make_args and make_args[0] == "--":
         make_args = make_args[1:]
+
+    prepare_dry_run_stamp_dir(args.sdk_root, make_args)
 
     dry_run_cmd = ["make", "-C", args.sdk_root, "-n", "all", *make_args]
     dry_run = subprocess.run(dry_run_cmd, capture_output=True, text=True)
