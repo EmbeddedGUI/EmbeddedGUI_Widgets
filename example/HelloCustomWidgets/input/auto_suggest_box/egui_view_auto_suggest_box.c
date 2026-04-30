@@ -203,7 +203,7 @@ static uint8_t auto_suggest_box_get_visible_count_for_height(const egui_view_aut
 
 static egui_dim_t auto_suggest_box_get_available_bottom(egui_view_t *self)
 {
-    egui_dim_t available_bottom = EGUI_CONFIG_SCEEN_HEIGHT;
+    egui_dim_t available_bottom = EGUI_CONFIG_SCREEN_HEIGHT;
     egui_view_t *parent = (egui_view_t *)self->parent;
 
     while (parent != NULL)

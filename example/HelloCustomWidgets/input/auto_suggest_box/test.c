@@ -21,8 +21,8 @@
 #define AUTO_SUGGEST_BOX_RECORD_FRAME_WAIT 170
 #define AUTO_SUGGEST_BOX_RECORD_FINAL_WAIT 280
 #define AUTO_SUGGEST_BOX_KEYBOARD_HEIGHT   128
-#define AUTO_SUGGEST_BOX_KEYBOARD_Y        ((EGUI_CONFIG_SCEEN_HEIGHT > AUTO_SUGGEST_BOX_KEYBOARD_HEIGHT) ? (EGUI_CONFIG_SCEEN_HEIGHT - AUTO_SUGGEST_BOX_KEYBOARD_HEIGHT) : 0)
-#define AUTO_SUGGEST_BOX_KEYBOARD_HIDDEN_Y (EGUI_CONFIG_SCEEN_HEIGHT + AUTO_SUGGEST_BOX_KEYBOARD_HEIGHT)
+#define AUTO_SUGGEST_BOX_KEYBOARD_Y        ((EGUI_CONFIG_SCREEN_HEIGHT > AUTO_SUGGEST_BOX_KEYBOARD_HEIGHT) ? (EGUI_CONFIG_SCREEN_HEIGHT - AUTO_SUGGEST_BOX_KEYBOARD_HEIGHT) : 0)
+#define AUTO_SUGGEST_BOX_KEYBOARD_HIDDEN_Y (EGUI_CONFIG_SCREEN_HEIGHT + AUTO_SUGGEST_BOX_KEYBOARD_HEIGHT)
 
 typedef struct auto_suggest_snapshot auto_suggest_snapshot_t;
 struct auto_suggest_snapshot
@@ -200,12 +200,12 @@ static void layout_local_views(void)
 
 static egui_dim_t get_stable_root_y(void)
 {
-    egui_dim_t root_y = (EGUI_CONFIG_SCEEN_HEIGHT - EGUI_VIEW_OF(&root_layout)->region.size.height) / 2;
+    egui_dim_t root_y = (EGUI_CONFIG_SCREEN_HEIGHT - EGUI_VIEW_OF(&root_layout)->region.size.height) / 2;
 
 #if EGUI_CONFIG_FUNCTION_SUPPORT_KEY && EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     if (EGUI_VIEW_OF(&control_keyboard)->region.size.height > 0)
     {
-        egui_dim_t max_root_bottom = EGUI_CONFIG_SCEEN_HEIGHT - EGUI_VIEW_OF(&control_keyboard)->region.size.height - 12;
+        egui_dim_t max_root_bottom = EGUI_CONFIG_SCREEN_HEIGHT - EGUI_VIEW_OF(&control_keyboard)->region.size.height - 12;
 
         if (root_y + EGUI_VIEW_OF(&root_layout)->region.size.height > max_root_bottom)
         {
@@ -226,7 +226,7 @@ static void layout_page(void)
     egui_dim_t root_y;
 
     layout_local_views();
-    root_x = (EGUI_CONFIG_SCEEN_WIDTH - EGUI_VIEW_OF(&root_layout)->region.size.width) / 2;
+    root_x = (EGUI_CONFIG_SCREEN_WIDTH - EGUI_VIEW_OF(&root_layout)->region.size.width) / 2;
     root_y = get_stable_root_y();
     if (root_x < 0)
     {
@@ -407,7 +407,7 @@ void test_init_ui(void)
     egui_view_set_layer(EGUI_VIEW_OF(&control_keyboard), EGUI_VIEW_LAYER_TOP);
 #endif
     egui_view_set_position(EGUI_VIEW_OF(&control_keyboard), 0, AUTO_SUGGEST_BOX_KEYBOARD_HIDDEN_Y);
-    egui_view_set_size(EGUI_VIEW_OF(&control_keyboard), EGUI_CONFIG_SCEEN_WIDTH, AUTO_SUGGEST_BOX_KEYBOARD_HEIGHT);
+    egui_view_set_size(EGUI_VIEW_OF(&control_keyboard), EGUI_CONFIG_SCREEN_WIDTH, AUTO_SUGGEST_BOX_KEYBOARD_HEIGHT);
     position_keyboard_hidden();
     egui_view_keyboard_set_font(EGUI_VIEW_OF(&control_keyboard), (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT);
     egui_view_keyboard_set_icon_font(EGUI_VIEW_OF(&control_keyboard), EGUI_FONT_ICON_MS_20);

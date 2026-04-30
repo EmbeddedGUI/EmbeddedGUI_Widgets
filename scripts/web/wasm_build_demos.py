@@ -193,8 +193,8 @@ def get_screen_size(root_dir, app, app_sub=None):
         with open(config_path, "r", encoding="utf-8") as f:
             content = f.read()
 
-        width = parse_define_int(content, "EGUI_CONFIG_SCEEN_WIDTH", 240)
-        height = parse_define_int(content, "EGUI_CONFIG_SCEEN_HEIGHT", 320)
+        width = parse_define_int(content, "EGUI_CONFIG_SCREEN_WIDTH", 240)
+        height = parse_define_int(content, "EGUI_CONFIG_SCREEN_HEIGHT", 320)
         return width, height
 
     return 240, 320

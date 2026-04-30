@@ -62,11 +62,6 @@ endef
 
 FORWARD_ARGS := $(foreach var,$(FORWARD_VARS),$(if $($(var)),$(call forward_arg,$(var))))
 
-WINDOWS_PC_TEST_RSP_WORKAROUND := $(strip $(and \
-	$(filter Windows_NT,$(OS)), \
-	$(filter HelloUnitTest,$(APP)), \
-	$(filter pc_test,$(PORT))))
-
 CI_ARGS := $(if $(filter-out all ALL,$(strip $(CATEGORY))),--category $(CATEGORY),)
 CI_ARGS += $(if $(filter 32,$(strip $(BITS))),--bits32,)
 CI_ARGS += $(if $(strip $(CI_TIMEOUT)),--timeout $(CI_TIMEOUT),)
@@ -79,13 +74,8 @@ CI_ARGS += $(if $(filter 1 true TRUE yes YES,$(strip $(SKIP_UNIT_TESTS))),--skip
 clean resource resource_refresh:
 	$(MAKE) -C $(SDK_ROOT) $@ $(FORWARD_ARGS)
 
-ifneq ($(WINDOWS_PC_TEST_RSP_WORKAROUND),)
-all:
-	$(PYTHON) scripts/windows_link_rsp.py --sdk-root "$(SDK_ROOT)" -- $(FORWARD_ARGS)
-else
 all:
 	$(MAKE) -C $(SDK_ROOT) all $(FORWARD_ARGS)
-endif
 
 run:
 	$(MAKE) -C $(SDK_ROOT) all $(FORWARD_ARGS)

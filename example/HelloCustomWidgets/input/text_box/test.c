@@ -22,8 +22,8 @@
 #define TEXT_BOX_RECORD_FINAL_WAIT 280
 #define TEXT_BOX_DEFAULT_SNAPSHOT  0
 #define TEXT_BOX_KEYBOARD_HEIGHT   128
-#define TEXT_BOX_KEYBOARD_Y        ((EGUI_CONFIG_SCEEN_HEIGHT > TEXT_BOX_KEYBOARD_HEIGHT) ? (EGUI_CONFIG_SCEEN_HEIGHT - TEXT_BOX_KEYBOARD_HEIGHT) : 0)
-#define TEXT_BOX_KEYBOARD_HIDDEN_Y (EGUI_CONFIG_SCEEN_HEIGHT + TEXT_BOX_KEYBOARD_HEIGHT)
+#define TEXT_BOX_KEYBOARD_Y        ((EGUI_CONFIG_SCREEN_HEIGHT > TEXT_BOX_KEYBOARD_HEIGHT) ? (EGUI_CONFIG_SCREEN_HEIGHT - TEXT_BOX_KEYBOARD_HEIGHT) : 0)
+#define TEXT_BOX_KEYBOARD_HIDDEN_Y (EGUI_CONFIG_SCREEN_HEIGHT + TEXT_BOX_KEYBOARD_HEIGHT)
 
 #define PRIMARY_SNAPSHOT_COUNT ((uint8_t)EGUI_ARRAY_SIZE(primary_snapshots))
 
@@ -152,12 +152,12 @@ static void relocate_view(egui_view_t *view, egui_dim_t x, egui_dim_t y)
 
 static egui_dim_t get_stable_root_y(void)
 {
-    egui_dim_t root_y = (EGUI_CONFIG_SCEEN_HEIGHT - EGUI_VIEW_OF(&root_layout)->region.size.height) / 2;
+    egui_dim_t root_y = (EGUI_CONFIG_SCREEN_HEIGHT - EGUI_VIEW_OF(&root_layout)->region.size.height) / 2;
 
 #if EGUI_CONFIG_FUNCTION_SUPPORT_KEY && EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     if (EGUI_VIEW_OF(&box_keyboard)->region.size.height > 0)
     {
-        egui_dim_t max_root_bottom = EGUI_CONFIG_SCEEN_HEIGHT - EGUI_VIEW_OF(&box_keyboard)->region.size.height - 12;
+        egui_dim_t max_root_bottom = EGUI_CONFIG_SCREEN_HEIGHT - EGUI_VIEW_OF(&box_keyboard)->region.size.height - 12;
 
         if (root_y + EGUI_VIEW_OF(&root_layout)->region.size.height > max_root_bottom)
         {
@@ -174,7 +174,7 @@ static egui_dim_t get_stable_root_y(void)
 
 static void layout_page(void)
 {
-    egui_dim_t root_x = (EGUI_CONFIG_SCEEN_WIDTH - EGUI_VIEW_OF(&root_layout)->region.size.width) / 2;
+    egui_dim_t root_x = (EGUI_CONFIG_SCREEN_WIDTH - EGUI_VIEW_OF(&root_layout)->region.size.width) / 2;
 
     layout_local_views();
     if (root_x < 0)
@@ -332,7 +332,7 @@ void test_init_ui(void)
     egui_view_set_layer(EGUI_VIEW_OF(&box_keyboard), EGUI_VIEW_LAYER_TOP);
 #endif
     egui_view_set_position(EGUI_VIEW_OF(&box_keyboard), 0, TEXT_BOX_KEYBOARD_HIDDEN_Y);
-    egui_view_set_size(EGUI_VIEW_OF(&box_keyboard), EGUI_CONFIG_SCEEN_WIDTH, TEXT_BOX_KEYBOARD_HEIGHT);
+    egui_view_set_size(EGUI_VIEW_OF(&box_keyboard), EGUI_CONFIG_SCREEN_WIDTH, TEXT_BOX_KEYBOARD_HEIGHT);
     position_keyboard_hidden();
     egui_view_keyboard_set_font(EGUI_VIEW_OF(&box_keyboard), (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT);
     egui_view_keyboard_set_icon_font(EGUI_VIEW_OF(&box_keyboard), EGUI_FONT_ICON_MS_20);

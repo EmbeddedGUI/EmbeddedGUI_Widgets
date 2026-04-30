@@ -411,7 +411,7 @@ static void test_auto_suggest_box_touch_expand_select_and_fit_height(void)
 
     setup_box();
     egui_view_auto_suggest_box_set_query(EGUI_VIEW_OF(&test_box), "A");
-    layout_box(10, EGUI_CONFIG_SCEEN_HEIGHT - 80, 180, 34);
+    layout_box(10, EGUI_CONFIG_SCREEN_HEIGHT - 80, 180, 34);
     get_view_center(&x, &y);
     EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
     EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, x, y));

@@ -433,7 +433,7 @@ static void test_combo_box_touch_expand_select_and_fit_height(void)
     EGUI_TEST_ASSERT_EQUAL_INT(local->collapsed_height, EGUI_VIEW_OF(&test_box)->region_screen.size.height);
 
     setup_box();
-    layout_box(10, EGUI_CONFIG_SCEEN_HEIGHT - 80, 180, 34);
+    layout_box(10, EGUI_CONFIG_SCREEN_HEIGHT - 80, 180, 34);
     get_view_center(&x, &y);
     EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
     EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, x, y));
