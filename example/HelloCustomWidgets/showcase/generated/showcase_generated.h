@@ -1,0 +1,179 @@
+#ifndef _HELLO_CUSTOM_WIDGETS_SHOWCASE_GENERATED_H_
+#define _HELLO_CUSTOM_WIDGETS_SHOWCASE_GENERATED_H_
+
+#include <stdint.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+typedef void (*hcw_showcase_demo_init_fn_t)(void);
+
+typedef struct hcw_showcase_demo_entry hcw_showcase_demo_entry_t;
+struct hcw_showcase_demo_entry
+{
+    const char *id;
+    const char *title;
+    hcw_showcase_demo_init_fn_t init;
+};
+
+typedef struct hcw_showcase_category hcw_showcase_category_t;
+struct hcw_showcase_category
+{
+    const char *id;
+    const char *title;
+    const hcw_showcase_demo_entry_t *demos;
+    uint16_t demo_count;
+};
+
+void hcw_showcase_demo_display_access_text_init_ui(void);
+void hcw_showcase_demo_display_animated_icon_init_ui(void);
+void hcw_showcase_demo_display_arc_init_ui(void);
+void hcw_showcase_demo_display_badge_init_ui(void);
+void hcw_showcase_demo_display_badge_group_init_ui(void);
+void hcw_showcase_demo_display_bitmap_icon_init_ui(void);
+void hcw_showcase_demo_display_card_panel_init_ui(void);
+void hcw_showcase_demo_display_counter_badge_init_ui(void);
+void hcw_showcase_demo_display_divider_init_ui(void);
+void hcw_showcase_demo_display_ellipse_init_ui(void);
+void hcw_showcase_demo_display_font_icon_init_ui(void);
+void hcw_showcase_demo_display_glyphs_init_ui(void);
+void hcw_showcase_demo_display_image_control_init_ui(void);
+void hcw_showcase_demo_display_image_icon_init_ui(void);
+void hcw_showcase_demo_display_info_badge_init_ui(void);
+void hcw_showcase_demo_display_info_label_init_ui(void);
+void hcw_showcase_demo_display_label_control_init_ui(void);
+void hcw_showcase_demo_display_line_init_ui(void);
+void hcw_showcase_demo_display_path_init_ui(void);
+void hcw_showcase_demo_display_path_icon_init_ui(void);
+void hcw_showcase_demo_display_person_picture_init_ui(void);
+void hcw_showcase_demo_display_persona_init_ui(void);
+void hcw_showcase_demo_display_persona_group_init_ui(void);
+void hcw_showcase_demo_display_polygon_init_ui(void);
+void hcw_showcase_demo_display_polyline_init_ui(void);
+void hcw_showcase_demo_display_presence_badge_init_ui(void);
+void hcw_showcase_demo_display_rectangle_init_ui(void);
+void hcw_showcase_demo_display_rich_text_block_init_ui(void);
+void hcw_showcase_demo_display_status_bar_init_ui(void);
+void hcw_showcase_demo_display_symbol_icon_init_ui(void);
+void hcw_showcase_demo_display_tag_init_ui(void);
+void hcw_showcase_demo_display_text_block_init_ui(void);
+void hcw_showcase_demo_feedback_activity_ring_init_ui(void);
+void hcw_showcase_demo_feedback_dialog_sheet_init_ui(void);
+void hcw_showcase_demo_feedback_flyout_init_ui(void);
+void hcw_showcase_demo_feedback_info_bar_init_ui(void);
+void hcw_showcase_demo_feedback_message_bar_init_ui(void);
+void hcw_showcase_demo_feedback_progress_bar_init_ui(void);
+void hcw_showcase_demo_feedback_skeleton_init_ui(void);
+void hcw_showcase_demo_feedback_snackbar_init_ui(void);
+void hcw_showcase_demo_feedback_spinner_init_ui(void);
+void hcw_showcase_demo_feedback_teaching_tip_init_ui(void);
+void hcw_showcase_demo_feedback_toast_stack_init_ui(void);
+void hcw_showcase_demo_feedback_tool_tip_init_ui(void);
+void hcw_showcase_demo_input_auto_suggest_box_init_ui(void);
+void hcw_showcase_demo_input_button_init_ui(void);
+void hcw_showcase_demo_input_calendar_date_picker_init_ui(void);
+void hcw_showcase_demo_input_calendar_view_init_ui(void);
+void hcw_showcase_demo_input_check_box_init_ui(void);
+void hcw_showcase_demo_input_color_picker_init_ui(void);
+void hcw_showcase_demo_input_combo_box_init_ui(void);
+void hcw_showcase_demo_input_command_bar_init_ui(void);
+void hcw_showcase_demo_input_command_bar_flyout_init_ui(void);
+void hcw_showcase_demo_input_compound_button_init_ui(void);
+void hcw_showcase_demo_input_date_picker_init_ui(void);
+void hcw_showcase_demo_input_drop_down_button_init_ui(void);
+void hcw_showcase_demo_input_field_init_ui(void);
+void hcw_showcase_demo_input_hyperlink_button_init_ui(void);
+void hcw_showcase_demo_input_menu_button_init_ui(void);
+void hcw_showcase_demo_input_number_box_init_ui(void);
+void hcw_showcase_demo_input_password_box_init_ui(void);
+void hcw_showcase_demo_input_radio_button_init_ui(void);
+void hcw_showcase_demo_input_radio_buttons_init_ui(void);
+void hcw_showcase_demo_input_rating_control_init_ui(void);
+void hcw_showcase_demo_input_repeat_button_init_ui(void);
+void hcw_showcase_demo_input_rich_edit_box_init_ui(void);
+void hcw_showcase_demo_input_scroll_bar_init_ui(void);
+void hcw_showcase_demo_input_search_box_init_ui(void);
+void hcw_showcase_demo_input_segmented_control_init_ui(void);
+void hcw_showcase_demo_input_shortcut_recorder_init_ui(void);
+void hcw_showcase_demo_input_slider_init_ui(void);
+void hcw_showcase_demo_input_spin_button_init_ui(void);
+void hcw_showcase_demo_input_split_button_init_ui(void);
+void hcw_showcase_demo_input_swipe_control_init_ui(void);
+void hcw_showcase_demo_input_switch_init_ui(void);
+void hcw_showcase_demo_input_text_box_init_ui(void);
+void hcw_showcase_demo_input_thumb_rate_init_ui(void);
+void hcw_showcase_demo_input_tick_bar_init_ui(void);
+void hcw_showcase_demo_input_time_picker_init_ui(void);
+void hcw_showcase_demo_input_toggle_button_init_ui(void);
+void hcw_showcase_demo_input_toggle_split_button_init_ui(void);
+void hcw_showcase_demo_input_token_input_init_ui(void);
+void hcw_showcase_demo_input_toolbar_init_ui(void);
+void hcw_showcase_demo_layout_accordion_init_ui(void);
+void hcw_showcase_demo_layout_adorner_decorator_init_ui(void);
+void hcw_showcase_demo_layout_block_ui_container_init_ui(void);
+void hcw_showcase_demo_layout_border_init_ui(void);
+void hcw_showcase_demo_layout_bullet_decorator_init_ui(void);
+void hcw_showcase_demo_layout_canvas_init_ui(void);
+void hcw_showcase_demo_layout_card_action_init_ui(void);
+void hcw_showcase_demo_layout_card_control_init_ui(void);
+void hcw_showcase_demo_layout_card_expander_init_ui(void);
+void hcw_showcase_demo_layout_content_control_init_ui(void);
+void hcw_showcase_demo_layout_content_presenter_init_ui(void);
+void hcw_showcase_demo_layout_data_grid_init_ui(void);
+void hcw_showcase_demo_layout_data_list_panel_init_ui(void);
+void hcw_showcase_demo_layout_dock_panel_init_ui(void);
+void hcw_showcase_demo_layout_drawer_init_ui(void);
+void hcw_showcase_demo_layout_expander_init_ui(void);
+void hcw_showcase_demo_layout_figure_init_ui(void);
+void hcw_showcase_demo_layout_floater_init_ui(void);
+void hcw_showcase_demo_layout_grid_init_ui(void);
+void hcw_showcase_demo_layout_grid_splitter_init_ui(void);
+void hcw_showcase_demo_layout_grid_view_init_ui(void);
+void hcw_showcase_demo_layout_group_box_init_ui(void);
+void hcw_showcase_demo_layout_headered_content_control_init_ui(void);
+void hcw_showcase_demo_layout_headered_items_control_init_ui(void);
+void hcw_showcase_demo_layout_inline_ui_container_init_ui(void);
+void hcw_showcase_demo_layout_items_control_init_ui(void);
+void hcw_showcase_demo_layout_items_repeater_init_ui(void);
+void hcw_showcase_demo_layout_list_init_ui(void);
+void hcw_showcase_demo_layout_master_detail_init_ui(void);
+void hcw_showcase_demo_layout_parallax_view_init_ui(void);
+void hcw_showcase_demo_layout_relative_panel_init_ui(void);
+void hcw_showcase_demo_layout_resize_grip_init_ui(void);
+void hcw_showcase_demo_layout_scroll_presenter_init_ui(void);
+void hcw_showcase_demo_layout_scroll_viewer_init_ui(void);
+void hcw_showcase_demo_layout_settings_card_init_ui(void);
+void hcw_showcase_demo_layout_settings_expander_init_ui(void);
+void hcw_showcase_demo_layout_settings_panel_init_ui(void);
+void hcw_showcase_demo_layout_split_view_init_ui(void);
+void hcw_showcase_demo_layout_stack_panel_init_ui(void);
+void hcw_showcase_demo_layout_two_pane_view_init_ui(void);
+void hcw_showcase_demo_layout_uniform_grid_init_ui(void);
+void hcw_showcase_demo_layout_viewbox_init_ui(void);
+void hcw_showcase_demo_layout_virtualizing_stack_panel_init_ui(void);
+void hcw_showcase_demo_layout_virtualizing_wrap_panel_init_ui(void);
+void hcw_showcase_demo_layout_wrap_panel_init_ui(void);
+void hcw_showcase_demo_navigation_annotated_scroll_bar_init_ui(void);
+void hcw_showcase_demo_navigation_breadcrumb_bar_init_ui(void);
+void hcw_showcase_demo_navigation_flip_view_init_ui(void);
+void hcw_showcase_demo_navigation_menu_bar_init_ui(void);
+void hcw_showcase_demo_navigation_menu_flyout_init_ui(void);
+void hcw_showcase_demo_navigation_nav_panel_init_ui(void);
+void hcw_showcase_demo_navigation_pips_pager_init_ui(void);
+void hcw_showcase_demo_navigation_pivot_init_ui(void);
+void hcw_showcase_demo_navigation_selector_bar_init_ui(void);
+void hcw_showcase_demo_navigation_tab_strip_init_ui(void);
+void hcw_showcase_demo_navigation_tab_view_init_ui(void);
+void hcw_showcase_demo_navigation_title_bar_init_ui(void);
+void hcw_showcase_demo_navigation_tree_view_init_ui(void);
+
+extern const hcw_showcase_category_t hcw_showcase_categories[];
+extern const uint8_t hcw_showcase_category_count;
+extern const uint16_t hcw_showcase_demo_count;
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* _HELLO_CUSTOM_WIDGETS_SHOWCASE_GENERATED_H_ */
