@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import errno
 import json
 import os
 import re
@@ -70,6 +71,20 @@ class Utf8StaticHandler(SimpleHTTPRequestHandler):
     def log_message(self, format: str, *args) -> None:
         return
 
+    def handle(self) -> None:
+        try:
+            super().handle()
+        except (BrokenPipeError, ConnectionResetError):
+            return
+
+    def copyfile(self, source, outputfile) -> None:
+        try:
+            super().copyfile(source, outputfile)
+        except OSError as exc:
+            if exc.errno in (errno.EPIPE, errno.ECONNRESET):
+                return
+            raise
+
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
@@ -91,6 +106,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--port", type=int, default=0, help="Server port. 0 chooses a free port automatically.")
     parser.add_argument("--window-size", default="900,980", help="Browser window size, for example 900,980.")
     parser.add_argument("--virtual-time-budget", type=int, default=12000, help="Headless browser virtual time budget in ms.")
+    parser.add_argument("--browser-timeout", type=int, default=90, help="Per-demo browser timeout in seconds.")
     parser.add_argument(
         "--output-dir",
         default="",
@@ -154,14 +170,19 @@ def parse_window_size(window_size: str) -> tuple[int, int]:
 
 def default_browser_args() -> list[str]:
     args = [
-        "--headless",
+        "--headless=new",
         "--disable-gpu",
         "--no-first-run",
         "--no-default-browser-check",
     ]
 
     if os.name != "nt":
-        args.append("--disable-dev-shm-usage")
+        args.extend([
+            "--disable-dev-shm-usage",
+            "--disable-background-networking",
+            "--disable-component-update",
+            "--run-all-compositor-stages-before-draw",
+        ])
 
     if os.environ.get("GITHUB_ACTIONS", "").lower() == "true":
         args.extend(["--no-sandbox", "--disable-setuid-sandbox"])
@@ -200,6 +221,7 @@ def wait_server(port: int, timeout: float = 15.0) -> None:
 def start_server(web_root: Path, port: int) -> tuple[ThreadingHTTPServer, threading.Thread]:
     handler = partial(Utf8StaticHandler, directory=str(web_root))
     server = ThreadingHTTPServer(("127.0.0.1", port), handler)
+    server.daemon_threads = True
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
     return server, thread
@@ -350,7 +372,7 @@ def create_contact_sheet(output_dir: Path, results: list[dict], window_size: tup
     return output_path
 
 
-def run_demo(browser: str, browser_args: list[str], port: int, entry: dict, output_dir: Path, profile_dir: Path, window_size: str, virtual_time_budget: int) -> dict:
+def run_demo(browser: str, browser_args: list[str], port: int, entry: dict, output_dir: Path, profile_dir: Path, window_size: str, virtual_time_budget: int, browser_timeout: int) -> dict:
     name = entry["name"]
     app = entry["app"]
     demo_dir = output_dir / name
@@ -373,20 +395,36 @@ def run_demo(browser: str, browser_args: list[str], port: int, entry: dict, outp
         url,
     ]
 
-    completed = subprocess.run(
-        command,
-        cwd=PROJECT_ROOT,
-        capture_output=True,
-        text=True,
-        encoding="utf-8",
-        errors="replace",
-        timeout=40,
-    )
+    timed_out = False
+    returncode = 0
+    stdout = ""
+    stderr = ""
+    try:
+        completed = subprocess.run(
+            command,
+            cwd=PROJECT_ROOT,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=max(1, browser_timeout),
+        )
+        returncode = completed.returncode
+        stdout = completed.stdout or ""
+        stderr = completed.stderr or ""
+    except subprocess.TimeoutExpired as exc:
+        timed_out = True
+        returncode = -9
+        stdout_data = exc.stdout or ""
+        stderr_data = exc.stderr or ""
+        stdout = stdout_data.decode("utf-8", errors="replace") if isinstance(stdout_data, bytes) else stdout_data
+        stderr = stderr_data.decode("utf-8", errors="replace") if isinstance(stderr_data, bytes) else stderr_data
+        stderr = (stderr + f"\nBROWSER_TIMEOUT after {browser_timeout}s\n").lstrip()
 
-    dom_path.write_text(completed.stdout or "", encoding="utf-8")
-    stderr_path.write_text(completed.stderr or "", encoding="utf-8")
+    dom_path.write_text(stdout, encoding="utf-8")
+    stderr_path.write_text(stderr, encoding="utf-8")
 
-    status, title, canvas_size = parse_dom(completed.stdout or "")
+    status, title, canvas_size = parse_dom(stdout)
     shot_exists = screenshot_path.exists() and screenshot_path.stat().st_size > 0
     metrics = screenshot_metrics(screenshot_path) if shot_exists else {
         "imageWidth": 0,
@@ -397,7 +435,8 @@ def run_demo(browser: str, browser_args: list[str], port: int, entry: dict, outp
         "uniqueColors": 0,
     }
     ok = (
-        completed.returncode == 0
+        not timed_out
+        and returncode == 0
         and status == "Running"
         and canvas_size[0] > 0
         and canvas_size[1] > 0
@@ -412,7 +451,8 @@ def run_demo(browser: str, browser_args: list[str], port: int, entry: dict, outp
         "app": app,
         "category": entry.get("category"),
         "url": url,
-        "returncode": completed.returncode,
+        "returncode": returncode,
+        "timedOut": timed_out,
         "status": status,
         "title": title,
         "canvasSize": canvas_size,
@@ -460,6 +500,7 @@ def main() -> int:
                 profile_dir=profiles_dir / entry["name"],
                 window_size=args.window_size,
                 virtual_time_budget=args.virtual_time_budget,
+                browser_timeout=args.browser_timeout,
             )
             results.append(result)
             if result["ok"]:
