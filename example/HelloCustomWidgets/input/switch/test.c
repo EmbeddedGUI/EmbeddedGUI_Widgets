@@ -35,10 +35,10 @@ static egui_view_label_t title_label;
 static egui_view_switch_t primary_switch;
 static egui_view_api_t primary_switch_api;
 static egui_view_linearlayout_t bottom_row;
-static egui_view_switch_t compact_switch;
-static egui_view_api_t compact_switch_api;
-static egui_view_switch_t read_only_switch;
-static egui_view_api_t read_only_switch_api;
+static egui_view_switch_t secondary_switch;
+static egui_view_api_t secondary_switch_api;
+static egui_view_switch_t disabled_switch;
+static egui_view_api_t disabled_switch_api;
 static uint8_t ui_ready;
 
 EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
@@ -53,11 +53,11 @@ static const switch_snapshot_t primary_snapshots[] = {
         {0, EGUI_ICON_MS_DONE, EGUI_ICON_MS_CROSS},
 };
 
-static const switch_snapshot_t compact_snapshot = {
+static const switch_snapshot_t secondary_snapshot = {
         1, EGUI_ICON_MS_DONE, NULL,
 };
 
-static const switch_snapshot_t read_only_snapshot = {
+static const switch_snapshot_t disabled_snapshot = {
         1, EGUI_ICON_MS_DONE, NULL,
 };
 
@@ -85,12 +85,28 @@ static void apply_primary_default_state(void)
 
 static void apply_preview_states(void)
 {
-    apply_snapshot_to_switch(&compact_switch, &compact_snapshot);
-    apply_snapshot_to_switch(&read_only_switch, &read_only_snapshot);
+    apply_snapshot_to_switch(&secondary_switch, &secondary_snapshot);
+    apply_snapshot_to_switch(&disabled_switch, &disabled_snapshot);
     if (ui_ready)
     {
         layout_page();
     }
+}
+
+static void apply_secondary_preview_palette(egui_view_switch_t *control)
+{
+    control->bk_color_on = EGUI_COLOR_HEX(0x0C7C73);
+    control->bk_color_off = EGUI_COLOR_HEX(0xD9E5DE);
+    control->switch_color_on = EGUI_COLOR_WHITE;
+    control->switch_color_off = EGUI_COLOR_WHITE;
+}
+
+static void apply_disabled_preview_palette(egui_view_switch_t *control)
+{
+    control->bk_color_on = EGUI_COLOR_HEX(0xAFB8C3);
+    control->bk_color_off = EGUI_COLOR_HEX(0xE4E9EE);
+    control->switch_color_on = EGUI_COLOR_HEX(0xF7F9FB);
+    control->switch_color_off = EGUI_COLOR_HEX(0xF7F9FB);
 }
 
 static void layout_local_views(void)
@@ -157,26 +173,29 @@ void test_init_ui(void)
     egui_view_linearlayout_set_align_type(EGUI_VIEW_OF(&bottom_row), EGUI_ALIGN_VCENTER);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&bottom_row));
 
-    egui_view_switch_init(EGUI_VIEW_OF(&compact_switch), uicode_get_core());
-    egui_view_set_size(EGUI_VIEW_OF(&compact_switch), SWITCH_PREVIEW_WIDTH, SWITCH_PREVIEW_HEIGHT);
-    hcw_switch_apply_compact_style(EGUI_VIEW_OF(&compact_switch));
-    hcw_switch_set_icon_font(EGUI_VIEW_OF(&compact_switch), EGUI_FONT_ICON_MS_16);
-    hcw_switch_override_static_preview_api(EGUI_VIEW_OF(&compact_switch), &compact_switch_api);
+    egui_view_switch_init(EGUI_VIEW_OF(&secondary_switch), uicode_get_core());
+    egui_view_set_size(EGUI_VIEW_OF(&secondary_switch), SWITCH_PREVIEW_WIDTH, SWITCH_PREVIEW_HEIGHT);
+    hcw_switch_apply_standard_style(EGUI_VIEW_OF(&secondary_switch));
+    apply_secondary_preview_palette(&secondary_switch);
+    hcw_switch_set_icon_font(EGUI_VIEW_OF(&secondary_switch), EGUI_FONT_ICON_MS_16);
+    hcw_switch_override_static_preview_api(EGUI_VIEW_OF(&secondary_switch), &secondary_switch_api);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
-    egui_view_set_focusable(EGUI_VIEW_OF(&compact_switch), 0);
+    egui_view_set_focusable(EGUI_VIEW_OF(&secondary_switch), 0);
 #endif
-    egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&compact_switch));
+    egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&secondary_switch));
 
-    egui_view_switch_init(EGUI_VIEW_OF(&read_only_switch), uicode_get_core());
-    egui_view_set_size(EGUI_VIEW_OF(&read_only_switch), SWITCH_PREVIEW_WIDTH, SWITCH_PREVIEW_HEIGHT);
-    hcw_switch_apply_read_only_style(EGUI_VIEW_OF(&read_only_switch));
-    hcw_switch_set_icon_font(EGUI_VIEW_OF(&read_only_switch), EGUI_FONT_ICON_MS_16);
-    hcw_switch_override_static_preview_api(EGUI_VIEW_OF(&read_only_switch), &read_only_switch_api);
-    egui_view_set_margin(EGUI_VIEW_OF(&read_only_switch), 8, 0, 0, 0);
+    egui_view_switch_init(EGUI_VIEW_OF(&disabled_switch), uicode_get_core());
+    egui_view_set_size(EGUI_VIEW_OF(&disabled_switch), SWITCH_PREVIEW_WIDTH, SWITCH_PREVIEW_HEIGHT);
+    hcw_switch_apply_standard_style(EGUI_VIEW_OF(&disabled_switch));
+    apply_disabled_preview_palette(&disabled_switch);
+    hcw_switch_set_icon_font(EGUI_VIEW_OF(&disabled_switch), EGUI_FONT_ICON_MS_16);
+    hcw_switch_override_static_preview_api(EGUI_VIEW_OF(&disabled_switch), &disabled_switch_api);
+    egui_view_set_enable(EGUI_VIEW_OF(&disabled_switch), 0);
+    egui_view_set_margin(EGUI_VIEW_OF(&disabled_switch), 8, 0, 0, 0);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
-    egui_view_set_focusable(EGUI_VIEW_OF(&read_only_switch), 0);
+    egui_view_set_focusable(EGUI_VIEW_OF(&disabled_switch), 0);
 #endif
-    egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&read_only_switch));
+    egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&disabled_switch));
 
     apply_primary_default_state();
     apply_preview_states();
@@ -253,4 +272,3 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     }
 }
 #endif
-

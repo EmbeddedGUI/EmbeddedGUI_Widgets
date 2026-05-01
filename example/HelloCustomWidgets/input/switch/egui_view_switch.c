@@ -63,17 +63,6 @@ void hcw_switch_apply_standard_style(egui_view_t *self)
     hcw_switch_apply_palette(self, EGUI_COLOR_HEX(0x2563EB), EGUI_COLOR_HEX(0xD8E0E9), EGUI_COLOR_WHITE, EGUI_COLOR_WHITE, EGUI_ALPHA_100);
 }
 
-void hcw_switch_apply_compact_style(egui_view_t *self)
-{
-    hcw_switch_apply_palette(self, EGUI_COLOR_HEX(0x0C7C73), EGUI_COLOR_HEX(0xD9E5DE), EGUI_COLOR_WHITE, EGUI_COLOR_WHITE, EGUI_ALPHA_100);
-}
-
-void hcw_switch_apply_read_only_style(egui_view_t *self)
-{
-    hcw_switch_apply_palette(self, EGUI_COLOR_HEX(0xAFB8C3), EGUI_COLOR_HEX(0xE4E9EE), EGUI_COLOR_HEX(0xF7F9FB), EGUI_COLOR_HEX(0xF7F9FB),
-                             EGUI_ALPHA_100);
-}
-
 void hcw_switch_set_checked(egui_view_t *self, uint8_t is_checked)
 {
     hcw_switch_clear_pressed_state(self);

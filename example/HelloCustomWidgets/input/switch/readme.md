@@ -5,10 +5,10 @@
 - 官方语义参考：`WinUI ToggleSwitch`
 - 开源母本：`WPF UI`
 - 对应组件名：`ToggleSwitch`
-- 当前保留形态：`checked + done`、`unchecked + done`、`unchecked + done/cross`、`compact`、`read only`
-- 当前保留交互：主区保留 `same-target release`、`Enter / Space` 键盘闭环与 `ToggleSwitch` 二态切换语义；底部 `compact / read only` preview 统一收口为静态 reference 对照
-- 当前移除内容：旧 preview 快照轮换、preview 点击清焦桥接、额外收尾态、说明文案、外部标签、section divider、showcase 化装饰，以及旧版 finalize README 章节顺序
-- EGUI 适配说明：继续复用当前目录下的 `egui_view_switch` 包装层与 SDK `switch` 基础绘制，在不修改 `sdk/EmbeddedGUI` 的前提下，只收口 `reference` 页面结构、录制轨道、静态 preview、README 和单测口径
+- 当前保留形态：`checked + done`、`unchecked + done`、`unchecked + done/cross`、`secondary`、`disabled`
+- 当前保留交互：主区保留 `same-target release`、`Enter / Space` 键盘闭环与 `ToggleSwitch` 二态切换语义；底部 `secondary / disabled` preview 统一收口为静态 reference 对照
+- 当前移除内容：控件 helper 层的独立紧凑 / 只读样式 API、旧 preview 快照轮换、preview 点击清焦桥接、额外收尾态、说明文案、外部标签、section divider、showcase 化装饰，以及旧版 finalize README 章节顺序
+- EGUI 适配说明：继续复用当前目录下的 `egui_view_switch` 包装层与 SDK `switch` 基础绘制，在不修改 `sdk/EmbeddedGUI` 的前提下，只收口 `reference` 页面结构、录制轨道、静态 preview、README 和单测口径；小尺寸和禁用预览由 APP 侧尺寸、palette、图标字体与 enable 配置
 
 ## 1. 为什么需要这个控件
 `switch` 用来表达“状态切换后立即生效”的设置项开关，适合通知、同步、自动化与权限类场景。它强调轨道与 thumb 的二态反馈，比命令按钮更贴近设置页里的标准开关语义。
@@ -23,8 +23,8 @@
 - 标题：`Toggle Switch`
 - 主区：一个保留真实 `ToggleSwitch` 语义的 `switch`
 - 底部：一行并排的两个静态 preview
-- 左侧 preview：`compact`，固定显示 `checked + done`
-- 右侧 preview：`read only`，固定显示 `checked + done`
+- 左侧 preview：`secondary`，固定显示 `checked + done`
+- 右侧 preview：`disabled`，固定显示 `checked + done`
 
 目录：
 - `example/HelloCustomWidgets/input/switch/`
@@ -41,9 +41,9 @@
 
 底部 preview 在整条轨道中始终固定：
 
-1. `compact`
+1. `secondary`
    `checked + done`
-2. `read only`
+2. `disabled`
    `checked + done`
 
 ## 5. 视觉与布局规格
@@ -52,11 +52,11 @@
 - 主控件：`108 x 44`
 - 底部 preview 行：`160 x 32`
 - 单个 preview：`76 x 32`
-- 页面结构：标题 -> 主 `switch` -> 底部 `compact / read only`
-- 风格约束：保持浅色 `page panel`、低噪音描边和 Fluent 风格的标准 `ToggleSwitch` 比例；主区只保留轨道、thumb、icon 与 focus ring，不再叠加旧 demo 的解释性 chrome
+- 页面结构：标题 -> 主 `switch` -> 底部 `secondary / disabled`
+- 风格约束：保持浅色 `page panel`、低噪音描边和 Fluent 风格的标准 `ToggleSwitch` 比例；主区只保留轨道、thumb、icon 与 focus ring，不再叠加旧 demo 的解释性 chrome；`secondary` 与 `disabled` 预览只由 APP 侧尺寸、palette、图标字体与 enable 配置
 
 ## 6. 状态矩阵
-| 状态 | 主控件 | Compact preview | Read only preview |
+| 状态 | 主控件 | Secondary preview | Disabled preview |
 | --- | --- | --- | --- |
 | 默认显示 | `checked + done` | `checked + done` | `checked + done` |
 | 快照 2 | `unchecked + done` | 保持不变 | 保持不变 |
@@ -68,7 +68,7 @@
 `example/HelloUnitTest/test/test_switch.c` 当前覆盖 `7` 条用例：
 
 1. 样式 helper 更新 palette 并清理 `pressed`。
-   覆盖 `apply_compact_style()` 与 `apply_read_only_style()` 的 `bk_color_on / bk_color_off / switch_color_on` 更新，以及进入 helper 前后的 pressed 清理。
+   覆盖 `apply_standard_style()` 的 `bk_color_on / bk_color_off / switch_color_on / switch_color_off / alpha` 更新，以及进入 helper 前后的 pressed 清理。
 2. setter 清理 `pressed` 并更新数据。
    覆盖 `set_checked()`、`set_state_icons()` 与 `set_icon_font()`，要求 setter 入口先清理残留 pressed，再更新 checked、图标与字体。
 3. `touch` same-target release 只切换一次。
@@ -86,7 +86,7 @@
 - 主控件继续保留标准 `ToggleSwitch` 语义：触摸 `DOWN(inside) -> UP(inside)` 才提交切换；`DOWN(inside) -> MOVE(outside) -> UP(outside)` 不提交；只有回到原命中区后 `UP(inside)` 才重新提交。
 - `set_checked()`、`set_state_icons()`、`set_icon_font()`、样式 helper、`!enable` guard 和无关键盘输入都统一要求清理残留 `pressed`。
 - preview 键盘入口统一走 `dispatch_key_event()`，不再直接调用旧的 `on_key_event()`。
-- 底部 `compact / read only` preview 统一通过 `hcw_switch_override_static_preview_api()` 吞掉 `touch / key`，只承担静态 reference 对照。
+- 底部 `secondary / disabled` preview 统一通过 `hcw_switch_override_static_preview_api()` 吞掉 `touch / key`，只承担静态 reference 对照。
 
 ## 8. 录制动作设计
 `egui_port_get_recording_action()` 的 `reference` 轨道顺序如下：
@@ -100,26 +100,24 @@
 7. 请求最终稳定帧，并继续等待 `SWITCH_RECORD_FINAL_WAIT`。
 
 说明：
-- 录制只允许主区发生变化。底部 `compact / read only` preview 在整条 `reference` 轨道里必须保持单一静态对照。
+- 录制只允许主区发生变化。底部 `secondary / disabled` preview 在整条 `reference` 轨道里必须保持单一静态对照。
 - `apply_primary_default_state()`、`apply_preview_states()`、`layout_page()`、`focus_primary_switch()` 与 `request_page_snapshot()` 共同负责统一页面恢复路径。
 - runtime 录制阶段不再真实发送 `touch / key` 输入来驱动主区切换。
 
 ## 9. 验收命令
 ```bash
-make all APP=HelloCustomWidgets APP_SUB=input/switch PORT=pc
+make all APP=HelloCustomWidgets APP_SUB=input/switch PORT=pc COMPILE_DEBUG= COMPILE_OPT_LEVEL=-O0
 
-# 在 X:\ 短路径下执行
-make all APP=HelloUnitTest PORT=pc_test
+make all APP=HelloUnitTest PORT=pc_test COMPILE_DEBUG= COMPILE_OPT_LEVEL=-O0
+.\output\main.exe
 
-python scripts/sync_widget_catalog.py
+python scripts/sync_widget_catalog.py --check
 python scripts/checks/check_touch_release_semantics.py --scope custom --category input
 python scripts/checks/check_docs_encoding.py
 python scripts/checks/check_widget_catalog.py
-python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/switch --track reference --timeout 10 --keep-screenshots
-python scripts/code_compile_check.py --custom-widgets --category input --bits64
-python scripts/code_runtime_check.py --app HelloCustomWidgets --category input --track reference --bits64
-python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub input/switch
-python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_input_switch
+python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/switch --timeout 10 --keep-screenshots
+make all APP=HelloCustomWidgets APP_SUB=input/switch PORT=emscripten COMPILE_DEBUG= COMPILE_OPT_LEVEL=-O0
+git diff --check
 ```
 
 ## 10. 验收重点
@@ -150,8 +148,8 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
   - `unchecked + done`
   - `unchecked + done/cross`
 - 保留的底部对照：
-  - `compact`
-  - `read only`
+  - `secondary`
+  - `disabled`
 - 保留的交互：
   - `same-target release`
   - `Enter / Space` 键盘闭环
@@ -163,34 +161,31 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
   - 额外收尾态、说明文案、外部标签、section divider 与 showcase 化装饰
   - 旧版 finalize README 章节顺序
 
-## 14. 当前验收结果（2026-04-19）
+## 14. 当前验收结果（2026-05-02）
 - 单控件编译：`PASS`
-  - `make all APP=HelloCustomWidgets APP_SUB=input/switch PORT=pc`
-- `HelloUnitTest`：`日志复核 PASS`
-  - 在 `X:\` 短路径下执行 `make all APP=HelloUnitTest PORT=pc_test`
-  - 本轮沿用已归档 unit 日志复核总计 `845 / 845`，其中 `switch` suite `7 / 7`
+  - `make all APP=HelloCustomWidgets APP_SUB=input/switch PORT=pc COMPILE_DEBUG= COMPILE_OPT_LEVEL=-O0`
+- `HelloUnitTest`：`PASS`
+  - `make all APP=HelloUnitTest PORT=pc_test COMPILE_DEBUG= COMPILE_OPT_LEVEL=-O0`
+  - `.\output\main.exe`
+  - 全量结果：`1048 / 1048`，其中 `switch` suite `7 / 7`
 - catalog / 文档 / 触摸语义：`PASS`
-  - `python scripts/sync_widget_catalog.py`
+  - `python scripts/sync_widget_catalog.py --check`
   - `python scripts/checks/check_touch_release_semantics.py --scope custom --category input`
   - `python scripts/checks/check_docs_encoding.py`
   - `python scripts/checks/check_widget_catalog.py`
-  - 触摸语义结果：`custom_audited=28 custom_skipped_allowlist=5`
-  - 文档编码结果：`134 files`
-  - widget catalog 结果：`106 widgets`
+  - 触摸语义结果：`custom_audited=34 custom_skipped_allowlist=5`
+  - 文档编码结果：`172 files`
+  - widget catalog 结果：`141 widgets`
 - 单控件 runtime：`PASS`
-  - `python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/switch --track reference --timeout 10 --keep-screenshots`
+  - `python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/switch --timeout 10 --keep-screenshots`
   - 输出目录：`runtime_check_output/HelloCustomWidgets_input_switch/default`
   - 共捕获 `8` 帧
-- input 分类 compile/runtime 回归：`PASS`
-  - `python scripts/code_compile_check.py --custom-widgets --category input --bits64`
-  - `python scripts/code_runtime_check.py --app HelloCustomWidgets --category input --track reference --bits64`
-  - input `33 / 33` 全部通过
-- web 链路：`PASS`
-  - `python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub input/switch`
-  - `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_input_switch`
-  - smoke 结果：`status=Running canvas=480x480 ratio=0.1007 colors=137`
+- wasm 构建：`PASS`
+  - `make all APP=HelloCustomWidgets APP_SUB=input/switch PORT=emscripten COMPILE_DEBUG= COMPILE_OPT_LEVEL=-O0`
+- `git diff --check`：`PASS`
+  - Windows LF/CRLF 提示可忽略，命令退出码为 `0`
 - 截图复核结论：
   - 主区覆盖默认 `checked + done`、`unchecked + done` 与 `unchecked + done/cross` 三组 reference 状态
   - 最终稳定帧保持 `unchecked + done/cross`
   - 主区 RGB 差分边界收敛到 `(132, 168) - (347, 233)`
-  - 遮罩主区变化边界后主区外保持单哈希，底部 `compact / read only` preview 以 `y >= 234` 裁切后全程保持单哈希静态
+  - 遮罩主区变化边界后主区外保持单哈希，底部 `secondary / disabled` preview 以 `y >= 234` 裁切后全程保持单哈希静态

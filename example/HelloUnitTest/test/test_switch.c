@@ -70,7 +70,11 @@ static void setup_preview_switch(uint8_t checked)
 {
     egui_view_switch_init(EGUI_VIEW_OF(&preview_switch), uicode_get_core());
     egui_view_set_size(EGUI_VIEW_OF(&preview_switch), 76, 32);
-    hcw_switch_apply_compact_style(EGUI_VIEW_OF(&preview_switch));
+    hcw_switch_apply_standard_style(EGUI_VIEW_OF(&preview_switch));
+    preview_switch.bk_color_on = EGUI_COLOR_HEX(0x0C7C73);
+    preview_switch.bk_color_off = EGUI_COLOR_HEX(0xD9E5DE);
+    preview_switch.switch_color_on = EGUI_COLOR_WHITE;
+    preview_switch.switch_color_off = EGUI_COLOR_WHITE;
     hcw_switch_set_state_icons(EGUI_VIEW_OF(&preview_switch), EGUI_ICON_MS_DONE, NULL);
     hcw_switch_set_icon_font(EGUI_VIEW_OF(&preview_switch), EGUI_FONT_ICON_MS_16);
     hcw_switch_set_checked(EGUI_VIEW_OF(&preview_switch), checked);
@@ -162,7 +166,7 @@ static void get_switch_center(egui_view_switch_t *control, egui_dim_t *x, egui_d
     *y = EGUI_VIEW_OF(control)->region_screen.location.y + EGUI_VIEW_OF(control)->region_screen.size.height / 2;
 }
 
-static void test_switch_style_helpers_update_palette_and_clear_pressed_state(void)
+static void test_switch_style_helper_updates_palette_and_clear_pressed_state(void)
 {
     egui_view_switch_t *local;
 
@@ -170,18 +174,13 @@ static void test_switch_style_helpers_update_palette_and_clear_pressed_state(voi
     local = &test_switch;
 
     egui_view_set_pressed(EGUI_VIEW_OF(local), 1);
-    hcw_switch_apply_compact_style(EGUI_VIEW_OF(local));
+    hcw_switch_apply_standard_style(EGUI_VIEW_OF(local));
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(local)->is_pressed);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x0C7C73).full, local->bk_color_on.full);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xD9E5DE).full, local->bk_color_off.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x2563EB).full, local->bk_color_on.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xD8E0E9).full, local->bk_color_off.full);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_WHITE.full, local->switch_color_on.full);
-
-    egui_view_set_pressed(EGUI_VIEW_OF(local), 1);
-    hcw_switch_apply_read_only_style(EGUI_VIEW_OF(local));
-    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(local)->is_pressed);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xAFB8C3).full, local->bk_color_on.full);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xE4E9EE).full, local->bk_color_off.full);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xF7F9FB).full, local->switch_color_on.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_WHITE.full, local->switch_color_off.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_ALPHA_100, local->alpha);
 }
 
 static void test_switch_setters_clear_pressed_state_and_update_data(void)
@@ -316,7 +315,7 @@ static void test_switch_static_preview_consumes_input_and_keeps_state(void)
 void test_switch_run(void)
 {
     EGUI_TEST_SUITE_BEGIN(switch);
-    EGUI_TEST_RUN(test_switch_style_helpers_update_palette_and_clear_pressed_state);
+    EGUI_TEST_RUN(test_switch_style_helper_updates_palette_and_clear_pressed_state);
     EGUI_TEST_RUN(test_switch_setters_clear_pressed_state_and_update_data);
     EGUI_TEST_RUN(test_switch_touch_same_target_release_toggles_once);
     EGUI_TEST_RUN(test_switch_keyboard_space_and_enter_toggle);

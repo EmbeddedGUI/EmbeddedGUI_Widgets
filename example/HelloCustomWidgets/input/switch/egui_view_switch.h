@@ -9,8 +9,6 @@ extern "C" {
 #endif
 
 void hcw_switch_apply_standard_style(egui_view_t *self);
-void hcw_switch_apply_compact_style(egui_view_t *self);
-void hcw_switch_apply_read_only_style(egui_view_t *self);
 void hcw_switch_set_checked(egui_view_t *self, uint8_t is_checked);
 void hcw_switch_set_state_icons(egui_view_t *self, const char *icon_on, const char *icon_off);
 void hcw_switch_set_icon_font(egui_view_t *self, const egui_font_t *font);
