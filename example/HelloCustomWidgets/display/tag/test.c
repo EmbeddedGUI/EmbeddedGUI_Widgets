@@ -41,10 +41,10 @@ static egui_view_label_t title_label;
 static egui_view_tag_t primary_tag;
 static egui_view_label_t primary_status_label;
 static egui_view_linearlayout_t bottom_row;
-static egui_view_tag_t compact_tag;
-static egui_view_tag_t read_only_tag;
-static egui_view_api_t compact_api;
-static egui_view_api_t read_only_api;
+static egui_view_tag_t secondary_tag;
+static egui_view_tag_t muted_tag;
+static egui_view_api_t secondary_api;
+static egui_view_api_t muted_api;
 static uint8_t primary_snapshot_index;
 static uint8_t ui_ready;
 
@@ -108,7 +108,6 @@ static void apply_primary_snapshot(uint8_t index)
     const tag_snapshot_t *snapshot = &primary_snapshots[index % PRIMARY_SNAPSHOT_COUNT];
 
     primary_snapshot_index = (uint8_t)(index % PRIMARY_SNAPSHOT_COUNT);
-    egui_view_tag_apply_standard_style(EGUI_VIEW_OF(&primary_tag));
     egui_view_tag_set_text(EGUI_VIEW_OF(&primary_tag), snapshot->text);
     egui_view_tag_set_secondary_text(EGUI_VIEW_OF(&primary_tag), snapshot->secondary);
     egui_view_tag_set_dismissible(EGUI_VIEW_OF(&primary_tag), 1);
@@ -127,26 +126,28 @@ static void apply_primary_default_state(void)
     apply_primary_snapshot(TAG_DEFAULT_SNAPSHOT);
 }
 
-static void apply_compact_state(void)
+static void apply_secondary_state(void)
 {
-    egui_view_tag_apply_compact_style(EGUI_VIEW_OF(&compact_tag));
-    egui_view_tag_set_text(EGUI_VIEW_OF(&compact_tag), "Compact");
-    egui_view_tag_set_secondary_text(EGUI_VIEW_OF(&compact_tag), "Preview");
-    egui_view_tag_set_dismissible(EGUI_VIEW_OF(&compact_tag), 1);
+    egui_view_tag_set_text(EGUI_VIEW_OF(&secondary_tag), "Queued");
+    egui_view_tag_set_secondary_text(EGUI_VIEW_OF(&secondary_tag), "Open");
+    egui_view_tag_set_dismissible(EGUI_VIEW_OF(&secondary_tag), 1);
+    egui_view_tag_set_palette(EGUI_VIEW_OF(&secondary_tag), EGUI_COLOR_HEX(0xF8FBFD), EGUI_COLOR_HEX(0xCCD8E3), EGUI_COLOR_HEX(0x1D3440),
+                              EGUI_COLOR_HEX(0x6A7A88), EGUI_COLOR_HEX(0x0C7C73));
 }
 
-static void apply_read_only_state(void)
+static void apply_muted_state(void)
 {
-    egui_view_tag_apply_read_only_style(EGUI_VIEW_OF(&read_only_tag));
-    egui_view_tag_set_text(EGUI_VIEW_OF(&read_only_tag), "System");
-    egui_view_tag_set_secondary_text(EGUI_VIEW_OF(&read_only_tag), "Locked");
-    egui_view_tag_set_dismissible(EGUI_VIEW_OF(&read_only_tag), 1);
+    egui_view_tag_set_text(EGUI_VIEW_OF(&muted_tag), "System");
+    egui_view_tag_set_secondary_text(EGUI_VIEW_OF(&muted_tag), "Locked");
+    egui_view_tag_set_dismissible(EGUI_VIEW_OF(&muted_tag), 0);
+    egui_view_tag_set_palette(EGUI_VIEW_OF(&muted_tag), EGUI_COLOR_HEX(0xF5F7FA), EGUI_COLOR_HEX(0xD7DEE6), EGUI_COLOR_HEX(0x73808C),
+                              EGUI_COLOR_HEX(0x8E99A4), EGUI_COLOR_HEX(0x9AA6B2));
 }
 
 static void apply_preview_states(void)
 {
-    apply_compact_state();
-    apply_read_only_state();
+    apply_secondary_state();
+    apply_muted_state();
 
     if (ui_ready)
     {
@@ -214,26 +215,26 @@ void test_init_ui(void)
     egui_view_linearlayout_set_align_type(EGUI_VIEW_OF(&bottom_row), EGUI_ALIGN_VCENTER);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&bottom_row));
 
-    egui_view_tag_init(EGUI_VIEW_OF(&compact_tag));
-    egui_view_set_size(EGUI_VIEW_OF(&compact_tag), TAG_PREVIEW_WIDTH, TAG_PREVIEW_HEIGHT);
-    egui_view_tag_set_font(EGUI_VIEW_OF(&compact_tag), (const egui_font_t *)&egui_res_font_montserrat_8_4);
-    egui_view_tag_set_secondary_font(EGUI_VIEW_OF(&compact_tag), (const egui_font_t *)&egui_res_font_montserrat_8_4);
-    egui_view_tag_override_static_preview_api(EGUI_VIEW_OF(&compact_tag), &compact_api);
+    egui_view_tag_init(EGUI_VIEW_OF(&secondary_tag));
+    egui_view_set_size(EGUI_VIEW_OF(&secondary_tag), TAG_PREVIEW_WIDTH, TAG_PREVIEW_HEIGHT);
+    egui_view_tag_set_font(EGUI_VIEW_OF(&secondary_tag), (const egui_font_t *)&egui_res_font_montserrat_8_4);
+    egui_view_tag_set_secondary_font(EGUI_VIEW_OF(&secondary_tag), (const egui_font_t *)&egui_res_font_montserrat_8_4);
+    egui_view_tag_override_static_preview_api(EGUI_VIEW_OF(&secondary_tag), &secondary_api);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
-    egui_view_set_focusable(EGUI_VIEW_OF(&compact_tag), 0);
+    egui_view_set_focusable(EGUI_VIEW_OF(&secondary_tag), 0);
 #endif
-    egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&compact_tag));
+    egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&secondary_tag));
 
-    egui_view_tag_init(EGUI_VIEW_OF(&read_only_tag));
-    egui_view_set_size(EGUI_VIEW_OF(&read_only_tag), TAG_PREVIEW_WIDTH, TAG_PREVIEW_HEIGHT);
-    egui_view_set_margin(EGUI_VIEW_OF(&read_only_tag), 8, 0, 0, 0);
-    egui_view_tag_set_font(EGUI_VIEW_OF(&read_only_tag), (const egui_font_t *)&egui_res_font_montserrat_8_4);
-    egui_view_tag_set_secondary_font(EGUI_VIEW_OF(&read_only_tag), (const egui_font_t *)&egui_res_font_montserrat_8_4);
-    egui_view_tag_override_static_preview_api(EGUI_VIEW_OF(&read_only_tag), &read_only_api);
+    egui_view_tag_init(EGUI_VIEW_OF(&muted_tag));
+    egui_view_set_size(EGUI_VIEW_OF(&muted_tag), TAG_PREVIEW_WIDTH, TAG_PREVIEW_HEIGHT);
+    egui_view_set_margin(EGUI_VIEW_OF(&muted_tag), 8, 0, 0, 0);
+    egui_view_tag_set_font(EGUI_VIEW_OF(&muted_tag), (const egui_font_t *)&egui_res_font_montserrat_8_4);
+    egui_view_tag_set_secondary_font(EGUI_VIEW_OF(&muted_tag), (const egui_font_t *)&egui_res_font_montserrat_8_4);
+    egui_view_tag_override_static_preview_api(EGUI_VIEW_OF(&muted_tag), &muted_api);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
-    egui_view_set_focusable(EGUI_VIEW_OF(&read_only_tag), 0);
+    egui_view_set_focusable(EGUI_VIEW_OF(&muted_tag), 0);
 #endif
-    egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&read_only_tag));
+    egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&muted_tag));
 
     apply_primary_default_state();
     apply_preview_states();
@@ -313,4 +314,3 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     }
 }
 #endif
-

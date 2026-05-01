@@ -194,7 +194,7 @@ static void egui_view_tag_fit_text_to_width(const egui_font_t *font, const char 
 
 static uint8_t egui_view_tag_has_dismiss(const egui_view_t *self, const egui_view_tag_t *local)
 {
-    return local->dismissible && !local->read_only_mode && egui_view_get_enable((egui_view_t *)self);
+    return local->dismissible && egui_view_get_enable((egui_view_t *)self);
 }
 
 static uint8_t egui_view_tag_clear_pressed_state(egui_view_t *self)
@@ -233,9 +233,9 @@ static void egui_view_tag_local_region_to_screen(egui_view_t *self, const egui_r
 static void egui_view_tag_get_metrics(egui_view_t *self, egui_view_tag_t *local, egui_view_tag_metrics_t *metrics)
 {
     egui_region_t region;
-    egui_dim_t pad_x = local->compact_mode ? 7 : 10;
-    egui_dim_t gap = local->compact_mode ? 4 : 6;
-    egui_dim_t dismiss_size = local->compact_mode ? 12 : 14;
+    egui_dim_t pad_x = 10;
+    egui_dim_t gap = 6;
+    egui_dim_t dismiss_size = 14;
     egui_dim_t primary_width = 0;
     egui_dim_t primary_height = 0;
     egui_dim_t secondary_width = 0;
@@ -359,7 +359,7 @@ static void egui_view_tag_on_draw(egui_view_t *self)
     egui_color_t accent_color = local->accent_color;
     egui_color_t dismiss_fill;
     egui_color_t dismiss_icon;
-    egui_dim_t radius = local->compact_mode ? 8 : 10;
+    egui_dim_t radius = 10;
 
     egui_view_get_work_region(self, &region);
     if (egui_region_is_empty(&region))
@@ -368,22 +368,16 @@ static void egui_view_tag_on_draw(egui_view_t *self)
     }
 
     egui_view_tag_get_metrics(self, local, &metrics);
-    if (self->is_focused && !local->read_only_mode && egui_view_tag_has_dismiss(self, local))
+    if (self->is_focused && egui_view_tag_has_dismiss(self, local))
     {
-        fill_color = egui_rgb_mix(fill_color, accent_color, local->compact_mode ? 6 : 8);
+        fill_color = egui_rgb_mix(fill_color, accent_color, 8);
         border_color = egui_rgb_mix(border_color, accent_color, 44);
     }
-    if (self->is_pressed && !local->read_only_mode)
+    if (self->is_pressed)
     {
         fill_color = egui_rgb_mix(fill_color, accent_color, 12);
         border_color = egui_rgb_mix(border_color, accent_color, 56);
         text_color = egui_rgb_mix(text_color, accent_color, 16);
-    }
-    if (local->read_only_mode)
-    {
-        border_color = egui_rgb_mix(border_color, EGUI_COLOR_HEX(0x9AA6B2), 20);
-        text_color = egui_rgb_mix(text_color, EGUI_COLOR_HEX(0x8A96A2), 26);
-        secondary_color = egui_rgb_mix(secondary_color, EGUI_COLOR_HEX(0x99A5B0), 32);
     }
     if (!egui_view_get_enable(self))
     {
@@ -426,54 +420,6 @@ static void egui_view_tag_on_draw(egui_view_t *self)
         egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, egui_view_tag_get_icon_font(local), EGUI_ICON_MS_CLOSE, &metrics.dismiss_region, EGUI_ALIGN_CENTER, dismiss_icon,
                                       egui_color_alpha_mix(self->alpha, EGUI_ALPHA_100));
     }
-}
-
-void egui_view_tag_apply_standard_style(egui_view_t *self)
-{
-    EGUI_LOCAL_INIT(egui_view_tag_t);
-
-    egui_view_tag_clear_pressed_state(self);
-    local->compact_mode = 0;
-    local->read_only_mode = 0;
-    local->surface_color = EGUI_COLOR_HEX(0xFFFFFF);
-    local->border_color = EGUI_COLOR_HEX(0xD5DDE6);
-    local->text_color = EGUI_COLOR_HEX(0x1F2A35);
-    local->secondary_color = EGUI_COLOR_HEX(0x637283);
-    local->accent_color = EGUI_COLOR_HEX(0x0F6CBD);
-    egui_view_invalidate(self);
-}
-
-void egui_view_tag_apply_compact_style(egui_view_t *self)
-{
-    EGUI_LOCAL_INIT(egui_view_tag_t);
-
-    egui_view_tag_clear_pressed_state(self);
-    local->compact_mode = 1;
-    local->read_only_mode = 0;
-    local->surface_color = EGUI_COLOR_HEX(0xF8FBFD);
-    local->border_color = EGUI_COLOR_HEX(0xCCD8E3);
-    local->text_color = EGUI_COLOR_HEX(0x1D3440);
-    local->secondary_color = EGUI_COLOR_HEX(0x6A7A88);
-    local->accent_color = EGUI_COLOR_HEX(0x0C7C73);
-    egui_view_invalidate(self);
-}
-
-void egui_view_tag_apply_read_only_style(egui_view_t *self)
-{
-    EGUI_LOCAL_INIT(egui_view_tag_t);
-
-    egui_view_tag_clear_pressed_state(self);
-    local->compact_mode = 1;
-    local->read_only_mode = 1;
-    local->surface_color = EGUI_COLOR_HEX(0xF5F7FA);
-    local->border_color = EGUI_COLOR_HEX(0xD7DEE6);
-    local->text_color = EGUI_COLOR_HEX(0x73808C);
-    local->secondary_color = EGUI_COLOR_HEX(0x8E99A4);
-    local->accent_color = EGUI_COLOR_HEX(0x9AA6B2);
-#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
-    egui_view_clear_focus(self);
-#endif
-    egui_view_invalidate(self);
 }
 
 void egui_view_tag_set_text(egui_view_t *self, const char *text)
@@ -543,30 +489,6 @@ void egui_view_tag_set_dismissible(egui_view_t *self, uint8_t dismissible)
     local->dismissible = dismissible ? 1 : 0;
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     if (!local->dismissible)
-    {
-        egui_view_clear_focus(self);
-    }
-#endif
-    egui_view_invalidate(self);
-}
-
-void egui_view_tag_set_compact_mode(egui_view_t *self, uint8_t compact_mode)
-{
-    EGUI_LOCAL_INIT(egui_view_tag_t);
-
-    egui_view_tag_clear_pressed_state(self);
-    local->compact_mode = compact_mode ? 1 : 0;
-    egui_view_invalidate(self);
-}
-
-void egui_view_tag_set_read_only_mode(egui_view_t *self, uint8_t read_only_mode)
-{
-    EGUI_LOCAL_INIT(egui_view_tag_t);
-
-    egui_view_tag_clear_pressed_state(self);
-    local->read_only_mode = read_only_mode ? 1 : 0;
-#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
-    if (local->read_only_mode)
     {
         egui_view_clear_focus(self);
     }
@@ -771,11 +693,13 @@ void egui_view_tag_init(egui_view_t *self)
     local->icon_font = EGUI_FONT_ICON_MS_16;
     local->on_dismiss = NULL;
     local->dismissible = 1;
-    local->compact_mode = 0;
-    local->read_only_mode = 0;
     local->dismiss_pressed = 0;
+    local->surface_color = EGUI_COLOR_HEX(0xFFFFFF);
+    local->border_color = EGUI_COLOR_HEX(0xD5DDE6);
+    local->text_color = EGUI_COLOR_HEX(0x1F2A35);
+    local->secondary_color = EGUI_COLOR_HEX(0x637283);
+    local->accent_color = EGUI_COLOR_HEX(0x0F6CBD);
     egui_view_tag_copy_text(local->text, sizeof(local->text), "Tag");
     egui_view_tag_copy_text(local->secondary_text, sizeof(local->secondary_text), "");
-    egui_view_tag_apply_standard_style(self);
     egui_view_set_view_name(self, "egui_view_tag");
 }

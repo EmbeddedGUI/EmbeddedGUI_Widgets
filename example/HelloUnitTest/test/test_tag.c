@@ -26,8 +26,6 @@ struct tag_preview_snapshot
     const egui_view_api_t *api;
     egui_alpha_t alpha;
     uint8_t dismissible;
-    uint8_t compact_mode;
-    uint8_t read_only_mode;
     uint8_t enable;
     uint8_t is_focused;
     uint8_t is_pressed;
@@ -71,7 +69,6 @@ static void setup_tag(void)
 {
     egui_view_tag_init(EGUI_VIEW_OF(&test_tag_widget));
     egui_view_set_size(EGUI_VIEW_OF(&test_tag_widget), 128, 28);
-    egui_view_tag_apply_standard_style(EGUI_VIEW_OF(&test_tag_widget));
     egui_view_tag_set_text(EGUI_VIEW_OF(&test_tag_widget), "Assigned");
     egui_view_tag_set_secondary_text(EGUI_VIEW_OF(&test_tag_widget), "Today");
     egui_view_tag_set_font(EGUI_VIEW_OF(&test_tag_widget), (const egui_font_t *)&egui_res_font_montserrat_10_4);
@@ -88,7 +85,6 @@ static void setup_preview_tag(void)
 {
     egui_view_tag_init(EGUI_VIEW_OF(&preview_tag_widget));
     egui_view_set_size(EGUI_VIEW_OF(&preview_tag_widget), 88, 24);
-    egui_view_tag_apply_compact_style(EGUI_VIEW_OF(&preview_tag_widget));
     egui_view_tag_set_text(EGUI_VIEW_OF(&preview_tag_widget), "Compact");
     egui_view_tag_set_secondary_text(EGUI_VIEW_OF(&preview_tag_widget), "Preview");
     egui_view_tag_set_font(EGUI_VIEW_OF(&preview_tag_widget), (const egui_font_t *)&egui_res_font_montserrat_8_4);
@@ -179,8 +175,6 @@ static void capture_preview_snapshot(tag_preview_snapshot_t *snapshot)
     snapshot->api = EGUI_VIEW_OF(&preview_tag_widget)->api;
     snapshot->alpha = EGUI_VIEW_OF(&preview_tag_widget)->alpha;
     snapshot->dismissible = preview_tag_widget.dismissible;
-    snapshot->compact_mode = preview_tag_widget.compact_mode;
-    snapshot->read_only_mode = preview_tag_widget.read_only_mode;
     snapshot->enable = (uint8_t)egui_view_get_enable(EGUI_VIEW_OF(&preview_tag_widget));
     snapshot->is_focused = EGUI_VIEW_OF(&preview_tag_widget)->is_focused;
     snapshot->is_pressed = EGUI_VIEW_OF(&preview_tag_widget)->is_pressed;
@@ -209,8 +203,6 @@ static void assert_preview_state_unchanged(const tag_preview_snapshot_t *snapsho
     EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&preview_tag_widget)->api == snapshot->api);
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->alpha, EGUI_VIEW_OF(&preview_tag_widget)->alpha);
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->dismissible, preview_tag_widget.dismissible);
-    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->compact_mode, preview_tag_widget.compact_mode);
-    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->read_only_mode, preview_tag_widget.read_only_mode);
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->enable, egui_view_get_enable(EGUI_VIEW_OF(&preview_tag_widget)));
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->is_focused, EGUI_VIEW_OF(&preview_tag_widget)->is_focused);
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->is_pressed, EGUI_VIEW_OF(&preview_tag_widget)->is_pressed);
@@ -221,31 +213,32 @@ static void assert_preview_state_unchanged(const tag_preview_snapshot_t *snapsho
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->padding_bottom, EGUI_VIEW_OF(&preview_tag_widget)->padding.bottom);
 }
 
-static void test_tag_style_helpers_update_modes_and_palette(void)
+static void test_tag_init_uses_defaults_and_palette_setter_updates_palette(void)
 {
     egui_view_tag_t *local;
+    egui_color_t surface = EGUI_COLOR_HEX(0xF8F9FA);
+    egui_color_t border = EGUI_COLOR_HEX(0xCCD3DA);
+    egui_color_t text = EGUI_COLOR_HEX(0x22303F);
+    egui_color_t secondary = EGUI_COLOR_HEX(0x708091);
+    egui_color_t accent = EGUI_COLOR_HEX(0x13579B);
 
     setup_tag();
     local = &test_tag_widget;
 
-    EGUI_TEST_ASSERT_FALSE(local->compact_mode);
-    EGUI_TEST_ASSERT_FALSE(local->read_only_mode);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xFFFFFF).full, local->surface_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xD5DDE6).full, local->border_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x1F2A35).full, local->text_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x637283).full, local->secondary_color.full);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x0F6CBD).full, local->accent_color.full);
 
     egui_view_set_pressed(EGUI_VIEW_OF(local), 1);
-    egui_view_tag_apply_compact_style(EGUI_VIEW_OF(local));
+    egui_view_tag_set_palette(EGUI_VIEW_OF(local), surface, border, text, secondary, accent);
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(local)->is_pressed);
-    EGUI_TEST_ASSERT_TRUE(local->compact_mode);
-    EGUI_TEST_ASSERT_FALSE(local->read_only_mode);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x0C7C73).full, local->accent_color.full);
-
-    egui_view_set_pressed(EGUI_VIEW_OF(local), 1);
-    egui_view_tag_apply_read_only_style(EGUI_VIEW_OF(local));
-    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(local)->is_pressed);
-    EGUI_TEST_ASSERT_TRUE(local->compact_mode);
-    EGUI_TEST_ASSERT_TRUE(local->read_only_mode);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x9AA6B2).full, local->accent_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(surface.full, local->surface_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(border.full, local->border_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(text.full, local->text_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(secondary.full, local->secondary_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(accent.full, local->accent_color.full);
 }
 
 static void test_tag_setters_clear_pressed_state_and_update_content(void)
@@ -292,7 +285,7 @@ static void test_tag_setters_clear_pressed_state_and_update_content(void)
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x13579B).full, local->accent_color.full);
 }
 
-static void test_tag_dismiss_region_visibility_tracks_mode_changes(void)
+static void test_tag_dismiss_region_visibility_tracks_dismissible_and_enable(void)
 {
     egui_region_t region;
 
@@ -305,7 +298,7 @@ static void test_tag_dismiss_region_visibility_tracks_mode_changes(void)
     EGUI_TEST_ASSERT_FALSE(egui_view_tag_get_dismiss_region(EGUI_VIEW_OF(&test_tag_widget), &region));
 
     egui_view_tag_set_dismissible(EGUI_VIEW_OF(&test_tag_widget), 1);
-    egui_view_tag_set_read_only_mode(EGUI_VIEW_OF(&test_tag_widget), 1);
+    egui_view_set_enable(EGUI_VIEW_OF(&test_tag_widget), 0);
     EGUI_TEST_ASSERT_FALSE(egui_view_tag_get_dismiss_region(EGUI_VIEW_OF(&test_tag_widget), &region));
 }
 
@@ -350,7 +343,7 @@ static void test_tag_keyboard_delete_and_enter_dismiss(void)
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_tag_widget)->is_pressed);
 }
 
-static void test_tag_read_only_and_disabled_input_do_not_dismiss(void)
+static void test_tag_non_dismissible_and_disabled_input_do_not_dismiss(void)
 {
     egui_dim_t inside_x;
     egui_dim_t inside_y;
@@ -360,13 +353,13 @@ static void test_tag_read_only_and_disabled_input_do_not_dismiss(void)
     get_dismiss_center(EGUI_VIEW_OF(&test_tag_widget), &inside_x, &inside_y);
 
     egui_view_set_pressed(EGUI_VIEW_OF(&test_tag_widget), 1);
-    egui_view_tag_set_read_only_mode(EGUI_VIEW_OF(&test_tag_widget), 1);
+    egui_view_tag_set_dismissible(EGUI_VIEW_OF(&test_tag_widget), 0);
     EGUI_TEST_ASSERT_FALSE(send_key_to_view(EGUI_VIEW_OF(&test_tag_widget), EGUI_KEY_CODE_DELETE));
     EGUI_TEST_ASSERT_FALSE(send_touch_to_view(EGUI_VIEW_OF(&test_tag_widget), EGUI_MOTION_EVENT_ACTION_DOWN, inside_x, inside_y));
     EGUI_TEST_ASSERT_EQUAL_INT(0, g_dismiss_count);
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_tag_widget)->is_pressed);
 
-    egui_view_tag_set_read_only_mode(EGUI_VIEW_OF(&test_tag_widget), 0);
+    egui_view_tag_set_dismissible(EGUI_VIEW_OF(&test_tag_widget), 1);
     egui_view_set_enable(EGUI_VIEW_OF(&test_tag_widget), 0);
     EGUI_TEST_ASSERT_FALSE(send_key_to_view(EGUI_VIEW_OF(&test_tag_widget), EGUI_KEY_CODE_DELETE));
     EGUI_TEST_ASSERT_FALSE(send_touch_to_view(EGUI_VIEW_OF(&test_tag_widget), EGUI_MOTION_EVENT_ACTION_DOWN, inside_x, inside_y));
@@ -417,12 +410,12 @@ static void test_tag_text_helpers(void)
 void test_tag_run(void)
 {
     EGUI_TEST_SUITE_BEGIN(tag);
-    EGUI_TEST_RUN(test_tag_style_helpers_update_modes_and_palette);
+    EGUI_TEST_RUN(test_tag_init_uses_defaults_and_palette_setter_updates_palette);
     EGUI_TEST_RUN(test_tag_setters_clear_pressed_state_and_update_content);
-    EGUI_TEST_RUN(test_tag_dismiss_region_visibility_tracks_mode_changes);
+    EGUI_TEST_RUN(test_tag_dismiss_region_visibility_tracks_dismissible_and_enable);
     EGUI_TEST_RUN(test_tag_touch_same_target_release_dismisses_once);
     EGUI_TEST_RUN(test_tag_keyboard_delete_and_enter_dismiss);
-    EGUI_TEST_RUN(test_tag_read_only_and_disabled_input_do_not_dismiss);
+    EGUI_TEST_RUN(test_tag_non_dismissible_and_disabled_input_do_not_dismiss);
     EGUI_TEST_RUN(test_tag_static_preview_consumes_input_and_keeps_state);
     EGUI_TEST_RUN(test_tag_text_helpers);
     EGUI_TEST_SUITE_END();
