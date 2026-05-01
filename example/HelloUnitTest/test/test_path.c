@@ -18,8 +18,6 @@ struct path_preview_snapshot
     egui_color_t accent_color;
     egui_dim_t stroke_width;
     egui_alpha_t alpha;
-    uint8_t compact_mode;
-    uint8_t read_only_mode;
     uint8_t enable;
     uint8_t is_pressed;
     uint8_t is_focused;
@@ -32,6 +30,20 @@ struct path_preview_snapshot
 static egui_view_path_t test_control;
 static egui_view_path_t preview_control;
 static egui_view_api_t preview_api;
+
+static void apply_test_path_line_style(egui_view_t *view)
+{
+    egui_view_path_set_palette(view, EGUI_COLOR_HEX(0xDCEDEA), EGUI_COLOR_HEX(0x0C7C73), EGUI_COLOR_HEX(0xBFDCD8));
+    egui_view_path_set_stroke_width(view, 1);
+    egui_view_path_set_data(view, egui_view_path_get_line_data());
+}
+
+static void apply_test_path_muted_style(egui_view_t *view)
+{
+    egui_view_path_set_palette(view, EGUI_COLOR_HEX(0xE1E6EB), EGUI_COLOR_HEX(0x687684), EGUI_COLOR_HEX(0xCCD4DC));
+    egui_view_path_set_stroke_width(view, 1);
+    egui_view_path_set_data(view, egui_view_path_get_bookmark_data());
+}
 
 static void assert_region_equal(const egui_region_t *expected, const egui_region_t *actual)
 {
@@ -51,7 +63,7 @@ static void setup_preview_control(void)
 {
     egui_view_path_init(EGUI_VIEW_OF(&preview_control));
     egui_view_set_size(EGUI_VIEW_OF(&preview_control), 72, 34);
-    egui_view_path_apply_compact_style(EGUI_VIEW_OF(&preview_control));
+    apply_test_path_line_style(EGUI_VIEW_OF(&preview_control));
     egui_view_path_override_static_preview_api(EGUI_VIEW_OF(&preview_control), &preview_api);
 }
 
@@ -108,8 +120,6 @@ static void capture_preview_snapshot(path_preview_snapshot_t *snapshot)
     snapshot->accent_color = preview_control.accent_color;
     snapshot->stroke_width = preview_control.stroke_width;
     snapshot->alpha = EGUI_VIEW_OF(&preview_control)->alpha;
-    snapshot->compact_mode = preview_control.compact_mode;
-    snapshot->read_only_mode = preview_control.read_only_mode;
     snapshot->enable = (uint8_t)egui_view_get_enable(EGUI_VIEW_OF(&preview_control));
     snapshot->is_pressed = EGUI_VIEW_OF(&preview_control)->is_pressed;
     snapshot->is_focused = EGUI_VIEW_OF(&preview_control)->is_focused;
@@ -129,8 +139,6 @@ static void assert_preview_state_unchanged(const path_preview_snapshot_t *snapsh
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->accent_color.full, preview_control.accent_color.full);
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->stroke_width, preview_control.stroke_width);
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->alpha, EGUI_VIEW_OF(&preview_control)->alpha);
-    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->compact_mode, preview_control.compact_mode);
-    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->read_only_mode, preview_control.read_only_mode);
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->enable, egui_view_get_enable(EGUI_VIEW_OF(&preview_control)));
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&preview_control)->is_pressed);
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->is_focused, EGUI_VIEW_OF(&preview_control)->is_focused);
@@ -146,8 +154,6 @@ static void test_path_init_defaults(void)
 
     EGUI_TEST_ASSERT_EQUAL_INT(2, egui_view_path_get_stroke_width(EGUI_VIEW_OF(&test_control)));
     EGUI_TEST_ASSERT_TRUE(egui_view_path_get_data(EGUI_VIEW_OF(&test_control)) == egui_view_path_get_shield_data());
-    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_path_get_compact_mode(EGUI_VIEW_OF(&test_control)));
-    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_path_get_read_only_mode(EGUI_VIEW_OF(&test_control)));
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xDDEBFA).full, test_control.fill_color.full);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x0F6CBD).full, test_control.stroke_color.full);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_MARGIN_PADDING
@@ -190,19 +196,19 @@ static void test_path_styles(void)
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_control)->is_pressed);
     EGUI_TEST_ASSERT_EQUAL_INT(3, egui_view_path_get_stroke_width(EGUI_VIEW_OF(&test_control)));
     EGUI_TEST_ASSERT_TRUE(egui_view_path_get_data(EGUI_VIEW_OF(&test_control)) == egui_view_path_get_curve_data());
-    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_path_get_compact_mode(EGUI_VIEW_OF(&test_control)));
-    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_path_get_read_only_mode(EGUI_VIEW_OF(&test_control)));
 
-    egui_view_path_apply_compact_style(EGUI_VIEW_OF(&test_control));
+    apply_test_path_line_style(EGUI_VIEW_OF(&test_control));
     EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_path_get_stroke_width(EGUI_VIEW_OF(&test_control)));
     EGUI_TEST_ASSERT_TRUE(egui_view_path_get_data(EGUI_VIEW_OF(&test_control)) == egui_view_path_get_line_data());
-    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_path_get_compact_mode(EGUI_VIEW_OF(&test_control)));
-    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_path_get_read_only_mode(EGUI_VIEW_OF(&test_control)));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xDCEDEA).full, test_control.fill_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x0C7C73).full, test_control.stroke_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xBFDCD8).full, test_control.accent_color.full);
 
-    egui_view_path_apply_read_only_style(EGUI_VIEW_OF(&test_control));
+    apply_test_path_muted_style(EGUI_VIEW_OF(&test_control));
     EGUI_TEST_ASSERT_TRUE(egui_view_path_get_data(EGUI_VIEW_OF(&test_control)) == egui_view_path_get_bookmark_data());
-    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_path_get_compact_mode(EGUI_VIEW_OF(&test_control)));
-    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_path_get_read_only_mode(EGUI_VIEW_OF(&test_control)));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xE1E6EB).full, test_control.fill_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x687684).full, test_control.stroke_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xCCD4DC).full, test_control.accent_color.full);
 }
 
 static void test_path_static_preview_consumes_input_and_keeps_state(void)

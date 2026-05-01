@@ -285,8 +285,8 @@ static void egui_view_path_on_draw(egui_view_t *self)
     egui_color_t fill_color = local->fill_color;
     egui_color_t stroke_color = local->stroke_color;
     egui_color_t accent_color = local->accent_color;
-    egui_alpha_t fill_alpha = local->compact_mode ? 30 : 48;
-    egui_alpha_t stroke_alpha = local->compact_mode ? 58 : 86;
+    egui_alpha_t fill_alpha = 48;
+    egui_alpha_t stroke_alpha = 86;
     uint8_t contour_count = 0;
     uint8_t contour_closed = 0;
     uint8_t has_current = 0;
@@ -304,14 +304,6 @@ static void egui_view_path_on_draw(egui_view_t *self)
         return;
     }
 
-    if (local->read_only_mode)
-    {
-        fill_color = egui_rgb_mix(fill_color, EGUI_COLOR_HEX(0xE6EAEE), 62);
-        stroke_color = egui_rgb_mix(stroke_color, EGUI_COLOR_HEX(0x8A97A5), 58);
-        accent_color = egui_rgb_mix(accent_color, EGUI_COLOR_HEX(0x8A97A5), 58);
-        fill_alpha = 34;
-        stroke_alpha = 48;
-    }
     if (!egui_view_get_enable(self))
     {
         fill_color = egui_view_path_mix_disabled(fill_color);
@@ -480,45 +472,11 @@ egui_dim_t egui_view_path_get_stroke_width(egui_view_t *self)
     return local->stroke_width;
 }
 
-void egui_view_path_set_compact_mode(egui_view_t *self, uint8_t compact_mode)
-{
-    egui_view_path_t *local = egui_view_path_local(self);
-
-    egui_view_path_clear_pressed_state(self);
-    local->compact_mode = compact_mode ? 1 : 0;
-    egui_view_invalidate(self);
-}
-
-uint8_t egui_view_path_get_compact_mode(egui_view_t *self)
-{
-    egui_view_path_t *local = egui_view_path_local(self);
-
-    return local->compact_mode;
-}
-
-void egui_view_path_set_read_only_mode(egui_view_t *self, uint8_t read_only_mode)
-{
-    egui_view_path_t *local = egui_view_path_local(self);
-
-    egui_view_path_clear_pressed_state(self);
-    local->read_only_mode = read_only_mode ? 1 : 0;
-    egui_view_invalidate(self);
-}
-
-uint8_t egui_view_path_get_read_only_mode(egui_view_t *self)
-{
-    egui_view_path_t *local = egui_view_path_local(self);
-
-    return local->read_only_mode;
-}
-
 void egui_view_path_apply_standard_style(egui_view_t *self)
 {
     egui_view_path_set_palette(self, EGUI_COLOR_HEX(0xDDEBFA), EGUI_COLOR_HEX(0x0F6CBD), EGUI_COLOR_HEX(0xBBD7F0));
     egui_view_path_set_stroke_width(self, 2);
     egui_view_path_set_data(self, &path_shield_data);
-    egui_view_path_set_compact_mode(self, 0);
-    egui_view_path_set_read_only_mode(self, 0);
 }
 
 void egui_view_path_apply_accent_style(egui_view_t *self)
@@ -526,26 +484,6 @@ void egui_view_path_apply_accent_style(egui_view_t *self)
     egui_view_path_set_palette(self, EGUI_COLOR_HEX(0xD4E8FA), EGUI_COLOR_HEX(0x0F6CBD), EGUI_COLOR_HEX(0x8ABCE5));
     egui_view_path_set_stroke_width(self, 3);
     egui_view_path_set_data(self, &path_curve_data);
-    egui_view_path_set_compact_mode(self, 0);
-    egui_view_path_set_read_only_mode(self, 0);
-}
-
-void egui_view_path_apply_compact_style(egui_view_t *self)
-{
-    egui_view_path_set_palette(self, EGUI_COLOR_HEX(0xDCEDEA), EGUI_COLOR_HEX(0x0C7C73), EGUI_COLOR_HEX(0xBFDCD8));
-    egui_view_path_set_stroke_width(self, 1);
-    egui_view_path_set_data(self, &path_line_data);
-    egui_view_path_set_compact_mode(self, 1);
-    egui_view_path_set_read_only_mode(self, 0);
-}
-
-void egui_view_path_apply_read_only_style(egui_view_t *self)
-{
-    egui_view_path_set_palette(self, EGUI_COLOR_HEX(0xE1E6EB), EGUI_COLOR_HEX(0x687684), EGUI_COLOR_HEX(0xCCD4DC));
-    egui_view_path_set_stroke_width(self, 1);
-    egui_view_path_set_data(self, &path_bookmark_data);
-    egui_view_path_set_compact_mode(self, 1);
-    egui_view_path_set_read_only_mode(self, 1);
 }
 
 #if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
@@ -626,8 +564,6 @@ static const egui_view_api_t EGUI_VIEW_API_TABLE_NAME(egui_view_path_t) = {
 
 void egui_view_path_init(egui_view_t *self)
 {
-    egui_view_path_t *local = egui_view_path_local(self);
-
     egui_view_init(self, uicode_get_core());
     self->api = &EGUI_VIEW_API_TABLE_NAME(egui_view_path_t);
     egui_view_set_padding_all(self, 2);
@@ -635,8 +571,6 @@ void egui_view_path_init(egui_view_t *self)
     egui_view_set_focusable(self, 0);
 #endif
 
-    local->compact_mode = 0;
-    local->read_only_mode = 0;
     egui_view_path_apply_standard_style(self);
     egui_view_set_view_name(self, "egui_view_path");
 }
