@@ -60,7 +60,7 @@ static void setup_preview_button(void)
 {
     egui_view_button_init(EGUI_VIEW_OF(&preview_button), uicode_get_core());
     egui_view_set_size(EGUI_VIEW_OF(&preview_button), 96, 32);
-    hcw_button_apply_compact_style(EGUI_VIEW_OF(&preview_button));
+    hcw_button_apply_standard_style(EGUI_VIEW_OF(&preview_button));
     hcw_button_set_text(EGUI_VIEW_OF(&preview_button), "Open");
     hcw_button_set_icon(EGUI_VIEW_OF(&preview_button), EGUI_ICON_MS_ARROW_FORWARD);
     hcw_button_set_icon_font(EGUI_VIEW_OF(&preview_button), EGUI_FONT_ICON_MS_16);
@@ -164,13 +164,6 @@ static void test_button_style_helpers_update_background_and_clear_pressed_state(
     EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(local)->background == EGUI_BG_OF(&hcw_button_standard_background));
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_WHITE.full, local->base.color.full);
     EGUI_TEST_ASSERT_EQUAL_INT(6, local->icon_text_gap);
-
-    egui_view_set_pressed(EGUI_VIEW_OF(local), 1);
-    hcw_button_apply_compact_style(EGUI_VIEW_OF(local));
-    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(local)->is_pressed);
-    EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(local)->background == EGUI_BG_OF(&hcw_button_compact_background));
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_WHITE.full, local->base.color.full);
-    EGUI_TEST_ASSERT_EQUAL_INT(4, local->icon_text_gap);
 
     egui_view_set_pressed(EGUI_VIEW_OF(local), 1);
     hcw_button_apply_disabled_style(EGUI_VIEW_OF(local));

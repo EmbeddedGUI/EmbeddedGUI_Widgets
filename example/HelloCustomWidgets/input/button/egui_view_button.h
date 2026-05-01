@@ -9,7 +9,6 @@ extern "C" {
 #endif
 
 void hcw_button_apply_standard_style(egui_view_t *self);
-void hcw_button_apply_compact_style(egui_view_t *self);
 void hcw_button_apply_disabled_style(egui_view_t *self);
 void hcw_button_set_text(egui_view_t *self, const char *text);
 void hcw_button_set_icon(egui_view_t *self, const char *icon);

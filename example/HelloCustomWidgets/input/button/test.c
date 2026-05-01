@@ -37,8 +37,8 @@ static egui_view_label_t title_label;
 static egui_view_button_t button_primary;
 static egui_view_api_t button_primary_api;
 static egui_view_linearlayout_t bottom_row;
-static egui_view_button_t button_compact;
-static egui_view_api_t button_compact_api;
+static egui_view_button_t button_secondary;
+static egui_view_api_t button_secondary_api;
 static egui_view_button_t button_disabled;
 static egui_view_api_t button_disabled_api;
 static uint8_t current_primary_snapshot;
@@ -57,7 +57,7 @@ static const button_snapshot_t primary_snapshots[] = {
         {"Dispatch", EGUI_ICON_MS_ARROW_FORWARD, 4},
 };
 
-static const button_snapshot_t compact_snapshot = {"Open", EGUI_ICON_MS_ARROW_FORWARD, 4};
+static const button_snapshot_t secondary_snapshot = {"Open", EGUI_ICON_MS_ARROW_FORWARD, 4};
 static const button_snapshot_t disabled_snapshot = {"Queued", EGUI_ICON_MS_DOWNLOAD, 4};
 
 static void layout_page(void);
@@ -86,7 +86,7 @@ static void apply_primary_default_state(void)
 
 static void apply_preview_states(void)
 {
-    apply_snapshot_to_button(&button_compact, &compact_snapshot);
+    apply_snapshot_to_button(&button_secondary, &secondary_snapshot);
     apply_snapshot_to_button(&button_disabled, &disabled_snapshot);
     if (ui_ready)
     {
@@ -165,16 +165,17 @@ void test_init_ui(void)
     egui_view_linearlayout_set_align_type(EGUI_VIEW_OF(&bottom_row), EGUI_ALIGN_VCENTER);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&bottom_row));
 
-    egui_view_button_init(EGUI_VIEW_OF(&button_compact), uicode_get_core());
-    egui_view_set_size(EGUI_VIEW_OF(&button_compact), BUTTON_PREVIEW_WIDTH, BUTTON_PREVIEW_HEIGHT);
-    hello_custom_widgets_demo_set_label_font_with_min_height(EGUI_VIEW_OF(&button_compact), (const egui_font_t *)&egui_res_font_montserrat_10_4);
-    hcw_button_apply_compact_style(EGUI_VIEW_OF(&button_compact));
-    hcw_button_set_icon_font(EGUI_VIEW_OF(&button_compact), EGUI_FONT_ICON_MS_16);
-    hcw_button_override_static_preview_api(EGUI_VIEW_OF(&button_compact), &button_compact_api);
+    egui_view_button_init(EGUI_VIEW_OF(&button_secondary), uicode_get_core());
+    egui_view_set_size(EGUI_VIEW_OF(&button_secondary), BUTTON_PREVIEW_WIDTH, BUTTON_PREVIEW_HEIGHT);
+    hello_custom_widgets_demo_set_label_font_with_min_height(EGUI_VIEW_OF(&button_secondary), (const egui_font_t *)&egui_res_font_montserrat_10_4);
+    hcw_button_apply_standard_style(EGUI_VIEW_OF(&button_secondary));
+    hcw_button_set_icon_text_gap(EGUI_VIEW_OF(&button_secondary), 4);
+    hcw_button_set_icon_font(EGUI_VIEW_OF(&button_secondary), EGUI_FONT_ICON_MS_16);
+    hcw_button_override_static_preview_api(EGUI_VIEW_OF(&button_secondary), &button_secondary_api);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
-    egui_view_set_focusable(EGUI_VIEW_OF(&button_compact), 0);
+    egui_view_set_focusable(EGUI_VIEW_OF(&button_secondary), 0);
 #endif
-    egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&button_compact));
+    egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&button_secondary));
 
     egui_view_button_init(EGUI_VIEW_OF(&button_disabled), uicode_get_core());
     egui_view_set_size(EGUI_VIEW_OF(&button_disabled), BUTTON_PREVIEW_WIDTH, BUTTON_PREVIEW_HEIGHT);
@@ -313,4 +314,3 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     }
 }
 #endif
-
