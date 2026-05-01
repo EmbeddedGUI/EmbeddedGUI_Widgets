@@ -18,8 +18,6 @@ struct egui_view_rectangle
     egui_dim_t stroke_width;
     egui_dim_t corner_radius;
     uint8_t fill_enabled;
-    uint8_t compact_mode;
-    uint8_t read_only_mode;
 };
 
 void egui_view_rectangle_init(egui_view_t *self);
@@ -30,14 +28,8 @@ void egui_view_rectangle_set_corner_radius(egui_view_t *self, egui_dim_t corner_
 egui_dim_t egui_view_rectangle_get_corner_radius(egui_view_t *self);
 void egui_view_rectangle_set_fill_enabled(egui_view_t *self, uint8_t fill_enabled);
 uint8_t egui_view_rectangle_get_fill_enabled(egui_view_t *self);
-void egui_view_rectangle_set_compact_mode(egui_view_t *self, uint8_t compact_mode);
-uint8_t egui_view_rectangle_get_compact_mode(egui_view_t *self);
-void egui_view_rectangle_set_read_only_mode(egui_view_t *self, uint8_t read_only_mode);
-uint8_t egui_view_rectangle_get_read_only_mode(egui_view_t *self);
 void egui_view_rectangle_apply_standard_style(egui_view_t *self);
 void egui_view_rectangle_apply_accent_style(egui_view_t *self);
-void egui_view_rectangle_apply_compact_style(egui_view_t *self);
-void egui_view_rectangle_apply_read_only_style(egui_view_t *self);
 void egui_view_rectangle_override_static_preview_api(egui_view_t *self, egui_view_api_t *api);
 
 #ifdef __cplusplus
