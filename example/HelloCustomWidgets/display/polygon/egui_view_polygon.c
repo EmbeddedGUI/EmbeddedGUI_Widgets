@@ -19,19 +19,6 @@ static const uint8_t polygon_accent_points[] = {
         8, 36,
 };
 
-static const uint8_t polygon_compact_points[] = {
-        50, 14,
-        86, 82,
-        14, 82,
-};
-
-static const uint8_t polygon_read_only_points[] = {
-        50, 10,
-        88, 50,
-        50, 90,
-        12, 50,
-};
-
 static egui_view_polygon_t *egui_view_polygon_local(egui_view_t *self)
 {
     return (egui_view_polygon_t *)self;
@@ -93,8 +80,8 @@ static void egui_view_polygon_on_draw(egui_view_t *self)
     egui_color_t fill_color = local->fill_color;
     egui_color_t stroke_color = local->stroke_color;
     egui_color_t accent_color = local->accent_color;
-    egui_alpha_t fill_alpha = local->compact_mode ? 36 : 52;
-    egui_alpha_t stroke_alpha = local->compact_mode ? 58 : 82;
+    egui_alpha_t fill_alpha = 52;
+    egui_alpha_t stroke_alpha = 82;
     egui_dim_t points[EGUI_VIEW_POLYGON_MAX_POINTS * 2];
 
     egui_view_get_work_region(self, &region);
@@ -103,14 +90,6 @@ static void egui_view_polygon_on_draw(egui_view_t *self)
         return;
     }
 
-    if (local->read_only_mode)
-    {
-        fill_color = egui_rgb_mix(fill_color, EGUI_COLOR_HEX(0xE6EAEE), 62);
-        stroke_color = egui_rgb_mix(stroke_color, EGUI_COLOR_HEX(0x8A97A5), 58);
-        accent_color = egui_rgb_mix(accent_color, EGUI_COLOR_HEX(0x8A97A5), 58);
-        fill_alpha = 34;
-        stroke_alpha = 48;
-    }
     if (!egui_view_get_enable(self))
     {
         fill_color = egui_view_polygon_mix_disabled(fill_color);
@@ -218,45 +197,11 @@ void egui_view_polygon_get_point(egui_view_t *self, uint8_t index, uint8_t *x_pe
     }
 }
 
-void egui_view_polygon_set_compact_mode(egui_view_t *self, uint8_t compact_mode)
-{
-    egui_view_polygon_t *local = egui_view_polygon_local(self);
-
-    egui_view_polygon_clear_pressed_state(self);
-    local->compact_mode = compact_mode ? 1 : 0;
-    egui_view_invalidate(self);
-}
-
-uint8_t egui_view_polygon_get_compact_mode(egui_view_t *self)
-{
-    egui_view_polygon_t *local = egui_view_polygon_local(self);
-
-    return local->compact_mode;
-}
-
-void egui_view_polygon_set_read_only_mode(egui_view_t *self, uint8_t read_only_mode)
-{
-    egui_view_polygon_t *local = egui_view_polygon_local(self);
-
-    egui_view_polygon_clear_pressed_state(self);
-    local->read_only_mode = read_only_mode ? 1 : 0;
-    egui_view_invalidate(self);
-}
-
-uint8_t egui_view_polygon_get_read_only_mode(egui_view_t *self)
-{
-    egui_view_polygon_t *local = egui_view_polygon_local(self);
-
-    return local->read_only_mode;
-}
-
 void egui_view_polygon_apply_standard_style(egui_view_t *self)
 {
     egui_view_polygon_set_palette(self, EGUI_COLOR_HEX(0xDDEBFA), EGUI_COLOR_HEX(0x0F6CBD), EGUI_COLOR_HEX(0xBBD7F0));
     egui_view_polygon_set_stroke_width(self, 2);
     egui_view_polygon_set_points(self, polygon_standard_points, 4);
-    egui_view_polygon_set_compact_mode(self, 0);
-    egui_view_polygon_set_read_only_mode(self, 0);
 }
 
 void egui_view_polygon_apply_accent_style(egui_view_t *self)
@@ -264,26 +209,6 @@ void egui_view_polygon_apply_accent_style(egui_view_t *self)
     egui_view_polygon_set_palette(self, EGUI_COLOR_HEX(0xD4E8FA), EGUI_COLOR_HEX(0x0F6CBD), EGUI_COLOR_HEX(0x9EC7EA));
     egui_view_polygon_set_stroke_width(self, 3);
     egui_view_polygon_set_points(self, polygon_accent_points, 5);
-    egui_view_polygon_set_compact_mode(self, 0);
-    egui_view_polygon_set_read_only_mode(self, 0);
-}
-
-void egui_view_polygon_apply_compact_style(egui_view_t *self)
-{
-    egui_view_polygon_set_palette(self, EGUI_COLOR_HEX(0xDCEDEA), EGUI_COLOR_HEX(0x0C7C73), EGUI_COLOR_HEX(0xBFDCD8));
-    egui_view_polygon_set_stroke_width(self, 1);
-    egui_view_polygon_set_points(self, polygon_compact_points, 3);
-    egui_view_polygon_set_compact_mode(self, 1);
-    egui_view_polygon_set_read_only_mode(self, 0);
-}
-
-void egui_view_polygon_apply_read_only_style(egui_view_t *self)
-{
-    egui_view_polygon_set_palette(self, EGUI_COLOR_HEX(0xE1E6EB), EGUI_COLOR_HEX(0x687684), EGUI_COLOR_HEX(0xCCD4DC));
-    egui_view_polygon_set_stroke_width(self, 1);
-    egui_view_polygon_set_points(self, polygon_read_only_points, 4);
-    egui_view_polygon_set_compact_mode(self, 1);
-    egui_view_polygon_set_read_only_mode(self, 1);
 }
 
 #if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
@@ -364,8 +289,6 @@ static const egui_view_api_t EGUI_VIEW_API_TABLE_NAME(egui_view_polygon_t) = {
 
 void egui_view_polygon_init(egui_view_t *self)
 {
-    egui_view_polygon_t *local = egui_view_polygon_local(self);
-
     egui_view_init(self, uicode_get_core());
     self->api = &EGUI_VIEW_API_TABLE_NAME(egui_view_polygon_t);
     egui_view_set_padding_all(self, 2);
@@ -373,8 +296,6 @@ void egui_view_polygon_init(egui_view_t *self)
     egui_view_set_focusable(self, 0);
 #endif
 
-    local->compact_mode = 0;
-    local->read_only_mode = 0;
     egui_view_polygon_apply_standard_style(self);
     egui_view_set_view_name(self, "egui_view_polygon");
 }

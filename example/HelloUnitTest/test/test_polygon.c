@@ -19,8 +19,6 @@ struct polygon_preview_snapshot
     uint8_t point_count;
     uint8_t points_percent[EGUI_VIEW_POLYGON_MAX_POINTS * 2];
     egui_alpha_t alpha;
-    uint8_t compact_mode;
-    uint8_t read_only_mode;
     uint8_t enable;
     uint8_t is_pressed;
     uint8_t is_focused;
@@ -33,6 +31,19 @@ struct polygon_preview_snapshot
 static egui_view_polygon_t test_control;
 static egui_view_polygon_t preview_control;
 static egui_view_api_t preview_api;
+
+static const uint8_t test_polygon_triangle_points[] = {
+        50, 14,
+        86, 82,
+        14, 82,
+};
+
+static const uint8_t test_polygon_muted_points[] = {
+        50, 10,
+        88, 50,
+        50, 90,
+        12, 50,
+};
 
 static void assert_region_equal(const egui_region_t *expected, const egui_region_t *actual)
 {
@@ -52,7 +63,10 @@ static void setup_preview_control(void)
 {
     egui_view_polygon_init(EGUI_VIEW_OF(&preview_control));
     egui_view_set_size(EGUI_VIEW_OF(&preview_control), 68, 38);
-    egui_view_polygon_apply_compact_style(EGUI_VIEW_OF(&preview_control));
+    egui_view_polygon_set_palette(EGUI_VIEW_OF(&preview_control), EGUI_COLOR_HEX(0xDCEDEA), EGUI_COLOR_HEX(0x0C7C73),
+                                  EGUI_COLOR_HEX(0xBFDCD8));
+    egui_view_polygon_set_stroke_width(EGUI_VIEW_OF(&preview_control), 1);
+    egui_view_polygon_set_points(EGUI_VIEW_OF(&preview_control), test_polygon_triangle_points, 3);
     egui_view_polygon_override_static_preview_api(EGUI_VIEW_OF(&preview_control), &preview_api);
 }
 
@@ -110,8 +124,6 @@ static void capture_preview_snapshot(polygon_preview_snapshot_t *snapshot)
     snapshot->point_count = preview_control.point_count;
     memcpy(snapshot->points_percent, preview_control.points_percent, sizeof(snapshot->points_percent));
     snapshot->alpha = EGUI_VIEW_OF(&preview_control)->alpha;
-    snapshot->compact_mode = preview_control.compact_mode;
-    snapshot->read_only_mode = preview_control.read_only_mode;
     snapshot->enable = (uint8_t)egui_view_get_enable(EGUI_VIEW_OF(&preview_control));
     snapshot->is_pressed = EGUI_VIEW_OF(&preview_control)->is_pressed;
     snapshot->is_focused = EGUI_VIEW_OF(&preview_control)->is_focused;
@@ -132,8 +144,6 @@ static void assert_preview_state_unchanged(const polygon_preview_snapshot_t *sna
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->point_count, preview_control.point_count);
     EGUI_TEST_ASSERT_EQUAL_INT(0, memcmp(snapshot->points_percent, preview_control.points_percent, sizeof(snapshot->points_percent)));
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->alpha, EGUI_VIEW_OF(&preview_control)->alpha);
-    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->compact_mode, preview_control.compact_mode);
-    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->read_only_mode, preview_control.read_only_mode);
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->enable, egui_view_get_enable(EGUI_VIEW_OF(&preview_control)));
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&preview_control)->is_pressed);
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->is_focused, EGUI_VIEW_OF(&preview_control)->is_focused);
@@ -161,8 +171,6 @@ static void test_polygon_init_defaults(void)
     EGUI_TEST_ASSERT_EQUAL_INT(4, egui_view_polygon_get_point_count(EGUI_VIEW_OF(&test_control)));
     assert_point(EGUI_VIEW_OF(&test_control), 0, 50, 8);
     assert_point(EGUI_VIEW_OF(&test_control), 3, 10, 50);
-    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_polygon_get_compact_mode(EGUI_VIEW_OF(&test_control)));
-    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_polygon_get_read_only_mode(EGUI_VIEW_OF(&test_control)));
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xDDEBFA).full, test_control.fill_color.full);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x0F6CBD).full, test_control.stroke_color.full);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_MARGIN_PADDING
@@ -221,15 +229,17 @@ static void test_polygon_styles(void)
     EGUI_TEST_ASSERT_EQUAL_INT(5, egui_view_polygon_get_point_count(EGUI_VIEW_OF(&test_control)));
     assert_point(EGUI_VIEW_OF(&test_control), 1, 92, 36);
 
-    egui_view_polygon_apply_compact_style(EGUI_VIEW_OF(&test_control));
-    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_polygon_get_compact_mode(EGUI_VIEW_OF(&test_control)));
-    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_polygon_get_read_only_mode(EGUI_VIEW_OF(&test_control)));
+    egui_view_polygon_set_palette(EGUI_VIEW_OF(&test_control), EGUI_COLOR_HEX(0xDCEDEA), EGUI_COLOR_HEX(0x0C7C73),
+                                  EGUI_COLOR_HEX(0xBFDCD8));
+    egui_view_polygon_set_stroke_width(EGUI_VIEW_OF(&test_control), 1);
+    egui_view_polygon_set_points(EGUI_VIEW_OF(&test_control), test_polygon_triangle_points, 3);
     EGUI_TEST_ASSERT_EQUAL_INT(3, egui_view_polygon_get_point_count(EGUI_VIEW_OF(&test_control)));
     assert_point(EGUI_VIEW_OF(&test_control), 2, 14, 82);
 
-    egui_view_polygon_apply_read_only_style(EGUI_VIEW_OF(&test_control));
-    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_polygon_get_compact_mode(EGUI_VIEW_OF(&test_control)));
-    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_polygon_get_read_only_mode(EGUI_VIEW_OF(&test_control)));
+    egui_view_polygon_set_palette(EGUI_VIEW_OF(&test_control), EGUI_COLOR_HEX(0xE1E6EB), EGUI_COLOR_HEX(0x687684),
+                                  EGUI_COLOR_HEX(0xCCD4DC));
+    egui_view_polygon_set_stroke_width(EGUI_VIEW_OF(&test_control), 1);
+    egui_view_polygon_set_points(EGUI_VIEW_OF(&test_control), test_polygon_muted_points, 4);
     EGUI_TEST_ASSERT_EQUAL_INT(4, egui_view_polygon_get_point_count(EGUI_VIEW_OF(&test_control)));
     assert_point(EGUI_VIEW_OF(&test_control), 3, 12, 50);
 }
