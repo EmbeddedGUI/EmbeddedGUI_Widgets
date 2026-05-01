@@ -27,8 +27,6 @@ struct label_control_preview_snapshot
     uint8_t access_key_index;
     uint8_t required;
     uint8_t target_highlighted;
-    uint8_t compact_mode;
-    uint8_t read_only_mode;
     uint8_t enable;
     uint8_t is_pressed;
     uint8_t is_focused;
@@ -67,9 +65,11 @@ static void setup_preview_control(void)
 {
     egui_view_label_control_init(EGUI_VIEW_OF(&preview_control));
     egui_view_set_size(EGUI_VIEW_OF(&preview_control), 92, 30);
-    egui_view_label_control_apply_compact_style(EGUI_VIEW_OF(&preview_control));
-    egui_view_label_control_set_text(EGUI_VIEW_OF(&preview_control), "Compact");
-    egui_view_label_control_set_target_hint(EGUI_VIEW_OF(&preview_control), "Hidden");
+    egui_view_label_control_set_palette(EGUI_VIEW_OF(&preview_control), EGUI_COLOR_HEX(0xF8FBFD), EGUI_COLOR_HEX(0xD2DCE6),
+                                        EGUI_COLOR_HEX(0x22313C), EGUI_COLOR_HEX(0x6E7E8E), EGUI_COLOR_HEX(0x0C7C73),
+                                        EGUI_COLOR_HEX(0xA15C00));
+    egui_view_label_control_set_text(EGUI_VIEW_OF(&preview_control), "Small");
+    egui_view_label_control_set_target_hint(EGUI_VIEW_OF(&preview_control), "");
     egui_view_label_control_set_access_key_index(EGUI_VIEW_OF(&preview_control), 0);
     egui_view_label_control_override_static_preview_api(EGUI_VIEW_OF(&preview_control), &preview_api);
 }
@@ -136,8 +136,6 @@ static void capture_preview_snapshot(label_control_preview_snapshot_t *snapshot)
     snapshot->access_key_index = preview_control.access_key_index;
     snapshot->required = preview_control.required;
     snapshot->target_highlighted = preview_control.target_highlighted;
-    snapshot->compact_mode = preview_control.compact_mode;
-    snapshot->read_only_mode = preview_control.read_only_mode;
     snapshot->enable = (uint8_t)egui_view_get_enable(EGUI_VIEW_OF(&preview_control));
     snapshot->is_pressed = EGUI_VIEW_OF(&preview_control)->is_pressed;
     snapshot->is_focused = EGUI_VIEW_OF(&preview_control)->is_focused;
@@ -166,8 +164,6 @@ static void assert_preview_state_unchanged(const label_control_preview_snapshot_
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->access_key_index, preview_control.access_key_index);
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->required, preview_control.required);
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->target_highlighted, preview_control.target_highlighted);
-    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->compact_mode, preview_control.compact_mode);
-    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->read_only_mode, preview_control.read_only_mode);
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->enable, egui_view_get_enable(EGUI_VIEW_OF(&preview_control)));
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&preview_control)->is_pressed);
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->is_focused, EGUI_VIEW_OF(&preview_control)->is_focused);
@@ -189,8 +185,6 @@ static void test_label_control_init_defaults(void)
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_LABEL_CONTROL_ACCESS_NONE, egui_view_label_control_get_access_key_index(EGUI_VIEW_OF(&test_control)));
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_label_control_get_required(EGUI_VIEW_OF(&test_control)));
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_label_control_get_target_highlighted(EGUI_VIEW_OF(&test_control)));
-    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_label_control_get_compact_mode(EGUI_VIEW_OF(&test_control)));
-    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_label_control_get_read_only_mode(EGUI_VIEW_OF(&test_control)));
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xFFFFFF).full, test_control.surface_color.full);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x0F6CBD).full, test_control.accent_color.full);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_MARGIN_PADDING
@@ -229,26 +223,19 @@ static void test_label_control_setters_and_access_key_clamp(void)
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_ALIGN_RIGHT | EGUI_ALIGN_VCENTER, egui_view_label_control_get_align_type(EGUI_VIEW_OF(&test_control)));
 }
 
-static void test_label_control_styles_palette_and_fonts(void)
+static void test_label_control_palette_fonts_and_highlight(void)
 {
     setup_label_control();
 
     egui_view_set_pressed(EGUI_VIEW_OF(&test_control), 1);
-    egui_view_label_control_apply_accent_style(EGUI_VIEW_OF(&test_control));
+    egui_view_label_control_set_palette(EGUI_VIEW_OF(&test_control), EGUI_COLOR_HEX(0xF7FBFF), EGUI_COLOR_HEX(0xB9D6F0),
+                                        EGUI_COLOR_HEX(0x173247), EGUI_COLOR_HEX(0x5D7183), EGUI_COLOR_HEX(0x0F6CBD),
+                                        EGUI_COLOR_HEX(0xA15C00));
+    egui_view_label_control_set_target_highlighted(EGUI_VIEW_OF(&test_control), 1);
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_control)->is_pressed);
-    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_label_control_get_compact_mode(EGUI_VIEW_OF(&test_control)));
-    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_label_control_get_read_only_mode(EGUI_VIEW_OF(&test_control)));
     EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_label_control_get_target_highlighted(EGUI_VIEW_OF(&test_control)));
-
-    egui_view_label_control_apply_compact_style(EGUI_VIEW_OF(&test_control));
-    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_label_control_get_compact_mode(EGUI_VIEW_OF(&test_control)));
-    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_label_control_get_read_only_mode(EGUI_VIEW_OF(&test_control)));
-    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_label_control_get_target_highlighted(EGUI_VIEW_OF(&test_control)));
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x0C7C73).full, test_control.accent_color.full);
-
-    egui_view_label_control_apply_read_only_style(EGUI_VIEW_OF(&test_control));
-    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_label_control_get_compact_mode(EGUI_VIEW_OF(&test_control)));
-    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_label_control_get_read_only_mode(EGUI_VIEW_OF(&test_control)));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xF7FBFF).full, test_control.surface_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x0F6CBD).full, test_control.accent_color.full);
 
     egui_view_label_control_set_fonts(EGUI_VIEW_OF(&test_control), (const egui_font_t *)&egui_res_font_montserrat_10_4,
                                       (const egui_font_t *)&egui_res_font_montserrat_8_4);
@@ -302,7 +289,7 @@ void test_label_control_run(void)
     EGUI_TEST_SUITE_BEGIN(label_control);
     EGUI_TEST_RUN(test_label_control_init_defaults);
     EGUI_TEST_RUN(test_label_control_setters_and_access_key_clamp);
-    EGUI_TEST_RUN(test_label_control_styles_palette_and_fonts);
+    EGUI_TEST_RUN(test_label_control_palette_fonts_and_highlight);
     EGUI_TEST_RUN(test_label_control_static_preview_consumes_input_and_keeps_state);
     EGUI_TEST_RUN(test_label_control_text_helpers);
     EGUI_TEST_SUITE_END();

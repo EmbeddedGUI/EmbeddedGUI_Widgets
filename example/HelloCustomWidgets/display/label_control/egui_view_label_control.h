@@ -30,8 +30,6 @@ struct egui_view_label_control
     uint8_t access_key_index;
     uint8_t required;
     uint8_t target_highlighted;
-    uint8_t compact_mode;
-    uint8_t read_only_mode;
 };
 
 void egui_view_label_control_init(egui_view_t *self);
@@ -51,14 +49,6 @@ void egui_view_label_control_set_required(egui_view_t *self, uint8_t required);
 uint8_t egui_view_label_control_get_required(egui_view_t *self);
 void egui_view_label_control_set_target_highlighted(egui_view_t *self, uint8_t target_highlighted);
 uint8_t egui_view_label_control_get_target_highlighted(egui_view_t *self);
-void egui_view_label_control_set_compact_mode(egui_view_t *self, uint8_t compact_mode);
-uint8_t egui_view_label_control_get_compact_mode(egui_view_t *self);
-void egui_view_label_control_set_read_only_mode(egui_view_t *self, uint8_t read_only_mode);
-uint8_t egui_view_label_control_get_read_only_mode(egui_view_t *self);
-void egui_view_label_control_apply_standard_style(egui_view_t *self);
-void egui_view_label_control_apply_accent_style(egui_view_t *self);
-void egui_view_label_control_apply_compact_style(egui_view_t *self);
-void egui_view_label_control_apply_read_only_style(egui_view_t *self);
 void egui_view_label_control_override_static_preview_api(egui_view_t *self, egui_view_api_t *api);
 
 #ifdef __cplusplus

@@ -3,7 +3,6 @@
 #include <string.h>
 
 #define EGUI_VIEW_LABEL_CONTROL_RADIUS          8
-#define EGUI_VIEW_LABEL_CONTROL_COMPACT_RADIUS  6
 #define EGUI_VIEW_LABEL_CONTROL_REQUIRED_RADIUS 2
 
 static egui_view_label_control_t *egui_view_label_control_local(egui_view_t *self)
@@ -192,8 +191,8 @@ static void egui_view_label_control_get_text_regions(egui_view_t *self, egui_vie
                                                      egui_region_t *hint_region)
 {
     egui_region_t work_region;
-    egui_dim_t left_gap = local->compact_mode ? 7 : 10;
-    egui_dim_t right_gap = local->required ? (local->compact_mode ? 10 : 13) : (local->compact_mode ? 5 : 7);
+    egui_dim_t left_gap = 10;
+    egui_dim_t right_gap = local->required ? 13 : 7;
 
     egui_view_get_work_region(self, &work_region);
     if (work_region.size.width < left_gap + right_gap)
@@ -202,9 +201,9 @@ static void egui_view_label_control_get_text_regions(egui_view_t *self, egui_vie
     }
 
     text_region->location.x = work_region.location.x + left_gap;
-    text_region->location.y = work_region.location.y + (local->compact_mode ? 0 : 1);
+    text_region->location.y = work_region.location.y + 1;
     text_region->size.width = work_region.size.width - left_gap - right_gap;
-    text_region->size.height = local->compact_mode || !egui_view_label_control_has_text(local->target_hint) ? work_region.size.height : work_region.size.height / 2;
+    text_region->size.height = !egui_view_label_control_has_text(local->target_hint) ? work_region.size.height : work_region.size.height / 2;
     if (text_region->size.height < 10)
     {
         text_region->size.height = work_region.size.height;
@@ -234,12 +233,12 @@ static void egui_view_label_control_draw_text(const egui_font_t *font, egui_view
 static void egui_view_label_control_draw_access_underline(egui_view_t *self, egui_view_label_control_t *local, const egui_region_t *text_region,
                                                           const char *draw_text, egui_color_t color)
 {
-    egui_dim_t underline_width = local->compact_mode ? 4 : 5;
+    egui_dim_t underline_width = 5;
     egui_dim_t underline_x;
     egui_dim_t underline_y;
     uint8_t draw_length;
 
-    if (local->read_only_mode || local->access_key_index == EGUI_VIEW_LABEL_CONTROL_ACCESS_NONE || !egui_view_label_control_has_text(draw_text))
+    if (local->access_key_index == EGUI_VIEW_LABEL_CONTROL_ACCESS_NONE || !egui_view_label_control_has_text(draw_text))
     {
         return;
     }
@@ -255,7 +254,7 @@ static void egui_view_label_control_draw_access_underline(egui_view_t *self, egu
     {
         return;
     }
-    underline_y = text_region->location.y + text_region->size.height - (local->compact_mode ? 3 : 4);
+    underline_y = text_region->location.y + text_region->size.height - 4;
     egui_canvas_draw_rectangle_fill(&uicode_get_core()->canvas, underline_x, underline_y, underline_width, 1, color,
                                     egui_color_alpha_mix(self->alpha, 82));
 }
@@ -272,7 +271,7 @@ static void egui_view_label_control_on_draw(egui_view_t *self)
     egui_color_t hint_color = local->hint_color;
     egui_color_t accent_color = local->accent_color;
     egui_color_t required_color = local->required_color;
-    egui_dim_t radius = local->compact_mode ? EGUI_VIEW_LABEL_CONTROL_COMPACT_RADIUS : EGUI_VIEW_LABEL_CONTROL_RADIUS;
+    egui_dim_t radius = EGUI_VIEW_LABEL_CONTROL_RADIUS;
     char text[EGUI_VIEW_LABEL_CONTROL_MAX_TEXT_LEN + 1];
     char hint[EGUI_VIEW_LABEL_CONTROL_MAX_HINT_LEN + 1];
 
@@ -282,19 +281,10 @@ static void egui_view_label_control_on_draw(egui_view_t *self)
         return;
     }
 
-    if (local->target_highlighted && !local->read_only_mode)
+    if (local->target_highlighted)
     {
-        surface_color = egui_rgb_mix(surface_color, accent_color, local->compact_mode ? 6 : 8);
+        surface_color = egui_rgb_mix(surface_color, accent_color, 8);
         border_color = egui_rgb_mix(border_color, accent_color, 42);
-    }
-    if (local->read_only_mode)
-    {
-        surface_color = egui_rgb_mix(surface_color, EGUI_COLOR_HEX(0xF5F7FA), 48);
-        border_color = egui_rgb_mix(border_color, EGUI_COLOR_HEX(0xAAB5C0), 48);
-        text_color = egui_rgb_mix(text_color, EGUI_COLOR_HEX(0x8A97A5), 38);
-        hint_color = egui_rgb_mix(hint_color, EGUI_COLOR_HEX(0x8A97A5), 38);
-        accent_color = egui_rgb_mix(accent_color, EGUI_COLOR_HEX(0x8A97A5), 46);
-        required_color = egui_rgb_mix(required_color, EGUI_COLOR_HEX(0x8A97A5), 50);
     }
     if (!egui_view_get_enable(self))
     {
@@ -310,16 +300,15 @@ static void egui_view_label_control_on_draw(egui_view_t *self)
                                           surface_color, egui_color_alpha_mix(self->alpha, local->target_highlighted ? 98 : 92));
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, region.location.x, region.location.y, region.size.width, region.size.height, radius, 1,
                                      border_color, egui_color_alpha_mix(self->alpha, local->target_highlighted ? 62 : 42));
-    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, region.location.x + 5, region.location.y + (local->compact_mode ? 5 : 6),
-                                          local->compact_mode ? 2 : 3, region.size.height - (local->compact_mode ? 10 : 12), 1, accent_color,
-                                          egui_color_alpha_mix(self->alpha, local->read_only_mode ? 30 : 52));
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, region.location.x + 5, region.location.y + 6, 3, region.size.height - 12, 1,
+                                          accent_color, egui_color_alpha_mix(self->alpha, 52));
 
     egui_view_label_control_get_text_regions(self, local, &text_region, &hint_region);
-    egui_view_label_control_fit_text_to_width(local->text_font, local->text, text, sizeof(text), text_region.size.width, local->compact_mode ? 5 : 6);
+    egui_view_label_control_fit_text_to_width(local->text_font, local->text, text, sizeof(text), text_region.size.width, 6);
     egui_view_label_control_draw_text(local->text_font, self, text, &text_region, local->align_type, text_color, EGUI_ALPHA_100);
     egui_view_label_control_draw_access_underline(self, local, &text_region, text, accent_color);
 
-    if (!local->compact_mode && egui_view_label_control_has_text(local->target_hint))
+    if (egui_view_label_control_has_text(local->target_hint))
     {
         egui_view_label_control_fit_text_to_width(local->hint_font, local->target_hint, hint, sizeof(hint), hint_region.size.width, 5);
         egui_view_label_control_draw_text(local->hint_font, self, hint, &hint_region, local->align_type, hint_color, EGUI_ALPHA_100);
@@ -327,9 +316,8 @@ static void egui_view_label_control_on_draw(egui_view_t *self)
 
     if (local->required)
     {
-        egui_canvas_draw_circle_fill_basic(&uicode_get_core()->canvas, region.location.x + region.size.width - (local->compact_mode ? 7 : 9),
-                                           region.location.y + (local->compact_mode ? 8 : 10), EGUI_VIEW_LABEL_CONTROL_REQUIRED_RADIUS,
-                                           required_color, egui_color_alpha_mix(self->alpha, local->read_only_mode ? 62 : 92));
+        egui_canvas_draw_circle_fill_basic(&uicode_get_core()->canvas, region.location.x + region.size.width - 9, region.location.y + 10,
+                                           EGUI_VIEW_LABEL_CONTROL_REQUIRED_RADIUS, required_color, egui_color_alpha_mix(self->alpha, 92));
     }
 }
 
@@ -457,78 +445,6 @@ uint8_t egui_view_label_control_get_target_highlighted(egui_view_t *self)
     return local->target_highlighted;
 }
 
-void egui_view_label_control_set_compact_mode(egui_view_t *self, uint8_t compact_mode)
-{
-    egui_view_label_control_t *local = egui_view_label_control_local(self);
-
-    egui_view_label_control_clear_pressed_state(self);
-    local->compact_mode = compact_mode ? 1 : 0;
-    egui_view_invalidate(self);
-}
-
-uint8_t egui_view_label_control_get_compact_mode(egui_view_t *self)
-{
-    egui_view_label_control_t *local = egui_view_label_control_local(self);
-
-    return local->compact_mode;
-}
-
-void egui_view_label_control_set_read_only_mode(egui_view_t *self, uint8_t read_only_mode)
-{
-    egui_view_label_control_t *local = egui_view_label_control_local(self);
-
-    egui_view_label_control_clear_pressed_state(self);
-    local->read_only_mode = read_only_mode ? 1 : 0;
-    egui_view_invalidate(self);
-}
-
-uint8_t egui_view_label_control_get_read_only_mode(egui_view_t *self)
-{
-    egui_view_label_control_t *local = egui_view_label_control_local(self);
-
-    return local->read_only_mode;
-}
-
-void egui_view_label_control_apply_standard_style(egui_view_t *self)
-{
-    egui_view_label_control_set_palette(self, EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD5DEE8), EGUI_COLOR_HEX(0x1D2A36),
-                                        EGUI_COLOR_HEX(0x647484), EGUI_COLOR_HEX(0x0F6CBD), EGUI_COLOR_HEX(0xC2410C));
-    egui_view_label_control_set_align_type(self, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER);
-    egui_view_label_control_set_compact_mode(self, 0);
-    egui_view_label_control_set_read_only_mode(self, 0);
-    egui_view_label_control_set_target_highlighted(self, 0);
-}
-
-void egui_view_label_control_apply_accent_style(egui_view_t *self)
-{
-    egui_view_label_control_set_palette(self, EGUI_COLOR_HEX(0xF7FBFF), EGUI_COLOR_HEX(0xB9D6F0), EGUI_COLOR_HEX(0x173247),
-                                        EGUI_COLOR_HEX(0x5D7183), EGUI_COLOR_HEX(0x0F6CBD), EGUI_COLOR_HEX(0xA15C00));
-    egui_view_label_control_set_align_type(self, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER);
-    egui_view_label_control_set_compact_mode(self, 0);
-    egui_view_label_control_set_read_only_mode(self, 0);
-    egui_view_label_control_set_target_highlighted(self, 1);
-}
-
-void egui_view_label_control_apply_compact_style(egui_view_t *self)
-{
-    egui_view_label_control_set_palette(self, EGUI_COLOR_HEX(0xF8FBFD), EGUI_COLOR_HEX(0xD2DCE6), EGUI_COLOR_HEX(0x22313C),
-                                        EGUI_COLOR_HEX(0x6E7E8E), EGUI_COLOR_HEX(0x0C7C73), EGUI_COLOR_HEX(0xA15C00));
-    egui_view_label_control_set_align_type(self, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER);
-    egui_view_label_control_set_compact_mode(self, 1);
-    egui_view_label_control_set_read_only_mode(self, 0);
-    egui_view_label_control_set_target_highlighted(self, 0);
-}
-
-void egui_view_label_control_apply_read_only_style(egui_view_t *self)
-{
-    egui_view_label_control_set_palette(self, EGUI_COLOR_HEX(0xF5F7FA), EGUI_COLOR_HEX(0xD7DEE6), EGUI_COLOR_HEX(0x687684),
-                                        EGUI_COLOR_HEX(0x8B98A5), EGUI_COLOR_HEX(0x788593), EGUI_COLOR_HEX(0x92765F));
-    egui_view_label_control_set_align_type(self, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER);
-    egui_view_label_control_set_compact_mode(self, 1);
-    egui_view_label_control_set_read_only_mode(self, 1);
-    egui_view_label_control_set_target_highlighted(self, 0);
-}
-
 #if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
 static int egui_view_label_control_on_touch_event(egui_view_t *self, egui_motion_event_t *event)
 {
@@ -621,10 +537,14 @@ void egui_view_label_control_init(egui_view_t *self)
     local->access_key_index = EGUI_VIEW_LABEL_CONTROL_ACCESS_NONE;
     local->required = 0;
     local->target_highlighted = 0;
-    local->compact_mode = 0;
-    local->read_only_mode = 0;
+    local->surface_color = EGUI_COLOR_HEX(0xFFFFFF);
+    local->border_color = EGUI_COLOR_HEX(0xD5DEE8);
+    local->text_color = EGUI_COLOR_HEX(0x1D2A36);
+    local->hint_color = EGUI_COLOR_HEX(0x647484);
+    local->accent_color = EGUI_COLOR_HEX(0x0F6CBD);
+    local->required_color = EGUI_COLOR_HEX(0xC2410C);
+    local->align_type = EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER;
     egui_view_label_control_copy_text(local->text, sizeof(local->text), "Label");
     egui_view_label_control_copy_text(local->target_hint, sizeof(local->target_hint), "Target");
-    egui_view_label_control_apply_standard_style(self);
     egui_view_set_view_name(self, "egui_view_label_control");
 }
