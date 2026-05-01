@@ -19,8 +19,6 @@ struct image_control_preview_snapshot
     egui_color_t placeholder_color;
     egui_color_t muted_color;
     uint8_t stretch;
-    uint8_t compact_mode;
-    uint8_t read_only_mode;
     egui_alpha_t alpha;
     uint8_t enable;
     uint8_t is_pressed;
@@ -70,7 +68,8 @@ static void setup_preview_image_control(void)
 {
     egui_view_image_control_init(EGUI_VIEW_OF(&preview_image));
     egui_view_set_size(EGUI_VIEW_OF(&preview_image), 92, 50);
-    egui_view_image_control_apply_compact_style(EGUI_VIEW_OF(&preview_image));
+    egui_view_image_control_set_palette(EGUI_VIEW_OF(&preview_image), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD0D9E2),
+                                        EGUI_COLOR_HEX(0x0F7B45), EGUI_COLOR_HEX(0x7E8A97));
     egui_view_image_control_set_source(EGUI_VIEW_OF(&preview_image), egui_view_image_control_get_square_image(), "Square");
     egui_view_image_control_set_stretch(EGUI_VIEW_OF(&preview_image), EGUI_VIEW_IMAGE_CONTROL_STRETCH_FILL);
     egui_view_set_on_click_listener(EGUI_VIEW_OF(&preview_image), on_preview_click);
@@ -132,8 +131,6 @@ static void capture_preview_snapshot(image_control_preview_snapshot_t *snapshot)
     snapshot->placeholder_color = preview_image.placeholder_color;
     snapshot->muted_color = preview_image.muted_color;
     snapshot->stretch = preview_image.stretch;
-    snapshot->compact_mode = preview_image.compact_mode;
-    snapshot->read_only_mode = preview_image.read_only_mode;
     snapshot->alpha = EGUI_VIEW_OF(&preview_image)->alpha;
     snapshot->enable = (uint8_t)egui_view_get_enable(EGUI_VIEW_OF(&preview_image));
     snapshot->is_pressed = EGUI_VIEW_OF(&preview_image)->is_pressed;
@@ -155,8 +152,6 @@ static void assert_preview_state_unchanged(const image_control_preview_snapshot_
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->placeholder_color.full, preview_image.placeholder_color.full);
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->muted_color.full, preview_image.muted_color.full);
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->stretch, preview_image.stretch);
-    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->compact_mode, preview_image.compact_mode);
-    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->read_only_mode, preview_image.read_only_mode);
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->alpha, EGUI_VIEW_OF(&preview_image)->alpha);
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->enable, egui_view_get_enable(EGUI_VIEW_OF(&preview_image)));
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&preview_image)->is_pressed);
@@ -213,21 +208,9 @@ static void test_image_control_source_stretch_and_state_setters(void)
     assert_optional_string_equal("Landscape", egui_view_image_control_get_source_name(EGUI_VIEW_OF(&test_image)));
 }
 
-static void test_image_control_styles_and_palette(void)
+static void test_image_control_palette_clears_pressed_state(void)
 {
     setup_image_control();
-
-    egui_view_set_pressed(EGUI_VIEW_OF(&test_image), 1);
-    egui_view_image_control_apply_compact_style(EGUI_VIEW_OF(&test_image));
-    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_image)->is_pressed);
-    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_image_control_get_compact_mode(EGUI_VIEW_OF(&test_image)));
-    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_image_control_get_read_only_mode(EGUI_VIEW_OF(&test_image)));
-
-    egui_view_set_pressed(EGUI_VIEW_OF(&test_image), 1);
-    egui_view_image_control_apply_read_only_style(EGUI_VIEW_OF(&test_image));
-    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_image)->is_pressed);
-    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_image_control_get_compact_mode(EGUI_VIEW_OF(&test_image)));
-    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_image_control_get_read_only_mode(EGUI_VIEW_OF(&test_image)));
 
     egui_view_set_pressed(EGUI_VIEW_OF(&test_image), 1);
     egui_view_image_control_set_palette(EGUI_VIEW_OF(&test_image), EGUI_COLOR_HEX(0x010203), EGUI_COLOR_HEX(0x111213),
@@ -264,7 +247,7 @@ void test_image_control_run(void)
     EGUI_TEST_SUITE_BEGIN(image_control);
     EGUI_TEST_RUN(test_image_control_init_and_builtin_sources);
     EGUI_TEST_RUN(test_image_control_source_stretch_and_state_setters);
-    EGUI_TEST_RUN(test_image_control_styles_and_palette);
+    EGUI_TEST_RUN(test_image_control_palette_clears_pressed_state);
     EGUI_TEST_RUN(test_image_control_static_preview_consumes_input_and_keeps_state);
     EGUI_TEST_SUITE_END();
 }

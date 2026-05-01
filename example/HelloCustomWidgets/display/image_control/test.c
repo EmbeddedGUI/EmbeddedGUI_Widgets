@@ -36,10 +36,10 @@ static egui_view_label_t title_label;
 static egui_view_image_control_t primary_image;
 static egui_view_label_t caption_label;
 static egui_view_linearlayout_t bottom_row;
-static egui_view_image_control_t compact_preview;
-static egui_view_image_control_t read_only_preview;
-static egui_view_api_t compact_preview_api;
-static egui_view_api_t read_only_preview_api;
+static egui_view_image_control_t secondary_preview;
+static egui_view_image_control_t muted_preview;
+static egui_view_api_t secondary_preview_api;
+static egui_view_api_t muted_preview_api;
 static uint8_t ui_ready;
 
 EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
@@ -93,7 +93,8 @@ static void apply_primary_snapshot(uint8_t index)
 {
     const image_control_snapshot_t *snapshot = &primary_snapshots[index % PRIMARY_SNAPSHOT_COUNT];
 
-    egui_view_image_control_apply_standard_style(EGUI_VIEW_OF(&primary_image));
+    egui_view_image_control_set_palette(EGUI_VIEW_OF(&primary_image), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xB8C7D7),
+                                        EGUI_COLOR_HEX(0x0F6CBD), EGUI_COLOR_HEX(0x798694));
     egui_view_image_control_set_source(EGUI_VIEW_OF(&primary_image), snapshot->image, snapshot->source_name);
     egui_view_image_control_set_stretch(EGUI_VIEW_OF(&primary_image), snapshot->stretch);
     egui_view_label_set_text(EGUI_VIEW_OF(&caption_label), snapshot->caption);
@@ -111,13 +112,15 @@ static void apply_primary_default_state(void)
 
 static void apply_preview_states(void)
 {
-    egui_view_image_control_apply_compact_style(EGUI_VIEW_OF(&compact_preview));
-    egui_view_image_control_set_source(EGUI_VIEW_OF(&compact_preview), egui_view_image_control_get_square_image(), "Square");
-    egui_view_image_control_set_stretch(EGUI_VIEW_OF(&compact_preview), EGUI_VIEW_IMAGE_CONTROL_STRETCH_FILL);
+    egui_view_image_control_set_palette(EGUI_VIEW_OF(&secondary_preview), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD0D9E2),
+                                        EGUI_COLOR_HEX(0x0F7B45), EGUI_COLOR_HEX(0x7E8A97));
+    egui_view_image_control_set_source(EGUI_VIEW_OF(&secondary_preview), egui_view_image_control_get_square_image(), "Square");
+    egui_view_image_control_set_stretch(EGUI_VIEW_OF(&secondary_preview), EGUI_VIEW_IMAGE_CONTROL_STRETCH_FILL);
 
-    egui_view_image_control_apply_read_only_style(EGUI_VIEW_OF(&read_only_preview));
-    egui_view_image_control_set_source(EGUI_VIEW_OF(&read_only_preview), egui_view_image_control_get_portrait_image(), "Portrait");
-    egui_view_image_control_set_stretch(EGUI_VIEW_OF(&read_only_preview), EGUI_VIEW_IMAGE_CONTROL_STRETCH_UNIFORM);
+    egui_view_image_control_set_palette(EGUI_VIEW_OF(&muted_preview), EGUI_COLOR_HEX(0xF7F9FB), EGUI_COLOR_HEX(0xD3DCE5),
+                                        EGUI_COLOR_HEX(0x6B7785), EGUI_COLOR_HEX(0x7E8A97));
+    egui_view_image_control_set_source(EGUI_VIEW_OF(&muted_preview), egui_view_image_control_get_portrait_image(), "Portrait");
+    egui_view_image_control_set_stretch(EGUI_VIEW_OF(&muted_preview), EGUI_VIEW_IMAGE_CONTROL_STRETCH_UNIFORM);
 
     if (ui_ready)
     {
@@ -189,22 +192,22 @@ void test_init_ui(void)
     egui_view_linearlayout_set_align_type(EGUI_VIEW_OF(&bottom_row), EGUI_ALIGN_VCENTER);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&bottom_row));
 
-    egui_view_image_control_init(EGUI_VIEW_OF(&compact_preview));
-    egui_view_set_size(EGUI_VIEW_OF(&compact_preview), IMAGE_CONTROL_PREVIEW_WIDTH, IMAGE_CONTROL_PREVIEW_HEIGHT);
-    egui_view_image_control_override_static_preview_api(EGUI_VIEW_OF(&compact_preview), &compact_preview_api);
+    egui_view_image_control_init(EGUI_VIEW_OF(&secondary_preview));
+    egui_view_set_size(EGUI_VIEW_OF(&secondary_preview), IMAGE_CONTROL_PREVIEW_WIDTH, IMAGE_CONTROL_PREVIEW_HEIGHT);
+    egui_view_image_control_override_static_preview_api(EGUI_VIEW_OF(&secondary_preview), &secondary_preview_api);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
-    egui_view_set_focusable(EGUI_VIEW_OF(&compact_preview), 0);
+    egui_view_set_focusable(EGUI_VIEW_OF(&secondary_preview), 0);
 #endif
-    egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&compact_preview));
+    egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&secondary_preview));
 
-    egui_view_image_control_init(EGUI_VIEW_OF(&read_only_preview));
-    egui_view_set_size(EGUI_VIEW_OF(&read_only_preview), IMAGE_CONTROL_PREVIEW_WIDTH, IMAGE_CONTROL_PREVIEW_HEIGHT);
-    egui_view_set_margin(EGUI_VIEW_OF(&read_only_preview), 12, 0, 0, 0);
-    egui_view_image_control_override_static_preview_api(EGUI_VIEW_OF(&read_only_preview), &read_only_preview_api);
+    egui_view_image_control_init(EGUI_VIEW_OF(&muted_preview));
+    egui_view_set_size(EGUI_VIEW_OF(&muted_preview), IMAGE_CONTROL_PREVIEW_WIDTH, IMAGE_CONTROL_PREVIEW_HEIGHT);
+    egui_view_set_margin(EGUI_VIEW_OF(&muted_preview), 12, 0, 0, 0);
+    egui_view_image_control_override_static_preview_api(EGUI_VIEW_OF(&muted_preview), &muted_preview_api);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
-    egui_view_set_focusable(EGUI_VIEW_OF(&read_only_preview), 0);
+    egui_view_set_focusable(EGUI_VIEW_OF(&muted_preview), 0);
 #endif
-    egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&read_only_preview));
+    egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&muted_preview));
 
     apply_primary_default_state();
     apply_preview_states();

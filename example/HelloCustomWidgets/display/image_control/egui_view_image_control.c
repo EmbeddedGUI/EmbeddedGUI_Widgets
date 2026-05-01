@@ -179,8 +179,9 @@ static void egui_view_image_control_draw_placeholder(egui_view_t *self, const eg
 static void egui_view_image_control_get_content_region(egui_view_t *self, const egui_view_image_control_t *local, egui_region_t *content_region)
 {
     egui_region_t region;
-    egui_dim_t inset = local->compact_mode ? 2 : 4;
+    egui_dim_t inset = 4;
 
+    EGUI_UNUSED(local);
     egui_view_get_work_region(self, &region);
     if (region.size.width <= inset * 2 || region.size.height <= inset * 2)
     {
@@ -291,7 +292,7 @@ static void egui_view_image_control_on_draw(egui_view_t *self)
     egui_region_t content_region;
     egui_color_t surface_color = local->surface_color;
     egui_color_t border_color = local->border_color;
-    egui_dim_t radius = local->compact_mode ? 5 : 7;
+    egui_dim_t radius = 7;
 
     egui_view_get_work_region(self, &region);
     if (region.size.width <= 0 || region.size.height <= 0)
@@ -299,11 +300,6 @@ static void egui_view_image_control_on_draw(egui_view_t *self)
         return;
     }
 
-    if (local->read_only_mode)
-    {
-        surface_color = egui_rgb_mix(surface_color, EGUI_COLOR_HEX(0xF6F8FA), 42);
-        border_color = egui_rgb_mix(border_color, local->muted_color, 50);
-    }
     if (!egui_view_get_enable(self))
     {
         surface_color = egui_view_image_control_mix_disabled(surface_color);
@@ -316,14 +312,14 @@ static void egui_view_image_control_on_draw(egui_view_t *self)
     egui_view_image_control_get_content_region(self, local, &content_region);
     egui_view_image_control_draw_image(self, local, &content_region);
 
-    if (local->read_only_mode || !egui_view_get_enable(self))
+    if (!egui_view_get_enable(self))
     {
         egui_canvas_draw_rectangle_fill(&uicode_get_core()->canvas, content_region.location.x, content_region.location.y, content_region.size.width,
                                         content_region.size.height, surface_color, egui_color_alpha_mix(self->alpha, 34));
     }
 
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, region.location.x, region.location.y, region.size.width, region.size.height, radius, 1,
-                                     border_color, egui_color_alpha_mix(self->alpha, local->read_only_mode ? 48 : 64));
+                                     border_color, egui_color_alpha_mix(self->alpha, 64));
 }
 
 #if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
@@ -391,38 +387,6 @@ uint8_t egui_view_image_control_get_stretch(egui_view_t *self)
     return local->stretch;
 }
 
-void egui_view_image_control_set_compact_mode(egui_view_t *self, uint8_t compact_mode)
-{
-    egui_view_image_control_t *local = egui_view_image_control_local(self);
-
-    egui_view_image_control_clear_pressed_state(self);
-    local->compact_mode = compact_mode ? 1 : 0;
-    egui_view_invalidate(self);
-}
-
-uint8_t egui_view_image_control_get_compact_mode(egui_view_t *self)
-{
-    egui_view_image_control_t *local = egui_view_image_control_local(self);
-
-    return local->compact_mode;
-}
-
-void egui_view_image_control_set_read_only_mode(egui_view_t *self, uint8_t read_only_mode)
-{
-    egui_view_image_control_t *local = egui_view_image_control_local(self);
-
-    egui_view_image_control_clear_pressed_state(self);
-    local->read_only_mode = read_only_mode ? 1 : 0;
-    egui_view_invalidate(self);
-}
-
-uint8_t egui_view_image_control_get_read_only_mode(egui_view_t *self)
-{
-    egui_view_image_control_t *local = egui_view_image_control_local(self);
-
-    return local->read_only_mode;
-}
-
 void egui_view_image_control_set_palette(egui_view_t *self, egui_color_t surface_color, egui_color_t border_color,
                                          egui_color_t placeholder_color, egui_color_t muted_color)
 {
@@ -434,27 +398,6 @@ void egui_view_image_control_set_palette(egui_view_t *self, egui_color_t surface
     local->placeholder_color = placeholder_color;
     local->muted_color = muted_color;
     egui_view_invalidate(self);
-}
-
-void egui_view_image_control_apply_standard_style(egui_view_t *self)
-{
-    egui_view_image_control_set_palette(self, EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xB8C7D7), EGUI_COLOR_HEX(0x0F6CBD), EGUI_COLOR_HEX(0x798694));
-    egui_view_image_control_set_compact_mode(self, 0);
-    egui_view_image_control_set_read_only_mode(self, 0);
-}
-
-void egui_view_image_control_apply_compact_style(egui_view_t *self)
-{
-    egui_view_image_control_set_palette(self, EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD0D9E2), EGUI_COLOR_HEX(0x0F7B45), EGUI_COLOR_HEX(0x7E8A97));
-    egui_view_image_control_set_compact_mode(self, 1);
-    egui_view_image_control_set_read_only_mode(self, 0);
-}
-
-void egui_view_image_control_apply_read_only_style(egui_view_t *self)
-{
-    egui_view_image_control_set_palette(self, EGUI_COLOR_HEX(0xF7F9FB), EGUI_COLOR_HEX(0xD3DCE5), EGUI_COLOR_HEX(0x6B7785), EGUI_COLOR_HEX(0x7E8A97));
-    egui_view_image_control_set_compact_mode(self, 1);
-    egui_view_image_control_set_read_only_mode(self, 1);
 }
 
 void egui_view_image_control_override_static_preview_api(egui_view_t *self, egui_view_api_t *api)
@@ -524,8 +467,6 @@ void egui_view_image_control_init(egui_view_t *self)
     local->image = egui_view_image_control_get_default_image();
     local->source_name = "Landscape";
     local->stretch = EGUI_VIEW_IMAGE_CONTROL_STRETCH_UNIFORM;
-    local->compact_mode = 0;
-    local->read_only_mode = 0;
     local->surface_color = EGUI_COLOR_HEX(0xFFFFFF);
     local->border_color = EGUI_COLOR_HEX(0xB8C7D7);
     local->placeholder_color = EGUI_COLOR_HEX(0x0F6CBD);
