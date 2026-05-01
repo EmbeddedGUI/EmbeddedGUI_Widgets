@@ -20,8 +20,6 @@ struct line_preview_snapshot
     uint8_t x2_percent;
     uint8_t y2_percent;
     egui_alpha_t alpha;
-    uint8_t compact_mode;
-    uint8_t read_only_mode;
     uint8_t enable;
     uint8_t is_pressed;
     uint8_t is_focused;
@@ -53,7 +51,9 @@ static void setup_preview_control(void)
 {
     egui_view_shape_line_init(EGUI_VIEW_OF(&preview_control));
     egui_view_set_size(EGUI_VIEW_OF(&preview_control), 72, 34);
-    egui_view_shape_line_apply_compact_style(EGUI_VIEW_OF(&preview_control));
+    egui_view_shape_line_set_palette(EGUI_VIEW_OF(&preview_control), EGUI_COLOR_HEX(0x0C7C73), EGUI_COLOR_HEX(0xD9E7E5));
+    egui_view_shape_line_set_stroke_width(EGUI_VIEW_OF(&preview_control), 1);
+    egui_view_shape_line_set_points(EGUI_VIEW_OF(&preview_control), 50, 12, 50, 88);
     egui_view_shape_line_override_static_preview_api(EGUI_VIEW_OF(&preview_control), &preview_api);
 }
 
@@ -112,8 +112,6 @@ static void capture_preview_snapshot(line_preview_snapshot_t *snapshot)
     snapshot->x2_percent = preview_control.x2_percent;
     snapshot->y2_percent = preview_control.y2_percent;
     snapshot->alpha = EGUI_VIEW_OF(&preview_control)->alpha;
-    snapshot->compact_mode = preview_control.compact_mode;
-    snapshot->read_only_mode = preview_control.read_only_mode;
     snapshot->enable = (uint8_t)egui_view_get_enable(EGUI_VIEW_OF(&preview_control));
     snapshot->is_pressed = EGUI_VIEW_OF(&preview_control)->is_pressed;
     snapshot->is_focused = EGUI_VIEW_OF(&preview_control)->is_focused;
@@ -135,8 +133,6 @@ static void assert_preview_state_unchanged(const line_preview_snapshot_t *snapsh
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->x2_percent, preview_control.x2_percent);
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->y2_percent, preview_control.y2_percent);
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->alpha, EGUI_VIEW_OF(&preview_control)->alpha);
-    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->compact_mode, preview_control.compact_mode);
-    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->read_only_mode, preview_control.read_only_mode);
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->enable, egui_view_get_enable(EGUI_VIEW_OF(&preview_control)));
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&preview_control)->is_pressed);
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->is_focused, EGUI_VIEW_OF(&preview_control)->is_focused);
@@ -166,8 +162,6 @@ static void test_line_init_defaults(void)
 
     EGUI_TEST_ASSERT_EQUAL_INT(2, egui_view_shape_line_get_stroke_width(EGUI_VIEW_OF(&test_control)));
     assert_points(EGUI_VIEW_OF(&test_control), 8, 50, 92, 50);
-    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_shape_line_get_compact_mode(EGUI_VIEW_OF(&test_control)));
-    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_shape_line_get_read_only_mode(EGUI_VIEW_OF(&test_control)));
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x0F6CBD).full, test_control.stroke_color.full);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_MARGIN_PADDING
     EGUI_TEST_ASSERT_EQUAL_INT(2, EGUI_VIEW_OF(&test_control)->padding.left);
@@ -204,14 +198,14 @@ static void test_line_styles(void)
     EGUI_TEST_ASSERT_EQUAL_INT(3, egui_view_shape_line_get_stroke_width(EGUI_VIEW_OF(&test_control)));
     assert_points(EGUI_VIEW_OF(&test_control), 10, 82, 90, 18);
 
-    egui_view_shape_line_apply_compact_style(EGUI_VIEW_OF(&test_control));
-    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_shape_line_get_compact_mode(EGUI_VIEW_OF(&test_control)));
-    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_shape_line_get_read_only_mode(EGUI_VIEW_OF(&test_control)));
+    egui_view_shape_line_set_palette(EGUI_VIEW_OF(&test_control), EGUI_COLOR_HEX(0x0C7C73), EGUI_COLOR_HEX(0xD9E7E5));
+    egui_view_shape_line_set_stroke_width(EGUI_VIEW_OF(&test_control), 1);
+    egui_view_shape_line_set_points(EGUI_VIEW_OF(&test_control), 50, 12, 50, 88);
     assert_points(EGUI_VIEW_OF(&test_control), 50, 12, 50, 88);
 
-    egui_view_shape_line_apply_read_only_style(EGUI_VIEW_OF(&test_control));
-    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_shape_line_get_compact_mode(EGUI_VIEW_OF(&test_control)));
-    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_shape_line_get_read_only_mode(EGUI_VIEW_OF(&test_control)));
+    egui_view_shape_line_set_palette(EGUI_VIEW_OF(&test_control), EGUI_COLOR_HEX(0x687684), EGUI_COLOR_HEX(0xE1E6EB));
+    egui_view_shape_line_set_stroke_width(EGUI_VIEW_OF(&test_control), 1);
+    egui_view_shape_line_set_points(EGUI_VIEW_OF(&test_control), 12, 50, 88, 50);
     assert_points(EGUI_VIEW_OF(&test_control), 12, 50, 88, 50);
 }
 

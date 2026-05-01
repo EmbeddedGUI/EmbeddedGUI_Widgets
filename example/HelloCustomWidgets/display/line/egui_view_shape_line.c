@@ -55,7 +55,7 @@ static void egui_view_shape_line_on_draw(egui_view_t *self)
     egui_region_t region;
     egui_color_t stroke_color = local->stroke_color;
     egui_color_t accent_color = local->accent_color;
-    egui_alpha_t stroke_alpha = local->compact_mode ? 58 : 82;
+    egui_alpha_t stroke_alpha = 82;
     egui_dim_t x1;
     egui_dim_t y1;
     egui_dim_t x2;
@@ -67,12 +67,6 @@ static void egui_view_shape_line_on_draw(egui_view_t *self)
         return;
     }
 
-    if (local->read_only_mode)
-    {
-        stroke_color = egui_rgb_mix(stroke_color, EGUI_COLOR_HEX(0xAEB8C2), 54);
-        accent_color = egui_rgb_mix(accent_color, EGUI_COLOR_HEX(0x8A97A5), 56);
-        stroke_alpha = 42;
-    }
     if (!egui_view_get_enable(self))
     {
         stroke_color = egui_view_shape_line_mix_disabled(stroke_color);
@@ -152,45 +146,11 @@ void egui_view_shape_line_get_points(egui_view_t *self, uint8_t *x1_percent, uin
     }
 }
 
-void egui_view_shape_line_set_compact_mode(egui_view_t *self, uint8_t compact_mode)
-{
-    egui_view_shape_line_t *local = egui_view_shape_line_local(self);
-
-    egui_view_shape_line_clear_pressed_state(self);
-    local->compact_mode = compact_mode ? 1 : 0;
-    egui_view_invalidate(self);
-}
-
-uint8_t egui_view_shape_line_get_compact_mode(egui_view_t *self)
-{
-    egui_view_shape_line_t *local = egui_view_shape_line_local(self);
-
-    return local->compact_mode;
-}
-
-void egui_view_shape_line_set_read_only_mode(egui_view_t *self, uint8_t read_only_mode)
-{
-    egui_view_shape_line_t *local = egui_view_shape_line_local(self);
-
-    egui_view_shape_line_clear_pressed_state(self);
-    local->read_only_mode = read_only_mode ? 1 : 0;
-    egui_view_invalidate(self);
-}
-
-uint8_t egui_view_shape_line_get_read_only_mode(egui_view_t *self)
-{
-    egui_view_shape_line_t *local = egui_view_shape_line_local(self);
-
-    return local->read_only_mode;
-}
-
 void egui_view_shape_line_apply_standard_style(egui_view_t *self)
 {
     egui_view_shape_line_set_palette(self, EGUI_COLOR_HEX(0x0F6CBD), EGUI_COLOR_HEX(0xD7E3EE));
     egui_view_shape_line_set_stroke_width(self, 2);
     egui_view_shape_line_set_points(self, 8, 50, 92, 50);
-    egui_view_shape_line_set_compact_mode(self, 0);
-    egui_view_shape_line_set_read_only_mode(self, 0);
 }
 
 void egui_view_shape_line_apply_accent_style(egui_view_t *self)
@@ -198,26 +158,6 @@ void egui_view_shape_line_apply_accent_style(egui_view_t *self)
     egui_view_shape_line_set_palette(self, EGUI_COLOR_HEX(0x0F6CBD), EGUI_COLOR_HEX(0xCFE2F3));
     egui_view_shape_line_set_stroke_width(self, 3);
     egui_view_shape_line_set_points(self, 10, 82, 90, 18);
-    egui_view_shape_line_set_compact_mode(self, 0);
-    egui_view_shape_line_set_read_only_mode(self, 0);
-}
-
-void egui_view_shape_line_apply_compact_style(egui_view_t *self)
-{
-    egui_view_shape_line_set_palette(self, EGUI_COLOR_HEX(0x0C7C73), EGUI_COLOR_HEX(0xD9E7E5));
-    egui_view_shape_line_set_stroke_width(self, 1);
-    egui_view_shape_line_set_points(self, 50, 12, 50, 88);
-    egui_view_shape_line_set_compact_mode(self, 1);
-    egui_view_shape_line_set_read_only_mode(self, 0);
-}
-
-void egui_view_shape_line_apply_read_only_style(egui_view_t *self)
-{
-    egui_view_shape_line_set_palette(self, EGUI_COLOR_HEX(0x687684), EGUI_COLOR_HEX(0xE1E6EB));
-    egui_view_shape_line_set_stroke_width(self, 1);
-    egui_view_shape_line_set_points(self, 12, 50, 88, 50);
-    egui_view_shape_line_set_compact_mode(self, 1);
-    egui_view_shape_line_set_read_only_mode(self, 1);
 }
 
 #if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
@@ -298,17 +238,12 @@ static const egui_view_api_t EGUI_VIEW_API_TABLE_NAME(egui_view_shape_line_t) = 
 
 void egui_view_shape_line_init(egui_view_t *self)
 {
-    egui_view_shape_line_t *local = egui_view_shape_line_local(self);
-
     egui_view_init(self, uicode_get_core());
     self->api = &EGUI_VIEW_API_TABLE_NAME(egui_view_shape_line_t);
     egui_view_set_padding_all(self, 2);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(self, 0);
 #endif
-
-    local->compact_mode = 0;
-    local->read_only_mode = 0;
     egui_view_shape_line_apply_standard_style(self);
     egui_view_set_view_name(self, "egui_view_shape_line");
 }

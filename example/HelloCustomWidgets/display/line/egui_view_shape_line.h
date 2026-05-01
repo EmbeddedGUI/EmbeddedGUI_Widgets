@@ -19,8 +19,6 @@ struct egui_view_shape_line
     uint8_t y1_percent;
     uint8_t x2_percent;
     uint8_t y2_percent;
-    uint8_t compact_mode;
-    uint8_t read_only_mode;
 };
 
 void egui_view_shape_line_init(egui_view_t *self);
@@ -29,14 +27,8 @@ void egui_view_shape_line_set_stroke_width(egui_view_t *self, egui_dim_t stroke_
 egui_dim_t egui_view_shape_line_get_stroke_width(egui_view_t *self);
 void egui_view_shape_line_set_points(egui_view_t *self, uint8_t x1_percent, uint8_t y1_percent, uint8_t x2_percent, uint8_t y2_percent);
 void egui_view_shape_line_get_points(egui_view_t *self, uint8_t *x1_percent, uint8_t *y1_percent, uint8_t *x2_percent, uint8_t *y2_percent);
-void egui_view_shape_line_set_compact_mode(egui_view_t *self, uint8_t compact_mode);
-uint8_t egui_view_shape_line_get_compact_mode(egui_view_t *self);
-void egui_view_shape_line_set_read_only_mode(egui_view_t *self, uint8_t read_only_mode);
-uint8_t egui_view_shape_line_get_read_only_mode(egui_view_t *self);
 void egui_view_shape_line_apply_standard_style(egui_view_t *self);
 void egui_view_shape_line_apply_accent_style(egui_view_t *self);
-void egui_view_shape_line_apply_compact_style(egui_view_t *self);
-void egui_view_shape_line_apply_read_only_style(egui_view_t *self);
 void egui_view_shape_line_override_static_preview_api(egui_view_t *self, egui_view_api_t *api);
 
 #ifdef __cplusplus
