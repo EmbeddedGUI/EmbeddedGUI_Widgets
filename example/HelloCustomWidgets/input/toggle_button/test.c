@@ -36,11 +36,11 @@ static egui_view_linearlayout_t root_layout;
 static egui_view_label_t title_label;
 static egui_view_toggle_button_t button_primary;
 static egui_view_linearlayout_t bottom_row;
-static egui_view_toggle_button_t button_compact;
-static egui_view_toggle_button_t button_read_only;
+static egui_view_toggle_button_t button_secondary;
+static egui_view_toggle_button_t button_disabled;
 static egui_view_api_t button_primary_interaction_api;
-static egui_view_api_t button_compact_api;
-static egui_view_api_t button_read_only_api;
+static egui_view_api_t button_secondary_api;
+static egui_view_api_t button_disabled_api;
 static uint8_t ui_ready;
 
 EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
@@ -55,11 +55,11 @@ static const toggle_button_snapshot_t primary_snapshots[] = {
         {"Favorite", EGUI_ICON_MS_FAVORITE, EGUI_COLOR_HEX(0xB146C2), EGUI_COLOR_HEX(0xF5E9F8), 1},
 };
 
-static const toggle_button_snapshot_t compact_snapshot = {
+static const toggle_button_snapshot_t secondary_snapshot = {
         "Visible", EGUI_ICON_MS_VISIBILITY, EGUI_COLOR_HEX(0x0F766E), EGUI_COLOR_HEX(0xE4F2EF), 1,
 };
 
-static const toggle_button_snapshot_t read_only_snapshot = {
+static const toggle_button_snapshot_t disabled_snapshot = {
         "Pinned", EGUI_ICON_MS_FAVORITE, EGUI_COLOR_HEX(0xA5AFBA), EGUI_COLOR_HEX(0xEEF2F6), 1,
 };
 
@@ -90,12 +90,26 @@ static void apply_primary_default_state(void)
 
 static void apply_preview_states(void)
 {
-    apply_snapshot_to_button(&button_compact, &compact_snapshot);
-    apply_snapshot_to_button(&button_read_only, &read_only_snapshot);
+    apply_snapshot_to_button(&button_secondary, &secondary_snapshot);
+    apply_snapshot_to_button(&button_disabled, &disabled_snapshot);
     if (ui_ready)
     {
         layout_page();
     }
+}
+
+static void apply_secondary_preview_style(egui_view_toggle_button_t *button)
+{
+    button->corner_radius = 7;
+    button->icon_text_gap = 3;
+    button->text_color = EGUI_COLOR_WHITE;
+}
+
+static void apply_disabled_preview_style(egui_view_toggle_button_t *button)
+{
+    button->corner_radius = 7;
+    button->icon_text_gap = 3;
+    button->text_color = EGUI_COLOR_HEX(0xF7F9FB);
 }
 
 static void layout_local_views(void)
@@ -164,30 +178,33 @@ void test_init_ui(void)
     egui_view_linearlayout_set_align_type(EGUI_VIEW_OF(&bottom_row), EGUI_ALIGN_VCENTER);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&bottom_row));
 
-    egui_view_toggle_button_init(EGUI_VIEW_OF(&button_compact), uicode_get_core());
-    egui_view_set_size(EGUI_VIEW_OF(&button_compact), TOGGLE_BUTTON_PREVIEW_WIDTH, TOGGLE_BUTTON_PREVIEW_HEIGHT);
-    egui_view_toggle_button_set_font(EGUI_VIEW_OF(&button_compact), (const egui_font_t *)&egui_res_font_montserrat_10_4);
-    egui_view_toggle_button_set_icon_font(EGUI_VIEW_OF(&button_compact), EGUI_FONT_ICON_MS_16);
-    hcw_toggle_button_apply_compact_style(EGUI_VIEW_OF(&button_compact));
-    egui_view_set_padding(EGUI_VIEW_OF(&button_compact), 1, 1, 0, 0);
-    hcw_toggle_button_override_static_preview_api(EGUI_VIEW_OF(&button_compact), &button_compact_api);
+    egui_view_toggle_button_init(EGUI_VIEW_OF(&button_secondary), uicode_get_core());
+    egui_view_set_size(EGUI_VIEW_OF(&button_secondary), TOGGLE_BUTTON_PREVIEW_WIDTH, TOGGLE_BUTTON_PREVIEW_HEIGHT);
+    egui_view_toggle_button_set_font(EGUI_VIEW_OF(&button_secondary), (const egui_font_t *)&egui_res_font_montserrat_10_4);
+    egui_view_toggle_button_set_icon_font(EGUI_VIEW_OF(&button_secondary), EGUI_FONT_ICON_MS_16);
+    hcw_toggle_button_apply_standard_style(EGUI_VIEW_OF(&button_secondary));
+    apply_secondary_preview_style(&button_secondary);
+    egui_view_set_padding(EGUI_VIEW_OF(&button_secondary), 1, 1, 0, 0);
+    hcw_toggle_button_override_static_preview_api(EGUI_VIEW_OF(&button_secondary), &button_secondary_api);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
-    egui_view_set_focusable(EGUI_VIEW_OF(&button_compact), false);
+    egui_view_set_focusable(EGUI_VIEW_OF(&button_secondary), false);
 #endif
-    egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&button_compact));
+    egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&button_secondary));
 
-    egui_view_toggle_button_init(EGUI_VIEW_OF(&button_read_only), uicode_get_core());
-    egui_view_set_size(EGUI_VIEW_OF(&button_read_only), TOGGLE_BUTTON_PREVIEW_WIDTH, TOGGLE_BUTTON_PREVIEW_HEIGHT);
-    egui_view_set_margin(EGUI_VIEW_OF(&button_read_only), 8, 0, 0, 0);
-    egui_view_toggle_button_set_font(EGUI_VIEW_OF(&button_read_only), (const egui_font_t *)&egui_res_font_montserrat_10_4);
-    egui_view_toggle_button_set_icon_font(EGUI_VIEW_OF(&button_read_only), EGUI_FONT_ICON_MS_16);
-    hcw_toggle_button_apply_read_only_style(EGUI_VIEW_OF(&button_read_only));
-    egui_view_set_padding(EGUI_VIEW_OF(&button_read_only), 1, 1, 0, 0);
-    hcw_toggle_button_override_static_preview_api(EGUI_VIEW_OF(&button_read_only), &button_read_only_api);
+    egui_view_toggle_button_init(EGUI_VIEW_OF(&button_disabled), uicode_get_core());
+    egui_view_set_size(EGUI_VIEW_OF(&button_disabled), TOGGLE_BUTTON_PREVIEW_WIDTH, TOGGLE_BUTTON_PREVIEW_HEIGHT);
+    egui_view_set_margin(EGUI_VIEW_OF(&button_disabled), 8, 0, 0, 0);
+    egui_view_toggle_button_set_font(EGUI_VIEW_OF(&button_disabled), (const egui_font_t *)&egui_res_font_montserrat_10_4);
+    egui_view_toggle_button_set_icon_font(EGUI_VIEW_OF(&button_disabled), EGUI_FONT_ICON_MS_16);
+    hcw_toggle_button_apply_standard_style(EGUI_VIEW_OF(&button_disabled));
+    apply_disabled_preview_style(&button_disabled);
+    egui_view_set_padding(EGUI_VIEW_OF(&button_disabled), 1, 1, 0, 0);
+    hcw_toggle_button_override_static_preview_api(EGUI_VIEW_OF(&button_disabled), &button_disabled_api);
+    egui_view_set_enable(EGUI_VIEW_OF(&button_disabled), 0);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
-    egui_view_set_focusable(EGUI_VIEW_OF(&button_read_only), false);
+    egui_view_set_focusable(EGUI_VIEW_OF(&button_disabled), false);
 #endif
-    egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&button_read_only));
+    egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&button_disabled));
 
     apply_primary_default_state();
     apply_preview_states();
@@ -264,4 +281,3 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     }
 }
 #endif
-

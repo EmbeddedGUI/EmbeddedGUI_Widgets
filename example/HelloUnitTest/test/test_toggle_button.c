@@ -73,7 +73,12 @@ static void setup_preview_button(void)
     egui_view_toggle_button_set_icon(EGUI_VIEW_OF(&preview_button), EGUI_ICON_MS_VISIBILITY);
     egui_view_toggle_button_set_font(EGUI_VIEW_OF(&preview_button), (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT);
     egui_view_toggle_button_set_icon_font(EGUI_VIEW_OF(&preview_button), EGUI_FONT_ICON_MS_16);
-    hcw_toggle_button_apply_compact_style(EGUI_VIEW_OF(&preview_button));
+    hcw_toggle_button_apply_standard_style(EGUI_VIEW_OF(&preview_button));
+    preview_button.corner_radius = 7;
+    preview_button.on_color = EGUI_COLOR_HEX(0x0C7C73);
+    preview_button.off_color = EGUI_COLOR_HEX(0xDBEAE5);
+    preview_button.text_color = EGUI_COLOR_WHITE;
+    preview_button.icon_text_gap = 3;
     egui_view_toggle_button_set_on_toggled_listener(EGUI_VIEW_OF(&preview_button), on_toggled);
     hcw_toggle_button_set_toggled(EGUI_VIEW_OF(&preview_button), 1);
     hcw_toggle_button_override_static_preview_api(EGUI_VIEW_OF(&preview_button), &preview_api);
@@ -231,7 +236,7 @@ static void test_toggle_button_disabled_ignores_input(void)
     EGUI_TEST_ASSERT_EQUAL_INT(0, toggled_count);
 }
 
-static void test_toggle_button_setters_and_style_helpers_clear_pressed_state(void)
+static void test_toggle_button_setter_and_style_helper_clear_pressed_state(void)
 {
     setup_button(1);
 
@@ -242,30 +247,26 @@ static void test_toggle_button_setters_and_style_helpers_clear_pressed_state(voi
     EGUI_TEST_ASSERT_EQUAL_INT(0, toggled_count);
 
     egui_view_set_pressed(EGUI_VIEW_OF(&test_button), 1);
-    hcw_toggle_button_apply_compact_style(EGUI_VIEW_OF(&test_button));
-    EGUI_TEST_ASSERT_FALSE(egui_view_get_pressed(EGUI_VIEW_OF(&test_button)));
-
-    egui_view_set_pressed(EGUI_VIEW_OF(&test_button), 1);
-    hcw_toggle_button_apply_read_only_style(EGUI_VIEW_OF(&test_button));
+    hcw_toggle_button_apply_standard_style(EGUI_VIEW_OF(&test_button));
     EGUI_TEST_ASSERT_FALSE(egui_view_get_pressed(EGUI_VIEW_OF(&test_button)));
 }
 
-static void test_toggle_button_style_helpers_update_palette(void)
+static void test_toggle_button_style_helper_updates_palette(void)
 {
     setup_button(0);
+
+    test_button.corner_radius = 3;
+    test_button.on_color = EGUI_COLOR_HEX(0x111111);
+    test_button.off_color = EGUI_COLOR_HEX(0x222222);
+    test_button.text_color = EGUI_COLOR_HEX(0x333333);
+    test_button.icon_text_gap = 1;
+
+    hcw_toggle_button_apply_standard_style(EGUI_VIEW_OF(&test_button));
     EGUI_TEST_ASSERT_EQUAL_INT(10, test_button.corner_radius);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x2563EB).full, test_button.on_color.full);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xEAF1FB).full, test_button.off_color.full);
-
-    hcw_toggle_button_apply_compact_style(EGUI_VIEW_OF(&test_button));
-    EGUI_TEST_ASSERT_EQUAL_INT(7, test_button.corner_radius);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x0C7C73).full, test_button.on_color.full);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xDBEAE5).full, test_button.off_color.full);
-
-    hcw_toggle_button_apply_read_only_style(EGUI_VIEW_OF(&test_button));
-    EGUI_TEST_ASSERT_EQUAL_INT(7, test_button.corner_radius);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xAFB8C3).full, test_button.on_color.full);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xF3F6F8).full, test_button.off_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_WHITE.full, test_button.text_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(5, test_button.icon_text_gap);
 }
 
 static void test_toggle_button_touch_cancel_and_disabled_clear_pressed_state(void)
@@ -362,8 +363,8 @@ void test_toggle_button_run(void)
     EGUI_TEST_RUN(test_toggle_button_touch_toggles_state);
     EGUI_TEST_RUN(test_toggle_button_enter_and_space_toggle_state);
     EGUI_TEST_RUN(test_toggle_button_disabled_ignores_input);
-    EGUI_TEST_RUN(test_toggle_button_setters_and_style_helpers_clear_pressed_state);
-    EGUI_TEST_RUN(test_toggle_button_style_helpers_update_palette);
+    EGUI_TEST_RUN(test_toggle_button_setter_and_style_helper_clear_pressed_state);
+    EGUI_TEST_RUN(test_toggle_button_style_helper_updates_palette);
     EGUI_TEST_RUN(test_toggle_button_touch_cancel_and_disabled_clear_pressed_state);
     EGUI_TEST_RUN(test_toggle_button_same_target_release_requires_return_to_origin);
     EGUI_TEST_RUN(test_toggle_button_unhandled_key_does_not_toggle);

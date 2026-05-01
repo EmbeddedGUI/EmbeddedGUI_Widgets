@@ -35,16 +35,6 @@ void hcw_toggle_button_apply_standard_style(egui_view_t *self)
     hcw_toggle_button_apply_style(self, 10, EGUI_COLOR_HEX(0x2563EB), EGUI_COLOR_HEX(0xEAF1FB), EGUI_COLOR_WHITE, 5);
 }
 
-void hcw_toggle_button_apply_compact_style(egui_view_t *self)
-{
-    hcw_toggle_button_apply_style(self, 7, EGUI_COLOR_HEX(0x0C7C73), EGUI_COLOR_HEX(0xDBEAE5), EGUI_COLOR_WHITE, 3);
-}
-
-void hcw_toggle_button_apply_read_only_style(egui_view_t *self)
-{
-    hcw_toggle_button_apply_style(self, 7, EGUI_COLOR_HEX(0xAFB8C3), EGUI_COLOR_HEX(0xF3F6F8), EGUI_COLOR_HEX(0xF7F9FB), 3);
-}
-
 #if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
 static int hcw_toggle_button_on_touch_event(egui_view_t *self, egui_motion_event_t *event)
 {
