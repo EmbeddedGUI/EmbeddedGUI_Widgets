@@ -33,10 +33,10 @@ static egui_view_label_t title_label;
 static egui_view_presence_badge_t primary_badge;
 static egui_view_label_t primary_status_label;
 static egui_view_linearlayout_t bottom_row;
-static egui_view_presence_badge_t compact_badge;
-static egui_view_presence_badge_t read_only_badge;
-static egui_view_api_t compact_api;
-static egui_view_api_t read_only_api;
+static egui_view_presence_badge_t away_badge;
+static egui_view_presence_badge_t muted_badge;
+static egui_view_api_t away_api;
+static egui_view_api_t muted_api;
 static uint8_t ui_ready;
 
 EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
@@ -96,12 +96,13 @@ static void apply_primary_default_state(void)
 
 static void apply_preview_states(void)
 {
-    egui_view_presence_badge_set_status(EGUI_VIEW_OF(&compact_badge), EGUI_VIEW_PRESENCE_BADGE_STATUS_AWAY);
-    egui_view_presence_badge_set_compact_mode(EGUI_VIEW_OF(&compact_badge), 1);
+    egui_view_presence_badge_set_status(EGUI_VIEW_OF(&away_badge), EGUI_VIEW_PRESENCE_BADGE_STATUS_AWAY);
 
-    egui_view_presence_badge_set_status(EGUI_VIEW_OF(&read_only_badge), EGUI_VIEW_PRESENCE_BADGE_STATUS_BUSY);
-    egui_view_presence_badge_set_compact_mode(EGUI_VIEW_OF(&read_only_badge), 1);
-    egui_view_presence_badge_set_read_only_mode(EGUI_VIEW_OF(&read_only_badge), 1);
+    egui_view_presence_badge_set_status(EGUI_VIEW_OF(&muted_badge), EGUI_VIEW_PRESENCE_BADGE_STATUS_BUSY);
+    egui_view_presence_badge_set_palette(EGUI_VIEW_OF(&muted_badge), EGUI_COLOR_HEX(0xF6F8FA), EGUI_COLOR_HEX(0xD6DEE6),
+                                         EGUI_COLOR_HEX(0x8A96A3), EGUI_COLOR_HEX(0x8A96A3), EGUI_COLOR_HEX(0x8A96A3),
+                                         EGUI_COLOR_HEX(0x8A96A3), EGUI_COLOR_HEX(0x8A96A3), EGUI_COLOR_WHITE,
+                                         EGUI_COLOR_HEX(0x6B7A89));
 
     if (ui_ready)
     {
@@ -163,22 +164,22 @@ void test_init_ui(void)
     egui_view_linearlayout_set_align_type(EGUI_VIEW_OF(&bottom_row), EGUI_ALIGN_VCENTER);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&bottom_row));
 
-    egui_view_presence_badge_init(EGUI_VIEW_OF(&compact_badge));
-    egui_view_set_size(EGUI_VIEW_OF(&compact_badge), PRESENCE_BADGE_PREVIEW_SIZE, PRESENCE_BADGE_PREVIEW_SIZE);
-    egui_view_presence_badge_override_static_preview_api(EGUI_VIEW_OF(&compact_badge), &compact_api);
+    egui_view_presence_badge_init(EGUI_VIEW_OF(&away_badge));
+    egui_view_set_size(EGUI_VIEW_OF(&away_badge), PRESENCE_BADGE_PREVIEW_SIZE, PRESENCE_BADGE_PREVIEW_SIZE);
+    egui_view_presence_badge_override_static_preview_api(EGUI_VIEW_OF(&away_badge), &away_api);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
-    egui_view_set_focusable(EGUI_VIEW_OF(&compact_badge), 0);
+    egui_view_set_focusable(EGUI_VIEW_OF(&away_badge), 0);
 #endif
-    egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&compact_badge));
+    egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&away_badge));
 
-    egui_view_presence_badge_init(EGUI_VIEW_OF(&read_only_badge));
-    egui_view_set_size(EGUI_VIEW_OF(&read_only_badge), PRESENCE_BADGE_PREVIEW_SIZE, PRESENCE_BADGE_PREVIEW_SIZE);
-    egui_view_set_margin(EGUI_VIEW_OF(&read_only_badge), 8, 0, 0, 0);
-    egui_view_presence_badge_override_static_preview_api(EGUI_VIEW_OF(&read_only_badge), &read_only_api);
+    egui_view_presence_badge_init(EGUI_VIEW_OF(&muted_badge));
+    egui_view_set_size(EGUI_VIEW_OF(&muted_badge), PRESENCE_BADGE_PREVIEW_SIZE, PRESENCE_BADGE_PREVIEW_SIZE);
+    egui_view_set_margin(EGUI_VIEW_OF(&muted_badge), 8, 0, 0, 0);
+    egui_view_presence_badge_override_static_preview_api(EGUI_VIEW_OF(&muted_badge), &muted_api);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
-    egui_view_set_focusable(EGUI_VIEW_OF(&read_only_badge), 0);
+    egui_view_set_focusable(EGUI_VIEW_OF(&muted_badge), 0);
 #endif
-    egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&read_only_badge));
+    egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&muted_badge));
 
     apply_primary_default_state();
     apply_preview_states();
@@ -258,4 +259,3 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     }
 }
 #endif
-

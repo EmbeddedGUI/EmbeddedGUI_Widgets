@@ -25,8 +25,6 @@ struct presence_badge_preview_snapshot
     const egui_view_api_t *api;
     egui_alpha_t alpha;
     uint8_t status;
-    uint8_t compact_mode;
-    uint8_t read_only_mode;
     uint8_t enable;
     uint8_t is_focused;
     uint8_t is_pressed;
@@ -80,7 +78,6 @@ static void setup_preview_badge(void)
     egui_view_set_size(EGUI_VIEW_OF(&preview_badge_widget), 18, 18);
     egui_view_set_on_click_listener(EGUI_VIEW_OF(&preview_badge_widget), on_preview_click);
     egui_view_presence_badge_set_status(EGUI_VIEW_OF(&preview_badge_widget), EGUI_VIEW_PRESENCE_BADGE_STATUS_AWAY);
-    egui_view_presence_badge_set_compact_mode(EGUI_VIEW_OF(&preview_badge_widget), 1);
     egui_view_presence_badge_override_static_preview_api(EGUI_VIEW_OF(&preview_badge_widget), &preview_api);
     g_click_count = 0;
 }
@@ -132,8 +129,6 @@ static void capture_preview_snapshot(presence_badge_preview_snapshot_t *snapshot
     snapshot->api = EGUI_VIEW_OF(&preview_badge_widget)->api;
     snapshot->alpha = EGUI_VIEW_OF(&preview_badge_widget)->alpha;
     snapshot->status = preview_badge_widget.status;
-    snapshot->compact_mode = preview_badge_widget.compact_mode;
-    snapshot->read_only_mode = preview_badge_widget.read_only_mode;
     snapshot->enable = (uint8_t)egui_view_get_enable(EGUI_VIEW_OF(&preview_badge_widget));
     snapshot->is_focused = EGUI_VIEW_OF(&preview_badge_widget)->is_focused;
     snapshot->is_pressed = EGUI_VIEW_OF(&preview_badge_widget)->is_pressed;
@@ -160,8 +155,6 @@ static void assert_preview_state_unchanged(const presence_badge_preview_snapshot
     EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&preview_badge_widget)->api == snapshot->api);
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->alpha, EGUI_VIEW_OF(&preview_badge_widget)->alpha);
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->status, preview_badge_widget.status);
-    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->compact_mode, preview_badge_widget.compact_mode);
-    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->read_only_mode, preview_badge_widget.read_only_mode);
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->enable, egui_view_get_enable(EGUI_VIEW_OF(&preview_badge_widget)));
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->is_focused, EGUI_VIEW_OF(&preview_badge_widget)->is_focused);
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->is_pressed, EGUI_VIEW_OF(&preview_badge_widget)->is_pressed);
@@ -176,8 +169,6 @@ static void test_presence_badge_init_uses_defaults(void)
     setup_presence_badge();
 
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_PRESENCE_BADGE_STATUS_AVAILABLE, egui_view_presence_badge_get_status(EGUI_VIEW_OF(&test_badge_widget)));
-    EGUI_TEST_ASSERT_FALSE(egui_view_presence_badge_get_compact_mode(EGUI_VIEW_OF(&test_badge_widget)));
-    EGUI_TEST_ASSERT_FALSE(egui_view_presence_badge_get_read_only_mode(EGUI_VIEW_OF(&test_badge_widget)));
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xFFFFFF).full, test_badge_widget.surface_color.full);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xD5DEE6).full, test_badge_widget.outline_color.full);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x107C41).full, test_badge_widget.available_color.full);
@@ -220,22 +211,11 @@ static void test_presence_badge_setters_clear_pressed_state_and_update_palette(v
     EGUI_TEST_ASSERT_EQUAL_INT(glyph.full, test_badge_widget.glyph_color.full);
     EGUI_TEST_ASSERT_EQUAL_INT(muted.full, test_badge_widget.muted_color.full);
 
-    egui_view_set_pressed(EGUI_VIEW_OF(&test_badge_widget), 1);
-    egui_view_presence_badge_set_compact_mode(EGUI_VIEW_OF(&test_badge_widget), 2);
-    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_badge_widget)->is_pressed);
-    EGUI_TEST_ASSERT_TRUE(egui_view_presence_badge_get_compact_mode(EGUI_VIEW_OF(&test_badge_widget)));
-
-    egui_view_set_pressed(EGUI_VIEW_OF(&test_badge_widget), 1);
-    egui_view_presence_badge_set_read_only_mode(EGUI_VIEW_OF(&test_badge_widget), 3);
-    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_badge_widget)->is_pressed);
-    EGUI_TEST_ASSERT_TRUE(egui_view_presence_badge_get_read_only_mode(EGUI_VIEW_OF(&test_badge_widget)));
 }
 
 static void test_presence_badge_helpers_compute_regions_and_status_colors(void)
 {
     egui_region_t region;
-    egui_dim_t standard_width;
-    egui_dim_t compact_width;
     egui_color_t sample = EGUI_COLOR_HEX(0x123456);
 
     setup_presence_badge();
@@ -245,7 +225,6 @@ static void test_presence_badge_helpers_compute_regions_and_status_colors(void)
     EGUI_TEST_ASSERT_EQUAL_INT(12, region.location.x);
     EGUI_TEST_ASSERT_EQUAL_INT(22, region.location.y);
     EGUI_TEST_ASSERT_EQUAL_INT(20, region.size.width);
-    standard_width = region.size.width;
 
     EGUI_TEST_ASSERT_EQUAL_INT(test_badge_widget.available_color.full,
                                egui_view_presence_badge_resolve_status_color(&test_badge_widget, EGUI_VIEW_PRESENCE_BADGE_STATUS_AVAILABLE).full);
@@ -259,12 +238,12 @@ static void test_presence_badge_helpers_compute_regions_and_status_colors(void)
                                egui_view_presence_badge_resolve_status_color(&test_badge_widget, EGUI_VIEW_PRESENCE_BADGE_STATUS_OFFLINE).full);
     EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(sample, EGUI_COLOR_HEX(0x83909D), 54).full, egui_view_presence_badge_mix_disabled(sample).full);
 
-    egui_view_presence_badge_set_compact_mode(EGUI_VIEW_OF(&test_badge_widget), 1);
     egui_view_set_size(EGUI_VIEW_OF(&test_badge_widget), 18, 18);
     layout_badge(EGUI_VIEW_OF(&test_badge_widget), 4, 6, 18, 18);
     EGUI_TEST_ASSERT_TRUE(egui_view_presence_badge_get_indicator_region(EGUI_VIEW_OF(&test_badge_widget), &region));
-    compact_width = region.size.width;
-    EGUI_TEST_ASSERT_TRUE(compact_width < standard_width);
+    EGUI_TEST_ASSERT_EQUAL_INT(5, region.location.x);
+    EGUI_TEST_ASSERT_EQUAL_INT(7, region.location.y);
+    EGUI_TEST_ASSERT_EQUAL_INT(16, region.size.width);
 }
 
 static void test_presence_badge_static_preview_consumes_input_and_keeps_state(void)

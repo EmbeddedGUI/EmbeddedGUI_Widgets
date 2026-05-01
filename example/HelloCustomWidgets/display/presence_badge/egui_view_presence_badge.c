@@ -47,7 +47,7 @@ static void egui_view_presence_badge_local_region_to_screen(egui_view_t *self, c
     screen_region->size.height = local_region->size.height;
 }
 
-static void egui_view_presence_badge_get_regions(egui_view_presence_badge_t *local, egui_view_t *self, egui_region_t *outer_region, egui_region_t *mark_region)
+static void egui_view_presence_badge_get_regions(egui_view_t *self, egui_region_t *outer_region, egui_region_t *mark_region)
 {
     egui_region_t work_region;
     egui_dim_t badge_size;
@@ -66,7 +66,7 @@ static void egui_view_presence_badge_get_regions(egui_view_presence_badge_t *loc
         return;
     }
 
-    outer_inset = local->compact_mode ? 0 : (badge_size >= 20 ? 2 : 1);
+    outer_inset = badge_size >= 20 ? 2 : 1;
     if (badge_size - outer_inset * 2 <= 0)
     {
         outer_inset = 0;
@@ -79,10 +79,6 @@ static void egui_view_presence_badge_get_regions(egui_view_presence_badge_t *loc
     outer_region->location.y = work_region.location.y + (work_region.size.height - badge_size) / 2;
 
     mark_inset = badge_size >= 18 ? 2 : 1;
-    if (local->compact_mode && mark_inset > 1)
-    {
-        mark_inset = 1;
-    }
     if (badge_size - mark_inset * 2 <= 0)
     {
         mark_inset = 0;
@@ -139,19 +135,12 @@ static void egui_view_presence_badge_on_draw(egui_view_t *self)
     egui_color_t status_color = egui_view_presence_badge_resolve_status_color(local, local->status);
     egui_color_t glyph_color = local->glyph_color;
 
-    egui_view_presence_badge_get_regions(local, self, &outer_region, &mark_region);
+    egui_view_presence_badge_get_regions(self, &outer_region, &mark_region);
     if (outer_region.size.width <= 0 || outer_region.size.height <= 0)
     {
         return;
     }
 
-    if (local->read_only_mode)
-    {
-        surface_color = egui_rgb_mix(surface_color, EGUI_COLOR_HEX(0xF6F8FA), 28);
-        outline_color = egui_rgb_mix(outline_color, local->muted_color, 34);
-        status_color = egui_rgb_mix(status_color, local->muted_color, 46);
-        glyph_color = egui_rgb_mix(glyph_color, local->muted_color, 42);
-    }
     if (!egui_view_get_enable(self))
     {
         surface_color = egui_view_presence_badge_mix_disabled(surface_color);
@@ -172,7 +161,7 @@ static void egui_view_presence_badge_on_draw(egui_view_t *self)
         if (mark_radius > 0)
         {
             egui_canvas_draw_circle_basic(&uicode_get_core()->canvas, center_x, center_y, mark_radius, 1, status_color, egui_color_alpha_mix(self->alpha, 92));
-            if (mark_radius > 2 && !local->compact_mode)
+            if (mark_radius > 2)
             {
                 egui_canvas_draw_circle_basic(&uicode_get_core()->canvas, center_x, center_y, mark_radius - 1, 1, status_color, egui_color_alpha_mix(self->alpha, 40));
             }
@@ -187,7 +176,7 @@ static void egui_view_presence_badge_on_draw(egui_view_t *self)
         }
     }
 
-    egui_canvas_draw_circle_basic(&uicode_get_core()->canvas, center_x, center_y, outer_radius, 1, outline_color, egui_color_alpha_mix(self->alpha, local->compact_mode ? 22 : 30));
+    egui_canvas_draw_circle_basic(&uicode_get_core()->canvas, center_x, center_y, outer_radius, 1, outline_color, egui_color_alpha_mix(self->alpha, 30));
 }
 
 #if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
@@ -243,38 +232,6 @@ void egui_view_presence_badge_set_palette(egui_view_t *self, egui_color_t surfac
     egui_view_invalidate(self);
 }
 
-void egui_view_presence_badge_set_compact_mode(egui_view_t *self, uint8_t compact_mode)
-{
-    EGUI_LOCAL_INIT(egui_view_presence_badge_t);
-
-    egui_view_presence_badge_clear_pressed_state(self);
-    local->compact_mode = compact_mode ? 1 : 0;
-    egui_view_invalidate(self);
-}
-
-uint8_t egui_view_presence_badge_get_compact_mode(egui_view_t *self)
-{
-    EGUI_LOCAL_INIT(egui_view_presence_badge_t);
-
-    return local->compact_mode;
-}
-
-void egui_view_presence_badge_set_read_only_mode(egui_view_t *self, uint8_t read_only_mode)
-{
-    EGUI_LOCAL_INIT(egui_view_presence_badge_t);
-
-    egui_view_presence_badge_clear_pressed_state(self);
-    local->read_only_mode = read_only_mode ? 1 : 0;
-    egui_view_invalidate(self);
-}
-
-uint8_t egui_view_presence_badge_get_read_only_mode(egui_view_t *self)
-{
-    EGUI_LOCAL_INIT(egui_view_presence_badge_t);
-
-    return local->read_only_mode;
-}
-
 uint8_t egui_view_presence_badge_get_indicator_region(egui_view_t *self, egui_region_t *region)
 {
     EGUI_LOCAL_INIT(egui_view_presence_badge_t);
@@ -286,7 +243,7 @@ uint8_t egui_view_presence_badge_get_indicator_region(egui_view_t *self, egui_re
         return 0;
     }
 
-    egui_view_presence_badge_get_regions(local, self, &outer_region, &mark_region);
+    egui_view_presence_badge_get_regions(self, &outer_region, &mark_region);
     if (outer_region.size.width <= 0 || outer_region.size.height <= 0)
     {
         return 0;
@@ -345,8 +302,6 @@ void egui_view_presence_badge_init(egui_view_t *self)
     local->glyph_color = EGUI_COLOR_WHITE;
     local->muted_color = EGUI_COLOR_HEX(0x6B7A89);
     local->status = EGUI_VIEW_PRESENCE_BADGE_STATUS_AVAILABLE;
-    local->compact_mode = 0;
-    local->read_only_mode = 0;
 
     egui_view_set_view_name(self, "egui_view_presence_badge");
 }
