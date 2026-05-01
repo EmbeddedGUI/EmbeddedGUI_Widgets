@@ -33,8 +33,6 @@ struct persona_preview_snapshot
     egui_alpha_t alpha;
     uint8_t tone;
     uint8_t status;
-    uint8_t compact_mode;
-    uint8_t read_only_mode;
     uint8_t enable;
     uint8_t is_focused;
     uint8_t is_pressed;
@@ -101,7 +99,6 @@ static void setup_preview_persona(void)
     egui_view_persona_set_secondary_text(EGUI_VIEW_OF(&preview_persona), "Research lead");
     egui_view_persona_set_status(EGUI_VIEW_OF(&preview_persona), EGUI_VIEW_PERSONA_STATUS_AWAY);
     egui_view_persona_set_tone(EGUI_VIEW_OF(&preview_persona), EGUI_VIEW_PERSONA_TONE_WARNING);
-    egui_view_persona_set_compact_mode(EGUI_VIEW_OF(&preview_persona), 1);
     egui_view_persona_override_static_preview_api(EGUI_VIEW_OF(&preview_persona), &preview_api);
     g_click_count = 0;
 }
@@ -167,8 +164,6 @@ static void capture_preview_snapshot(persona_preview_snapshot_t *snapshot)
     snapshot->alpha = EGUI_VIEW_OF(&preview_persona)->alpha;
     snapshot->tone = preview_persona.tone;
     snapshot->status = preview_persona.status;
-    snapshot->compact_mode = preview_persona.compact_mode;
-    snapshot->read_only_mode = preview_persona.read_only_mode;
     snapshot->enable = (uint8_t)egui_view_get_enable(EGUI_VIEW_OF(&preview_persona));
     snapshot->is_focused = EGUI_VIEW_OF(&preview_persona)->is_focused;
     snapshot->is_pressed = EGUI_VIEW_OF(&preview_persona)->is_pressed;
@@ -203,8 +198,6 @@ static void assert_preview_state_unchanged(const persona_preview_snapshot_t *sna
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->alpha, EGUI_VIEW_OF(&preview_persona)->alpha);
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->tone, preview_persona.tone);
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->status, preview_persona.status);
-    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->compact_mode, preview_persona.compact_mode);
-    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->read_only_mode, preview_persona.read_only_mode);
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->enable, egui_view_get_enable(EGUI_VIEW_OF(&preview_persona)));
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->is_focused, EGUI_VIEW_OF(&preview_persona)->is_focused);
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->is_pressed, EGUI_VIEW_OF(&preview_persona)->is_pressed);
@@ -225,8 +218,6 @@ static void test_persona_init_uses_defaults(void)
     EGUI_TEST_ASSERT_NULL(egui_view_persona_get_initials(EGUI_VIEW_OF(&test_persona)));
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_PERSONA_STATUS_NONE, egui_view_persona_get_status(EGUI_VIEW_OF(&test_persona)));
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_PERSONA_TONE_NEUTRAL, egui_view_persona_get_tone(EGUI_VIEW_OF(&test_persona)));
-    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_persona_get_compact_mode(EGUI_VIEW_OF(&test_persona)));
-    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_persona_get_read_only_mode(EGUI_VIEW_OF(&test_persona)));
     EGUI_TEST_ASSERT_TRUE(test_persona.font == (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT);
     EGUI_TEST_ASSERT_TRUE(test_persona.meta_font == (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT);
     EGUI_TEST_ASSERT_TRUE(egui_view_persona_default_icon_font(20) == EGUI_FONT_ICON_MS_16);
@@ -319,16 +310,6 @@ static void test_persona_setters_and_resolvers_clear_pressed_state(void)
     EGUI_TEST_ASSERT_EQUAL_INT(warning.full, test_persona.warning_color.full);
     EGUI_TEST_ASSERT_EQUAL_INT(neutral.full, test_persona.neutral_color.full);
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_persona)->is_pressed);
-
-    egui_view_set_pressed(EGUI_VIEW_OF(&test_persona), 1);
-    egui_view_persona_set_compact_mode(EGUI_VIEW_OF(&test_persona), 2);
-    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_persona_get_compact_mode(EGUI_VIEW_OF(&test_persona)));
-    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_persona)->is_pressed);
-
-    egui_view_set_pressed(EGUI_VIEW_OF(&test_persona), 1);
-    egui_view_persona_set_read_only_mode(EGUI_VIEW_OF(&test_persona), 3);
-    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_persona_get_read_only_mode(EGUI_VIEW_OF(&test_persona)));
-    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_persona)->is_pressed);
 }
 
 static void test_persona_helpers_compute_regions_and_colors(void)
@@ -361,7 +342,6 @@ static void test_persona_helpers_compute_regions_and_colors(void)
     EGUI_TEST_ASSERT_TRUE(egui_view_persona_get_presence_region(EGUI_VIEW_OF(&test_persona), &presence_region));
     EGUI_TEST_ASSERT_TRUE(presence_region.size.width > 0);
 
-    egui_view_persona_set_compact_mode(EGUI_VIEW_OF(&test_persona), 1);
     egui_view_set_size(EGUI_VIEW_OF(&test_persona), 104, 78);
     layout_view(EGUI_VIEW_OF(&test_persona), 4, 6, 104, 78);
     EGUI_TEST_ASSERT_TRUE(egui_view_persona_get_avatar_region(EGUI_VIEW_OF(&test_persona), &avatar_region));

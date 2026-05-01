@@ -421,18 +421,18 @@ static void egui_view_persona_draw_text(egui_view_t *self, const egui_font_t *fo
 
 static void egui_view_persona_get_metrics(egui_view_persona_t *local, egui_view_t *self, egui_view_persona_metrics_t *metrics)
 {
-    egui_dim_t pad_x = local->compact_mode ? 8 : 10;
-    egui_dim_t pad_y = local->compact_mode ? 8 : 10;
-    egui_dim_t gap = local->compact_mode ? 8 : 10;
-    egui_dim_t avatar_size = local->compact_mode ? 30 : 44;
-    egui_dim_t section_extra = local->compact_mode ? 8 : 12;
-    egui_dim_t min_content_w = local->compact_mode ? 28 : 44;
+    egui_dim_t pad_x = 10;
+    egui_dim_t pad_y = 10;
+    egui_dim_t gap = 10;
+    egui_dim_t avatar_size = 44;
+    egui_dim_t section_extra = 12;
+    egui_dim_t min_content_w = 44;
     egui_dim_t available_w;
     egui_dim_t available_h;
     egui_dim_t section_w;
     egui_dim_t title_height;
     egui_dim_t meta_height;
-    egui_dim_t line_gap = local->compact_mode ? 2 : 3;
+    egui_dim_t line_gap = 3;
     egui_dim_t total_height;
     egui_dim_t cursor_y;
 
@@ -513,19 +513,19 @@ static void egui_view_persona_get_metrics(egui_view_persona_t *local, egui_view_
     }
 
     metrics->show_secondary = (uint8_t)(local->secondary_text != NULL && local->secondary_text[0] != '\0');
-    metrics->show_tertiary = (uint8_t)(!local->compact_mode && local->tertiary_text != NULL && local->tertiary_text[0] != '\0');
-    metrics->show_quaternary = (uint8_t)(!local->compact_mode && local->quaternary_text != NULL && local->quaternary_text[0] != '\0');
+    metrics->show_tertiary = (uint8_t)(local->tertiary_text != NULL && local->tertiary_text[0] != '\0');
+    metrics->show_quaternary = (uint8_t)(local->quaternary_text != NULL && local->quaternary_text[0] != '\0');
     metrics->show_presence = egui_view_persona_should_draw_presence(local);
 
     egui_view_persona_measure_text(egui_view_persona_get_font(local), "Ag", NULL, &title_height);
     egui_view_persona_measure_text(egui_view_persona_get_meta_font(local), "Ag", NULL, &meta_height);
-    if (title_height < (local->compact_mode ? 10 : 12))
+    if (title_height < 12)
     {
-        title_height = local->compact_mode ? 10 : 12;
+        title_height = 12;
     }
-    if (meta_height < (local->compact_mode ? 8 : 10))
+    if (meta_height < 10)
     {
-        meta_height = local->compact_mode ? 8 : 10;
+        meta_height = 10;
     }
 
     total_height = title_height;
@@ -605,12 +605,12 @@ static void egui_view_persona_get_metrics(egui_view_persona_t *local, egui_view_
 
     if (metrics->show_presence)
     {
-        egui_dim_t dot_size = metrics->avatar_region.size.width / (local->compact_mode ? 4 : 3);
-        egui_dim_t margin = local->compact_mode ? 1 : 2;
+        egui_dim_t dot_size = metrics->avatar_region.size.width / 3;
+        egui_dim_t margin = 2;
 
-        if (dot_size < (local->compact_mode ? 6 : 8))
+        if (dot_size < 8)
         {
-            dot_size = local->compact_mode ? 6 : 8;
+            dot_size = 8;
         }
         if (dot_size > metrics->avatar_region.size.width / 2)
         {
@@ -690,8 +690,8 @@ static void egui_view_persona_on_draw(egui_view_t *self)
 
     tone_color = egui_view_persona_tone_color(local, local->tone);
     surface_color = local->surface_color;
-    border_color = egui_rgb_mix(local->border_color, tone_color, local->compact_mode ? 12 : 16);
-    section_color = egui_rgb_mix(local->section_color, tone_color, local->compact_mode ? 12 : 16);
+    border_color = egui_rgb_mix(local->border_color, tone_color, 16);
+    section_color = egui_rgb_mix(local->section_color, tone_color, 16);
     title_color = local->text_color;
     meta_color = local->muted_text_color;
     avatar_fill = tone_color;
@@ -700,23 +700,8 @@ static void egui_view_persona_on_draw(egui_view_t *self)
     presence_color = egui_view_persona_status_color(local, local->status);
     presence_outline = local->surface_color;
     shadow_color = egui_rgb_mix(local->border_color, EGUI_COLOR_HEX(0xAAB7C4), 48);
-    panel_radius = local->compact_mode ? 10 : 12;
-    section_radius = local->compact_mode ? 8 : 10;
-
-    if (local->read_only_mode)
-    {
-        surface_color = egui_rgb_mix(surface_color, EGUI_COLOR_HEX(0xF6F8FA), 24);
-        border_color = egui_rgb_mix(border_color, local->muted_text_color, 34);
-        section_color = egui_rgb_mix(section_color, surface_color, 42);
-        title_color = egui_rgb_mix(title_color, local->muted_text_color, 28);
-        meta_color = egui_rgb_mix(meta_color, surface_color, 20);
-        avatar_fill = egui_rgb_mix(avatar_fill, surface_color, 36);
-        avatar_text_color = egui_rgb_mix(avatar_text_color, local->muted_text_color, 46);
-        avatar_border = egui_rgb_mix(avatar_border, local->muted_text_color, 44);
-        presence_color = egui_rgb_mix(presence_color, local->muted_text_color, 46);
-        presence_outline = egui_rgb_mix(presence_outline, local->muted_text_color, 16);
-        shadow_color = egui_rgb_mix(shadow_color, surface_color, 48);
-    }
+    panel_radius = 12;
+    section_radius = 10;
     if (!egui_view_get_enable(self))
     {
         surface_color = egui_view_persona_mix_disabled(surface_color);
@@ -732,7 +717,7 @@ static void egui_view_persona_on_draw(egui_view_t *self)
         shadow_color = egui_view_persona_mix_disabled(shadow_color);
     }
 
-    if (!local->compact_mode && metrics.panel_region.size.height >= 34)
+    if (metrics.panel_region.size.height >= 34)
     {
         egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.panel_region.location.x, metrics.panel_region.location.y + 2, metrics.panel_region.size.width,
                                               metrics.panel_region.size.height, panel_radius, shadow_color, egui_color_alpha_mix(self->alpha, 22));
@@ -741,13 +726,13 @@ static void egui_view_persona_on_draw(egui_view_t *self)
                                           metrics.panel_region.size.height, panel_radius, surface_color, egui_color_alpha_mix(self->alpha, 96));
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics.panel_region.location.x, metrics.panel_region.location.y, metrics.panel_region.size.width,
                                      metrics.panel_region.size.height, panel_radius, 1, border_color,
-                                     egui_color_alpha_mix(self->alpha, local->compact_mode ? 40 : 52));
+                                     egui_color_alpha_mix(self->alpha, 52));
 
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.section_region.location.x, metrics.section_region.location.y, metrics.section_region.size.width,
                                           metrics.section_region.size.height, section_radius, section_color, egui_color_alpha_mix(self->alpha, 82));
     if (metrics.section_region.size.height > 10)
     {
-        egui_dim_t indicator_h = metrics.section_region.size.height - (local->compact_mode ? 12 : 14);
+        egui_dim_t indicator_h = metrics.section_region.size.height - 14;
         egui_dim_t indicator_y = metrics.section_region.location.y + (metrics.section_region.size.height - indicator_h) / 2;
 
         if (indicator_h < 6)
@@ -755,7 +740,7 @@ static void egui_view_persona_on_draw(egui_view_t *self)
             indicator_h = 6;
             indicator_y = metrics.section_region.location.y + (metrics.section_region.size.height - indicator_h) / 2;
         }
-        egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.section_region.location.x + 4, indicator_y, local->compact_mode ? 3 : 4, indicator_h, 1, tone_color,
+        egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.section_region.location.x + 4, indicator_y, 4, indicator_h, 1, tone_color,
                                               egui_color_alpha_mix(self->alpha, 62));
     }
 
@@ -806,7 +791,7 @@ static void egui_view_persona_on_draw(egui_view_t *self)
 
     title_text = (local->display_name != NULL && local->display_name[0] != '\0') ? local->display_name : resolved_initials;
     egui_view_persona_fit_text_to_width(egui_view_persona_get_font(local), title_text, title_label, sizeof(title_label), metrics.title_region.size.width,
-                                        local->compact_mode ? 4 : 5);
+                                        5);
     egui_view_persona_draw_text(self, egui_view_persona_get_font(local), title_label, &metrics.title_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, title_color,
                                 EGUI_ALPHA_100);
     if (metrics.show_secondary)
@@ -980,38 +965,6 @@ void egui_view_persona_set_meta_font(egui_view_t *self, const egui_font_t *font)
     egui_view_invalidate(self);
 }
 
-void egui_view_persona_set_compact_mode(egui_view_t *self, uint8_t compact_mode)
-{
-    EGUI_LOCAL_INIT(egui_view_persona_t);
-
-    egui_view_persona_clear_pressed_state(self);
-    local->compact_mode = compact_mode ? 1 : 0;
-    egui_view_invalidate(self);
-}
-
-uint8_t egui_view_persona_get_compact_mode(egui_view_t *self)
-{
-    EGUI_LOCAL_INIT(egui_view_persona_t);
-
-    return local->compact_mode;
-}
-
-void egui_view_persona_set_read_only_mode(egui_view_t *self, uint8_t read_only_mode)
-{
-    EGUI_LOCAL_INIT(egui_view_persona_t);
-
-    egui_view_persona_clear_pressed_state(self);
-    local->read_only_mode = read_only_mode ? 1 : 0;
-    egui_view_invalidate(self);
-}
-
-uint8_t egui_view_persona_get_read_only_mode(egui_view_t *self)
-{
-    EGUI_LOCAL_INIT(egui_view_persona_t);
-
-    return local->read_only_mode;
-}
-
 void egui_view_persona_set_palette(egui_view_t *self, egui_color_t surface_color, egui_color_t border_color, egui_color_t section_color,
                                    egui_color_t text_color, egui_color_t muted_text_color, egui_color_t accent_color, egui_color_t success_color,
                                    egui_color_t warning_color, egui_color_t neutral_color)
@@ -1128,8 +1081,6 @@ void egui_view_persona_init(egui_view_t *self)
     local->neutral_color = EGUI_COLOR_HEX(0x7A8796);
     local->tone = EGUI_VIEW_PERSONA_TONE_NEUTRAL;
     local->status = EGUI_VIEW_PERSONA_STATUS_NONE;
-    local->compact_mode = 0;
-    local->read_only_mode = 0;
 
     egui_view_set_view_name(self, "egui_view_persona");
 }

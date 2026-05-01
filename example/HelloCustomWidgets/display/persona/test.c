@@ -39,10 +39,10 @@ static egui_view_label_t title_label;
 static egui_view_persona_t primary_persona;
 static egui_view_label_t primary_status_label;
 static egui_view_linearlayout_t bottom_row;
-static egui_view_persona_t compact_persona;
-static egui_view_persona_t read_only_persona;
-static egui_view_api_t compact_persona_api;
-static egui_view_api_t read_only_persona_api;
+static egui_view_persona_t secondary_persona;
+static egui_view_persona_t muted_persona;
+static egui_view_api_t secondary_persona_api;
+static egui_view_api_t muted_persona_api;
 static uint8_t ui_ready;
 
 EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
@@ -131,7 +131,7 @@ static void apply_primary_default_state(void)
 
 static void apply_preview_states(void)
 {
-    static const persona_snapshot_t compact_snapshot = {
+    static const persona_snapshot_t secondary_snapshot = {
             "Maya Yu",
             "Research lead",
             NULL,
@@ -142,10 +142,10 @@ static void apply_preview_states(void)
             NULL,
             EGUI_COLOR_HEX(0x000000),
     };
-    static const persona_snapshot_t read_only_snapshot = {
+    static const persona_snapshot_t muted_snapshot = {
             "Jin Park",
             "Compliance archive",
-            "Read-only audit trail",
+            "Muted audit trail",
             NULL,
             "JP",
             EGUI_VIEW_PERSONA_TONE_NEUTRAL,
@@ -154,15 +154,14 @@ static void apply_preview_states(void)
             EGUI_COLOR_HEX(0x000000),
     };
 
-    apply_snapshot(&compact_persona, &compact_snapshot);
-    egui_view_persona_set_compact_mode(EGUI_VIEW_OF(&compact_persona), 1);
+    apply_snapshot(&secondary_persona, &secondary_snapshot);
+    egui_view_set_enable(EGUI_VIEW_OF(&secondary_persona), 1);
 
-    apply_snapshot(&read_only_persona, &read_only_snapshot);
-    egui_view_persona_set_compact_mode(EGUI_VIEW_OF(&read_only_persona), 1);
-    egui_view_persona_set_read_only_mode(EGUI_VIEW_OF(&read_only_persona), 1);
-    egui_view_persona_set_palette(EGUI_VIEW_OF(&read_only_persona), EGUI_COLOR_HEX(0xFBFCFD), EGUI_COLOR_HEX(0xD8DFE6), EGUI_COLOR_HEX(0xEEF2F6),
+    apply_snapshot(&muted_persona, &muted_snapshot);
+    egui_view_persona_set_palette(EGUI_VIEW_OF(&muted_persona), EGUI_COLOR_HEX(0xFBFCFD), EGUI_COLOR_HEX(0xD8DFE6), EGUI_COLOR_HEX(0xEEF2F6),
                                   EGUI_COLOR_HEX(0x6B7A89), EGUI_COLOR_HEX(0x99A6B2), EGUI_COLOR_HEX(0xA7B4C1), EGUI_COLOR_HEX(0xB2C4BA),
                                   EGUI_COLOR_HEX(0xC4B8A4), EGUI_COLOR_HEX(0xB4BDC8));
+    egui_view_set_enable(EGUI_VIEW_OF(&muted_persona), 0);
 
     if (ui_ready)
     {
@@ -226,26 +225,26 @@ void test_init_ui(void)
     egui_view_linearlayout_set_align_type(EGUI_VIEW_OF(&bottom_row), EGUI_ALIGN_VCENTER);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&bottom_row));
 
-    egui_view_persona_init(EGUI_VIEW_OF(&compact_persona));
-    egui_view_set_size(EGUI_VIEW_OF(&compact_persona), 104, 78);
-    egui_view_persona_set_font(EGUI_VIEW_OF(&compact_persona), (const egui_font_t *)&egui_res_font_montserrat_8_4);
-    egui_view_persona_set_meta_font(EGUI_VIEW_OF(&compact_persona), (const egui_font_t *)&egui_res_font_montserrat_8_4);
-    egui_view_persona_override_static_preview_api(EGUI_VIEW_OF(&compact_persona), &compact_persona_api);
+    egui_view_persona_init(EGUI_VIEW_OF(&secondary_persona));
+    egui_view_set_size(EGUI_VIEW_OF(&secondary_persona), 104, 78);
+    egui_view_persona_set_font(EGUI_VIEW_OF(&secondary_persona), (const egui_font_t *)&egui_res_font_montserrat_8_4);
+    egui_view_persona_set_meta_font(EGUI_VIEW_OF(&secondary_persona), (const egui_font_t *)&egui_res_font_montserrat_8_4);
+    egui_view_persona_override_static_preview_api(EGUI_VIEW_OF(&secondary_persona), &secondary_persona_api);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
-    egui_view_set_focusable(EGUI_VIEW_OF(&compact_persona), 0);
+    egui_view_set_focusable(EGUI_VIEW_OF(&secondary_persona), 0);
 #endif
-    egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&compact_persona));
+    egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&secondary_persona));
 
-    egui_view_persona_init(EGUI_VIEW_OF(&read_only_persona));
-    egui_view_set_size(EGUI_VIEW_OF(&read_only_persona), 104, 78);
-    egui_view_set_margin(EGUI_VIEW_OF(&read_only_persona), 8, 0, 0, 0);
-    egui_view_persona_set_font(EGUI_VIEW_OF(&read_only_persona), (const egui_font_t *)&egui_res_font_montserrat_8_4);
-    egui_view_persona_set_meta_font(EGUI_VIEW_OF(&read_only_persona), (const egui_font_t *)&egui_res_font_montserrat_8_4);
-    egui_view_persona_override_static_preview_api(EGUI_VIEW_OF(&read_only_persona), &read_only_persona_api);
+    egui_view_persona_init(EGUI_VIEW_OF(&muted_persona));
+    egui_view_set_size(EGUI_VIEW_OF(&muted_persona), 104, 78);
+    egui_view_set_margin(EGUI_VIEW_OF(&muted_persona), 8, 0, 0, 0);
+    egui_view_persona_set_font(EGUI_VIEW_OF(&muted_persona), (const egui_font_t *)&egui_res_font_montserrat_8_4);
+    egui_view_persona_set_meta_font(EGUI_VIEW_OF(&muted_persona), (const egui_font_t *)&egui_res_font_montserrat_8_4);
+    egui_view_persona_override_static_preview_api(EGUI_VIEW_OF(&muted_persona), &muted_persona_api);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
-    egui_view_set_focusable(EGUI_VIEW_OF(&read_only_persona), 0);
+    egui_view_set_focusable(EGUI_VIEW_OF(&muted_persona), 0);
 #endif
-    egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&read_only_persona));
+    egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&muted_persona));
 
     apply_primary_default_state();
     apply_preview_states();
@@ -325,4 +324,3 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     }
 }
 #endif
-
