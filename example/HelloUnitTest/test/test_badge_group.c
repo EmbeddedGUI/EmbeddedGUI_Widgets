@@ -25,8 +25,6 @@ struct badge_group_preview_snapshot
     egui_color_t neutral_color;
     uint8_t snapshot_count;
     uint8_t current_snapshot;
-    uint8_t compact_mode;
-    uint8_t read_only_mode;
     egui_alpha_t alpha;
     uint8_t enable;
     uint8_t is_focused;
@@ -75,7 +73,7 @@ static const egui_view_badge_group_item_t g_extra_items[] = {
         {"E", "5", 0, 0, 1}, {"F", "6", 1, 0, 1}, {"G", "7", 2, 1, 0},
 };
 
-static const egui_view_badge_group_item_t g_compact_items[] = {
+static const egui_view_badge_group_item_t g_preview_items[] = {
         {"Ready", "8", 0, 1, 0},
         {"Muted", "2", 3, 0, 1},
 };
@@ -87,8 +85,8 @@ static const egui_view_badge_group_snapshot_t g_snapshots[] = {
         {"CALM", "Archive sweep", "Neutral focus softens the card.", "Neutral stays calm.", g_items_3, 4, 1},
 };
 
-static const egui_view_badge_group_snapshot_t g_compact_snapshots[] = {
-        {"SET", "Compact", "", "Short row", g_compact_items, 2, 0},
+static const egui_view_badge_group_snapshot_t g_preview_snapshots[] = {
+        {"SET", "Small", "", "Short row", g_preview_items, 2, 0},
 };
 
 static const egui_view_badge_group_snapshot_t g_overflow_snapshots[] = {
@@ -137,11 +135,10 @@ static void setup_preview_group(void)
 {
     egui_view_badge_group_init(EGUI_VIEW_OF(&preview_group));
     egui_view_set_size(EGUI_VIEW_OF(&preview_group), 104, 84);
-    egui_view_badge_group_set_snapshots(EGUI_VIEW_OF(&preview_group), g_compact_snapshots, 1);
+    egui_view_badge_group_set_snapshots(EGUI_VIEW_OF(&preview_group), g_preview_snapshots, 1);
     egui_view_badge_group_set_current_snapshot(EGUI_VIEW_OF(&preview_group), 0);
     egui_view_badge_group_set_font(EGUI_VIEW_OF(&preview_group), (const egui_font_t *)&egui_res_font_montserrat_8_4);
     egui_view_badge_group_set_meta_font(EGUI_VIEW_OF(&preview_group), (const egui_font_t *)&egui_res_font_montserrat_8_4);
-    egui_view_badge_group_set_compact_mode(EGUI_VIEW_OF(&preview_group), 1);
     egui_view_badge_group_set_palette(EGUI_VIEW_OF(&preview_group), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD2DBE3), EGUI_COLOR_HEX(0x1A2734),
                                       EGUI_COLOR_HEX(0x6B7A89), EGUI_COLOR_HEX(0x0F6CBD), EGUI_COLOR_HEX(0x0F7B45), EGUI_COLOR_HEX(0x9D5D00),
                                       EGUI_COLOR_HEX(0x7A8796));
@@ -261,8 +258,6 @@ static void capture_preview_snapshot(badge_group_preview_snapshot_t *snapshot)
     snapshot->neutral_color = preview_group.neutral_color;
     snapshot->snapshot_count = preview_group.snapshot_count;
     snapshot->current_snapshot = preview_group.current_snapshot;
-    snapshot->compact_mode = preview_group.compact_mode;
-    snapshot->read_only_mode = preview_group.read_only_mode;
     snapshot->alpha = EGUI_VIEW_OF(&preview_group)->alpha;
     snapshot->enable = (uint8_t)egui_view_get_enable(EGUI_VIEW_OF(&preview_group));
     snapshot->is_focused = EGUI_VIEW_OF(&preview_group)->is_focused;
@@ -290,8 +285,6 @@ static void assert_preview_state_unchanged(const badge_group_preview_snapshot_t 
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->neutral_color.full, preview_group.neutral_color.full);
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->snapshot_count, preview_group.snapshot_count);
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->current_snapshot, preview_group.current_snapshot);
-    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->compact_mode, preview_group.compact_mode);
-    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->read_only_mode, preview_group.read_only_mode);
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->alpha, EGUI_VIEW_OF(&preview_group)->alpha);
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->enable, egui_view_get_enable(EGUI_VIEW_OF(&preview_group)));
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->is_focused, EGUI_VIEW_OF(&preview_group)->is_focused);
@@ -369,15 +362,6 @@ static void test_badge_group_snapshot_and_setters_clear_pressed_state(void)
     EGUI_TEST_ASSERT_EQUAL_INT(warning.full, test_group.warning_color.full);
     EGUI_TEST_ASSERT_EQUAL_INT(neutral.full, test_group.neutral_color.full);
 
-    seed_pressed_state(EGUI_VIEW_OF(&test_group), 1);
-    egui_view_badge_group_set_compact_mode(EGUI_VIEW_OF(&test_group), 2);
-    assert_pressed_cleared(EGUI_VIEW_OF(&test_group));
-    EGUI_TEST_ASSERT_EQUAL_INT(1, test_group.compact_mode);
-
-    seed_pressed_state(EGUI_VIEW_OF(&test_group), 1);
-    egui_view_badge_group_set_read_only_mode(EGUI_VIEW_OF(&test_group), 3);
-    assert_pressed_cleared(EGUI_VIEW_OF(&test_group));
-    EGUI_TEST_ASSERT_EQUAL_INT(1, test_group.read_only_mode);
 }
 
 static void test_badge_group_touch_same_target_release_and_cancel_behavior(void)
@@ -423,56 +407,10 @@ static void test_badge_group_keyboard_click_listener(void)
     EGUI_TEST_ASSERT_EQUAL_INT(1, click_count);
 }
 
-static void test_badge_group_compact_mode_clears_pressed_and_keeps_click_behavior(void)
+static void test_badge_group_disabled_guards_clear_pressed_state(void)
 {
     egui_dim_t x;
     egui_dim_t y;
-
-    setup_group();
-    layout_group();
-    get_view_center(EGUI_VIEW_OF(&test_group), &x, &y);
-
-    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
-    EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&test_group)->is_pressed);
-
-    egui_view_badge_group_set_compact_mode(EGUI_VIEW_OF(&test_group), 1);
-    EGUI_TEST_ASSERT_EQUAL_INT(1, test_group.compact_mode);
-    assert_pressed_cleared(EGUI_VIEW_OF(&test_group));
-
-    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
-    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, x, y));
-    EGUI_TEST_ASSERT_EQUAL_INT(1, click_count);
-}
-
-static void test_badge_group_read_only_and_disabled_guards_clear_pressed_state(void)
-{
-    egui_dim_t x;
-    egui_dim_t y;
-
-    setup_group();
-    layout_group();
-    get_view_center(EGUI_VIEW_OF(&test_group), &x, &y);
-
-    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
-    EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&test_group)->is_pressed);
-
-    egui_view_badge_group_set_read_only_mode(EGUI_VIEW_OF(&test_group), 1);
-    EGUI_TEST_ASSERT_EQUAL_INT(1, test_group.read_only_mode);
-    assert_pressed_cleared(EGUI_VIEW_OF(&test_group));
-
-    seed_pressed_state(EGUI_VIEW_OF(&test_group), 1);
-    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
-    assert_pressed_cleared(EGUI_VIEW_OF(&test_group));
-
-    seed_pressed_state(EGUI_VIEW_OF(&test_group), 1);
-    EGUI_TEST_ASSERT_FALSE(send_key(EGUI_KEY_CODE_ENTER));
-    assert_pressed_cleared(EGUI_VIEW_OF(&test_group));
-    EGUI_TEST_ASSERT_EQUAL_INT(0, click_count);
-
-    egui_view_badge_group_set_read_only_mode(EGUI_VIEW_OF(&test_group), 0);
-    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
-    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, x, y));
-    EGUI_TEST_ASSERT_EQUAL_INT(1, click_count);
 
     setup_group();
     layout_group();
@@ -560,8 +498,7 @@ void test_badge_group_run(void)
     EGUI_TEST_RUN(test_badge_group_snapshot_and_setters_clear_pressed_state);
     EGUI_TEST_RUN(test_badge_group_touch_same_target_release_and_cancel_behavior);
     EGUI_TEST_RUN(test_badge_group_keyboard_click_listener);
-    EGUI_TEST_RUN(test_badge_group_compact_mode_clears_pressed_and_keeps_click_behavior);
-    EGUI_TEST_RUN(test_badge_group_read_only_and_disabled_guards_clear_pressed_state);
+    EGUI_TEST_RUN(test_badge_group_disabled_guards_clear_pressed_state);
     EGUI_TEST_RUN(test_badge_group_static_preview_consumes_input_and_keeps_state);
     EGUI_TEST_RUN(test_badge_group_internal_helpers_cover_focus_tone_text_and_width);
     EGUI_TEST_SUITE_END();

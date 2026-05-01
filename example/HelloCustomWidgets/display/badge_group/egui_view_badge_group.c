@@ -166,27 +166,32 @@ static void egui_view_badge_group_fit_text_to_width(const egui_font_t *font, con
     }
 }
 
-static egui_dim_t egui_view_badge_group_get_badge_height(egui_view_badge_group_t *local)
+static uint8_t egui_view_badge_group_should_use_dense_layout(const egui_region_t *work_region)
+{
+    return (uint8_t)(work_region->size.width <= 132 || work_region->size.height <= 90);
+}
+
+static egui_dim_t egui_view_badge_group_get_badge_height(egui_view_badge_group_t *local, uint8_t dense_layout)
 {
     egui_dim_t badge_h = egui_view_badge_group_measure_font_line_height(local->meta_font);
-    egui_dim_t min_h = local->compact_mode ? 11 : 13;
+    egui_dim_t min_h = dense_layout ? 11 : 13;
 
     return badge_h > min_h ? badge_h : min_h;
 }
 
-static egui_dim_t egui_view_badge_group_get_title_height(egui_view_badge_group_t *local)
+static egui_dim_t egui_view_badge_group_get_title_height(egui_view_badge_group_t *local, uint8_t dense_layout)
 {
     egui_dim_t title_h = egui_view_badge_group_measure_font_line_height(local->font);
-    egui_dim_t min_h = local->compact_mode ? 11 : 13;
+    egui_dim_t min_h = dense_layout ? 11 : 13;
 
     return title_h > min_h ? title_h : min_h;
 }
 
-static egui_dim_t egui_view_badge_group_get_body_height(egui_view_badge_group_t *local)
+static egui_dim_t egui_view_badge_group_get_body_height(egui_view_badge_group_t *local, uint8_t dense_layout)
 {
     egui_dim_t body_h;
 
-    if (local->compact_mode)
+    if (dense_layout)
     {
         return 0;
     }
@@ -195,10 +200,10 @@ static egui_dim_t egui_view_badge_group_get_body_height(egui_view_badge_group_t 
     return body_h > 11 ? body_h : 11;
 }
 
-static egui_dim_t egui_view_badge_group_get_footer_height(egui_view_badge_group_t *local)
+static egui_dim_t egui_view_badge_group_get_footer_height(egui_view_badge_group_t *local, uint8_t dense_layout)
 {
     egui_dim_t footer_h = egui_view_badge_group_measure_font_line_height(local->meta_font);
-    egui_dim_t min_h = local->compact_mode ? 12 : 16;
+    egui_dim_t min_h = dense_layout ? 12 : 16;
 
     return footer_h > min_h ? footer_h : min_h;
 }
@@ -279,7 +284,7 @@ static egui_dim_t egui_view_badge_group_pill_width(const egui_font_t *font, cons
 }
 
 static void egui_view_badge_group_draw_badge(egui_view_t *self, egui_view_badge_group_t *local, const egui_view_badge_group_item_t *item, egui_dim_t x,
-                                             egui_dim_t y, egui_dim_t width, egui_dim_t height, uint8_t focused)
+                                             egui_dim_t y, egui_dim_t width, egui_dim_t height, uint8_t focused, uint8_t dense_layout)
 {
     char label_text[16];
     char meta_text_buffer[8];
@@ -303,15 +308,6 @@ static void egui_view_badge_group_draw_badge(egui_view_t *self, egui_view_badge_
     radius = height / 2;
     is_enabled = egui_view_get_enable(self) ? 1 : 0;
 
-    if (local->read_only_mode)
-    {
-        fill_color = egui_rgb_mix(fill_color, local->surface_color, 42);
-        border_color = egui_rgb_mix(border_color, local->muted_text_color, 16);
-        text_color = egui_rgb_mix(text_color, local->muted_text_color, 36);
-        meta_fill = egui_rgb_mix(meta_fill, local->surface_color, 44);
-        meta_text = egui_rgb_mix(meta_text, local->muted_text_color, 40);
-    }
-
     if (!is_enabled)
     {
         fill_color = egui_view_badge_group_mix_disabled(fill_color);
@@ -333,9 +329,9 @@ static void egui_view_badge_group_draw_badge(egui_view_t *self, egui_view_badge_
         {
             meta_w = 10 + egui_view_badge_group_text_len(item->meta) * 4;
         }
-        if (meta_w < (local->compact_mode ? 16 : 18))
+        if (meta_w < (dense_layout ? 16 : 18))
         {
-            meta_w = local->compact_mode ? 16 : 18;
+            meta_w = dense_layout ? 16 : 18;
         }
         if (meta_w > width / 2)
         {
@@ -353,15 +349,15 @@ static void egui_view_badge_group_draw_badge(egui_view_t *self, egui_view_badge_
         egui_view_badge_group_draw_text(local->meta_font, self, meta_text_buffer, &text_region, EGUI_ALIGN_CENTER, meta_text);
     }
 
-    text_region.location.x = x + (local->compact_mode ? 6 : 8);
+    text_region.location.x = x + (dense_layout ? 6 : 8);
     text_region.location.y = y;
-    text_region.size.width = width - meta_w - (local->compact_mode ? 9 : 13);
+    text_region.size.width = width - meta_w - (dense_layout ? 9 : 13);
     text_region.size.height = height;
     if (text_region.size.width < 0)
     {
         text_region.size.width = 0;
     }
-    egui_view_badge_group_fit_text_to_width(local->meta_font, item->label, label_text, sizeof(label_text), text_region.size.width, local->compact_mode ? 4 : 5);
+    egui_view_badge_group_fit_text_to_width(local->meta_font, item->label, label_text, sizeof(label_text), text_region.size.width, dense_layout ? 4 : 5);
     egui_view_badge_group_draw_text(local->meta_font, self, label_text, &text_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, text_color);
 }
 
@@ -426,26 +422,6 @@ void egui_view_badge_group_set_meta_font(egui_view_t *self, const egui_font_t *f
     uint8_t had_pressed = egui_view_badge_group_clear_pressed_state(self);
 
     local->meta_font = font ? font : (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT;
-    EGUI_UNUSED(had_pressed);
-    egui_view_invalidate(self);
-}
-
-void egui_view_badge_group_set_compact_mode(egui_view_t *self, uint8_t compact_mode)
-{
-    EGUI_LOCAL_INIT(egui_view_badge_group_t);
-    uint8_t had_pressed = egui_view_badge_group_clear_pressed_state(self);
-
-    local->compact_mode = compact_mode ? 1 : 0;
-    EGUI_UNUSED(had_pressed);
-    egui_view_invalidate(self);
-}
-
-void egui_view_badge_group_set_read_only_mode(egui_view_t *self, uint8_t read_only_mode)
-{
-    EGUI_LOCAL_INIT(egui_view_badge_group_t);
-    uint8_t had_pressed = egui_view_badge_group_clear_pressed_state(self);
-
-    local->read_only_mode = read_only_mode ? 1 : 0;
     EGUI_UNUSED(had_pressed);
     egui_view_invalidate(self);
 }
@@ -519,6 +495,7 @@ static void egui_view_badge_group_on_draw(egui_view_t *self)
     egui_dim_t focus_pill_y;
     uint8_t item_count;
     uint8_t focus_index;
+    uint8_t dense_layout;
     uint8_t i;
 
     egui_view_get_work_region(self, &region);
@@ -536,34 +513,19 @@ static void egui_view_badge_group_on_draw(egui_view_t *self)
 
     focus_index = egui_view_badge_group_focus_index(snapshot, item_count);
     focus_item = &snapshot->items[focus_index];
+    dense_layout = egui_view_badge_group_should_use_dense_layout(&region);
     focus_color = egui_view_badge_group_tone_color(local, focus_item->tone);
-    card_fill = egui_rgb_mix(local->surface_color, focus_color, local->compact_mode ? 3 : 4);
-    card_border = egui_rgb_mix(local->border_color, focus_color, local->compact_mode ? 7 : 10);
+    card_fill = egui_rgb_mix(local->surface_color, focus_color, dense_layout ? 3 : 4);
+    card_border = egui_rgb_mix(local->border_color, focus_color, dense_layout ? 7 : 10);
     title_color = local->text_color;
-    body_color = egui_rgb_mix(local->muted_text_color, local->text_color, local->compact_mode ? 10 : 16);
-    footer_color = egui_rgb_mix(local->muted_text_color, focus_color, local->compact_mode ? 8 : 12);
-    footer_fill = egui_rgb_mix(local->surface_color, focus_color, local->compact_mode ? 4 : 6);
-    footer_border = egui_rgb_mix(local->border_color, focus_color, local->compact_mode ? 8 : 10);
-    eyebrow_fill = egui_rgb_mix(local->surface_color, focus_color, local->compact_mode ? 7 : 10);
-    eyebrow_border = egui_rgb_mix(local->border_color, focus_color, local->compact_mode ? 10 : 14);
-    focus_fill = egui_rgb_mix(local->surface_color, focus_color, local->compact_mode ? 8 : 10);
-    focus_border = egui_rgb_mix(local->border_color, focus_color, local->compact_mode ? 10 : 14);
-
-    if (local->read_only_mode)
-    {
-        focus_color = egui_rgb_mix(focus_color, local->muted_text_color, 82);
-        card_fill = egui_rgb_mix(card_fill, local->surface_color, 24);
-        card_border = egui_rgb_mix(card_border, local->muted_text_color, 16);
-        title_color = egui_rgb_mix(title_color, local->muted_text_color, 24);
-        body_color = egui_rgb_mix(body_color, local->muted_text_color, 28);
-        footer_color = egui_rgb_mix(footer_color, local->muted_text_color, 36);
-        footer_fill = egui_rgb_mix(footer_fill, local->surface_color, 32);
-        footer_border = egui_rgb_mix(footer_border, local->muted_text_color, 18);
-        eyebrow_fill = egui_rgb_mix(eyebrow_fill, local->surface_color, 28);
-        eyebrow_border = egui_rgb_mix(eyebrow_border, local->muted_text_color, 16);
-        focus_fill = egui_rgb_mix(focus_fill, local->surface_color, 32);
-        focus_border = egui_rgb_mix(focus_border, local->muted_text_color, 16);
-    }
+    body_color = egui_rgb_mix(local->muted_text_color, local->text_color, dense_layout ? 10 : 16);
+    footer_color = egui_rgb_mix(local->muted_text_color, focus_color, dense_layout ? 8 : 12);
+    footer_fill = egui_rgb_mix(local->surface_color, focus_color, dense_layout ? 4 : 6);
+    footer_border = egui_rgb_mix(local->border_color, focus_color, dense_layout ? 8 : 10);
+    eyebrow_fill = egui_rgb_mix(local->surface_color, focus_color, dense_layout ? 7 : 10);
+    eyebrow_border = egui_rgb_mix(local->border_color, focus_color, dense_layout ? 10 : 14);
+    focus_fill = egui_rgb_mix(local->surface_color, focus_color, dense_layout ? 8 : 10);
+    focus_border = egui_rgb_mix(local->border_color, focus_color, dense_layout ? 10 : 14);
 
     if (!egui_view_get_enable(self))
     {
@@ -585,13 +547,13 @@ static void egui_view_badge_group_on_draw(egui_view_t *self)
     y = region.location.y;
     w = region.size.width;
     h = region.size.height;
-    padding = local->compact_mode ? 7 : 9;
-    badge_h = egui_view_badge_group_get_badge_height(local);
-    title_h = egui_view_badge_group_get_title_height(local);
-    body_h = egui_view_badge_group_get_body_height(local);
-    row_gap = local->compact_mode ? 3 : 4;
-    badge_gap = local->compact_mode ? 3 : 4;
-    footer_h = egui_view_badge_group_get_footer_height(local);
+    padding = dense_layout ? 7 : 9;
+    badge_h = egui_view_badge_group_get_badge_height(local, dense_layout);
+    title_h = egui_view_badge_group_get_title_height(local, dense_layout);
+    body_h = egui_view_badge_group_get_body_height(local, dense_layout);
+    row_gap = dense_layout ? 3 : 4;
+    badge_gap = dense_layout ? 3 : 4;
+    footer_h = egui_view_badge_group_get_footer_height(local, dense_layout);
     footer_y = y + h - padding - footer_h;
     title_y = y + padding + badge_h + 4;
     body_y = title_y + title_h + 2;
@@ -601,24 +563,24 @@ static void egui_view_badge_group_on_draw(egui_view_t *self)
         badges_y += body_h + 3;
     }
     badges_w = w - padding * 2;
-    eyebrow_w = egui_view_badge_group_pill_width(local->meta_font, snapshot->eyebrow, local->compact_mode ? 24 : 28, badges_w);
+    eyebrow_w = egui_view_badge_group_pill_width(local->meta_font, snapshot->eyebrow, dense_layout ? 24 : 28, badges_w);
     focus_pill_h = badge_h;
-    if (focus_pill_h < (local->compact_mode ? 10 : 12))
+    if (focus_pill_h < (dense_layout ? 10 : 12))
     {
-        focus_pill_h = local->compact_mode ? 10 : 12;
+        focus_pill_h = dense_layout ? 10 : 12;
     }
     if (focus_pill_h > footer_h - 2)
     {
         focus_pill_h = footer_h - 2;
     }
-    focus_pill_w = egui_view_badge_group_pill_width(local->meta_font, focus_item->label, local->compact_mode ? 20 : 24, badges_w / 2);
+    focus_pill_w = egui_view_badge_group_pill_width(local->meta_font, focus_item->label, dense_layout ? 20 : 24, badges_w / 2);
     focus_pill_x = x + padding + 4;
     focus_pill_y = footer_y + (footer_h - focus_pill_h) / 2;
 
-    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, x, y, w, h, local->compact_mode ? 8 : 10, card_fill, egui_color_alpha_mix(self->alpha, 100));
-    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, x, y, w, h, local->compact_mode ? 8 : 10, 1, card_border, egui_color_alpha_mix(self->alpha, 58));
-    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, x + 2, y + 2, w - 4, local->compact_mode ? 3 : 4, local->compact_mode ? 6 : 8, focus_color,
-                                          egui_color_alpha_mix(self->alpha, local->read_only_mode ? 8 : 14));
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, x, y, w, h, dense_layout ? 8 : 10, card_fill, egui_color_alpha_mix(self->alpha, 100));
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, x, y, w, h, dense_layout ? 8 : 10, 1, card_border, egui_color_alpha_mix(self->alpha, 58));
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, x + 2, y + 2, w - 4, dense_layout ? 3 : 4, dense_layout ? 6 : 8, focus_color,
+                                          egui_color_alpha_mix(self->alpha, 14));
 
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, x + padding, y + padding, eyebrow_w, badge_h, badge_h / 2, eyebrow_fill, egui_color_alpha_mix(self->alpha, 82));
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, x + padding, y + padding, eyebrow_w, badge_h, badge_h / 2, 1, eyebrow_border, egui_color_alpha_mix(self->alpha, 40));
@@ -634,7 +596,7 @@ static void egui_view_badge_group_on_draw(egui_view_t *self)
     text_region.location.y = title_y;
     text_region.size.width = w - padding * 2;
     text_region.size.height = title_h;
-    egui_view_badge_group_fit_text_to_width(local->font, snapshot->title, title_text, sizeof(title_text), text_region.size.width, local->compact_mode ? 4 : 5);
+    egui_view_badge_group_fit_text_to_width(local->font, snapshot->title, title_text, sizeof(title_text), text_region.size.width, dense_layout ? 4 : 5);
     egui_view_badge_group_draw_text(local->font, self, title_text, &text_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, title_color);
 
     if (body_h > 0)
@@ -643,7 +605,7 @@ static void egui_view_badge_group_on_draw(egui_view_t *self)
         text_region.location.y = body_y;
         text_region.size.width = w - padding * 2;
         text_region.size.height = body_h;
-        egui_view_badge_group_fit_text_to_width(local->font, snapshot->body, body_text, sizeof(body_text), text_region.size.width, local->compact_mode ? 4 : 5);
+        egui_view_badge_group_fit_text_to_width(local->font, snapshot->body, body_text, sizeof(body_text), text_region.size.width, dense_layout ? 4 : 5);
         egui_view_badge_group_draw_text(local->font, self, body_text, &text_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, body_color);
     }
 
@@ -657,9 +619,9 @@ static void egui_view_badge_group_on_draw(egui_view_t *self)
             badge_w += 12 + egui_view_badge_group_measure_text_width(local->meta_font, snapshot->items[i].meta);
         }
 
-        if (badge_w < (local->compact_mode ? 34 : 42))
+        if (badge_w < (dense_layout ? 34 : 42))
         {
-            badge_w = local->compact_mode ? 34 : 42;
+            badge_w = dense_layout ? 34 : 42;
         }
         if (badge_w > badges_w)
         {
@@ -676,16 +638,16 @@ static void egui_view_badge_group_on_draw(egui_view_t *self)
             break;
         }
 
-        egui_view_badge_group_draw_badge(self, local, &snapshot->items[i], cursor_x, cursor_y, badge_w, badge_h, i == focus_index ? 1 : 0);
+        egui_view_badge_group_draw_badge(self, local, &snapshot->items[i], cursor_x, cursor_y, badge_w, badge_h, i == focus_index ? 1 : 0, dense_layout);
         cursor_x += badge_w + badge_gap;
     }
 
-    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, x + padding, footer_y, w - padding * 2, footer_h, local->compact_mode ? 6 : 8, footer_fill,
-                                          egui_color_alpha_mix(self->alpha, local->compact_mode ? 16 : 20));
-    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, x + padding, footer_y, w - padding * 2, footer_h, local->compact_mode ? 6 : 8, 1, footer_border,
-                                     egui_color_alpha_mix(self->alpha, local->compact_mode ? 22 : 26));
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, x + padding, footer_y, w - padding * 2, footer_h, dense_layout ? 6 : 8, footer_fill,
+                                          egui_color_alpha_mix(self->alpha, dense_layout ? 16 : 20));
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, x + padding, footer_y, w - padding * 2, footer_h, dense_layout ? 6 : 8, 1, footer_border,
+                                     egui_color_alpha_mix(self->alpha, dense_layout ? 22 : 26));
 
-    if (!local->compact_mode)
+    if (!dense_layout)
     {
         egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, focus_pill_x, focus_pill_y, focus_pill_w, focus_pill_h, focus_pill_h / 2, focus_fill,
                                               egui_color_alpha_mix(self->alpha, 78));
@@ -720,9 +682,7 @@ static void egui_view_badge_group_on_draw(egui_view_t *self)
 #if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
 static int egui_view_badge_group_on_touch_event(egui_view_t *self, egui_motion_event_t *event)
 {
-    EGUI_LOCAL_INIT(egui_view_badge_group_t);
-
-    if (local->read_only_mode || !egui_view_get_enable(self))
+    if (!egui_view_get_enable(self))
     {
         if (egui_view_badge_group_clear_pressed_state(self))
         {
@@ -739,9 +699,7 @@ static int egui_view_badge_group_on_touch_event(egui_view_t *self, egui_motion_e
 #if EGUI_CONFIG_FUNCTION_SUPPORT_KEY
 static int egui_view_badge_group_on_key_event(egui_view_t *self, egui_key_event_t *event)
 {
-    EGUI_LOCAL_INIT(egui_view_badge_group_t);
-
-    if (local->read_only_mode || !egui_view_get_enable(self))
+    if (!egui_view_get_enable(self))
     {
         if (egui_view_badge_group_clear_pressed_state(self))
         {
@@ -822,6 +780,4 @@ void egui_view_badge_group_init(egui_view_t *self)
     local->neutral_color = EGUI_COLOR_HEX(0x7A8796);
     local->snapshot_count = 0;
     local->current_snapshot = 0;
-    local->compact_mode = 0;
-    local->read_only_mode = 0;
 }
