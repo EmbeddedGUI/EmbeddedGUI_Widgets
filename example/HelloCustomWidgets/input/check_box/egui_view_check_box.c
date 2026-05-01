@@ -61,16 +61,6 @@ void hcw_check_box_apply_standard_style(egui_view_t *self)
     hcw_check_box_apply_style(self, EGUI_COLOR_HEX(0xC6D2DE), EGUI_COLOR_HEX(0x2563EB), EGUI_COLOR_WHITE, EGUI_COLOR_HEX(0x1A2734), 8);
 }
 
-void hcw_check_box_apply_compact_style(egui_view_t *self)
-{
-    hcw_check_box_apply_style(self, EGUI_COLOR_HEX(0xC7D8CE), EGUI_COLOR_HEX(0x0C7C73), EGUI_COLOR_WHITE, EGUI_COLOR_HEX(0x21303F), 6);
-}
-
-void hcw_check_box_apply_read_only_style(egui_view_t *self)
-{
-    hcw_check_box_apply_style(self, EGUI_COLOR_HEX(0xD8E0E8), EGUI_COLOR_HEX(0xAFB8C3), EGUI_COLOR_HEX(0xF7F9FB), EGUI_COLOR_HEX(0x546474), 6);
-}
-
 void hcw_check_box_set_checked(egui_view_t *self, uint8_t is_checked)
 {
     hcw_check_box_clear_pressed_state(self);

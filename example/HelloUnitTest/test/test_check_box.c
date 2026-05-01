@@ -73,7 +73,12 @@ static void setup_preview_box(uint8_t checked)
     egui_view_checkbox_init(EGUI_VIEW_OF(&preview_box), uicode_get_core());
     egui_view_set_size(EGUI_VIEW_OF(&preview_box), 104, 28);
     egui_view_checkbox_set_font(EGUI_VIEW_OF(&preview_box), (const egui_font_t *)&egui_res_font_montserrat_10_4);
-    hcw_check_box_apply_compact_style(EGUI_VIEW_OF(&preview_box));
+    hcw_check_box_apply_standard_style(EGUI_VIEW_OF(&preview_box));
+    preview_box.box_color = EGUI_COLOR_HEX(0xC7D8CE);
+    preview_box.box_fill_color = EGUI_COLOR_HEX(0x0C7C73);
+    preview_box.check_color = EGUI_COLOR_WHITE;
+    preview_box.text_color = EGUI_COLOR_HEX(0x21303F);
+    preview_box.text_gap = 6;
     hcw_check_box_set_text(EGUI_VIEW_OF(&preview_box), "Auto");
     hcw_check_box_set_checked(EGUI_VIEW_OF(&preview_box), checked);
     egui_view_checkbox_set_on_checked_listener(EGUI_VIEW_OF(&preview_box), on_checked);
@@ -176,7 +181,7 @@ static void assert_preview_state_unchanged(const check_box_preview_snapshot_t *s
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&preview_box)->is_pressed);
 }
 
-static void test_check_box_style_helpers_update_palette_and_clear_pressed_state(void)
+static void test_check_box_style_helper_updates_palette_and_clear_pressed_state(void)
 {
     egui_view_checkbox_t *local;
 
@@ -184,20 +189,13 @@ static void test_check_box_style_helpers_update_palette_and_clear_pressed_state(
     local = (egui_view_checkbox_t *)EGUI_VIEW_OF(&test_box);
 
     egui_view_set_pressed(EGUI_VIEW_OF(&test_box), 1);
-    hcw_check_box_apply_compact_style(EGUI_VIEW_OF(&test_box));
+    hcw_check_box_apply_standard_style(EGUI_VIEW_OF(&test_box));
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_box)->is_pressed);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xC7D8CE).full, local->box_color.full);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x0C7C73).full, local->box_fill_color.full);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x21303F).full, local->text_color.full);
-    EGUI_TEST_ASSERT_EQUAL_INT(6, local->text_gap);
-
-    egui_view_set_pressed(EGUI_VIEW_OF(&test_box), 1);
-    hcw_check_box_apply_read_only_style(EGUI_VIEW_OF(&test_box));
-    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_box)->is_pressed);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xD8E0E8).full, local->box_color.full);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xAFB8C3).full, local->box_fill_color.full);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x546474).full, local->text_color.full);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xF7F9FB).full, local->check_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xC6D2DE).full, local->box_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x2563EB).full, local->box_fill_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x1A2734).full, local->text_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_WHITE.full, local->check_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(8, local->text_gap);
 }
 
 static void test_check_box_text_and_mark_setters_clear_pressed_state(void)
@@ -344,7 +342,7 @@ static void test_check_box_static_preview_consumes_input_and_keeps_state(void)
 void test_check_box_run(void)
 {
     EGUI_TEST_SUITE_BEGIN(check_box);
-    EGUI_TEST_RUN(test_check_box_style_helpers_update_palette_and_clear_pressed_state);
+    EGUI_TEST_RUN(test_check_box_style_helper_updates_palette_and_clear_pressed_state);
     EGUI_TEST_RUN(test_check_box_text_and_mark_setters_clear_pressed_state);
     EGUI_TEST_RUN(test_check_box_checked_setter_notifies_and_clears_pressed_state);
     EGUI_TEST_RUN(test_check_box_touch_same_target_release_toggles_once);

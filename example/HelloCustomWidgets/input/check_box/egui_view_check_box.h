@@ -9,8 +9,6 @@ extern "C" {
 #endif
 
 void hcw_check_box_apply_standard_style(egui_view_t *self);
-void hcw_check_box_apply_compact_style(egui_view_t *self);
-void hcw_check_box_apply_read_only_style(egui_view_t *self);
 void hcw_check_box_set_checked(egui_view_t *self, uint8_t is_checked);
 void hcw_check_box_set_text(egui_view_t *self, const char *text);
 void hcw_check_box_set_mark_style(egui_view_t *self, egui_view_checkbox_mark_style_t style);

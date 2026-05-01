@@ -35,11 +35,11 @@ static egui_view_linearlayout_t root_layout;
 static egui_view_label_t title_label;
 static egui_view_checkbox_t control_primary;
 static egui_view_linearlayout_t bottom_row;
-static egui_view_checkbox_t control_compact;
-static egui_view_checkbox_t control_read_only;
+static egui_view_checkbox_t control_secondary;
+static egui_view_checkbox_t control_disabled;
 static egui_view_api_t control_primary_api;
-static egui_view_api_t control_compact_api;
-static egui_view_api_t control_read_only_api;
+static egui_view_api_t control_secondary_api;
+static egui_view_api_t control_disabled_api;
 static uint8_t current_primary_snapshot;
 static uint8_t ui_ready;
 
@@ -54,8 +54,8 @@ static const check_box_snapshot_t primary_snapshots[] = {
         {"Offline sync", 0},
 };
 
-static const check_box_snapshot_t compact_snapshot = {"Auto", 1};
-static const check_box_snapshot_t read_only_snapshot = {"Accepted", 1};
+static const check_box_snapshot_t secondary_snapshot = {"Auto", 1};
+static const check_box_snapshot_t disabled_snapshot = {"Accepted", 1};
 
 static void layout_page(void);
 
@@ -82,12 +82,30 @@ static void apply_primary_default_state(void)
 
 static void apply_preview_states(void)
 {
-    apply_snapshot_to_box(&control_compact, &compact_snapshot);
-    apply_snapshot_to_box(&control_read_only, &read_only_snapshot);
+    apply_snapshot_to_box(&control_secondary, &secondary_snapshot);
+    apply_snapshot_to_box(&control_disabled, &disabled_snapshot);
     if (ui_ready)
     {
         layout_page();
     }
+}
+
+static void apply_secondary_preview_palette(egui_view_checkbox_t *box)
+{
+    box->box_color = EGUI_COLOR_HEX(0xC7D8CE);
+    box->box_fill_color = EGUI_COLOR_HEX(0x0C7C73);
+    box->check_color = EGUI_COLOR_WHITE;
+    box->text_color = EGUI_COLOR_HEX(0x21303F);
+    box->text_gap = 6;
+}
+
+static void apply_disabled_preview_palette(egui_view_checkbox_t *box)
+{
+    box->box_color = EGUI_COLOR_HEX(0xD8E0E8);
+    box->box_fill_color = EGUI_COLOR_HEX(0xAFB8C3);
+    box->check_color = EGUI_COLOR_HEX(0xF7F9FB);
+    box->text_color = EGUI_COLOR_HEX(0x546474);
+    box->text_gap = 6;
 }
 
 static void layout_local_views(void)
@@ -153,26 +171,29 @@ void test_init_ui(void)
     egui_view_linearlayout_set_align_type(EGUI_VIEW_OF(&bottom_row), EGUI_ALIGN_VCENTER);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&bottom_row));
 
-    egui_view_checkbox_init(EGUI_VIEW_OF(&control_compact), uicode_get_core());
-    egui_view_set_size(EGUI_VIEW_OF(&control_compact), CHECK_BOX_PREVIEW_WIDTH, CHECK_BOX_PREVIEW_HEIGHT);
-    egui_view_checkbox_set_font(EGUI_VIEW_OF(&control_compact), (const egui_font_t *)&egui_res_font_montserrat_10_4);
-    hcw_check_box_apply_compact_style(EGUI_VIEW_OF(&control_compact));
-    hcw_check_box_override_static_preview_api(EGUI_VIEW_OF(&control_compact), &control_compact_api);
+    egui_view_checkbox_init(EGUI_VIEW_OF(&control_secondary), uicode_get_core());
+    egui_view_set_size(EGUI_VIEW_OF(&control_secondary), CHECK_BOX_PREVIEW_WIDTH, CHECK_BOX_PREVIEW_HEIGHT);
+    egui_view_checkbox_set_font(EGUI_VIEW_OF(&control_secondary), (const egui_font_t *)&egui_res_font_montserrat_10_4);
+    hcw_check_box_apply_standard_style(EGUI_VIEW_OF(&control_secondary));
+    apply_secondary_preview_palette(&control_secondary);
+    hcw_check_box_override_static_preview_api(EGUI_VIEW_OF(&control_secondary), &control_secondary_api);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
-    egui_view_set_focusable(EGUI_VIEW_OF(&control_compact), 0);
+    egui_view_set_focusable(EGUI_VIEW_OF(&control_secondary), 0);
 #endif
-    egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&control_compact));
+    egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&control_secondary));
 
-    egui_view_checkbox_init(EGUI_VIEW_OF(&control_read_only), uicode_get_core());
-    egui_view_set_size(EGUI_VIEW_OF(&control_read_only), CHECK_BOX_PREVIEW_WIDTH, CHECK_BOX_PREVIEW_HEIGHT);
-    egui_view_set_margin(EGUI_VIEW_OF(&control_read_only), 8, 0, 0, 0);
-    egui_view_checkbox_set_font(EGUI_VIEW_OF(&control_read_only), (const egui_font_t *)&egui_res_font_montserrat_10_4);
-    hcw_check_box_apply_read_only_style(EGUI_VIEW_OF(&control_read_only));
-    hcw_check_box_override_static_preview_api(EGUI_VIEW_OF(&control_read_only), &control_read_only_api);
+    egui_view_checkbox_init(EGUI_VIEW_OF(&control_disabled), uicode_get_core());
+    egui_view_set_size(EGUI_VIEW_OF(&control_disabled), CHECK_BOX_PREVIEW_WIDTH, CHECK_BOX_PREVIEW_HEIGHT);
+    egui_view_set_margin(EGUI_VIEW_OF(&control_disabled), 8, 0, 0, 0);
+    egui_view_checkbox_set_font(EGUI_VIEW_OF(&control_disabled), (const egui_font_t *)&egui_res_font_montserrat_10_4);
+    hcw_check_box_apply_standard_style(EGUI_VIEW_OF(&control_disabled));
+    apply_disabled_preview_palette(&control_disabled);
+    egui_view_set_enable(EGUI_VIEW_OF(&control_disabled), 0);
+    hcw_check_box_override_static_preview_api(EGUI_VIEW_OF(&control_disabled), &control_disabled_api);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
-    egui_view_set_focusable(EGUI_VIEW_OF(&control_read_only), 0);
+    egui_view_set_focusable(EGUI_VIEW_OF(&control_disabled), 0);
 #endif
-    egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&control_read_only));
+    egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&control_disabled));
 
     apply_primary_default_state();
     apply_preview_states();
@@ -299,4 +320,3 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     }
 }
 #endif
-
