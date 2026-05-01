@@ -21,20 +21,6 @@ static const uint8_t polyline_accent_points[] = {
         92, 12,
 };
 
-static const uint8_t polyline_compact_points[] = {
-        12, 68,
-        38, 36,
-        62, 58,
-        88, 24,
-};
-
-static const uint8_t polyline_read_only_points[] = {
-        10, 58,
-        34, 42,
-        58, 48,
-        86, 32,
-};
-
 static egui_view_polyline_t *egui_view_polyline_local(egui_view_t *self)
 {
     return (egui_view_polyline_t *)self;
@@ -95,7 +81,7 @@ static void egui_view_polyline_on_draw(egui_view_t *self)
     egui_region_t region;
     egui_color_t stroke_color = local->stroke_color;
     egui_color_t accent_color = local->accent_color;
-    egui_alpha_t stroke_alpha = local->compact_mode ? 58 : 82;
+    egui_alpha_t stroke_alpha = 82;
     egui_dim_t points[EGUI_VIEW_POLYLINE_MAX_POINTS * 2];
 
     egui_view_get_work_region(self, &region);
@@ -104,12 +90,6 @@ static void egui_view_polyline_on_draw(egui_view_t *self)
         return;
     }
 
-    if (local->read_only_mode)
-    {
-        stroke_color = egui_rgb_mix(stroke_color, EGUI_COLOR_HEX(0xAEB8C2), 56);
-        accent_color = egui_rgb_mix(accent_color, EGUI_COLOR_HEX(0x8A97A5), 56);
-        stroke_alpha = 42;
-    }
     if (!egui_view_get_enable(self))
     {
         stroke_color = egui_view_polyline_mix_disabled(stroke_color);
@@ -213,45 +193,11 @@ void egui_view_polyline_get_point(egui_view_t *self, uint8_t index, uint8_t *x_p
     }
 }
 
-void egui_view_polyline_set_compact_mode(egui_view_t *self, uint8_t compact_mode)
-{
-    egui_view_polyline_t *local = egui_view_polyline_local(self);
-
-    egui_view_polyline_clear_pressed_state(self);
-    local->compact_mode = compact_mode ? 1 : 0;
-    egui_view_invalidate(self);
-}
-
-uint8_t egui_view_polyline_get_compact_mode(egui_view_t *self)
-{
-    egui_view_polyline_t *local = egui_view_polyline_local(self);
-
-    return local->compact_mode;
-}
-
-void egui_view_polyline_set_read_only_mode(egui_view_t *self, uint8_t read_only_mode)
-{
-    egui_view_polyline_t *local = egui_view_polyline_local(self);
-
-    egui_view_polyline_clear_pressed_state(self);
-    local->read_only_mode = read_only_mode ? 1 : 0;
-    egui_view_invalidate(self);
-}
-
-uint8_t egui_view_polyline_get_read_only_mode(egui_view_t *self)
-{
-    egui_view_polyline_t *local = egui_view_polyline_local(self);
-
-    return local->read_only_mode;
-}
-
 void egui_view_polyline_apply_standard_style(egui_view_t *self)
 {
     egui_view_polyline_set_palette(self, EGUI_COLOR_HEX(0x0F6CBD), EGUI_COLOR_HEX(0xD7E3EE));
     egui_view_polyline_set_stroke_width(self, 2);
     egui_view_polyline_set_points(self, polyline_standard_points, 5);
-    egui_view_polyline_set_compact_mode(self, 0);
-    egui_view_polyline_set_read_only_mode(self, 0);
 }
 
 void egui_view_polyline_apply_accent_style(egui_view_t *self)
@@ -259,26 +205,6 @@ void egui_view_polyline_apply_accent_style(egui_view_t *self)
     egui_view_polyline_set_palette(self, EGUI_COLOR_HEX(0x0F6CBD), EGUI_COLOR_HEX(0xCFE2F3));
     egui_view_polyline_set_stroke_width(self, 3);
     egui_view_polyline_set_points(self, polyline_accent_points, 6);
-    egui_view_polyline_set_compact_mode(self, 0);
-    egui_view_polyline_set_read_only_mode(self, 0);
-}
-
-void egui_view_polyline_apply_compact_style(egui_view_t *self)
-{
-    egui_view_polyline_set_palette(self, EGUI_COLOR_HEX(0x0C7C73), EGUI_COLOR_HEX(0xD9E7E5));
-    egui_view_polyline_set_stroke_width(self, 1);
-    egui_view_polyline_set_points(self, polyline_compact_points, 4);
-    egui_view_polyline_set_compact_mode(self, 1);
-    egui_view_polyline_set_read_only_mode(self, 0);
-}
-
-void egui_view_polyline_apply_read_only_style(egui_view_t *self)
-{
-    egui_view_polyline_set_palette(self, EGUI_COLOR_HEX(0x687684), EGUI_COLOR_HEX(0xE1E6EB));
-    egui_view_polyline_set_stroke_width(self, 1);
-    egui_view_polyline_set_points(self, polyline_read_only_points, 4);
-    egui_view_polyline_set_compact_mode(self, 1);
-    egui_view_polyline_set_read_only_mode(self, 1);
 }
 
 #if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
@@ -359,8 +285,6 @@ static const egui_view_api_t EGUI_VIEW_API_TABLE_NAME(egui_view_polyline_t) = {
 
 void egui_view_polyline_init(egui_view_t *self)
 {
-    egui_view_polyline_t *local = egui_view_polyline_local(self);
-
     egui_view_init(self, uicode_get_core());
     self->api = &EGUI_VIEW_API_TABLE_NAME(egui_view_polyline_t);
     egui_view_set_padding_all(self, 2);
@@ -368,8 +292,6 @@ void egui_view_polyline_init(egui_view_t *self)
     egui_view_set_focusable(self, 0);
 #endif
 
-    local->compact_mode = 0;
-    local->read_only_mode = 0;
     egui_view_polyline_apply_standard_style(self);
     egui_view_set_view_name(self, "egui_view_polyline");
 }
