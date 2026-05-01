@@ -15,7 +15,8 @@
 #define HCW_SHOWCASE_CARD_WIDTH    226
 #define HCW_SHOWCASE_ROW_GAP       14
 #define HCW_SHOWCASE_SIDE_PADDING  10
-#define HCW_SHOWCASE_NAV_GAP       6
+#define HCW_SHOWCASE_NAV_GAP           6
+#define HCW_SHOWCASE_BASIC_CHILD_COUNT 2
 
 static egui_core_t *s_core;
 static egui_view_linearlayout_t root_layout;
@@ -73,6 +74,77 @@ static void reset_view_spacing(egui_view_t *view)
     view->margin.bottom = 0;
 }
 
+static uint8_t is_group_view(egui_view_t *view)
+{
+    return view != NULL && view->api != NULL && view->api->draw == egui_view_group_draw;
+}
+
+static egui_dim_t measure_visible_vertical_extent(egui_view_t *view)
+{
+    egui_dnode_t *node;
+    egui_dim_t height;
+
+    if (!is_group_view(view))
+    {
+        return 0;
+    }
+
+    height = view->padding.top + view->padding.bottom;
+    EGUI_DLIST_FOR_EACH_NODE(&EGUI_CAST_TO(egui_view_group_t, view)->childs, node)
+    {
+        egui_view_t *child = EGUI_DLIST_ENTRY(node, egui_view_t, node);
+
+        if (child->is_gone)
+        {
+            continue;
+        }
+
+        height += child->margin.top + child->region.size.height + child->margin.bottom;
+    }
+
+    return height;
+}
+
+static void keep_basic_demo_state(egui_view_t *view)
+{
+    egui_dnode_t *node;
+    uint8_t visible_child_count = 0;
+    uint8_t hidden_child_count = 0;
+
+    if (!is_group_view(view))
+    {
+        return;
+    }
+
+    EGUI_DLIST_FOR_EACH_NODE(&EGUI_CAST_TO(egui_view_group_t, view)->childs, node)
+    {
+        egui_view_t *child = EGUI_DLIST_ENTRY(node, egui_view_t, node);
+
+        if (child->is_gone)
+        {
+            continue;
+        }
+
+        if (visible_child_count >= HCW_SHOWCASE_BASIC_CHILD_COUNT)
+        {
+            egui_view_set_gone(child, 1);
+            ++hidden_child_count;
+        }
+        ++visible_child_count;
+    }
+
+    if (hidden_child_count > 0)
+    {
+        egui_dim_t height = measure_visible_vertical_extent(view);
+
+        if (height > 0)
+        {
+            egui_view_set_size(view, view->region.size.width, height);
+        }
+        egui_view_group_layout_childs(view, 0, 0, 0, EGUI_ALIGN_HCENTER);
+    }
+}
+
 static egui_view_t *create_demo_view(const hcw_showcase_demo_entry_t *entry)
 {
     if (entry == NULL || entry->init == NULL)
@@ -87,6 +159,7 @@ static egui_view_t *create_demo_view(const hcw_showcase_demo_entry_t *entry)
 
     if (s_captured_demo != NULL)
     {
+        keep_basic_demo_state(s_captured_demo);
         reset_view_spacing(s_captured_demo);
     }
     return s_captured_demo;
