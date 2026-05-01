@@ -27,8 +27,6 @@ struct egui_view_access_text
     uint8_t align_type;
     uint8_t access_key_index;
     uint8_t keyboard_cue_visible;
-    uint8_t compact_mode;
-    uint8_t read_only_mode;
 };
 
 void egui_view_access_text_init(egui_view_t *self);
@@ -45,14 +43,6 @@ void egui_view_access_text_set_align_type(egui_view_t *self, uint8_t align_type)
 uint8_t egui_view_access_text_get_align_type(egui_view_t *self);
 void egui_view_access_text_set_keyboard_cue_visible(egui_view_t *self, uint8_t visible);
 uint8_t egui_view_access_text_get_keyboard_cue_visible(egui_view_t *self);
-void egui_view_access_text_set_compact_mode(egui_view_t *self, uint8_t compact_mode);
-uint8_t egui_view_access_text_get_compact_mode(egui_view_t *self);
-void egui_view_access_text_set_read_only_mode(egui_view_t *self, uint8_t read_only_mode);
-uint8_t egui_view_access_text_get_read_only_mode(egui_view_t *self);
-void egui_view_access_text_apply_standard_style(egui_view_t *self);
-void egui_view_access_text_apply_accent_style(egui_view_t *self);
-void egui_view_access_text_apply_compact_style(egui_view_t *self);
-void egui_view_access_text_apply_read_only_style(egui_view_t *self);
 void egui_view_access_text_override_static_preview_api(egui_view_t *self, egui_view_api_t *api);
 
 #ifdef __cplusplus

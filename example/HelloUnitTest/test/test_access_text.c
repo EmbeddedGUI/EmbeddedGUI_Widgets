@@ -24,8 +24,6 @@ struct access_text_preview_snapshot
     uint8_t align_type;
     uint8_t access_key_index;
     uint8_t keyboard_cue_visible;
-    uint8_t compact_mode;
-    uint8_t read_only_mode;
     uint8_t enable;
     uint8_t is_pressed;
     uint8_t is_focused;
@@ -60,12 +58,37 @@ static void setup_access_text(void)
     egui_view_set_size(EGUI_VIEW_OF(&test_control), 150, 36);
 }
 
+static void configure_access_text_accent(egui_view_t *view)
+{
+    egui_view_access_text_set_palette(view, EGUI_COLOR_HEX(0xF6FAFF), EGUI_COLOR_HEX(0xB9D6F0), EGUI_COLOR_HEX(0x173247),
+                                      EGUI_COLOR_HEX(0xCFE2F3), EGUI_COLOR_HEX(0x0F6CBD));
+    egui_view_access_text_set_align_type(view, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER);
+    egui_view_access_text_set_keyboard_cue_visible(view, 1);
+}
+
+static void configure_access_text_secondary(egui_view_t *view)
+{
+    egui_view_access_text_set_palette(view, EGUI_COLOR_HEX(0xF8FBFD), EGUI_COLOR_HEX(0xD2DCE6), EGUI_COLOR_HEX(0x22313C),
+                                      EGUI_COLOR_HEX(0xD9E7E5), EGUI_COLOR_HEX(0x0C7C73));
+    egui_view_access_text_set_align_type(view, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER);
+    egui_view_access_text_set_keyboard_cue_visible(view, 1);
+}
+
+static void configure_access_text_muted(egui_view_t *view)
+{
+    egui_view_access_text_set_palette(view, EGUI_COLOR_HEX(0xF5F7FA), EGUI_COLOR_HEX(0xD7DEE6), EGUI_COLOR_HEX(0x687684),
+                                      EGUI_COLOR_HEX(0xE1E6EB), EGUI_COLOR_HEX(0x788593));
+    egui_view_access_text_set_align_type(view, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER);
+    egui_view_access_text_set_keyboard_cue_visible(view, 0);
+}
+
 static void setup_preview_control(void)
 {
     egui_view_access_text_init(EGUI_VIEW_OF(&preview_control));
     egui_view_set_size(EGUI_VIEW_OF(&preview_control), 92, 28);
-    egui_view_access_text_apply_compact_style(EGUI_VIEW_OF(&preview_control));
-    egui_view_access_text_set_markup_text(EGUI_VIEW_OF(&preview_control), "_Compact");
+    egui_view_access_text_set_font(EGUI_VIEW_OF(&preview_control), (const egui_font_t *)&egui_res_font_montserrat_8_4);
+    configure_access_text_secondary(EGUI_VIEW_OF(&preview_control));
+    egui_view_access_text_set_markup_text(EGUI_VIEW_OF(&preview_control), "_Small");
     egui_view_access_text_override_static_preview_api(EGUI_VIEW_OF(&preview_control), &preview_api);
 }
 
@@ -128,8 +151,6 @@ static void capture_preview_snapshot(access_text_preview_snapshot_t *snapshot)
     snapshot->align_type = preview_control.align_type;
     snapshot->access_key_index = preview_control.access_key_index;
     snapshot->keyboard_cue_visible = preview_control.keyboard_cue_visible;
-    snapshot->compact_mode = preview_control.compact_mode;
-    snapshot->read_only_mode = preview_control.read_only_mode;
     snapshot->enable = (uint8_t)egui_view_get_enable(EGUI_VIEW_OF(&preview_control));
     snapshot->is_pressed = EGUI_VIEW_OF(&preview_control)->is_pressed;
     snapshot->is_focused = EGUI_VIEW_OF(&preview_control)->is_focused;
@@ -155,8 +176,6 @@ static void assert_preview_state_unchanged(const access_text_preview_snapshot_t 
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->align_type, preview_control.align_type);
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->access_key_index, preview_control.access_key_index);
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->keyboard_cue_visible, preview_control.keyboard_cue_visible);
-    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->compact_mode, preview_control.compact_mode);
-    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->read_only_mode, preview_control.read_only_mode);
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->enable, egui_view_get_enable(EGUI_VIEW_OF(&preview_control)));
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&preview_control)->is_pressed);
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->is_focused, EGUI_VIEW_OF(&preview_control)->is_focused);
@@ -176,8 +195,6 @@ static void test_access_text_init_defaults(void)
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_access_text_get_access_key_index(EGUI_VIEW_OF(&test_control)));
     EGUI_TEST_ASSERT_EQUAL_INT('S', egui_view_access_text_get_access_key_char(EGUI_VIEW_OF(&test_control)));
     EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_access_text_get_keyboard_cue_visible(EGUI_VIEW_OF(&test_control)));
-    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_access_text_get_compact_mode(EGUI_VIEW_OF(&test_control)));
-    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_access_text_get_read_only_mode(EGUI_VIEW_OF(&test_control)));
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, egui_view_access_text_get_align_type(EGUI_VIEW_OF(&test_control)));
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xFFFFFF).full, test_control.surface_color.full);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x0F6CBD).full, test_control.cue_color.full);
@@ -223,22 +240,16 @@ static void test_access_text_styles_palette_and_font(void)
     setup_access_text();
 
     egui_view_set_pressed(EGUI_VIEW_OF(&test_control), 1);
-    egui_view_access_text_apply_accent_style(EGUI_VIEW_OF(&test_control));
+    configure_access_text_accent(EGUI_VIEW_OF(&test_control));
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_control)->is_pressed);
-    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_access_text_get_compact_mode(EGUI_VIEW_OF(&test_control)));
-    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_access_text_get_read_only_mode(EGUI_VIEW_OF(&test_control)));
     EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_access_text_get_keyboard_cue_visible(EGUI_VIEW_OF(&test_control)));
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x0F6CBD).full, test_control.cue_color.full);
 
-    egui_view_access_text_apply_compact_style(EGUI_VIEW_OF(&test_control));
-    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_access_text_get_compact_mode(EGUI_VIEW_OF(&test_control)));
-    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_access_text_get_read_only_mode(EGUI_VIEW_OF(&test_control)));
+    configure_access_text_secondary(EGUI_VIEW_OF(&test_control));
     EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_access_text_get_keyboard_cue_visible(EGUI_VIEW_OF(&test_control)));
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x0C7C73).full, test_control.cue_color.full);
 
-    egui_view_access_text_apply_read_only_style(EGUI_VIEW_OF(&test_control));
-    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_access_text_get_compact_mode(EGUI_VIEW_OF(&test_control)));
-    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_access_text_get_read_only_mode(EGUI_VIEW_OF(&test_control)));
+    configure_access_text_muted(EGUI_VIEW_OF(&test_control));
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_access_text_get_keyboard_cue_visible(EGUI_VIEW_OF(&test_control)));
 
     egui_view_access_text_set_font(EGUI_VIEW_OF(&test_control), (const egui_font_t *)&egui_res_font_montserrat_10_4);

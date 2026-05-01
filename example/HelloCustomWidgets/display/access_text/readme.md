@@ -15,15 +15,15 @@
 1. `_Save changes`：首个 marker 解析为 `Save changes`，并给 `S` 绘制键盘 cue 下划线。
 2. `E_xport report`：accent 状态下显示 `x` 助记字符。
 3. `File__name field`：双下划线转义为普通 `_`，不产生访问键。
-4. `Locked _field`：只读状态降低对比度并隐藏 keyboard cue。
+4. `Muted _field`：示例侧用 muted palette 降低对比度并隐藏 keyboard cue。
 
-底部静态 preview 固定展示 compact 与 read only 两种状态。
+底部静态 preview 固定展示 secondary 与 muted 两种 APP 配置结果。
 
 ## 视觉与布局规格
 
 - 主体使用浅色 surface、细边框、低对比底线和短 cue rail。
-- 默认高度 36，compact preview 高度 28。
-- 文本左右留白 10，compact 模式压缩到 7。
+- 控件内部只保留默认文本留白与圆角；小尺寸 preview 通过 APP 设置 view size 与 font。
+- muted 外观通过 APP 设置 palette 与 keyboard cue visible。
 - 访问键下划线按实际字符宽度绘制，超出可见区域时不强制绘制。
 - 文本过长时使用 `...` 省略，避免压到边框或 preview。
 
@@ -33,8 +33,8 @@
 | --- | --- | --- |
 | standard | 默认访问键文本 | marker 解析、cue underline |
 | accent | 强调访问键文本 | 浅蓝 surface、accent cue |
-| compact | 小尺寸文本 | 压缩 padding、保留下划线 |
-| read only | 只读说明文本 | muted 文本、隐藏 cue |
+| secondary | 小尺寸文本 | APP 配置 view size、font、palette |
+| muted | 降噪说明文本 | APP 配置 muted palette、隐藏 cue |
 
 ## 录制动作设计
 
@@ -54,7 +54,7 @@ python scripts\web\wasm_build_demos.py --app HelloCustomWidgets --app-sub displa
 python scripts\web\web_smoke_check.py --web-root web --manifest web\demos\demos.json --demo HelloCustomWidgets_display_access_text
 ```
 
-截图必须确认文本、转义下划线、访问键下划线、compact preview 和 read only preview 完整可见，不出现黑屏、白屏、文字裁切或重叠。
+截图必须确认文本、转义下划线、访问键下划线、secondary preview 和 muted preview 完整可见，不出现黑屏、白屏、文字裁切或重叠。
 
 ## 参考设计体系与开源母本
 
@@ -70,7 +70,7 @@ python scripts\web\web_smoke_check.py --web-root web --manifest web\demos\demos.
 
 ## 保留的核心状态与删掉的装饰效果
 
-保留 marker 解析、escaped underscore、访问键字符索引、keyboard cue 可见性、compact 和 read only。删除强装饰化标签、复杂快捷键气泡、真实焦点跳转和命令执行逻辑。
+保留 marker 解析、escaped underscore、访问键字符索引、keyboard cue 可见性。小尺寸和 muted 变体由 APP 通过尺寸、字体、palette 与 cue visible 按需配置；删除控件内置尺寸/只读状态、强装饰化标签、复杂快捷键气泡、真实焦点跳转和命令执行逻辑。
 
 ## EGUI 适配时的简化点与限制
 
