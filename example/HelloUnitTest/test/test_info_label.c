@@ -28,8 +28,6 @@ struct info_label_preview_snapshot
     egui_color_t accent_color;
     egui_color_t bubble_surface_color;
     egui_color_t shadow_color;
-    uint8_t compact_mode;
-    uint8_t read_only_mode;
     uint8_t open;
     uint8_t pressed_part;
     uint8_t has_icon_region;
@@ -106,12 +104,26 @@ static void setup_widget(void)
     reset_listener_state();
 }
 
+static void configure_info_label_secondary(egui_view_t *view)
+{
+    hcw_info_label_set_palette(view, EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD6DEE6), EGUI_COLOR_HEX(0x22303C),
+                               EGUI_COLOR_HEX(0x73808C), EGUI_COLOR_HEX(0x0C7C73), EGUI_COLOR_HEX(0xF7FBFA),
+                               EGUI_COLOR_HEX(0xD7E7E4));
+}
+
+static void configure_info_label_muted(egui_view_t *view)
+{
+    hcw_info_label_set_palette(view, EGUI_COLOR_HEX(0xFBFCFD), EGUI_COLOR_HEX(0xD9E1E8), EGUI_COLOR_HEX(0x566675),
+                               EGUI_COLOR_HEX(0x8895A1), EGUI_COLOR_HEX(0xA8B6C2), EGUI_COLOR_HEX(0xF7F9FB),
+                               EGUI_COLOR_HEX(0xE3E9EE));
+}
+
 static void setup_preview_widget(void)
 {
     hcw_info_label_init(EGUI_VIEW_OF(&preview_widget));
     egui_view_set_size(EGUI_VIEW_OF(&preview_widget), 84, 54);
-    hcw_info_label_apply_compact_style(EGUI_VIEW_OF(&preview_widget));
-    hcw_info_label_set_text(EGUI_VIEW_OF(&preview_widget), "Compact help");
+    configure_info_label_secondary(EGUI_VIEW_OF(&preview_widget));
+    hcw_info_label_set_text(EGUI_VIEW_OF(&preview_widget), "Small help");
     hcw_info_label_set_info_title(EGUI_VIEW_OF(&preview_widget), "Inline note");
     hcw_info_label_set_info_body(EGUI_VIEW_OF(&preview_widget), "Static preview.");
     hcw_info_label_set_font(EGUI_VIEW_OF(&preview_widget), (const egui_font_t *)&egui_res_font_montserrat_8_4);
@@ -204,8 +216,6 @@ static void capture_preview_snapshot(info_label_preview_snapshot_t *snapshot)
     snapshot->accent_color = preview_widget.accent_color;
     snapshot->bubble_surface_color = preview_widget.bubble_surface_color;
     snapshot->shadow_color = preview_widget.shadow_color;
-    snapshot->compact_mode = preview_widget.compact_mode;
-    snapshot->read_only_mode = preview_widget.read_only_mode;
     snapshot->open = preview_widget.open;
     snapshot->pressed_part = preview_widget.pressed_part;
     snapshot->has_icon_region = hcw_info_label_get_part_region(EGUI_VIEW_OF(&preview_widget), HCW_INFO_LABEL_PART_ICON, &snapshot->icon_region);
@@ -243,8 +253,6 @@ static void assert_preview_state_unchanged(const info_label_preview_snapshot_t *
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->accent_color.full, preview_widget.accent_color.full);
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->bubble_surface_color.full, preview_widget.bubble_surface_color.full);
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->shadow_color.full, preview_widget.shadow_color.full);
-    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->compact_mode, preview_widget.compact_mode);
-    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->read_only_mode, preview_widget.read_only_mode);
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->open, preview_widget.open);
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->pressed_part, preview_widget.pressed_part);
     assert_optional_region_equal(snapshot->has_icon_region, &snapshot->icon_region, has_icon_region, &icon_region);
@@ -266,20 +274,15 @@ static void test_info_label_style_helpers_and_setters_clear_pressed_state(void)
     setup_widget();
 
     EGUI_TEST_ASSERT_EQUAL_INT(0, hcw_info_label_get_open(EGUI_VIEW_OF(&test_widget)));
-    EGUI_TEST_ASSERT_FALSE(test_widget.compact_mode);
-    EGUI_TEST_ASSERT_FALSE(test_widget.read_only_mode);
-
     seed_pressed_state(&test_widget, 1);
-    hcw_info_label_apply_compact_style(EGUI_VIEW_OF(&test_widget));
+    configure_info_label_secondary(EGUI_VIEW_OF(&test_widget));
     assert_pressed_cleared(&test_widget);
-    EGUI_TEST_ASSERT_TRUE(test_widget.compact_mode);
-    EGUI_TEST_ASSERT_FALSE(test_widget.read_only_mode);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x0C7C73).full, test_widget.accent_color.full);
 
     seed_pressed_state(&test_widget, 0);
-    hcw_info_label_apply_read_only_style(EGUI_VIEW_OF(&test_widget));
+    configure_info_label_muted(EGUI_VIEW_OF(&test_widget));
     assert_pressed_cleared(&test_widget);
-    EGUI_TEST_ASSERT_FALSE(test_widget.compact_mode);
-    EGUI_TEST_ASSERT_TRUE(test_widget.read_only_mode);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xA8B6C2).full, test_widget.accent_color.full);
 
     seed_pressed_state(&test_widget, 1);
     hcw_info_label_set_text(EGUI_VIEW_OF(&test_widget), "Export guidance");
@@ -316,16 +319,6 @@ static void test_info_label_style_helpers_and_setters_clear_pressed_state(void)
                                EGUI_COLOR_HEX(0x404142), EGUI_COLOR_HEX(0x505152), EGUI_COLOR_HEX(0x606162), EGUI_COLOR_HEX(0x707172));
     assert_pressed_cleared(&test_widget);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x505152).full, test_widget.accent_color.full);
-
-    seed_pressed_state(&test_widget, 0);
-    hcw_info_label_set_compact_mode(EGUI_VIEW_OF(&test_widget), 1);
-    assert_pressed_cleared(&test_widget);
-    EGUI_TEST_ASSERT_TRUE(test_widget.compact_mode);
-
-    seed_pressed_state(&test_widget, 1);
-    hcw_info_label_set_read_only_mode(EGUI_VIEW_OF(&test_widget), 1);
-    assert_pressed_cleared(&test_widget);
-    EGUI_TEST_ASSERT_TRUE(test_widget.read_only_mode);
 
     layout_view(EGUI_VIEW_OF(&test_widget), 12, 18, 148, 96);
     EGUI_TEST_ASSERT_FALSE(hcw_info_label_get_part_region(EGUI_VIEW_OF(&test_widget), HCW_INFO_LABEL_PART_BUBBLE, &bubble_region));

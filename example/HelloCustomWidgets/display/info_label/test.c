@@ -42,10 +42,10 @@ static egui_view_linearlayout_t root_layout;
 static egui_view_label_t title_label;
 static hcw_info_label_t primary_info_label;
 static egui_view_linearlayout_t bottom_row;
-static hcw_info_label_t compact_info_label;
-static hcw_info_label_t read_only_info_label;
-static egui_view_api_t compact_info_label_api;
-static egui_view_api_t read_only_info_label_api;
+static hcw_info_label_t secondary_info_label;
+static hcw_info_label_t muted_info_label;
+static egui_view_api_t secondary_info_label_api;
+static egui_view_api_t muted_info_label_api;
 static uint8_t ui_ready;
 
 EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
@@ -84,7 +84,7 @@ static const info_label_snapshot_t primary_snapshots[] = {
         {
                 "Reading help",
                 "Reference note",
-                "Use the compact preview when the layout has limited width.",
+                "Use the small preview when the layout has limited width.",
                 EGUI_COLOR_HEX(0xFBFCFD),
                 EGUI_COLOR_HEX(0xD7DEE6),
                 EGUI_COLOR_HEX(0x334252),
@@ -96,10 +96,10 @@ static const info_label_snapshot_t primary_snapshots[] = {
         },
 };
 
-static const info_label_snapshot_t compact_snapshot = {
-        "Compact help",
+static const info_label_snapshot_t secondary_snapshot = {
+        "Small help",
         "Inline note",
-        "Compact mode keeps the bubble short.",
+        "Small preview keeps the bubble concise.",
         EGUI_COLOR_HEX(0xFFFFFF),
         EGUI_COLOR_HEX(0xD6DEE6),
         EGUI_COLOR_HEX(0x22303C),
@@ -110,10 +110,10 @@ static const info_label_snapshot_t compact_snapshot = {
         1,
 };
 
-static const info_label_snapshot_t read_only_snapshot = {
+static const info_label_snapshot_t muted_snapshot = {
         "Audit note",
-        "Read only",
-        "Static preview keeps input disabled.",
+        "Muted note",
+        "Static preview uses subdued colors.",
         EGUI_COLOR_HEX(0xFBFCFD),
         EGUI_COLOR_HEX(0xD9E1E8),
         EGUI_COLOR_HEX(0x566675),
@@ -153,13 +153,9 @@ static void apply_primary_default_state(void)
 
 static void apply_preview_states(void)
 {
-    hcw_info_label_apply_compact_style(EGUI_VIEW_OF(&compact_info_label));
-    apply_snapshot(EGUI_VIEW_OF(&compact_info_label), &compact_snapshot);
-    hcw_info_label_set_read_only_mode(EGUI_VIEW_OF(&compact_info_label), 0);
+    apply_snapshot(EGUI_VIEW_OF(&secondary_info_label), &secondary_snapshot);
 
-    hcw_info_label_apply_compact_style(EGUI_VIEW_OF(&read_only_info_label));
-    apply_snapshot(EGUI_VIEW_OF(&read_only_info_label), &read_only_snapshot);
-    hcw_info_label_set_read_only_mode(EGUI_VIEW_OF(&read_only_info_label), 1);
+    apply_snapshot(EGUI_VIEW_OF(&muted_info_label), &muted_snapshot);
 
     if (ui_ready)
     {
@@ -220,28 +216,28 @@ void test_init_ui(void)
     egui_view_linearlayout_set_align_type(EGUI_VIEW_OF(&bottom_row), EGUI_ALIGN_VCENTER);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&bottom_row));
 
-    hcw_info_label_init(EGUI_VIEW_OF(&compact_info_label));
-    egui_view_set_size(EGUI_VIEW_OF(&compact_info_label), INFO_LABEL_PREVIEW_WIDTH, INFO_LABEL_PREVIEW_HEIGHT);
-    hcw_info_label_set_font(EGUI_VIEW_OF(&compact_info_label), (const egui_font_t *)&egui_res_font_montserrat_8_4);
-    hcw_info_label_set_meta_font(EGUI_VIEW_OF(&compact_info_label), (const egui_font_t *)&egui_res_font_montserrat_8_4);
-    hcw_info_label_set_icon_font(EGUI_VIEW_OF(&compact_info_label), EGUI_FONT_ICON_MS_16);
-    hcw_info_label_override_static_preview_api(EGUI_VIEW_OF(&compact_info_label), &compact_info_label_api);
+    hcw_info_label_init(EGUI_VIEW_OF(&secondary_info_label));
+    egui_view_set_size(EGUI_VIEW_OF(&secondary_info_label), INFO_LABEL_PREVIEW_WIDTH, INFO_LABEL_PREVIEW_HEIGHT);
+    hcw_info_label_set_font(EGUI_VIEW_OF(&secondary_info_label), (const egui_font_t *)&egui_res_font_montserrat_8_4);
+    hcw_info_label_set_meta_font(EGUI_VIEW_OF(&secondary_info_label), (const egui_font_t *)&egui_res_font_montserrat_8_4);
+    hcw_info_label_set_icon_font(EGUI_VIEW_OF(&secondary_info_label), EGUI_FONT_ICON_MS_16);
+    hcw_info_label_override_static_preview_api(EGUI_VIEW_OF(&secondary_info_label), &secondary_info_label_api);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
-    egui_view_set_focusable(EGUI_VIEW_OF(&compact_info_label), 0);
+    egui_view_set_focusable(EGUI_VIEW_OF(&secondary_info_label), 0);
 #endif
-    egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&compact_info_label));
+    egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&secondary_info_label));
 
-    hcw_info_label_init(EGUI_VIEW_OF(&read_only_info_label));
-    egui_view_set_size(EGUI_VIEW_OF(&read_only_info_label), INFO_LABEL_PREVIEW_WIDTH, INFO_LABEL_PREVIEW_HEIGHT);
-    egui_view_set_margin(EGUI_VIEW_OF(&read_only_info_label), 8, 0, 0, 0);
-    hcw_info_label_set_font(EGUI_VIEW_OF(&read_only_info_label), (const egui_font_t *)&egui_res_font_montserrat_8_4);
-    hcw_info_label_set_meta_font(EGUI_VIEW_OF(&read_only_info_label), (const egui_font_t *)&egui_res_font_montserrat_8_4);
-    hcw_info_label_set_icon_font(EGUI_VIEW_OF(&read_only_info_label), EGUI_FONT_ICON_MS_16);
-    hcw_info_label_override_static_preview_api(EGUI_VIEW_OF(&read_only_info_label), &read_only_info_label_api);
+    hcw_info_label_init(EGUI_VIEW_OF(&muted_info_label));
+    egui_view_set_size(EGUI_VIEW_OF(&muted_info_label), INFO_LABEL_PREVIEW_WIDTH, INFO_LABEL_PREVIEW_HEIGHT);
+    egui_view_set_margin(EGUI_VIEW_OF(&muted_info_label), 8, 0, 0, 0);
+    hcw_info_label_set_font(EGUI_VIEW_OF(&muted_info_label), (const egui_font_t *)&egui_res_font_montserrat_8_4);
+    hcw_info_label_set_meta_font(EGUI_VIEW_OF(&muted_info_label), (const egui_font_t *)&egui_res_font_montserrat_8_4);
+    hcw_info_label_set_icon_font(EGUI_VIEW_OF(&muted_info_label), EGUI_FONT_ICON_MS_16);
+    hcw_info_label_override_static_preview_api(EGUI_VIEW_OF(&muted_info_label), &muted_info_label_api);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
-    egui_view_set_focusable(EGUI_VIEW_OF(&read_only_info_label), 0);
+    egui_view_set_focusable(EGUI_VIEW_OF(&muted_info_label), 0);
 #endif
-    egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&read_only_info_label));
+    egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&muted_info_label));
 
     apply_primary_default_state();
     apply_preview_states();
@@ -321,4 +317,3 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     }
 }
 #endif
-

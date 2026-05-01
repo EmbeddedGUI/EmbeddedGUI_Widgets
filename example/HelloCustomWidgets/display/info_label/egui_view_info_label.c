@@ -21,25 +21,6 @@
 #define HCW_INFO_LABEL_STANDARD_ACTIVE_FILL_ALPHA   18
 #define HCW_INFO_LABEL_STANDARD_BUBBLE_BORDER_ALPHA 54
 
-#define HCW_INFO_LABEL_COMPACT_PANEL_RADIUS        8
-#define HCW_INFO_LABEL_COMPACT_FILL_ALPHA          88
-#define HCW_INFO_LABEL_COMPACT_BORDER_ALPHA        50
-#define HCW_INFO_LABEL_COMPACT_PAD_X               8
-#define HCW_INFO_LABEL_COMPACT_PAD_Y               6
-#define HCW_INFO_LABEL_COMPACT_ROW_HEIGHT          18
-#define HCW_INFO_LABEL_COMPACT_ICON_SIZE           14
-#define HCW_INFO_LABEL_COMPACT_ICON_RADIUS         5
-#define HCW_INFO_LABEL_COMPACT_ICON_GAP            6
-#define HCW_INFO_LABEL_COMPACT_BUBBLE_GAP          5
-#define HCW_INFO_LABEL_COMPACT_BUBBLE_HEIGHT       22
-#define HCW_INFO_LABEL_COMPACT_BUBBLE_RADIUS       6
-#define HCW_INFO_LABEL_COMPACT_BUBBLE_PAD_X        8
-#define HCW_INFO_LABEL_COMPACT_BUBBLE_PAD_Y        6
-#define HCW_INFO_LABEL_COMPACT_ARROW_WIDTH         8
-#define HCW_INFO_LABEL_COMPACT_ARROW_HEIGHT        4
-#define HCW_INFO_LABEL_COMPACT_ACTIVE_FILL_ALPHA   14
-#define HCW_INFO_LABEL_COMPACT_BUBBLE_BORDER_ALPHA 48
-
 typedef struct hcw_info_label_metrics hcw_info_label_metrics_t;
 struct hcw_info_label_metrics
 {
@@ -114,94 +95,94 @@ static uint8_t hcw_info_label_clear_pressed_state(egui_view_t *self)
     return 1;
 }
 
-static egui_dim_t hcw_info_label_pad_x(uint8_t compact_mode)
+static egui_dim_t hcw_info_label_pad_x(void)
 {
-    return compact_mode ? HCW_INFO_LABEL_COMPACT_PAD_X : HCW_INFO_LABEL_STANDARD_PAD_X;
+    return HCW_INFO_LABEL_STANDARD_PAD_X;
 }
 
-static egui_dim_t hcw_info_label_pad_y(uint8_t compact_mode)
+static egui_dim_t hcw_info_label_pad_y(void)
 {
-    return compact_mode ? HCW_INFO_LABEL_COMPACT_PAD_Y : HCW_INFO_LABEL_STANDARD_PAD_Y;
+    return HCW_INFO_LABEL_STANDARD_PAD_Y;
 }
 
-static egui_dim_t hcw_info_label_row_height(uint8_t compact_mode)
+static egui_dim_t hcw_info_label_row_height(void)
 {
-    return compact_mode ? HCW_INFO_LABEL_COMPACT_ROW_HEIGHT : HCW_INFO_LABEL_STANDARD_ROW_HEIGHT;
+    return HCW_INFO_LABEL_STANDARD_ROW_HEIGHT;
 }
 
-static egui_dim_t hcw_info_label_icon_size(uint8_t compact_mode)
+static egui_dim_t hcw_info_label_icon_size(void)
 {
-    return compact_mode ? HCW_INFO_LABEL_COMPACT_ICON_SIZE : HCW_INFO_LABEL_STANDARD_ICON_SIZE;
+    return HCW_INFO_LABEL_STANDARD_ICON_SIZE;
 }
 
-static egui_dim_t hcw_info_label_icon_radius(uint8_t compact_mode)
+static egui_dim_t hcw_info_label_icon_radius(void)
 {
-    return compact_mode ? HCW_INFO_LABEL_COMPACT_ICON_RADIUS : HCW_INFO_LABEL_STANDARD_ICON_RADIUS;
+    return HCW_INFO_LABEL_STANDARD_ICON_RADIUS;
 }
 
-static egui_dim_t hcw_info_label_icon_gap(uint8_t compact_mode)
+static egui_dim_t hcw_info_label_icon_gap(void)
 {
-    return compact_mode ? HCW_INFO_LABEL_COMPACT_ICON_GAP : HCW_INFO_LABEL_STANDARD_ICON_GAP;
+    return HCW_INFO_LABEL_STANDARD_ICON_GAP;
 }
 
-static egui_dim_t hcw_info_label_bubble_gap(uint8_t compact_mode)
+static egui_dim_t hcw_info_label_bubble_gap(void)
 {
-    return compact_mode ? HCW_INFO_LABEL_COMPACT_BUBBLE_GAP : HCW_INFO_LABEL_STANDARD_BUBBLE_GAP;
+    return HCW_INFO_LABEL_STANDARD_BUBBLE_GAP;
 }
 
-static egui_dim_t hcw_info_label_bubble_height(uint8_t compact_mode)
+static egui_dim_t hcw_info_label_bubble_height(void)
 {
-    return compact_mode ? HCW_INFO_LABEL_COMPACT_BUBBLE_HEIGHT : HCW_INFO_LABEL_STANDARD_BUBBLE_HEIGHT;
+    return HCW_INFO_LABEL_STANDARD_BUBBLE_HEIGHT;
 }
 
-static egui_dim_t hcw_info_label_bubble_radius(uint8_t compact_mode)
+static egui_dim_t hcw_info_label_bubble_radius(void)
 {
-    return compact_mode ? HCW_INFO_LABEL_COMPACT_BUBBLE_RADIUS : HCW_INFO_LABEL_STANDARD_BUBBLE_RADIUS;
+    return HCW_INFO_LABEL_STANDARD_BUBBLE_RADIUS;
 }
 
-static egui_dim_t hcw_info_label_bubble_pad_x(uint8_t compact_mode)
+static egui_dim_t hcw_info_label_bubble_pad_x(void)
 {
-    return compact_mode ? HCW_INFO_LABEL_COMPACT_BUBBLE_PAD_X : HCW_INFO_LABEL_STANDARD_BUBBLE_PAD_X;
+    return HCW_INFO_LABEL_STANDARD_BUBBLE_PAD_X;
 }
 
-static egui_dim_t hcw_info_label_bubble_pad_y(uint8_t compact_mode)
+static egui_dim_t hcw_info_label_bubble_pad_y(void)
 {
-    return compact_mode ? HCW_INFO_LABEL_COMPACT_BUBBLE_PAD_Y : HCW_INFO_LABEL_STANDARD_BUBBLE_PAD_Y;
+    return HCW_INFO_LABEL_STANDARD_BUBBLE_PAD_Y;
 }
 
-static egui_dim_t hcw_info_label_arrow_width(uint8_t compact_mode)
+static egui_dim_t hcw_info_label_arrow_width(void)
 {
-    return compact_mode ? HCW_INFO_LABEL_COMPACT_ARROW_WIDTH : HCW_INFO_LABEL_STANDARD_ARROW_WIDTH;
+    return HCW_INFO_LABEL_STANDARD_ARROW_WIDTH;
 }
 
-static egui_dim_t hcw_info_label_arrow_height(uint8_t compact_mode)
+static egui_dim_t hcw_info_label_arrow_height(void)
 {
-    return compact_mode ? HCW_INFO_LABEL_COMPACT_ARROW_HEIGHT : HCW_INFO_LABEL_STANDARD_ARROW_HEIGHT;
+    return HCW_INFO_LABEL_STANDARD_ARROW_HEIGHT;
 }
 
-static egui_alpha_t hcw_info_label_fill_alpha(uint8_t compact_mode)
+static egui_alpha_t hcw_info_label_fill_alpha(void)
 {
-    return compact_mode ? HCW_INFO_LABEL_COMPACT_FILL_ALPHA : HCW_INFO_LABEL_STANDARD_FILL_ALPHA;
+    return HCW_INFO_LABEL_STANDARD_FILL_ALPHA;
 }
 
-static egui_alpha_t hcw_info_label_border_alpha(uint8_t compact_mode)
+static egui_alpha_t hcw_info_label_border_alpha(void)
 {
-    return compact_mode ? HCW_INFO_LABEL_COMPACT_BORDER_ALPHA : HCW_INFO_LABEL_STANDARD_BORDER_ALPHA;
+    return HCW_INFO_LABEL_STANDARD_BORDER_ALPHA;
 }
 
-static egui_alpha_t hcw_info_label_active_fill_alpha(uint8_t compact_mode)
+static egui_alpha_t hcw_info_label_active_fill_alpha(void)
 {
-    return compact_mode ? HCW_INFO_LABEL_COMPACT_ACTIVE_FILL_ALPHA : HCW_INFO_LABEL_STANDARD_ACTIVE_FILL_ALPHA;
+    return HCW_INFO_LABEL_STANDARD_ACTIVE_FILL_ALPHA;
 }
 
-static egui_alpha_t hcw_info_label_bubble_border_alpha(uint8_t compact_mode)
+static egui_alpha_t hcw_info_label_bubble_border_alpha(void)
 {
-    return compact_mode ? HCW_INFO_LABEL_COMPACT_BUBBLE_BORDER_ALPHA : HCW_INFO_LABEL_STANDARD_BUBBLE_BORDER_ALPHA;
+    return HCW_INFO_LABEL_STANDARD_BUBBLE_BORDER_ALPHA;
 }
 
-static egui_dim_t hcw_info_label_panel_radius(uint8_t compact_mode)
+static egui_dim_t hcw_info_label_panel_radius(void)
 {
-    return compact_mode ? HCW_INFO_LABEL_COMPACT_PANEL_RADIUS : HCW_INFO_LABEL_STANDARD_PANEL_RADIUS;
+    return HCW_INFO_LABEL_STANDARD_PANEL_RADIUS;
 }
 
 static const egui_font_t *hcw_info_label_get_font(const hcw_info_label_t *local)
@@ -368,19 +349,19 @@ static void hcw_info_label_draw_text(egui_view_t *self, const egui_font_t *font,
 
 static void hcw_info_label_get_metrics(hcw_info_label_t *local, egui_view_t *self, hcw_info_label_metrics_t *metrics)
 {
-    egui_dim_t pad_x = hcw_info_label_pad_x(local->compact_mode);
-    egui_dim_t pad_y = hcw_info_label_pad_y(local->compact_mode);
-    egui_dim_t row_height = hcw_info_label_row_height(local->compact_mode);
-    egui_dim_t icon_size = hcw_info_label_icon_size(local->compact_mode);
-    egui_dim_t icon_gap = hcw_info_label_icon_gap(local->compact_mode);
-    egui_dim_t bubble_gap = hcw_info_label_bubble_gap(local->compact_mode);
-    egui_dim_t bubble_height = hcw_info_label_bubble_height(local->compact_mode);
-    egui_dim_t bubble_pad_x = hcw_info_label_bubble_pad_x(local->compact_mode);
-    egui_dim_t bubble_pad_y = hcw_info_label_bubble_pad_y(local->compact_mode);
-    egui_dim_t bubble_body_gap = local->compact_mode ? 2 : 4;
-    egui_dim_t min_label_width = local->compact_mode ? 28 : 36;
-    egui_dim_t title_height = hcw_info_label_resolve_line_height(hcw_info_label_get_font(local), local->compact_mode ? 10 : 12);
-    egui_dim_t body_line_height = hcw_info_label_resolve_line_height(hcw_info_label_get_meta_font(local), local->compact_mode ? 8 : 10);
+    egui_dim_t pad_x = hcw_info_label_pad_x();
+    egui_dim_t pad_y = hcw_info_label_pad_y();
+    egui_dim_t row_height = hcw_info_label_row_height();
+    egui_dim_t icon_size = hcw_info_label_icon_size();
+    egui_dim_t icon_gap = hcw_info_label_icon_gap();
+    egui_dim_t bubble_gap = hcw_info_label_bubble_gap();
+    egui_dim_t bubble_height = hcw_info_label_bubble_height();
+    egui_dim_t bubble_pad_x = hcw_info_label_bubble_pad_x();
+    egui_dim_t bubble_pad_y = hcw_info_label_bubble_pad_y();
+    egui_dim_t bubble_body_gap = 4;
+    egui_dim_t min_label_width = 36;
+    egui_dim_t title_height = hcw_info_label_resolve_line_height(hcw_info_label_get_font(local), 12);
+    egui_dim_t body_line_height = hcw_info_label_resolve_line_height(hcw_info_label_get_meta_font(local), 10);
     egui_dim_t required_bubble_height = bubble_pad_y * 2 + title_height + bubble_body_gap + body_line_height;
     egui_dim_t remaining_height;
 
@@ -419,7 +400,7 @@ static void hcw_info_label_get_metrics(hcw_info_label_t *local, egui_view_t *sel
         bubble_height = required_bubble_height;
     }
     metrics->bubble_region.size.height = remaining_height < bubble_height ? remaining_height : bubble_height;
-    if (metrics->bubble_region.size.height < (local->compact_mode ? 12 : 18))
+    if (metrics->bubble_region.size.height < 18)
     {
         metrics->show_bubble = 0;
     }
@@ -505,8 +486,9 @@ static void hcw_info_label_draw_bubble_arrow(egui_view_t *self, hcw_info_label_t
         return;
     }
 
-    arrow_w = hcw_info_label_arrow_width(local->compact_mode);
-    arrow_h = hcw_info_label_arrow_height(local->compact_mode);
+    EGUI_UNUSED(local);
+    arrow_w = hcw_info_label_arrow_width();
+    arrow_h = hcw_info_label_arrow_height();
     center_x = metrics->arrow_center_x;
     top_y = metrics->bubble_region.location.y;
 
@@ -542,27 +524,8 @@ static void hcw_info_label_on_draw(egui_view_t *self)
         return;
     }
 
-    if (local->compact_mode)
-    {
-        surface_color = egui_rgb_mix(surface_color, EGUI_COLOR_HEX(0xFBFCFD), 18);
-        bubble_surface_color = egui_rgb_mix(bubble_surface_color, EGUI_COLOR_HEX(0xFCFDFE), 12);
-    }
-    else
-    {
-        surface_color = egui_rgb_mix(surface_color, EGUI_COLOR_HEX(0xFFFFFF), 16);
-        bubble_surface_color = egui_rgb_mix(bubble_surface_color, EGUI_COLOR_HEX(0xFFFFFF), 14);
-    }
-
-    if (local->read_only_mode)
-    {
-        surface_color = egui_rgb_mix(surface_color, EGUI_COLOR_HEX(0xF7F9FB), 16);
-        bubble_surface_color = egui_rgb_mix(bubble_surface_color, EGUI_COLOR_HEX(0xF7F9FB), 18);
-        border_color = egui_rgb_mix(border_color, muted_text_color, 14);
-        text_color = egui_rgb_mix(text_color, muted_text_color, 38);
-        muted_text_color = egui_rgb_mix(muted_text_color, border_color, 12);
-        accent_color = egui_rgb_mix(accent_color, muted_text_color, 54);
-        shadow_color = egui_rgb_mix(shadow_color, bubble_surface_color, 34);
-    }
+    surface_color = egui_rgb_mix(surface_color, EGUI_COLOR_HEX(0xFFFFFF), 16);
+    bubble_surface_color = egui_rgb_mix(bubble_surface_color, EGUI_COLOR_HEX(0xFFFFFF), 14);
     if (!egui_view_get_enable(self))
     {
         surface_color = hcw_info_label_mix_disabled(surface_color);
@@ -574,16 +537,16 @@ static void hcw_info_label_on_draw(egui_view_t *self)
         shadow_color = hcw_info_label_mix_disabled(shadow_color);
     }
 
-    panel_radius = hcw_info_label_panel_radius(local->compact_mode);
-    icon_radius = hcw_info_label_icon_radius(local->compact_mode);
+    panel_radius = hcw_info_label_panel_radius();
+    icon_radius = hcw_info_label_icon_radius();
     icon_fill = egui_rgb_mix(surface_color, accent_color, local->open ? 7 : 4);
     icon_border = egui_rgb_mix(border_color, accent_color, local->open ? 14 : 8);
     icon_text = egui_rgb_mix(accent_color, text_color, local->open ? 6 : 14);
 
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.region.location.x, metrics.region.location.y, metrics.region.size.width, metrics.region.size.height,
-                                          panel_radius, surface_color, egui_color_alpha_mix(self->alpha, hcw_info_label_fill_alpha(local->compact_mode)));
+                                          panel_radius, surface_color, egui_color_alpha_mix(self->alpha, hcw_info_label_fill_alpha()));
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics.region.location.x, metrics.region.location.y, metrics.region.size.width, metrics.region.size.height, panel_radius, 1,
-                                     border_color, egui_color_alpha_mix(self->alpha, hcw_info_label_border_alpha(local->compact_mode)));
+                                     border_color, egui_color_alpha_mix(self->alpha, hcw_info_label_border_alpha()));
 
     if (local->open)
     {
@@ -601,7 +564,7 @@ static void hcw_info_label_on_draw(egui_view_t *self)
         hcw_info_label_draw_focus_ring(self, &metrics.icon_region, icon_radius, EGUI_THEME_FOCUS, 68);
     }
 
-    if (egui_view_get_enable(self) && !local->read_only_mode && local->pressed_part == HCW_INFO_LABEL_PART_ICON)
+    if (egui_view_get_enable(self) && local->pressed_part == HCW_INFO_LABEL_PART_ICON)
     {
         egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.icon_region.location.x, metrics.icon_region.location.y, metrics.icon_region.size.width,
                                               metrics.icon_region.size.height, icon_radius, EGUI_THEME_PRESS_OVERLAY, EGUI_THEME_PRESS_OVERLAY_ALPHA);
@@ -610,7 +573,7 @@ static void hcw_info_label_on_draw(egui_view_t *self)
     {
         egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.icon_region.location.x, metrics.icon_region.location.y, metrics.icon_region.size.width,
                                               metrics.icon_region.size.height, icon_radius, icon_fill,
-                                              egui_color_alpha_mix(self->alpha, hcw_info_label_active_fill_alpha(local->compact_mode)));
+                                              egui_color_alpha_mix(self->alpha, hcw_info_label_active_fill_alpha()));
     }
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics.icon_region.location.x, metrics.icon_region.location.y, metrics.icon_region.size.width, metrics.icon_region.size.height,
                                      icon_radius, 1, icon_border, egui_color_alpha_mix(self->alpha, 56));
@@ -622,18 +585,18 @@ static void hcw_info_label_on_draw(egui_view_t *self)
     }
 
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.bubble_region.location.x + 1, metrics.bubble_region.location.y + 2, metrics.bubble_region.size.width,
-                                          metrics.bubble_region.size.height, hcw_info_label_bubble_radius(local->compact_mode), shadow_color,
-                                          egui_color_alpha_mix(self->alpha, local->compact_mode ? 10 : 16));
+                                          metrics.bubble_region.size.height, hcw_info_label_bubble_radius(), shadow_color,
+                                          egui_color_alpha_mix(self->alpha, 16));
     hcw_info_label_draw_bubble_arrow(self, local, &metrics, bubble_surface_color, border_color);
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.bubble_region.location.x, metrics.bubble_region.location.y, metrics.bubble_region.size.width,
-                                          metrics.bubble_region.size.height, hcw_info_label_bubble_radius(local->compact_mode), bubble_surface_color,
+                                          metrics.bubble_region.size.height, hcw_info_label_bubble_radius(), bubble_surface_color,
                                           egui_color_alpha_mix(self->alpha, 96));
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics.bubble_region.location.x, metrics.bubble_region.location.y, metrics.bubble_region.size.width,
-                                     metrics.bubble_region.size.height, hcw_info_label_bubble_radius(local->compact_mode), 1, border_color,
-                                     egui_color_alpha_mix(self->alpha, hcw_info_label_bubble_border_alpha(local->compact_mode)));
-    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.bubble_region.location.x + hcw_info_label_bubble_pad_x(local->compact_mode),
-                                          metrics.bubble_region.location.y + 6, local->compact_mode ? 12 : 16, 2, 1, accent_color,
-                                          egui_color_alpha_mix(self->alpha, local->compact_mode ? 56 : 70));
+                                     metrics.bubble_region.size.height, hcw_info_label_bubble_radius(), 1, border_color,
+                                     egui_color_alpha_mix(self->alpha, hcw_info_label_bubble_border_alpha()));
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.bubble_region.location.x + hcw_info_label_bubble_pad_x(),
+                                          metrics.bubble_region.location.y + 6, 16, 2, 1, accent_color,
+                                          egui_color_alpha_mix(self->alpha, 70));
 
     hcw_info_label_fit_text_to_width(hcw_info_label_get_font(local), local->info_title, fitted_title, sizeof(fitted_title), metrics.title_region.size.width, 5);
     hcw_info_label_draw_text(self, hcw_info_label_get_font(local), fitted_title, &metrics.title_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, text_color,
@@ -641,43 +604,6 @@ static void hcw_info_label_on_draw(egui_view_t *self)
     hcw_info_label_fit_text_to_width(hcw_info_label_get_meta_font(local), local->info_body, fitted_body, sizeof(fitted_body), metrics.body_region.size.width, 4);
     hcw_info_label_draw_text(self, hcw_info_label_get_meta_font(local), fitted_body, &metrics.body_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_TOP,
                              muted_text_color, EGUI_ALPHA_100);
-}
-
-static void hcw_info_label_apply_style(egui_view_t *self, uint8_t compact_mode, uint8_t read_only_mode)
-{
-    EGUI_LOCAL_INIT(hcw_info_label_t);
-
-    hcw_info_label_clear_pressed_state(self);
-    local->compact_mode = compact_mode ? 1 : 0;
-    local->read_only_mode = read_only_mode ? 1 : 0;
-    local->surface_color = EGUI_COLOR_HEX(0xFFFFFF);
-    local->border_color = EGUI_COLOR_HEX(0xD4DDE5);
-    local->text_color = EGUI_COLOR_HEX(0x1B2835);
-    local->muted_text_color = EGUI_COLOR_HEX(0x697A8B);
-    local->accent_color = compact_mode ? EGUI_COLOR_HEX(0x0C7C73) : EGUI_COLOR_HEX(0x0F6CBD);
-    local->bubble_surface_color = EGUI_COLOR_HEX(0xF9FBFD);
-    local->shadow_color = EGUI_COLOR_HEX(0xDCE4EA);
-    if (read_only_mode)
-    {
-        local->accent_color = EGUI_COLOR_HEX(0x9AA6B2);
-        local->bubble_surface_color = EGUI_COLOR_HEX(0xFBFCFD);
-    }
-    egui_view_invalidate(self);
-}
-
-void hcw_info_label_apply_standard_style(egui_view_t *self)
-{
-    hcw_info_label_apply_style(self, 0, 0);
-}
-
-void hcw_info_label_apply_compact_style(egui_view_t *self)
-{
-    hcw_info_label_apply_style(self, 1, 0);
-}
-
-void hcw_info_label_apply_read_only_style(egui_view_t *self)
-{
-    hcw_info_label_apply_style(self, 0, 1);
 }
 
 void hcw_info_label_set_text(egui_view_t *self, const char *label)
@@ -772,30 +698,6 @@ void hcw_info_label_set_palette(egui_view_t *self, egui_color_t surface_color, e
     }
 }
 
-void hcw_info_label_set_compact_mode(egui_view_t *self, uint8_t compact_mode)
-{
-    EGUI_LOCAL_INIT(hcw_info_label_t);
-    uint8_t had_pressed = hcw_info_label_clear_pressed_state(self);
-
-    local->compact_mode = compact_mode ? 1 : 0;
-    if (!had_pressed)
-    {
-        egui_view_invalidate(self);
-    }
-}
-
-void hcw_info_label_set_read_only_mode(egui_view_t *self, uint8_t read_only_mode)
-{
-    EGUI_LOCAL_INIT(hcw_info_label_t);
-    uint8_t had_pressed = hcw_info_label_clear_pressed_state(self);
-
-    local->read_only_mode = read_only_mode ? 1 : 0;
-    if (!had_pressed)
-    {
-        egui_view_invalidate(self);
-    }
-}
-
 void hcw_info_label_set_open(egui_view_t *self, uint8_t is_open)
 {
     hcw_info_label_set_open_inner(self, is_open, 1);
@@ -850,7 +752,7 @@ static int hcw_info_label_on_touch_event(egui_view_t *self, egui_motion_event_t 
     uint8_t hit_part;
     uint8_t same_target;
 
-    if (!egui_view_get_enable(self) || local->read_only_mode)
+    if (!egui_view_get_enable(self))
     {
         hcw_info_label_clear_pressed_state(self);
         return 0;
@@ -939,7 +841,7 @@ static int hcw_info_label_on_key_event(egui_view_t *self, egui_key_event_t *even
 {
     EGUI_LOCAL_INIT(hcw_info_label_t);
 
-    if (!egui_view_get_enable(self) || local->read_only_mode)
+    if (!egui_view_get_enable(self))
     {
         hcw_info_label_clear_pressed_state(self);
         return 0;
@@ -1059,11 +961,15 @@ void hcw_info_label_init(egui_view_t *self)
     local->meta_font = hcw_info_label_default_font();
     local->icon_font = hcw_info_label_default_icon_font();
     local->on_open_changed = NULL;
-    local->compact_mode = 0;
-    local->read_only_mode = 0;
+    local->surface_color = EGUI_COLOR_HEX(0xFFFFFF);
+    local->border_color = EGUI_COLOR_HEX(0xD4DDE5);
+    local->text_color = EGUI_COLOR_HEX(0x1B2835);
+    local->muted_text_color = EGUI_COLOR_HEX(0x697A8B);
+    local->accent_color = EGUI_COLOR_HEX(0x0F6CBD);
+    local->bubble_surface_color = EGUI_COLOR_HEX(0xF9FBFD);
+    local->shadow_color = EGUI_COLOR_HEX(0xDCE4EA);
     local->open = 0;
     local->pressed_part = HCW_INFO_LABEL_PART_NONE;
 
-    hcw_info_label_apply_standard_style(self);
     egui_view_set_view_name(self, "hcw_info_label");
 }

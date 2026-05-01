@@ -4,10 +4,10 @@
 - 参考设计体系：`Fluent 2`
 - 参考开源库：`Fluent UI React`
 - 对应组件：`InfoLabel`
-- 当前保留形态：主区 `Project policy`、`Export guidance`、`Reading help` 三组 reference 快照，底部 `compact / read only` 双静态 preview
-- 当前保留交互：主区保留程序化 `closed accent / open warning / open neutral` 切换；`text / title / body / font / palette / compact / read_only / open` setter 清理 `pressed`；底部 static preview 吞掉 `touch / key`
+- 当前保留形态：主区 `Project policy`、`Export guidance`、`Reading help` 三组 reference 快照，底部 `secondary / muted` 双静态 preview
+- 当前保留交互：主区保留程序化 `closed accent / open warning / open neutral` 切换；`text / title / body / font / palette / open` setter 清理 `pressed`；底部 static preview 吞掉 `touch / key`
 - 当前移除内容：旧主面板包装、底部 preview panel / heading、录制阶段真实 icon click、额外故事化说明与高噪音页面壳层、录制末尾额外桥接帧
-- EGUI 适配说明：继续使用 `HelloCustomWidgets` custom 层的轻量 `wrapper`，在 custom view 内收口 `label + info button + anchored bubble`、`compact / read only` 与静态 preview API，不修改 `sdk/EmbeddedGUI`
+- EGUI 适配说明：继续使用 `HelloCustomWidgets` custom 层的轻量 `wrapper`，在 custom view 内收口 `label + info button + anchored bubble` 与静态 preview API；小尺寸和 muted 变体由 APP 通过尺寸、字体与 palette 配置，不修改 `sdk/EmbeddedGUI`
 
 ## 1. 为什么需要这个控件
 `info_label` 用来在正文标签旁边提供一个低打扰的信息入口。它适合出现在设置项、表单字段、只读说明和摘要行附近，让用户按需展开一段短说明，而不是被 `TeachingTip` 或块级反馈容器打断。
@@ -24,9 +24,9 @@
 - 标题：`InfoLabel`
 - 主区：一个主 `info_label`
 - 底部：一行并排的两个静态 preview
-- 左侧 preview：`compact`
-- 右侧 preview：`read only`
-- 页面结构：标题 -> 主 `info_label` -> 底部 `compact / read only`
+- 左侧 preview：`secondary`
+- 右侧 preview：`muted`
+- 页面结构：标题 -> 主 `info_label` -> 底部 `secondary / muted`
 
 目录：
 - `example/HelloCustomWidgets/display/info_label/`
@@ -48,7 +48,7 @@
 3. 快照 3
    文案：`Reading help`
    `Reference note`
-   `Use the compact preview when the layout has limited width.`
+   `Use the small preview when the layout has limited width.`
    表现：`open neutral`
 4. 最终稳定帧
    文案：`Project policy`
@@ -58,14 +58,14 @@
 
 底部 preview 在整条轨道中始终固定：
 
-1. `compact`
-   `Compact help`
+1. `secondary`
+   `Small help`
    `Inline note`
-   `Compact mode keeps the bubble short.`
-2. `read only`
+   `Small preview keeps the bubble concise.`
+2. `muted`
    `Audit note`
-   `Read only`
-   `Static preview keeps input disabled.`
+   `Muted note`
+   `Static preview uses subdued colors.`
 
 ## 5. 视觉与布局规格
 
@@ -79,13 +79,13 @@
 
 ## 6. 状态矩阵
 
-| 状态 / 区域 | 主控件 | Compact preview | Read only preview |
+| 状态 / 区域 | 主控件 | Secondary preview | Muted preview |
 | --- | --- | --- | --- |
 | 默认 `Project policy / closed accent` | 是 | 否 | 否 |
 | `Export guidance / open warning` | 是 | 否 | 否 |
 | `Reading help / open neutral` | 是 | 否 | 否 |
 | 最终稳定帧回到默认态 | 是 | 否 | 否 |
-| `Compact help` | 否 | 是 | 否 |
+| `Small help` | 否 | 是 | 否 |
 | `Audit note` | 否 | 否 | 是 |
 | 静态 preview 对照 | 否 | 是 | 是 |
 | 静态 preview 吞掉 `touch / key` 且状态不变 | 否 | 是 | 是 |
@@ -95,18 +95,18 @@
 `example/HelloUnitTest/test/test_info_label.c` 当前覆盖 `4` 条用例：
 
 1. `style helpers and setters clear pressed state`
-   覆盖 `apply_compact_style()`、`apply_read_only_style()`、`set_text()`、`set_info_title()`、`set_info_body()`、`set_font()`、`set_meta_font()`、`set_icon_font()`、`set_palette()`、`set_compact_mode()`、`set_read_only_mode()` 与 `set_open()` 附近的状态清理。
+   覆盖示例侧 secondary/muted palette 配置、`set_text()`、`set_info_title()`、`set_info_body()`、`set_font()`、`set_meta_font()`、`set_icon_font()`、`set_palette()` 与 `set_open()` 附近的状态清理。
 2. `touch same target release and cancel behavior`
    覆盖 `DOWN(A) -> MOVE(B) -> UP(B)` 不提交、回到同一 target 后 `UP(A)` 才提交，以及 `CANCEL` 不触发额外 notify。
 3. `keyboard toggle and escape close`
    覆盖 `Enter / Space` 开关与 `Esc` 关闭闭环。
 4. `static preview consumes input and keeps state`
-   通过 `info_label_preview_snapshot_t`、`capture_preview_snapshot()` 与 `assert_preview_state_unchanged()` 固定校验 `region_screen`、`background`、`label`、`info_title`、`info_body`、`font`、`meta_font`、`icon_font`、`on_open_changed`、`surface_color`、`border_color`、`text_color`、`muted_text_color`、`accent_color`、`bubble_surface_color`、`shadow_color`、`compact_mode`、`read_only_mode`、`open`、`pressed_part`、`icon_region`、`bubble_region`、`alpha`、`enable`、`is_focused`、`is_pressed` 与 `padding` 不变。
+   通过 `info_label_preview_snapshot_t`、`capture_preview_snapshot()` 与 `assert_preview_state_unchanged()` 固定校验 `region_screen`、`background`、`label`、`info_title`、`info_body`、`font`、`meta_font`、`icon_font`、`on_open_changed`、`surface_color`、`border_color`、`text_color`、`muted_text_color`、`accent_color`、`bubble_surface_color`、`shadow_color`、`open`、`pressed_part`、`icon_region`、`bubble_region`、`alpha`、`enable`、`is_focused`、`is_pressed` 与 `padding` 不变。
 
 补充说明：
 
 - 主区 `info_label` 是 display-first 的标签解释控件，重点在按需展开的说明入口和 bubble 层级，不承担复杂 popup 管理。
-- 底部 `compact / read only` preview 统一通过 `hcw_info_label_override_static_preview_api()` 吞掉 `touch / key`，只承担静态 reference 对照职责。
+- 底部 `secondary / muted` preview 统一通过 `hcw_info_label_override_static_preview_api()` 吞掉 `touch / key`，只承担静态 reference 对照职责。
 - 为兼容当前 `HelloUnitTest` harness，preview 用例继续直接调用 `on_touch_event()` / `on_key_event()`。
 
 ## 8. 录制动作设计
@@ -151,10 +151,10 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
 
 ## 10. 验收重点
 
-- 主区 `info_label` 与底部 `compact / read only` preview 必须完整可见，不能黑屏、白屏或被裁切。
+- 主区 `info_label` 与底部 `secondary / muted` preview 必须完整可见，不能黑屏、白屏或被裁切。
 - 主区 `Project policy`、`Export guidance`、`Reading help` 三组状态必须能从截图中稳定区分，且最终稳定帧显式回到默认态。
-- `apply_compact_style()`、`apply_read_only_style()`、`set_text()`、`set_info_title()`、`set_info_body()`、`set_font()`、`set_meta_font()`、`set_icon_font()`、`set_palette()`、`set_compact_mode()`、`set_read_only_mode()` 不能残留 `pressed`。
-- 主控件需要保持 same-target release 与 `Enter / Space / Esc` 键盘闭环；底部 `compact / read only` preview 必须保持静态 reference，对输入只吞不改状态。
+- 示例侧 secondary/muted palette 配置、`set_text()`、`set_info_title()`、`set_info_body()`、`set_font()`、`set_meta_font()`、`set_icon_font()`、`set_palette()` 不能残留 `pressed`。
+- 主控件需要保持 same-target release 与 `Enter / Space / Esc` 键盘闭环；底部 `secondary / muted` preview 必须保持静态 reference，对输入只吞不改状态。
 
 ## 11. 截图复核口径
 
@@ -177,8 +177,8 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
 ## 13. 本轮保留与删减
 
 - 保留的主区状态：`Project policy / closed accent`、`Export guidance / open warning`、`Reading help / open neutral`
-- 保留的底部对照：`compact`、`read only`
-- 保留的交互与实现约束：`label + info button + anchored bubble`、`compact / read only`、same-target release、`Enter / Space / Esc` 键盘闭环、static preview 输入抑制
+- 保留的底部对照：`secondary`、`muted`
+- 保留的交互与实现约束：`label + info button + anchored bubble`、same-target release、`Enter / Space / Esc` 键盘闭环、static preview 输入抑制；小尺寸和 muted 由 APP 配置
 - 删减的旧桥接与装饰：主面板包装、底部 preview panel / heading、录制阶段真实 icon click、额外故事化说明与高噪音页面壳层、录制末尾额外桥接帧
 
 ## 14. 当前验收结果（2026-04-19）
@@ -211,4 +211,4 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
   - 遮罩主区差分边界后主区外唯一哈希数：`1`
   - 主区唯一状态数：`3`
   - 按 `y >= 265` 裁切底部 preview 后，preview 区唯一哈希数：`1`
-  - 结论：主区完整覆盖 `Project policy`、`Export guidance`、`Reading help` 三组 reference 快照，最终稳定帧已回到默认态，底部 `compact / read only` preview 全程静态
+  - 结论：主区完整覆盖 `Project policy`、`Export guidance`、`Reading help` 三组 reference 快照，最终稳定帧已回到默认态，底部 `secondary / muted` preview 全程静态

@@ -32,16 +32,11 @@ struct hcw_info_label
     egui_color_t accent_color;
     egui_color_t bubble_surface_color;
     egui_color_t shadow_color;
-    uint8_t compact_mode;
-    uint8_t read_only_mode;
     uint8_t open;
     uint8_t pressed_part;
 };
 
 void hcw_info_label_init(egui_view_t *self);
-void hcw_info_label_apply_standard_style(egui_view_t *self);
-void hcw_info_label_apply_compact_style(egui_view_t *self);
-void hcw_info_label_apply_read_only_style(egui_view_t *self);
 void hcw_info_label_set_text(egui_view_t *self, const char *label);
 void hcw_info_label_set_info_title(egui_view_t *self, const char *title);
 void hcw_info_label_set_info_body(egui_view_t *self, const char *body);
@@ -51,8 +46,6 @@ void hcw_info_label_set_icon_font(egui_view_t *self, const egui_font_t *font);
 void hcw_info_label_set_palette(egui_view_t *self, egui_color_t surface_color, egui_color_t border_color, egui_color_t text_color,
                                 egui_color_t muted_text_color, egui_color_t accent_color, egui_color_t bubble_surface_color,
                                 egui_color_t shadow_color);
-void hcw_info_label_set_compact_mode(egui_view_t *self, uint8_t compact_mode);
-void hcw_info_label_set_read_only_mode(egui_view_t *self, uint8_t read_only_mode);
 void hcw_info_label_set_open(egui_view_t *self, uint8_t is_open);
 uint8_t hcw_info_label_get_open(egui_view_t *self);
 void hcw_info_label_set_on_open_changed_listener(egui_view_t *self, hcw_info_label_on_open_changed_listener_t listener);
