@@ -28,11 +28,6 @@ static uint8_t egui_view_text_block_clear_pressed_state(egui_view_t *self)
     return had_pressed;
 }
 
-static egui_color_t egui_view_text_block_mix_disabled(egui_color_t color)
-{
-    return egui_rgb_mix(color, EGUI_COLOR_HEX(0x7B8794), 52);
-}
-
 static egui_color_t egui_view_text_block_resolve_color(const egui_view_text_block_t *local)
 {
     switch (local->style)
@@ -54,12 +49,6 @@ static void egui_view_text_block_sync_visuals(egui_view_t *self)
     egui_color_t text_color = egui_view_text_block_resolve_color(local);
     egui_alpha_t text_alpha = local->text_alpha;
 
-    if (local->read_only_mode)
-    {
-        text_color = egui_view_text_block_mix_disabled(text_color);
-        text_alpha = (text_alpha > 28) ? (egui_alpha_t)(text_alpha - 28) : (egui_alpha_t)(text_alpha / 2);
-    }
-
     egui_view_set_background(self, NULL);
     egui_view_set_shadow(self, NULL);
     egui_view_set_padding_all(self, 0);
@@ -67,7 +56,7 @@ static void egui_view_text_block_sync_visuals(egui_view_t *self)
     egui_view_textblock_set_scroll_enabled(self, 0);
     egui_view_textblock_set_border_enabled(self, 0);
     egui_view_textblock_set_align_type(self, EGUI_ALIGN_LEFT | EGUI_ALIGN_TOP);
-    egui_view_textblock_set_line_space(self, local->compact_mode ? 2 : 4);
+    egui_view_textblock_set_line_space(self, 4);
     egui_view_textblock_set_font_color(self, text_color, text_alpha);
 
 #if EGUI_CONFIG_FUNCTION_SUPPORT_KEY && EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
@@ -132,34 +121,6 @@ void egui_view_text_block_set_palette(egui_view_t *self, egui_color_t standard_c
     egui_view_text_block_sync_visuals(self);
 }
 
-void egui_view_text_block_set_compact_mode(egui_view_t *self, uint8_t compact_mode)
-{
-    egui_view_text_block_t *local = egui_view_text_block_local(self);
-
-    egui_view_text_block_clear_pressed_state(self);
-    local->compact_mode = compact_mode ? 1 : 0;
-    egui_view_text_block_sync_visuals(self);
-}
-
-uint8_t egui_view_text_block_get_compact_mode(egui_view_t *self)
-{
-    return egui_view_text_block_local(self)->compact_mode;
-}
-
-void egui_view_text_block_set_read_only_mode(egui_view_t *self, uint8_t read_only_mode)
-{
-    egui_view_text_block_t *local = egui_view_text_block_local(self);
-
-    egui_view_text_block_clear_pressed_state(self);
-    local->read_only_mode = read_only_mode ? 1 : 0;
-    egui_view_text_block_sync_visuals(self);
-}
-
-uint8_t egui_view_text_block_get_read_only_mode(egui_view_t *self)
-{
-    return egui_view_text_block_local(self)->read_only_mode;
-}
-
 #if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
 static int egui_view_text_block_on_static_touch_event(egui_view_t *self, egui_motion_event_t *event)
 {
@@ -199,8 +160,6 @@ void egui_view_text_block_init(egui_view_t *self)
     local->accent_color = EGUI_COLOR_HEX(0x0F6CBD);
     local->text_alpha = EGUI_ALPHA_100;
     local->style = EGUI_VIEW_TEXT_BLOCK_STYLE_STANDARD;
-    local->compact_mode = 0;
-    local->read_only_mode = 0;
     egui_view_text_block_set_text(self, egui_view_text_block_default_text());
     egui_view_text_block_set_font(self, egui_view_text_block_default_font());
     egui_view_text_block_sync_visuals(self);

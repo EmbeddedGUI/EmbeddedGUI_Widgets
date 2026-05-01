@@ -31,8 +31,6 @@ struct text_block_preview_snapshot
     uint8_t is_scroll_enabled;
     uint8_t is_border_enabled;
     uint8_t style;
-    uint8_t compact_mode;
-    uint8_t read_only_mode;
     uint8_t enable;
     uint8_t is_focused;
     uint8_t is_pressed;
@@ -83,10 +81,10 @@ static void setup_preview_widget(void)
     egui_view_text_block_init(EGUI_VIEW_OF(&preview_widget));
     egui_view_set_size(EGUI_VIEW_OF(&preview_widget), 88, 34);
     egui_view_set_on_click_listener(EGUI_VIEW_OF(&preview_widget), on_preview_click);
-    egui_view_text_block_set_text(EGUI_VIEW_OF(&preview_widget), "Compact copy\nfor tight rows.");
+    egui_view_text_block_set_text(EGUI_VIEW_OF(&preview_widget), "Note copy\nfor tight rows.");
     egui_view_text_block_set_font(EGUI_VIEW_OF(&preview_widget), (const egui_font_t *)&egui_res_font_montserrat_8_4);
-    egui_view_text_block_set_compact_mode(EGUI_VIEW_OF(&preview_widget), 1);
     egui_view_text_block_apply_subtle_style(EGUI_VIEW_OF(&preview_widget));
+    egui_view_textblock_set_line_space(EGUI_VIEW_OF(&preview_widget), 2);
     egui_view_textblock_set_max_lines(EGUI_VIEW_OF(&preview_widget), 2);
     egui_view_text_block_override_static_preview_api(EGUI_VIEW_OF(&preview_widget), &preview_api);
     g_click_count = 0;
@@ -163,8 +161,6 @@ static void capture_preview_snapshot(text_block_preview_snapshot_t *snapshot)
     snapshot->is_scroll_enabled = preview_widget.base.is_scroll_enabled;
     snapshot->is_border_enabled = preview_widget.base.is_border_enabled;
     snapshot->style = preview_widget.style;
-    snapshot->compact_mode = preview_widget.compact_mode;
-    snapshot->read_only_mode = preview_widget.read_only_mode;
     snapshot->enable = (uint8_t)egui_view_get_enable(EGUI_VIEW_OF(&preview_widget));
     snapshot->is_focused = EGUI_VIEW_OF(&preview_widget)->is_focused;
     snapshot->is_pressed = EGUI_VIEW_OF(&preview_widget)->is_pressed;
@@ -197,8 +193,6 @@ static void assert_preview_state_unchanged(const text_block_preview_snapshot_t *
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->is_scroll_enabled, preview_widget.base.is_scroll_enabled);
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->is_border_enabled, preview_widget.base.is_border_enabled);
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->style, preview_widget.style);
-    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->compact_mode, preview_widget.compact_mode);
-    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->read_only_mode, preview_widget.read_only_mode);
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->enable, egui_view_get_enable(EGUI_VIEW_OF(&preview_widget)));
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->is_focused, EGUI_VIEW_OF(&preview_widget)->is_focused);
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->is_pressed, EGUI_VIEW_OF(&preview_widget)->is_pressed);
@@ -222,11 +216,9 @@ static void test_text_block_init_uses_display_defaults(void)
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x22303F).full, test_widget.base.color.full);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_ALPHA_100, test_widget.base.alpha);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_TEXT_BLOCK_STYLE_STANDARD, test_widget.style);
-    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_text_block_get_compact_mode(EGUI_VIEW_OF(&test_widget)));
-    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_text_block_get_read_only_mode(EGUI_VIEW_OF(&test_widget)));
 }
 
-static void test_text_block_style_helpers_and_modes_clear_pressed_state(void)
+static void test_text_block_style_helpers_and_setters_clear_pressed_state(void)
 {
     setup_widget();
 
@@ -258,18 +250,9 @@ static void test_text_block_style_helpers_and_modes_clear_pressed_state(void)
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_widget)->is_pressed);
     EGUI_TEST_ASSERT_TRUE(test_widget.base.font == (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT);
 
-    egui_view_set_pressed(EGUI_VIEW_OF(&test_widget), 1);
-    egui_view_text_block_set_compact_mode(EGUI_VIEW_OF(&test_widget), 2);
-    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_widget)->is_pressed);
-    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_text_block_get_compact_mode(EGUI_VIEW_OF(&test_widget)));
-    EGUI_TEST_ASSERT_EQUAL_INT(2, test_widget.base.line_space);
-
-    egui_view_set_pressed(EGUI_VIEW_OF(&test_widget), 1);
-    egui_view_text_block_set_read_only_mode(EGUI_VIEW_OF(&test_widget), 3);
-    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_widget)->is_pressed);
-    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_text_block_get_read_only_mode(EGUI_VIEW_OF(&test_widget)));
-    EGUI_TEST_ASSERT_EQUAL_INT(egui_view_text_block_mix_disabled(EGUI_COLOR_HEX(0x313233)).full, test_widget.base.color.full);
-    EGUI_TEST_ASSERT_EQUAL_INT(60, test_widget.base.alpha);
+    egui_view_textblock_set_line_space(EGUI_VIEW_OF(&test_widget), 2);
+    egui_view_text_block_apply_standard_style(EGUI_VIEW_OF(&test_widget));
+    EGUI_TEST_ASSERT_EQUAL_INT(4, test_widget.base.line_space);
 }
 
 static void test_text_block_set_font_and_style_preserve_display_only_defaults(void)
@@ -314,7 +297,7 @@ void test_text_block_run(void)
 {
     EGUI_TEST_SUITE_BEGIN(text_block);
     EGUI_TEST_RUN(test_text_block_init_uses_display_defaults);
-    EGUI_TEST_RUN(test_text_block_style_helpers_and_modes_clear_pressed_state);
+    EGUI_TEST_RUN(test_text_block_style_helpers_and_setters_clear_pressed_state);
     EGUI_TEST_RUN(test_text_block_set_font_and_style_preserve_display_only_defaults);
     EGUI_TEST_RUN(test_text_block_static_preview_consumes_input_and_keeps_state);
     EGUI_TEST_SUITE_END();
