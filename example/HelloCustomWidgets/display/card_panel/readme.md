@@ -5,8 +5,8 @@
 - 参考开源库：`WPF UI`
 - 补充对照实现：`ModernWpf`
 - 对应组件：`Card`
-- 当前保留形态：主区 `OVERVIEW`、`SYNC`、`DEPLOY`、`ARCHIVE` 四组 reference 快照，底部 `compact / read only` 双静态 preview
-- 当前保留交互：主区保留程序化 snapshot 切换、same-target release 与键盘 click；`snapshot / compact / read_only / disabled` 切换清理 `pressed`；底部 static preview 吞掉 `touch / key`
+- 当前保留形态：主区 `OVERVIEW`、`SYNC`、`DEPLOY`、`ARCHIVE` 四组 reference 快照，底部 `secondary / muted` 双静态 preview
+- 当前保留交互：主区保留程序化 snapshot 切换、same-target release 与键盘 click；snapshot、font、palette 与 disabled 切换清理 `pressed`；底部 static preview 吞掉 `touch / key`
 - 当前移除内容：preview snapshot 轮换、preview 点击清主区 focus 的桥接动作、与结构化信息卡无关的额外交互录制和旧说明壳层
 - EGUI 适配说明：继续复用当前目录下的 `egui_view_card_panel` custom view，在不修改 `sdk/EmbeddedGUI` 的前提下，把 `reference` 页面统一收口到主区四态快照加底部双静态 preview
 
@@ -25,9 +25,9 @@
 - 标题：`Card Panel`
 - 主区：一个标准 `card_panel`
 - 底部：一行并排的两个静态 preview
-- 左侧 preview：`compact`
-- 右侧 preview：`read only`
-- 页面结构：标题 -> 主 `card_panel` -> 底部 `compact / read only`
+- 左侧 preview：`secondary`
+- 右侧 preview：`muted`
+- 页面结构：标题 -> 主 `card_panel` -> 底部 `secondary / muted`
 
 目录：
 - `example/HelloCustomWidgets/display/card_panel/`
@@ -84,15 +84,15 @@
 
 底部 preview 在整条录制轨道中始终固定：
 
-1. `compact`
+1. `secondary`
    eyebrow：`TASK`
-   title：`Compact`
+   title：`Small`
    summary：`Short.`
    summary slot：`12 / tasks`
    meta：`Focus`
    footer：`Clear layout.`
    action：`Open`
-2. `read only`
+2. `muted`
    eyebrow：`ARCHIVE`
    title：`Archive`
    summary：`Muted.`
@@ -132,25 +132,23 @@
 1. `set_snapshots clamps and clears pressed state`
    覆盖 `set_snapshots()` 的数量钳制、空快照清理与 `pressed` 复位。
 2. `snapshot and setters clear pressed state`
-   覆盖 `set_current_snapshot()`、`set_font()`、`set_meta_font()`、`set_palette()`、`set_compact_mode()`、`set_read_only_mode()` 的 `pressed` 清理与参数落位。
+   覆盖 `set_current_snapshot()`、`set_font()`、`set_meta_font()`、`set_palette()` 的 `pressed` 清理与参数落位。
 3. `touch same-target release and cancel behavior`
    覆盖 `DOWN(A) -> MOVE(B) -> UP(B)` 不提交、`DOWN(A) -> MOVE(B) -> MOVE(A) -> UP(A)` 才提交，以及 `ACTION_CANCEL` 清理。
 4. `keyboard click listener`
    覆盖主控件键盘 `Enter` 触发 click。
-5. `compact mode clears pressed and keeps click behavior`
-   覆盖 `compact` 模式切换先清残留 `pressed`，恢复后仍保留主卡 click 语义。
-6. `read only and disabled guards clear pressed state`
-   覆盖 `read only` / disabled 在新输入到来时清理高亮、拒绝 `touch / key` 提交，并在恢复后重新允许交互。
-7. `static preview consumes input and keeps snapshot`
+5. `disabled guards clear pressed state`
+   覆盖 disabled 在新输入到来时清理高亮、拒绝 `touch / key` 提交，并在恢复后重新允许交互。
+6. `static preview consumes input and keeps snapshot`
    覆盖静态 preview 吞掉输入后 `current_snapshot` 保持原值，且不触发 click listener。
-8. `internal helpers cover tone text and pill width`
+7. `internal helpers cover tone text and pill width`
    覆盖 tone 颜色选择、防御式文本长度与 action pill 宽度估算等内部 helper。
 
 补充说明：
 
 - 主控件继续保留 same-target release 与键盘 click 语义，但不再让底部 preview 参与主区 focus 桥接。
-- 底部 `compact / read only` preview 统一通过 `egui_view_card_panel_override_static_preview_api()` 吞掉 `touch / key`，只承担静态 reference 对照职责。
-- 当前 README 与实现统一使用 `read_only_mode` 命名，不再沿用历史 `locked` 表述。
+- 底部 `secondary / muted` preview 统一通过 `egui_view_card_panel_override_static_preview_api()` 吞掉 `touch / key`，只承担静态 reference 对照职责。
+- muted preview 的弱化由 APP 侧 palette、enable、字体和尺寸配置表达，控件本体不保存专用状态模式。
 
 ## 8. 录制动作设计
 
@@ -170,7 +168,7 @@
 
 - 录制轨道只导出主区四态与最终稳定帧。
 - 初始化阶段在 root view 挂载前后各重放一次默认态与 preview，统一走 `ui_ready + layout_page + request_page_snapshot` 布局重放路径。
-- 录制阶段不再轮换 `compact` preview，也不再通过 preview 点击桥接去清主区焦点。
+- 录制阶段不再轮换底部 preview，也不再通过 preview 点击桥接去清主区焦点。
 
 ## 9. 验收命令
 
@@ -195,10 +193,10 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
 
 ## 10. 验收重点
 
-- 主区与底部 `compact / read only` preview 必须完整可见，不能黑屏、白屏或被裁切。
+- 主区与底部 `secondary / muted` preview 必须完整可见，不能黑屏、白屏或被裁切。
 - 主区 `OVERVIEW / SYNC / DEPLOY / ARCHIVE` 四组卡片状态必须能从截图中稳定区分，且最终稳定帧显式回到默认态。
-- `set_snapshots()`、`snapshot / compact / read_only / disabled` 切换链路，以及 `touch / key` guard 不能残留 `pressed`。
-- 底部 `compact / read only` preview 必须保持静态 reference，对输入只吞不改状态。
+- `set_snapshots()`、snapshot/font/palette/disabled 切换链路，以及 `touch / key` guard 不能残留 `pressed`。
+- 底部 `secondary / muted` preview 必须保持静态 reference，对输入只吞不改状态。
 
 ## 11. 截图复核口径
 
@@ -220,8 +218,8 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
 ## 13. 本轮保留与删减
 
 - 保留的主区状态：`OVERVIEW`、`SYNC`、`DEPLOY`、`ARCHIVE`
-- 保留的底部对照：`compact`、`read only`
-- 保留的交互与实现约束：结构化卡片层级、summary slot、action pill、主控件 same-target release 与键盘 click、`snapshot / compact / read_only / disabled` 切换清理 `pressed`、static preview 输入抑制
+- 保留的底部对照：`secondary`、`muted`
+- 保留的交互与实现约束：结构化卡片层级、summary slot、action pill、主控件 same-target release 与键盘 click、snapshot/font/palette/disabled 切换清理 `pressed`、static preview 输入抑制
 - 删减的旧桥接与装饰：preview snapshot 轮换、preview 点击清主区 focus 的桥接动作、额外交互录制和旧说明壳层
 
 ## 14. 当前验收结果（2026-04-19）
@@ -254,4 +252,4 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
   - 遮罩主区差分边界后主区外唯一哈希数：`1`
   - 主区唯一状态数：`4`
   - 按 `y >= 261` 裁切底部 preview 后，preview 区唯一哈希数：`1`
-  - 结论：主区完整覆盖 `OVERVIEW / SYNC / DEPLOY / ARCHIVE` 四组 reference 快照，最终稳定帧已回到默认态，底部 `compact / read only` preview 全程静态
+  - 结论：主区完整覆盖 `OVERVIEW / SYNC / DEPLOY / ARCHIVE` 四组 reference 快照，最终稳定帧已回到默认态，底部 `secondary / muted` preview 全程静态

@@ -25,10 +25,10 @@ static egui_view_linearlayout_t root_layout;
 static egui_view_label_t title_label;
 static egui_view_card_panel_t panel_primary;
 static egui_view_linearlayout_t bottom_row;
-static egui_view_card_panel_t panel_compact;
-static egui_view_card_panel_t panel_read_only;
-static egui_view_api_t panel_compact_api;
-static egui_view_api_t panel_read_only_api;
+static egui_view_card_panel_t panel_secondary;
+static egui_view_card_panel_t panel_muted;
+static egui_view_api_t panel_secondary_api;
+static egui_view_api_t panel_muted_api;
 static uint8_t ui_ready;
 
 EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
@@ -47,11 +47,11 @@ static const egui_view_card_panel_snapshot_t primary_snapshots[] = {
          "Browse", 3, 0},
 };
 
-static const egui_view_card_panel_snapshot_t compact_snapshots[] = {
-        {"TASK", "Compact", "Short.", "12", "tasks", "Focus", "", "Clear layout.", "Open", 0, 1},
+static const egui_view_card_panel_snapshot_t secondary_snapshots[] = {
+        {"TASK", "Small", "Short.", "12", "tasks", "Focus", "", "Clear layout.", "Open", 0, 1},
 };
 
-static const egui_view_card_panel_snapshot_t read_only_snapshots[] = {
+static const egui_view_card_panel_snapshot_t muted_snapshots[] = {
         {"ARCHIVE", "Archive", "Muted.", "7", "notes", "History", "", "Preview only.", "", 3, 0},
 };
 
@@ -71,23 +71,22 @@ static void apply_primary_default_state(void)
     apply_primary_snapshot(CARD_PANEL_DEFAULT_SNAPSHOT);
 }
 
-static void apply_compact_state(void)
+static void apply_secondary_state(void)
 {
-    egui_view_card_panel_set_current_snapshot(EGUI_VIEW_OF(&panel_compact), 0);
-    egui_view_card_panel_set_compact_mode(EGUI_VIEW_OF(&panel_compact), 1);
+    egui_view_set_enable(EGUI_VIEW_OF(&panel_secondary), 1);
+    egui_view_card_panel_set_current_snapshot(EGUI_VIEW_OF(&panel_secondary), 0);
 }
 
-static void apply_read_only_state(void)
+static void apply_muted_state(void)
 {
-    egui_view_card_panel_set_current_snapshot(EGUI_VIEW_OF(&panel_read_only), 0);
-    egui_view_card_panel_set_compact_mode(EGUI_VIEW_OF(&panel_read_only), 1);
-    egui_view_card_panel_set_read_only_mode(EGUI_VIEW_OF(&panel_read_only), 1);
+    egui_view_set_enable(EGUI_VIEW_OF(&panel_muted), 0);
+    egui_view_card_panel_set_current_snapshot(EGUI_VIEW_OF(&panel_muted), 0);
 }
 
 static void apply_preview_states(void)
 {
-    apply_compact_state();
-    apply_read_only_state();
+    apply_secondary_state();
+    apply_muted_state();
     if (ui_ready)
     {
         layout_page();
@@ -142,37 +141,35 @@ void test_init_ui(void)
     egui_view_linearlayout_set_align_type(EGUI_VIEW_OF(&bottom_row), EGUI_ALIGN_VCENTER);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&bottom_row));
 
-    egui_view_card_panel_init(EGUI_VIEW_OF(&panel_compact));
-    egui_view_set_size(EGUI_VIEW_OF(&panel_compact), CARD_PANEL_PREVIEW_WIDTH, CARD_PANEL_PREVIEW_HEIGHT);
-    egui_view_card_panel_set_snapshots(EGUI_VIEW_OF(&panel_compact), compact_snapshots, 1);
-    egui_view_card_panel_set_font(EGUI_VIEW_OF(&panel_compact), (const egui_font_t *)&egui_res_font_montserrat_8_4);
-    egui_view_card_panel_set_meta_font(EGUI_VIEW_OF(&panel_compact), (const egui_font_t *)&egui_res_font_montserrat_8_4);
-    egui_view_card_panel_set_compact_mode(EGUI_VIEW_OF(&panel_compact), 1);
-    egui_view_card_panel_set_palette(EGUI_VIEW_OF(&panel_compact), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD2DBE3), EGUI_COLOR_HEX(0x1A2734),
+    egui_view_card_panel_init(EGUI_VIEW_OF(&panel_secondary));
+    egui_view_set_size(EGUI_VIEW_OF(&panel_secondary), CARD_PANEL_PREVIEW_WIDTH, CARD_PANEL_PREVIEW_HEIGHT);
+    egui_view_card_panel_set_snapshots(EGUI_VIEW_OF(&panel_secondary), secondary_snapshots, 1);
+    egui_view_card_panel_set_font(EGUI_VIEW_OF(&panel_secondary), (const egui_font_t *)&egui_res_font_montserrat_8_4);
+    egui_view_card_panel_set_meta_font(EGUI_VIEW_OF(&panel_secondary), (const egui_font_t *)&egui_res_font_montserrat_8_4);
+    egui_view_card_panel_set_palette(EGUI_VIEW_OF(&panel_secondary), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD2DBE3), EGUI_COLOR_HEX(0x1A2734),
                                      EGUI_COLOR_HEX(0x6B7A89), EGUI_COLOR_HEX(0x0F6CBD), EGUI_COLOR_HEX(0x0F7B45), EGUI_COLOR_HEX(0x9D5D00),
                                      EGUI_COLOR_HEX(0x7A8796));
-    egui_view_card_panel_override_static_preview_api(EGUI_VIEW_OF(&panel_compact), &panel_compact_api);
+    egui_view_card_panel_override_static_preview_api(EGUI_VIEW_OF(&panel_secondary), &panel_secondary_api);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
-    egui_view_set_focusable(EGUI_VIEW_OF(&panel_compact), false);
+    egui_view_set_focusable(EGUI_VIEW_OF(&panel_secondary), false);
 #endif
-    egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&panel_compact));
+    egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&panel_secondary));
 
-    egui_view_card_panel_init(EGUI_VIEW_OF(&panel_read_only));
-    egui_view_set_size(EGUI_VIEW_OF(&panel_read_only), CARD_PANEL_PREVIEW_WIDTH, CARD_PANEL_PREVIEW_HEIGHT);
-    egui_view_set_margin(EGUI_VIEW_OF(&panel_read_only), 8, 0, 0, 0);
-    egui_view_card_panel_set_snapshots(EGUI_VIEW_OF(&panel_read_only), read_only_snapshots, 1);
-    egui_view_card_panel_set_font(EGUI_VIEW_OF(&panel_read_only), (const egui_font_t *)&egui_res_font_montserrat_8_4);
-    egui_view_card_panel_set_meta_font(EGUI_VIEW_OF(&panel_read_only), (const egui_font_t *)&egui_res_font_montserrat_8_4);
-    egui_view_card_panel_set_compact_mode(EGUI_VIEW_OF(&panel_read_only), 1);
-    egui_view_card_panel_set_read_only_mode(EGUI_VIEW_OF(&panel_read_only), 1);
-    egui_view_card_panel_set_palette(EGUI_VIEW_OF(&panel_read_only), EGUI_COLOR_HEX(0xFBFCFD), EGUI_COLOR_HEX(0xD8DFE6), EGUI_COLOR_HEX(0x233241),
+    egui_view_card_panel_init(EGUI_VIEW_OF(&panel_muted));
+    egui_view_set_size(EGUI_VIEW_OF(&panel_muted), CARD_PANEL_PREVIEW_WIDTH, CARD_PANEL_PREVIEW_HEIGHT);
+    egui_view_set_margin(EGUI_VIEW_OF(&panel_muted), 8, 0, 0, 0);
+    egui_view_card_panel_set_snapshots(EGUI_VIEW_OF(&panel_muted), muted_snapshots, 1);
+    egui_view_card_panel_set_font(EGUI_VIEW_OF(&panel_muted), (const egui_font_t *)&egui_res_font_montserrat_8_4);
+    egui_view_card_panel_set_meta_font(EGUI_VIEW_OF(&panel_muted), (const egui_font_t *)&egui_res_font_montserrat_8_4);
+    egui_view_card_panel_set_palette(EGUI_VIEW_OF(&panel_muted), EGUI_COLOR_HEX(0xFBFCFD), EGUI_COLOR_HEX(0xD8DFE6), EGUI_COLOR_HEX(0x233241),
                                      EGUI_COLOR_HEX(0x708091), EGUI_COLOR_HEX(0x98A5B2), EGUI_COLOR_HEX(0xA7B4BF), EGUI_COLOR_HEX(0xB8B0A2),
                                      EGUI_COLOR_HEX(0xB4BDC8));
-    egui_view_card_panel_override_static_preview_api(EGUI_VIEW_OF(&panel_read_only), &panel_read_only_api);
+    egui_view_set_enable(EGUI_VIEW_OF(&panel_muted), 0);
+    egui_view_card_panel_override_static_preview_api(EGUI_VIEW_OF(&panel_muted), &panel_muted_api);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
-    egui_view_set_focusable(EGUI_VIEW_OF(&panel_read_only), false);
+    egui_view_set_focusable(EGUI_VIEW_OF(&panel_muted), false);
 #endif
-    egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&panel_read_only));
+    egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&panel_muted));
 
     apply_primary_default_state();
     apply_preview_states();
@@ -275,4 +272,3 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     }
 }
 #endif
-

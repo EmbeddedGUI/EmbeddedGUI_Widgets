@@ -58,7 +58,6 @@ static void setup_preview_panel(void)
     egui_view_set_size(EGUI_VIEW_OF(&preview_panel), 104, 90);
     egui_view_card_panel_set_snapshots(EGUI_VIEW_OF(&preview_panel), g_snapshots, 4);
     egui_view_card_panel_set_current_snapshot(EGUI_VIEW_OF(&preview_panel), 1);
-    egui_view_card_panel_set_compact_mode(EGUI_VIEW_OF(&preview_panel), 1);
     egui_view_set_on_click_listener(EGUI_VIEW_OF(&preview_panel), on_panel_click);
     egui_view_card_panel_override_static_preview_api(EGUI_VIEW_OF(&preview_panel), &preview_api);
     reset_click_count();
@@ -220,15 +219,6 @@ static void test_card_panel_snapshot_and_setters_clear_pressed_state(void)
     EGUI_TEST_ASSERT_EQUAL_INT(warning.full, test_panel.warning_color.full);
     EGUI_TEST_ASSERT_EQUAL_INT(neutral.full, test_panel.neutral_color.full);
 
-    seed_pressed_state(EGUI_VIEW_OF(&test_panel), 1);
-    egui_view_card_panel_set_compact_mode(EGUI_VIEW_OF(&test_panel), 2);
-    assert_pressed_cleared(EGUI_VIEW_OF(&test_panel));
-    EGUI_TEST_ASSERT_EQUAL_INT(1, test_panel.compact_mode);
-
-    seed_pressed_state(EGUI_VIEW_OF(&test_panel), 1);
-    egui_view_card_panel_set_read_only_mode(EGUI_VIEW_OF(&test_panel), 3);
-    assert_pressed_cleared(EGUI_VIEW_OF(&test_panel));
-    EGUI_TEST_ASSERT_EQUAL_INT(1, test_panel.read_only_mode);
 }
 
 static void test_card_panel_touch_same_target_release_and_cancel_behavior(void)
@@ -274,56 +264,10 @@ static void test_card_panel_keyboard_click_listener(void)
     EGUI_TEST_ASSERT_EQUAL_INT(1, click_count);
 }
 
-static void test_card_panel_compact_mode_clears_pressed_and_keeps_click_behavior(void)
+static void test_card_panel_disabled_guards_clear_pressed_state(void)
 {
     egui_dim_t x;
     egui_dim_t y;
-
-    setup_panel();
-    layout_panel();
-    get_view_center(EGUI_VIEW_OF(&test_panel), &x, &y);
-
-    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
-    EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&test_panel)->is_pressed);
-
-    egui_view_card_panel_set_compact_mode(EGUI_VIEW_OF(&test_panel), 1);
-    EGUI_TEST_ASSERT_EQUAL_INT(1, test_panel.compact_mode);
-    assert_pressed_cleared(EGUI_VIEW_OF(&test_panel));
-
-    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
-    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, x, y));
-    EGUI_TEST_ASSERT_EQUAL_INT(1, click_count);
-}
-
-static void test_card_panel_read_only_and_disabled_guards_clear_pressed_state(void)
-{
-    egui_dim_t x;
-    egui_dim_t y;
-
-    setup_panel();
-    layout_panel();
-    get_view_center(EGUI_VIEW_OF(&test_panel), &x, &y);
-
-    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
-    EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&test_panel)->is_pressed);
-
-    egui_view_card_panel_set_read_only_mode(EGUI_VIEW_OF(&test_panel), 1);
-    EGUI_TEST_ASSERT_EQUAL_INT(1, test_panel.read_only_mode);
-    assert_pressed_cleared(EGUI_VIEW_OF(&test_panel));
-
-    seed_pressed_state(EGUI_VIEW_OF(&test_panel), 1);
-    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
-    assert_pressed_cleared(EGUI_VIEW_OF(&test_panel));
-
-    seed_pressed_state(EGUI_VIEW_OF(&test_panel), 1);
-    EGUI_TEST_ASSERT_FALSE(send_key(EGUI_KEY_CODE_ENTER));
-    assert_pressed_cleared(EGUI_VIEW_OF(&test_panel));
-    EGUI_TEST_ASSERT_EQUAL_INT(0, click_count);
-
-    egui_view_card_panel_set_read_only_mode(EGUI_VIEW_OF(&test_panel), 0);
-    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
-    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, x, y));
-    EGUI_TEST_ASSERT_EQUAL_INT(1, click_count);
 
     setup_panel();
     layout_panel();
@@ -355,7 +299,6 @@ static void test_card_panel_static_preview_consumes_input_and_keeps_snapshot(voi
 
     setup_preview_panel();
     EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_card_panel_get_current_snapshot(EGUI_VIEW_OF(&preview_panel)));
-    EGUI_TEST_ASSERT_EQUAL_INT(1, preview_panel.compact_mode);
     layout_preview_panel();
     get_view_center(EGUI_VIEW_OF(&preview_panel), &x, &y);
 
@@ -409,8 +352,7 @@ void test_card_panel_run(void)
     EGUI_TEST_RUN(test_card_panel_snapshot_and_setters_clear_pressed_state);
     EGUI_TEST_RUN(test_card_panel_touch_same_target_release_and_cancel_behavior);
     EGUI_TEST_RUN(test_card_panel_keyboard_click_listener);
-    EGUI_TEST_RUN(test_card_panel_compact_mode_clears_pressed_and_keeps_click_behavior);
-    EGUI_TEST_RUN(test_card_panel_read_only_and_disabled_guards_clear_pressed_state);
+    EGUI_TEST_RUN(test_card_panel_disabled_guards_clear_pressed_state);
     EGUI_TEST_RUN(test_card_panel_static_preview_consumes_input_and_keeps_snapshot);
     EGUI_TEST_RUN(test_card_panel_internal_helpers_cover_tone_text_and_pill_width);
     EGUI_TEST_SUITE_END();
