@@ -9,13 +9,13 @@
 #define EGUI_VIEW_PERSONA_GROUP_STANDARD_TITLE_HEIGHT  11
 #define EGUI_VIEW_PERSONA_GROUP_STANDARD_FOOTER_HEIGHT 11
 
-#define EGUI_VIEW_PERSONA_GROUP_COMPACT_PAD_X         6
-#define EGUI_VIEW_PERSONA_GROUP_COMPACT_PAD_Y         5
-#define EGUI_VIEW_PERSONA_GROUP_COMPACT_RADIUS        8
-#define EGUI_VIEW_PERSONA_GROUP_COMPACT_AVATAR_SIZE   15
-#define EGUI_VIEW_PERSONA_GROUP_COMPACT_AVATAR_STEP   12
-#define EGUI_VIEW_PERSONA_GROUP_COMPACT_TITLE_HEIGHT  9
-#define EGUI_VIEW_PERSONA_GROUP_COMPACT_FOOTER_HEIGHT 10
+#define EGUI_VIEW_PERSONA_GROUP_DENSE_PAD_X         6
+#define EGUI_VIEW_PERSONA_GROUP_DENSE_PAD_Y         5
+#define EGUI_VIEW_PERSONA_GROUP_DENSE_RADIUS        8
+#define EGUI_VIEW_PERSONA_GROUP_DENSE_AVATAR_SIZE   15
+#define EGUI_VIEW_PERSONA_GROUP_DENSE_AVATAR_STEP   12
+#define EGUI_VIEW_PERSONA_GROUP_DENSE_TITLE_HEIGHT  9
+#define EGUI_VIEW_PERSONA_GROUP_DENSE_FOOTER_HEIGHT 10
 
 typedef struct egui_view_persona_group_metrics egui_view_persona_group_metrics_t;
 struct egui_view_persona_group_metrics
@@ -29,6 +29,7 @@ struct egui_view_persona_group_metrics
     egui_region_t eyebrow_region;
     egui_region_t title_region;
     uint8_t bubble_count;
+    uint8_t dense_layout;
 };
 
 static const egui_color_t egui_view_persona_group_avatar_palette[] = {
@@ -211,27 +212,32 @@ static egui_dim_t egui_view_persona_group_get_eyebrow_height(egui_view_persona_g
     return eyebrow_h > EGUI_VIEW_PERSONA_GROUP_STANDARD_HEADER_HEIGHT ? eyebrow_h : EGUI_VIEW_PERSONA_GROUP_STANDARD_HEADER_HEIGHT;
 }
 
-static egui_dim_t egui_view_persona_group_get_title_height(egui_view_persona_group_t *local)
+static uint8_t egui_view_persona_group_should_use_dense_layout(const egui_region_t *work_region)
+{
+    return (uint8_t)(work_region->size.width <= 132 || work_region->size.height <= 90);
+}
+
+static egui_dim_t egui_view_persona_group_get_title_height(egui_view_persona_group_t *local, uint8_t dense_layout)
 {
     egui_dim_t title_h = egui_view_persona_group_measure_font_line_height(local->font);
-    egui_dim_t min_h = local->compact_mode ? EGUI_VIEW_PERSONA_GROUP_COMPACT_TITLE_HEIGHT : EGUI_VIEW_PERSONA_GROUP_STANDARD_TITLE_HEIGHT;
+    egui_dim_t min_h = dense_layout ? EGUI_VIEW_PERSONA_GROUP_DENSE_TITLE_HEIGHT : EGUI_VIEW_PERSONA_GROUP_STANDARD_TITLE_HEIGHT;
 
     return title_h > min_h ? title_h : min_h;
 }
 
-static egui_dim_t egui_view_persona_group_get_name_height(egui_view_persona_group_t *local)
+static egui_dim_t egui_view_persona_group_get_name_height(egui_view_persona_group_t *local, uint8_t dense_layout)
 {
     egui_dim_t name_h = egui_view_persona_group_measure_font_line_height(local->font);
-    egui_dim_t min_h = local->compact_mode ? 9 : 10;
+    egui_dim_t min_h = dense_layout ? 9 : 10;
 
     return name_h > min_h ? name_h : min_h;
 }
 
-static egui_dim_t egui_view_persona_group_get_role_height(egui_view_persona_group_t *local)
+static egui_dim_t egui_view_persona_group_get_role_height(egui_view_persona_group_t *local, uint8_t dense_layout)
 {
     egui_dim_t role_h;
 
-    if (local->compact_mode)
+    if (dense_layout)
     {
         return 0;
     }
@@ -240,10 +246,10 @@ static egui_dim_t egui_view_persona_group_get_role_height(egui_view_persona_grou
     return role_h > 8 ? role_h : 8;
 }
 
-static egui_dim_t egui_view_persona_group_get_footer_height(egui_view_persona_group_t *local)
+static egui_dim_t egui_view_persona_group_get_footer_height(egui_view_persona_group_t *local, uint8_t dense_layout)
 {
     egui_dim_t footer_h = egui_view_persona_group_measure_font_line_height(local->meta_font);
-    egui_dim_t min_h = local->compact_mode ? EGUI_VIEW_PERSONA_GROUP_COMPACT_FOOTER_HEIGHT : EGUI_VIEW_PERSONA_GROUP_STANDARD_FOOTER_HEIGHT;
+    egui_dim_t min_h = dense_layout ? EGUI_VIEW_PERSONA_GROUP_DENSE_FOOTER_HEIGHT : EGUI_VIEW_PERSONA_GROUP_STANDARD_FOOTER_HEIGHT;
 
     return footer_h > min_h ? footer_h : min_h;
 }
@@ -339,13 +345,15 @@ static void egui_view_persona_group_draw_text(const egui_font_t *font, egui_view
     egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, font, text, &draw_region, align, color, self->alpha);
 }
 
-static egui_dim_t egui_view_persona_group_footer_width(const egui_font_t *font, const char *text, uint8_t compact_mode, egui_dim_t max_width)
+static egui_dim_t egui_view_persona_group_footer_width(const egui_font_t *font, const char *text, uint8_t dense_layout, egui_dim_t max_width)
 {
-    egui_dim_t width = (compact_mode ? 18 : 24) + egui_view_persona_group_measure_text_width(font, text);
+    egui_dim_t min_width = dense_layout ? 18 : 24;
+    egui_dim_t fallback_char_width = dense_layout ? 4 : 5;
+    egui_dim_t width = min_width + egui_view_persona_group_measure_text_width(font, text);
 
-    if (width <= (compact_mode ? 18 : 24))
+    if (width <= min_width)
     {
-        width = (compact_mode ? 18 : 24) + egui_view_persona_group_text_len(text) * (compact_mode ? 4 : 5);
+        width = min_width + egui_view_persona_group_text_len(text) * fallback_char_width;
     }
     if (width > max_width)
     {
@@ -368,24 +376,38 @@ static void egui_view_persona_group_get_metrics(egui_view_persona_group_t *local
 {
     const egui_view_persona_group_snapshot_t *snapshot = egui_view_persona_group_get_snapshot(local);
     egui_region_t work_region;
-    egui_dim_t pad_x = local->compact_mode ? EGUI_VIEW_PERSONA_GROUP_COMPACT_PAD_X : EGUI_VIEW_PERSONA_GROUP_STANDARD_PAD_X;
-    egui_dim_t pad_y = local->compact_mode ? EGUI_VIEW_PERSONA_GROUP_COMPACT_PAD_Y : EGUI_VIEW_PERSONA_GROUP_STANDARD_PAD_Y;
-    egui_dim_t avatar_size = local->compact_mode ? EGUI_VIEW_PERSONA_GROUP_COMPACT_AVATAR_SIZE : EGUI_VIEW_PERSONA_GROUP_STANDARD_AVATAR_SIZE;
-    egui_dim_t avatar_step = local->compact_mode ? EGUI_VIEW_PERSONA_GROUP_COMPACT_AVATAR_STEP : EGUI_VIEW_PERSONA_GROUP_STANDARD_AVATAR_STEP;
+    uint8_t dense_layout;
+    egui_dim_t pad_x;
+    egui_dim_t pad_y;
+    egui_dim_t avatar_size;
+    egui_dim_t avatar_step;
     egui_dim_t bubble_count;
     egui_dim_t row_width;
     egui_dim_t start_x;
     egui_dim_t row_y;
-    egui_dim_t eyebrow_h = local->compact_mode ? 0 : egui_view_persona_group_get_eyebrow_height(local);
-    egui_dim_t title_h = egui_view_persona_group_get_title_height(local);
-    egui_dim_t name_h = egui_view_persona_group_get_name_height(local);
-    egui_dim_t role_h = egui_view_persona_group_get_role_height(local);
-    egui_dim_t footer_h = egui_view_persona_group_get_footer_height(local);
-    egui_dim_t overflow_size = avatar_size - (local->compact_mode ? 1 : 2);
+    egui_dim_t eyebrow_h;
+    egui_dim_t title_h;
+    egui_dim_t name_h;
+    egui_dim_t role_h;
+    egui_dim_t footer_h;
+    egui_dim_t overflow_size;
     uint8_t item_count = 0;
     uint8_t i;
 
     egui_view_get_work_region(self, &work_region);
+    dense_layout = egui_view_persona_group_should_use_dense_layout(&work_region);
+    pad_x = dense_layout ? EGUI_VIEW_PERSONA_GROUP_DENSE_PAD_X : EGUI_VIEW_PERSONA_GROUP_STANDARD_PAD_X;
+    pad_y = dense_layout ? EGUI_VIEW_PERSONA_GROUP_DENSE_PAD_Y : EGUI_VIEW_PERSONA_GROUP_STANDARD_PAD_Y;
+    avatar_size = dense_layout ? EGUI_VIEW_PERSONA_GROUP_DENSE_AVATAR_SIZE : EGUI_VIEW_PERSONA_GROUP_STANDARD_AVATAR_SIZE;
+    avatar_step = dense_layout ? EGUI_VIEW_PERSONA_GROUP_DENSE_AVATAR_STEP : EGUI_VIEW_PERSONA_GROUP_STANDARD_AVATAR_STEP;
+    eyebrow_h = dense_layout ? 0 : egui_view_persona_group_get_eyebrow_height(local);
+    title_h = egui_view_persona_group_get_title_height(local, dense_layout);
+    name_h = egui_view_persona_group_get_name_height(local, dense_layout);
+    role_h = egui_view_persona_group_get_role_height(local, dense_layout);
+    footer_h = egui_view_persona_group_get_footer_height(local, dense_layout);
+    overflow_size = avatar_size - (dense_layout ? 1 : 2);
+
+    metrics->dense_layout = dense_layout;
     metrics->content_region.location.x = work_region.location.x + pad_x;
     metrics->content_region.location.y = work_region.location.y + pad_y;
     metrics->content_region.size.width = work_region.size.width - pad_x * 2;
@@ -429,7 +451,7 @@ static void egui_view_persona_group_get_metrics(egui_view_persona_group_t *local
     metrics->eyebrow_region.size.height = eyebrow_h;
 
     metrics->title_region.location.x = metrics->content_region.location.x + 2;
-    metrics->title_region.location.y = local->compact_mode ? (metrics->content_region.location.y + 4) : (metrics->eyebrow_region.location.y + eyebrow_h + 3);
+    metrics->title_region.location.y = dense_layout ? (metrics->content_region.location.y + 4) : (metrics->eyebrow_region.location.y + eyebrow_h + 3);
     metrics->title_region.size.width = metrics->content_region.size.width - 4;
     metrics->title_region.size.height = title_h;
 
@@ -452,7 +474,7 @@ static void egui_view_persona_group_get_metrics(egui_view_persona_group_t *local
     }
 
     metrics->name_region.location.x = metrics->content_region.location.x + 4;
-    metrics->name_region.location.y = row_y + avatar_size + (local->compact_mode ? 5 : 7);
+    metrics->name_region.location.y = row_y + avatar_size + (dense_layout ? 5 : 7);
     metrics->name_region.size.width = metrics->content_region.size.width - 8;
     metrics->name_region.size.height = name_h;
 
@@ -642,22 +664,6 @@ void egui_view_persona_group_set_meta_font(egui_view_t *self, const egui_font_t 
     egui_view_invalidate(self);
 }
 
-void egui_view_persona_group_set_compact_mode(egui_view_t *self, uint8_t compact_mode)
-{
-    EGUI_LOCAL_INIT(egui_view_persona_group_t);
-    egui_view_persona_group_clear_pressed_state(self);
-    local->compact_mode = compact_mode ? 1 : 0;
-    egui_view_invalidate(self);
-}
-
-void egui_view_persona_group_set_read_only_mode(egui_view_t *self, uint8_t read_only_mode)
-{
-    EGUI_LOCAL_INIT(egui_view_persona_group_t);
-    egui_view_persona_group_clear_pressed_state(self);
-    local->read_only_mode = read_only_mode ? 1 : 0;
-    egui_view_invalidate(self);
-}
-
 void egui_view_persona_group_set_palette(egui_view_t *self, egui_color_t surface_color, egui_color_t border_color, egui_color_t section_color,
                                          egui_color_t text_color, egui_color_t muted_text_color, egui_color_t accent_color, egui_color_t success_color,
                                          egui_color_t warning_color, egui_color_t neutral_color)
@@ -695,13 +701,6 @@ static void egui_view_persona_group_draw_avatar(egui_view_t *self, egui_view_per
     if (pressed)
     {
         fill_color = egui_rgb_mix(fill_color, EGUI_COLOR_BLACK, 10);
-    }
-    if (local->read_only_mode)
-    {
-        fill_color = egui_rgb_mix(fill_color, local->surface_color, 44);
-        ring_color = egui_rgb_mix(ring_color, local->muted_text_color, 78);
-        text_color = egui_rgb_mix(text_color, local->muted_text_color, 56);
-        presence_color = egui_rgb_mix(presence_color, local->muted_text_color, 76);
     }
     if (!egui_view_get_enable(self))
     {
@@ -750,12 +749,6 @@ static void egui_view_persona_group_draw_overflow(egui_view_t *self, egui_view_p
     text[1] = (char)('0' + overflow_count);
     text[2] = '\0';
 
-    if (local->read_only_mode)
-    {
-        fill_color = egui_rgb_mix(fill_color, local->surface_color, 32);
-        border_color = egui_rgb_mix(border_color, local->muted_text_color, 52);
-        text_color = egui_rgb_mix(text_color, local->muted_text_color, 54);
-    }
     if (!egui_view_get_enable(self))
     {
         fill_color = egui_view_persona_group_mix_disabled(fill_color);
@@ -794,7 +787,7 @@ static void egui_view_persona_group_on_draw(egui_view_t *self)
     egui_color_t footer_border;
     egui_color_t footer_text;
     egui_dim_t footer_w;
-    egui_dim_t card_radius = local->compact_mode ? EGUI_VIEW_PERSONA_GROUP_COMPACT_RADIUS : EGUI_VIEW_PERSONA_GROUP_STANDARD_RADIUS;
+    egui_dim_t card_radius;
     uint8_t item_count;
     uint8_t i;
 
@@ -810,26 +803,15 @@ static void egui_view_persona_group_on_draw(egui_view_t *self)
     }
 
     item_count = egui_view_persona_group_clamp_item_count(snapshot->item_count);
-    card_fill = egui_rgb_mix(local->surface_color, local->section_color, local->compact_mode ? 4 : 6);
-    card_border = egui_rgb_mix(local->border_color, local->section_color, local->compact_mode ? 14 : 18);
-    eyebrow_color = egui_rgb_mix(local->muted_text_color, local->accent_color, local->compact_mode ? 14 : 18);
+    card_radius = metrics.dense_layout ? EGUI_VIEW_PERSONA_GROUP_DENSE_RADIUS : EGUI_VIEW_PERSONA_GROUP_STANDARD_RADIUS;
+    card_fill = egui_rgb_mix(local->surface_color, local->section_color, metrics.dense_layout ? 4 : 6);
+    card_border = egui_rgb_mix(local->border_color, local->section_color, metrics.dense_layout ? 14 : 18);
+    eyebrow_color = egui_rgb_mix(local->muted_text_color, local->accent_color, metrics.dense_layout ? 14 : 18);
     title_color = local->text_color;
     role_color = local->muted_text_color;
-    footer_fill = egui_rgb_mix(local->surface_color, local->accent_color, local->compact_mode ? 4 : 6);
-    footer_border = egui_rgb_mix(local->border_color, local->accent_color, local->compact_mode ? 6 : 8);
-    footer_text = egui_rgb_mix(local->muted_text_color, local->accent_color, local->compact_mode ? 12 : 16);
-
-    if (local->read_only_mode)
-    {
-        card_fill = egui_rgb_mix(card_fill, local->surface_color, 28);
-        card_border = egui_rgb_mix(card_border, local->muted_text_color, 44);
-        eyebrow_color = egui_rgb_mix(eyebrow_color, local->muted_text_color, 56);
-        title_color = egui_rgb_mix(title_color, local->muted_text_color, 34);
-        role_color = egui_rgb_mix(role_color, local->muted_text_color, 32);
-        footer_fill = egui_rgb_mix(footer_fill, local->surface_color, 36);
-        footer_border = egui_rgb_mix(footer_border, local->muted_text_color, 60);
-        footer_text = egui_rgb_mix(footer_text, local->muted_text_color, 74);
-    }
+    footer_fill = egui_rgb_mix(local->surface_color, local->accent_color, metrics.dense_layout ? 4 : 6);
+    footer_border = egui_rgb_mix(local->border_color, local->accent_color, metrics.dense_layout ? 6 : 8);
+    footer_text = egui_rgb_mix(local->muted_text_color, local->accent_color, metrics.dense_layout ? 12 : 16);
     if (!egui_view_get_enable(self))
     {
         card_fill = egui_view_persona_group_mix_disabled(card_fill);
@@ -847,12 +829,13 @@ static void egui_view_persona_group_on_draw(egui_view_t *self)
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics.content_region.location.x - 2, metrics.content_region.location.y - 2, metrics.content_region.size.width + 4,
                                      metrics.content_region.size.height + 4, card_radius, 1, card_border, egui_color_alpha_mix(self->alpha, 34));
 
-    if (!local->compact_mode)
+    if (!metrics.dense_layout)
     {
         egui_view_persona_group_fit_text_to_width(local->meta_font, snapshot->eyebrow, eyebrow_label, sizeof(eyebrow_label), metrics.eyebrow_region.size.width, 4);
         egui_view_persona_group_draw_text(local->meta_font, self, eyebrow_label, &metrics.eyebrow_region, EGUI_ALIGN_CENTER, eyebrow_color);
     }
-    egui_view_persona_group_fit_text_to_width(local->font, snapshot->title, title_label, sizeof(title_label), metrics.title_region.size.width, local->compact_mode ? 4 : 5);
+    egui_view_persona_group_fit_text_to_width(local->font, snapshot->title, title_label, sizeof(title_label), metrics.title_region.size.width,
+                                              metrics.dense_layout ? 4 : 5);
     egui_view_persona_group_draw_text(local->font, self, title_label, &metrics.title_region, EGUI_ALIGN_CENTER, title_color);
 
     if (snapshot->overflow_count > 0)
@@ -875,16 +858,17 @@ static void egui_view_persona_group_on_draw(egui_view_t *self)
                                             (uint8_t)(self->is_pressed && local->current_index == local->pressed_index));
     }
 
-    egui_view_persona_group_fit_text_to_width(local->font, item->name, name_label, sizeof(name_label), metrics.name_region.size.width, local->compact_mode ? 4 : 5);
+    egui_view_persona_group_fit_text_to_width(local->font, item->name, name_label, sizeof(name_label), metrics.name_region.size.width,
+                                              metrics.dense_layout ? 4 : 5);
     egui_view_persona_group_draw_text(local->font, self, name_label, &metrics.name_region, EGUI_ALIGN_CENTER, title_color);
 
-    if (!local->compact_mode)
+    if (!metrics.dense_layout)
     {
         egui_view_persona_group_fit_text_to_width(local->meta_font, item->role, role_label, sizeof(role_label), metrics.role_region.size.width, 4);
         egui_view_persona_group_draw_text(local->meta_font, self, role_label, &metrics.role_region, EGUI_ALIGN_CENTER, role_color);
     }
 
-    footer_w = egui_view_persona_group_footer_width(local->meta_font, snapshot->summary, local->compact_mode, metrics.footer_region.size.width);
+    footer_w = egui_view_persona_group_footer_width(local->meta_font, snapshot->summary, metrics.dense_layout, metrics.footer_region.size.width);
     text_region = metrics.footer_region;
     text_region.location.x = metrics.content_region.location.x + (metrics.content_region.size.width - footer_w) / 2;
     text_region.size.width = footer_w;
@@ -893,7 +877,7 @@ static void egui_view_persona_group_on_draw(egui_view_t *self)
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, text_region.location.x, text_region.location.y, text_region.size.width, text_region.size.height,
                                      text_region.size.height / 2, 1, footer_border, egui_color_alpha_mix(self->alpha, 20));
     egui_view_persona_group_fit_text_to_width(local->meta_font, snapshot->summary, summary_label, sizeof(summary_label), text_region.size.width - 4,
-                                              local->compact_mode ? 4 : 5);
+                                              metrics.dense_layout ? 4 : 5);
     egui_view_persona_group_draw_text(local->meta_font, self, summary_label, &text_region, EGUI_ALIGN_CENTER, footer_text);
 }
 #if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
@@ -904,7 +888,7 @@ static int egui_view_persona_group_on_touch_event(egui_view_t *self, egui_motion
     uint8_t hit_index;
     uint8_t same_target;
 
-    if (snapshot == NULL || !egui_view_get_enable(self) || local->read_only_mode)
+    if (snapshot == NULL || !egui_view_get_enable(self))
     {
         egui_view_persona_group_clear_pressed_state(self);
         return 0;
@@ -983,7 +967,7 @@ static int egui_view_persona_group_on_key_event(egui_view_t *self, egui_key_even
     uint8_t item_count = snapshot == NULL ? 0 : egui_view_persona_group_clamp_item_count(snapshot->item_count);
     uint8_t next_index;
 
-    if (snapshot == NULL || !egui_view_get_enable(self) || local->read_only_mode)
+    if (snapshot == NULL || !egui_view_get_enable(self))
     {
         egui_view_persona_group_clear_pressed_state(self);
         return 0;
@@ -1100,8 +1084,6 @@ void egui_view_persona_group_init(egui_view_t *self)
     local->snapshot_count = 0;
     local->current_snapshot = 0;
     local->current_index = 0;
-    local->compact_mode = 0;
-    local->read_only_mode = 0;
     local->pressed_index = EGUI_VIEW_PERSONA_GROUP_MAX_ITEMS;
 
     egui_view_set_view_name(self, "egui_view_persona_group");

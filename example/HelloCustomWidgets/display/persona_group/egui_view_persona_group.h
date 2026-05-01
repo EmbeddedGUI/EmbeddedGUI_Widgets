@@ -66,8 +66,6 @@ struct egui_view_persona_group
     uint8_t snapshot_count;
     uint8_t current_snapshot;
     uint8_t current_index;
-    uint8_t compact_mode;
-    uint8_t read_only_mode;
     uint8_t pressed_index;
 };
 
@@ -80,8 +78,6 @@ uint8_t egui_view_persona_group_get_current_index(egui_view_t *self);
 void egui_view_persona_group_set_on_focus_changed_listener(egui_view_t *self, egui_view_on_persona_group_focus_changed_listener_t listener);
 void egui_view_persona_group_set_font(egui_view_t *self, const egui_font_t *font);
 void egui_view_persona_group_set_meta_font(egui_view_t *self, const egui_font_t *font);
-void egui_view_persona_group_set_compact_mode(egui_view_t *self, uint8_t compact_mode);
-void egui_view_persona_group_set_read_only_mode(egui_view_t *self, uint8_t read_only_mode);
 void egui_view_persona_group_set_palette(egui_view_t *self, egui_color_t surface_color, egui_color_t border_color, egui_color_t section_color,
                                          egui_color_t text_color, egui_color_t muted_text_color, egui_color_t accent_color, egui_color_t success_color,
                                          egui_color_t warning_color, egui_color_t neutral_color);

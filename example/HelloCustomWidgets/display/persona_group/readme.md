@@ -5,8 +5,8 @@
 - 平台语义参考：`WinUI AvatarGroup`
 - 补充对照实现：`ModernWpf`
 - 对应组件：`AvatarGroup`
-- 当前保留语义：`standard`、`compact`、`read only`、`accent`、`success`、`warning`、`neutral`、`live`、`busy`、`away`、`idle`
-- 当前保留交互：主区保留程序化 snapshot 切换，底部 `compact / read only` 统一收口为静态 preview
+- 当前保留语义：`standard`、`secondary`、`muted`、`accent`、`success`、`warning`、`neutral`、`live`、`busy`、`away`、`idle`
+- 当前保留交互：主区保留程序化 snapshot 切换，底部 `secondary / muted` 统一收口为静态 preview
 - 当前移除内容：旧 `preview` 轮换、preview 点击桥接清主区焦点、额外收尾帧、页面级 `guide / status` 文案、旧双列预览包裹层
 - EGUI 适配说明：继续复用当前目录下的 `egui_view_persona_group` custom view，在不修改 `sdk/EmbeddedGUI` 的前提下，把 `reference` 页面统一收口到主区三态 snapshots 加底部双静态 preview
 
@@ -23,8 +23,8 @@
 - 标题：`Persona Group`
 - 主区：一个标准 `persona_group`
 - 底部：一行并排的两个静态 preview
-- 左侧 preview：`compact`
-- 右侧 preview：`read only`
+- 左侧 preview：`secondary`
+- 右侧 preview：`muted`
 
 目录：
 - `example/HelloCustomWidgets/display/persona_group/`
@@ -50,12 +50,12 @@
 
 底部 preview 在整条录制轨道中始终固定：
 
-1. `compact`
-   - title：`Compact`
+1. `secondary`
+   - title：`Small`
    - summary：`Short roster`
    - 成员：`LM Lena Lead`、`AR Arun Ops`、`MY Maya QA`
-2. `read only`
-   - title：`Read only`
+2. `muted`
+   - title：`Muted`
    - summary：`Muted roster`
    - 成员：`MB Mina Archive owner`、`KO Kora Retention QA`、`YU Yuri Restore desk`
 
@@ -66,13 +66,13 @@
 - 主 `persona_group`：`196 x 114`
 - 底部 preview 行：`216 x 76`
 - 单个 preview：`104 x 76`
-- 页面结构：标题 -> 主 `persona_group` -> 底部 `compact / read only`
+- 页面结构：标题 -> 主 `persona_group` -> 底部 `secondary / muted`
 - 风格约束：浅色 page panel、低噪音边框、保留头像重叠与 presence dot，但不回退到旧 showcase 风格的高对比说明页
 
 ## 6. 状态矩阵
-| 状态 / 区域 | 主控件 | Compact preview | Read only preview |
+| 状态 / 区域 | 主控件 | Secondary preview | Muted preview |
 | --- | --- | --- | --- |
-| 默认显示 | `DESIGN / Design review / Design team` | `Compact / Short roster` | `Read only / Muted roster` |
+| 默认显示 | `DESIGN / Design review / Design team` | `Small / Short roster` | `Muted / Muted roster` |
 | 快照 2 | `OPS / Ops handoff / Shift lead` | 保持不变 | 保持不变 |
 | 快照 3 | `ARCHIVE / Archive sweep / Restore desk` | 保持不变 | 保持不变 |
 | 录制最终稳定帧 | `DESIGN / Design review / Design team` | 保持不变 | 保持不变 |
@@ -91,7 +91,7 @@
 8. 抓取最终稳定帧
 
 说明：
-- 录制阶段不再轮换 `compact` preview。
+- 录制阶段不再轮换底部 preview。
 - 不再通过 preview 点击桥接去清主区焦点。
 - 录制阶段最终会显式恢复主区默认态，并走统一布局重放路径。
 - `request_page_snapshot()` 会统一做 `layout + invalidate + recording_request_snapshot()`，保证 3 组主区快照和最终稳定帧口径一致。
@@ -105,7 +105,7 @@
 2. snapshot 与 setter 更新后的 `pressed` 清理
 3. metrics、命中测试与 helper
 4. `same-target release`、`ACTION_CANCEL` 与 touch 行为
-5. `read only / disabled` guard 清理残留 `pressed`
+5. disabled guard 清理残留 `pressed`
 6. 键盘导航与边界守卫
 7. 静态 preview `consumes input and keeps state`
 
@@ -130,8 +130,6 @@
 - `snapshot_count`
 - `current_snapshot`
 - `current_index`
-- `compact_mode`
-- `read_only_mode`
 - `pressed_index`
 - `alpha`
 - `enable`
@@ -162,19 +160,16 @@ python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub displa
 python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_display_persona_group
 ```
 
-## 10. 当前验收结果（2026-04-18）
-- `HelloCustomWidgets` 单控件编译：已通过 `make all APP=HelloCustomWidgets APP_SUB=display/persona_group PORT=pc`
-- `HelloUnitTest`：已在 `X:\` 短路径通过 `make clean APP=HelloUnitTest PORT=pc_test`、`make all APP=HelloUnitTest PORT=pc_test` 和 `X:\output\main.exe`，总计 `845 / 845`，其中 `persona_group` suite `7 / 7`
-- `sync_widget_catalog.py`：已通过，本轮无额外目录变化
-- `touch release semantics`：已通过，结果 `custom_audited=21 custom_skipped_allowlist=0`
-- `docs encoding`：已通过，结果 `134 files`
-- `widget catalog check`：已通过，结果 `106 widgets: reference=106, showcase=0, deprecated=0`
-- 单控件 runtime：已通过 `python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub display/persona_group --track reference --timeout 10 --keep-screenshots`，输出 `9 frames captured -> D:\workspace\gitee\EmbeddedGUI_Widgets\runtime_check_output\HelloCustomWidgets_display_persona_group\default`
-- display 分类 compile/runtime 回归：已通过
-  compile `21 / 21`
-  runtime `21 / 21`
-- wasm 构建：已通过 `python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub display/persona_group`，输出 `web/demos/HelloCustomWidgets_display_persona_group`
-- web smoke：已通过 `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_display_persona_group`，结果 `PASS status=Running canvas=480x480 ratio=0.1754 colors=400`
+## 10. 当前验收结果（2026-05-01）
+- `HelloCustomWidgets` 单控件编译：已通过 `make all APP=HelloCustomWidgets APP_SUB=display/persona_group PORT=pc COMPILE_DEBUG= COMPILE_OPT_LEVEL=-O0`
+- `HelloUnitTest`：已通过 `make clean APP=HelloUnitTest PORT=pc_test COMPILE_DEBUG= COMPILE_OPT_LEVEL=-O0`、`make all APP=HelloUnitTest PORT=pc_test COMPILE_DEBUG= COMPILE_OPT_LEVEL=-O0` 和 `.\output\main.exe`，总计 `1049 / 1049`，其中 `persona_group` suite `7 / 7`
+- `sync_widget_catalog.py --check`：已通过，结果 `141 entries`
+- `touch release semantics`：已通过，结果 `custom_audited=32 custom_skipped_allowlist=0 core_audited=0 core_skipped_allowlist=0`
+- `docs encoding`：已通过，结果 `172 files`
+- `widget catalog check`：已通过，结果 `141 widgets: reference=141, showcase=0, deprecated=0`
+- 单控件 runtime：已通过 `python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub display/persona_group --timeout 10 --keep-screenshots`，输出 `9 frames captured -> D:\workspace\gitee\EmbeddedGUI_Widgets\runtime_check_output\HelloCustomWidgets_display_persona_group\default`
+- wasm 构建：已通过 `make all APP=HelloCustomWidgets APP_SUB=display/persona_group PORT=emscripten COMPILE_DEBUG= COMPILE_OPT_LEVEL=-O0`
+- `git diff --check`：已通过，只有 Windows 工作区 LF/CRLF 提示
 
 ## 11. Runtime 复核结论
 复核目录：
@@ -195,13 +190,13 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
 结论：
 - 主区变化严格收敛在 `persona_group` 主体，主区外页面 chrome 在整条轨道中保持静态。
 - `9` 帧里主区保持 `3` 组唯一状态：`[0,1,6,7,8]` 对应默认 `DESIGN / Design review / Design team`，`[2,3]` 对应 `OPS / Ops handoff / Shift lead`，`[4,5]` 对应 `ARCHIVE / Archive sweep / Restore desk`；最终稳定帧已显式回到默认态。
-- 按 `y >= 258` 裁剪底部 preview 区域后保持单哈希，确认 `compact / read only` preview 在整条录制轨道中始终静态一致。
+- 按 `y >= 258` 裁剪底部 preview 区域后保持单哈希，确认 `secondary / muted` preview 在整条录制轨道中始终静态一致。
 
 ## 12. 已知限制
 - 当前仍使用固定 `snapshot + item` 数据，不接真实头像资源和外部团队数据模型。
 - 当前不扩展 hover、focus ring、成员详情弹层和真实 overflow 展开面板。
 - `+n` overflow 仍是静态摘要气泡，不承接更多成员列表弹出层。
-- 底部 `compact / read only` preview 只承担静态 reference 对照，不承载额外交互职责。
+- 底部 `secondary / muted` preview 只承担静态 reference 对照，不承载额外交互职责。
 
 ## 13. 与现有控件的边界
 - 相比 `persona`：这里表达的是成员组关系，不是单人卡片。

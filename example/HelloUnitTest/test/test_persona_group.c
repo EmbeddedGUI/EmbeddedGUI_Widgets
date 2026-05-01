@@ -30,8 +30,6 @@ struct persona_group_preview_snapshot
     uint8_t snapshot_count;
     uint8_t current_snapshot;
     uint8_t current_index;
-    uint8_t compact_mode;
-    uint8_t read_only_mode;
     uint8_t pressed_index;
     egui_alpha_t alpha;
     uint8_t enable;
@@ -92,7 +90,7 @@ static const egui_view_persona_group_item_t g_preview_items[] = {
 };
 
 static const egui_view_persona_group_snapshot_t g_preview_snapshots[] = {
-        {"", "Compact", "Short roster", g_preview_items, 3, 0, 1},
+        {"", "Small", "Short roster", g_preview_items, 3, 0, 1},
 };
 
 static void assert_region_equal(const egui_region_t *expected, const egui_region_t *actual)
@@ -136,7 +134,6 @@ static void setup_preview_group(void)
     egui_view_persona_group_set_snapshots(EGUI_VIEW_OF(&preview_group), g_preview_snapshots, 1);
     egui_view_persona_group_set_current_snapshot(EGUI_VIEW_OF(&preview_group), 0);
     egui_view_persona_group_set_current_index(EGUI_VIEW_OF(&preview_group), 0);
-    egui_view_persona_group_set_compact_mode(EGUI_VIEW_OF(&preview_group), 1);
     egui_view_persona_group_set_font(EGUI_VIEW_OF(&preview_group), (const egui_font_t *)&egui_res_font_montserrat_8_4);
     egui_view_persona_group_set_meta_font(EGUI_VIEW_OF(&preview_group), (const egui_font_t *)&egui_res_font_montserrat_8_4);
     egui_view_persona_group_set_palette(EGUI_VIEW_OF(&preview_group), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD2DBE3), EGUI_COLOR_HEX(0xEEF3F7),
@@ -278,8 +275,6 @@ static void capture_preview_snapshot(persona_group_preview_snapshot_t *snapshot)
     snapshot->snapshot_count = preview_group.snapshot_count;
     snapshot->current_snapshot = preview_group.current_snapshot;
     snapshot->current_index = preview_group.current_index;
-    snapshot->compact_mode = preview_group.compact_mode;
-    snapshot->read_only_mode = preview_group.read_only_mode;
     snapshot->pressed_index = preview_group.pressed_index;
     snapshot->alpha = EGUI_VIEW_OF(&preview_group)->alpha;
     snapshot->enable = (uint8_t)egui_view_get_enable(EGUI_VIEW_OF(&preview_group));
@@ -312,8 +307,6 @@ static void assert_preview_state_unchanged(const persona_group_preview_snapshot_
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->snapshot_count, preview_group.snapshot_count);
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->current_snapshot, preview_group.current_snapshot);
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->current_index, preview_group.current_index);
-    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->compact_mode, preview_group.compact_mode);
-    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->read_only_mode, preview_group.read_only_mode);
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->pressed_index, preview_group.pressed_index);
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->alpha, EGUI_VIEW_OF(&preview_group)->alpha);
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->enable, egui_view_get_enable(EGUI_VIEW_OF(&preview_group)));
@@ -432,16 +425,6 @@ static void test_persona_group_snapshot_and_setters_clear_pressed_state(void)
     EGUI_TEST_ASSERT_EQUAL_INT(warning.full, test_group.warning_color.full);
     EGUI_TEST_ASSERT_EQUAL_INT(neutral.full, test_group.neutral_color.full);
     assert_pressed_cleared(&test_group, EGUI_VIEW_OF(&test_group));
-
-    seed_pressed_state(&test_group, EGUI_VIEW_OF(&test_group), 1, 1);
-    egui_view_persona_group_set_compact_mode(EGUI_VIEW_OF(&test_group), 2);
-    EGUI_TEST_ASSERT_EQUAL_INT(1, test_group.compact_mode);
-    assert_pressed_cleared(&test_group, EGUI_VIEW_OF(&test_group));
-
-    seed_pressed_state(&test_group, EGUI_VIEW_OF(&test_group), 1, 1);
-    egui_view_persona_group_set_read_only_mode(EGUI_VIEW_OF(&test_group), 3);
-    EGUI_TEST_ASSERT_EQUAL_INT(1, test_group.read_only_mode);
-    assert_pressed_cleared(&test_group, EGUI_VIEW_OF(&test_group));
 }
 
 static void test_persona_group_metrics_hit_testing_and_helpers(void)
@@ -511,12 +494,11 @@ static void test_persona_group_metrics_hit_testing_and_helpers(void)
                                egui_view_persona_group_hit_index(&test_group, EGUI_VIEW_OF(&test_group), metrics.content_region.location.x,
                                                                  metrics.content_region.location.y));
 
-    egui_view_persona_group_set_compact_mode(EGUI_VIEW_OF(&test_group), 1);
     egui_view_set_size(EGUI_VIEW_OF(&test_group), 106, 76);
     layout_view(EGUI_VIEW_OF(&test_group), 10, 20, 106, 76);
     get_group_metrics(&test_group, EGUI_VIEW_OF(&test_group), &metrics);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_PERSONA_GROUP_COMPACT_TITLE_HEIGHT, metrics.title_region.size.height);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_PERSONA_GROUP_COMPACT_FOOTER_HEIGHT, metrics.footer_region.size.height);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_PERSONA_GROUP_DENSE_TITLE_HEIGHT, metrics.title_region.size.height);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_PERSONA_GROUP_DENSE_FOOTER_HEIGHT, metrics.footer_region.size.height);
     EGUI_TEST_ASSERT_EQUAL_INT(0, metrics.role_region.size.height);
 }
 
@@ -568,7 +550,7 @@ static void test_persona_group_touch_same_target_release_and_cancel_behavior(voi
     EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_CANCEL, x2, y2));
 }
 
-static void test_persona_group_read_only_and_disabled_guards_clear_pressed_state(void)
+static void test_persona_group_disabled_guards_clear_pressed_state(void)
 {
     egui_dim_t x1;
     egui_dim_t y1;
@@ -583,26 +565,6 @@ static void test_persona_group_read_only_and_disabled_guards_clear_pressed_state
     EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x1, y1));
     EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&test_group)->is_pressed);
 
-    egui_view_persona_group_set_read_only_mode(EGUI_VIEW_OF(&test_group), 1);
-    EGUI_TEST_ASSERT_EQUAL_INT(1, test_group.read_only_mode);
-    assert_pressed_cleared(&test_group, EGUI_VIEW_OF(&test_group));
-
-    seed_pressed_state(&test_group, EGUI_VIEW_OF(&test_group), 1, 1);
-    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x1, y1));
-    assert_pressed_cleared(&test_group, EGUI_VIEW_OF(&test_group));
-
-    seed_pressed_state(&test_group, EGUI_VIEW_OF(&test_group), 1, 1);
-    EGUI_TEST_ASSERT_FALSE(send_key(EGUI_KEY_CODE_RIGHT));
-    assert_pressed_cleared(&test_group, EGUI_VIEW_OF(&test_group));
-    EGUI_TEST_ASSERT_EQUAL_INT(0, changed_count);
-
-    egui_view_persona_group_set_read_only_mode(EGUI_VIEW_OF(&test_group), 0);
-    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x1, y1));
-    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, x1, y1));
-    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_persona_group_get_current_index(EGUI_VIEW_OF(&test_group)));
-    EGUI_TEST_ASSERT_EQUAL_INT(1, changed_count);
-
-    seed_pressed_state(&test_group, EGUI_VIEW_OF(&test_group), 2, 1);
     egui_view_set_enable(EGUI_VIEW_OF(&test_group), 0);
     EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x2, y2));
     assert_pressed_cleared(&test_group, EGUI_VIEW_OF(&test_group));
@@ -611,13 +573,13 @@ static void test_persona_group_read_only_and_disabled_guards_clear_pressed_state
     EGUI_TEST_ASSERT_FALSE(send_key(EGUI_KEY_CODE_RIGHT));
     assert_pressed_cleared(&test_group, EGUI_VIEW_OF(&test_group));
     EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, x2, y2));
-    EGUI_TEST_ASSERT_EQUAL_INT(1, changed_count);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, changed_count);
 
     egui_view_set_enable(EGUI_VIEW_OF(&test_group), 1);
     EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x2, y2));
     EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, x2, y2));
     EGUI_TEST_ASSERT_EQUAL_INT(2, egui_view_persona_group_get_current_index(EGUI_VIEW_OF(&test_group)));
-    EGUI_TEST_ASSERT_EQUAL_INT(2, changed_count);
+    EGUI_TEST_ASSERT_EQUAL_INT(1, changed_count);
 }
 
 static void test_persona_group_keyboard_navigation_and_guards(void)
@@ -682,7 +644,7 @@ void test_persona_group_run(void)
     EGUI_TEST_RUN(test_persona_group_snapshot_and_setters_clear_pressed_state);
     EGUI_TEST_RUN(test_persona_group_metrics_hit_testing_and_helpers);
     EGUI_TEST_RUN(test_persona_group_touch_same_target_release_and_cancel_behavior);
-    EGUI_TEST_RUN(test_persona_group_read_only_and_disabled_guards_clear_pressed_state);
+    EGUI_TEST_RUN(test_persona_group_disabled_guards_clear_pressed_state);
     EGUI_TEST_RUN(test_persona_group_keyboard_navigation_and_guards);
     EGUI_TEST_RUN(test_persona_group_static_preview_consumes_input_and_keeps_state);
     EGUI_TEST_SUITE_END();
