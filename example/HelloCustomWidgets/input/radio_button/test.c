@@ -47,14 +47,14 @@ static egui_view_radio_button_t primary_buttons[3];
 static egui_view_radio_group_t primary_group;
 static egui_view_api_t primary_button_api[3];
 static egui_view_linearlayout_t bottom_row;
-static egui_view_linearlayout_t compact_column;
-static egui_view_radio_button_t compact_buttons[2];
-static egui_view_radio_group_t compact_group;
-static egui_view_api_t compact_button_api[2];
-static egui_view_linearlayout_t read_only_column;
-static egui_view_radio_button_t read_only_buttons[2];
-static egui_view_radio_group_t read_only_group;
-static egui_view_api_t read_only_button_api[2];
+static egui_view_linearlayout_t secondary_column;
+static egui_view_radio_button_t secondary_buttons[2];
+static egui_view_radio_group_t secondary_group;
+static egui_view_api_t secondary_button_api[2];
+static egui_view_linearlayout_t disabled_column;
+static egui_view_radio_button_t disabled_buttons[2];
+static egui_view_radio_group_t disabled_group;
+static egui_view_api_t disabled_button_api[2];
 static uint8_t ui_ready;
 
 EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
@@ -69,11 +69,11 @@ static const primary_radio_snapshot_t primary_snapshots[] = {
         {{"Daily", "Weekly", "Monthly"}, 2},
 };
 
-static const preview_radio_snapshot_t compact_snapshot = {
+static const preview_radio_snapshot_t secondary_snapshot = {
         {"Auto", "Manual"}, 0,
 };
 
-static const preview_radio_snapshot_t read_only_snapshot = {
+static const preview_radio_snapshot_t disabled_snapshot = {
         {"Desktop", "Tablet"}, 1,
 };
 
@@ -115,21 +115,37 @@ static void apply_primary_default_state(void)
 
 static void apply_preview_states(void)
 {
-    apply_snapshot_to_group(compact_buttons, EGUI_ARRAY_SIZE(compact_buttons), compact_snapshot.texts, compact_snapshot.selected_index);
-    apply_snapshot_to_group(read_only_buttons, EGUI_ARRAY_SIZE(read_only_buttons), read_only_snapshot.texts, read_only_snapshot.selected_index);
+    apply_snapshot_to_group(secondary_buttons, EGUI_ARRAY_SIZE(secondary_buttons), secondary_snapshot.texts, secondary_snapshot.selected_index);
+    apply_snapshot_to_group(disabled_buttons, EGUI_ARRAY_SIZE(disabled_buttons), disabled_snapshot.texts, disabled_snapshot.selected_index);
     if (ui_ready)
     {
         layout_page();
     }
 }
 
-static void init_radio_button(egui_view_radio_button_t *button, egui_view_api_t *api, egui_dim_t width, egui_dim_t height, const egui_font_t *font,
-                              void (*apply_style)(egui_view_t *), uint8_t is_focusable, uint8_t is_static_preview)
+static void apply_secondary_preview_palette(egui_view_radio_button_t *button)
+{
+    button->circle_color = EGUI_COLOR_HEX(0xC7D8CE);
+    button->dot_color = EGUI_COLOR_HEX(0x0C7C73);
+    button->text_color = EGUI_COLOR_HEX(0x21303F);
+    button->text_gap = 6;
+}
+
+static void apply_disabled_preview_palette(egui_view_radio_button_t *button)
+{
+    button->circle_color = EGUI_COLOR_HEX(0xD8E0E8);
+    button->dot_color = EGUI_COLOR_HEX(0xAFB8C3);
+    button->text_color = EGUI_COLOR_HEX(0x546474);
+    button->text_gap = 6;
+}
+
+static void init_radio_button(egui_view_radio_button_t *button, egui_view_api_t *api, egui_dim_t width, egui_dim_t height, const egui_font_t *font, uint8_t is_focusable,
+                              uint8_t is_static_preview)
 {
     egui_view_radio_button_init(EGUI_VIEW_OF(button), uicode_get_core());
     egui_view_set_size(EGUI_VIEW_OF(button), width, height);
     hcw_radio_button_set_font(EGUI_VIEW_OF(button), font);
-    apply_style(EGUI_VIEW_OF(button));
+    hcw_radio_button_apply_standard_style(EGUI_VIEW_OF(button));
     if (is_static_preview)
     {
         hcw_radio_button_override_static_preview_api(EGUI_VIEW_OF(button), api);
@@ -148,8 +164,8 @@ static void init_radio_button(egui_view_radio_button_t *button, egui_view_api_t 
 static void layout_local_views(void)
 {
     egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&primary_column));
-    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&compact_column));
-    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&read_only_column));
+    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&secondary_column));
+    egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&disabled_column));
     egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&bottom_row));
     egui_view_linearlayout_layout_childs(EGUI_VIEW_OF(&root_layout));
 }
@@ -184,6 +200,9 @@ static void request_page_snapshot(void)
 void test_init_ui(void)
 {
     uint8_t i;
+    const uint8_t primary_button_count = (uint8_t)EGUI_ARRAY_SIZE(primary_buttons);
+    const uint8_t secondary_button_count = (uint8_t)EGUI_ARRAY_SIZE(secondary_buttons);
+    const uint8_t disabled_button_count = (uint8_t)EGUI_ARRAY_SIZE(disabled_buttons);
 
     ui_ready = 0;
 
@@ -210,11 +229,11 @@ void test_init_ui(void)
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&primary_column));
 
     egui_view_radio_group_init(&primary_group);
-    for (i = 0; i < EGUI_ARRAY_SIZE(primary_buttons); ++i)
+    for (i = 0; i < primary_button_count; ++i)
     {
         init_radio_button(&primary_buttons[i], &primary_button_api[i], RADIO_BUTTON_PRIMARY_ITEM_WIDTH, RADIO_BUTTON_PRIMARY_ITEM_HEIGHT,
-                          (const egui_font_t *)&egui_res_font_montserrat_10_4, hcw_radio_button_apply_standard_style, 1, 0);
-        if (i + 1 < EGUI_ARRAY_SIZE(primary_buttons))
+                          (const egui_font_t *)&egui_res_font_montserrat_10_4, 1, 0);
+        if (i + 1 < primary_button_count)
         {
             egui_view_set_margin(EGUI_VIEW_OF(&primary_buttons[i]), 0, 0, 0, 4);
         }
@@ -228,43 +247,46 @@ void test_init_ui(void)
     egui_view_linearlayout_set_align_type(EGUI_VIEW_OF(&bottom_row), EGUI_ALIGN_VCENTER);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&bottom_row));
 
-    egui_view_linearlayout_init(EGUI_VIEW_OF(&compact_column), uicode_get_core());
-    egui_view_set_size(EGUI_VIEW_OF(&compact_column), RADIO_BUTTON_PREVIEW_WIDTH, RADIO_BUTTON_PREVIEW_COLUMN_HEIGHT);
-    egui_view_linearlayout_set_orientation(EGUI_VIEW_OF(&compact_column), 0);
-    egui_view_linearlayout_set_align_type(EGUI_VIEW_OF(&compact_column), EGUI_ALIGN_HCENTER);
-    egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&compact_column));
+    egui_view_linearlayout_init(EGUI_VIEW_OF(&secondary_column), uicode_get_core());
+    egui_view_set_size(EGUI_VIEW_OF(&secondary_column), RADIO_BUTTON_PREVIEW_WIDTH, RADIO_BUTTON_PREVIEW_COLUMN_HEIGHT);
+    egui_view_linearlayout_set_orientation(EGUI_VIEW_OF(&secondary_column), 0);
+    egui_view_linearlayout_set_align_type(EGUI_VIEW_OF(&secondary_column), EGUI_ALIGN_HCENTER);
+    egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&secondary_column));
 
-    egui_view_radio_group_init(&compact_group);
-    for (i = 0; i < EGUI_ARRAY_SIZE(compact_buttons); ++i)
+    egui_view_radio_group_init(&secondary_group);
+    for (i = 0; i < secondary_button_count; ++i)
     {
-        init_radio_button(&compact_buttons[i], &compact_button_api[i], RADIO_BUTTON_PREVIEW_ITEM_WIDTH, RADIO_BUTTON_PREVIEW_ITEM_HEIGHT,
-                          (const egui_font_t *)&egui_res_font_montserrat_10_4, hcw_radio_button_apply_compact_style, 0, 1);
-        if (i + 1 < EGUI_ARRAY_SIZE(compact_buttons))
+        init_radio_button(&secondary_buttons[i], &secondary_button_api[i], RADIO_BUTTON_PREVIEW_ITEM_WIDTH, RADIO_BUTTON_PREVIEW_ITEM_HEIGHT,
+                          (const egui_font_t *)&egui_res_font_montserrat_10_4, 0, 1);
+        apply_secondary_preview_palette(&secondary_buttons[i]);
+        if (i + 1 < secondary_button_count)
         {
-            egui_view_set_margin(EGUI_VIEW_OF(&compact_buttons[i]), 0, 0, 0, 4);
+            egui_view_set_margin(EGUI_VIEW_OF(&secondary_buttons[i]), 0, 0, 0, 4);
         }
-        egui_view_radio_group_add(&compact_group, EGUI_VIEW_OF(&compact_buttons[i]));
-        egui_view_group_add_child(EGUI_VIEW_OF(&compact_column), EGUI_VIEW_OF(&compact_buttons[i]));
+        egui_view_radio_group_add(&secondary_group, EGUI_VIEW_OF(&secondary_buttons[i]));
+        egui_view_group_add_child(EGUI_VIEW_OF(&secondary_column), EGUI_VIEW_OF(&secondary_buttons[i]));
     }
 
-    egui_view_linearlayout_init(EGUI_VIEW_OF(&read_only_column), uicode_get_core());
-    egui_view_set_size(EGUI_VIEW_OF(&read_only_column), RADIO_BUTTON_PREVIEW_WIDTH, RADIO_BUTTON_PREVIEW_COLUMN_HEIGHT);
-    egui_view_set_margin(EGUI_VIEW_OF(&read_only_column), 8, 0, 0, 0);
-    egui_view_linearlayout_set_orientation(EGUI_VIEW_OF(&read_only_column), 0);
-    egui_view_linearlayout_set_align_type(EGUI_VIEW_OF(&read_only_column), EGUI_ALIGN_HCENTER);
-    egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&read_only_column));
+    egui_view_linearlayout_init(EGUI_VIEW_OF(&disabled_column), uicode_get_core());
+    egui_view_set_size(EGUI_VIEW_OF(&disabled_column), RADIO_BUTTON_PREVIEW_WIDTH, RADIO_BUTTON_PREVIEW_COLUMN_HEIGHT);
+    egui_view_set_margin(EGUI_VIEW_OF(&disabled_column), 8, 0, 0, 0);
+    egui_view_linearlayout_set_orientation(EGUI_VIEW_OF(&disabled_column), 0);
+    egui_view_linearlayout_set_align_type(EGUI_VIEW_OF(&disabled_column), EGUI_ALIGN_HCENTER);
+    egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&disabled_column));
 
-    egui_view_radio_group_init(&read_only_group);
-    for (i = 0; i < EGUI_ARRAY_SIZE(read_only_buttons); ++i)
+    egui_view_radio_group_init(&disabled_group);
+    for (i = 0; i < disabled_button_count; ++i)
     {
-        init_radio_button(&read_only_buttons[i], &read_only_button_api[i], RADIO_BUTTON_PREVIEW_ITEM_WIDTH, RADIO_BUTTON_PREVIEW_ITEM_HEIGHT,
-                          (const egui_font_t *)&egui_res_font_montserrat_10_4, hcw_radio_button_apply_read_only_style, 0, 1);
-        if (i + 1 < EGUI_ARRAY_SIZE(read_only_buttons))
+        init_radio_button(&disabled_buttons[i], &disabled_button_api[i], RADIO_BUTTON_PREVIEW_ITEM_WIDTH, RADIO_BUTTON_PREVIEW_ITEM_HEIGHT,
+                          (const egui_font_t *)&egui_res_font_montserrat_10_4, 0, 1);
+        apply_disabled_preview_palette(&disabled_buttons[i]);
+        egui_view_set_enable(EGUI_VIEW_OF(&disabled_buttons[i]), 0);
+        if (i + 1 < disabled_button_count)
         {
-            egui_view_set_margin(EGUI_VIEW_OF(&read_only_buttons[i]), 0, 0, 0, 4);
+            egui_view_set_margin(EGUI_VIEW_OF(&disabled_buttons[i]), 0, 0, 0, 4);
         }
-        egui_view_radio_group_add(&read_only_group, EGUI_VIEW_OF(&read_only_buttons[i]));
-        egui_view_group_add_child(EGUI_VIEW_OF(&read_only_column), EGUI_VIEW_OF(&read_only_buttons[i]));
+        egui_view_radio_group_add(&disabled_group, EGUI_VIEW_OF(&disabled_buttons[i]));
+        egui_view_group_add_child(EGUI_VIEW_OF(&disabled_column), EGUI_VIEW_OF(&disabled_buttons[i]));
     }
 
     apply_primary_default_state();
@@ -342,4 +364,3 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     }
 }
 #endif
-

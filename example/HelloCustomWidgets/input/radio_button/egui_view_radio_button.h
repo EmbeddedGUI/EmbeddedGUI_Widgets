@@ -9,8 +9,6 @@ extern "C" {
 #endif
 
 void hcw_radio_button_apply_standard_style(egui_view_t *self);
-void hcw_radio_button_apply_compact_style(egui_view_t *self);
-void hcw_radio_button_apply_read_only_style(egui_view_t *self);
 void hcw_radio_button_set_checked(egui_view_t *self, uint8_t is_checked);
 void hcw_radio_button_set_text(egui_view_t *self, const char *text);
 void hcw_radio_button_set_font(egui_view_t *self, const egui_font_t *font);

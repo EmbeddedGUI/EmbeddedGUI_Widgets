@@ -4,10 +4,10 @@
 - 参考设计体系：`Fluent 2`
 - 参考开源库：`WPF UI`
 - 对应组件：`RadioButton`
-- 当前保留形态：`Home / Alerts / Privacy`、`Email / Push / SMS`、`Daily / Weekly / Monthly`、`compact`、`read only`
-- 当前保留交互：主区保留标准互斥选择、`touch` 与 `Space / Enter` 选中；底部 `compact / read only` 仅作为静态 preview 对照
-- 当前移除内容：旧 preview 快照轮换、preview 清焦桥接、键盘驱动录制切换、额外收尾态、说明文案和场景化装饰，以及旧版 finalize README 章节结构
-- EGUI 适配说明：目录和 demo 继续使用 `input/radio_button`，底层仍复用仓库内现有 `hcw_radio_button` 实现；本轮只收口 README、reference 录制说明、static preview 语义与验收记录，不修改 `sdk/EmbeddedGUI`
+- 当前保留形态：`Home / Alerts / Privacy`、`Email / Push / SMS`、`Daily / Weekly / Monthly`、`secondary`、`disabled`
+- 当前保留交互：主区保留标准互斥选择、`touch` 与 `Space / Enter` 选中；底部 `secondary / disabled` 仅作为静态 preview 对照
+- 当前移除内容：控件 helper 层的独立紧凑 / 只读样式 API、旧 preview 快照轮换、preview 清焦桥接、键盘驱动录制切换、额外收尾态、说明文案和场景化装饰，以及旧版 finalize README 章节结构
+- EGUI 适配说明：目录和 demo 继续使用 `input/radio_button`，底层仍复用仓库内现有 `hcw_radio_button` 实现；小尺寸和禁用预览由 APP 侧尺寸、palette、gap 与 enable 配置，不修改 `sdk/EmbeddedGUI`
 
 ## 1. 为什么需要这个控件
 `radio_button` 用于表达“多个候选项中只能选一个”的标准表单语义，适合通知方式、同步策略、频率模式和终端形态这类互斥配置。它强调组内互斥和最终选择结果，而不是单个布尔开关。
@@ -22,8 +22,8 @@
 - 标题：`Radio Button`
 - 主区：3 个互斥 `radio_button`
 - 底部：一行并排的两个静态 preview
-- 左侧 preview：`compact`，固定显示 `Auto / Manual`，选中 `Auto`
-- 右侧 preview：`read only`，固定显示 `Desktop / Tablet`，选中 `Tablet`
+- 左侧 preview：`secondary`，固定显示 `Auto / Manual`，选中 `Auto`
+- 右侧 preview：`disabled`，固定显示 `Desktop / Tablet`，选中 `Tablet`
 
 目录：
 - `example/HelloCustomWidgets/input/radio_button/`
@@ -42,10 +42,10 @@
    选中：`Monthly`
 
 底部 preview 在整条轨道中始终固定：
-1. `compact`
+1. `secondary`
    `Auto / Manual`
    选中：`Auto`
-2. `read only`
+2. `disabled`
    `Desktop / Tablet`
    选中：`Tablet`
 
@@ -57,11 +57,11 @@
 - 底部 preview 行：`216 x 52`
 - 单个 preview 列：`104 x 52`
 - 单个 preview 项：`104 x 24`
-- 页面结构：标题 -> 主区 3 个 `radio_button` -> 底部 `compact / read only`
-- 风格约束：浅色 `page panel`、低噪音描边、标准 `RadioButton` 比例和轻量 focus ring，不回退到旧 demo 的说明型 chrome
+- 页面结构：标题 -> 主区 3 个 `radio_button` -> 底部 `secondary / disabled`
+- 风格约束：浅色 `page panel`、低噪音描边、标准 `RadioButton` 比例和轻量 focus ring，不回退到旧 demo 的说明型 chrome；`secondary` 与 `disabled` 预览只由 APP 侧尺寸、palette、gap 与 enable 配置
 
 ## 6. 状态矩阵
-| 状态 | 主控件 | Compact preview | Read only preview |
+| 状态 | 主控件 | Secondary preview | Disabled preview |
 | --- | --- | --- | --- |
 | 默认显示 | `Home / Alerts / Privacy`，选中 `Home` | `Auto / Manual`，选中 `Auto` | `Desktop / Tablet`，选中 `Tablet` |
 | 快照 2 | `Email / Push / SMS`，选中 `Push` | 保持不变 | 保持不变 |
@@ -73,7 +73,7 @@
 `example/HelloUnitTest/test/test_radio_button.c` 当前覆盖 `7` 条用例：
 
 1. 样式 helper 更新调色并清理 `pressed`。
-   覆盖 `apply_compact_style()` 与 `apply_read_only_style()` 对 `circle_color / dot_color / text_color / text_gap / mark_style` 的更新。
+   覆盖 `apply_standard_style()` 对 `circle_color / dot_color / text_color / text_gap / mark_style` 的更新。
 2. 文本与图标相关 setter 清理 `pressed` 并更新内容。
    覆盖 `set_text()`、`set_font()`、`set_text_color()`、`set_mark_style()`、`set_mark_icon()`、`set_icon_font()`、`set_icon_text_gap()`。
 3. `set_checked()` 更新 group 选中项并清理 `pressed`。
@@ -90,7 +90,7 @@
 说明：
 - 主区真实交互继续保留组内互斥选择、`touch` 选中与 `Space / Enter` 键盘切换。
 - 样式 helper、setter、`!enable` guard 和 static preview 都统一要求先清理残留 `pressed`，再处理后续状态。
-- 底部 `compact / read only` preview 统一通过 `hcw_radio_button_override_static_preview_api()` 吞掉 `touch / key`，只承担静态 reference 对照，不改 `group / is_checked / alpha / circle_color / dot_color / text / font / text_color / text_gap / mark_style / mark_icon / icon_font / region_screen`。
+- 底部 `secondary / disabled` preview 统一通过 `hcw_radio_button_override_static_preview_api()` 吞掉 `touch / key`，只承担静态 reference 对照，不改 `group / is_checked / alpha / circle_color / dot_color / text / font / text_color / text_gap / mark_style / mark_icon / icon_font / region_screen`。
 
 ## 8. 录制动作设计
 `egui_port_get_recording_action()` 已收口为静态 preview 工作流：
@@ -104,27 +104,25 @@
 
 说明：
 - 录制阶段不再用键盘驱动主区切换，主区只保留 `Home / Alerts / Privacy`、`Email / Push / SMS` 与 `Daily / Weekly / Monthly` 三组程序化快照。
-- 录制阶段不再轮换底部 preview 文本或选中项，底部 `compact / read only` preview 在整条 reference 轨道中保持静态一致。
+- 录制阶段不再轮换底部 preview 文本或选中项，底部 `secondary / disabled` preview 在整条 reference 轨道中保持静态一致。
 - `request_page_snapshot()` 统一走 `layout_page() + invalidate + recording_request_snapshot()`，保证 `3` 组主区快照和最终稳定帧口径一致。
 - 初始化阶段在 root view 挂载前后各重放一次默认态与 preview；录制入口继续通过 `focus_primary_button()` 收敛主区焦点，再进入显式布局后的稳定抓帧路径。
 - README 这里按当前 `test.c` 如实保留 `RADIO_BUTTON_RECORD_WAIT / RADIO_BUTTON_RECORD_FRAME_WAIT / RADIO_BUTTON_RECORD_FINAL_WAIT` 三档等待口径。
 
 ## 9. 验收命令
 ```bash
-make all APP=HelloCustomWidgets APP_SUB=input/radio_button PORT=pc
+make all APP=HelloCustomWidgets APP_SUB=input/radio_button PORT=pc COMPILE_DEBUG= COMPILE_OPT_LEVEL=-O0
 
-# 在 X:\ 短路径下执行
-make all APP=HelloUnitTest PORT=pc_test
+make all APP=HelloUnitTest PORT=pc_test COMPILE_DEBUG= COMPILE_OPT_LEVEL=-O0
+.\output\main.exe
 
-python scripts/sync_widget_catalog.py
+python scripts/sync_widget_catalog.py --check
 python scripts/checks/check_touch_release_semantics.py --scope custom --category input
 python scripts/checks/check_docs_encoding.py
 python scripts/checks/check_widget_catalog.py
-python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/radio_button --track reference --timeout 10 --keep-screenshots
-python scripts/code_compile_check.py --custom-widgets --category input --bits64
-python scripts/code_runtime_check.py --app HelloCustomWidgets --category input --track reference --bits64
-python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub input/radio_button
-python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_input_radio_button
+python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/radio_button --timeout 10 --keep-screenshots
+make all APP=HelloCustomWidgets APP_SUB=input/radio_button PORT=emscripten COMPILE_DEBUG= COMPILE_OPT_LEVEL=-O0
+git diff --check
 ```
 
 ## 10. 验收重点
@@ -155,8 +153,8 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
   - `Email / Push / SMS`
   - `Daily / Weekly / Monthly`
 - 保留的底部对照：
-  - `compact`
-  - `read only`
+  - `secondary`
+  - `disabled`
 - 保留的交互：
   - 主区组内互斥选择
   - `touch` 选中
@@ -168,34 +166,31 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
   - 键盘驱动录制切换与额外收尾态
   - 说明文案、场景化装饰和复杂设置行包装
 
-## 14. 当前验收结果（2026-04-19）
+## 14. 当前验收结果（2026-05-02）
 - 单控件编译：`PASS`
-  - `make all APP=HelloCustomWidgets APP_SUB=input/radio_button PORT=pc`
-- `HelloUnitTest`：`日志复核 PASS`
-  - 在 `X:\` 短路径下执行 `make all APP=HelloUnitTest PORT=pc_test`
-  - 本轮沿用已归档 unit 日志复核总计 `845 / 845`，其中 `radio_button` suite `7 / 7`
+  - `make all APP=HelloCustomWidgets APP_SUB=input/radio_button PORT=pc COMPILE_DEBUG= COMPILE_OPT_LEVEL=-O0`
+- `HelloUnitTest`：`PASS`
+  - `make all APP=HelloUnitTest PORT=pc_test COMPILE_DEBUG= COMPILE_OPT_LEVEL=-O0`
+  - `.\output\main.exe`
+  - 全量结果：`1048 / 1048`，其中 `radio_button` suite `7 / 7`
 - catalog / 文档 / 触摸语义：`PASS`
-  - `python scripts/sync_widget_catalog.py`
+  - `python scripts/sync_widget_catalog.py --check`
   - `python scripts/checks/check_touch_release_semantics.py --scope custom --category input`
   - `python scripts/checks/check_docs_encoding.py`
   - `python scripts/checks/check_widget_catalog.py`
-  - 触摸语义结果：`custom_audited=28 custom_skipped_allowlist=5`
-  - 文档编码结果：`134 files`
-  - widget catalog 结果：`106 widgets`
+  - 触摸语义结果：`custom_audited=34 custom_skipped_allowlist=5`
+  - 文档编码结果：`172 files`
+  - widget catalog 结果：`141 widgets`
 - 单控件 runtime：`PASS`
-  - `python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/radio_button --track reference --timeout 10 --keep-screenshots`
+  - `python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/radio_button --timeout 10 --keep-screenshots`
   - 输出目录：`runtime_check_output/HelloCustomWidgets_input_radio_button/default`
   - 共捕获 `8` 帧
-- input 分类 compile/runtime 回归：`PASS`
-  - `python scripts/code_compile_check.py --custom-widgets --category input --bits64`
-  - `python scripts/code_runtime_check.py --app HelloCustomWidgets --category input --track reference --bits64`
-  - input `33 / 33` 全部通过
-- web 链路：`PASS`
-  - `python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub input/radio_button`
-  - `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_input_radio_button`
-  - smoke 结果：`status=Running canvas=480x480 ratio=0.1632 colors=136`
+- wasm 构建：`PASS`
+  - `make all APP=HelloCustomWidgets APP_SUB=input/radio_button PORT=emscripten COMPILE_DEBUG= COMPILE_OPT_LEVEL=-O0`
+- `git diff --check`：`PASS`
+  - Windows LF/CRLF 提示可忽略，命令退出码为 `0`
 - 截图复核结论：
   - 主区覆盖默认 `Home / Alerts / Privacy`、`Email / Push / SMS` 与 `Daily / Weekly / Monthly` 三组 reference 快照
   - 最终稳定帧保持 `Daily / Weekly / Monthly`
   - 主区 RGB 差分边界收敛到 `(44, 106) - (435, 240)`
-  - 遮罩主区变化边界后主区外保持单哈希，底部 `compact / read only` preview 以 `y >= 241` 裁切后全程保持单哈希静态
+  - 遮罩主区变化边界后主区外保持单哈希，底部 `secondary / disabled` preview 以 `y >= 241` 裁切后全程保持单哈希静态
