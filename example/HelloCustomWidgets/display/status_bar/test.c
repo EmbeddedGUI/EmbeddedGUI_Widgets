@@ -11,8 +11,8 @@
 #define STATUS_BAR_ROOT_HEIGHT       156
 #define STATUS_BAR_PRIMARY_WIDTH     204
 #define STATUS_BAR_PRIMARY_HEIGHT    36
-#define STATUS_BAR_PREVIEW_WIDTH     94
-#define STATUS_BAR_PREVIEW_HEIGHT    28
+#define STATUS_BAR_SECONDARY_WIDTH   94
+#define STATUS_BAR_SECONDARY_HEIGHT  28
 #define STATUS_BAR_PREVIEW_ROW_WIDTH 200
 #define STATUS_BAR_RECORD_WAIT       90
 #define STATUS_BAR_RECORD_FRAME_WAIT 170
@@ -28,7 +28,7 @@ struct status_bar_snapshot
     uint8_t item_count;
     const char *caption;
     egui_color_t caption_color;
-    uint8_t style;
+    uint8_t palette;
 };
 
 static egui_view_linearlayout_t root_layout;
@@ -36,10 +36,10 @@ static egui_view_label_t title_label;
 static egui_view_status_bar_t primary_control;
 static egui_view_label_t caption_label;
 static egui_view_linearlayout_t bottom_row;
-static egui_view_status_bar_t compact_preview;
-static egui_view_status_bar_t read_only_preview;
-static egui_view_api_t compact_preview_api;
-static egui_view_api_t read_only_preview_api;
+static egui_view_status_bar_t secondary_preview;
+static egui_view_status_bar_t muted_preview;
+static egui_view_api_t secondary_preview_api;
+static egui_view_api_t muted_preview_api;
 static uint8_t ui_ready;
 
 EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
@@ -60,24 +60,24 @@ static const egui_view_status_bar_item_t accent_items[] = {
         {"Branch", "main", 1, EGUI_VIEW_STATUS_BAR_STATE_NORMAL, 0},
 };
 
-static const egui_view_status_bar_item_t compact_items[] = {
+static const egui_view_status_bar_item_t telemetry_items[] = {
         {"CPU", "42%", 1, EGUI_VIEW_STATUS_BAR_STATE_INFO, 0},
         {"Mem", "61%", 1, EGUI_VIEW_STATUS_BAR_STATE_OK, 0},
         {"Net", "Idle", 1, EGUI_VIEW_STATUS_BAR_STATE_NORMAL, 0},
 };
 
-static const egui_view_status_bar_item_t read_only_items[] = {
+static const egui_view_status_bar_item_t locked_items[] = {
         {"State", "Locked", 2, EGUI_VIEW_STATUS_BAR_STATE_NORMAL, 0},
         {"Owner", "System", 1, EGUI_VIEW_STATUS_BAR_STATE_INFO, 0},
         {"Write", "Off", 1, EGUI_VIEW_STATUS_BAR_STATE_WARN, 0},
 };
 
-static const egui_view_status_bar_item_t compact_preview_items[] = {
+static const egui_view_status_bar_item_t secondary_preview_items[] = {
         {"CPU", "42%", 1, EGUI_VIEW_STATUS_BAR_STATE_INFO, 0},
         {"Net", "Idle", 1, EGUI_VIEW_STATUS_BAR_STATE_NORMAL, 0},
 };
 
-static const egui_view_status_bar_item_t read_only_preview_items[] = {
+static const egui_view_status_bar_item_t muted_preview_items[] = {
         {"Lock", "On", 1, EGUI_VIEW_STATUS_BAR_STATE_NORMAL, 0},
         {"Edit", "Off", 1, EGUI_VIEW_STATUS_BAR_STATE_WARN, 0},
 };
@@ -85,8 +85,8 @@ static const egui_view_status_bar_item_t read_only_preview_items[] = {
 static const status_bar_snapshot_t primary_snapshots[] = {
         {standard_items, (uint8_t)EGUI_ARRAY_SIZE(standard_items), "Ready / standard", EGUI_COLOR_HEX(0x0F6CBD), 0},
         {accent_items, (uint8_t)EGUI_ARRAY_SIZE(accent_items), "Running / accent", EGUI_COLOR_HEX(0x0F6CBD), 1},
-        {compact_items, (uint8_t)EGUI_ARRAY_SIZE(compact_items), "Compact / dense status", EGUI_COLOR_HEX(0x0C7C73), 2},
-        {read_only_items, (uint8_t)EGUI_ARRAY_SIZE(read_only_items), "Read only / muted", EGUI_COLOR_HEX(0x65717E), 3},
+        {telemetry_items, (uint8_t)EGUI_ARRAY_SIZE(telemetry_items), "Telemetry / app palette", EGUI_COLOR_HEX(0x0C7C73), 2},
+        {locked_items, (uint8_t)EGUI_ARRAY_SIZE(locked_items), "Locked / app muted", EGUI_COLOR_HEX(0x65717E), 3},
 };
 
 static void layout_page(void);
@@ -102,21 +102,29 @@ static void init_text_label(egui_view_label_t *label, egui_dim_t width, egui_dim
     egui_view_label_set_font_color(EGUI_VIEW_OF(label), color, EGUI_ALPHA_100);
 }
 
-static void apply_status_bar_style(egui_view_t *view, uint8_t style)
+static void apply_status_bar_palette(egui_view_t *view, uint8_t palette)
 {
-    switch (style)
+    switch (palette)
     {
     case 1:
-        egui_view_status_bar_apply_accent_style(view);
+        egui_view_status_bar_set_palette(view, EGUI_COLOR_HEX(0xF7FBFF), EGUI_COLOR_HEX(0xB9D6F0), EGUI_COLOR_HEX(0xCDE0F2),
+                                         EGUI_COLOR_HEX(0x173247), EGUI_COLOR_HEX(0x5D7183), EGUI_COLOR_HEX(0x0F6CBD),
+                                         EGUI_COLOR_HEX(0x0F7B45), EGUI_COLOR_HEX(0xA15C00));
         break;
     case 2:
-        egui_view_status_bar_apply_compact_style(view);
+        egui_view_status_bar_set_palette(view, EGUI_COLOR_HEX(0xF8FBFD), EGUI_COLOR_HEX(0xD2DCE6), EGUI_COLOR_HEX(0xDFE7EF),
+                                         EGUI_COLOR_HEX(0x21313E), EGUI_COLOR_HEX(0x6E7E8E), EGUI_COLOR_HEX(0x0C7C73),
+                                         EGUI_COLOR_HEX(0x107C41), EGUI_COLOR_HEX(0xA15C00));
         break;
     case 3:
-        egui_view_status_bar_apply_read_only_style(view);
+        egui_view_status_bar_set_palette(view, EGUI_COLOR_HEX(0xF5F7FA), EGUI_COLOR_HEX(0xD7DEE6), EGUI_COLOR_HEX(0xE1E7ED),
+                                         EGUI_COLOR_HEX(0x687684), EGUI_COLOR_HEX(0x8B98A5), EGUI_COLOR_HEX(0x788593),
+                                         EGUI_COLOR_HEX(0x768777), EGUI_COLOR_HEX(0x92765F));
         break;
     default:
-        egui_view_status_bar_apply_standard_style(view);
+        egui_view_status_bar_set_palette(view, EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xCCD6E0), EGUI_COLOR_HEX(0xDCE4EC),
+                                         EGUI_COLOR_HEX(0x1D2A36), EGUI_COLOR_HEX(0x637283), EGUI_COLOR_HEX(0x0F6CBD),
+                                         EGUI_COLOR_HEX(0x107C41), EGUI_COLOR_HEX(0xB26A00));
         break;
     }
 }
@@ -125,7 +133,8 @@ static void apply_primary_snapshot(uint8_t index)
 {
     const status_bar_snapshot_t *snapshot = &primary_snapshots[index % PRIMARY_SNAPSHOT_COUNT];
 
-    apply_status_bar_style(EGUI_VIEW_OF(&primary_control), snapshot->style);
+    egui_view_set_enable(EGUI_VIEW_OF(&primary_control), 1);
+    apply_status_bar_palette(EGUI_VIEW_OF(&primary_control), snapshot->palette);
     egui_view_status_bar_set_items(EGUI_VIEW_OF(&primary_control), snapshot->items, snapshot->item_count);
     egui_view_label_set_text(EGUI_VIEW_OF(&caption_label), snapshot->caption);
     egui_view_label_set_font_color(EGUI_VIEW_OF(&caption_label), snapshot->caption_color, EGUI_ALPHA_100);
@@ -142,11 +151,13 @@ static void apply_primary_default_state(void)
 
 static void apply_preview_states(void)
 {
-    egui_view_status_bar_apply_compact_style(EGUI_VIEW_OF(&compact_preview));
-    egui_view_status_bar_set_items(EGUI_VIEW_OF(&compact_preview), compact_preview_items, (uint8_t)EGUI_ARRAY_SIZE(compact_preview_items));
+    egui_view_set_enable(EGUI_VIEW_OF(&secondary_preview), 1);
+    apply_status_bar_palette(EGUI_VIEW_OF(&secondary_preview), 2);
+    egui_view_status_bar_set_items(EGUI_VIEW_OF(&secondary_preview), secondary_preview_items, (uint8_t)EGUI_ARRAY_SIZE(secondary_preview_items));
 
-    egui_view_status_bar_apply_read_only_style(EGUI_VIEW_OF(&read_only_preview));
-    egui_view_status_bar_set_items(EGUI_VIEW_OF(&read_only_preview), read_only_preview_items, (uint8_t)EGUI_ARRAY_SIZE(read_only_preview_items));
+    egui_view_set_enable(EGUI_VIEW_OF(&muted_preview), 0);
+    apply_status_bar_palette(EGUI_VIEW_OF(&muted_preview), 3);
+    egui_view_status_bar_set_items(EGUI_VIEW_OF(&muted_preview), muted_preview_items, (uint8_t)EGUI_ARRAY_SIZE(muted_preview_items));
 
     if (ui_ready)
     {
@@ -203,31 +214,31 @@ void test_init_ui(void)
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&caption_label));
 
     egui_view_linearlayout_init(EGUI_VIEW_OF(&bottom_row), uicode_get_core());
-    egui_view_set_size(EGUI_VIEW_OF(&bottom_row), STATUS_BAR_PREVIEW_ROW_WIDTH, STATUS_BAR_PREVIEW_HEIGHT);
+    egui_view_set_size(EGUI_VIEW_OF(&bottom_row), STATUS_BAR_PREVIEW_ROW_WIDTH, STATUS_BAR_SECONDARY_HEIGHT);
     egui_view_linearlayout_set_orientation(EGUI_VIEW_OF(&bottom_row), 1);
     egui_view_linearlayout_set_align_type(EGUI_VIEW_OF(&bottom_row), EGUI_ALIGN_VCENTER);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&bottom_row));
 
-    egui_view_status_bar_init(EGUI_VIEW_OF(&compact_preview));
-    egui_view_set_size(EGUI_VIEW_OF(&compact_preview), STATUS_BAR_PREVIEW_WIDTH, STATUS_BAR_PREVIEW_HEIGHT);
-    egui_view_status_bar_set_fonts(EGUI_VIEW_OF(&compact_preview), (const egui_font_t *)&egui_res_font_montserrat_8_4,
+    egui_view_status_bar_init(EGUI_VIEW_OF(&secondary_preview));
+    egui_view_set_size(EGUI_VIEW_OF(&secondary_preview), STATUS_BAR_SECONDARY_WIDTH, STATUS_BAR_SECONDARY_HEIGHT);
+    egui_view_status_bar_set_fonts(EGUI_VIEW_OF(&secondary_preview), (const egui_font_t *)&egui_res_font_montserrat_8_4,
                                    (const egui_font_t *)&egui_res_font_montserrat_8_4);
-    egui_view_status_bar_override_static_preview_api(EGUI_VIEW_OF(&compact_preview), &compact_preview_api);
+    egui_view_status_bar_override_static_preview_api(EGUI_VIEW_OF(&secondary_preview), &secondary_preview_api);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
-    egui_view_set_focusable(EGUI_VIEW_OF(&compact_preview), 0);
+    egui_view_set_focusable(EGUI_VIEW_OF(&secondary_preview), 0);
 #endif
-    egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&compact_preview));
+    egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&secondary_preview));
 
-    egui_view_status_bar_init(EGUI_VIEW_OF(&read_only_preview));
-    egui_view_set_size(EGUI_VIEW_OF(&read_only_preview), STATUS_BAR_PREVIEW_WIDTH, STATUS_BAR_PREVIEW_HEIGHT);
-    egui_view_set_margin(EGUI_VIEW_OF(&read_only_preview), 12, 0, 0, 0);
-    egui_view_status_bar_set_fonts(EGUI_VIEW_OF(&read_only_preview), (const egui_font_t *)&egui_res_font_montserrat_8_4,
+    egui_view_status_bar_init(EGUI_VIEW_OF(&muted_preview));
+    egui_view_set_size(EGUI_VIEW_OF(&muted_preview), STATUS_BAR_SECONDARY_WIDTH, STATUS_BAR_SECONDARY_HEIGHT);
+    egui_view_set_margin(EGUI_VIEW_OF(&muted_preview), 12, 0, 0, 0);
+    egui_view_status_bar_set_fonts(EGUI_VIEW_OF(&muted_preview), (const egui_font_t *)&egui_res_font_montserrat_8_4,
                                    (const egui_font_t *)&egui_res_font_montserrat_8_4);
-    egui_view_status_bar_override_static_preview_api(EGUI_VIEW_OF(&read_only_preview), &read_only_preview_api);
+    egui_view_status_bar_override_static_preview_api(EGUI_VIEW_OF(&muted_preview), &muted_preview_api);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
-    egui_view_set_focusable(EGUI_VIEW_OF(&read_only_preview), 0);
+    egui_view_set_focusable(EGUI_VIEW_OF(&muted_preview), 0);
 #endif
-    egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&read_only_preview));
+    egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&muted_preview));
 
     apply_primary_default_state();
     apply_preview_states();

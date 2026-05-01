@@ -13,25 +13,24 @@
 ## 视觉与布局
 
 - 浅色圆角容器，1px 边框，内部按 item `weight` 横向分配区域。
-- 每个 item 包含状态点、label 和 value；窄宽度或 compact 模式只保留 value。
+- 每个 item 包含状态点、label 和 value；宽度不足时只保留 value。
 - `normal / info / ok / warn` 状态通过低饱和颜色点表达，不使用大面积警示色。
 - `emphasized` item 只增加浅色 pill 背景，不改变状态栏整体层级。
-- `read only` 模式降低状态点和文本对比度，保留信息但不制造可点击暗示。
+- 锁定、只读或禁用等场景由 APP 侧通过 palette、enable 与静态 preview 配置表达，控件本体不保存专用模式。
 
 ## 控件清单与状态矩阵
 
 - `standard`：三段状态项，显示同步、行号和模式。
 - `accent`：强调运行状态和 warning 状态。
-- `compact`：压缩 padding 与文字，适合窄状态栏。
-- `read only`：静态 muted 视觉，表达锁定或不可编辑状态。
-- `static preview`：底部 compact / read only 对照，touch/key 输入后状态保持不变。
+- `telemetry`：APP 侧使用较窄尺寸和绿色 accent 表达密集状态摘要。
+- `locked`：APP 侧使用 muted palette 或 disabled 状态表达锁定信息。
+- `static preview`：底部两个静态对照由 APP 配置不同 palette、尺寸和 enable，touch/key 输入后状态保持不变。
 
 ## API 范围
 
 - `egui_view_status_bar_set_items()` / `egui_view_status_bar_set_item()` 设置状态项。
 - `egui_view_status_bar_set_fonts()` 设置 label/value 字体。
-- `egui_view_status_bar_set_palette()` 设置颜色。
-- `egui_view_status_bar_apply_standard_style()` / `apply_accent_style()` / `apply_compact_style()` / `apply_read_only_style()` 应用预设样式。
+- `egui_view_status_bar_set_palette()` 设置颜色；不同业务状态由 APP 侧直接配置 palette、字体、尺寸和 enable。
 - `egui_view_status_bar_get_item_region()` 供单测和后续命中区域验证使用。
 - `egui_view_status_bar_override_static_preview_api()` 让 preview 吞掉输入并保持静态。
 
