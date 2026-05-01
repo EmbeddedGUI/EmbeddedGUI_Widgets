@@ -41,6 +41,8 @@ This repository keeps only the scripts needed for standalone custom-widget work.
   Refresh `web/demos/demos.json` and bundled README files from existing web demo artifacts without rebuilding WASM.
 - `python scripts/web/web_smoke_check.py`
   Run headless browser smoke checks for `web/demos/`, capture one screenshot per demo, and generate `summary.json`, `summary.md`, and a contact sheet for manual visual review. The script auto-adds Linux CI-friendly browser flags on GitHub Actions and also accepts repeatable `--browser-arg`.
+- `python scripts/web/widget_render_gallery.py --summary output/ci_web_smoke/summary.json`
+  Compose all smoke-check screenshots into a widget render gallery under `web/render-gallery/`, including a contact sheet, JSON index, Markdown index, and HTML page for GitHub Pages.
 
 ## Principle
 

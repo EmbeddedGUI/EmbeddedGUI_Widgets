@@ -23,6 +23,7 @@
             "en": "The project now converges on Fluent 2 / WPF UI. Both the repository and the default web catalog keep only reference widgets."
         },
         linkHome: { "zh-CN": "站点入口", "en": "Site entry" },
+        linkGallery: { "zh-CN": "渲染总览", "en": "Render gallery" },
         linkJson: { "zh-CN": "demos.json", "en": "demos.json" },
         trackLabel: { "zh-CN": "显示轨道", "en": "Display track" },
         searchPlaceholder: { "zh-CN": "搜索控件、分类或参考组件", "en": "Search widgets, categories, or reference components" },
@@ -142,6 +143,7 @@
         document.getElementById("sidebar-title").textContent = t("sidebarTitle");
         document.getElementById("sidebar-description").textContent = showcaseTotal === 0 ? t("sidebarDescriptionReferenceOnly") : t("sidebarDescription");
         document.getElementById("link-home").textContent = t("linkHome");
+        document.getElementById("link-gallery").textContent = t("linkGallery");
         document.getElementById("link-json").textContent = t("linkJson");
         document.getElementById("track-label").textContent = t("trackLabel");
         document.getElementById("search-input").placeholder = t("searchPlaceholder");

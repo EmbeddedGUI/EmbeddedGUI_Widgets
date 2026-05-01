@@ -9,6 +9,7 @@
 /.tmp*/
 /web/demos/
 /web/docs/
+/web/render-gallery/
 /__pycache__/
 /.pytest_cache/
 /.pytest-tmp/

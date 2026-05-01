@@ -53,6 +53,12 @@ jobs:
             --browser "${{ steps.setup-chrome.outputs.chrome-path }}" \
             --output-dir output/ci_web_smoke
 
+      - name: Generate widget render gallery
+        run: |
+          python scripts/web/widget_render_gallery.py \
+            --summary output/ci_web_smoke/summary.json \
+            --output-dir web/render-gallery
+
       - name: Upload web smoke artifact
         if: always()
         uses: actions/upload-artifact@v4

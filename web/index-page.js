@@ -43,6 +43,7 @@
             "en": "The site now fully converges on Fluent 2 / WPF UI. Both the repository and the default web catalog keep only the Reference mainline."
         },
         actionReference: { "zh-CN": "打开 Reference 目录", "en": "Open Reference Catalog" },
+        actionGallery: { "zh-CN": "查看渲染总览", "en": "Open Render Gallery" },
         actionShowcase: { "zh-CN": "查看历史轨道", "en": "Open Historical Track" },
         actionManifest: { "zh-CN": "查看 demos.json", "en": "Open demos.json" },
         actionPolicy: { "zh-CN": "查看 catalog-policy.json", "en": "Open catalog-policy.json" },
@@ -184,6 +185,7 @@
         document.getElementById("landing-title").textContent = t("landingTitle");
         document.getElementById("landing-description").textContent = state.policy.showcase === 0 ? t("landingDescriptionReferenceOnly") : t("landingDescription");
         document.getElementById("action-reference").textContent = t("actionReference");
+        document.getElementById("action-gallery").textContent = t("actionGallery");
         document.getElementById("action-showcase").textContent = t("actionShowcase");
         document.getElementById("action-manifest").textContent = t("actionManifest");
         document.getElementById("action-policy").textContent = t("actionPolicy");
