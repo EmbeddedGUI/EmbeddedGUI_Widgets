@@ -222,9 +222,9 @@ static void egui_view_badge_local_region_to_screen(egui_view_t *self, const egui
 static void egui_view_badge_get_metrics(egui_view_t *self, egui_view_badge_t *local, egui_view_badge_metrics_t *metrics)
 {
     egui_region_t region;
-    egui_dim_t pad_x = local->compact_mode ? 7 : 10;
-    egui_dim_t gap = local->compact_mode ? 4 : 6;
-    egui_dim_t icon_size = local->compact_mode ? 11 : 13;
+    egui_dim_t pad_x = 10;
+    egui_dim_t gap = 6;
+    egui_dim_t icon_size = 13;
     egui_dim_t text_width = 0;
     egui_dim_t available_width;
     egui_dim_t content_width = 0;
@@ -314,7 +314,7 @@ static void egui_view_badge_on_draw(egui_view_t *self)
     egui_color_t text_color = local->text_color;
     egui_color_t accent_color = local->accent_color;
     egui_alpha_t border_alpha = local->subtle_mode ? 28 : (local->outline_mode ? 54 : 74);
-    egui_dim_t radius = local->compact_mode ? 8 : 10;
+    egui_dim_t radius = 10;
 
     egui_view_get_work_region(self, &region);
     if (egui_region_is_empty(&region))
@@ -323,14 +323,6 @@ static void egui_view_badge_on_draw(egui_view_t *self)
     }
 
     egui_view_badge_get_metrics(self, local, &metrics);
-    if (local->read_only_mode)
-    {
-        fill_color = egui_rgb_mix(fill_color, EGUI_COLOR_HEX(0xF5F7FA), 28);
-        border_color = egui_rgb_mix(border_color, EGUI_COLOR_HEX(0xBAC7D3), 36);
-        text_color = egui_rgb_mix(text_color, EGUI_COLOR_HEX(0x7D8995), 42);
-        accent_color = egui_rgb_mix(accent_color, EGUI_COLOR_HEX(0x85919D), 42);
-        border_alpha = local->subtle_mode ? 24 : 40;
-    }
     if (!egui_view_get_enable(self))
     {
         fill_color = egui_view_badge_mix_disabled(fill_color);
@@ -350,7 +342,7 @@ static void egui_view_badge_on_draw(egui_view_t *self)
                                       egui_color_alpha_mix(self->alpha, EGUI_ALPHA_100));
     }
     egui_view_badge_fit_text_to_width(egui_view_badge_get_text_font(local), local->text, fitted_text, sizeof(fitted_text), metrics.text_region.size.width,
-                                      local->compact_mode ? 4 : 5);
+                                      5);
     egui_view_badge_draw_text(egui_view_badge_get_text_font(local), self, fitted_text, &metrics.text_region, text_color);
 }
 
@@ -359,8 +351,6 @@ void egui_view_badge_apply_filled_style(egui_view_t *self)
     EGUI_LOCAL_INIT(egui_view_badge_t);
 
     egui_view_badge_clear_pressed_state(self);
-    local->compact_mode = 0;
-    local->read_only_mode = 0;
     local->outline_mode = 0;
     local->subtle_mode = 0;
     local->surface_color = EGUI_COLOR_HEX(0x0F6CBD);
@@ -375,8 +365,6 @@ void egui_view_badge_apply_outline_style(egui_view_t *self)
     EGUI_LOCAL_INIT(egui_view_badge_t);
 
     egui_view_badge_clear_pressed_state(self);
-    local->compact_mode = 0;
-    local->read_only_mode = 0;
     local->outline_mode = 1;
     local->subtle_mode = 0;
     local->surface_color = EGUI_COLOR_HEX(0xFFFFFF);
@@ -391,30 +379,12 @@ void egui_view_badge_apply_subtle_style(egui_view_t *self)
     EGUI_LOCAL_INIT(egui_view_badge_t);
 
     egui_view_badge_clear_pressed_state(self);
-    local->compact_mode = 0;
-    local->read_only_mode = 0;
     local->outline_mode = 0;
     local->subtle_mode = 1;
     local->surface_color = EGUI_COLOR_HEX(0xF3F7FB);
     local->border_color = EGUI_COLOR_HEX(0xD6E3F3);
     local->text_color = EGUI_COLOR_HEX(0x12456F);
     local->accent_color = EGUI_COLOR_HEX(0x0F6CBD);
-    egui_view_invalidate(self);
-}
-
-void egui_view_badge_apply_read_only_style(egui_view_t *self)
-{
-    EGUI_LOCAL_INIT(egui_view_badge_t);
-
-    egui_view_badge_clear_pressed_state(self);
-    local->compact_mode = 1;
-    local->read_only_mode = 1;
-    local->outline_mode = 0;
-    local->subtle_mode = 1;
-    local->surface_color = EGUI_COLOR_HEX(0xF5F7FA);
-    local->border_color = EGUI_COLOR_HEX(0xD7DEE6);
-    local->text_color = EGUI_COLOR_HEX(0x73808C);
-    local->accent_color = EGUI_COLOR_HEX(0x87939E);
     egui_view_invalidate(self);
 }
 
@@ -463,24 +433,6 @@ void egui_view_badge_set_palette(egui_view_t *self, egui_color_t surface_color, 
     local->border_color = border_color;
     local->text_color = text_color;
     local->accent_color = accent_color;
-    egui_view_invalidate(self);
-}
-
-void egui_view_badge_set_compact_mode(egui_view_t *self, uint8_t compact_mode)
-{
-    EGUI_LOCAL_INIT(egui_view_badge_t);
-
-    egui_view_badge_clear_pressed_state(self);
-    local->compact_mode = compact_mode ? 1 : 0;
-    egui_view_invalidate(self);
-}
-
-void egui_view_badge_set_read_only_mode(egui_view_t *self, uint8_t read_only_mode)
-{
-    EGUI_LOCAL_INIT(egui_view_badge_t);
-
-    egui_view_badge_clear_pressed_state(self);
-    local->read_only_mode = read_only_mode ? 1 : 0;
     egui_view_invalidate(self);
 }
 
@@ -563,8 +515,6 @@ void egui_view_badge_init(egui_view_t *self)
     local->font = (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT;
     local->icon_font = EGUI_FONT_ICON_MS_16;
     local->icon = NULL;
-    local->compact_mode = 0;
-    local->read_only_mode = 0;
     local->outline_mode = 1;
     local->subtle_mode = 0;
     egui_view_badge_copy_text(local->text, sizeof(local->text), "Badge");

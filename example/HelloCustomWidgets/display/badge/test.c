@@ -48,10 +48,10 @@ static egui_view_linearlayout_t root_layout;
 static egui_view_label_t title_label;
 static egui_view_badge_t primary_badge;
 static egui_view_linearlayout_t bottom_row;
-static egui_view_badge_t compact_badge;
-static egui_view_badge_t read_only_badge;
-static egui_view_api_t compact_api;
-static egui_view_api_t read_only_api;
+static egui_view_badge_t secondary_badge;
+static egui_view_badge_t muted_badge;
+static egui_view_api_t secondary_api;
+static egui_view_api_t muted_api;
 static uint8_t ui_ready;
 
 EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
@@ -126,27 +126,28 @@ static void apply_primary_default_state(void)
     apply_primary_snapshot(BADGE_DEFAULT_SNAPSHOT);
 }
 
-static void apply_compact_state(void)
+static void apply_secondary_state(void)
 {
-    egui_view_badge_apply_outline_style(EGUI_VIEW_OF(&compact_badge));
-    egui_view_badge_set_text(EGUI_VIEW_OF(&compact_badge), "Beta");
-    egui_view_badge_set_icon(EGUI_VIEW_OF(&compact_badge), EGUI_ICON_MS_INFO);
-    egui_view_badge_set_palette(EGUI_VIEW_OF(&compact_badge), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xC6D5E8), EGUI_COLOR_HEX(0x124B78),
+    egui_view_badge_apply_outline_style(EGUI_VIEW_OF(&secondary_badge));
+    egui_view_badge_set_text(EGUI_VIEW_OF(&secondary_badge), "Beta");
+    egui_view_badge_set_icon(EGUI_VIEW_OF(&secondary_badge), EGUI_ICON_MS_INFO);
+    egui_view_badge_set_palette(EGUI_VIEW_OF(&secondary_badge), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xC6D5E8), EGUI_COLOR_HEX(0x124B78),
                                 EGUI_COLOR_HEX(0x0F6CBD));
-    egui_view_badge_set_compact_mode(EGUI_VIEW_OF(&compact_badge), 1);
 }
 
-static void apply_read_only_state(void)
+static void apply_muted_state(void)
 {
-    egui_view_badge_apply_read_only_style(EGUI_VIEW_OF(&read_only_badge));
-    egui_view_badge_set_text(EGUI_VIEW_OF(&read_only_badge), "Archived");
-    egui_view_badge_set_icon(EGUI_VIEW_OF(&read_only_badge), NULL);
+    egui_view_badge_apply_subtle_style(EGUI_VIEW_OF(&muted_badge));
+    egui_view_badge_set_text(EGUI_VIEW_OF(&muted_badge), "Archived");
+    egui_view_badge_set_icon(EGUI_VIEW_OF(&muted_badge), NULL);
+    egui_view_badge_set_palette(EGUI_VIEW_OF(&muted_badge), EGUI_COLOR_HEX(0xF5F7FA), EGUI_COLOR_HEX(0xD7DEE6), EGUI_COLOR_HEX(0x73808C),
+                                EGUI_COLOR_HEX(0x87939E));
 }
 
 static void apply_preview_states(void)
 {
-    apply_compact_state();
-    apply_read_only_state();
+    apply_secondary_state();
+    apply_muted_state();
 
     if (ui_ready)
     {
@@ -209,26 +210,26 @@ void test_init_ui(void)
     egui_view_linearlayout_set_align_type(EGUI_VIEW_OF(&bottom_row), EGUI_ALIGN_VCENTER);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&bottom_row));
 
-    egui_view_badge_init(EGUI_VIEW_OF(&compact_badge));
-    egui_view_set_size(EGUI_VIEW_OF(&compact_badge), BADGE_PREVIEW_WIDTH, BADGE_PREVIEW_HEIGHT);
-    egui_view_badge_set_font(EGUI_VIEW_OF(&compact_badge), (const egui_font_t *)&egui_res_font_montserrat_8_4);
-    egui_view_badge_set_icon_font(EGUI_VIEW_OF(&compact_badge), EGUI_FONT_ICON_MS_16);
-    egui_view_badge_override_static_preview_api(EGUI_VIEW_OF(&compact_badge), &compact_api);
+    egui_view_badge_init(EGUI_VIEW_OF(&secondary_badge));
+    egui_view_set_size(EGUI_VIEW_OF(&secondary_badge), BADGE_PREVIEW_WIDTH, BADGE_PREVIEW_HEIGHT);
+    egui_view_badge_set_font(EGUI_VIEW_OF(&secondary_badge), (const egui_font_t *)&egui_res_font_montserrat_8_4);
+    egui_view_badge_set_icon_font(EGUI_VIEW_OF(&secondary_badge), EGUI_FONT_ICON_MS_16);
+    egui_view_badge_override_static_preview_api(EGUI_VIEW_OF(&secondary_badge), &secondary_api);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
-    egui_view_set_focusable(EGUI_VIEW_OF(&compact_badge), 0);
+    egui_view_set_focusable(EGUI_VIEW_OF(&secondary_badge), 0);
 #endif
-    egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&compact_badge));
+    egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&secondary_badge));
 
-    egui_view_badge_init(EGUI_VIEW_OF(&read_only_badge));
-    egui_view_set_size(EGUI_VIEW_OF(&read_only_badge), BADGE_PREVIEW_WIDTH, BADGE_PREVIEW_HEIGHT);
-    egui_view_set_margin(EGUI_VIEW_OF(&read_only_badge), 8, 0, 0, 0);
-    egui_view_badge_set_font(EGUI_VIEW_OF(&read_only_badge), (const egui_font_t *)&egui_res_font_montserrat_8_4);
-    egui_view_badge_set_icon_font(EGUI_VIEW_OF(&read_only_badge), EGUI_FONT_ICON_MS_16);
-    egui_view_badge_override_static_preview_api(EGUI_VIEW_OF(&read_only_badge), &read_only_api);
+    egui_view_badge_init(EGUI_VIEW_OF(&muted_badge));
+    egui_view_set_size(EGUI_VIEW_OF(&muted_badge), BADGE_PREVIEW_WIDTH, BADGE_PREVIEW_HEIGHT);
+    egui_view_set_margin(EGUI_VIEW_OF(&muted_badge), 8, 0, 0, 0);
+    egui_view_badge_set_font(EGUI_VIEW_OF(&muted_badge), (const egui_font_t *)&egui_res_font_montserrat_8_4);
+    egui_view_badge_set_icon_font(EGUI_VIEW_OF(&muted_badge), EGUI_FONT_ICON_MS_16);
+    egui_view_badge_override_static_preview_api(EGUI_VIEW_OF(&muted_badge), &muted_api);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
-    egui_view_set_focusable(EGUI_VIEW_OF(&read_only_badge), 0);
+    egui_view_set_focusable(EGUI_VIEW_OF(&muted_badge), 0);
 #endif
-    egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&read_only_badge));
+    egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&muted_badge));
 
     apply_primary_default_state();
     apply_preview_states();
@@ -308,4 +309,3 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     }
 }
 #endif
-

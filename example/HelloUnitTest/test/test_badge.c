@@ -21,8 +21,6 @@ struct badge_preview_snapshot
     egui_color_t accent_color;
     char text[EGUI_VIEW_BADGE_MAX_TEXT_LEN + 1];
     const char *icon;
-    uint8_t compact_mode;
-    uint8_t read_only_mode;
     uint8_t outline_mode;
     uint8_t subtle_mode;
     egui_alpha_t alpha;
@@ -77,7 +75,6 @@ static void setup_preview_badge(void)
     egui_view_badge_set_icon(EGUI_VIEW_OF(&preview_badge_widget), EGUI_ICON_MS_INFO);
     egui_view_badge_set_font(EGUI_VIEW_OF(&preview_badge_widget), (const egui_font_t *)&egui_res_font_montserrat_8_4);
     egui_view_badge_set_icon_font(EGUI_VIEW_OF(&preview_badge_widget), EGUI_FONT_ICON_MS_16);
-    egui_view_badge_set_compact_mode(EGUI_VIEW_OF(&preview_badge_widget), 1);
     egui_view_badge_override_static_preview_api(EGUI_VIEW_OF(&preview_badge_widget), &preview_api);
 }
 
@@ -135,8 +132,6 @@ static void capture_preview_snapshot(badge_preview_snapshot_t *snapshot)
     snapshot->accent_color = preview_badge_widget.accent_color;
     strcpy(snapshot->text, preview_badge_widget.text);
     snapshot->icon = preview_badge_widget.icon;
-    snapshot->compact_mode = preview_badge_widget.compact_mode;
-    snapshot->read_only_mode = preview_badge_widget.read_only_mode;
     snapshot->outline_mode = preview_badge_widget.outline_mode;
     snapshot->subtle_mode = preview_badge_widget.subtle_mode;
     snapshot->alpha = EGUI_VIEW_OF(&preview_badge_widget)->alpha;
@@ -161,8 +156,6 @@ static void assert_preview_state_unchanged(const badge_preview_snapshot_t *snaps
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->accent_color.full, preview_badge_widget.accent_color.full);
     EGUI_TEST_ASSERT_TRUE(strcmp(snapshot->text, preview_badge_widget.text) == 0);
     assert_optional_string_equal(snapshot->icon, preview_badge_widget.icon);
-    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->compact_mode, preview_badge_widget.compact_mode);
-    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->read_only_mode, preview_badge_widget.read_only_mode);
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->outline_mode, preview_badge_widget.outline_mode);
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->subtle_mode, preview_badge_widget.subtle_mode);
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->alpha, EGUI_VIEW_OF(&preview_badge_widget)->alpha);
@@ -175,15 +168,13 @@ static void assert_preview_state_unchanged(const badge_preview_snapshot_t *snaps
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->padding_bottom, EGUI_VIEW_OF(&preview_badge_widget)->padding.bottom);
 }
 
-static void test_badge_style_helpers_update_modes_and_palette(void)
+static void test_badge_style_helpers_update_variant_and_palette(void)
 {
     egui_view_badge_t *local;
 
     setup_badge();
     local = &test_badge_widget;
 
-    EGUI_TEST_ASSERT_FALSE(local->compact_mode);
-    EGUI_TEST_ASSERT_FALSE(local->read_only_mode);
     EGUI_TEST_ASSERT_FALSE(local->outline_mode);
     EGUI_TEST_ASSERT_FALSE(local->subtle_mode);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x0F6CBD).full, local->surface_color.full);
@@ -203,14 +194,6 @@ static void test_badge_style_helpers_update_modes_and_palette(void)
     EGUI_TEST_ASSERT_FALSE(local->outline_mode);
     EGUI_TEST_ASSERT_TRUE(local->subtle_mode);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xF3F7FB).full, local->surface_color.full);
-
-    egui_view_set_pressed(EGUI_VIEW_OF(local), 1);
-    egui_view_badge_apply_read_only_style(EGUI_VIEW_OF(local));
-    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(local)->is_pressed);
-    EGUI_TEST_ASSERT_TRUE(local->compact_mode);
-    EGUI_TEST_ASSERT_TRUE(local->read_only_mode);
-    EGUI_TEST_ASSERT_TRUE(local->subtle_mode);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xF5F7FA).full, local->surface_color.full);
 }
 
 static void test_badge_setters_clear_pressed_state_and_update_content(void)
@@ -247,44 +230,18 @@ static void test_badge_setters_clear_pressed_state_and_update_content(void)
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x13579B).full, local->accent_color.full);
 }
 
-static void test_badge_icon_region_visibility_tracks_icon_and_compact_mode(void)
+static void test_badge_icon_region_visibility_tracks_icon(void)
 {
     egui_region_t icon_region;
-    egui_dim_t standard_width;
-    egui_dim_t compact_width;
 
     setup_badge();
     layout_badge(EGUI_VIEW_OF(&test_badge_widget), 12, 18, 128, 28);
 
     EGUI_TEST_ASSERT_TRUE(egui_view_badge_get_icon_region(EGUI_VIEW_OF(&test_badge_widget), &icon_region));
-    standard_width = icon_region.size.width;
-
-    egui_view_badge_set_compact_mode(EGUI_VIEW_OF(&test_badge_widget), 1);
-    layout_badge(EGUI_VIEW_OF(&test_badge_widget), 12, 18, 96, 24);
-    EGUI_TEST_ASSERT_TRUE(egui_view_badge_get_icon_region(EGUI_VIEW_OF(&test_badge_widget), &icon_region));
-    compact_width = icon_region.size.width;
-    EGUI_TEST_ASSERT_TRUE(compact_width < standard_width);
+    EGUI_TEST_ASSERT_EQUAL_INT(13, icon_region.size.width);
 
     egui_view_badge_set_icon(EGUI_VIEW_OF(&test_badge_widget), NULL);
     EGUI_TEST_ASSERT_FALSE(egui_view_badge_get_icon_region(EGUI_VIEW_OF(&test_badge_widget), &icon_region));
-}
-
-static void test_badge_mode_setters_clear_pressed_state(void)
-{
-    egui_view_badge_t *local;
-
-    setup_badge();
-    local = &test_badge_widget;
-
-    egui_view_set_pressed(EGUI_VIEW_OF(local), 1);
-    egui_view_badge_set_compact_mode(EGUI_VIEW_OF(local), 1);
-    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(local)->is_pressed);
-    EGUI_TEST_ASSERT_TRUE(local->compact_mode);
-
-    egui_view_set_pressed(EGUI_VIEW_OF(local), 1);
-    egui_view_badge_set_read_only_mode(EGUI_VIEW_OF(local), 1);
-    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(local)->is_pressed);
-    EGUI_TEST_ASSERT_TRUE(local->read_only_mode);
 }
 
 static void test_badge_text_helpers(void)
@@ -331,10 +288,9 @@ static void test_badge_static_preview_consumes_input_and_keeps_state(void)
 void test_badge_run(void)
 {
     EGUI_TEST_SUITE_BEGIN(badge);
-    EGUI_TEST_RUN(test_badge_style_helpers_update_modes_and_palette);
+    EGUI_TEST_RUN(test_badge_style_helpers_update_variant_and_palette);
     EGUI_TEST_RUN(test_badge_setters_clear_pressed_state_and_update_content);
-    EGUI_TEST_RUN(test_badge_icon_region_visibility_tracks_icon_and_compact_mode);
-    EGUI_TEST_RUN(test_badge_mode_setters_clear_pressed_state);
+    EGUI_TEST_RUN(test_badge_icon_region_visibility_tracks_icon);
     EGUI_TEST_RUN(test_badge_text_helpers);
     EGUI_TEST_RUN(test_badge_static_preview_consumes_input_and_keeps_state);
     EGUI_TEST_SUITE_END();
