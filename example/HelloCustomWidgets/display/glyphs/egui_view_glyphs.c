@@ -56,8 +56,8 @@ static void egui_view_glyphs_on_draw(egui_view_t *self)
     egui_region_t draw_region;
     egui_color_t fill_color = local->fill_color;
     egui_color_t accent_color = local->accent_color;
-    egui_alpha_t text_alpha = local->compact_mode ? 82 : EGUI_ALPHA_100;
-    egui_alpha_t marker_alpha = local->compact_mode ? 34 : 46;
+    egui_alpha_t text_alpha = EGUI_ALPHA_100;
+    egui_alpha_t marker_alpha = 46;
     const egui_font_t *font = local->font != NULL ? local->font : egui_view_glyphs_default_font();
     const char *text = egui_view_glyphs_has_text(local->unicode_string) ? local->unicode_string : egui_view_glyphs_default_text();
     egui_dim_t origin_x;
@@ -69,13 +69,6 @@ static void egui_view_glyphs_on_draw(egui_view_t *self)
         return;
     }
 
-    if (local->read_only_mode)
-    {
-        fill_color = egui_rgb_mix(fill_color, EGUI_COLOR_HEX(0x7B8794), 54);
-        accent_color = egui_rgb_mix(accent_color, EGUI_COLOR_HEX(0x8A97A5), 58);
-        text_alpha = 62;
-        marker_alpha = 26;
-    }
     if (!egui_view_get_enable(self))
     {
         fill_color = egui_view_glyphs_mix_disabled(fill_color);
@@ -93,7 +86,7 @@ static void egui_view_glyphs_on_draw(egui_view_t *self)
 
     if (marker_alpha > 0)
     {
-        egui_dim_t marker_w = local->compact_mode ? 8 : 12;
+        egui_dim_t marker_w = 12;
         egui_canvas_draw_line(&uicode_get_core()->canvas, origin_x, region.location.y + 1, origin_x, region.location.y + region.size.height - 2, 1,
                               accent_color, egui_color_alpha_mix(self->alpha, marker_alpha));
         egui_canvas_draw_line(&uicode_get_core()->canvas, region.location.x + 1, origin_y, region.location.x + region.size.width - 2, origin_y, 1,
@@ -189,78 +182,6 @@ void egui_view_glyphs_get_origin(egui_view_t *self, uint8_t *origin_x_percent, u
     }
 }
 
-void egui_view_glyphs_set_compact_mode(egui_view_t *self, uint8_t compact_mode)
-{
-    egui_view_glyphs_t *local = egui_view_glyphs_local(self);
-
-    egui_view_glyphs_clear_pressed_state(self);
-    local->compact_mode = compact_mode ? 1 : 0;
-    egui_view_invalidate(self);
-}
-
-uint8_t egui_view_glyphs_get_compact_mode(egui_view_t *self)
-{
-    egui_view_glyphs_t *local = egui_view_glyphs_local(self);
-
-    return local->compact_mode;
-}
-
-void egui_view_glyphs_set_read_only_mode(egui_view_t *self, uint8_t read_only_mode)
-{
-    egui_view_glyphs_t *local = egui_view_glyphs_local(self);
-
-    egui_view_glyphs_clear_pressed_state(self);
-    local->read_only_mode = read_only_mode ? 1 : 0;
-    egui_view_invalidate(self);
-}
-
-uint8_t egui_view_glyphs_get_read_only_mode(egui_view_t *self)
-{
-    egui_view_glyphs_t *local = egui_view_glyphs_local(self);
-
-    return local->read_only_mode;
-}
-
-void egui_view_glyphs_apply_standard_style(egui_view_t *self)
-{
-    egui_view_glyphs_set_unicode_string(self, "Glyphs");
-    egui_view_glyphs_set_font(self, (const egui_font_t *)&egui_res_font_montserrat_16_4, 16);
-    egui_view_glyphs_set_fill(self, EGUI_COLOR_HEX(0x21303F), EGUI_COLOR_HEX(0xBBD7F0));
-    egui_view_glyphs_set_origin(self, 8, 18);
-    egui_view_glyphs_set_compact_mode(self, 0);
-    egui_view_glyphs_set_read_only_mode(self, 0);
-}
-
-void egui_view_glyphs_apply_accent_style(egui_view_t *self)
-{
-    egui_view_glyphs_set_unicode_string(self, "A1 B2 C3");
-    egui_view_glyphs_set_font(self, (const egui_font_t *)&egui_res_font_montserrat_14_4, 14);
-    egui_view_glyphs_set_fill(self, EGUI_COLOR_HEX(0x0F6CBD), EGUI_COLOR_HEX(0xCFE2F3));
-    egui_view_glyphs_set_origin(self, 10, 20);
-    egui_view_glyphs_set_compact_mode(self, 0);
-    egui_view_glyphs_set_read_only_mode(self, 0);
-}
-
-void egui_view_glyphs_apply_compact_style(egui_view_t *self)
-{
-    egui_view_glyphs_set_unicode_string(self, "ID-42");
-    egui_view_glyphs_set_font(self, (const egui_font_t *)&egui_res_font_montserrat_10_4, 10);
-    egui_view_glyphs_set_fill(self, EGUI_COLOR_HEX(0x0C7C73), EGUI_COLOR_HEX(0xBFDCD8));
-    egui_view_glyphs_set_origin(self, 8, 24);
-    egui_view_glyphs_set_compact_mode(self, 1);
-    egui_view_glyphs_set_read_only_mode(self, 0);
-}
-
-void egui_view_glyphs_apply_read_only_style(egui_view_t *self)
-{
-    egui_view_glyphs_set_unicode_string(self, "Locked");
-    egui_view_glyphs_set_font(self, (const egui_font_t *)&egui_res_font_montserrat_10_4, 10);
-    egui_view_glyphs_set_fill(self, EGUI_COLOR_HEX(0x65717E), EGUI_COLOR_HEX(0xCCD4DC));
-    egui_view_glyphs_set_origin(self, 8, 24);
-    egui_view_glyphs_set_compact_mode(self, 1);
-    egui_view_glyphs_set_read_only_mode(self, 1);
-}
-
 #if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
 static int egui_view_glyphs_on_touch_event(egui_view_t *self, egui_motion_event_t *event)
 {
@@ -349,10 +270,11 @@ void egui_view_glyphs_init(egui_view_t *self)
 #endif
 
     local->unicode_string = egui_view_glyphs_default_text();
-    local->font = egui_view_glyphs_default_font();
-    local->font_rendering_em_size = 12;
-    local->compact_mode = 0;
-    local->read_only_mode = 0;
-    egui_view_glyphs_apply_standard_style(self);
+    local->font = (const egui_font_t *)&egui_res_font_montserrat_16_4;
+    local->font_rendering_em_size = 16;
+    local->fill_color = EGUI_COLOR_HEX(0x21303F);
+    local->accent_color = EGUI_COLOR_HEX(0xBBD7F0);
+    local->origin_x_percent = 8;
+    local->origin_y_percent = 18;
     egui_view_set_view_name(self, "egui_view_glyphs");
 }
