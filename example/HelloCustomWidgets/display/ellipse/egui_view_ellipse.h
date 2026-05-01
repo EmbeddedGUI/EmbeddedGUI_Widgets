@@ -18,8 +18,6 @@ struct egui_view_ellipse
     egui_dim_t stroke_width;
     uint8_t fill_enabled;
     uint8_t circle_mode;
-    uint8_t compact_mode;
-    uint8_t read_only_mode;
 };
 
 void egui_view_ellipse_init(egui_view_t *self);
@@ -30,14 +28,8 @@ void egui_view_ellipse_set_circle_mode(egui_view_t *self, uint8_t circle_mode);
 uint8_t egui_view_ellipse_get_circle_mode(egui_view_t *self);
 void egui_view_ellipse_set_fill_enabled(egui_view_t *self, uint8_t fill_enabled);
 uint8_t egui_view_ellipse_get_fill_enabled(egui_view_t *self);
-void egui_view_ellipse_set_compact_mode(egui_view_t *self, uint8_t compact_mode);
-uint8_t egui_view_ellipse_get_compact_mode(egui_view_t *self);
-void egui_view_ellipse_set_read_only_mode(egui_view_t *self, uint8_t read_only_mode);
-uint8_t egui_view_ellipse_get_read_only_mode(egui_view_t *self);
 void egui_view_ellipse_apply_standard_style(egui_view_t *self);
 void egui_view_ellipse_apply_accent_style(egui_view_t *self);
-void egui_view_ellipse_apply_compact_style(egui_view_t *self);
-void egui_view_ellipse_apply_read_only_style(egui_view_t *self);
 void egui_view_ellipse_override_static_preview_api(egui_view_t *self, egui_view_api_t *api);
 
 #ifdef __cplusplus

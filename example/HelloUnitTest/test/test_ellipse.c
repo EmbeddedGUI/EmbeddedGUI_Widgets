@@ -19,8 +19,6 @@ struct ellipse_preview_snapshot
     uint8_t circle_mode;
     egui_alpha_t alpha;
     uint8_t fill_enabled;
-    uint8_t compact_mode;
-    uint8_t read_only_mode;
     uint8_t enable;
     uint8_t is_pressed;
     uint8_t is_focused;
@@ -52,7 +50,11 @@ static void setup_preview_control(void)
 {
     egui_view_ellipse_init(EGUI_VIEW_OF(&preview_control));
     egui_view_set_size(EGUI_VIEW_OF(&preview_control), 72, 34);
-    egui_view_ellipse_apply_compact_style(EGUI_VIEW_OF(&preview_control));
+    egui_view_ellipse_set_palette(EGUI_VIEW_OF(&preview_control), EGUI_COLOR_HEX(0xF8FBFD), EGUI_COLOR_HEX(0x0C7C73),
+                                  EGUI_COLOR_HEX(0xD9E7E5));
+    egui_view_ellipse_set_stroke_width(EGUI_VIEW_OF(&preview_control), 1);
+    egui_view_ellipse_set_circle_mode(EGUI_VIEW_OF(&preview_control), 0);
+    egui_view_ellipse_set_fill_enabled(EGUI_VIEW_OF(&preview_control), 1);
     egui_view_ellipse_override_static_preview_api(EGUI_VIEW_OF(&preview_control), &preview_api);
 }
 
@@ -110,8 +112,6 @@ static void capture_preview_snapshot(ellipse_preview_snapshot_t *snapshot)
     snapshot->circle_mode = preview_control.circle_mode;
     snapshot->alpha = EGUI_VIEW_OF(&preview_control)->alpha;
     snapshot->fill_enabled = preview_control.fill_enabled;
-    snapshot->compact_mode = preview_control.compact_mode;
-    snapshot->read_only_mode = preview_control.read_only_mode;
     snapshot->enable = (uint8_t)egui_view_get_enable(EGUI_VIEW_OF(&preview_control));
     snapshot->is_pressed = EGUI_VIEW_OF(&preview_control)->is_pressed;
     snapshot->is_focused = EGUI_VIEW_OF(&preview_control)->is_focused;
@@ -132,8 +132,6 @@ static void assert_preview_state_unchanged(const ellipse_preview_snapshot_t *sna
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->circle_mode, preview_control.circle_mode);
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->alpha, EGUI_VIEW_OF(&preview_control)->alpha);
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->fill_enabled, preview_control.fill_enabled);
-    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->compact_mode, preview_control.compact_mode);
-    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->read_only_mode, preview_control.read_only_mode);
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->enable, egui_view_get_enable(EGUI_VIEW_OF(&preview_control)));
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&preview_control)->is_pressed);
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->is_focused, EGUI_VIEW_OF(&preview_control)->is_focused);
@@ -150,8 +148,6 @@ static void test_ellipse_init_defaults(void)
     EGUI_TEST_ASSERT_EQUAL_INT(2, egui_view_ellipse_get_stroke_width(EGUI_VIEW_OF(&test_control)));
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_ellipse_get_circle_mode(EGUI_VIEW_OF(&test_control)));
     EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_ellipse_get_fill_enabled(EGUI_VIEW_OF(&test_control)));
-    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_ellipse_get_compact_mode(EGUI_VIEW_OF(&test_control)));
-    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_ellipse_get_read_only_mode(EGUI_VIEW_OF(&test_control)));
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xFFFFFF).full, test_control.fill_color.full);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x0F6CBD).full, test_control.stroke_color.full);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_MARGIN_PADDING
@@ -196,18 +192,19 @@ static void test_ellipse_styles(void)
     egui_view_ellipse_apply_accent_style(EGUI_VIEW_OF(&test_control));
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_control)->is_pressed);
     EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_ellipse_get_circle_mode(EGUI_VIEW_OF(&test_control)));
-    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_ellipse_get_compact_mode(EGUI_VIEW_OF(&test_control)));
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xF7FBFF).full, test_control.fill_color.full);
 
-    egui_view_ellipse_apply_compact_style(EGUI_VIEW_OF(&test_control));
+    egui_view_ellipse_set_palette(EGUI_VIEW_OF(&test_control), EGUI_COLOR_HEX(0xF8FBFD), EGUI_COLOR_HEX(0x0C7C73),
+                                  EGUI_COLOR_HEX(0xD9E7E5));
+    egui_view_ellipse_set_stroke_width(EGUI_VIEW_OF(&test_control), 1);
+    egui_view_ellipse_set_circle_mode(EGUI_VIEW_OF(&test_control), 0);
+    egui_view_ellipse_set_fill_enabled(EGUI_VIEW_OF(&test_control), 1);
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_ellipse_get_circle_mode(EGUI_VIEW_OF(&test_control)));
-    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_ellipse_get_compact_mode(EGUI_VIEW_OF(&test_control)));
-    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_ellipse_get_read_only_mode(EGUI_VIEW_OF(&test_control)));
     EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_ellipse_get_stroke_width(EGUI_VIEW_OF(&test_control)));
 
-    egui_view_ellipse_apply_read_only_style(EGUI_VIEW_OF(&test_control));
-    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_ellipse_get_compact_mode(EGUI_VIEW_OF(&test_control)));
-    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_ellipse_get_read_only_mode(EGUI_VIEW_OF(&test_control)));
+    egui_view_ellipse_set_palette(EGUI_VIEW_OF(&test_control), EGUI_COLOR_HEX(0xF5F7FA), EGUI_COLOR_HEX(0x687684),
+                                  EGUI_COLOR_HEX(0xE1E6EB));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xF5F7FA).full, test_control.fill_color.full);
 }
 
 static void test_ellipse_static_preview_consumes_input_and_keeps_state(void)
