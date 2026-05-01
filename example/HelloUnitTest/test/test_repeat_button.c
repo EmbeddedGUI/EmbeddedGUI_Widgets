@@ -65,11 +65,12 @@ static void setup_preview_widget(void)
     egui_timer_init(uicode_get_core());
     egui_view_repeat_button_init(EGUI_VIEW_OF(&preview_widget));
     egui_view_set_size(EGUI_VIEW_OF(&preview_widget), 96, 32);
-    egui_view_repeat_button_apply_compact_style(EGUI_VIEW_OF(&preview_widget));
+    egui_view_repeat_button_apply_standard_style(EGUI_VIEW_OF(&preview_widget));
     egui_view_repeat_button_set_text(EGUI_VIEW_OF(&preview_widget), "Fast");
     egui_view_repeat_button_set_icon(EGUI_VIEW_OF(&preview_widget), EGUI_ICON_MS_REFRESH);
     egui_view_repeat_button_set_font(EGUI_VIEW_OF(&preview_widget), (const egui_font_t *)&egui_res_font_montserrat_10_4);
     egui_view_repeat_button_set_icon_font(EGUI_VIEW_OF(&preview_widget), EGUI_FONT_ICON_MS_16);
+    egui_view_repeat_button_set_icon_text_gap(EGUI_VIEW_OF(&preview_widget), 4);
     egui_view_set_on_click_listener(EGUI_VIEW_OF(&preview_widget), on_repeat_button_click);
     egui_view_repeat_button_override_static_preview_api(EGUI_VIEW_OF(&preview_widget), &preview_api);
     g_click_count = 0;
@@ -238,14 +239,6 @@ static void test_repeat_button_setters_and_style_helpers_clear_pressed_state(voi
 
     setup_widget();
     start_touch_hold(&center_x, &center_y);
-    egui_view_repeat_button_apply_compact_style(EGUI_VIEW_OF(&test_widget));
-    assert_pressed_state_cleared(&test_widget);
-    EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&test_widget)->background == EGUI_BG_OF(&repeat_button_compact_background));
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_WHITE.full, test_widget.base.base.color.full);
-    EGUI_TEST_ASSERT_EQUAL_INT(4, test_widget.base.icon_text_gap);
-
-    EGUI_TEST_ASSERT_TRUE(send_touch_action(EGUI_VIEW_OF(&test_widget), EGUI_MOTION_EVENT_ACTION_DOWN, center_x, center_y));
-    EGUI_TEST_ASSERT_EQUAL_INT(2, g_click_count);
     egui_view_repeat_button_apply_disabled_style(EGUI_VIEW_OF(&test_widget));
     assert_pressed_state_cleared(&test_widget);
     EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&test_widget)->background == EGUI_BG_OF(&repeat_button_disabled_background));
@@ -253,37 +246,37 @@ static void test_repeat_button_setters_and_style_helpers_clear_pressed_state(voi
     EGUI_TEST_ASSERT_EQUAL_INT(4, test_widget.base.icon_text_gap);
 
     EGUI_TEST_ASSERT_TRUE(send_touch_action(EGUI_VIEW_OF(&test_widget), EGUI_MOTION_EVENT_ACTION_DOWN, center_x, center_y));
-    EGUI_TEST_ASSERT_EQUAL_INT(3, g_click_count);
+    EGUI_TEST_ASSERT_EQUAL_INT(2, g_click_count);
     egui_view_repeat_button_set_text(EGUI_VIEW_OF(&test_widget), "Pause");
     assert_pressed_state_cleared(&test_widget);
     EGUI_TEST_ASSERT_TRUE(strcmp(test_widget.base.base.text, "Pause") == 0);
 
     EGUI_TEST_ASSERT_TRUE(send_touch_action(EGUI_VIEW_OF(&test_widget), EGUI_MOTION_EVENT_ACTION_DOWN, center_x, center_y));
-    EGUI_TEST_ASSERT_EQUAL_INT(4, g_click_count);
+    EGUI_TEST_ASSERT_EQUAL_INT(3, g_click_count);
     egui_view_repeat_button_set_icon(EGUI_VIEW_OF(&test_widget), EGUI_ICON_MS_REFRESH);
     assert_pressed_state_cleared(&test_widget);
     EGUI_TEST_ASSERT_TRUE(strcmp(test_widget.base.icon, EGUI_ICON_MS_REFRESH) == 0);
 
     EGUI_TEST_ASSERT_TRUE(send_touch_action(EGUI_VIEW_OF(&test_widget), EGUI_MOTION_EVENT_ACTION_DOWN, center_x, center_y));
-    EGUI_TEST_ASSERT_EQUAL_INT(5, g_click_count);
+    EGUI_TEST_ASSERT_EQUAL_INT(4, g_click_count);
     egui_view_repeat_button_set_font(EGUI_VIEW_OF(&test_widget), NULL);
     assert_pressed_state_cleared(&test_widget);
     EGUI_TEST_ASSERT_TRUE(test_widget.base.base.font == (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT);
 
     EGUI_TEST_ASSERT_TRUE(send_touch_action(EGUI_VIEW_OF(&test_widget), EGUI_MOTION_EVENT_ACTION_DOWN, center_x, center_y));
-    EGUI_TEST_ASSERT_EQUAL_INT(6, g_click_count);
+    EGUI_TEST_ASSERT_EQUAL_INT(5, g_click_count);
     egui_view_repeat_button_set_icon_font(EGUI_VIEW_OF(&test_widget), EGUI_FONT_ICON_MS_20);
     assert_pressed_state_cleared(&test_widget);
     EGUI_TEST_ASSERT_TRUE(test_widget.base.icon_font == EGUI_FONT_ICON_MS_20);
 
     EGUI_TEST_ASSERT_TRUE(send_touch_action(EGUI_VIEW_OF(&test_widget), EGUI_MOTION_EVENT_ACTION_DOWN, center_x, center_y));
-    EGUI_TEST_ASSERT_EQUAL_INT(7, g_click_count);
+    EGUI_TEST_ASSERT_EQUAL_INT(6, g_click_count);
     egui_view_repeat_button_set_icon_text_gap(EGUI_VIEW_OF(&test_widget), 9);
     assert_pressed_state_cleared(&test_widget);
     EGUI_TEST_ASSERT_EQUAL_INT(9, test_widget.base.icon_text_gap);
 
     EGUI_TEST_ASSERT_TRUE(send_touch_action(EGUI_VIEW_OF(&test_widget), EGUI_MOTION_EVENT_ACTION_DOWN, center_x, center_y));
-    EGUI_TEST_ASSERT_EQUAL_INT(8, g_click_count);
+    EGUI_TEST_ASSERT_EQUAL_INT(7, g_click_count);
     egui_view_repeat_button_set_repeat_timing(EGUI_VIEW_OF(&test_widget), 10, 20);
     assert_pressed_state_cleared(&test_widget);
     EGUI_TEST_ASSERT_EQUAL_INT(80, test_widget.initial_delay_ms);

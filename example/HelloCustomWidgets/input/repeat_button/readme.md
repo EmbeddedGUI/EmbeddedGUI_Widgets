@@ -5,10 +5,10 @@
 - 官方语义参考：`WinUI RepeatButton`
 - 参考开源库：`WPF UI`
 - 对应组件：`RepeatButton`
-- 当前保留形态：`Volume 12`、`Volume 15`、`Volume 18`、`compact`、`disabled`
-- 当前保留交互：主区保留 immediate click、press-and-hold repeat、移出/移回恢复与 `Space / Enter` 键盘 repeat；底部 `compact / disabled` preview 统一收口为静态 reference 对照
-- 当前移除内容：旧主面板说明文案、preview 说明标签、preview 快照轮换、录制阶段真实 `touch / key` 长按、额外收尾态，以及旧版 finalize README 章节顺序
-- EGUI 适配说明：继续使用当前目录下的 `egui_view_repeat_button` custom view，在不修改 `sdk/EmbeddedGUI` 的前提下，只收口 README、reference 录制说明、static preview 语义与验收记录
+- 当前保留形态：`Volume 12`、`Volume 15`、`Volume 18`、`secondary`、`disabled`
+- 当前保留交互：主区保留 immediate click、press-and-hold repeat、移出/移回恢复与 `Space / Enter` 键盘 repeat；底部 `secondary / disabled` preview 统一收口为静态 reference 对照
+- 当前移除内容：控件 helper 层的独立紧凑样式 API、旧主面板说明文案、preview 说明标签、preview 快照轮换、录制阶段真实 `touch / key` 长按、额外收尾态，以及旧版 finalize README 章节顺序
+- EGUI 适配说明：继续使用当前目录下的 `egui_view_repeat_button` custom view；小尺寸预览由 APP 侧尺寸、字体和 gap 配置，不修改 `sdk/EmbeddedGUI`
 
 ## 1. 为什么需要这个控件
 `repeat_button` 用于表达“按下立即触发一次，继续按住则持续重复触发”的标准命令语义，适合音量步进、数值加减、滚动微调和列表连续翻页这类离散但连续可重复的操作入口。
@@ -25,7 +25,7 @@
 - 标题：`RepeatButton`
 - 主区：1 个保留真实 repeat 语义的 `repeat_button`
 - 底部：一行并排的两个静态 preview
-- 左侧 preview：`compact`，固定显示 `Fast`
+- 左侧 preview：`secondary`，固定显示 `Fast`
 - 右侧 preview：`disabled`，固定显示 `Locked`
 
 目录：
@@ -43,7 +43,7 @@
 
 底部 preview 在整条轨道中始终固定：
 
-1. `compact`
+1. `secondary`
    `Fast`
 2. `disabled`
    `Locked`
@@ -54,11 +54,11 @@
 - 主控件：`160 x 40`
 - 底部 preview 行：`200 x 32`
 - 单个 preview：`96 x 32`
-- 页面结构：标题 -> 主 `repeat_button` -> 底部 `compact / disabled`
+- 页面结构：标题 -> 主 `repeat_button` -> 底部 `secondary / disabled`
 - 风格约束：浅色圆角 page panel、低噪音布局、标准命令按钮比例和轻量 focus ring，不回退到旧 demo 的说明型 chrome
 
 ## 6. 状态矩阵
-| 状态 | 主控件 | Compact preview | Disabled preview |
+| 状态 | 主控件 | Secondary preview | Disabled preview |
 | --- | --- | --- | --- |
 | 默认显示 | `Volume 12` | `Fast` | `Locked` |
 | 快照 2 | `Volume 15` | 保持不变 | 保持不变 |
@@ -73,7 +73,7 @@
 1. init 默认 timing / style。
    覆盖默认 `initial_delay_ms = 360`、`repeat_interval_ms = 90`、standard 背景、默认文字色、`icon_text_gap = 6` 与初始 timer 停止。
 2. setters 与 style helpers 清理 `pressed`。
-   覆盖 `apply_compact_style()`、`apply_disabled_style()`、`set_text()`、`set_icon()`、`set_font()`、`set_icon_font()`、`set_icon_text_gap()` 与 `set_repeat_timing()`，要求先清理 `is_pressed / touch_active / key_active / timer_started`，再更新内容与 timing。
+   覆盖 `apply_disabled_style()`、`set_text()`、`set_icon()`、`set_font()`、`set_icon_font()`、`set_icon_text_gap()` 与 `set_repeat_timing()`，要求先清理 `is_pressed / touch_active / key_active / timer_started`，再更新内容与 timing。
 3. `touch down` 立即 click + repeat。
    覆盖按下即触发一次 click，随后通过 timer 持续 repeat；`UP` 后不再额外 click，且状态完全清理。
 4. move outside 停 timer，move back 恢复且不额外 click。
@@ -92,12 +92,12 @@
 说明：
 - 主区真实交互继续保留 immediate click、press-and-hold repeat、移出/移回命中区恢复与 `Space / Enter` 键盘 repeat。
 - 所有 setter / 样式 helper、未处理键与 disabled guard 都统一要求先清理残留 `pressed` 与 repeat timer，再进入后续状态。
-- 底部 `compact / disabled` preview 统一通过 `egui_view_repeat_button_override_static_preview_api()` 吞掉 `touch / key`，只承担静态 reference 对照，不触发 click。
+- 底部 `secondary / disabled` preview 统一通过 `egui_view_repeat_button_override_static_preview_api()` 吞掉 `touch / key`，只承担静态 reference 对照，不触发 click。
 
 ## 8. 录制动作设计
 `egui_port_get_recording_action()` 已收口为静态 preview 工作流：
 
-1. 恢复主区默认 `Volume 12`，同时恢复底部 `compact / disabled` 固定状态，聚焦主按钮并抓取首帧，等待 `REPEAT_BUTTON_RECORD_FRAME_WAIT`。
+1. 恢复主区默认 `Volume 12`，同时恢复底部 `secondary / disabled` 固定状态，聚焦主按钮并抓取首帧，等待 `REPEAT_BUTTON_RECORD_FRAME_WAIT`。
 2. 切到 `Volume 15`，等待 `REPEAT_BUTTON_RECORD_WAIT`。
 3. 抓取 `Volume 15` 主区快照，等待 `REPEAT_BUTTON_RECORD_FRAME_WAIT`。
 4. 切到 `Volume 18`，等待 `REPEAT_BUTTON_RECORD_WAIT`。
@@ -114,27 +114,25 @@
 
 ## 9. 验收命令
 ```bash
-make all APP=HelloCustomWidgets APP_SUB=input/repeat_button PORT=pc
+make all APP=HelloCustomWidgets APP_SUB=input/repeat_button PORT=pc COMPILE_DEBUG= COMPILE_OPT_LEVEL=-O0
 
-# 在 X:\ 短路径下执行
-make all APP=HelloUnitTest PORT=pc_test
+make all APP=HelloUnitTest PORT=pc_test COMPILE_DEBUG= COMPILE_OPT_LEVEL=-O0
+.\output\main.exe
 
-python scripts/sync_widget_catalog.py
+python scripts/sync_widget_catalog.py --check
 python scripts/checks/check_touch_release_semantics.py --scope custom --category input
 python scripts/checks/check_docs_encoding.py
 python scripts/checks/check_widget_catalog.py
-python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/repeat_button --track reference --timeout 10 --keep-screenshots
-python scripts/code_compile_check.py --custom-widgets --category input --bits64
-python scripts/code_runtime_check.py --app HelloCustomWidgets --category input --track reference --bits64
-python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub input/repeat_button
-python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_input_repeat_button
+python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/repeat_button --timeout 10 --keep-screenshots
+make all APP=HelloCustomWidgets APP_SUB=input/repeat_button PORT=emscripten COMPILE_DEBUG= COMPILE_OPT_LEVEL=-O0
+git diff --check
 ```
 
 ## 10. 验收重点
 - 主区与底部双 preview 必须完整可见，不能黑屏、白屏或被裁切。
 - 主区录制只允许出现 `Volume 12`、`Volume 15`、`Volume 18` `3` 组可识别状态。
 - 主区真实交互仍需保留 immediate click、press-and-hold repeat、移出/移回命中区恢复与 `Space / Enter` repeat 语义。
-- 底部 `compact / disabled` preview 必须在全部 runtime 帧里保持静态一致，收到输入后不能改写 `region_screen / text / icon / font / icon_font / background / color / alpha / icon_text_gap / on_click_listener / initial_delay_ms / repeat_interval_ms`。
+- 底部 `secondary / disabled` preview 必须在全部 runtime 帧里保持静态一致，收到输入后不能改写 `region_screen / text / icon / font / icon_font / background / color / alpha / icon_text_gap / on_click_listener / initial_delay_ms / repeat_interval_ms`。
 - WASM demo 必须能以 `HelloCustomWidgets_input_repeat_button` 正常加载。
 
 ## 11. 截图复核口径
@@ -158,7 +156,7 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
   - `Volume 15`
   - `Volume 18`
 - 保留的底部对照：
-  - `compact`
+  - `secondary`
   - `disabled`
 - 保留的交互：
   - immediate click + repeat
@@ -174,34 +172,31 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
   - 录制阶段真实 `touch / key` 长按
   - 额外收尾态与旧版 finalize README 章节顺序
 
-## 14. 当前验收结果（2026-04-19）
+## 14. 当前验收结果（2026-05-01）
 - 单控件编译：`PASS`
-  - `make all APP=HelloCustomWidgets APP_SUB=input/repeat_button PORT=pc`
-- `HelloUnitTest`：`日志复核 PASS`
-  - 在 `X:\` 短路径下执行 `make all APP=HelloUnitTest PORT=pc_test`
-  - 本轮沿用已归档 unit 日志复核总计 `845 / 845`，其中 `repeat_button` suite `9 / 9`
+  - `make all APP=HelloCustomWidgets APP_SUB=input/repeat_button PORT=pc COMPILE_DEBUG= COMPILE_OPT_LEVEL=-O0`
+- `HelloUnitTest`：`PASS`
+  - `make all APP=HelloUnitTest PORT=pc_test COMPILE_DEBUG= COMPILE_OPT_LEVEL=-O0`
+  - `.\output\main.exe`
+  - 全量结果：`1048 / 1048`，其中 `repeat_button` suite `9 / 9`
 - catalog / 文档 / 触摸语义：`PASS`
-  - `python scripts/sync_widget_catalog.py`
+  - `python scripts/sync_widget_catalog.py --check`
   - `python scripts/checks/check_touch_release_semantics.py --scope custom --category input`
   - `python scripts/checks/check_docs_encoding.py`
   - `python scripts/checks/check_widget_catalog.py`
-  - 触摸语义结果：`custom_audited=28 custom_skipped_allowlist=5`
-  - 文档编码结果：`134 files`
-  - widget catalog 结果：`106 widgets`
+  - 触摸语义结果：`custom_audited=34 custom_skipped_allowlist=5`
+  - 文档编码结果：`172 files`
+  - widget catalog 结果：`141 widgets`
 - 单控件 runtime：`PASS`
-  - `python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/repeat_button --track reference --timeout 10 --keep-screenshots`
+  - `python scripts/code_runtime_check.py --app HelloCustomWidgets --app-sub input/repeat_button --timeout 10 --keep-screenshots`
   - 输出目录：`runtime_check_output/HelloCustomWidgets_input_repeat_button/default`
   - 共捕获 `8` 帧
-- input 分类 compile/runtime 回归：`PASS`
-  - `python scripts/code_compile_check.py --custom-widgets --category input --bits64`
-  - `python scripts/code_runtime_check.py --app HelloCustomWidgets --category input --track reference --bits64`
-  - input `33 / 33` 全部通过
-- web 链路：`PASS`
-  - `python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --app-sub input/repeat_button`
-  - `python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.json --demo HelloCustomWidgets_input_repeat_button`
-  - smoke 结果：`status=Running canvas=480x480 ratio=0.0977 colors=139`
+- wasm 构建：`PASS`
+  - `make all APP=HelloCustomWidgets APP_SUB=input/repeat_button PORT=emscripten COMPILE_DEBUG= COMPILE_OPT_LEVEL=-O0`
+- `git diff --check`：`PASS`
+  - Windows LF/CRLF 提示可忽略，命令退出码为 `0`
 - 截图复核结论：
   - 主区覆盖默认 `Volume 12`、`Volume 15` 与 `Volume 18` 三组 reference 状态
   - 最终稳定帧保持 `Volume 18`
   - 主按钮实际占位边界收敛到 `(82, 173) - (397, 228)`
-  - 遮罩主区变化边界后主区外保持单哈希，底部 `compact / disabled` preview 以 `y >= 245` 裁切后全程保持单哈希静态
+  - 遮罩主区变化边界后主区外保持单哈希，底部 `secondary / disabled` preview 以 `y >= 245` 裁切后全程保持单哈希静态

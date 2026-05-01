@@ -24,23 +24,6 @@ EGUI_BACKGROUND_PARAM_INIT(repeat_button_standard_bg_params, &repeat_button_stan
 #endif
 EGUI_BACKGROUND_COLOR_STATIC_CONST_INIT(repeat_button_standard_background, &repeat_button_standard_bg_params);
 
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(repeat_button_compact_bg_normal_param, EGUI_COLOR_HEX(0x0C7C73), EGUI_ALPHA_100, 8, 1,
-                                                        EGUI_COLOR_HEX(0x09655F), EGUI_ALPHA_100);
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(repeat_button_compact_bg_pressed_param, EGUI_COLOR_HEX(0x0A6B63), EGUI_ALPHA_100, 8, 1,
-                                                        EGUI_COLOR_HEX(0x08514A), EGUI_ALPHA_100);
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(repeat_button_compact_bg_disabled_param, EGUI_COLOR_HEX(0xB4C3BC), EGUI_ALPHA_100, 8, 1,
-                                                        EGUI_COLOR_HEX(0xB4C3BC), EGUI_ALPHA_100);
-#if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(repeat_button_compact_bg_focused_param, EGUI_COLOR_HEX(0x0C7C73), EGUI_ALPHA_100, 8, 2,
-                                                        EGUI_COLOR_HEX(0x8ED9CE), EGUI_ALPHA_100);
-EGUI_BACKGROUND_PARAM_INIT_WITH_FOCUS(repeat_button_compact_bg_params, &repeat_button_compact_bg_normal_param, &repeat_button_compact_bg_pressed_param,
-                                      &repeat_button_compact_bg_disabled_param, &repeat_button_compact_bg_focused_param);
-#else
-EGUI_BACKGROUND_PARAM_INIT(repeat_button_compact_bg_params, &repeat_button_compact_bg_normal_param, &repeat_button_compact_bg_pressed_param,
-                           &repeat_button_compact_bg_disabled_param);
-#endif
-EGUI_BACKGROUND_COLOR_STATIC_CONST_INIT(repeat_button_compact_background, &repeat_button_compact_bg_params);
-
 EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(repeat_button_disabled_bg_normal_param, EGUI_COLOR_HEX(0xEEF2F6), EGUI_ALPHA_100, 8, 1,
                                                         EGUI_COLOR_HEX(0xD0D8E1), EGUI_ALPHA_100);
 EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(repeat_button_disabled_bg_pressed_param, EGUI_COLOR_HEX(0xE6ECF2), EGUI_ALPHA_100, 8, 1,
@@ -183,11 +166,6 @@ static void egui_view_repeat_button_tick(egui_timer_t *timer)
 void egui_view_repeat_button_apply_standard_style(egui_view_t *self)
 {
     egui_view_repeat_button_apply_style(self, EGUI_BG_OF(&repeat_button_standard_background), EGUI_COLOR_WHITE, 6, 12);
-}
-
-void egui_view_repeat_button_apply_compact_style(egui_view_t *self)
-{
-    egui_view_repeat_button_apply_style(self, EGUI_BG_OF(&repeat_button_compact_background), EGUI_COLOR_WHITE, 4, 10);
 }
 
 void egui_view_repeat_button_apply_disabled_style(egui_view_t *self)

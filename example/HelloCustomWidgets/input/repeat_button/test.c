@@ -34,9 +34,9 @@ static egui_view_linearlayout_t root_layout;
 static egui_view_label_t title_label;
 static egui_view_repeat_button_t primary_widget;
 static egui_view_linearlayout_t bottom_row;
-static egui_view_repeat_button_t compact_widget;
+static egui_view_repeat_button_t secondary_widget;
 static egui_view_repeat_button_t disabled_widget;
-static egui_view_api_t compact_widget_api;
+static egui_view_api_t secondary_widget_api;
 static egui_view_api_t disabled_widget_api;
 static char primary_button_text[24];
 static int primary_value;
@@ -81,9 +81,9 @@ static void apply_primary_default_state(void)
 
 static void apply_preview_states(void)
 {
-    egui_view_repeat_button_set_text(EGUI_VIEW_OF(&compact_widget), "Fast");
-    egui_view_repeat_button_set_icon(EGUI_VIEW_OF(&compact_widget), EGUI_ICON_MS_REFRESH);
-    egui_view_repeat_button_set_icon_text_gap(EGUI_VIEW_OF(&compact_widget), 4);
+    egui_view_repeat_button_set_text(EGUI_VIEW_OF(&secondary_widget), "Fast");
+    egui_view_repeat_button_set_icon(EGUI_VIEW_OF(&secondary_widget), EGUI_ICON_MS_REFRESH);
+    egui_view_repeat_button_set_icon_text_gap(EGUI_VIEW_OF(&secondary_widget), 4);
 
     egui_view_repeat_button_set_text(EGUI_VIEW_OF(&disabled_widget), "Locked");
     egui_view_repeat_button_set_icon(EGUI_VIEW_OF(&disabled_widget), EGUI_ICON_MS_REMOVE);
@@ -170,16 +170,17 @@ void test_init_ui(void)
     egui_view_linearlayout_set_align_type(EGUI_VIEW_OF(&bottom_row), EGUI_ALIGN_VCENTER);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&bottom_row));
 
-    egui_view_repeat_button_init(EGUI_VIEW_OF(&compact_widget));
-    egui_view_set_size(EGUI_VIEW_OF(&compact_widget), REPEAT_BUTTON_PREVIEW_WIDTH, REPEAT_BUTTON_PREVIEW_HEIGHT);
-    egui_view_repeat_button_apply_compact_style(EGUI_VIEW_OF(&compact_widget));
-    egui_view_repeat_button_set_font(EGUI_VIEW_OF(&compact_widget), (const egui_font_t *)&egui_res_font_montserrat_10_4);
-    egui_view_repeat_button_set_icon_font(EGUI_VIEW_OF(&compact_widget), EGUI_FONT_ICON_MS_16);
-    egui_view_repeat_button_override_static_preview_api(EGUI_VIEW_OF(&compact_widget), &compact_widget_api);
+    egui_view_repeat_button_init(EGUI_VIEW_OF(&secondary_widget));
+    egui_view_set_size(EGUI_VIEW_OF(&secondary_widget), REPEAT_BUTTON_PREVIEW_WIDTH, REPEAT_BUTTON_PREVIEW_HEIGHT);
+    egui_view_repeat_button_apply_standard_style(EGUI_VIEW_OF(&secondary_widget));
+    egui_view_repeat_button_set_font(EGUI_VIEW_OF(&secondary_widget), (const egui_font_t *)&egui_res_font_montserrat_10_4);
+    egui_view_repeat_button_set_icon_text_gap(EGUI_VIEW_OF(&secondary_widget), 4);
+    egui_view_repeat_button_set_icon_font(EGUI_VIEW_OF(&secondary_widget), EGUI_FONT_ICON_MS_16);
+    egui_view_repeat_button_override_static_preview_api(EGUI_VIEW_OF(&secondary_widget), &secondary_widget_api);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
-    egui_view_set_focusable(EGUI_VIEW_OF(&compact_widget), 0);
+    egui_view_set_focusable(EGUI_VIEW_OF(&secondary_widget), 0);
 #endif
-    egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&compact_widget));
+    egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&secondary_widget));
 
     egui_view_repeat_button_init(EGUI_VIEW_OF(&disabled_widget));
     egui_view_set_size(EGUI_VIEW_OF(&disabled_widget), REPEAT_BUTTON_PREVIEW_WIDTH, REPEAT_BUTTON_PREVIEW_HEIGHT);
@@ -268,4 +269,3 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     }
 }
 #endif
-
