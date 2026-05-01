@@ -36,10 +36,10 @@ static egui_view_label_t title_label;
 static egui_view_rich_text_block_t primary_widget;
 static egui_view_label_t primary_status_label;
 static egui_view_linearlayout_t bottom_row;
-static egui_view_rich_text_block_t compact_widget;
-static egui_view_rich_text_block_t read_only_widget;
-static egui_view_api_t compact_widget_api;
-static egui_view_api_t read_only_widget_api;
+static egui_view_rich_text_block_t secondary_widget;
+static egui_view_rich_text_block_t muted_widget;
+static egui_view_api_t secondary_widget_api;
+static egui_view_api_t muted_widget_api;
 static uint8_t ui_ready;
 
 EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
@@ -68,12 +68,12 @@ static const egui_view_rich_text_block_paragraph_t snapshot_editorial_brief[] = 
 
 static const egui_view_rich_text_block_paragraph_t compact_preview_snapshot[] = {
         {"Short brief\nfor narrow slots.", EGUI_VIEW_RICH_TEXT_BLOCK_STYLE_BODY},
-        {"Compact", EGUI_VIEW_RICH_TEXT_BLOCK_STYLE_CAPTION},
+        {"Preview", EGUI_VIEW_RICH_TEXT_BLOCK_STYLE_CAPTION},
 };
 
 static const egui_view_rich_text_block_paragraph_t read_only_preview_snapshot[] = {
         {"Owner review\nrequired.", EGUI_VIEW_RICH_TEXT_BLOCK_STYLE_BODY},
-        {"Read only", EGUI_VIEW_RICH_TEXT_BLOCK_STYLE_CAPTION},
+        {"Muted", EGUI_VIEW_RICH_TEXT_BLOCK_STYLE_CAPTION},
 };
 
 static const rich_text_block_snapshot_t primary_snapshots[] = {
@@ -130,13 +130,12 @@ static void apply_primary_default_state(void)
 
 static void apply_preview_states(void)
 {
-    egui_view_rich_text_block_set_paragraphs(EGUI_VIEW_OF(&compact_widget), compact_preview_snapshot, (uint8_t)EGUI_ARRAY_SIZE(compact_preview_snapshot));
-    egui_view_rich_text_block_set_compact_mode(EGUI_VIEW_OF(&compact_widget), 1);
+    egui_view_rich_text_block_set_paragraphs(EGUI_VIEW_OF(&secondary_widget), compact_preview_snapshot, (uint8_t)EGUI_ARRAY_SIZE(compact_preview_snapshot));
+    egui_view_rich_text_block_set_palette(EGUI_VIEW_OF(&secondary_widget), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xDCE3E8), EGUI_COLOR_HEX(0x1E2A36),
+                                          EGUI_COLOR_HEX(0x627181), EGUI_COLOR_HEX(0x0F6CBD));
 
-    egui_view_rich_text_block_set_paragraphs(EGUI_VIEW_OF(&read_only_widget), read_only_preview_snapshot, (uint8_t)EGUI_ARRAY_SIZE(read_only_preview_snapshot));
-    egui_view_rich_text_block_set_compact_mode(EGUI_VIEW_OF(&read_only_widget), 1);
-    egui_view_rich_text_block_set_read_only_mode(EGUI_VIEW_OF(&read_only_widget), 1);
-    egui_view_rich_text_block_set_palette(EGUI_VIEW_OF(&read_only_widget), EGUI_COLOR_HEX(0xFBFCFD), EGUI_COLOR_HEX(0xD8DFE6), EGUI_COLOR_HEX(0x425160),
+    egui_view_rich_text_block_set_paragraphs(EGUI_VIEW_OF(&muted_widget), read_only_preview_snapshot, (uint8_t)EGUI_ARRAY_SIZE(read_only_preview_snapshot));
+    egui_view_rich_text_block_set_palette(EGUI_VIEW_OF(&muted_widget), EGUI_COLOR_HEX(0xFBFCFD), EGUI_COLOR_HEX(0xD8DFE6), EGUI_COLOR_HEX(0x425160),
                                           EGUI_COLOR_HEX(0x738191), EGUI_COLOR_HEX(0x8AA2B5));
     if (ui_ready)
     {
@@ -198,22 +197,22 @@ void test_init_ui(void)
     egui_view_linearlayout_set_align_type(EGUI_VIEW_OF(&bottom_row), EGUI_ALIGN_VCENTER);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&bottom_row));
 
-    egui_view_rich_text_block_init(EGUI_VIEW_OF(&compact_widget));
-    egui_view_set_size(EGUI_VIEW_OF(&compact_widget), RICH_TEXT_BLOCK_PREVIEW_WIDTH, RICH_TEXT_BLOCK_PREVIEW_HEIGHT);
-    egui_view_rich_text_block_set_font(EGUI_VIEW_OF(&compact_widget), (const egui_font_t *)&egui_res_font_montserrat_8_4);
-    egui_view_rich_text_block_set_emphasis_font(EGUI_VIEW_OF(&compact_widget), (const egui_font_t *)&egui_res_font_montserrat_10_4);
-    egui_view_rich_text_block_set_caption_font(EGUI_VIEW_OF(&compact_widget), (const egui_font_t *)&egui_res_font_montserrat_8_4);
-    egui_view_rich_text_block_override_static_preview_api(EGUI_VIEW_OF(&compact_widget), &compact_widget_api);
-    egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&compact_widget));
+    egui_view_rich_text_block_init(EGUI_VIEW_OF(&secondary_widget));
+    egui_view_set_size(EGUI_VIEW_OF(&secondary_widget), RICH_TEXT_BLOCK_PREVIEW_WIDTH, RICH_TEXT_BLOCK_PREVIEW_HEIGHT);
+    egui_view_rich_text_block_set_font(EGUI_VIEW_OF(&secondary_widget), (const egui_font_t *)&egui_res_font_montserrat_8_4);
+    egui_view_rich_text_block_set_emphasis_font(EGUI_VIEW_OF(&secondary_widget), (const egui_font_t *)&egui_res_font_montserrat_10_4);
+    egui_view_rich_text_block_set_caption_font(EGUI_VIEW_OF(&secondary_widget), (const egui_font_t *)&egui_res_font_montserrat_8_4);
+    egui_view_rich_text_block_override_static_preview_api(EGUI_VIEW_OF(&secondary_widget), &secondary_widget_api);
+    egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&secondary_widget));
 
-    egui_view_rich_text_block_init(EGUI_VIEW_OF(&read_only_widget));
-    egui_view_set_size(EGUI_VIEW_OF(&read_only_widget), RICH_TEXT_BLOCK_PREVIEW_WIDTH, RICH_TEXT_BLOCK_PREVIEW_HEIGHT);
-    egui_view_set_margin(EGUI_VIEW_OF(&read_only_widget), 8, 0, 0, 0);
-    egui_view_rich_text_block_set_font(EGUI_VIEW_OF(&read_only_widget), (const egui_font_t *)&egui_res_font_montserrat_8_4);
-    egui_view_rich_text_block_set_emphasis_font(EGUI_VIEW_OF(&read_only_widget), (const egui_font_t *)&egui_res_font_montserrat_10_4);
-    egui_view_rich_text_block_set_caption_font(EGUI_VIEW_OF(&read_only_widget), (const egui_font_t *)&egui_res_font_montserrat_8_4);
-    egui_view_rich_text_block_override_static_preview_api(EGUI_VIEW_OF(&read_only_widget), &read_only_widget_api);
-    egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&read_only_widget));
+    egui_view_rich_text_block_init(EGUI_VIEW_OF(&muted_widget));
+    egui_view_set_size(EGUI_VIEW_OF(&muted_widget), RICH_TEXT_BLOCK_PREVIEW_WIDTH, RICH_TEXT_BLOCK_PREVIEW_HEIGHT);
+    egui_view_set_margin(EGUI_VIEW_OF(&muted_widget), 8, 0, 0, 0);
+    egui_view_rich_text_block_set_font(EGUI_VIEW_OF(&muted_widget), (const egui_font_t *)&egui_res_font_montserrat_8_4);
+    egui_view_rich_text_block_set_emphasis_font(EGUI_VIEW_OF(&muted_widget), (const egui_font_t *)&egui_res_font_montserrat_10_4);
+    egui_view_rich_text_block_set_caption_font(EGUI_VIEW_OF(&muted_widget), (const egui_font_t *)&egui_res_font_montserrat_8_4);
+    egui_view_rich_text_block_override_static_preview_api(EGUI_VIEW_OF(&muted_widget), &muted_widget_api);
+    egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&muted_widget));
 
     apply_primary_default_state();
     apply_preview_states();
@@ -293,4 +292,3 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     }
 }
 #endif
-

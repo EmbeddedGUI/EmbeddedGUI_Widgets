@@ -27,8 +27,6 @@ struct rich_text_block_preview_snapshot
     egui_dim_t line_space;
     egui_dim_t paragraph_gap;
     uint8_t paragraph_count;
-    uint8_t compact_mode;
-    uint8_t read_only_mode;
     uint8_t enable;
     uint8_t is_focused;
     uint8_t is_pressed;
@@ -117,8 +115,6 @@ static void setup_preview_widget(void)
     egui_view_rich_text_block_set_font(EGUI_VIEW_OF(&preview_widget), (const egui_font_t *)&egui_res_font_montserrat_8_4);
     egui_view_rich_text_block_set_emphasis_font(EGUI_VIEW_OF(&preview_widget), (const egui_font_t *)&egui_res_font_montserrat_10_4);
     egui_view_rich_text_block_set_caption_font(EGUI_VIEW_OF(&preview_widget), (const egui_font_t *)&egui_res_font_montserrat_8_4);
-    egui_view_rich_text_block_set_compact_mode(EGUI_VIEW_OF(&preview_widget), 1);
-    egui_view_rich_text_block_set_read_only_mode(EGUI_VIEW_OF(&preview_widget), 1);
     egui_view_rich_text_block_override_static_preview_api(EGUI_VIEW_OF(&preview_widget), &preview_api);
     g_click_count = 0;
 }
@@ -172,8 +168,6 @@ static void capture_preview_snapshot(rich_text_block_preview_snapshot_t *snapsho
     snapshot->line_space = preview_widget.line_space;
     snapshot->paragraph_gap = preview_widget.paragraph_gap;
     snapshot->paragraph_count = preview_widget.paragraph_count;
-    snapshot->compact_mode = preview_widget.compact_mode;
-    snapshot->read_only_mode = preview_widget.read_only_mode;
     snapshot->enable = (uint8_t)egui_view_get_enable(EGUI_VIEW_OF(&preview_widget));
     snapshot->is_focused = EGUI_VIEW_OF(&preview_widget)->is_focused;
     snapshot->is_pressed = EGUI_VIEW_OF(&preview_widget)->is_pressed;
@@ -202,8 +196,6 @@ static void assert_preview_state_unchanged(const rich_text_block_preview_snapsho
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->line_space, preview_widget.line_space);
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->paragraph_gap, preview_widget.paragraph_gap);
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->paragraph_count, preview_widget.paragraph_count);
-    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->compact_mode, preview_widget.compact_mode);
-    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->read_only_mode, preview_widget.read_only_mode);
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->enable, egui_view_get_enable(EGUI_VIEW_OF(&preview_widget)));
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->is_focused, EGUI_VIEW_OF(&preview_widget)->is_focused);
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->is_pressed, EGUI_VIEW_OF(&preview_widget)->is_pressed);
@@ -221,8 +213,6 @@ static void test_rich_text_block_init_uses_defaults(void)
     EGUI_TEST_ASSERT_TRUE(test_widget.font == (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT);
     EGUI_TEST_ASSERT_NULL(test_widget.emphasis_font);
     EGUI_TEST_ASSERT_NULL(test_widget.caption_font);
-    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_rich_text_block_get_compact_mode(EGUI_VIEW_OF(&test_widget)));
-    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_rich_text_block_get_read_only_mode(EGUI_VIEW_OF(&test_widget)));
     EGUI_TEST_ASSERT_EQUAL_INT(6, test_widget.paragraph_gap);
     EGUI_TEST_ASSERT_EQUAL_INT(2, test_widget.line_space);
 }
@@ -254,17 +244,6 @@ static void test_rich_text_block_setters_clamp_content_and_clear_pressed_state(v
     egui_view_rich_text_block_set_caption_font(EGUI_VIEW_OF(&test_widget), (const egui_font_t *)&egui_res_font_montserrat_8_4);
     EGUI_TEST_ASSERT_TRUE(egui_view_rich_text_block_resolve_font(&test_widget, EGUI_VIEW_RICH_TEXT_BLOCK_STYLE_CAPTION) ==
                           (const egui_font_t *)&egui_res_font_montserrat_8_4);
-    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_widget)->is_pressed);
-
-    EGUI_VIEW_OF(&test_widget)->is_pressed = 1;
-    egui_view_rich_text_block_set_compact_mode(EGUI_VIEW_OF(&test_widget), 2);
-    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_rich_text_block_get_compact_mode(EGUI_VIEW_OF(&test_widget)));
-    EGUI_TEST_ASSERT_EQUAL_INT(4, test_widget.paragraph_gap);
-    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_widget)->is_pressed);
-
-    EGUI_VIEW_OF(&test_widget)->is_pressed = 1;
-    egui_view_rich_text_block_set_read_only_mode(EGUI_VIEW_OF(&test_widget), 3);
-    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_rich_text_block_get_read_only_mode(EGUI_VIEW_OF(&test_widget)));
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_widget)->is_pressed);
 
     EGUI_VIEW_OF(&test_widget)->is_pressed = 1;

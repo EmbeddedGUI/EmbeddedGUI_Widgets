@@ -435,7 +435,7 @@ static void egui_view_rich_text_block_prepare_layout(egui_view_rich_text_block_t
 
     if (style == EGUI_VIEW_RICH_TEXT_BLOCK_STYLE_ACCENT && work_region.size.width > 14)
     {
-        accent_inset = local->compact_mode ? 10 : 14;
+        accent_inset = 14;
         if (accent_inset >= work_region.size.width)
         {
             accent_inset = 0;
@@ -443,9 +443,9 @@ static void egui_view_rich_text_block_prepare_layout(egui_view_rich_text_block_t
         layout->has_box = 1;
         layout->box_region.location.x = work_region.location.x;
         layout->box_region.size.width = work_region.size.width;
-        layout->strip_region.location.x = work_region.location.x + (local->compact_mode ? 4 : 5);
+        layout->strip_region.location.x = work_region.location.x + 5;
         layout->strip_region.location.y = y + 4;
-        layout->strip_region.size.width = local->compact_mode ? 2 : 3;
+        layout->strip_region.size.width = 3;
     }
 
     text_x = work_region.location.x + accent_inset;
@@ -498,16 +498,10 @@ static egui_dim_t egui_view_rich_text_block_measure_content_height(egui_view_ric
 
 static void egui_view_rich_text_block_draw_accent_box(egui_view_rich_text_block_t *local, egui_view_t *self, const egui_view_rich_text_block_paragraph_layout_t *layout)
 {
-    egui_color_t box_fill = egui_rgb_mix(local->surface_color, local->accent_color, local->compact_mode ? 10 : 14);
+    egui_color_t box_fill = egui_rgb_mix(local->surface_color, local->accent_color, 14);
     egui_color_t box_border = egui_rgb_mix(local->border_color, local->accent_color, 28);
     egui_color_t strip_color = local->accent_color;
 
-    if (local->read_only_mode)
-    {
-        box_fill = egui_rgb_mix(box_fill, local->surface_color, 36);
-        box_border = egui_rgb_mix(box_border, local->muted_text_color, 34);
-        strip_color = egui_rgb_mix(strip_color, local->muted_text_color, 30);
-    }
     if (!egui_view_get_enable(self))
     {
         box_fill = egui_view_rich_text_block_mix_disabled(box_fill);
@@ -516,9 +510,9 @@ static void egui_view_rich_text_block_draw_accent_box(egui_view_rich_text_block_
     }
 
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, layout->box_region.location.x, layout->box_region.location.y, layout->box_region.size.width, layout->box_region.size.height,
-                                          local->compact_mode ? 6 : 8, box_fill, egui_color_alpha_mix(self->alpha, 96));
+                                          8, box_fill, egui_color_alpha_mix(self->alpha, 96));
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, layout->box_region.location.x, layout->box_region.location.y, layout->box_region.size.width, layout->box_region.size.height,
-                                     local->compact_mode ? 6 : 8, 1, box_border, egui_color_alpha_mix(self->alpha, 42));
+                                     8, 1, box_border, egui_color_alpha_mix(self->alpha, 42));
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, layout->strip_region.location.x, layout->strip_region.location.y, layout->strip_region.size.width,
                                           layout->strip_region.size.height, 1, strip_color, egui_color_alpha_mix(self->alpha, 92));
 }
@@ -546,10 +540,6 @@ static void egui_view_rich_text_block_on_draw(egui_view_t *self)
         egui_view_rich_text_block_prepare_layout(local, self, &local->paragraphs[i], y, &layout);
         text_color = layout.text_color;
 
-        if (local->read_only_mode)
-        {
-            text_color = egui_rgb_mix(text_color, local->muted_text_color, layout.style == EGUI_VIEW_RICH_TEXT_BLOCK_STYLE_CAPTION ? 12 : 28);
-        }
         if (!egui_view_get_enable(self))
         {
             text_color = egui_view_rich_text_block_mix_disabled(text_color);
@@ -628,35 +618,6 @@ void egui_view_rich_text_block_set_caption_font(egui_view_t *self, const egui_fo
     egui_view_invalidate(self);
 }
 
-void egui_view_rich_text_block_set_compact_mode(egui_view_t *self, uint8_t compact_mode)
-{
-    EGUI_LOCAL_INIT(egui_view_rich_text_block_t);
-    egui_view_rich_text_block_clear_pressed_state(self);
-    local->compact_mode = compact_mode ? 1 : 0;
-    local->paragraph_gap = local->compact_mode ? 4 : 6;
-    egui_view_invalidate(self);
-}
-
-uint8_t egui_view_rich_text_block_get_compact_mode(egui_view_t *self)
-{
-    EGUI_LOCAL_INIT(egui_view_rich_text_block_t);
-    return local->compact_mode;
-}
-
-void egui_view_rich_text_block_set_read_only_mode(egui_view_t *self, uint8_t read_only_mode)
-{
-    EGUI_LOCAL_INIT(egui_view_rich_text_block_t);
-    egui_view_rich_text_block_clear_pressed_state(self);
-    local->read_only_mode = read_only_mode ? 1 : 0;
-    egui_view_invalidate(self);
-}
-
-uint8_t egui_view_rich_text_block_get_read_only_mode(egui_view_t *self)
-{
-    EGUI_LOCAL_INIT(egui_view_rich_text_block_t);
-    return local->read_only_mode;
-}
-
 void egui_view_rich_text_block_set_palette(egui_view_t *self, egui_color_t surface_color, egui_color_t border_color, egui_color_t text_color,
                                            egui_color_t muted_text_color, egui_color_t accent_color)
 {
@@ -723,8 +684,6 @@ void egui_view_rich_text_block_init(egui_view_t *self)
     local->line_space = 2;
     local->paragraph_gap = 6;
     local->paragraph_count = 0;
-    local->compact_mode = 0;
-    local->read_only_mode = 0;
 
     egui_view_set_view_name(self, "egui_view_rich_text_block");
 }
