@@ -24,8 +24,6 @@ struct counter_badge_preview_snapshot
     egui_alpha_t alpha;
     uint16_t count;
     uint8_t max_display;
-    uint8_t compact_mode;
-    uint8_t read_only_mode;
     uint8_t dot_mode;
     uint8_t enable;
     uint8_t is_focused;
@@ -80,7 +78,6 @@ static void setup_preview_badge(void)
     egui_view_set_size(EGUI_VIEW_OF(&preview_badge_widget), 18, 16);
     egui_view_set_on_click_listener(EGUI_VIEW_OF(&preview_badge_widget), on_preview_click);
     egui_view_counter_badge_set_count(EGUI_VIEW_OF(&preview_badge_widget), 4);
-    egui_view_counter_badge_set_compact_mode(EGUI_VIEW_OF(&preview_badge_widget), 1);
     egui_view_counter_badge_override_static_preview_api(EGUI_VIEW_OF(&preview_badge_widget), &preview_api);
     g_click_count = 0;
 }
@@ -131,8 +128,6 @@ static void capture_preview_snapshot(counter_badge_preview_snapshot_t *snapshot)
     snapshot->alpha = EGUI_VIEW_OF(&preview_badge_widget)->alpha;
     snapshot->count = preview_badge_widget.count;
     snapshot->max_display = preview_badge_widget.max_display;
-    snapshot->compact_mode = preview_badge_widget.compact_mode;
-    snapshot->read_only_mode = preview_badge_widget.read_only_mode;
     snapshot->dot_mode = preview_badge_widget.dot_mode;
     snapshot->enable = (uint8_t)egui_view_get_enable(EGUI_VIEW_OF(&preview_badge_widget));
     snapshot->is_focused = EGUI_VIEW_OF(&preview_badge_widget)->is_focused;
@@ -159,8 +154,6 @@ static void assert_preview_state_unchanged(const counter_badge_preview_snapshot_
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->alpha, EGUI_VIEW_OF(&preview_badge_widget)->alpha);
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->count, preview_badge_widget.count);
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->max_display, preview_badge_widget.max_display);
-    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->compact_mode, preview_badge_widget.compact_mode);
-    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->read_only_mode, preview_badge_widget.read_only_mode);
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->dot_mode, preview_badge_widget.dot_mode);
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->enable, egui_view_get_enable(EGUI_VIEW_OF(&preview_badge_widget)));
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->is_focused, EGUI_VIEW_OF(&preview_badge_widget)->is_focused);
@@ -178,8 +171,6 @@ static void test_counter_badge_init_uses_defaults(void)
     EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_counter_badge_get_count(EGUI_VIEW_OF(&test_badge_widget)));
     EGUI_TEST_ASSERT_EQUAL_INT(99, egui_view_counter_badge_get_max_display(EGUI_VIEW_OF(&test_badge_widget)));
     EGUI_TEST_ASSERT_FALSE(egui_view_counter_badge_get_dot_mode(EGUI_VIEW_OF(&test_badge_widget)));
-    EGUI_TEST_ASSERT_FALSE(egui_view_counter_badge_get_compact_mode(EGUI_VIEW_OF(&test_badge_widget)));
-    EGUI_TEST_ASSERT_FALSE(egui_view_counter_badge_get_read_only_mode(EGUI_VIEW_OF(&test_badge_widget)));
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xC42B1C).full, test_badge_widget.badge_color.full);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_WHITE.full, test_badge_widget.text_color.full);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_WHITE.full, test_badge_widget.outline_color.full);
@@ -211,15 +202,6 @@ static void test_counter_badge_setters_clear_pressed_state_and_update_palette(vo
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xF8F9FA).full, test_badge_widget.text_color.full);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x102030).full, test_badge_widget.outline_color.full);
 
-    egui_view_set_pressed(EGUI_VIEW_OF(&test_badge_widget), 1);
-    egui_view_counter_badge_set_compact_mode(EGUI_VIEW_OF(&test_badge_widget), 2);
-    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_badge_widget)->is_pressed);
-    EGUI_TEST_ASSERT_TRUE(egui_view_counter_badge_get_compact_mode(EGUI_VIEW_OF(&test_badge_widget)));
-
-    egui_view_set_pressed(EGUI_VIEW_OF(&test_badge_widget), 1);
-    egui_view_counter_badge_set_read_only_mode(EGUI_VIEW_OF(&test_badge_widget), 4);
-    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_badge_widget)->is_pressed);
-    EGUI_TEST_ASSERT_TRUE(egui_view_counter_badge_get_read_only_mode(EGUI_VIEW_OF(&test_badge_widget)));
 }
 
 static void test_counter_badge_helpers_compute_regions_and_modes(void)

@@ -72,9 +72,9 @@ static void egui_view_counter_badge_get_metrics(egui_view_t *self, egui_view_cou
 
     if (local->dot_mode)
     {
-        egui_dim_t dot_d = local->compact_mode ? 8 : 10;
+        egui_dim_t dot_d = 10;
 
-        if (!local->compact_mode && min_side >= 18)
+        if (min_side >= 18)
         {
             dot_d = 12;
         }
@@ -109,20 +109,20 @@ static void egui_view_counter_badge_get_metrics(egui_view_t *self, egui_view_cou
     }
     if (text_height <= 0)
     {
-        text_height = local->compact_mode ? 8 : 10;
+        text_height = 10;
     }
 
-    badge_h = text_height + (local->compact_mode ? 6 : 8);
-    if (badge_h < (local->compact_mode ? 12 : 14))
+    badge_h = text_height + 8;
+    if (badge_h < 14)
     {
-        badge_h = local->compact_mode ? 12 : 14;
+        badge_h = 14;
     }
     if (badge_h > region.size.height)
     {
         badge_h = region.size.height;
     }
 
-    pad_x = local->compact_mode ? 4 : 6;
+    pad_x = 6;
     badge_w = text_width + pad_x * 2;
     if (badge_w < badge_h)
     {
@@ -182,13 +182,6 @@ static void egui_view_counter_badge_on_draw(egui_view_t *self)
         return;
     }
 
-    if (local->read_only_mode)
-    {
-        badge_color = egui_rgb_mix(badge_color, EGUI_COLOR_HEX(0xF5F7FA), 34);
-        text_color = egui_rgb_mix(text_color, EGUI_COLOR_HEX(0x7C8794), 42);
-        outline_color = egui_rgb_mix(outline_color, EGUI_COLOR_HEX(0xD6DEE6), 42);
-        outline_alpha = local->dot_mode ? 60 : 72;
-    }
     if (!egui_view_get_enable(self))
     {
         badge_color = egui_view_counter_badge_mix_disabled(badge_color);
@@ -273,36 +266,6 @@ void egui_view_counter_badge_set_palette(egui_view_t *self, egui_color_t badge_c
     local->text_color = text_color;
     local->outline_color = outline_color;
     egui_view_invalidate(self);
-}
-
-void egui_view_counter_badge_set_compact_mode(egui_view_t *self, uint8_t compact_mode)
-{
-    EGUI_LOCAL_INIT(egui_view_counter_badge_t);
-
-    egui_view_counter_badge_clear_pressed_state(self);
-    local->compact_mode = compact_mode ? 1 : 0;
-    egui_view_invalidate(self);
-}
-
-uint8_t egui_view_counter_badge_get_compact_mode(egui_view_t *self)
-{
-    EGUI_LOCAL_INIT(egui_view_counter_badge_t);
-    return local->compact_mode;
-}
-
-void egui_view_counter_badge_set_read_only_mode(egui_view_t *self, uint8_t read_only_mode)
-{
-    EGUI_LOCAL_INIT(egui_view_counter_badge_t);
-
-    egui_view_counter_badge_clear_pressed_state(self);
-    local->read_only_mode = read_only_mode ? 1 : 0;
-    egui_view_invalidate(self);
-}
-
-uint8_t egui_view_counter_badge_get_read_only_mode(egui_view_t *self)
-{
-    EGUI_LOCAL_INIT(egui_view_counter_badge_t);
-    return local->read_only_mode;
 }
 
 uint8_t egui_view_counter_badge_get_badge_region(egui_view_t *self, egui_region_t *region)
@@ -391,8 +354,6 @@ void egui_view_counter_badge_init(egui_view_t *self)
     local->icon_font = NULL;
     memset(local->text_buffer, 0, sizeof(local->text_buffer));
     local->outline_color = EGUI_COLOR_WHITE;
-    local->compact_mode = 0;
-    local->read_only_mode = 0;
     local->dot_mode = 0;
 
     egui_view_set_view_name(self, "egui_view_counter_badge");
