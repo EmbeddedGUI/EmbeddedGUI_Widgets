@@ -66,7 +66,11 @@ static void setup_preview_slider(uint8_t value)
 {
     egui_view_slider_init(EGUI_VIEW_OF(&preview_slider), uicode_get_core());
     egui_view_set_size(EGUI_VIEW_OF(&preview_slider), 104, 28);
-    hcw_slider_apply_compact_style(EGUI_VIEW_OF(&preview_slider));
+    hcw_slider_apply_standard_style(EGUI_VIEW_OF(&preview_slider));
+    egui_view_set_padding(EGUI_VIEW_OF(&preview_slider), 8, 8, 6, 6);
+    preview_slider.track_color = EGUI_COLOR_HEX(0xD9E5DE);
+    preview_slider.active_color = EGUI_COLOR_HEX(0x0C7C73);
+    preview_slider.thumb_color = EGUI_COLOR_WHITE;
     hcw_slider_set_value(EGUI_VIEW_OF(&preview_slider), value);
     egui_view_slider_set_on_value_changed_listener(EGUI_VIEW_OF(&preview_slider), on_value_changed);
     hcw_slider_override_static_preview_api(EGUI_VIEW_OF(&preview_slider), &preview_slider_api);
@@ -158,25 +162,18 @@ static void assert_preview_state_unchanged(const slider_preview_snapshot_t *snap
     EGUI_TEST_ASSERT_EQUAL_INT(0xFF, changed_value);
 }
 
-static void test_slider_style_helpers_update_palette_and_clear_pressed_state(void)
+static void test_slider_style_helper_updates_palette_and_clear_pressed_state(void)
 {
     setup_slider(42);
 
     test_slider.is_dragging = 1;
     egui_view_set_pressed(EGUI_VIEW_OF(&test_slider), 1);
-    hcw_slider_apply_compact_style(EGUI_VIEW_OF(&test_slider));
+    hcw_slider_apply_standard_style(EGUI_VIEW_OF(&test_slider));
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_slider)->is_pressed);
     EGUI_TEST_ASSERT_EQUAL_INT(0, test_slider.is_dragging);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xD9E5DE).full, test_slider.track_color.full);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x0C7C73).full, test_slider.active_color.full);
-
-    test_slider.is_dragging = 1;
-    egui_view_set_pressed(EGUI_VIEW_OF(&test_slider), 1);
-    hcw_slider_apply_read_only_style(EGUI_VIEW_OF(&test_slider));
-    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_slider)->is_pressed);
-    EGUI_TEST_ASSERT_EQUAL_INT(0, test_slider.is_dragging);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xE4E9EE).full, test_slider.track_color.full);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xAFB8C3).full, test_slider.active_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xD8E0E9).full, test_slider.track_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x2563EB).full, test_slider.active_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_WHITE.full, test_slider.thumb_color.full);
 }
 
 static void test_slider_set_value_clamps_and_clears_drag_state(void)
@@ -302,7 +299,7 @@ static void test_slider_static_preview_consumes_input_and_keeps_state(void)
 void test_slider_run(void)
 {
     EGUI_TEST_SUITE_BEGIN(slider);
-    EGUI_TEST_RUN(test_slider_style_helpers_update_palette_and_clear_pressed_state);
+    EGUI_TEST_RUN(test_slider_style_helper_updates_palette_and_clear_pressed_state);
     EGUI_TEST_RUN(test_slider_set_value_clamps_and_clears_drag_state);
     EGUI_TEST_RUN(test_slider_keyboard_navigation_steps_value);
     EGUI_TEST_RUN(test_slider_touch_drag_updates_value);

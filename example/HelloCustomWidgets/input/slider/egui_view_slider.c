@@ -75,7 +75,7 @@ static void hcw_slider_on_draw(egui_view_t *self)
     egui_color_t shell_fill;
     egui_color_t shell_border;
     egui_color_t thumb_border;
-    uint8_t compact_mode = self->padding.top <= 6 ? 1 : 0;
+    uint8_t small_surface = self->padding.top <= 6 ? 1 : 0;
 
     egui_view_get_work_region(self, &region);
     if (region.size.width <= 0 || region.size.height <= 0)
@@ -95,8 +95,8 @@ static void hcw_slider_on_draw(egui_view_t *self)
         thumb_color = egui_rgb_mix(thumb_color, EGUI_COLOR_DARK_GREY, 32);
     }
 
-    shell_fill = egui_rgb_mix(track_color, EGUI_COLOR_WHITE, compact_mode ? 86 : 90);
-    shell_border = egui_rgb_mix(track_color, active_color, compact_mode ? 18 : 24);
+    shell_fill = egui_rgb_mix(track_color, EGUI_COLOR_WHITE, small_surface ? 86 : 90);
+    shell_border = egui_rgb_mix(track_color, active_color, small_surface ? 18 : 24);
     thumb_border = egui_rgb_mix(shell_border, active_color, local->is_dragging ? 42 : 18);
     outer_radius = region.size.height / 2;
     if (outer_radius < 8)
@@ -105,9 +105,9 @@ static void hcw_slider_on_draw(egui_view_t *self)
     }
 
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, region.location.x, region.location.y, region.size.width, region.size.height, outer_radius, shell_fill,
-                                          egui_color_alpha_mix(self->alpha, compact_mode ? 94 : 100));
+                                          egui_color_alpha_mix(self->alpha, small_surface ? 94 : 100));
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, region.location.x, region.location.y, region.size.width, region.size.height, outer_radius, 1, shell_border,
-                                     egui_color_alpha_mix(self->alpha, compact_mode ? 46 : 58));
+                                     egui_color_alpha_mix(self->alpha, small_surface ? 46 : 58));
 
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.start_x, metrics.track_y, metrics.usable_width, metrics.track_height, metrics.track_radius, track_color,
                                           egui_color_alpha_mix(self->alpha, 100));
@@ -140,16 +140,6 @@ static void hcw_slider_on_draw(egui_view_t *self)
 void hcw_slider_apply_standard_style(egui_view_t *self)
 {
     hcw_slider_apply_palette(self, 10, 8, EGUI_COLOR_HEX(0xD8E0E9), EGUI_COLOR_HEX(0x2563EB), EGUI_COLOR_WHITE);
-}
-
-void hcw_slider_apply_compact_style(egui_view_t *self)
-{
-    hcw_slider_apply_palette(self, 8, 6, EGUI_COLOR_HEX(0xD9E5DE), EGUI_COLOR_HEX(0x0C7C73), EGUI_COLOR_WHITE);
-}
-
-void hcw_slider_apply_read_only_style(egui_view_t *self)
-{
-    hcw_slider_apply_palette(self, 8, 6, EGUI_COLOR_HEX(0xE4E9EE), EGUI_COLOR_HEX(0xAFB8C3), EGUI_COLOR_HEX(0xF7F9FB));
 }
 
 void hcw_slider_set_value(egui_view_t *self, uint8_t value)

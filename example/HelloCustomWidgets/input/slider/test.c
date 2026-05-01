@@ -34,11 +34,11 @@ static egui_view_linearlayout_t root_layout;
 static egui_view_label_t title_label;
 static egui_view_slider_t slider_primary;
 static egui_view_linearlayout_t bottom_row;
-static egui_view_slider_t slider_compact;
-static egui_view_slider_t slider_read_only;
+static egui_view_slider_t slider_secondary;
+static egui_view_slider_t slider_disabled;
 static egui_view_api_t slider_primary_api;
-static egui_view_api_t slider_compact_api;
-static egui_view_api_t slider_read_only_api;
+static egui_view_api_t slider_secondary_api;
+static egui_view_api_t slider_disabled_api;
 static uint8_t ui_ready;
 
 EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
@@ -53,8 +53,8 @@ static const slider_snapshot_t primary_snapshots[] = {
         {86},
 };
 
-static const slider_snapshot_t compact_snapshot = {28};
-static const slider_snapshot_t read_only_snapshot = {64};
+static const slider_snapshot_t secondary_snapshot = {28};
+static const slider_snapshot_t disabled_snapshot = {64};
 
 static void layout_page(void);
 
@@ -77,8 +77,8 @@ static void apply_primary_default_state(void)
 
 static void apply_preview_states(void)
 {
-    hcw_slider_set_value(EGUI_VIEW_OF(&slider_compact), compact_snapshot.value);
-    hcw_slider_set_value(EGUI_VIEW_OF(&slider_read_only), read_only_snapshot.value);
+    hcw_slider_set_value(EGUI_VIEW_OF(&slider_secondary), secondary_snapshot.value);
+    hcw_slider_set_value(EGUI_VIEW_OF(&slider_disabled), disabled_snapshot.value);
 
     if (ui_ready)
     {
@@ -142,24 +142,33 @@ void test_init_ui(void)
     egui_view_linearlayout_set_align_type(EGUI_VIEW_OF(&bottom_row), EGUI_ALIGN_VCENTER);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&bottom_row));
 
-    egui_view_slider_init(EGUI_VIEW_OF(&slider_compact), uicode_get_core());
-    egui_view_set_size(EGUI_VIEW_OF(&slider_compact), SLIDER_PREVIEW_WIDTH, SLIDER_PREVIEW_HEIGHT);
-    hcw_slider_apply_compact_style(EGUI_VIEW_OF(&slider_compact));
-    hcw_slider_override_static_preview_api(EGUI_VIEW_OF(&slider_compact), &slider_compact_api);
+    egui_view_slider_init(EGUI_VIEW_OF(&slider_secondary), uicode_get_core());
+    egui_view_set_size(EGUI_VIEW_OF(&slider_secondary), SLIDER_PREVIEW_WIDTH, SLIDER_PREVIEW_HEIGHT);
+    hcw_slider_apply_standard_style(EGUI_VIEW_OF(&slider_secondary));
+    egui_view_set_padding(EGUI_VIEW_OF(&slider_secondary), 8, 8, 6, 6);
+    slider_secondary.track_color = EGUI_COLOR_HEX(0xD9E5DE);
+    slider_secondary.active_color = EGUI_COLOR_HEX(0x0C7C73);
+    slider_secondary.thumb_color = EGUI_COLOR_WHITE;
+    hcw_slider_override_static_preview_api(EGUI_VIEW_OF(&slider_secondary), &slider_secondary_api);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
-    egui_view_set_focusable(EGUI_VIEW_OF(&slider_compact), 0);
+    egui_view_set_focusable(EGUI_VIEW_OF(&slider_secondary), 0);
 #endif
-    egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&slider_compact));
+    egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&slider_secondary));
 
-    egui_view_slider_init(EGUI_VIEW_OF(&slider_read_only), uicode_get_core());
-    egui_view_set_size(EGUI_VIEW_OF(&slider_read_only), SLIDER_PREVIEW_WIDTH, SLIDER_PREVIEW_HEIGHT);
-    egui_view_set_margin(EGUI_VIEW_OF(&slider_read_only), 8, 0, 0, 0);
-    hcw_slider_apply_read_only_style(EGUI_VIEW_OF(&slider_read_only));
-    hcw_slider_override_static_preview_api(EGUI_VIEW_OF(&slider_read_only), &slider_read_only_api);
+    egui_view_slider_init(EGUI_VIEW_OF(&slider_disabled), uicode_get_core());
+    egui_view_set_size(EGUI_VIEW_OF(&slider_disabled), SLIDER_PREVIEW_WIDTH, SLIDER_PREVIEW_HEIGHT);
+    egui_view_set_margin(EGUI_VIEW_OF(&slider_disabled), 8, 0, 0, 0);
+    hcw_slider_apply_standard_style(EGUI_VIEW_OF(&slider_disabled));
+    egui_view_set_padding(EGUI_VIEW_OF(&slider_disabled), 8, 8, 6, 6);
+    slider_disabled.track_color = EGUI_COLOR_HEX(0xE4E9EE);
+    slider_disabled.active_color = EGUI_COLOR_HEX(0xAFB8C3);
+    slider_disabled.thumb_color = EGUI_COLOR_HEX(0xF7F9FB);
+    egui_view_set_enable(EGUI_VIEW_OF(&slider_disabled), 0);
+    hcw_slider_override_static_preview_api(EGUI_VIEW_OF(&slider_disabled), &slider_disabled_api);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
-    egui_view_set_focusable(EGUI_VIEW_OF(&slider_read_only), 0);
+    egui_view_set_focusable(EGUI_VIEW_OF(&slider_disabled), 0);
 #endif
-    egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&slider_read_only));
+    egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&slider_disabled));
 
     apply_primary_default_state();
     apply_preview_states();
@@ -239,4 +248,3 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     }
 }
 #endif
-
