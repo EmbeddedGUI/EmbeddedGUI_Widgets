@@ -235,7 +235,8 @@ static void egui_view_person_picture_get_avatar_region(egui_view_person_picture_
         return;
     }
 
-    inset = local->compact_mode ? 0 : (avatar_size >= 24 ? 1 : 0);
+    EGUI_UNUSED(local);
+    inset = avatar_size >= 24 ? 1 : 0;
     if (avatar_size - inset * 2 <= 0)
     {
         inset = 0;
@@ -267,17 +268,17 @@ static void egui_view_person_picture_get_presence_region(egui_view_person_pictur
         return;
     }
 
-    dot_size = avatar_region->size.width / (local->compact_mode ? 4 : 3);
-    if (dot_size < (local->compact_mode ? 6 : 8))
+    dot_size = avatar_region->size.width / 3;
+    if (dot_size < 8)
     {
-        dot_size = local->compact_mode ? 6 : 8;
+        dot_size = 8;
     }
     if (dot_size > avatar_region->size.width / 2)
     {
         dot_size = avatar_region->size.width / 2;
     }
 
-    margin = local->compact_mode ? 1 : 2;
+    margin = 2;
     presence_region->size.width = dot_size;
     presence_region->size.height = dot_size;
     presence_region->location.x = avatar_region->location.x + avatar_region->size.width - dot_size - margin;
@@ -311,19 +312,11 @@ static void egui_view_person_picture_on_draw(egui_view_t *self)
     radius = avatar_region.size.width / 2;
 
     fill_color = egui_view_person_picture_tone_color(local, local->tone);
-    border_color = egui_rgb_mix(local->border_color, fill_color, local->compact_mode ? 8 : 14);
+    border_color = egui_rgb_mix(local->border_color, fill_color, 14);
     foreground_color = local->foreground_color;
     presence_color = egui_view_person_picture_presence_color(local, local->presence);
     presence_outline_color = local->surface_color;
 
-    if (local->read_only_mode)
-    {
-        fill_color = egui_rgb_mix(fill_color, local->surface_color, 34);
-        border_color = egui_rgb_mix(border_color, local->muted_color, 54);
-        foreground_color = egui_rgb_mix(foreground_color, local->muted_color, 42);
-        presence_color = egui_rgb_mix(presence_color, local->muted_color, 58);
-        presence_outline_color = egui_rgb_mix(presence_outline_color, local->muted_color, 18);
-    }
     if (!egui_view_get_enable(self))
     {
         fill_color = egui_view_person_picture_mix_disabled(fill_color);
@@ -506,34 +499,6 @@ void egui_view_person_picture_set_icon_font(egui_view_t *self, const egui_font_t
     egui_view_invalidate(self);
 }
 
-void egui_view_person_picture_set_compact_mode(egui_view_t *self, uint8_t compact_mode)
-{
-    EGUI_LOCAL_INIT(egui_view_person_picture_t);
-    egui_view_person_picture_clear_pressed_state(self);
-    local->compact_mode = compact_mode ? 1 : 0;
-    egui_view_invalidate(self);
-}
-
-uint8_t egui_view_person_picture_get_compact_mode(egui_view_t *self)
-{
-    EGUI_LOCAL_INIT(egui_view_person_picture_t);
-    return local->compact_mode;
-}
-
-void egui_view_person_picture_set_read_only_mode(egui_view_t *self, uint8_t read_only_mode)
-{
-    EGUI_LOCAL_INIT(egui_view_person_picture_t);
-    egui_view_person_picture_clear_pressed_state(self);
-    local->read_only_mode = read_only_mode ? 1 : 0;
-    egui_view_invalidate(self);
-}
-
-uint8_t egui_view_person_picture_get_read_only_mode(egui_view_t *self)
-{
-    EGUI_LOCAL_INIT(egui_view_person_picture_t);
-    return local->read_only_mode;
-}
-
 void egui_view_person_picture_set_palette(egui_view_t *self, egui_color_t surface_color, egui_color_t border_color, egui_color_t foreground_color,
                                           egui_color_t accent_color, egui_color_t success_color, egui_color_t warning_color, egui_color_t neutral_color,
                                           egui_color_t muted_color)
@@ -609,8 +574,6 @@ void egui_view_person_picture_init(egui_view_t *self)
     local->muted_color = EGUI_COLOR_HEX(0x6B7A89);
     local->tone = EGUI_VIEW_PERSON_PICTURE_TONE_NEUTRAL;
     local->presence = EGUI_VIEW_PERSON_PICTURE_PRESENCE_NONE;
-    local->compact_mode = 0;
-    local->read_only_mode = 0;
 
     egui_view_set_view_name(self, "egui_view_person_picture");
 }

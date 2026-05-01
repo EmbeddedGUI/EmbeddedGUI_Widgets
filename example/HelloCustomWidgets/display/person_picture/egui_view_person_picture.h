@@ -40,8 +40,6 @@ struct egui_view_person_picture
     egui_color_t muted_color;
     uint8_t tone;
     uint8_t presence;
-    uint8_t compact_mode;
-    uint8_t read_only_mode;
 };
 
 void egui_view_person_picture_init(egui_view_t *self);
@@ -59,10 +57,6 @@ void egui_view_person_picture_set_presence(egui_view_t *self, uint8_t presence);
 uint8_t egui_view_person_picture_get_presence(egui_view_t *self);
 void egui_view_person_picture_set_font(egui_view_t *self, const egui_font_t *font);
 void egui_view_person_picture_set_icon_font(egui_view_t *self, const egui_font_t *font);
-void egui_view_person_picture_set_compact_mode(egui_view_t *self, uint8_t compact_mode);
-uint8_t egui_view_person_picture_get_compact_mode(egui_view_t *self);
-void egui_view_person_picture_set_read_only_mode(egui_view_t *self, uint8_t read_only_mode);
-uint8_t egui_view_person_picture_get_read_only_mode(egui_view_t *self);
 void egui_view_person_picture_set_palette(egui_view_t *self, egui_color_t surface_color, egui_color_t border_color, egui_color_t foreground_color,
                                           egui_color_t accent_color, egui_color_t success_color, egui_color_t warning_color, egui_color_t neutral_color,
                                           egui_color_t muted_color);

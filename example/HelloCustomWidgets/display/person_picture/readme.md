@@ -20,8 +20,8 @@
 - 标题：`PersonPicture`
 - 主区：一个主 `person_picture` 和一个当前状态 label
 - 底部：一行并排的两个静态 preview
-- 左侧 preview：`compact`
-- 右侧 preview：`read_only`
+- 左侧 preview：`secondary`
+- 右侧 preview：`muted`
 
 目录：
 - `example/HelloCustomWidgets/display/person_picture/`
@@ -44,13 +44,13 @@
 
 底部 preview 在整条轨道中始终固定：
 
-1. `compact`
+1. `secondary`
    name：`Maya Yu`
-   mode：`compact`
-2. `read_only`
+   variant：小尺寸头像，由 APP 配置 view size 与 font
+2. `muted`
    name：`Mina Brooks`
    initials：`MB`
-   mode：`compact + read_only`
+   variant：小尺寸头像 + muted palette，由 APP 配置颜色
 
 ## 5. 视觉与布局规格
 - 画布：`480 x 480`
@@ -60,11 +60,11 @@
 - 主状态 label：`224 x 12`
 - 底部 preview 行：`84 x 38`
 - 单个 preview 头像：`38 x 38`
-- 页面结构：标题 -> 主 `person_picture` -> 状态 label -> 底部 `compact / read_only`
+- 页面结构：标题 -> 主 `person_picture` -> 状态 label -> 底部 `secondary / muted`
 - 风格约束：浅色 page panel、主区只保留头像回退链路与 presence/tone 变化，底部 preview 只做静态 reference
 
 ## 6. 状态矩阵
-| 状态 / 区域 | 主控件 | Compact preview | Read-only preview |
+| 状态 / 区域 | 主控件 | Secondary preview | Muted preview |
 | --- | --- | --- | --- |
 | `display_name -> initials` | 是 | 是 | 是 |
 | 显式 `initials` | 是 | 否 | 是 |
@@ -72,8 +72,8 @@
 | `set_image()` 圆形遮罩 | 支持 | 支持 | 支持 |
 | `tone` | 是 | 是 | 是 |
 | `presence` | 是 | 是 | 是 |
-| `compact_mode` | 否 | 是 | 是 |
-| `read_only_mode` | 否 | 否 | 是 |
+| 小尺寸布局 | APP 通过 view size / font 配置 | 是 | 是 |
+| muted 外观 | APP 通过 palette 配置 | 否 | 是 |
 | 静态 preview 吞掉 `touch / key` | 否 | 是 | 是 |
 
 ## 7. 录制动作设计
@@ -101,12 +101,12 @@
 1. 主控件初始化与默认语义
    覆盖默认 `fallback_glyph`、默认 `tone / presence`、默认字体与 icon font 回退规则
 2. setter 与 initials 回退守卫
-   覆盖 `set_display_name()`、`set_initials()`、`set_fallback_glyph()`、`set_image()`、`set_tone()`、`set_presence()`、`set_font()`、`set_icon_font()`、`set_palette()`、`set_compact_mode()`、`set_read_only_mode()` 对 `pressed` 状态的清理和默认回退
+   覆盖 `set_display_name()`、`set_initials()`、`set_fallback_glyph()`、`set_image()`、`set_tone()`、`set_presence()`、`set_font()`、`set_icon_font()`、`set_palette()` 对 `pressed` 状态的清理和默认回退
 3. helper 与 region/color 计算
    覆盖 `resolve_initials()`、`get_avatar_region()`、`get_presence_region()`、`tone_color()`、`presence_color()` 与 disabled 混色 helper
 4. 静态 preview 不变性断言
    通过 `person_picture_preview_snapshot_t`、`capture_preview_snapshot()` 与 `assert_preview_state_unchanged()` 固定校验以下字段：
-   `region_screen`、`background`、`display_name`、`initials`、`fallback_glyph`、`image`、`font`、`icon_font`、`surface_color`、`border_color`、`foreground_color`、`accent_color`、`success_color`、`warning_color`、`neutral_color`、`muted_color`、`on_click_listener`、`api`、`alpha`、`tone`、`presence`、`compact_mode`、`read_only_mode`、`enable`、`is_focused`、`is_pressed`、`padding`
+   `region_screen`、`background`、`display_name`、`initials`、`fallback_glyph`、`image`、`font`、`icon_font`、`surface_color`、`border_color`、`foreground_color`、`accent_color`、`success_color`、`warning_color`、`neutral_color`、`muted_color`、`on_click_listener`、`api`、`alpha`、`tone`、`presence`、`enable`、`is_focused`、`is_pressed`、`padding`
 
 补充说明：
 - 静态 preview 用例已收口为 “consumes input and keeps state”。
@@ -165,13 +165,13 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
 结论：
 - 主区变化严格收敛在 `person_picture` 主体，主区外页面 chrome 在整条轨道中保持静态。
 - `9` 帧里主区保持 `3` 组唯一状态：`[0,1,6,7,8]` 对应默认 `LM / live`，`[2,3]` 对应 `AR / busy`，`[4,5]` 对应 `Person / empty slot`；最终稳定帧已显式回到默认态。
-- 按 `y >= 275` 裁剪底部 preview 区域后保持单哈希，确认 `compact / read_only` preview 在整条录制轨道中始终静态一致。
+- 按 `y >= 275` 裁剪底部 preview 区域后保持单哈希，确认 `secondary / muted` preview 在整条录制轨道中始终静态一致。
 
 ## 12. 已知限制
 - 当前 demo 不内置 portrait 资源，主区重点放在 initials / glyph 回退链路。
 - `set_image()` 已保留并支持圆形遮罩，但需要业务层自行提供稳定的 `egui_image_t *`。
 - initials 解析当前按 ASCII 规则处理，优先覆盖 reference demo 与现有英文命名场景。
-- 底部 `compact / read_only` preview 只承担静态 reference 对照，不承载额外交互职责。
+- 底部 `secondary / muted` preview 只承担静态 reference 对照，不承载额外交互职责。
 
 ## 13. 与现有控件的边界
 - 相比 `image_icon`：这里承载头像语义和回退链路，而不是任意图片内容。
