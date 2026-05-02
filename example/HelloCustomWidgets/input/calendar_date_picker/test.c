@@ -18,6 +18,11 @@
 #define CALENDAR_DATE_PICKER_RECORD_WAIT           100
 #define CALENDAR_DATE_PICKER_RECORD_FRAME_WAIT     170
 #define CALENDAR_DATE_PICKER_RECORD_FINAL_WAIT     360
+#define CALENDAR_DATE_PICKER_RECORD_FIELD_OPEN_Y   28
+#define CALENDAR_DATE_PICKER_RECORD_PANEL_GRID_X   16
+#define CALENDAR_DATE_PICKER_RECORD_PANEL_GRID_Y   90
+#define CALENDAR_DATE_PICKER_RECORD_PANEL_GRID_W   164
+#define CALENDAR_DATE_PICKER_RECORD_PANEL_GRID_H   58
 #define CALENDAR_DATE_PICKER_DEFAULT_SNAPSHOT      0
 
 #define PRIMARY_SNAPSHOT_COUNT ((uint8_t)EGUI_ARRAY_SIZE(primary_snapshots))
@@ -67,6 +72,8 @@ static uint8_t point_in_view_work_region(egui_view_t *view, egui_dim_t x, egui_d
     egui_region_t region;
 
     egui_view_get_work_region(view, &region);
+    region.location.x += view->region_screen.location.x;
+    region.location.y += view->region_screen.location.y;
     return egui_region_pt_in_rect(&region, x, y) ? 1 : 0;
 }
 #endif
@@ -167,6 +174,73 @@ static void request_page_snapshot(void)
     layout_page();
     egui_view_invalidate(EGUI_VIEW_OF(&root_layout));
     recording_request_snapshot();
+}
+
+static uint8_t recording_day_of_week(uint16_t year, uint8_t month, uint8_t day)
+{
+    static const int offsets[] = {0, 3, 2, 5, 0, 3, 5, 1, 4, 6, 2, 4};
+
+    if (month < 1 || month > 12)
+    {
+        return 0;
+    }
+    if (month < 3)
+    {
+        year--;
+    }
+    return (uint8_t)((year + year / 4 - year / 100 + year / 400 + offsets[month - 1] + day) % 7);
+}
+
+static uint8_t set_primary_field_click_action(egui_sim_action_t *p_action, int interval_ms)
+{
+    egui_view_t *view = EGUI_VIEW_OF(&picker_primary);
+    int y_offset;
+
+    if (p_action == NULL || view->region_screen.size.width <= 0 || view->region_screen.size.height <= 0)
+    {
+        return 0;
+    }
+
+    y_offset = egui_view_calendar_date_picker_get_opened(view) ? CALENDAR_DATE_PICKER_RECORD_FIELD_OPEN_Y : view->region_screen.size.height / 2;
+    p_action->type = EGUI_SIM_ACTION_CLICK;
+    p_action->x1 = view->region_screen.location.x + view->region_screen.size.width / 2;
+    p_action->y1 = view->region_screen.location.y + y_offset;
+    p_action->interval_ms = interval_ms;
+    return 1;
+}
+
+static uint8_t set_primary_day_click_action(egui_sim_action_t *p_action, uint8_t day, int interval_ms)
+{
+    egui_view_t *view = EGUI_VIEW_OF(&picker_primary);
+    uint8_t start_cell;
+    uint8_t pos;
+    uint8_t col;
+    uint8_t row;
+    int grid_x;
+    int grid_y;
+    int cell_w;
+    int cell_h;
+
+    if (p_action == NULL || !egui_view_calendar_date_picker_get_opened(view) || view->region_screen.size.width <= 0 || view->region_screen.size.height <= 0)
+    {
+        return 0;
+    }
+
+    start_cell = recording_day_of_week(picker_primary.panel_year, picker_primary.panel_month, 1);
+    start_cell = (uint8_t)((start_cell - picker_primary.first_day_of_week + 7) % 7);
+    pos = (uint8_t)(start_cell + day - 1);
+    col = (uint8_t)(pos % 7);
+    row = (uint8_t)(pos / 7);
+    grid_x = view->region_screen.location.x + CALENDAR_DATE_PICKER_RECORD_PANEL_GRID_X;
+    grid_y = view->region_screen.location.y + CALENDAR_DATE_PICKER_RECORD_PANEL_GRID_Y;
+    cell_w = CALENDAR_DATE_PICKER_RECORD_PANEL_GRID_W / 7;
+    cell_h = CALENDAR_DATE_PICKER_RECORD_PANEL_GRID_H / 6;
+
+    p_action->type = EGUI_SIM_ACTION_CLICK;
+    p_action->x1 = grid_x + col * cell_w + cell_w / 2;
+    p_action->y1 = grid_y + row * cell_h + cell_h / 2;
+    p_action->interval_ms = interval_ms;
+    return 1;
 }
 #endif
 
@@ -278,10 +352,10 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     case 1:
         if (first_call)
         {
-            apply_primary_snapshot(1);
+            focus_primary_widget();
+            layout_page();
         }
-        EGUI_SIM_SET_WAIT(p_action, CALENDAR_DATE_PICKER_RECORD_WAIT);
-        return true;
+        return set_primary_field_click_action(p_action, CALENDAR_DATE_PICKER_RECORD_WAIT) ? true : false;
     case 2:
         if (first_call)
         {
@@ -292,10 +366,10 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     case 3:
         if (first_call)
         {
-            apply_primary_snapshot(2);
+            focus_primary_widget();
+            layout_page();
         }
-        EGUI_SIM_SET_WAIT(p_action, CALENDAR_DATE_PICKER_RECORD_WAIT);
-        return true;
+        return set_primary_field_click_action(p_action, CALENDAR_DATE_PICKER_RECORD_WAIT) ? true : false;
     case 4:
         if (first_call)
         {
@@ -306,11 +380,25 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     case 5:
         if (first_call)
         {
+            focus_primary_widget();
+            layout_page();
+        }
+        return set_primary_day_click_action(p_action, 24, CALENDAR_DATE_PICKER_RECORD_WAIT) ? true : false;
+    case 6:
+        if (first_call)
+        {
+            request_page_snapshot();
+        }
+        EGUI_SIM_SET_WAIT(p_action, CALENDAR_DATE_PICKER_RECORD_FRAME_WAIT);
+        return true;
+    case 7:
+        if (first_call)
+        {
             apply_primary_default_state();
         }
         EGUI_SIM_SET_WAIT(p_action, CALENDAR_DATE_PICKER_RECORD_WAIT);
         return true;
-    case 6:
+    case 8:
         if (first_call)
         {
             request_page_snapshot();
