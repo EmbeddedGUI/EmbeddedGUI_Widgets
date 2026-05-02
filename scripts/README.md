@@ -43,6 +43,10 @@ This repository keeps only the scripts needed for standalone custom-widget work.
   Run headless browser smoke checks for `web/demos/`, capture one screenshot per demo, and generate `summary.json`, `summary.md`, and a contact sheet for manual visual review. The script auto-adds Linux CI-friendly browser flags on GitHub Actions and also accepts repeatable `--browser-arg`.
 - `python scripts/web/widget_render_gallery.py --summary output/ci_web_smoke/summary.json`
   Compose all smoke-check screenshots into a widget render gallery under `web/render-gallery/`, including a contact sheet, JSON index, Markdown index, and HTML page for GitHub Pages.
+- `python doc/scripts/generate_widget_render_gallery.py --build-wasm --run-smoke`
+  Build HelloCustomWidgets WASM demos, capture one browser screenshot per widget, and generate the doc-side contact sheet under `doc/source/images/`.
+- `python scripts/web/widget_render_gallery.py --summary output/ci_web_smoke/summary.json --doc-output-dir doc/source/images`
+  Reuse an existing smoke summary and generate both the web gallery and the doc-side render overview.
 
 ## Principle
 

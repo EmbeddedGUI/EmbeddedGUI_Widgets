@@ -7,7 +7,9 @@ import argparse
 import html
 import json
 import math
+import os
 import subprocess
+import sys
 import textwrap
 from dataclasses import dataclass
 from datetime import datetime
@@ -22,6 +24,7 @@ PROJECT_ROOT = SCRIPTS_ROOT.parent
 DEFAULT_SUMMARY = PROJECT_ROOT / "output" / "ci_web_smoke" / "summary.json"
 DEFAULT_MANIFEST = PROJECT_ROOT / "web" / "demos" / "demos.json"
 DEFAULT_OUTPUT_DIR = PROJECT_ROOT / "web" / "render-gallery"
+DEFAULT_SMOKE_OUTPUT_DIR = PROJECT_ROOT / "output" / "widget_render_gallery_smoke"
 
 CATEGORY_ORDER = ["input", "layout", "navigation", "display", "feedback", "misc"]
 IMAGE_LANCZOS = getattr(Image, "Resampling", Image).LANCZOS
@@ -50,6 +53,7 @@ class GalleryEntry:
     ok: bool
     non_black_ratio: float
     unique_colors: int
+    bbox: list[int] | None
 
 
 def parse_args() -> argparse.Namespace:
@@ -59,14 +63,34 @@ def parse_args() -> argparse.Namespace:
             "Run web_smoke_check.py first when the summary does not exist."
         )
     )
-    parser.add_argument("--summary", default=str(DEFAULT_SUMMARY), help="Path to web smoke summary.json.")
+    parser.add_argument("--summary", default="", help="Path to web smoke summary.json.")
     parser.add_argument("--manifest", default="", help="Path to demos.json. Defaults to the summary manifest or web/demos/demos.json.")
     parser.add_argument("--output-dir", default=str(DEFAULT_OUTPUT_DIR), help="Output directory for gallery assets.")
+    parser.add_argument("--doc-output-dir", default="", help="Also write a doc contact sheet and index to this directory.")
+    parser.add_argument("--doc-sheet-name", default="hello_custom_widgets_render_gallery.png", help="Doc contact sheet file name.")
+    parser.add_argument("--doc-index-name", default="hello_custom_widgets_render_gallery.md", help="Doc Markdown index file name.")
+    parser.add_argument("--skip-web-output", action="store_true", help="Skip the web/render-gallery HTML and JSON outputs.")
     parser.add_argument("--columns", type=int, default=5, help="Columns in the contact sheet.")
     parser.add_argument("--tile-width", type=int, default=220, help="Preview tile width in the contact sheet.")
+    parser.add_argument("--doc-tile-width", type=int, default=480, help="Preview tile width used for the doc contact sheet.")
     parser.add_argument("--thumb-size", type=int, default=320, help="Square thumbnail size for the HTML gallery.")
     parser.add_argument("--include-failures", action="store_true", help="Include failed smoke entries when screenshots exist.")
     parser.add_argument("--title", default="HelloCustomWidgets Render Gallery", help="Gallery title.")
+    parser.add_argument("--build-wasm", action="store_true", help="Build WASM demos before capturing screenshots.")
+    parser.add_argument("--run-smoke", action="store_true", help="Run web_smoke_check.py before composing the gallery.")
+    parser.add_argument("--browser", default="", help="Browser executable passed to web_smoke_check.py.")
+    parser.add_argument("--browser-arg", action="append", default=[], help="Extra browser arg passed to web_smoke_check.py. Repeatable.")
+    parser.add_argument("--web-root", default=str(PROJECT_ROOT / "web"), help="Web root passed to web_smoke_check.py.")
+    parser.add_argument("--smoke-output-dir", default=str(DEFAULT_SMOKE_OUTPUT_DIR), help="Output directory used when --run-smoke is set.")
+    parser.add_argument("--smoke-max-demos", type=int, default=0, help="Limit smoke-checked demos for quick local debugging.")
+    parser.add_argument("--demo", action="append", default=[], help="Only build/check selected demo name(s). Repeatable.")
+    parser.add_argument("--category", default="", help="Only smoke-check selected manifest category.")
+    parser.add_argument("--name-filter", default="", help="Only smoke-check demos whose names contain this substring.")
+    parser.add_argument("--track", choices=["all", "reference", "showcase", "deprecated"], default="reference", help="HelloCustomWidgets track passed to wasm_build_demos.py.")
+    parser.add_argument("--include-deprecated", action="store_true", help="Include deprecated widgets when --build-wasm selects a group.")
+    parser.add_argument("--refresh-existing", action="store_true", help="Refresh demos.json from existing WASM artifacts instead of rebuilding.")
+    parser.add_argument("--wasm-jobs", type=int, default=0, help="Parallel build jobs passed to wasm_build_demos.py.")
+    parser.add_argument("--make-jobs", type=int, default=0, help="Per-build make jobs passed to wasm_build_demos.py.")
     return parser.parse_args()
 
 
@@ -96,6 +120,105 @@ def get_git_commit() -> str:
     except Exception:
         return "unknown"
     return (result.stdout or "").strip() or "unknown"
+
+
+def run_step(command: list[str], label: str) -> None:
+    print(f"{label}: {' '.join(command)}", flush=True)
+    subprocess.run(command, cwd=PROJECT_ROOT, check=True)
+
+
+def resolve_argument_path(path_value: str) -> Path:
+    path = Path(path_value)
+    if path.is_absolute():
+        return path.resolve()
+    return (PROJECT_ROOT / path).resolve()
+
+
+def resolve_summary_path(args: argparse.Namespace) -> Path:
+    if args.summary:
+        return resolve_argument_path(args.summary)
+    if args.run_smoke:
+        return resolve_argument_path(args.smoke_output_dir) / "summary.json"
+    return DEFAULT_SUMMARY.resolve()
+
+
+def resolve_manifest_arg(args: argparse.Namespace) -> str:
+    if args.manifest:
+        return str(resolve_argument_path(args.manifest))
+    return str(DEFAULT_MANIFEST.resolve())
+
+
+def append_wasm_common_args(command: list[str], args: argparse.Namespace) -> list[str]:
+    if args.refresh_existing:
+        command.append("--refresh-existing")
+    if args.wasm_jobs > 0:
+        command.extend(["--jobs", str(args.wasm_jobs)])
+    if args.make_jobs > 0:
+        command.extend(["--make-jobs", str(args.make_jobs)])
+    return command
+
+
+def demo_to_custom_widget_app_sub(demo_name: str) -> str:
+    prefix = "HelloCustomWidgets_"
+    if not demo_name.startswith(prefix):
+        raise RuntimeError(f"--build-wasm with --demo only supports HelloCustomWidgets demos: {demo_name}")
+    raw = demo_name[len(prefix) :]
+    parts = raw.split("_", 1)
+    if len(parts) != 2:
+        raise RuntimeError(f"cannot infer APP_SUB from demo name: {demo_name}")
+    return parts[0] + "/" + parts[1]
+
+
+def build_wasm_commands(args: argparse.Namespace) -> list[list[str]]:
+    if args.demo:
+        commands = []
+        for demo_name in args.demo:
+            commands.append(
+                append_wasm_common_args(
+                    [
+                        sys.executable,
+                        str(SCRIPT_DIR / "wasm_build_demos.py"),
+                        "--app",
+                        "HelloCustomWidgets",
+                        "--app-sub",
+                        demo_to_custom_widget_app_sub(demo_name),
+                    ],
+                    args,
+                )
+            )
+        return commands
+
+    command = [sys.executable, str(SCRIPT_DIR / "wasm_build_demos.py"), "--app", "HelloCustomWidgets", "--track", args.track]
+    if args.include_deprecated:
+        command.append("--include-deprecated")
+    return [append_wasm_common_args(command, args)]
+
+
+def build_smoke_args(args: argparse.Namespace, summary_path: Path) -> list[str]:
+    smoke_output_dir = summary_path.parent
+    command = [
+        sys.executable,
+        str(SCRIPT_DIR / "web_smoke_check.py"),
+        "--manifest",
+        resolve_manifest_arg(args),
+        "--web-root",
+        str(resolve_argument_path(args.web_root)),
+        "--output-dir",
+        str(smoke_output_dir),
+    ]
+    if args.browser:
+        command.extend(["--browser", args.browser])
+    for browser_arg in args.browser_arg:
+        command.extend(["--browser-arg", browser_arg])
+    for demo in args.demo:
+        command.extend(["--demo", demo])
+    if args.category:
+        command.extend(["--category", args.category])
+    if args.name_filter:
+        command.extend(["--name-filter", args.name_filter])
+    if args.smoke_max_demos > 0:
+        command.extend(["--max-demos", str(args.smoke_max_demos)])
+    return command
 
 
 def load_json(path: Path) -> dict | list:
@@ -221,6 +344,18 @@ def make_thumb(source_path: Path, bbox: list[int] | None, thumb_path: Path, thum
     canvas.save(thumb_path)
 
 
+def load_cropped_preview(source_path: Path, bbox: list[int] | None, target_size: tuple[int, int]) -> Image.Image:
+    with Image.open(source_path) as image:
+        rgb = image.convert("RGB")
+        crop_box = None
+        if bbox and len(bbox) == 4:
+            crop_box = expand_bbox([int(value) for value in bbox], rgb.size)
+        if crop_box is None:
+            crop_box = fallback_bbox(rgb)
+        cropped = rgb.crop(crop_box) if crop_box else rgb
+        return ImageOps.contain(cropped, target_size, IMAGE_LANCZOS)
+
+
 def load_font(size: int, bold: bool = False) -> ImageFont.ImageFont:
     candidates = [
         "C:/Windows/Fonts/segoeuib.ttf" if bold else "C:/Windows/Fonts/segoeui.ttf",
@@ -301,6 +436,7 @@ def read_entries(summary_path: Path, output_dir: Path, args: argparse.Namespace)
                 ok=ok,
                 non_black_ratio=float(metrics.get("nonBlackRatio", 0.0) or 0.0),
                 unique_colors=int(metrics.get("uniqueColors", 0) or 0),
+                bbox=bbox,
             )
         )
 
@@ -365,8 +501,7 @@ def build_contact_sheet(entries: list[GalleryEntry], output_path: Path, title: s
             cy = y + row * (card_height + gap)
             draw.rounded_rectangle((x, cy, x + card_width, cy + card_height), radius=10, fill=CARD_BG, outline=CARD_BORDER, width=1)
 
-            with Image.open(entry.thumb) as thumb:
-                preview = ImageOps.contain(thumb.convert("RGB"), (tile_width, tile_height), IMAGE_LANCZOS)
+            preview = load_cropped_preview(entry.screenshot, entry.bbox, (tile_width, tile_height))
             px = x + card_pad + (tile_width - preview.width) // 2
             py = cy + card_pad + (tile_height - preview.height) // 2
             sheet.paste(preview, (px, py))
@@ -436,6 +571,45 @@ def write_markdown(entries: list[GalleryEntry], output_dir: Path, sheet_path: Pa
             lines.append(f"- [{display_words(entry.widget)}]({entry.demo_href}) - `{entry.widget_id}`")
         lines.append("")
     markdown_path = output_dir / "README.md"
+    markdown_path.write_text("\n".join(lines), encoding="utf-8")
+    return markdown_path
+
+
+def relative_markdown_link(target: Path, base_dir: Path) -> str:
+    try:
+        relative = os.path.relpath(target.resolve(), base_dir.resolve())
+        return relative.replace("\\", "/")
+    except ValueError:
+        return project_relative(target)
+
+
+def write_doc_markdown(entries: list[GalleryEntry], doc_dir: Path, sheet_path: Path, summary_path: Path, index_name: str, commit: str) -> Path:
+    sheet_link = relative_markdown_link(sheet_path, doc_dir)
+    lines = [
+        "# HelloCustomWidgets Render Gallery",
+        "",
+        "This file is generated from WASM smoke-check screenshots so widget renders can be reviewed at a glance.",
+        "",
+        f"- Generated: `{datetime.now().isoformat(timespec='seconds')}`",
+        f"- Commit: `{commit}`",
+        f"- Source summary: `{project_relative(summary_path)}`",
+        f"- Widgets: `{len(entries)}`",
+        "",
+        f"![HelloCustomWidgets render gallery]({sheet_link})",
+        "",
+    ]
+    for category, items in grouped_entries(entries):
+        lines.extend([f"## {display_words(category)} ({len(items)})", ""])
+        for entry in items:
+            source_path = PROJECT_ROOT / "example" / "HelloCustomWidgets" / entry.widget_id / "readme.md"
+            source_link = relative_markdown_link(source_path, doc_dir) if source_path.exists() else ""
+            label = display_words(entry.widget)
+            suffix = f" - [`{entry.widget_id}`]({source_link})" if source_link else f" - `{entry.widget_id}`"
+            lines.append(f"- {label}{suffix}")
+        lines.append("")
+
+    markdown_path = doc_dir / index_name
+    markdown_path.parent.mkdir(parents=True, exist_ok=True)
     markdown_path.write_text("\n".join(lines), encoding="utf-8")
     return markdown_path
 
@@ -635,24 +809,42 @@ def write_html(entries: list[GalleryEntry], output_dir: Path, sheet_path: Path, 
 
 def main() -> int:
     args = parse_args()
-    summary_path = Path(args.summary).resolve()
-    output_dir = Path(args.output_dir).resolve()
-    output_dir.mkdir(parents=True, exist_ok=True)
+    summary_path = resolve_summary_path(args)
+
+    if args.build_wasm:
+        for command in build_wasm_commands(args):
+            run_step(command, "Build WASM demos")
+
+    if args.run_smoke:
+        run_step(build_smoke_args(args, summary_path), "Capture WASM renders")
+
+    output_dir = resolve_argument_path(args.output_dir)
+    if not args.skip_web_output:
+        output_dir.mkdir(parents=True, exist_ok=True)
 
     entries, summary = read_entries(summary_path, output_dir, args)
     if not entries:
         raise RuntimeError("no screenshots found in the smoke summary")
 
     commit = get_git_commit()
-    sheet_path = output_dir / "widget-render-gallery.png"
-    build_contact_sheet(entries, sheet_path, args.title, args.columns, args.tile_width, commit)
-    index_path = write_index(entries, output_dir, sheet_path, summary_path, summary, commit)
-    markdown_path = write_markdown(entries, output_dir, sheet_path, summary_path)
-    html_path = write_html(entries, output_dir, sheet_path, index_path, markdown_path, args.title, commit)
+    if not args.skip_web_output:
+        sheet_path = output_dir / "widget-render-gallery.png"
+        build_contact_sheet(entries, sheet_path, args.title, args.columns, args.tile_width, commit)
+        index_path = write_index(entries, output_dir, sheet_path, summary_path, summary, commit)
+        markdown_path = write_markdown(entries, output_dir, sheet_path, summary_path)
+        html_path = write_html(entries, output_dir, sheet_path, index_path, markdown_path, args.title, commit)
+        print(f"Render gallery: {html_path}")
+        print(f"Contact sheet: {sheet_path}")
+        print(f"Index: {index_path}")
 
-    print(f"Render gallery: {html_path}")
-    print(f"Contact sheet: {sheet_path}")
-    print(f"Index: {index_path}")
+    if args.doc_output_dir:
+        doc_dir = resolve_argument_path(args.doc_output_dir)
+        doc_sheet_path = doc_dir / args.doc_sheet_name
+        build_contact_sheet(entries, doc_sheet_path, args.title, args.columns, args.doc_tile_width, commit)
+        doc_index_path = write_doc_markdown(entries, doc_dir, doc_sheet_path, summary_path, args.doc_index_name, commit)
+        print(f"Doc contact sheet: {doc_sheet_path}")
+        print(f"Doc index: {doc_index_path}")
+
     print(f"Widgets: {len(entries)}")
     return 0
 

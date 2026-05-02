@@ -10,6 +10,8 @@
 /web/demos/
 /web/docs/
 /web/render-gallery/
+/doc/source/images/hello_custom_widgets_render_gallery.png
+/doc/source/images/hello_custom_widgets_render_gallery.md
 /__pycache__/
 /.pytest_cache/
 /.pytest-tmp/

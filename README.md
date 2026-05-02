@@ -92,6 +92,8 @@ The default SDK resolution order is:
   `python scripts/sync_widget_catalog.py`
 - Build the widgets web bundle:
   `python scripts/web/wasm_build_demos.py`
+- Generate the widget render overview for docs:
+  `python doc/scripts/generate_widget_render_gallery.py --build-wasm --run-smoke`
 - Preview the local site:
   `python web/start_server.py --port 8080`
 
@@ -103,6 +105,8 @@ The default SDK resolution order is:
   Custom-widget unit-test harness with the same app root multi-display entry structure.
 - `scripts/`
   Widgets-specific compile/runtime/WASM helpers.
+- `doc/`
+  Repository-local documentation helper scripts and generated doc output locations.
 - `web/`
   Widgets-only GitHub Pages site.
 - `.claude/workflow/`
