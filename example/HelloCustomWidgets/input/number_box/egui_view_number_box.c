@@ -424,6 +424,12 @@ static uint8_t egui_view_number_box_hit_part(egui_view_number_box_t *local, egui
     return EGUI_VIEW_NUMBER_BOX_PART_NONE;
 }
 
+static void egui_view_number_box_screen_to_local(egui_view_t *self, const egui_motion_event_t *event, egui_dim_t *x, egui_dim_t *y)
+{
+    *x = event->location.x - self->region_screen.location.x;
+    *y = event->location.y - self->region_screen.location.y;
+}
+
 static void egui_view_number_box_on_draw(egui_view_t *self)
 {
     EGUI_LOCAL_INIT(egui_view_number_box_t);
@@ -559,6 +565,8 @@ static int egui_view_number_box_on_touch_event(egui_view_t *self, egui_motion_ev
 {
     EGUI_LOCAL_INIT(egui_view_number_box_t);
     uint8_t hit_part;
+    egui_dim_t local_x;
+    egui_dim_t local_y;
 
     if (!egui_view_get_enable(self) || local->read_only_mode || local->compact_mode)
     {
@@ -570,10 +578,12 @@ static int egui_view_number_box_on_touch_event(egui_view_t *self, egui_motion_ev
         return 0;
     }
 
+    egui_view_number_box_screen_to_local(self, event, &local_x, &local_y);
+
     switch (event->type)
     {
     case EGUI_MOTION_EVENT_ACTION_DOWN:
-        hit_part = egui_view_number_box_hit_part(local, self, event->location.x, event->location.y);
+        hit_part = egui_view_number_box_hit_part(local, self, local_x, local_y);
         if (hit_part == EGUI_VIEW_NUMBER_BOX_PART_NONE)
         {
             if (egui_view_number_box_clear_pressed_state(self))
@@ -590,14 +600,14 @@ static int egui_view_number_box_on_touch_event(egui_view_t *self, egui_motion_ev
         {
             return 0;
         }
-        hit_part = egui_view_number_box_hit_part(local, self, event->location.x, event->location.y);
+        hit_part = egui_view_number_box_hit_part(local, self, local_x, local_y);
         egui_view_set_pressed(self, hit_part == local->pressed_part);
         return 1;
     case EGUI_MOTION_EVENT_ACTION_UP:
     {
         uint8_t handled;
 
-        hit_part = egui_view_number_box_hit_part(local, self, event->location.x, event->location.y);
+        hit_part = egui_view_number_box_hit_part(local, self, local_x, local_y);
         if (local->pressed_part != EGUI_VIEW_NUMBER_BOX_PART_NONE && local->pressed_part == hit_part)
         {
             int16_t delta = hit_part == EGUI_VIEW_NUMBER_BOX_PART_INC ? local->step : (int16_t)(-local->step);

@@ -83,6 +83,8 @@ static uint8_t point_in_view_work_region(egui_view_t *view, egui_dim_t x, egui_d
     egui_region_t region;
 
     egui_view_get_work_region(view, &region);
+    region.location.x += view->region_screen.location.x;
+    region.location.y += view->region_screen.location.y;
     return egui_region_pt_in_rect(&region, x, y) ? 1 : 0;
 }
 #endif
@@ -185,6 +187,53 @@ static void apply_primary_key(uint8_t key_code)
     {
         layout_page();
     }
+}
+
+static uint8_t recording_day_of_week(uint16_t year, uint8_t month, uint8_t day)
+{
+    static const int offsets[] = {0, 3, 2, 5, 0, 3, 5, 1, 4, 6, 2, 4};
+
+    if (month < 1 || month > 12)
+    {
+        return 0;
+    }
+    if (month < 3)
+    {
+        year--;
+    }
+    return (uint8_t)((year + year / 4 - year / 100 + year / 400 + offsets[month - 1] + day) % 7);
+}
+
+static uint8_t set_primary_day_click_action(egui_sim_action_t *p_action, uint8_t day, int interval_ms)
+{
+    egui_view_t *view = EGUI_VIEW_OF(&calendar_primary);
+    egui_region_t grid_region;
+    uint8_t start_cell;
+    uint8_t pos;
+    uint8_t col;
+    uint8_t row;
+    int cell_w;
+    int cell_h;
+
+    if (p_action == NULL || view->region_screen.size.width <= 0 || view->region_screen.size.height <= 0 ||
+        !egui_view_calendar_view_get_part_region(view, EGUI_VIEW_CALENDAR_VIEW_PART_GRID, &grid_region))
+    {
+        return 0;
+    }
+
+    start_cell = recording_day_of_week(calendar_primary.display_year, calendar_primary.display_month, 1);
+    start_cell = (uint8_t)((start_cell - calendar_primary.first_day_of_week + 7) % 7);
+    pos = (uint8_t)(start_cell + day - 1);
+    col = (uint8_t)(pos % 7);
+    row = (uint8_t)(pos / 7);
+    cell_w = grid_region.size.width / 7;
+    cell_h = grid_region.size.height / 6;
+
+    p_action->type = EGUI_SIM_ACTION_CLICK;
+    p_action->x1 = view->region_screen.location.x + grid_region.location.x + col * cell_w + cell_w / 2;
+    p_action->y1 = view->region_screen.location.y + grid_region.location.y + row * cell_h + cell_h / 2;
+    p_action->interval_ms = interval_ms;
+    return 1;
 }
 #endif
 
@@ -334,9 +383,21 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
         EGUI_SIM_SET_WAIT(p_action, CALENDAR_VIEW_RECORD_FRAME_WAIT);
         return true;
     case 7:
-        EGUI_SIM_SET_WAIT(p_action, CALENDAR_VIEW_RECORD_FINAL_WAIT);
-        return true;
+        if (first_call)
+        {
+            apply_primary_snapshot(0);
+            focus_primary_calendar_view();
+            layout_page();
+        }
+        return set_primary_day_click_action(p_action, 9, CALENDAR_VIEW_RECORD_WAIT) ? true : false;
     case 8:
+        if (first_call)
+        {
+            focus_primary_calendar_view();
+            layout_page();
+        }
+        return set_primary_day_click_action(p_action, 13, CALENDAR_VIEW_RECORD_WAIT) ? true : false;
+    case 9:
         if (first_call)
         {
             request_page_snapshot();
@@ -348,4 +409,3 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     }
 }
 #endif
-

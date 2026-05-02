@@ -187,7 +187,7 @@ static uint8_t egui_view_radio_buttons_prepare_layout(egui_view_radio_buttons_t 
     return count;
 }
 
-static uint8_t egui_view_radio_buttons_resolve_hit(egui_view_radio_buttons_t *local, egui_view_t *self, egui_dim_t screen_x, egui_dim_t screen_y)
+static uint8_t egui_view_radio_buttons_resolve_hit(egui_view_radio_buttons_t *local, egui_view_t *self, egui_dim_t x, egui_dim_t y)
 {
     egui_region_t work_region;
     egui_view_radio_buttons_layout_item_t items[EGUI_VIEW_RADIO_BUTTONS_MAX_ITEMS];
@@ -195,7 +195,7 @@ static uint8_t egui_view_radio_buttons_resolve_hit(egui_view_radio_buttons_t *lo
     uint8_t i;
 
     egui_view_get_work_region(self, &work_region);
-    if (!egui_region_pt_in_rect(&work_region, screen_x, screen_y))
+    if (!egui_region_pt_in_rect(&work_region, x, y))
     {
         return EGUI_VIEW_RADIO_BUTTONS_INDEX_NONE;
     }
@@ -203,13 +203,19 @@ static uint8_t egui_view_radio_buttons_resolve_hit(egui_view_radio_buttons_t *lo
     count = egui_view_radio_buttons_prepare_layout(local, self, items);
     for (i = 0; i < count; i++)
     {
-        if (egui_region_pt_in_rect(&items[i].region, screen_x, screen_y))
+        if (egui_region_pt_in_rect(&items[i].region, x, y))
         {
             return i;
         }
     }
 
     return EGUI_VIEW_RADIO_BUTTONS_INDEX_NONE;
+}
+
+static void egui_view_radio_buttons_screen_to_local(egui_view_t *self, const egui_motion_event_t *event, egui_dim_t *x, egui_dim_t *y)
+{
+    *x = event->location.x - self->region_screen.location.x;
+    *y = event->location.y - self->region_screen.location.y;
 }
 
 static void egui_view_radio_buttons_draw_indicator(egui_view_t *self, egui_view_radio_buttons_t *local, const egui_region_t *item_region, uint8_t is_selected,
@@ -503,6 +509,8 @@ static int egui_view_radio_buttons_on_touch_event(egui_view_t *self, egui_motion
     uint8_t hit_index;
     uint8_t handled;
     uint8_t same_target;
+    egui_dim_t local_x;
+    egui_dim_t local_y;
 
     if (!egui_view_get_enable(self) || local->read_only_mode || local->item_count == 0 || local->items == NULL)
     {
@@ -510,10 +518,12 @@ static int egui_view_radio_buttons_on_touch_event(egui_view_t *self, egui_motion
         return 0;
     }
 
+    egui_view_radio_buttons_screen_to_local(self, event, &local_x, &local_y);
+
     switch (event->type)
     {
     case EGUI_MOTION_EVENT_ACTION_DOWN:
-        hit_index = egui_view_radio_buttons_resolve_hit(local, self, event->location.x, event->location.y);
+        hit_index = egui_view_radio_buttons_resolve_hit(local, self, local_x, local_y);
         if (hit_index == EGUI_VIEW_RADIO_BUTTONS_INDEX_NONE)
         {
             egui_view_radio_buttons_clear_pressed_state(self);
@@ -545,7 +555,7 @@ static int egui_view_radio_buttons_on_touch_event(egui_view_t *self, egui_motion
         {
             return 0;
         }
-        hit_index = egui_view_radio_buttons_resolve_hit(local, self, event->location.x, event->location.y);
+        hit_index = egui_view_radio_buttons_resolve_hit(local, self, local_x, local_y);
         if (hit_index == local->pressed_index)
         {
             if (!self->is_pressed)
@@ -560,7 +570,7 @@ static int egui_view_radio_buttons_on_touch_event(egui_view_t *self, egui_motion
         }
         return 1;
     case EGUI_MOTION_EVENT_ACTION_UP:
-        hit_index = egui_view_radio_buttons_resolve_hit(local, self, event->location.x, event->location.y);
+        hit_index = egui_view_radio_buttons_resolve_hit(local, self, local_x, local_y);
         handled = (local->pressed_index != EGUI_VIEW_RADIO_BUTTONS_INDEX_NONE) || hit_index != EGUI_VIEW_RADIO_BUTTONS_INDEX_NONE;
         same_target = (uint8_t)(local->pressed_index != EGUI_VIEW_RADIO_BUTTONS_INDEX_NONE && local->pressed_index == hit_index);
         if (same_target && self->is_pressed)

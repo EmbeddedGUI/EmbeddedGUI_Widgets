@@ -151,6 +151,18 @@ static void layout_date_picker(egui_dim_t width, egui_dim_t height)
     egui_region_copy(&EGUI_VIEW_OF(&test_date_picker)->region_screen, &region);
 }
 
+static void layout_date_picker_at(egui_dim_t x, egui_dim_t y, egui_dim_t width, egui_dim_t height)
+{
+    egui_region_t region;
+
+    region.location.x = x;
+    region.location.y = y;
+    region.size.width = width;
+    region.size.height = height;
+    egui_view_layout(EGUI_VIEW_OF(&test_date_picker), &region);
+    egui_region_copy(&EGUI_VIEW_OF(&test_date_picker)->region_screen, &region);
+}
+
 static void layout_preview_date_picker(void)
 {
     egui_region_t region;
@@ -183,6 +195,24 @@ static int send_preview_touch(uint8_t type, egui_dim_t x, egui_dim_t y)
     event.location.x = x;
     event.location.y = y;
     return EGUI_VIEW_OF(&preview_date_picker)->api->dispatch_touch_event(EGUI_VIEW_OF(&preview_date_picker), &event);
+}
+
+static void local_to_screen(egui_view_t *view, egui_dim_t *x, egui_dim_t *y)
+{
+    *x += view->region_screen.location.x;
+    *y += view->region_screen.location.y;
+}
+
+static int send_touch_at_local(uint8_t type, egui_dim_t x, egui_dim_t y)
+{
+    local_to_screen(EGUI_VIEW_OF(&test_date_picker), &x, &y);
+    return send_touch(type, x, y);
+}
+
+static int send_preview_touch_at_local(uint8_t type, egui_dim_t x, egui_dim_t y)
+{
+    local_to_screen(EGUI_VIEW_OF(&preview_date_picker), &x, &y);
+    return send_preview_touch(type, x, y);
 }
 
 static int send_key_action(uint8_t type, uint8_t key_code)
@@ -577,6 +607,36 @@ static void test_date_picker_metrics_and_hit_testing(void)
     EGUI_TEST_ASSERT_EQUAL_INT(0, metrics.show_panel);
 }
 
+static void test_date_picker_touch_uses_screen_coordinates_after_layout(void)
+{
+    egui_dim_t x;
+    egui_dim_t y;
+
+    setup_date_picker();
+    layout_date_picker_at(160, 120, 194, 180);
+
+    get_field_center(&x, &y);
+    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
+    EGUI_TEST_ASSERT_TRUE(send_touch_at_local(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
+    EGUI_TEST_ASSERT_TRUE(send_touch_at_local(EGUI_MOTION_EVENT_ACTION_UP, x, y));
+    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_date_picker_get_opened(EGUI_VIEW_OF(&test_date_picker)));
+
+    get_day_center(24, &x, &y);
+    EGUI_TEST_ASSERT_TRUE(send_touch_at_local(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
+    EGUI_TEST_ASSERT_TRUE(send_touch_at_local(EGUI_MOTION_EVENT_ACTION_UP, x, y));
+    EGUI_TEST_ASSERT_EQUAL_INT(24, egui_view_date_picker_get_day(EGUI_VIEW_OF(&test_date_picker)));
+    EGUI_TEST_ASSERT_EQUAL_INT(1, g_date_changed_count);
+
+    get_field_center(&x, &y);
+    EGUI_TEST_ASSERT_TRUE(send_touch_at_local(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
+    EGUI_TEST_ASSERT_TRUE(send_touch_at_local(EGUI_MOTION_EVENT_ACTION_UP, x, y));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_date_picker_get_opened(EGUI_VIEW_OF(&test_date_picker)));
+    get_field_center(&x, &y);
+    EGUI_TEST_ASSERT_TRUE(send_touch_at_local(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
+    EGUI_TEST_ASSERT_TRUE(send_touch_at_local(EGUI_MOTION_EVENT_ACTION_UP, x, y));
+    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_date_picker_get_opened(EGUI_VIEW_OF(&test_date_picker)));
+}
+
 static void test_date_picker_touch_toggle_and_day_selection(void)
 {
     egui_dim_t x;
@@ -590,33 +650,33 @@ static void test_date_picker_touch_toggle_and_day_selection(void)
 
     EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, 0, 0));
 
-    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
+    EGUI_TEST_ASSERT_TRUE(send_touch_at_local(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_DATE_PICKER_PART_FIELD, test_date_picker.pressed_part);
     EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&test_date_picker)->is_pressed);
-    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, x, y));
+    EGUI_TEST_ASSERT_TRUE(send_touch_at_local(EGUI_MOTION_EVENT_ACTION_UP, x, y));
     EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_date_picker_get_opened(EGUI_VIEW_OF(&test_date_picker)));
     EGUI_TEST_ASSERT_EQUAL_INT(1, g_open_changed_count);
     EGUI_TEST_ASSERT_EQUAL_INT(1, g_last_opened);
 
     get_prev_center(&x, &y);
-    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
-    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, x, y));
+    EGUI_TEST_ASSERT_TRUE(send_touch_at_local(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
+    EGUI_TEST_ASSERT_TRUE(send_touch_at_local(EGUI_MOTION_EVENT_ACTION_UP, x, y));
     EGUI_TEST_ASSERT_EQUAL_INT(2, egui_view_date_picker_get_display_month(EGUI_VIEW_OF(&test_date_picker)));
     EGUI_TEST_ASSERT_EQUAL_INT(1, g_display_changed_count);
     EGUI_TEST_ASSERT_EQUAL_INT(2026, g_last_display_year);
     EGUI_TEST_ASSERT_EQUAL_INT(2, g_last_display_month);
 
     get_next_center(&x, &y);
-    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
-    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, x, y));
+    EGUI_TEST_ASSERT_TRUE(send_touch_at_local(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
+    EGUI_TEST_ASSERT_TRUE(send_touch_at_local(EGUI_MOTION_EVENT_ACTION_UP, x, y));
     EGUI_TEST_ASSERT_EQUAL_INT(3, egui_view_date_picker_get_display_month(EGUI_VIEW_OF(&test_date_picker)));
     EGUI_TEST_ASSERT_EQUAL_INT(2, g_display_changed_count);
 
     get_day_center(24, &x, &y);
-    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
+    EGUI_TEST_ASSERT_TRUE(send_touch_at_local(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_DATE_PICKER_PART_DAY, test_date_picker.pressed_part);
     EGUI_TEST_ASSERT_EQUAL_INT(24, test_date_picker.pressed_day);
-    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, x, y));
+    EGUI_TEST_ASSERT_TRUE(send_touch_at_local(EGUI_MOTION_EVENT_ACTION_UP, x, y));
     EGUI_TEST_ASSERT_EQUAL_INT(24, egui_view_date_picker_get_day(EGUI_VIEW_OF(&test_date_picker)));
     EGUI_TEST_ASSERT_EQUAL_INT(1, g_date_changed_count);
     EGUI_TEST_ASSERT_EQUAL_INT(2026, g_last_year);
@@ -625,29 +685,29 @@ static void test_date_picker_touch_toggle_and_day_selection(void)
 
     get_day_center(25, &x, &y);
     get_day_center(26, &x2, &y2);
-    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
+    EGUI_TEST_ASSERT_TRUE(send_touch_at_local(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
     EGUI_TEST_ASSERT_EQUAL_INT(25, test_date_picker.pressed_day);
     EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&test_date_picker)->is_pressed);
-    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_MOVE, x2, y2));
+    EGUI_TEST_ASSERT_TRUE(send_touch_at_local(EGUI_MOTION_EVENT_ACTION_MOVE, x2, y2));
     EGUI_TEST_ASSERT_EQUAL_INT(25, test_date_picker.pressed_day);
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_date_picker)->is_pressed);
-    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, x2, y2));
+    EGUI_TEST_ASSERT_TRUE(send_touch_at_local(EGUI_MOTION_EVENT_ACTION_UP, x2, y2));
     EGUI_TEST_ASSERT_EQUAL_INT(24, egui_view_date_picker_get_day(EGUI_VIEW_OF(&test_date_picker)));
     EGUI_TEST_ASSERT_EQUAL_INT(1, g_date_changed_count);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_DATE_PICKER_PART_NONE, test_date_picker.pressed_part);
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_date_picker)->is_pressed);
 
-    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
-    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_MOVE, x2, y2));
-    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_MOVE, x, y));
+    EGUI_TEST_ASSERT_TRUE(send_touch_at_local(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
+    EGUI_TEST_ASSERT_TRUE(send_touch_at_local(EGUI_MOTION_EVENT_ACTION_MOVE, x2, y2));
+    EGUI_TEST_ASSERT_TRUE(send_touch_at_local(EGUI_MOTION_EVENT_ACTION_MOVE, x, y));
     EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&test_date_picker)->is_pressed);
-    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, x, y));
+    EGUI_TEST_ASSERT_TRUE(send_touch_at_local(EGUI_MOTION_EVENT_ACTION_UP, x, y));
     EGUI_TEST_ASSERT_EQUAL_INT(25, egui_view_date_picker_get_day(EGUI_VIEW_OF(&test_date_picker)));
     EGUI_TEST_ASSERT_EQUAL_INT(2, g_date_changed_count);
     EGUI_TEST_ASSERT_EQUAL_INT(25, g_last_day);
 
     get_day_center(26, &x, &y);
-    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
+    EGUI_TEST_ASSERT_TRUE(send_touch_at_local(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
     EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_MOVE, 0, 0));
     EGUI_TEST_ASSERT_EQUAL_INT(26, test_date_picker.pressed_day);
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_date_picker)->is_pressed);
@@ -657,8 +717,8 @@ static void test_date_picker_touch_toggle_and_day_selection(void)
     EGUI_TEST_ASSERT_EQUAL_INT(2, g_date_changed_count);
 
     get_field_center(&x, &y);
-    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
-    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, x, y));
+    EGUI_TEST_ASSERT_TRUE(send_touch_at_local(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
+    EGUI_TEST_ASSERT_TRUE(send_touch_at_local(EGUI_MOTION_EVENT_ACTION_UP, x, y));
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_date_picker_get_opened(EGUI_VIEW_OF(&test_date_picker)));
     EGUI_TEST_ASSERT_EQUAL_INT(2, g_open_changed_count);
     EGUI_TEST_ASSERT_EQUAL_INT(0, g_last_opened);
@@ -725,11 +785,11 @@ static void test_date_picker_compact_read_only_disabled_and_focus_guards(void)
     EGUI_VIEW_OF(&test_date_picker)->is_pressed = 1;
     test_date_picker.pressed_part = EGUI_VIEW_DATE_PICKER_PART_FIELD;
     test_date_picker.pressed_day = 18;
-    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
+    EGUI_TEST_ASSERT_FALSE(send_touch_at_local(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_date_picker)->is_pressed);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_DATE_PICKER_PART_NONE, test_date_picker.pressed_part);
     EGUI_TEST_ASSERT_EQUAL_INT(0, test_date_picker.pressed_day);
-    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, x, y));
+    EGUI_TEST_ASSERT_FALSE(send_touch_at_local(EGUI_MOTION_EVENT_ACTION_UP, x, y));
     EGUI_VIEW_OF(&test_date_picker)->is_pressed = 1;
     test_date_picker.pressed_part = EGUI_VIEW_DATE_PICKER_PART_FIELD;
     test_date_picker.pressed_day = 18;
@@ -747,11 +807,11 @@ static void test_date_picker_compact_read_only_disabled_and_focus_guards(void)
     EGUI_VIEW_OF(&test_date_picker)->is_pressed = 1;
     test_date_picker.pressed_part = EGUI_VIEW_DATE_PICKER_PART_FIELD;
     test_date_picker.pressed_day = 18;
-    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
+    EGUI_TEST_ASSERT_FALSE(send_touch_at_local(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_date_picker)->is_pressed);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_DATE_PICKER_PART_NONE, test_date_picker.pressed_part);
     EGUI_TEST_ASSERT_EQUAL_INT(0, test_date_picker.pressed_day);
-    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, x, y));
+    EGUI_TEST_ASSERT_FALSE(send_touch_at_local(EGUI_MOTION_EVENT_ACTION_UP, x, y));
     EGUI_VIEW_OF(&test_date_picker)->is_pressed = 1;
     test_date_picker.pressed_part = EGUI_VIEW_DATE_PICKER_PART_FIELD;
     test_date_picker.pressed_day = 18;
@@ -770,7 +830,7 @@ static void test_date_picker_compact_read_only_disabled_and_focus_guards(void)
     EGUI_VIEW_OF(&test_date_picker)->is_pressed = 1;
     test_date_picker.pressed_part = EGUI_VIEW_DATE_PICKER_PART_FIELD;
     test_date_picker.pressed_day = 18;
-    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
+    EGUI_TEST_ASSERT_FALSE(send_touch_at_local(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_date_picker)->is_pressed);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_DATE_PICKER_PART_NONE, test_date_picker.pressed_part);
     EGUI_TEST_ASSERT_EQUAL_INT(0, test_date_picker.pressed_day);
@@ -813,7 +873,7 @@ static void test_date_picker_static_preview_consumes_input_and_keeps_state(void)
     EGUI_VIEW_OF(&preview_date_picker)->is_pressed = 1;
     preview_date_picker.pressed_part = EGUI_VIEW_DATE_PICKER_PART_FIELD;
     preview_date_picker.pressed_day = 0;
-    EGUI_TEST_ASSERT_TRUE(send_preview_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
+    EGUI_TEST_ASSERT_TRUE(send_preview_touch_at_local(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
     assert_preview_state_unchanged(&initial_snapshot);
 
     EGUI_VIEW_OF(&preview_date_picker)->is_pressed = 1;
@@ -831,6 +891,7 @@ void test_date_picker_run(void)
     EGUI_TEST_RUN(test_date_picker_setters_clear_pressed_state);
     EGUI_TEST_RUN(test_date_picker_font_palette_and_internal_helpers);
     EGUI_TEST_RUN(test_date_picker_metrics_and_hit_testing);
+    EGUI_TEST_RUN(test_date_picker_touch_uses_screen_coordinates_after_layout);
     EGUI_TEST_RUN(test_date_picker_touch_toggle_and_day_selection);
     EGUI_TEST_RUN(test_date_picker_keyboard_navigation_and_browse_commit);
     EGUI_TEST_RUN(test_date_picker_compact_read_only_disabled_and_focus_guards);

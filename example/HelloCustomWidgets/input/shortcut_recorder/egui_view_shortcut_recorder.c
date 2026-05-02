@@ -919,11 +919,19 @@ static uint8_t shortcut_recorder_hit_test(egui_view_t *self, egui_dim_t x, egui_
     return 0;
 }
 
+static void shortcut_recorder_screen_to_local(egui_view_t *self, const egui_motion_event_t *event, egui_dim_t *x, egui_dim_t *y)
+{
+    *x = event->location.x - self->region_screen.location.x;
+    *y = event->location.y - self->region_screen.location.y;
+}
+
 static int egui_view_shortcut_recorder_on_touch_event(egui_view_t *self, egui_motion_event_t *event)
 {
     EGUI_LOCAL_INIT(egui_view_shortcut_recorder_t);
     uint8_t hit_part = EGUI_VIEW_SHORTCUT_RECORDER_PART_NONE;
     uint8_t hit_preset = 0;
+    egui_dim_t local_x;
+    egui_dim_t local_y;
 
     shortcut_recorder_normalize_state(local);
     if (!egui_view_get_enable(self) || local->compact_mode || local->read_only_mode)
@@ -932,11 +940,13 @@ static int egui_view_shortcut_recorder_on_touch_event(egui_view_t *self, egui_mo
         return 0;
     }
 
+    shortcut_recorder_screen_to_local(self, event, &local_x, &local_y);
+
     switch (event->type)
     {
     case EGUI_MOTION_EVENT_ACTION_DOWN:
         shortcut_recorder_clear_pressed_state(self, local);
-        if (!shortcut_recorder_hit_test(self, event->location.x, event->location.y, &hit_part, &hit_preset))
+        if (!shortcut_recorder_hit_test(self, local_x, local_y, &hit_part, &hit_preset))
         {
             return 0;
         }
@@ -959,7 +969,7 @@ static int egui_view_shortcut_recorder_on_touch_event(egui_view_t *self, egui_mo
     case EGUI_MOTION_EVENT_ACTION_MOVE:
         return local->pressed_part != EGUI_VIEW_SHORTCUT_RECORDER_PART_NONE ? 1 : 0;
     case EGUI_MOTION_EVENT_ACTION_UP:
-        if (shortcut_recorder_hit_test(self, event->location.x, event->location.y, &hit_part, &hit_preset) == 0)
+        if (shortcut_recorder_hit_test(self, local_x, local_y, &hit_part, &hit_preset) == 0)
         {
             hit_part = EGUI_VIEW_SHORTCUT_RECORDER_PART_NONE;
             hit_preset = 0;

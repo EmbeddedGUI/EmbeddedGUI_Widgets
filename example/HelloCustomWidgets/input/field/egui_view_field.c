@@ -553,6 +553,12 @@ static uint8_t hcw_field_hit_part(hcw_field_t *local, egui_view_t *self, egui_di
     return HCW_FIELD_PART_NONE;
 }
 
+static void hcw_field_screen_to_local(egui_view_t *self, const egui_motion_event_t *event, egui_dim_t *x, egui_dim_t *y)
+{
+    *x = event->location.x - self->region_screen.location.x;
+    *y = event->location.y - self->region_screen.location.y;
+}
+
 static void hcw_field_set_open_inner(egui_view_t *self, uint8_t is_open, uint8_t notify)
 {
     EGUI_LOCAL_INIT(hcw_field_t);
@@ -1098,6 +1104,8 @@ static int hcw_field_on_touch_event(egui_view_t *self, egui_motion_event_t *even
     EGUI_LOCAL_INIT(hcw_field_t);
     uint8_t hit_part;
     uint8_t same_target;
+    egui_dim_t local_x;
+    egui_dim_t local_y;
 
     if (!egui_view_get_enable(self) || local->read_only_mode)
     {
@@ -1105,10 +1113,12 @@ static int hcw_field_on_touch_event(egui_view_t *self, egui_motion_event_t *even
         return 0;
     }
 
+    hcw_field_screen_to_local(self, event, &local_x, &local_y);
+
     switch (event->type)
     {
     case EGUI_MOTION_EVENT_ACTION_DOWN:
-        hit_part = hcw_field_hit_part(local, self, event->location.x, event->location.y);
+        hit_part = hcw_field_hit_part(local, self, local_x, local_y);
         if (hit_part != HCW_FIELD_PART_INFO_BUTTON)
         {
             hcw_field_clear_pressed_state(self);
@@ -1140,7 +1150,7 @@ static int hcw_field_on_touch_event(egui_view_t *self, egui_motion_event_t *even
         {
             return 0;
         }
-        hit_part = hcw_field_hit_part(local, self, event->location.x, event->location.y);
+        hit_part = hcw_field_hit_part(local, self, local_x, local_y);
         if (hit_part == local->pressed_part)
         {
             if (!egui_view_get_pressed(self))
@@ -1158,7 +1168,7 @@ static int hcw_field_on_touch_event(egui_view_t *self, egui_motion_event_t *even
     {
         uint8_t handled;
 
-        hit_part = hcw_field_hit_part(local, self, event->location.x, event->location.y);
+        hit_part = hcw_field_hit_part(local, self, local_x, local_y);
         handled = (uint8_t)((local->pressed_part != HCW_FIELD_PART_NONE) || hit_part != HCW_FIELD_PART_NONE);
         same_target = (uint8_t)(local->pressed_part != HCW_FIELD_PART_NONE && local->pressed_part == hit_part);
         if (same_target && egui_view_get_pressed(self))

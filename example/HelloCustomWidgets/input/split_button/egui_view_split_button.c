@@ -329,6 +329,12 @@ static uint8_t egui_view_split_button_hit_part(egui_view_split_button_t *local, 
     return EGUI_VIEW_SPLIT_BUTTON_PART_NONE;
 }
 
+static void egui_view_split_button_screen_to_local(egui_view_t *self, const egui_motion_event_t *event, egui_dim_t *x, egui_dim_t *y)
+{
+    *x = event->location.x - self->region_screen.location.x;
+    *y = event->location.y - self->region_screen.location.y;
+}
+
 static void egui_view_split_button_set_current_part_inner(egui_view_t *self, uint8_t part, uint8_t notify, uint8_t clear_pressed)
 {
     EGUI_LOCAL_INIT(egui_view_split_button_t);
@@ -727,6 +733,8 @@ static int egui_view_split_button_on_touch_event(egui_view_t *self, egui_motion_
     EGUI_LOCAL_INIT(egui_view_split_button_t);
     const egui_view_split_button_snapshot_t *snapshot = egui_view_split_button_get_snapshot(local);
     uint8_t hit_part;
+    egui_dim_t local_x;
+    egui_dim_t local_y;
 
     if (snapshot == NULL || !egui_view_get_enable(self) || local->disabled_mode || local->compact_mode)
     {
@@ -737,10 +745,12 @@ static int egui_view_split_button_on_touch_event(egui_view_t *self, egui_motion_
         return 0;
     }
 
+    egui_view_split_button_screen_to_local(self, event, &local_x, &local_y);
+
     switch (event->type)
     {
     case EGUI_MOTION_EVENT_ACTION_DOWN:
-        hit_part = egui_view_split_button_hit_part(local, self, event->location.x, event->location.y);
+        hit_part = egui_view_split_button_hit_part(local, self, local_x, local_y);
         if (!egui_view_split_button_part_is_enabled(local, self, snapshot, hit_part))
         {
             if (egui_view_split_button_clear_pressed_state(self, local))
@@ -758,7 +768,7 @@ static int egui_view_split_button_on_touch_event(egui_view_t *self, egui_motion_
         {
             return 0;
         }
-        hit_part = egui_view_split_button_hit_part(local, self, event->location.x, event->location.y);
+        hit_part = egui_view_split_button_hit_part(local, self, local_x, local_y);
         egui_view_set_pressed(self, hit_part == local->pressed_part &&
                                             egui_view_split_button_part_is_enabled(local, self, snapshot, local->pressed_part));
         return 1;
@@ -766,7 +776,7 @@ static int egui_view_split_button_on_touch_event(egui_view_t *self, egui_motion_
     {
         uint8_t handled;
 
-        hit_part = egui_view_split_button_hit_part(local, self, event->location.x, event->location.y);
+        hit_part = egui_view_split_button_hit_part(local, self, local_x, local_y);
         if (local->pressed_part == hit_part && egui_view_split_button_part_is_enabled(local, self, snapshot, hit_part))
         {
             egui_view_split_button_set_current_part_inner(self, hit_part, 1, 0);

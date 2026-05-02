@@ -145,6 +145,18 @@ static int send_preview_touch_event(uint8_t type, egui_dim_t x, egui_dim_t y)
     return EGUI_VIEW_OF(&preview_calendar_view)->api->on_touch_event(EGUI_VIEW_OF(&preview_calendar_view), &event);
 }
 
+static void local_to_screen(egui_view_t *view, egui_dim_t *x, egui_dim_t *y)
+{
+    *x += view->region_screen.location.x;
+    *y += view->region_screen.location.y;
+}
+
+static int send_touch_event_at_local(uint8_t type, egui_dim_t x, egui_dim_t y)
+{
+    local_to_screen(EGUI_VIEW_OF(&test_calendar_view), &x, &y);
+    return send_touch_event(type, x, y);
+}
+
 static int send_preview_key_event(uint8_t type, uint8_t key_code)
 {
     return dispatch_key_event_to_view(EGUI_VIEW_OF(&preview_calendar_view), type, key_code);
@@ -295,14 +307,38 @@ static void test_calendar_view_touch_two_taps_commits_range(void)
     get_day_center(9, &x1, &y1);
     get_day_center(13, &x2, &y2);
 
-    EGUI_TEST_ASSERT_TRUE(send_touch_event(EGUI_MOTION_EVENT_ACTION_DOWN, x1, y1));
-    EGUI_TEST_ASSERT_TRUE(send_touch_event(EGUI_MOTION_EVENT_ACTION_UP, x1, y1));
+    EGUI_TEST_ASSERT_TRUE(send_touch_event_at_local(EGUI_MOTION_EVENT_ACTION_DOWN, x1, y1));
+    EGUI_TEST_ASSERT_TRUE(send_touch_event_at_local(EGUI_MOTION_EVENT_ACTION_UP, x1, y1));
     EGUI_TEST_ASSERT_TRUE(egui_view_calendar_view_get_editing_range(EGUI_VIEW_OF(&test_calendar_view)));
     EGUI_TEST_ASSERT_EQUAL_INT(9, egui_view_calendar_view_get_start_day(EGUI_VIEW_OF(&test_calendar_view)));
     EGUI_TEST_ASSERT_EQUAL_INT(9, egui_view_calendar_view_get_end_day(EGUI_VIEW_OF(&test_calendar_view)));
 
-    EGUI_TEST_ASSERT_TRUE(send_touch_event(EGUI_MOTION_EVENT_ACTION_DOWN, x2, y2));
-    EGUI_TEST_ASSERT_TRUE(send_touch_event(EGUI_MOTION_EVENT_ACTION_UP, x2, y2));
+    EGUI_TEST_ASSERT_TRUE(send_touch_event_at_local(EGUI_MOTION_EVENT_ACTION_DOWN, x2, y2));
+    EGUI_TEST_ASSERT_TRUE(send_touch_event_at_local(EGUI_MOTION_EVENT_ACTION_UP, x2, y2));
+    EGUI_TEST_ASSERT_FALSE(egui_view_calendar_view_get_editing_range(EGUI_VIEW_OF(&test_calendar_view)));
+    EGUI_TEST_ASSERT_EQUAL_INT(9, egui_view_calendar_view_get_start_day(EGUI_VIEW_OF(&test_calendar_view)));
+    EGUI_TEST_ASSERT_EQUAL_INT(13, egui_view_calendar_view_get_end_day(EGUI_VIEW_OF(&test_calendar_view)));
+}
+
+static void test_calendar_view_touch_uses_screen_coordinates_after_layout(void)
+{
+    egui_dim_t x;
+    egui_dim_t y;
+
+    setup_calendar_view(2026, 3, 9, 11);
+    layout_calendar_view(150, 120, 196, 144);
+
+    get_day_center(9, &x, &y);
+    EGUI_TEST_ASSERT_FALSE(send_touch_event(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
+    EGUI_TEST_ASSERT_TRUE(send_touch_event_at_local(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
+    EGUI_TEST_ASSERT_TRUE(send_touch_event_at_local(EGUI_MOTION_EVENT_ACTION_UP, x, y));
+    EGUI_TEST_ASSERT_TRUE(egui_view_calendar_view_get_editing_range(EGUI_VIEW_OF(&test_calendar_view)));
+    EGUI_TEST_ASSERT_EQUAL_INT(9, egui_view_calendar_view_get_start_day(EGUI_VIEW_OF(&test_calendar_view)));
+    EGUI_TEST_ASSERT_EQUAL_INT(9, egui_view_calendar_view_get_end_day(EGUI_VIEW_OF(&test_calendar_view)));
+
+    get_day_center(13, &x, &y);
+    EGUI_TEST_ASSERT_TRUE(send_touch_event_at_local(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
+    EGUI_TEST_ASSERT_TRUE(send_touch_event_at_local(EGUI_MOTION_EVENT_ACTION_UP, x, y));
     EGUI_TEST_ASSERT_FALSE(egui_view_calendar_view_get_editing_range(EGUI_VIEW_OF(&test_calendar_view)));
     EGUI_TEST_ASSERT_EQUAL_INT(9, egui_view_calendar_view_get_start_day(EGUI_VIEW_OF(&test_calendar_view)));
     EGUI_TEST_ASSERT_EQUAL_INT(13, egui_view_calendar_view_get_end_day(EGUI_VIEW_OF(&test_calendar_view)));
@@ -320,53 +356,53 @@ static void test_calendar_view_release_requires_same_day(void)
     get_day_center(10, &x_start, &y_start);
     get_day_center(12, &x_end, &y_end);
 
-    EGUI_TEST_ASSERT_TRUE(send_touch_event(EGUI_MOTION_EVENT_ACTION_DOWN, x_start, y_start));
+    EGUI_TEST_ASSERT_TRUE(send_touch_event_at_local(EGUI_MOTION_EVENT_ACTION_DOWN, x_start, y_start));
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_CALENDAR_VIEW_PART_GRID, test_calendar_view.pressed_part);
     EGUI_TEST_ASSERT_EQUAL_INT(10, test_calendar_view.pressed_day);
     EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&test_calendar_view)->is_pressed);
 
-    EGUI_TEST_ASSERT_TRUE(send_touch_event(EGUI_MOTION_EVENT_ACTION_MOVE, x_end, y_end));
+    EGUI_TEST_ASSERT_TRUE(send_touch_event_at_local(EGUI_MOTION_EVENT_ACTION_MOVE, x_end, y_end));
     EGUI_TEST_ASSERT_EQUAL_INT(10, test_calendar_view.pressed_day);
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_calendar_view)->is_pressed);
 
-    EGUI_TEST_ASSERT_TRUE(send_touch_event(EGUI_MOTION_EVENT_ACTION_UP, x_end, y_end));
+    EGUI_TEST_ASSERT_TRUE(send_touch_event_at_local(EGUI_MOTION_EVENT_ACTION_UP, x_end, y_end));
     EGUI_TEST_ASSERT_FALSE(egui_view_calendar_view_get_editing_range(EGUI_VIEW_OF(&test_calendar_view)));
     EGUI_TEST_ASSERT_EQUAL_INT(9, egui_view_calendar_view_get_start_day(EGUI_VIEW_OF(&test_calendar_view)));
     EGUI_TEST_ASSERT_EQUAL_INT(11, egui_view_calendar_view_get_end_day(EGUI_VIEW_OF(&test_calendar_view)));
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_CALENDAR_VIEW_PART_NONE, test_calendar_view.pressed_part);
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_calendar_view)->is_pressed);
 
-    EGUI_TEST_ASSERT_TRUE(send_touch_event(EGUI_MOTION_EVENT_ACTION_DOWN, x_start, y_start));
-    EGUI_TEST_ASSERT_TRUE(send_touch_event(EGUI_MOTION_EVENT_ACTION_MOVE, x_end, y_end));
-    EGUI_TEST_ASSERT_TRUE(send_touch_event(EGUI_MOTION_EVENT_ACTION_MOVE, x_start, y_start));
+    EGUI_TEST_ASSERT_TRUE(send_touch_event_at_local(EGUI_MOTION_EVENT_ACTION_DOWN, x_start, y_start));
+    EGUI_TEST_ASSERT_TRUE(send_touch_event_at_local(EGUI_MOTION_EVENT_ACTION_MOVE, x_end, y_end));
+    EGUI_TEST_ASSERT_TRUE(send_touch_event_at_local(EGUI_MOTION_EVENT_ACTION_MOVE, x_start, y_start));
     EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&test_calendar_view)->is_pressed);
-    EGUI_TEST_ASSERT_TRUE(send_touch_event(EGUI_MOTION_EVENT_ACTION_UP, x_start, y_start));
+    EGUI_TEST_ASSERT_TRUE(send_touch_event_at_local(EGUI_MOTION_EVENT_ACTION_UP, x_start, y_start));
     EGUI_TEST_ASSERT_TRUE(egui_view_calendar_view_get_editing_range(EGUI_VIEW_OF(&test_calendar_view)));
     EGUI_TEST_ASSERT_EQUAL_INT(10, egui_view_calendar_view_get_start_day(EGUI_VIEW_OF(&test_calendar_view)));
     EGUI_TEST_ASSERT_EQUAL_INT(10, egui_view_calendar_view_get_end_day(EGUI_VIEW_OF(&test_calendar_view)));
 
     get_day_center(13, &x_start, &y_start);
     get_day_center(14, &x_end, &y_end);
-    EGUI_TEST_ASSERT_TRUE(send_touch_event(EGUI_MOTION_EVENT_ACTION_DOWN, x_start, y_start));
+    EGUI_TEST_ASSERT_TRUE(send_touch_event_at_local(EGUI_MOTION_EVENT_ACTION_DOWN, x_start, y_start));
     EGUI_TEST_ASSERT_EQUAL_INT(13, test_calendar_view.pressed_day);
     EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&test_calendar_view)->is_pressed);
 
-    EGUI_TEST_ASSERT_TRUE(send_touch_event(EGUI_MOTION_EVENT_ACTION_MOVE, x_end, y_end));
+    EGUI_TEST_ASSERT_TRUE(send_touch_event_at_local(EGUI_MOTION_EVENT_ACTION_MOVE, x_end, y_end));
     EGUI_TEST_ASSERT_EQUAL_INT(13, test_calendar_view.pressed_day);
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_calendar_view)->is_pressed);
 
-    EGUI_TEST_ASSERT_TRUE(send_touch_event(EGUI_MOTION_EVENT_ACTION_UP, x_end, y_end));
+    EGUI_TEST_ASSERT_TRUE(send_touch_event_at_local(EGUI_MOTION_EVENT_ACTION_UP, x_end, y_end));
     EGUI_TEST_ASSERT_TRUE(egui_view_calendar_view_get_editing_range(EGUI_VIEW_OF(&test_calendar_view)));
     EGUI_TEST_ASSERT_EQUAL_INT(10, egui_view_calendar_view_get_start_day(EGUI_VIEW_OF(&test_calendar_view)));
     EGUI_TEST_ASSERT_EQUAL_INT(10, egui_view_calendar_view_get_end_day(EGUI_VIEW_OF(&test_calendar_view)));
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_CALENDAR_VIEW_PART_NONE, test_calendar_view.pressed_part);
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_calendar_view)->is_pressed);
 
-    EGUI_TEST_ASSERT_TRUE(send_touch_event(EGUI_MOTION_EVENT_ACTION_DOWN, x_start, y_start));
-    EGUI_TEST_ASSERT_TRUE(send_touch_event(EGUI_MOTION_EVENT_ACTION_MOVE, x_end, y_end));
-    EGUI_TEST_ASSERT_TRUE(send_touch_event(EGUI_MOTION_EVENT_ACTION_MOVE, x_start, y_start));
+    EGUI_TEST_ASSERT_TRUE(send_touch_event_at_local(EGUI_MOTION_EVENT_ACTION_DOWN, x_start, y_start));
+    EGUI_TEST_ASSERT_TRUE(send_touch_event_at_local(EGUI_MOTION_EVENT_ACTION_MOVE, x_end, y_end));
+    EGUI_TEST_ASSERT_TRUE(send_touch_event_at_local(EGUI_MOTION_EVENT_ACTION_MOVE, x_start, y_start));
     EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&test_calendar_view)->is_pressed);
-    EGUI_TEST_ASSERT_TRUE(send_touch_event(EGUI_MOTION_EVENT_ACTION_UP, x_start, y_start));
+    EGUI_TEST_ASSERT_TRUE(send_touch_event_at_local(EGUI_MOTION_EVENT_ACTION_UP, x_start, y_start));
     EGUI_TEST_ASSERT_FALSE(egui_view_calendar_view_get_editing_range(EGUI_VIEW_OF(&test_calendar_view)));
     EGUI_TEST_ASSERT_EQUAL_INT(10, egui_view_calendar_view_get_start_day(EGUI_VIEW_OF(&test_calendar_view)));
     EGUI_TEST_ASSERT_EQUAL_INT(13, egui_view_calendar_view_get_end_day(EGUI_VIEW_OF(&test_calendar_view)));
@@ -379,10 +415,10 @@ static void test_calendar_view_touch_prev_button_changes_month(void)
     setup_calendar_view(2026, 3, 9, 11);
     layout_calendar_view(10, 20, 196, 144);
     EGUI_TEST_ASSERT_TRUE(egui_view_calendar_view_get_part_region(EGUI_VIEW_OF(&test_calendar_view), EGUI_VIEW_CALENDAR_VIEW_PART_PREV, &prev_region));
-    EGUI_TEST_ASSERT_TRUE(send_touch_event(EGUI_MOTION_EVENT_ACTION_DOWN, prev_region.location.x + prev_region.size.width / 2,
-                                           prev_region.location.y + prev_region.size.height / 2));
-    EGUI_TEST_ASSERT_TRUE(send_touch_event(EGUI_MOTION_EVENT_ACTION_UP, prev_region.location.x + prev_region.size.width / 2,
-                                           prev_region.location.y + prev_region.size.height / 2));
+    EGUI_TEST_ASSERT_TRUE(send_touch_event_at_local(EGUI_MOTION_EVENT_ACTION_DOWN, prev_region.location.x + prev_region.size.width / 2,
+                                                    prev_region.location.y + prev_region.size.height / 2));
+    EGUI_TEST_ASSERT_TRUE(send_touch_event_at_local(EGUI_MOTION_EVENT_ACTION_UP, prev_region.location.x + prev_region.size.width / 2,
+                                                    prev_region.location.y + prev_region.size.height / 2));
     EGUI_TEST_ASSERT_EQUAL_INT(2, egui_view_calendar_view_get_display_month(EGUI_VIEW_OF(&test_calendar_view)));
 }
 
@@ -502,6 +538,7 @@ void test_calendar_view_run(void)
     EGUI_TEST_RUN(test_calendar_view_keyboard_range_commit);
     EGUI_TEST_RUN(test_calendar_view_plus_minus_shift_display_month);
     EGUI_TEST_RUN(test_calendar_view_touch_two_taps_commits_range);
+    EGUI_TEST_RUN(test_calendar_view_touch_uses_screen_coordinates_after_layout);
     EGUI_TEST_RUN(test_calendar_view_release_requires_same_day);
     EGUI_TEST_RUN(test_calendar_view_touch_prev_button_changes_month);
     EGUI_TEST_RUN(test_calendar_view_setters_clear_pressed_state);

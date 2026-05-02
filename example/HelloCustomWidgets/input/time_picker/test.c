@@ -19,6 +19,10 @@
 #define TIME_PICKER_RECORD_WAIT         100
 #define TIME_PICKER_RECORD_FRAME_WAIT   170
 #define TIME_PICKER_RECORD_FINAL_WAIT   360
+#define TIME_PICKER_RECORD_FIELD_OPEN_Y 35
+#define TIME_PICKER_RECORD_PANEL_Y      60
+#define TIME_PICKER_RECORD_PANEL_H      40
+#define TIME_PICKER_RECORD_PANEL_GAP    6
 
 typedef struct time_picker_snapshot time_picker_snapshot_t;
 struct time_picker_snapshot
@@ -98,6 +102,8 @@ static uint8_t point_in_view_work_region(egui_view_t *view, egui_dim_t x, egui_d
     egui_region_t region;
 
     egui_view_get_work_region(view, &region);
+    region.location.x += view->region_screen.location.x;
+    region.location.y += view->region_screen.location.y;
     return egui_region_pt_in_rect(&region, x, y) ? 1 : 0;
 }
 
@@ -191,6 +197,56 @@ static void request_page_snapshot(void)
     layout_page();
     egui_view_invalidate(EGUI_VIEW_OF(&root_layout));
     recording_request_snapshot();
+}
+
+static uint8_t set_primary_field_click_action(egui_sim_action_t *p_action, int interval_ms)
+{
+    egui_view_t *view = EGUI_VIEW_OF(&picker_primary);
+    int y_offset;
+
+    if (p_action == NULL || view->region_screen.size.width <= 0 || view->region_screen.size.height <= 0)
+    {
+        return 0;
+    }
+
+    y_offset = egui_view_time_picker_get_opened(view) ? TIME_PICKER_RECORD_FIELD_OPEN_Y : view->region_screen.size.height / 2;
+    p_action->type = EGUI_SIM_ACTION_CLICK;
+    p_action->x1 = view->region_screen.location.x + view->region_screen.size.width / 2;
+    p_action->y1 = view->region_screen.location.y + y_offset;
+    p_action->interval_ms = interval_ms;
+    return 1;
+}
+
+static uint8_t set_primary_panel_click_action(egui_sim_action_t *p_action, uint8_t segment, uint8_t row, int interval_ms)
+{
+    egui_view_t *view = EGUI_VIEW_OF(&picker_primary);
+    int column_count;
+    int panel_inner_x;
+    int column_gap;
+    int column_w;
+    int row_h;
+
+    if (p_action == NULL || !egui_view_time_picker_get_opened(view) || view->region_screen.size.width <= 0 || view->region_screen.size.height <= 0)
+    {
+        return 0;
+    }
+
+    column_count = egui_view_time_picker_get_use_24h(view) ? 2 : 3;
+    if (segment >= column_count)
+    {
+        return 0;
+    }
+
+    column_gap = TIME_PICKER_RECORD_PANEL_GAP;
+    panel_inner_x = 16;
+    column_w = (view->region_screen.size.width - 12 - column_gap * (column_count - 1)) / column_count;
+    row_h = TIME_PICKER_RECORD_PANEL_H / 3;
+
+    p_action->type = EGUI_SIM_ACTION_CLICK;
+    p_action->x1 = view->region_screen.location.x + panel_inner_x + segment * (column_w + column_gap) + column_w / 2;
+    p_action->y1 = view->region_screen.location.y + TIME_PICKER_RECORD_PANEL_Y + row * row_h + row_h / 2;
+    p_action->interval_ms = interval_ms;
+    return 1;
 }
 #endif
 
@@ -313,10 +369,10 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     case 1:
         if (first_call)
         {
-            apply_primary_snapshot(1);
+            focus_primary_picker();
+            layout_page();
         }
-        EGUI_SIM_SET_WAIT(p_action, TIME_PICKER_RECORD_WAIT);
-        return true;
+        return set_primary_field_click_action(p_action, TIME_PICKER_RECORD_WAIT) ? true : false;
     case 2:
         if (first_call)
         {
@@ -327,10 +383,10 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     case 3:
         if (first_call)
         {
-            apply_primary_snapshot(2);
+            focus_primary_picker();
+            layout_page();
         }
-        EGUI_SIM_SET_WAIT(p_action, TIME_PICKER_RECORD_WAIT);
-        return true;
+        return set_primary_field_click_action(p_action, TIME_PICKER_RECORD_WAIT) ? true : false;
     case 4:
         if (first_call)
         {
@@ -341,10 +397,10 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     case 5:
         if (first_call)
         {
-            apply_primary_snapshot(3);
+            focus_primary_picker();
+            layout_page();
         }
-        EGUI_SIM_SET_WAIT(p_action, TIME_PICKER_RECORD_WAIT);
-        return true;
+        return set_primary_panel_click_action(p_action, EGUI_VIEW_TIME_PICKER_SEGMENT_HOUR, 0, TIME_PICKER_RECORD_WAIT) ? true : false;
     case 6:
         if (first_call)
         {
@@ -355,11 +411,10 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     case 7:
         if (first_call)
         {
-            apply_primary_default_state();
             focus_primary_picker();
+            layout_page();
         }
-        EGUI_SIM_SET_WAIT(p_action, TIME_PICKER_RECORD_FINAL_WAIT);
-        return true;
+        return set_primary_field_click_action(p_action, TIME_PICKER_RECORD_FINAL_WAIT) ? true : false;
     case 8:
         if (first_call)
         {
@@ -372,4 +427,3 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     }
 }
 #endif
-

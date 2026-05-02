@@ -187,12 +187,13 @@ static void layout_preview_button(void)
 static int send_touch(uint8_t type, egui_dim_t x, egui_dim_t y)
 {
     egui_motion_event_t event;
+    egui_view_t *view = EGUI_VIEW_OF(&test_button);
 
     memset(&event, 0, sizeof(event));
     event.type = type;
-    event.location.x = x;
-    event.location.y = y;
-    return EGUI_VIEW_OF(&test_button)->api->on_touch_event(EGUI_VIEW_OF(&test_button), &event);
+    event.location.x = view->region_screen.location.x + x;
+    event.location.y = view->region_screen.location.y + y;
+    return view->api->on_touch_event(view, &event);
 }
 
 static int dispatch_key_event_to_view(egui_view_t *view, uint8_t type, uint8_t key_code)
@@ -217,12 +218,13 @@ static int send_key(uint8_t key_code)
 static int send_preview_touch(uint8_t type, egui_dim_t x, egui_dim_t y)
 {
     egui_motion_event_t event;
+    egui_view_t *view = EGUI_VIEW_OF(&preview_button);
 
     memset(&event, 0, sizeof(event));
     event.type = type;
-    event.location.x = x;
-    event.location.y = y;
-    return EGUI_VIEW_OF(&preview_button)->api->on_touch_event(EGUI_VIEW_OF(&preview_button), &event);
+    event.location.x = view->region_screen.location.x + x;
+    event.location.y = view->region_screen.location.y + y;
+    return view->api->on_touch_event(view, &event);
 }
 
 static int send_preview_key(uint8_t key_code)

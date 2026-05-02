@@ -1047,6 +1047,12 @@ static uint8_t rich_edit_box_hit_part(egui_view_t *self, egui_dim_t x, egui_dim_
     return EGUI_VIEW_RICH_EDIT_BOX_PART_NONE;
 }
 
+static void rich_edit_box_screen_to_local(egui_view_t *self, const egui_motion_event_t *event, egui_dim_t *x, egui_dim_t *y)
+{
+    *x = event->location.x - self->region_screen.location.x;
+    *y = event->location.y - self->region_screen.location.y;
+}
+
 static uint8_t rich_edit_box_activate_current_inner(egui_view_t *self)
 {
     egui_view_rich_edit_box_t *local = rich_edit_box_local(self);
@@ -1174,6 +1180,8 @@ static int egui_view_rich_edit_box_on_touch_event(egui_view_t *self, egui_motion
 {
     EGUI_LOCAL_INIT(egui_view_rich_edit_box_t);
     uint8_t hit_part;
+    egui_dim_t local_x;
+    egui_dim_t local_y;
 
     if (!egui_view_get_enable(self) || local->read_only_mode)
     {
@@ -1181,11 +1189,13 @@ static int egui_view_rich_edit_box_on_touch_event(egui_view_t *self, egui_motion
         return 0;
     }
 
+    rich_edit_box_screen_to_local(self, event, &local_x, &local_y);
+
     switch (event->type)
     {
     case EGUI_MOTION_EVENT_ACTION_DOWN:
         rich_edit_box_clear_pressed_state(self, local);
-        hit_part = rich_edit_box_hit_part(self, event->location.x, event->location.y);
+        hit_part = rich_edit_box_hit_part(self, local_x, local_y);
         if (hit_part == EGUI_VIEW_RICH_EDIT_BOX_PART_NONE)
         {
             return 0;
@@ -1209,7 +1219,7 @@ static int egui_view_rich_edit_box_on_touch_event(egui_view_t *self, egui_motion
         {
             return 0;
         }
-        hit_part = rich_edit_box_hit_part(self, event->location.x, event->location.y);
+        hit_part = rich_edit_box_hit_part(self, local_x, local_y);
         if ((self->is_pressed ? 1 : 0) != (local->pressed_part == hit_part ? 1 : 0))
         {
             egui_view_set_pressed(self, local->pressed_part == hit_part ? 1 : 0);
@@ -1222,7 +1232,7 @@ static int egui_view_rich_edit_box_on_touch_event(egui_view_t *self, egui_motion
         uint8_t pressed_part = local->pressed_part;
         uint8_t was_pressed = self->is_pressed ? 1 : 0;
 
-        hit_part = rich_edit_box_hit_part(self, event->location.x, event->location.y);
+        hit_part = rich_edit_box_hit_part(self, local_x, local_y);
         if (pressed_part == EGUI_VIEW_RICH_EDIT_BOX_PART_NONE)
         {
             return rich_edit_box_clear_pressed_state(self, local) ? 1 : 0;

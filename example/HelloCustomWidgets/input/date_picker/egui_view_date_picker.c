@@ -924,6 +924,13 @@ static uint8_t date_picker_hit_part(egui_view_date_picker_t *local, egui_view_t 
 
     return EGUI_VIEW_DATE_PICKER_PART_NONE;
 }
+
+static void date_picker_screen_to_local(egui_view_t *self, const egui_motion_event_t *event, egui_dim_t *x, egui_dim_t *y)
+{
+    *x = event->location.x - self->region_screen.location.x;
+    *y = event->location.y - self->region_screen.location.y;
+}
+
 static void date_picker_draw_field(egui_view_t *self, egui_view_date_picker_t *local, egui_view_date_picker_metrics_t *metrics, egui_color_t accent_color,
                                    egui_color_t text_color, egui_color_t muted_text_color, egui_color_t border_color)
 {
@@ -1242,6 +1249,8 @@ static int egui_view_date_picker_on_touch_event(egui_view_t *self, egui_motion_e
     EGUI_LOCAL_INIT(egui_view_date_picker_t);
     uint8_t hit_part;
     uint8_t hit_day;
+    egui_dim_t local_x;
+    egui_dim_t local_y;
 
     if (!egui_view_get_enable(self) || local->read_only_mode || local->compact_mode)
     {
@@ -1249,10 +1258,12 @@ static int egui_view_date_picker_on_touch_event(egui_view_t *self, egui_motion_e
         return 0;
     }
 
+    date_picker_screen_to_local(self, event, &local_x, &local_y);
+
     switch (event->type)
     {
     case EGUI_MOTION_EVENT_ACTION_DOWN:
-        hit_part = date_picker_hit_part(local, self, event->location.x, event->location.y);
+        hit_part = date_picker_hit_part(local, self, local_x, local_y);
         if (hit_part == EGUI_VIEW_DATE_PICKER_PART_NONE)
         {
             return 0;
@@ -1264,7 +1275,7 @@ static int egui_view_date_picker_on_touch_event(egui_view_t *self, egui_motion_e
         }
 #endif
         local->pressed_part = hit_part;
-        local->pressed_day = hit_part == EGUI_VIEW_DATE_PICKER_PART_DAY ? date_picker_get_hit_day(local, self, event->location.x, event->location.y) : 0;
+        local->pressed_day = hit_part == EGUI_VIEW_DATE_PICKER_PART_DAY ? date_picker_get_hit_day(local, self, local_x, local_y) : 0;
         egui_view_set_pressed(self, true);
         egui_view_invalidate(self);
         return 1;
@@ -1274,8 +1285,8 @@ static int egui_view_date_picker_on_touch_event(egui_view_t *self, egui_motion_e
         uint8_t pressed_day = local->pressed_day;
         uint8_t was_pressed = self->is_pressed;
 
-        hit_part = date_picker_hit_part(local, self, event->location.x, event->location.y);
-        hit_day = hit_part == EGUI_VIEW_DATE_PICKER_PART_DAY ? date_picker_get_hit_day(local, self, event->location.x, event->location.y) : 0;
+        hit_part = date_picker_hit_part(local, self, local_x, local_y);
+        hit_day = hit_part == EGUI_VIEW_DATE_PICKER_PART_DAY ? date_picker_get_hit_day(local, self, local_x, local_y) : 0;
         if (was_pressed && pressed_part != EGUI_VIEW_DATE_PICKER_PART_NONE && pressed_part == hit_part)
         {
             if (hit_part == EGUI_VIEW_DATE_PICKER_PART_FIELD)
@@ -1306,8 +1317,8 @@ static int egui_view_date_picker_on_touch_event(egui_view_t *self, egui_motion_e
         {
             uint8_t is_pressed = 0;
 
-            hit_part = date_picker_hit_part(local, self, event->location.x, event->location.y);
-            hit_day = hit_part == EGUI_VIEW_DATE_PICKER_PART_DAY ? date_picker_get_hit_day(local, self, event->location.x, event->location.y) : 0;
+            hit_part = date_picker_hit_part(local, self, local_x, local_y);
+            hit_day = hit_part == EGUI_VIEW_DATE_PICKER_PART_DAY ? date_picker_get_hit_day(local, self, local_x, local_y) : 0;
             if (local->pressed_part == hit_part)
             {
                 if (local->pressed_part != EGUI_VIEW_DATE_PICKER_PART_DAY || (local->pressed_day > 0 && local->pressed_day == hit_day))

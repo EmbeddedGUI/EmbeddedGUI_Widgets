@@ -667,11 +667,24 @@ static uint8_t password_box_hit_test(egui_view_password_box_t *local, egui_view_
     {
         return EGUI_VIEW_PASSWORD_BOX_PART_REVEAL;
     }
-    if (egui_region_pt_in_rect(&metrics.row_region, x, y) || egui_region_pt_in_rect(&self->region_screen, x, y))
+    if (egui_region_pt_in_rect(&metrics.row_region, x, y))
     {
         return EGUI_VIEW_PASSWORD_BOX_PART_FIELD;
     }
     return EGUI_VIEW_PASSWORD_BOX_PART_NONE;
+}
+
+static uint8_t password_box_hit_test_screen(egui_view_password_box_t *local, egui_view_t *self, egui_dim_t screen_x, egui_dim_t screen_y)
+{
+    egui_dim_t local_x = screen_x - self->region_screen.location.x;
+    egui_dim_t local_y = screen_y - self->region_screen.location.y;
+    uint8_t hit_part = password_box_hit_test(local, self, local_x, local_y);
+
+    if (hit_part != EGUI_VIEW_PASSWORD_BOX_PART_NONE)
+    {
+        return hit_part;
+    }
+    return egui_region_pt_in_rect(&self->region_screen, screen_x, screen_y) ? EGUI_VIEW_PASSWORD_BOX_PART_FIELD : EGUI_VIEW_PASSWORD_BOX_PART_NONE;
 }
 
 uint8_t egui_view_password_box_get_part_region(egui_view_t *self, uint8_t part, egui_region_t *region)
@@ -857,7 +870,7 @@ static int egui_view_password_box_on_touch_event(egui_view_t *self, egui_motion_
         return 0;
     }
 
-    hit_part = password_box_hit_test(local, self, event->location.x, event->location.y);
+    hit_part = password_box_hit_test_screen(local, self, event->location.x, event->location.y);
 
     switch (event->type)
     {

@@ -290,6 +290,12 @@ static uint8_t toggle_split_button_hit_part(egui_view_toggle_split_button_t *loc
     return EGUI_VIEW_TOGGLE_SPLIT_BUTTON_PART_NONE;
 }
 
+static void toggle_split_button_screen_to_local(egui_view_t *self, const egui_motion_event_t *event, egui_dim_t *x, egui_dim_t *y)
+{
+    *x = event->location.x - self->region_screen.location.x;
+    *y = event->location.y - self->region_screen.location.y;
+}
+
 static void toggle_split_button_activate_part(egui_view_t *self, uint8_t part)
 {
     EGUI_LOCAL_INIT(egui_view_toggle_split_button_t);
@@ -708,6 +714,8 @@ static int egui_view_toggle_split_button_on_touch_event(egui_view_t *self, egui_
     EGUI_LOCAL_INIT(egui_view_toggle_split_button_t);
     const egui_view_toggle_split_button_snapshot_t *snapshot = toggle_split_button_get_snapshot(local);
     uint8_t hit_part;
+    egui_dim_t local_x;
+    egui_dim_t local_y;
 
     if (snapshot == NULL || !egui_view_get_enable(self) || local->read_only_mode || local->compact_mode)
     {
@@ -718,10 +726,12 @@ static int egui_view_toggle_split_button_on_touch_event(egui_view_t *self, egui_
         return 0;
     }
 
+    toggle_split_button_screen_to_local(self, event, &local_x, &local_y);
+
     switch (event->type)
     {
     case EGUI_MOTION_EVENT_ACTION_DOWN:
-        hit_part = toggle_split_button_hit_part(local, self, event->location.x, event->location.y);
+        hit_part = toggle_split_button_hit_part(local, self, local_x, local_y);
         if (!toggle_split_button_part_is_enabled(local, self, snapshot, hit_part))
         {
             if (toggle_split_button_clear_pressed_state(self, local))
@@ -739,7 +749,7 @@ static int egui_view_toggle_split_button_on_touch_event(egui_view_t *self, egui_
     {
         uint8_t handled;
 
-        hit_part = toggle_split_button_hit_part(local, self, event->location.x, event->location.y);
+        hit_part = toggle_split_button_hit_part(local, self, local_x, local_y);
         if (local->pressed_part == hit_part && toggle_split_button_part_is_enabled(local, self, snapshot, hit_part))
         {
             toggle_split_button_activate_part(self, hit_part);

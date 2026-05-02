@@ -115,23 +115,25 @@ static void layout_preview_color_picker(egui_dim_t x, egui_dim_t y)
 static int send_touch_event(uint8_t type, egui_dim_t x, egui_dim_t y)
 {
     egui_motion_event_t event;
+    egui_view_t *view = EGUI_VIEW_OF(&test_color_picker);
 
     memset(&event, 0, sizeof(event));
     event.type = type;
-    event.location.x = x;
-    event.location.y = y;
-    return EGUI_VIEW_OF(&test_color_picker)->api->on_touch_event(EGUI_VIEW_OF(&test_color_picker), &event);
+    event.location.x = view->region_screen.location.x + x;
+    event.location.y = view->region_screen.location.y + y;
+    return view->api->on_touch_event(view, &event);
 }
 
 static int send_preview_touch_event(uint8_t type, egui_dim_t x, egui_dim_t y)
 {
     egui_motion_event_t event;
+    egui_view_t *view = EGUI_VIEW_OF(&preview_color_picker);
 
     memset(&event, 0, sizeof(event));
     event.type = type;
-    event.location.x = x;
-    event.location.y = y;
-    return EGUI_VIEW_OF(&preview_color_picker)->api->on_touch_event(EGUI_VIEW_OF(&preview_color_picker), &event);
+    event.location.x = view->region_screen.location.x + x;
+    event.location.y = view->region_screen.location.y + y;
+    return view->api->on_touch_event(view, &event);
 }
 
 static int dispatch_key_event_to_view(egui_view_t *view, uint8_t type, uint8_t key_code)

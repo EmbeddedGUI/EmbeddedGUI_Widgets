@@ -78,6 +78,18 @@ static void layout_time_picker(egui_dim_t width, egui_dim_t height)
     egui_region_copy(&EGUI_VIEW_OF(&test_time_picker)->region_screen, &region);
 }
 
+static void layout_time_picker_at(egui_dim_t x, egui_dim_t y, egui_dim_t width, egui_dim_t height)
+{
+    egui_region_t region;
+
+    region.location.x = x;
+    region.location.y = y;
+    region.size.width = width;
+    region.size.height = height;
+    egui_view_layout(EGUI_VIEW_OF(&test_time_picker), &region);
+    egui_region_copy(&EGUI_VIEW_OF(&test_time_picker)->region_screen, &region);
+}
+
 static void layout_preview_time_picker(void)
 {
     egui_region_t region;
@@ -110,6 +122,24 @@ static int send_preview_touch(uint8_t type, egui_dim_t x, egui_dim_t y)
     event.location.x = x;
     event.location.y = y;
     return EGUI_VIEW_OF(&preview_time_picker)->api->on_touch_event(EGUI_VIEW_OF(&preview_time_picker), &event);
+}
+
+static void local_to_screen(egui_view_t *view, egui_dim_t *x, egui_dim_t *y)
+{
+    *x += view->region_screen.location.x;
+    *y += view->region_screen.location.y;
+}
+
+static int send_touch_at_local(uint8_t type, egui_dim_t x, egui_dim_t y)
+{
+    local_to_screen(EGUI_VIEW_OF(&test_time_picker), &x, &y);
+    return send_touch(type, x, y);
+}
+
+static int send_preview_touch_at_local(uint8_t type, egui_dim_t x, egui_dim_t y)
+{
+    local_to_screen(EGUI_VIEW_OF(&preview_time_picker), &x, &y);
+    return send_preview_touch(type, x, y);
 }
 
 static int send_key_action(uint8_t type, uint8_t key_code)
@@ -384,6 +414,36 @@ static void test_time_picker_metrics_and_hit_testing(void)
     EGUI_TEST_ASSERT_EQUAL_INT(0, metrics.chevron_region.size.width);
 }
 
+static void test_time_picker_touch_uses_screen_coordinates_after_layout(void)
+{
+    egui_dim_t x;
+    egui_dim_t y;
+
+    setup_time_picker();
+    layout_time_picker_at(150, 110, 194, 126);
+
+    get_field_center(&x, &y);
+    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
+    EGUI_TEST_ASSERT_TRUE(send_touch_at_local(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
+    EGUI_TEST_ASSERT_TRUE(send_touch_at_local(EGUI_MOTION_EVENT_ACTION_UP, x, y));
+    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_time_picker_get_opened(EGUI_VIEW_OF(&test_time_picker)));
+
+    get_panel_cell_center(EGUI_VIEW_TIME_PICKER_SEGMENT_HOUR, 0, &x, &y);
+    EGUI_TEST_ASSERT_TRUE(send_touch_at_local(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
+    EGUI_TEST_ASSERT_TRUE(send_touch_at_local(EGUI_MOTION_EVENT_ACTION_UP, x, y));
+    EGUI_TEST_ASSERT_EQUAL_INT(7, egui_view_time_picker_get_hour24(EGUI_VIEW_OF(&test_time_picker)));
+    EGUI_TEST_ASSERT_EQUAL_INT(1, g_time_changed_count);
+
+    get_field_center(&x, &y);
+    EGUI_TEST_ASSERT_TRUE(send_touch_at_local(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
+    EGUI_TEST_ASSERT_TRUE(send_touch_at_local(EGUI_MOTION_EVENT_ACTION_UP, x, y));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_time_picker_get_opened(EGUI_VIEW_OF(&test_time_picker)));
+    get_field_center(&x, &y);
+    EGUI_TEST_ASSERT_TRUE(send_touch_at_local(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
+    EGUI_TEST_ASSERT_TRUE(send_touch_at_local(EGUI_MOTION_EVENT_ACTION_UP, x, y));
+    EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_time_picker_get_opened(EGUI_VIEW_OF(&test_time_picker)));
+}
+
 static void test_time_picker_touch_toggle_and_panel_selection(void)
 {
     egui_dim_t x;
@@ -395,10 +455,10 @@ static void test_time_picker_touch_toggle_and_panel_selection(void)
 
     EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, 0, 0));
 
-    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
+    EGUI_TEST_ASSERT_TRUE(send_touch_at_local(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_TIME_PICKER_PART_FIELD, test_time_picker.pressed_part);
     EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&test_time_picker)->is_pressed);
-    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, x, y));
+    EGUI_TEST_ASSERT_TRUE(send_touch_at_local(EGUI_MOTION_EVENT_ACTION_UP, x, y));
     EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_time_picker_get_opened(EGUI_VIEW_OF(&test_time_picker)));
     EGUI_TEST_ASSERT_EQUAL_INT(1, g_open_changed_count);
     EGUI_TEST_ASSERT_EQUAL_INT(1, g_last_opened);
@@ -406,9 +466,9 @@ static void test_time_picker_touch_toggle_and_panel_selection(void)
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_time_picker)->is_pressed);
 
     get_panel_cell_center(EGUI_VIEW_TIME_PICKER_SEGMENT_HOUR, 0, &x, &y);
-    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
+    EGUI_TEST_ASSERT_TRUE(send_touch_at_local(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_TIME_PICKER_PART_HOUR, test_time_picker.pressed_part);
-    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, x, y));
+    EGUI_TEST_ASSERT_TRUE(send_touch_at_local(EGUI_MOTION_EVENT_ACTION_UP, x, y));
     EGUI_TEST_ASSERT_EQUAL_INT(7, egui_view_time_picker_get_hour24(EGUI_VIEW_OF(&test_time_picker)));
     EGUI_TEST_ASSERT_EQUAL_INT(1, g_time_changed_count);
     EGUI_TEST_ASSERT_EQUAL_INT(7, g_last_hour24);
@@ -416,23 +476,23 @@ static void test_time_picker_touch_toggle_and_panel_selection(void)
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_TIME_PICKER_SEGMENT_HOUR, egui_view_time_picker_get_focused_segment(EGUI_VIEW_OF(&test_time_picker)));
 
     get_panel_cell_center(EGUI_VIEW_TIME_PICKER_SEGMENT_MINUTE, 2, &x, &y);
-    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
-    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, x, y));
+    EGUI_TEST_ASSERT_TRUE(send_touch_at_local(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
+    EGUI_TEST_ASSERT_TRUE(send_touch_at_local(EGUI_MOTION_EVENT_ACTION_UP, x, y));
     EGUI_TEST_ASSERT_EQUAL_INT(45, egui_view_time_picker_get_minute(EGUI_VIEW_OF(&test_time_picker)));
     EGUI_TEST_ASSERT_EQUAL_INT(2, g_time_changed_count);
     EGUI_TEST_ASSERT_EQUAL_INT(45, g_last_minute);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_TIME_PICKER_SEGMENT_MINUTE, egui_view_time_picker_get_focused_segment(EGUI_VIEW_OF(&test_time_picker)));
 
     get_panel_cell_center(EGUI_VIEW_TIME_PICKER_SEGMENT_PERIOD, 1, &x, &y);
-    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
-    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_CANCEL, x, y));
+    EGUI_TEST_ASSERT_TRUE(send_touch_at_local(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
+    EGUI_TEST_ASSERT_TRUE(send_touch_at_local(EGUI_MOTION_EVENT_ACTION_CANCEL, x, y));
     EGUI_TEST_ASSERT_EQUAL_INT(2, g_time_changed_count);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_TIME_PICKER_PART_NONE, test_time_picker.pressed_part);
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_time_picker)->is_pressed);
 
     get_field_center(&x, &y);
-    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
-    EGUI_TEST_ASSERT_TRUE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, x, y));
+    EGUI_TEST_ASSERT_TRUE(send_touch_at_local(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
+    EGUI_TEST_ASSERT_TRUE(send_touch_at_local(EGUI_MOTION_EVENT_ACTION_UP, x, y));
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_time_picker_get_opened(EGUI_VIEW_OF(&test_time_picker)));
     EGUI_TEST_ASSERT_EQUAL_INT(2, g_open_changed_count);
     EGUI_TEST_ASSERT_EQUAL_INT(0, g_last_opened);
@@ -499,10 +559,10 @@ static void test_time_picker_compact_read_only_and_disabled_guards(void)
     egui_view_time_picker_set_read_only_mode(EGUI_VIEW_OF(&test_time_picker), 1);
     EGUI_VIEW_OF(&test_time_picker)->is_pressed = 1;
     test_time_picker.pressed_part = EGUI_VIEW_TIME_PICKER_PART_FIELD;
-    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
+    EGUI_TEST_ASSERT_FALSE(send_touch_at_local(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_time_picker)->is_pressed);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_TIME_PICKER_PART_NONE, test_time_picker.pressed_part);
-    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, x, y));
+    EGUI_TEST_ASSERT_FALSE(send_touch_at_local(EGUI_MOTION_EVENT_ACTION_UP, x, y));
     EGUI_VIEW_OF(&test_time_picker)->is_pressed = 1;
     test_time_picker.pressed_part = EGUI_VIEW_TIME_PICKER_PART_FIELD;
     EGUI_TEST_ASSERT_FALSE(send_key(EGUI_KEY_CODE_ENTER));
@@ -514,10 +574,10 @@ static void test_time_picker_compact_read_only_and_disabled_guards(void)
     egui_view_time_picker_set_compact_mode(EGUI_VIEW_OF(&test_time_picker), 1);
     EGUI_VIEW_OF(&test_time_picker)->is_pressed = 1;
     test_time_picker.pressed_part = EGUI_VIEW_TIME_PICKER_PART_FIELD;
-    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
+    EGUI_TEST_ASSERT_FALSE(send_touch_at_local(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_time_picker)->is_pressed);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_TIME_PICKER_PART_NONE, test_time_picker.pressed_part);
-    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_UP, x, y));
+    EGUI_TEST_ASSERT_FALSE(send_touch_at_local(EGUI_MOTION_EVENT_ACTION_UP, x, y));
     EGUI_VIEW_OF(&test_time_picker)->is_pressed = 1;
     test_time_picker.pressed_part = EGUI_VIEW_TIME_PICKER_PART_FIELD;
     EGUI_TEST_ASSERT_FALSE(send_key(EGUI_KEY_CODE_ENTER));
@@ -532,7 +592,7 @@ static void test_time_picker_compact_read_only_and_disabled_guards(void)
     egui_view_set_enable(EGUI_VIEW_OF(&test_time_picker), 0);
     EGUI_VIEW_OF(&test_time_picker)->is_pressed = 1;
     test_time_picker.pressed_part = EGUI_VIEW_TIME_PICKER_PART_FIELD;
-    EGUI_TEST_ASSERT_FALSE(send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
+    EGUI_TEST_ASSERT_FALSE(send_touch_at_local(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_time_picker)->is_pressed);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_TIME_PICKER_PART_NONE, test_time_picker.pressed_part);
     EGUI_VIEW_OF(&test_time_picker)->is_pressed = 1;
@@ -555,7 +615,7 @@ static void test_time_picker_static_preview_consumes_input_and_clears_pressed_st
 
     EGUI_VIEW_OF(&preview_time_picker)->is_pressed = 1;
     preview_time_picker.pressed_part = EGUI_VIEW_TIME_PICKER_PART_FIELD;
-    EGUI_TEST_ASSERT_TRUE(send_preview_touch(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
+    EGUI_TEST_ASSERT_TRUE(send_preview_touch_at_local(EGUI_MOTION_EVENT_ACTION_DOWN, x, y));
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&preview_time_picker)->is_pressed);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_TIME_PICKER_PART_NONE, preview_time_picker.pressed_part);
     EGUI_TEST_ASSERT_EQUAL_INT(13, egui_view_time_picker_get_hour24(EGUI_VIEW_OF(&preview_time_picker)));
@@ -580,6 +640,7 @@ void test_time_picker_run(void)
     EGUI_TEST_RUN(test_time_picker_setters_clear_pressed_state);
     EGUI_TEST_RUN(test_time_picker_font_palette_and_helpers);
     EGUI_TEST_RUN(test_time_picker_metrics_and_hit_testing);
+    EGUI_TEST_RUN(test_time_picker_touch_uses_screen_coordinates_after_layout);
     EGUI_TEST_RUN(test_time_picker_touch_toggle_and_panel_selection);
     EGUI_TEST_RUN(test_time_picker_keyboard_navigation_and_adjustment);
     EGUI_TEST_RUN(test_time_picker_compact_read_only_and_disabled_guards);

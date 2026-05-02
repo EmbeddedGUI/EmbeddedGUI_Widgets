@@ -753,6 +753,12 @@ static uint8_t color_picker_hit_part(egui_view_color_picker_t *local, egui_view_
     return EGUI_VIEW_COLOR_PICKER_PART_NONE;
 }
 
+static void color_picker_screen_to_local(egui_view_t *self, const egui_motion_event_t *event, egui_dim_t *x, egui_dim_t *y)
+{
+    *x = event->location.x - self->region_screen.location.x;
+    *y = event->location.y - self->region_screen.location.y;
+}
+
 static void color_picker_point_to_selection(const egui_region_t *region, egui_dim_t x, egui_dim_t y, uint8_t count_x, uint8_t count_y, uint8_t *out_x,
                                             uint8_t *out_y)
 {
@@ -837,6 +843,8 @@ static int egui_view_color_picker_on_touch_event(egui_view_t *self, egui_motion_
 {
     EGUI_LOCAL_INIT(egui_view_color_picker_t);
     uint8_t hit_part;
+    egui_dim_t local_x;
+    egui_dim_t local_y;
 
     if (!egui_view_get_enable(self) || local->read_only_mode || local->compact_mode)
     {
@@ -844,7 +852,8 @@ static int egui_view_color_picker_on_touch_event(egui_view_t *self, egui_motion_
         return 0;
     }
 
-    hit_part = color_picker_hit_part(local, self, event->location.x, event->location.y);
+    color_picker_screen_to_local(self, event, &local_x, &local_y);
+    hit_part = color_picker_hit_part(local, self, local_x, local_y);
 
     switch (event->type)
     {
@@ -862,7 +871,7 @@ static int egui_view_color_picker_on_touch_event(egui_view_t *self, egui_motion_
         local->pressed_part = hit_part;
         egui_view_set_pressed(self, true);
         color_picker_set_current_part_inner(self, hit_part, 0);
-        color_picker_update_from_point(self, hit_part, event->location.x, event->location.y, 1);
+        color_picker_update_from_point(self, hit_part, local_x, local_y, 1);
         egui_view_invalidate(self);
         return 1;
     case EGUI_MOTION_EVENT_ACTION_MOVE:
@@ -874,14 +883,14 @@ static int egui_view_color_picker_on_touch_event(egui_view_t *self, egui_motion_
         {
             local->pressed_part = hit_part;
             color_picker_set_current_part_inner(self, hit_part, 0);
-            color_picker_update_from_point(self, hit_part, event->location.x, event->location.y, 1);
+            color_picker_update_from_point(self, hit_part, local_x, local_y, 1);
         }
         return 1;
     case EGUI_MOTION_EVENT_ACTION_UP:
         if (local->pressed_part != EGUI_VIEW_COLOR_PICKER_PART_NONE && hit_part != EGUI_VIEW_COLOR_PICKER_PART_NONE)
         {
             color_picker_set_current_part_inner(self, hit_part, 0);
-            color_picker_update_from_point(self, hit_part, event->location.x, event->location.y, 1);
+            color_picker_update_from_point(self, hit_part, local_x, local_y, 1);
         }
         return color_picker_clear_pressed_state(self, local);
     case EGUI_MOTION_EVENT_ACTION_CANCEL:

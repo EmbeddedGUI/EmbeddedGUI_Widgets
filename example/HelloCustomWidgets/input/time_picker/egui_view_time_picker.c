@@ -788,6 +788,12 @@ static uint8_t time_picker_panel_row(const egui_region_t *region, egui_dim_t y)
     return 2;
 }
 
+static void time_picker_screen_to_local(egui_view_t *self, const egui_motion_event_t *event, egui_dim_t *x, egui_dim_t *y)
+{
+    *x = event->location.x - self->region_screen.location.x;
+    *y = event->location.y - self->region_screen.location.y;
+}
+
 static void time_picker_draw_field(egui_view_t *self, egui_view_time_picker_t *local, egui_view_time_picker_metrics_t *metrics, egui_color_t accent_color,
                                    egui_color_t text_color, egui_color_t muted_text_color, egui_color_t border_color)
 {
@@ -977,6 +983,8 @@ static int egui_view_time_picker_on_touch_event(egui_view_t *self, egui_motion_e
 {
     EGUI_LOCAL_INIT(egui_view_time_picker_t);
     uint8_t hit_part;
+    egui_dim_t local_x;
+    egui_dim_t local_y;
 
     if (!egui_view_get_enable(self) || local->read_only_mode || local->compact_mode)
     {
@@ -984,10 +992,12 @@ static int egui_view_time_picker_on_touch_event(egui_view_t *self, egui_motion_e
         return 0;
     }
 
+    time_picker_screen_to_local(self, event, &local_x, &local_y);
+
     switch (event->type)
     {
     case EGUI_MOTION_EVENT_ACTION_DOWN:
-        hit_part = time_picker_hit_part(local, self, event->location.x, event->location.y);
+        hit_part = time_picker_hit_part(local, self, local_x, local_y);
         if (hit_part == EGUI_VIEW_TIME_PICKER_PART_NONE)
         {
             return 0;
@@ -1003,7 +1013,7 @@ static int egui_view_time_picker_on_touch_event(egui_view_t *self, egui_motion_e
         egui_view_invalidate(self);
         return 1;
     case EGUI_MOTION_EVENT_ACTION_UP:
-        hit_part = time_picker_hit_part(local, self, event->location.x, event->location.y);
+        hit_part = time_picker_hit_part(local, self, local_x, local_y);
         if (local->pressed_part != EGUI_VIEW_TIME_PICKER_PART_NONE && local->pressed_part == hit_part)
         {
             if (hit_part == EGUI_VIEW_TIME_PICKER_PART_FIELD)
@@ -1021,7 +1031,7 @@ static int egui_view_time_picker_on_touch_event(egui_view_t *self, egui_motion_e
 
                 time_picker_get_metrics(local, self, &metrics);
                 time_picker_set_focus_inner(self, segment);
-                row = time_picker_panel_row(&metrics.panel_columns[segment], event->location.y);
+                row = time_picker_panel_row(&metrics.panel_columns[segment], local_y);
                 if (row == 0)
                 {
                     time_picker_step_segment(self, segment, -1);

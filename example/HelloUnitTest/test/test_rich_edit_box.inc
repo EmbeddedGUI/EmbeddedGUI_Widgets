@@ -160,8 +160,8 @@ static int rich_edit_box_send_touch_to_view(egui_view_t *view, uint8_t type, egu
 
     memset(&event, 0, sizeof(event));
     event.type = type;
-    event.location.x = x;
-    event.location.y = y;
+    event.location.x = view->region_screen.location.x + x;
+    event.location.y = view->region_screen.location.y + y;
     return view->api->dispatch_touch_event(view, &event);
 }
 
@@ -303,8 +303,9 @@ static uint8_t rich_edit_box_get_part_center(egui_view_t *view, uint8_t part, eg
 
 static void rich_edit_box_get_view_outside_point(egui_view_t *view, egui_dim_t *x, egui_dim_t *y)
 {
-    *x = view->region_screen.location.x - 4;
-    *y = view->region_screen.location.y - 4;
+    EGUI_UNUSED(view);
+    *x = -4;
+    *y = -4;
 }
 
 static void rich_edit_box_seed_pressed_state(egui_view_rich_edit_box_t *widget, uint8_t part, uint8_t visual_pressed)

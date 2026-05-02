@@ -128,8 +128,8 @@ static int send_touch_to_view(egui_view_t *view, uint8_t type, egui_dim_t x, egu
 
     memset(&event, 0, sizeof(event));
     event.type = type;
-    event.location.x = x;
-    event.location.y = y;
+    event.location.x = view->region_screen.location.x + x;
+    event.location.y = view->region_screen.location.y + y;
     return view->api->dispatch_touch_event(view, &event);
 }
 

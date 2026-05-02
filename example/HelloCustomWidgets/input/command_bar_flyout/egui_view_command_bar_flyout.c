@@ -672,6 +672,12 @@ static uint8_t egui_view_command_bar_flyout_resolve_hit(egui_view_command_bar_fl
     return EGUI_VIEW_COMMAND_BAR_FLYOUT_PART_NONE;
 }
 
+static void egui_view_command_bar_flyout_screen_to_local(egui_view_t *self, const egui_motion_event_t *event, egui_dim_t *x, egui_dim_t *y)
+{
+    *x = event->location.x - self->region_screen.location.x;
+    *y = event->location.y - self->region_screen.location.y;
+}
+
 static void egui_view_command_bar_flyout_sync_current_part(egui_view_command_bar_flyout_t *local)
 {
     const egui_view_command_bar_flyout_snapshot_t *snapshot = egui_view_command_bar_flyout_get_snapshot(local);
@@ -1482,6 +1488,8 @@ static int egui_view_command_bar_flyout_on_touch_event(egui_view_t *self, egui_m
     EGUI_LOCAL_INIT(egui_view_command_bar_flyout_t);
     const egui_view_command_bar_flyout_snapshot_t *snapshot = egui_view_command_bar_flyout_get_snapshot(local);
     uint8_t hit_part;
+    egui_dim_t local_x;
+    egui_dim_t local_y;
 
     if (snapshot == NULL || local->compact_mode || local->disabled_mode || !egui_view_get_enable(self))
     {
@@ -1492,10 +1500,12 @@ static int egui_view_command_bar_flyout_on_touch_event(egui_view_t *self, egui_m
         return 0;
     }
 
+    egui_view_command_bar_flyout_screen_to_local(self, event, &local_x, &local_y);
+
     switch (event->type)
     {
     case EGUI_MOTION_EVENT_ACTION_DOWN:
-        hit_part = egui_view_command_bar_flyout_resolve_hit(local, self, event->location.x, event->location.y);
+        hit_part = egui_view_command_bar_flyout_resolve_hit(local, self, local_x, local_y);
         if (!egui_view_command_bar_flyout_part_is_interactive(local, self, snapshot, hit_part))
         {
             if (egui_view_command_bar_flyout_clear_pressed_state(self, local))
@@ -1514,7 +1524,7 @@ static int egui_view_command_bar_flyout_on_touch_event(egui_view_t *self, egui_m
         {
             return 0;
         }
-        hit_part = egui_view_command_bar_flyout_resolve_hit(local, self, event->location.x, event->location.y);
+        hit_part = egui_view_command_bar_flyout_resolve_hit(local, self, local_x, local_y);
         egui_view_set_pressed(self, hit_part == local->pressed_part &&
                                             egui_view_command_bar_flyout_part_is_interactive(local, self, snapshot, local->pressed_part));
         egui_view_invalidate(self);
@@ -1523,7 +1533,7 @@ static int egui_view_command_bar_flyout_on_touch_event(egui_view_t *self, egui_m
     {
         uint8_t handled;
 
-        hit_part = egui_view_command_bar_flyout_resolve_hit(local, self, event->location.x, event->location.y);
+        hit_part = egui_view_command_bar_flyout_resolve_hit(local, self, local_x, local_y);
         if (hit_part == local->pressed_part && egui_view_command_bar_flyout_part_is_interactive(local, self, snapshot, hit_part))
         {
             local->current_part = hit_part;

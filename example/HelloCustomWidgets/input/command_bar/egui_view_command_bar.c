@@ -647,6 +647,12 @@ static uint8_t egui_view_command_bar_hit_item(egui_view_command_bar_t *local, eg
     return EGUI_VIEW_COMMAND_BAR_INDEX_NONE;
 }
 
+static void egui_view_command_bar_screen_to_local(egui_view_t *self, const egui_motion_event_t *event, egui_dim_t *x, egui_dim_t *y)
+{
+    *x = event->location.x - self->region_screen.location.x;
+    *y = event->location.y - self->region_screen.location.y;
+}
+
 static void egui_view_command_bar_set_current_index_inner(egui_view_t *self, uint8_t index, uint8_t notify)
 {
     EGUI_LOCAL_INIT(egui_view_command_bar_t);
@@ -1272,6 +1278,8 @@ static int egui_view_command_bar_on_touch_event(egui_view_t *self, egui_motion_e
     EGUI_LOCAL_INIT(egui_view_command_bar_t);
     const egui_view_command_bar_snapshot_t *snapshot = egui_view_command_bar_get_snapshot(local);
     uint8_t hit_index;
+    egui_dim_t local_x;
+    egui_dim_t local_y;
 
     if (!egui_view_get_enable(self) || local->disabled_mode || local->compact_mode || snapshot == NULL)
     {
@@ -1282,10 +1290,12 @@ static int egui_view_command_bar_on_touch_event(egui_view_t *self, egui_motion_e
         return 0;
     }
 
+    egui_view_command_bar_screen_to_local(self, event, &local_x, &local_y);
+
     switch (event->type)
     {
     case EGUI_MOTION_EVENT_ACTION_DOWN:
-        hit_index = egui_view_command_bar_hit_item(local, self, event->location.x, event->location.y);
+        hit_index = egui_view_command_bar_hit_item(local, self, local_x, local_y);
         if (hit_index == EGUI_VIEW_COMMAND_BAR_INDEX_NONE || !egui_view_command_bar_item_is_enabled(local, self, &snapshot->items[hit_index]))
         {
             if (egui_view_command_bar_clear_pressed_state(self, local))
@@ -1302,7 +1312,7 @@ static int egui_view_command_bar_on_touch_event(egui_view_t *self, egui_motion_e
     {
         uint8_t handled;
 
-        hit_index = egui_view_command_bar_hit_item(local, self, event->location.x, event->location.y);
+        hit_index = egui_view_command_bar_hit_item(local, self, local_x, local_y);
         if (local->pressed_index != EGUI_VIEW_COMMAND_BAR_INDEX_NONE && local->pressed_index == hit_index &&
             egui_view_command_bar_item_is_enabled(local, self, &snapshot->items[hit_index]))
         {
