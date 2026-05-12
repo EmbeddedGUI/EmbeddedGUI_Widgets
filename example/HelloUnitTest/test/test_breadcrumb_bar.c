@@ -437,7 +437,7 @@ static void test_breadcrumb_bar_internal_helpers_cover_entries_and_labels(void)
     EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_breadcrumb_bar_build_entries(font, &g_snapshots[2], 1, 29, entries));
     EGUI_TEST_ASSERT_EQUAL_INT(3, entries[0].item_index);
 
-    EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(sample, EGUI_COLOR_DARK_GREY, 62).full, egui_view_breadcrumb_bar_mix_disabled(sample).full);
+    EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(sample, EGUI_COLOR_DARK_GREY, EGUI_ALPHA_MAKE(52)).full, egui_view_breadcrumb_bar_mix_disabled(sample).full);
 }
 
 void test_breadcrumb_bar_run(void)

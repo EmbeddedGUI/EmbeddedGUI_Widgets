@@ -132,8 +132,8 @@ static void setup_preview_scroll_bar(void)
     egui_view_scroll_bar_set_meta_font(EGUI_VIEW_OF(&preview_scroll_bar), (const egui_font_t *)&egui_res_font_montserrat_8_4);
     egui_view_scroll_bar_set_label(EGUI_VIEW_OF(&preview_scroll_bar), "Compact rail");
     egui_view_scroll_bar_set_helper(EGUI_VIEW_OF(&preview_scroll_bar), "Static preview");
-    egui_view_scroll_bar_set_palette(EGUI_VIEW_OF(&preview_scroll_bar), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD2DDDA), EGUI_COLOR_HEX(0x17302A),
-                                     EGUI_COLOR_HEX(0x57756C), EGUI_COLOR_HEX(0x0D9488), EGUI_COLOR_HEX(0x3BC7B3));
+    egui_view_scroll_bar_set_palette(EGUI_VIEW_OF(&preview_scroll_bar), HCW_COLOR_SURFACE, HCW_COLOR_BORDER_STRONG, HCW_COLOR_TEXT_STRONG,
+                                     HCW_COLOR_TEXT_SOFT, HCW_COLOR_PRIMARY_DARK, HCW_COLOR_PRIMARY_DARK);
     egui_view_scroll_bar_set_content_metrics(EGUI_VIEW_OF(&preview_scroll_bar), 540, 160);
     egui_view_scroll_bar_set_step_size(EGUI_VIEW_OF(&preview_scroll_bar), 16, 96);
     egui_view_scroll_bar_set_offset(EGUI_VIEW_OF(&preview_scroll_bar), 96);
@@ -575,6 +575,12 @@ static void test_scroll_bar_clamps_metrics_and_offset(void)
     EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_scroll_bar_get_viewport_length(EGUI_VIEW_OF(&test_scroll_bar)));
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_scroll_bar_get_max_offset(EGUI_VIEW_OF(&test_scroll_bar)));
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_scroll_bar_get_offset(EGUI_VIEW_OF(&test_scroll_bar)));
+
+    egui_view_scroll_bar_init(EGUI_VIEW_OF(&test_scroll_bar));
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_BORDER_STRONG.full, test_scroll_bar.border_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT_SOFT.full, test_scroll_bar.muted_text_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PRIMARY_DARK.full, test_scroll_bar.accent_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PRIMARY_DARK.full, test_scroll_bar.preview_color.full);
 }
 
 static void test_scroll_bar_static_preview_consumes_input_and_keeps_state(void)

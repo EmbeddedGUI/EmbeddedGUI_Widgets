@@ -1,33 +1,48 @@
-﻿#include "egui_view_calendar_date_picker.h"
+#include "egui_view_calendar_date_picker.h"
+#include "../../hcw_text_center.h"
 
 #define EGUI_VIEW_CALENDAR_DATE_PICKER_STANDARD_RADIUS             10
-#define EGUI_VIEW_CALENDAR_DATE_PICKER_STANDARD_FILL_ALPHA         94
-#define EGUI_VIEW_CALENDAR_DATE_PICKER_STANDARD_BORDER_ALPHA       60
+#define EGUI_VIEW_CALENDAR_DATE_PICKER_STANDARD_FILL_ALPHA         EGUI_ALPHA_MAKE(98)
+#define EGUI_VIEW_CALENDAR_DATE_PICKER_STANDARD_BORDER_ALPHA       EGUI_ALPHA_MAKE(96)
 #define EGUI_VIEW_CALENDAR_DATE_PICKER_STANDARD_PAD_X              10
 #define EGUI_VIEW_CALENDAR_DATE_PICKER_STANDARD_PAD_Y              8
 #define EGUI_VIEW_CALENDAR_DATE_PICKER_STANDARD_LABEL_HEIGHT       10
 #define EGUI_VIEW_CALENDAR_DATE_PICKER_STANDARD_LABEL_GAP          4
 #define EGUI_VIEW_CALENDAR_DATE_PICKER_STANDARD_FIELD_HEIGHT       26
 #define EGUI_VIEW_CALENDAR_DATE_PICKER_STANDARD_FIELD_RADIUS       7
-#define EGUI_VIEW_CALENDAR_DATE_PICKER_STANDARD_FIELD_FILL_ALPHA   46
-#define EGUI_VIEW_CALENDAR_DATE_PICKER_STANDARD_FIELD_BORDER_ALPHA 56
+#define EGUI_VIEW_CALENDAR_DATE_PICKER_STANDARD_FIELD_FILL_ALPHA   EGUI_ALPHA_MAKE(98)
+#define EGUI_VIEW_CALENDAR_DATE_PICKER_STANDARD_FIELD_BORDER_ALPHA EGUI_ALPHA_MAKE(98)
 #define EGUI_VIEW_CALENDAR_DATE_PICKER_STANDARD_PANEL_GAP          6
 #define EGUI_VIEW_CALENDAR_DATE_PICKER_STANDARD_PANEL_HEIGHT       100
 #define EGUI_VIEW_CALENDAR_DATE_PICKER_STANDARD_PANEL_RADIUS       8
-#define EGUI_VIEW_CALENDAR_DATE_PICKER_STANDARD_PANEL_FILL_ALPHA   40
-#define EGUI_VIEW_CALENDAR_DATE_PICKER_STANDARD_PANEL_BORDER_ALPHA 54
+#define EGUI_VIEW_CALENDAR_DATE_PICKER_STANDARD_PANEL_FILL_ALPHA   EGUI_ALPHA_MAKE(98)
+#define EGUI_VIEW_CALENDAR_DATE_PICKER_STANDARD_PANEL_BORDER_ALPHA EGUI_ALPHA_MAKE(98)
 #define EGUI_VIEW_CALENDAR_DATE_PICKER_STANDARD_HELPER_GAP         5
 #define EGUI_VIEW_CALENDAR_DATE_PICKER_STANDARD_HELPER_HEIGHT      10
+#define EGUI_VIEW_CALENDAR_DATE_PICKER_FIELD_TEXT_INSET_X          8
+#define EGUI_VIEW_CALENDAR_DATE_PICKER_FIELD_CHEVRON_WIDTH         18
+#define EGUI_VIEW_CALENDAR_DATE_PICKER_FIELD_CHEVRON_END_PAD       4
+#define EGUI_VIEW_CALENDAR_DATE_PICKER_FIELD_CHEVRON_TEXT_GAP      4
+#define EGUI_VIEW_CALENDAR_DATE_PICKER_FIELD_DIVIDER_GAP           4
+#define EGUI_VIEW_CALENDAR_DATE_PICKER_FIELD_DIVIDER_TOP_INSET     6
+#define EGUI_VIEW_CALENDAR_DATE_PICKER_FIELD_DIVIDER_BOTTOM_INSET  7
+#define EGUI_VIEW_CALENDAR_DATE_PICKER_PANEL_INSET_X               6
+#define EGUI_VIEW_CALENDAR_DATE_PICKER_PANEL_NAV_INSET_X           5
+#define EGUI_VIEW_CALENDAR_DATE_PICKER_PANEL_HEADER_TOP_INSET      4
+#define EGUI_VIEW_CALENDAR_DATE_PICKER_PANEL_NAV_BUTTON_WIDTH      20
+#define EGUI_VIEW_CALENDAR_DATE_PICKER_PANEL_NAV_BUTTON_HEIGHT     16
+#define EGUI_VIEW_CALENDAR_DATE_PICKER_PANEL_NAV_GAP               5
+#define EGUI_VIEW_CALENDAR_DATE_PICKER_PANEL_GRID_GAP              2
 
 #define EGUI_VIEW_CALENDAR_DATE_PICKER_COMPACT_RADIUS             8
-#define EGUI_VIEW_CALENDAR_DATE_PICKER_COMPACT_FILL_ALPHA         92
-#define EGUI_VIEW_CALENDAR_DATE_PICKER_COMPACT_BORDER_ALPHA       56
+#define EGUI_VIEW_CALENDAR_DATE_PICKER_COMPACT_FILL_ALPHA         EGUI_ALPHA_MAKE(96)
+#define EGUI_VIEW_CALENDAR_DATE_PICKER_COMPACT_BORDER_ALPHA       EGUI_ALPHA_MAKE(94)
 #define EGUI_VIEW_CALENDAR_DATE_PICKER_COMPACT_PAD_X              7
 #define EGUI_VIEW_CALENDAR_DATE_PICKER_COMPACT_PAD_Y              6
 #define EGUI_VIEW_CALENDAR_DATE_PICKER_COMPACT_FIELD_HEIGHT       22
 #define EGUI_VIEW_CALENDAR_DATE_PICKER_COMPACT_FIELD_RADIUS       6
-#define EGUI_VIEW_CALENDAR_DATE_PICKER_COMPACT_FIELD_FILL_ALPHA   42
-#define EGUI_VIEW_CALENDAR_DATE_PICKER_COMPACT_FIELD_BORDER_ALPHA 52
+#define EGUI_VIEW_CALENDAR_DATE_PICKER_COMPACT_FIELD_FILL_ALPHA   EGUI_ALPHA_MAKE(96)
+#define EGUI_VIEW_CALENDAR_DATE_PICKER_COMPACT_FIELD_BORDER_ALPHA EGUI_ALPHA_MAKE(94)
 
 #define EGUI_VIEW_CALENDAR_DATE_PICKER_PART_NONE  0
 #define EGUI_VIEW_CALENDAR_DATE_PICKER_PART_FIELD 1
@@ -138,7 +153,7 @@ static void calendar_date_picker_normalize_display_month(uint16_t *year, uint8_t
 
 static egui_color_t calendar_date_picker_mix_disabled(egui_color_t color)
 {
-    return egui_rgb_mix(color, EGUI_COLOR_DARK_GREY, 68);
+    return egui_rgb_mix(color, HCW_COLOR_TEXT_SOFT, EGUI_ALPHA_MAKE(40));
 }
 
 static egui_dim_t calendar_date_picker_measure_font_line_height(const egui_font_t *font)
@@ -674,6 +689,7 @@ static void calendar_date_picker_draw_text(const egui_font_t *font, egui_view_t 
         return;
     }
 
+    draw_region.location.y += hcw_text_center_get_delta(font, text, region, align);
     egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, font, text, &draw_region, align, color, self->alpha);
 }
 
@@ -681,7 +697,7 @@ static void calendar_date_picker_draw_chevron(egui_view_t *self, const egui_regi
 {
     egui_dim_t cx = region->location.x + region->size.width / 2;
     egui_dim_t cy = region->location.y + region->size.height / 2;
-    egui_alpha_t alpha = egui_color_alpha_mix(self->alpha, 90);
+    egui_alpha_t alpha = egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(90));
 
     if (direction == 0)
     {
@@ -722,6 +738,9 @@ static void calendar_date_picker_get_metrics(egui_view_calendar_date_picker_t *l
     egui_dim_t block_h;
     egui_dim_t cursor_y;
     egui_dim_t meta_line_height = calendar_date_picker_measure_font_line_height(local->meta_font);
+    egui_dim_t panel_nav_y;
+    egui_dim_t panel_title_right;
+    egui_dim_t panel_grid_bottom;
 
     if (meta_line_height > label_h)
     {
@@ -778,9 +797,9 @@ static void calendar_date_picker_get_metrics(egui_view_calendar_date_picker_t *l
     metrics->field_region.size.height = field_h;
     cursor_y += field_h;
 
-    metrics->panel_region.location.x = metrics->content_region.location.x;
-    metrics->panel_region.location.y = cursor_y + panel_gap;
-    metrics->panel_region.size.width = metrics->content_region.size.width;
+    metrics->panel_region.location.x = metrics->field_region.location.x;
+    metrics->panel_region.location.y = metrics->field_region.location.y + metrics->field_region.size.height + panel_gap;
+    metrics->panel_region.size.width = metrics->field_region.size.width;
     metrics->panel_region.size.height = panel_h;
     if (metrics->show_panel)
     {
@@ -792,40 +811,75 @@ static void calendar_date_picker_get_metrics(egui_view_calendar_date_picker_t *l
     metrics->helper_region.size.width = metrics->content_region.size.width;
     metrics->helper_region.size.height = helper_h;
 
-    metrics->field_text_region.location.x = metrics->field_region.location.x + 8;
+    metrics->field_text_region.location.x = metrics->field_region.location.x + EGUI_VIEW_CALENDAR_DATE_PICKER_FIELD_TEXT_INSET_X;
     metrics->field_text_region.location.y = metrics->field_region.location.y;
-    metrics->field_text_region.size.width = metrics->field_region.size.width - (local->read_only_mode ? 16 : 34);
     metrics->field_text_region.size.height = metrics->field_region.size.height;
 
-    metrics->chevron_region.location.x = metrics->field_region.location.x + metrics->field_region.size.width - (local->read_only_mode ? 0 : 22);
-    metrics->chevron_region.location.y = metrics->field_region.location.y;
-    metrics->chevron_region.size.width = local->read_only_mode ? 0 : 18;
+    metrics->chevron_region.size.width = local->read_only_mode ? 0 : EGUI_VIEW_CALENDAR_DATE_PICKER_FIELD_CHEVRON_WIDTH;
     metrics->chevron_region.size.height = metrics->field_region.size.height;
+    metrics->chevron_region.location.x = metrics->field_region.location.x + metrics->field_region.size.width -
+                                         EGUI_VIEW_CALENDAR_DATE_PICKER_FIELD_CHEVRON_END_PAD - metrics->chevron_region.size.width;
+    metrics->chevron_region.location.y = metrics->field_region.location.y;
+    if (local->read_only_mode)
+    {
+        metrics->field_text_region.size.width =
+                metrics->field_region.size.width - EGUI_VIEW_CALENDAR_DATE_PICKER_FIELD_TEXT_INSET_X * 2;
+    }
+    else
+    {
+        metrics->field_text_region.size.width = metrics->chevron_region.location.x - metrics->field_text_region.location.x -
+                                                EGUI_VIEW_CALENDAR_DATE_PICKER_FIELD_CHEVRON_TEXT_GAP;
+    }
+    if (metrics->field_text_region.size.width < 0)
+    {
+        metrics->field_text_region.size.width = 0;
+    }
 
-    metrics->panel_prev_region.location.x = metrics->panel_region.location.x + 5;
-    metrics->panel_prev_region.location.y = metrics->panel_region.location.y + 3 + (panel_title_h > 14 ? (panel_title_h - 14) / 2 : 0);
-    metrics->panel_prev_region.size.width = 20;
-    metrics->panel_prev_region.size.height = 16;
-
-    metrics->panel_next_region.location.x = metrics->panel_region.location.x + metrics->panel_region.size.width - 25;
-    metrics->panel_next_region.location.y = metrics->panel_region.location.y + 3 + (panel_title_h > 14 ? (panel_title_h - 14) / 2 : 0);
-    metrics->panel_next_region.size.width = 20;
-    metrics->panel_next_region.size.height = 16;
-
-    metrics->panel_title_region.location.x = metrics->panel_prev_region.location.x + metrics->panel_prev_region.size.width + 5;
-    metrics->panel_title_region.location.y = metrics->panel_region.location.y + 4;
-    metrics->panel_title_region.size.width = metrics->panel_region.size.width - 60;
+    metrics->panel_title_region.location.y = metrics->panel_region.location.y + EGUI_VIEW_CALENDAR_DATE_PICKER_PANEL_HEADER_TOP_INSET;
     metrics->panel_title_region.size.height = panel_title_h;
 
-    metrics->panel_week_region.location.x = metrics->panel_region.location.x + 6;
-    metrics->panel_week_region.location.y = metrics->panel_title_region.location.y + metrics->panel_title_region.size.height + 4;
-    metrics->panel_week_region.size.width = metrics->panel_region.size.width - 12;
-    metrics->panel_week_region.size.height = panel_week_h;
+    metrics->panel_prev_region.size.width = EGUI_VIEW_CALENDAR_DATE_PICKER_PANEL_NAV_BUTTON_WIDTH;
+    metrics->panel_prev_region.size.height = EGUI_VIEW_CALENDAR_DATE_PICKER_PANEL_NAV_BUTTON_HEIGHT;
+    metrics->panel_next_region.size.width = EGUI_VIEW_CALENDAR_DATE_PICKER_PANEL_NAV_BUTTON_WIDTH;
+    metrics->panel_next_region.size.height = EGUI_VIEW_CALENDAR_DATE_PICKER_PANEL_NAV_BUTTON_HEIGHT;
+    metrics->panel_prev_region.location.x = metrics->panel_region.location.x + EGUI_VIEW_CALENDAR_DATE_PICKER_PANEL_NAV_INSET_X;
+    metrics->panel_next_region.location.x = metrics->panel_region.location.x + metrics->panel_region.size.width -
+                                            EGUI_VIEW_CALENDAR_DATE_PICKER_PANEL_NAV_INSET_X -
+                                            metrics->panel_next_region.size.width;
+    panel_nav_y = metrics->panel_title_region.location.y +
+                  (metrics->panel_title_region.size.height - metrics->panel_prev_region.size.height) / 2;
+    metrics->panel_prev_region.location.y = panel_nav_y;
+    metrics->panel_next_region.location.y = panel_nav_y;
 
-    metrics->panel_grid_region.location.x = metrics->panel_region.location.x + 6;
-    metrics->panel_grid_region.location.y = metrics->panel_week_region.location.y + metrics->panel_week_region.size.height + 2;
-    metrics->panel_grid_region.size.width = metrics->panel_region.size.width - 12;
-    metrics->panel_grid_region.size.height = metrics->panel_region.size.height - (metrics->panel_grid_region.location.y - metrics->panel_region.location.y) - 6;
+    metrics->panel_title_region.location.x =
+            metrics->panel_prev_region.location.x + metrics->panel_prev_region.size.width + EGUI_VIEW_CALENDAR_DATE_PICKER_PANEL_NAV_GAP;
+    panel_title_right = metrics->panel_next_region.location.x - EGUI_VIEW_CALENDAR_DATE_PICKER_PANEL_NAV_GAP;
+    metrics->panel_title_region.size.width = panel_title_right - metrics->panel_title_region.location.x;
+    if (metrics->panel_title_region.size.width < 0)
+    {
+        metrics->panel_title_region.size.width = 0;
+    }
+
+    metrics->panel_week_region.location.x = metrics->panel_region.location.x + EGUI_VIEW_CALENDAR_DATE_PICKER_PANEL_INSET_X;
+    metrics->panel_week_region.location.y = metrics->panel_title_region.location.y + metrics->panel_title_region.size.height +
+                                            EGUI_VIEW_CALENDAR_DATE_PICKER_PANEL_HEADER_TOP_INSET;
+    metrics->panel_week_region.size.width = metrics->panel_region.size.width - EGUI_VIEW_CALENDAR_DATE_PICKER_PANEL_INSET_X * 2;
+    metrics->panel_week_region.size.height = panel_week_h;
+    if (metrics->panel_week_region.size.width < 0)
+    {
+        metrics->panel_week_region.size.width = 0;
+    }
+
+    metrics->panel_grid_region.location.x = metrics->panel_region.location.x + EGUI_VIEW_CALENDAR_DATE_PICKER_PANEL_INSET_X;
+    metrics->panel_grid_region.location.y =
+            metrics->panel_week_region.location.y + metrics->panel_week_region.size.height + EGUI_VIEW_CALENDAR_DATE_PICKER_PANEL_GRID_GAP;
+    metrics->panel_grid_region.size.width = metrics->panel_week_region.size.width;
+    panel_grid_bottom = metrics->panel_region.location.y + metrics->panel_region.size.height - EGUI_VIEW_CALENDAR_DATE_PICKER_PANEL_INSET_X;
+    metrics->panel_grid_region.size.height = panel_grid_bottom - metrics->panel_grid_region.location.y;
+    if (metrics->panel_grid_region.size.height < 0)
+    {
+        metrics->panel_grid_region.size.height = 0;
+    }
 }
 
 static uint8_t calendar_date_picker_get_start_cell(egui_view_calendar_date_picker_t *local)
@@ -934,15 +988,15 @@ static void calendar_date_picker_screen_to_local(egui_view_t *self, const egui_m
 static void calendar_date_picker_draw_field(egui_view_t *self, egui_view_calendar_date_picker_t *local, egui_view_calendar_date_picker_metrics_t *metrics, egui_color_t accent_color,
                                    egui_color_t text_color, egui_color_t muted_text_color, egui_color_t border_color)
 {
-    egui_color_t field_fill = egui_rgb_mix(local->surface_color, accent_color, local->open_mode ? 10 : 5);
-    egui_color_t field_border = egui_rgb_mix(border_color, accent_color, local->open_mode ? 24 : 12);
+    egui_color_t field_fill = local->surface_color;
+    egui_color_t field_border = egui_rgb_mix(border_color, accent_color, EGUI_ALPHA_MAKE(local->open_mode ? 78 : 68));
     egui_alpha_t fill_alpha = local->compact_mode ? EGUI_VIEW_CALENDAR_DATE_PICKER_COMPACT_FIELD_FILL_ALPHA : EGUI_VIEW_CALENDAR_DATE_PICKER_STANDARD_FIELD_FILL_ALPHA;
     egui_alpha_t border_alpha = local->compact_mode ? EGUI_VIEW_CALENDAR_DATE_PICKER_COMPACT_FIELD_BORDER_ALPHA : EGUI_VIEW_CALENDAR_DATE_PICKER_STANDARD_FIELD_BORDER_ALPHA;
     char buffer[16];
 
     if (self->is_pressed && local->pressed_part == EGUI_VIEW_CALENDAR_DATE_PICKER_PART_FIELD)
     {
-        field_fill = egui_rgb_mix(field_fill, accent_color, 18);
+        field_fill = egui_rgb_mix(field_fill, accent_color, EGUI_ALPHA_MAKE(14));
     }
 
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics->field_region.location.x, metrics->field_region.location.y, metrics->field_region.size.width,
@@ -962,10 +1016,10 @@ static void calendar_date_picker_draw_field(egui_view_t *self, egui_view_calenda
 
         egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics->field_region.location.x, metrics->field_region.location.y, metrics->field_region.size.width,
                                          metrics->field_region.size.height, radius, 2, accent_color,
-                                         egui_color_alpha_mix(self->alpha, local->open_mode ? 96 : 84));
+                                         egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(local->open_mode ? 96 : 84)));
         egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics->field_region.location.x + 2, metrics->field_region.location.y + 2, metrics->field_region.size.width - 4,
                                          metrics->field_region.size.height - 4, radius > 2 ? (radius - 2) : radius, 1, accent_color,
-                                         egui_color_alpha_mix(self->alpha, local->open_mode ? 48 : 40));
+                                         egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(local->open_mode ? 48 : 40)));
     }
 #endif
 
@@ -974,23 +1028,27 @@ static void calendar_date_picker_draw_field(egui_view_t *self, egui_view_calenda
 
     if (!local->read_only_mode && !local->compact_mode)
     {
-        egui_dim_t divider_x = metrics->chevron_region.location.x - 4;
-        egui_color_t divider_color = egui_rgb_mix(border_color, accent_color, local->open_mode ? 18 : 8);
+        egui_dim_t divider_x = metrics->chevron_region.location.x - EGUI_VIEW_CALENDAR_DATE_PICKER_FIELD_DIVIDER_GAP;
+        egui_color_t divider_color = egui_rgb_mix(border_color, accent_color, EGUI_ALPHA_MAKE(local->open_mode ? 68 : 56));
 
-        egui_canvas_draw_line(&uicode_get_core()->canvas, divider_x, metrics->field_region.location.y + 6, divider_x,
-                              metrics->field_region.location.y + metrics->field_region.size.height - 7, 1, divider_color,
-                              egui_color_alpha_mix(self->alpha, local->open_mode ? 52 : 34));
-        calendar_date_picker_draw_chevron(self, &metrics->chevron_region, muted_text_color, local->open_mode ? 3 : 2);
+        egui_canvas_draw_line(&uicode_get_core()->canvas, divider_x,
+                              metrics->field_region.location.y + EGUI_VIEW_CALENDAR_DATE_PICKER_FIELD_DIVIDER_TOP_INSET,
+                              divider_x,
+                              metrics->field_region.location.y + metrics->field_region.size.height -
+                                      EGUI_VIEW_CALENDAR_DATE_PICKER_FIELD_DIVIDER_BOTTOM_INSET,
+                              1, divider_color, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(local->open_mode ? 88 : 78)));
+        calendar_date_picker_draw_chevron(self, &metrics->chevron_region, egui_rgb_mix(muted_text_color, accent_color, EGUI_ALPHA_MAKE(34)),
+                                          local->open_mode ? 3 : 2);
     }
 }
 
 static void calendar_date_picker_draw_panel(egui_view_t *self, egui_view_calendar_date_picker_t *local, egui_view_calendar_date_picker_metrics_t *metrics, egui_color_t accent_color,
                                    egui_color_t text_color, egui_color_t muted_text_color, egui_color_t border_color)
 {
-    egui_color_t panel_fill = egui_rgb_mix(local->surface_color, accent_color, 7);
-    egui_color_t panel_border = egui_rgb_mix(border_color, accent_color, 18);
-    egui_color_t nav_fill = egui_rgb_mix(local->surface_color, accent_color, 10);
-    egui_color_t nav_border = egui_rgb_mix(border_color, accent_color, 18);
+    egui_color_t panel_fill = local->surface_color;
+    egui_color_t panel_border = egui_rgb_mix(border_color, accent_color, EGUI_ALPHA_MAKE(28));
+    egui_color_t nav_fill = local->surface_color;
+    egui_color_t nav_border = egui_rgb_mix(border_color, accent_color, EGUI_ALPHA_MAKE(24));
     egui_dim_t cell_w = metrics->panel_grid_region.size.width / 7;
     egui_dim_t cell_h = metrics->panel_grid_region.size.height / 6;
     egui_dim_t col;
@@ -1011,35 +1069,35 @@ static void calendar_date_picker_draw_panel(egui_view_t *self, egui_view_calenda
 
     egui_canvas_draw_line(&uicode_get_core()->canvas, metrics->panel_region.location.x + 8, metrics->panel_week_region.location.y - 3,
                           metrics->panel_region.location.x + metrics->panel_region.size.width - 9, metrics->panel_week_region.location.y - 3, 1, panel_border,
-                          egui_color_alpha_mix(self->alpha, 34));
+                          egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(88)));
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics->panel_week_region.location.x, metrics->panel_week_region.location.y, metrics->panel_week_region.size.width,
-                                          metrics->panel_week_region.size.height, 5, egui_rgb_mix(local->surface_color, accent_color, 8),
-                                          egui_color_alpha_mix(self->alpha, 30));
+                                          metrics->panel_week_region.size.height, 5, local->surface_color,
+                                          egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(98)));
 
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics->panel_prev_region.location.x, metrics->panel_prev_region.location.y, metrics->panel_prev_region.size.width,
-                                          metrics->panel_prev_region.size.height, 5, nav_fill, egui_color_alpha_mix(self->alpha, 24));
+                                          metrics->panel_prev_region.size.height, 5, nav_fill, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(92)));
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics->panel_prev_region.location.x, metrics->panel_prev_region.location.y, metrics->panel_prev_region.size.width,
-                                     metrics->panel_prev_region.size.height, 5, 1, nav_border, egui_color_alpha_mix(self->alpha, 36));
+                                     metrics->panel_prev_region.size.height, 5, 1, nav_border, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(96)));
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics->panel_next_region.location.x, metrics->panel_next_region.location.y, metrics->panel_next_region.size.width,
-                                          metrics->panel_next_region.size.height, 5, nav_fill, egui_color_alpha_mix(self->alpha, 24));
+                                          metrics->panel_next_region.size.height, 5, nav_fill, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(92)));
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics->panel_next_region.location.x, metrics->panel_next_region.location.y, metrics->panel_next_region.size.width,
-                                     metrics->panel_next_region.size.height, 5, 1, nav_border, egui_color_alpha_mix(self->alpha, 36));
+                                     metrics->panel_next_region.size.height, 5, 1, nav_border, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(96)));
 
     if (self->is_pressed && local->pressed_part == EGUI_VIEW_CALENDAR_DATE_PICKER_PART_PREV)
     {
         egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics->panel_prev_region.location.x, metrics->panel_prev_region.location.y,
                                               metrics->panel_prev_region.size.width, metrics->panel_prev_region.size.height, 5,
-                                              egui_rgb_mix(local->surface_color, accent_color, 18), egui_color_alpha_mix(self->alpha, 60));
+                                               egui_rgb_mix(local->surface_color, accent_color, EGUI_ALPHA_MAKE(6)), egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(100)));
     }
     if (self->is_pressed && local->pressed_part == EGUI_VIEW_CALENDAR_DATE_PICKER_PART_NEXT)
     {
         egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics->panel_next_region.location.x, metrics->panel_next_region.location.y,
                                               metrics->panel_next_region.size.width, metrics->panel_next_region.size.height, 5,
-                                              egui_rgb_mix(local->surface_color, accent_color, 18), egui_color_alpha_mix(self->alpha, 60));
+                                               egui_rgb_mix(local->surface_color, accent_color, EGUI_ALPHA_MAKE(6)), egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(100)));
     }
 
-    calendar_date_picker_draw_chevron(self, &metrics->panel_prev_region, muted_text_color, 0);
-    calendar_date_picker_draw_chevron(self, &metrics->panel_next_region, muted_text_color, 1);
+    calendar_date_picker_draw_chevron(self, &metrics->panel_prev_region, egui_rgb_mix(muted_text_color, accent_color, EGUI_ALPHA_MAKE(32)), 0);
+    calendar_date_picker_draw_chevron(self, &metrics->panel_next_region, egui_rgb_mix(muted_text_color, accent_color, EGUI_ALPHA_MAKE(32)), 1);
 
     calendar_date_picker_format_month_title(local->panel_year, local->panel_month, buffer);
     calendar_date_picker_draw_text(local->font, self, buffer, &metrics->panel_title_region, EGUI_ALIGN_CENTER, title_color);
@@ -1049,7 +1107,8 @@ static void calendar_date_picker_draw_panel(egui_view_t *self, egui_view_calenda
         egui_dim_t center_x = metrics->panel_title_region.location.x + metrics->panel_title_region.size.width / 2;
         egui_dim_t underline_y = metrics->panel_title_region.location.y + metrics->panel_title_region.size.height - 1;
 
-        egui_canvas_draw_line(&uicode_get_core()->canvas, center_x - line_half, underline_y, center_x + line_half, underline_y, 2, accent_color, egui_color_alpha_mix(self->alpha, 76));
+        egui_canvas_draw_line(&uicode_get_core()->canvas, center_x - line_half, underline_y, center_x + line_half, underline_y, 2, accent_color,
+                              egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(90)));
     }
 
     for (col = 0; col < 7; ++col)
@@ -1094,32 +1153,32 @@ static void calendar_date_picker_draw_panel(egui_view_t *self, egui_view_calenda
 
             if (self->is_pressed && local->pressed_part == EGUI_VIEW_CALENDAR_DATE_PICKER_PART_DAY && day == local->pressed_day)
             {
-                egui_color_t press_fill = egui_rgb_mix(local->surface_color, accent_color, 18);
+                egui_color_t press_fill = egui_rgb_mix(local->surface_color, accent_color, EGUI_ALPHA_MAKE(6));
 
                 egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, cell_inner_region.location.x, cell_inner_region.location.y, cell_inner_region.size.width,
-                                                      cell_inner_region.size.height, 4, press_fill, egui_color_alpha_mix(self->alpha, 40));
+                                                      cell_inner_region.size.height, 4, press_fill, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(100)));
                 egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, cell_inner_region.location.x, cell_inner_region.location.y, cell_inner_region.size.width,
-                                                 cell_inner_region.size.height, 4, 1, egui_rgb_mix(border_color, accent_color, 32),
-                                                 egui_color_alpha_mix(self->alpha, 76));
+                                                 cell_inner_region.size.height, 4, 1, egui_rgb_mix(border_color, accent_color, EGUI_ALPHA_MAKE(24)),
+                                                 egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(94)));
             }
 
             if (local->year == local->panel_year && local->month == local->panel_month && day == local->day)
             {
                 egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, cell_inner_region.location.x, cell_inner_region.location.y, cell_inner_region.size.width,
-                                                      cell_inner_region.size.height, 4, accent_color, egui_color_alpha_mix(self->alpha, 84));
+                                                      cell_inner_region.size.height, 4, accent_color, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(100)));
                 egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, cell_inner_region.location.x, cell_inner_region.location.y, cell_inner_region.size.width,
-                                                 cell_inner_region.size.height, 4, 1, egui_rgb_mix(accent_color, EGUI_COLOR_WHITE, 16),
-                                                 egui_color_alpha_mix(self->alpha, 78));
+                                                 cell_inner_region.size.height, 4, 1, egui_rgb_mix(accent_color, EGUI_COLOR_WHITE, EGUI_ALPHA_MAKE(10)),
+                                                 egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(100)));
                 day_text_color = EGUI_COLOR_WHITE;
             }
             else if (anchor_day > 0 && day == anchor_day)
             {
                 egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, cell_inner_region.location.x, cell_inner_region.location.y, cell_inner_region.size.width,
-                                                      cell_inner_region.size.height, 4, egui_rgb_mix(local->surface_color, accent_color, 14),
-                                                      egui_color_alpha_mix(self->alpha, 24));
+                                                       cell_inner_region.size.height, 4, egui_rgb_mix(local->surface_color, accent_color, EGUI_ALPHA_MAKE(8)),
+                                                      egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(98)));
                 egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, cell_inner_region.location.x, cell_inner_region.location.y, cell_inner_region.size.width,
-                                                 cell_inner_region.size.height, 4, 1, egui_rgb_mix(border_color, accent_color, 32),
-                                                 egui_color_alpha_mix(self->alpha, 72));
+                                                 cell_inner_region.size.height, 4, 1, egui_rgb_mix(border_color, accent_color, EGUI_ALPHA_MAKE(24)),
+                                                 egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(94)));
                 day_text_color = accent_color;
             }
             else if (local->today_year == local->panel_year && local->today_month == local->panel_month && local->today_day == day)
@@ -1129,8 +1188,9 @@ static void calendar_date_picker_draw_panel(egui_view_t *self, egui_view_calenda
                 egui_dim_t dot_center_y = cell_inner_region.location.y + cell_inner_region.size.height - 4;
 
                 egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, cell_inner_region.location.x, cell_inner_region.location.y, cell_inner_region.size.width,
-                                                 cell_inner_region.size.height, 4, 1, local->today_color, egui_color_alpha_mix(self->alpha, 78));
-                egui_canvas_draw_circle_fill(&uicode_get_core()->canvas, dot_center_x, dot_center_y, dot_radius, local->today_color, egui_color_alpha_mix(self->alpha, 86));
+                                                 cell_inner_region.size.height, 4, 1, local->today_color, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(98)));
+                egui_canvas_draw_circle_fill(&uicode_get_core()->canvas, dot_center_x, dot_center_y, dot_radius, local->today_color,
+                                             egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(94)));
                 day_text_color = local->today_color;
             }
             else if (((col + local->first_day_of_week) % 7) == 0 || ((col + local->first_day_of_week) % 7) == 6)
@@ -1163,8 +1223,8 @@ static void egui_view_calendar_date_picker_on_draw(egui_view_t *self)
     egui_color_t border_color = local->border_color;
     egui_color_t text_color = local->text_color;
     egui_color_t muted_text_color = local->muted_text_color;
-    egui_color_t outer_fill = egui_rgb_mix(local->surface_color, local->accent_color, local->compact_mode ? 3 : 5);
-    egui_color_t outer_border = egui_rgb_mix(local->border_color, local->accent_color, local->open_mode ? 18 : 10);
+    egui_color_t outer_fill = local->surface_color;
+    egui_color_t outer_border = egui_rgb_mix(local->border_color, local->accent_color, EGUI_ALPHA_MAKE(local->open_mode ? 82 : 72));
 
     egui_view_get_work_region(self, &region);
     if (region.size.width <= 0 || region.size.height <= 0)
@@ -1174,9 +1234,15 @@ static void egui_view_calendar_date_picker_on_draw(egui_view_t *self)
 
     if (local->read_only_mode)
     {
-        accent_color = egui_rgb_mix(accent_color, muted_text_color, 72);
-        outer_fill = egui_rgb_mix(outer_fill, local->surface_color, 16);
-        outer_border = egui_rgb_mix(outer_border, muted_text_color, 18);
+        text_color = egui_rgb_mix(text_color, HCW_COLOR_TEXT_STRONG, EGUI_ALPHA_MAKE(44));
+        muted_text_color = egui_rgb_mix(muted_text_color, HCW_COLOR_TEXT_STRONG, EGUI_ALPHA_MAKE(34));
+        accent_color = egui_rgb_mix(accent_color, muted_text_color, EGUI_ALPHA_MAKE(10));
+        outer_fill = egui_rgb_mix(outer_fill, local->surface_color, EGUI_ALPHA_MAKE(8));
+        outer_border = egui_rgb_mix(outer_border, muted_text_color, EGUI_ALPHA_MAKE(30));
+    }
+    else
+    {
+        muted_text_color = egui_rgb_mix(muted_text_color, text_color, EGUI_ALPHA_MAKE(50));
     }
 
     if (!egui_view_get_enable(self))
@@ -1199,10 +1265,6 @@ static void egui_view_calendar_date_picker_on_draw(egui_view_t *self)
             region.location.x, region.location.y, region.size.width, region.size.height,
             local->compact_mode ? EGUI_VIEW_CALENDAR_DATE_PICKER_COMPACT_RADIUS : EGUI_VIEW_CALENDAR_DATE_PICKER_STANDARD_RADIUS, 1, outer_border,
             egui_color_alpha_mix(self->alpha, local->compact_mode ? EGUI_VIEW_CALENDAR_DATE_PICKER_COMPACT_BORDER_ALPHA : EGUI_VIEW_CALENDAR_DATE_PICKER_STANDARD_BORDER_ALPHA));
-    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, region.location.x + 2, region.location.y + 2, region.size.width - 4, local->compact_mode ? 3 : 4,
-                                          local->compact_mode ? EGUI_VIEW_CALENDAR_DATE_PICKER_COMPACT_RADIUS : EGUI_VIEW_CALENDAR_DATE_PICKER_STANDARD_RADIUS, accent_color,
-                                          egui_color_alpha_mix(self->alpha, local->read_only_mode ? 12 : 24));
-
     if (metrics.show_label)
     {
         calendar_date_picker_draw_text(local->meta_font, self, local->label, &metrics.label_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, muted_text_color);
@@ -1532,12 +1594,12 @@ void egui_view_calendar_date_picker_init(egui_view_t *self)
     local->meta_font = (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT;
     local->label = NULL;
     local->helper = NULL;
-    local->surface_color = EGUI_COLOR_HEX(0xFFFFFF);
-    local->border_color = EGUI_COLOR_HEX(0xD7DFE7);
-    local->text_color = EGUI_COLOR_HEX(0x18222D);
-    local->muted_text_color = EGUI_COLOR_HEX(0x69798A);
-    local->accent_color = EGUI_COLOR_HEX(0x2563EB);
-    local->today_color = EGUI_COLOR_HEX(0x0F766E);
+    local->surface_color = HCW_COLOR_SURFACE;
+    local->border_color = HCW_COLOR_BORDER_STRONG;
+    local->text_color = HCW_COLOR_TEXT_STRONG;
+    local->muted_text_color = HCW_COLOR_TEXT_SOFT;
+    local->accent_color = HCW_COLOR_PRIMARY_DARK;
+    local->today_color = HCW_COLOR_PRIMARY_DARK;
     local->year = 2026;
     local->panel_year = 2026;
     local->month = 3;

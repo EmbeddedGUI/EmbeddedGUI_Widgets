@@ -9,15 +9,15 @@
 #define HCW_PIVOT_STANDARD_MAX_WIDTH         66
 #define HCW_PIVOT_STANDARD_GAP               9
 #define HCW_PIVOT_STANDARD_PAD_X             10
-#define HCW_PIVOT_STANDARD_HEADER_Y          8
+#define HCW_PIVOT_STANDARD_HEADER_TOP_INSET  8
 #define HCW_PIVOT_STANDARD_HEADER_HEIGHT     14
-#define HCW_PIVOT_STANDARD_DIVIDER_Y         26
-#define HCW_PIVOT_STANDARD_BODY_Y            34
+#define HCW_PIVOT_STANDARD_HEADER_DIVIDER_GAP 4
+#define HCW_PIVOT_STANDARD_DIVIDER_BODY_GAP  8
 #define HCW_PIVOT_STANDARD_BODY_PAD_X        10
 #define HCW_PIVOT_STANDARD_BODY_PAD_Y        8
-#define HCW_PIVOT_STANDARD_FILL_ALPHA        92
-#define HCW_PIVOT_STANDARD_BORDER_ALPHA      60
-#define HCW_PIVOT_STANDARD_ACTIVE_FILL_ALPHA 22
+#define HCW_PIVOT_STANDARD_FILL_ALPHA        EGUI_ALPHA_MAKE(92)
+#define HCW_PIVOT_STANDARD_BORDER_ALPHA      EGUI_ALPHA_MAKE(70)
+#define HCW_PIVOT_STANDARD_ACTIVE_FILL_ALPHA EGUI_ALPHA_MAKE(60)
 
 #define HCW_PIVOT_COMPACT_BASE_WIDTH        12
 #define HCW_PIVOT_COMPACT_CHAR_WIDTH        4
@@ -26,15 +26,15 @@
 #define HCW_PIVOT_COMPACT_MAX_WIDTH         42
 #define HCW_PIVOT_COMPACT_GAP               5
 #define HCW_PIVOT_COMPACT_PAD_X             8
-#define HCW_PIVOT_COMPACT_HEADER_Y          5
+#define HCW_PIVOT_COMPACT_HEADER_TOP_INSET  5
 #define HCW_PIVOT_COMPACT_HEADER_HEIGHT     11
-#define HCW_PIVOT_COMPACT_DIVIDER_Y         18
-#define HCW_PIVOT_COMPACT_BODY_Y            24
+#define HCW_PIVOT_COMPACT_HEADER_DIVIDER_GAP 2
+#define HCW_PIVOT_COMPACT_DIVIDER_BODY_GAP  6
 #define HCW_PIVOT_COMPACT_BODY_PAD_X        8
 #define HCW_PIVOT_COMPACT_BODY_PAD_Y        6
-#define HCW_PIVOT_COMPACT_FILL_ALPHA        90
-#define HCW_PIVOT_COMPACT_BORDER_ALPHA      56
-#define HCW_PIVOT_COMPACT_ACTIVE_FILL_ALPHA 18
+#define HCW_PIVOT_COMPACT_FILL_ALPHA        EGUI_ALPHA_MAKE(90)
+#define HCW_PIVOT_COMPACT_BORDER_ALPHA      EGUI_ALPHA_MAKE(66)
+#define HCW_PIVOT_COMPACT_ACTIVE_FILL_ALPHA EGUI_ALPHA_MAKE(54)
 
 typedef struct hcw_pivot_layout_item hcw_pivot_layout_item_t;
 struct hcw_pivot_layout_item
@@ -54,7 +54,7 @@ static uint8_t hcw_pivot_clamp_count(uint8_t count)
 
 static egui_color_t hcw_pivot_mix_disabled(egui_color_t color)
 {
-    return egui_rgb_mix(color, EGUI_COLOR_HEX(0x83909D), 48);
+    return egui_rgb_mix(color, HCW_COLOR_TEXT_SOFT, EGUI_ALPHA_MAKE(38));
 }
 
 static egui_dim_t hcw_pivot_measure_font_line_height(const egui_font_t *font)
@@ -292,9 +292,9 @@ static egui_dim_t hcw_pivot_gap(uint8_t compact_mode)
     return compact_mode ? HCW_PIVOT_COMPACT_GAP : HCW_PIVOT_STANDARD_GAP;
 }
 
-static egui_dim_t hcw_pivot_header_y(uint8_t compact_mode)
+static egui_dim_t hcw_pivot_header_top_inset(uint8_t compact_mode)
 {
-    return compact_mode ? HCW_PIVOT_COMPACT_HEADER_Y : HCW_PIVOT_STANDARD_HEADER_Y;
+    return compact_mode ? HCW_PIVOT_COMPACT_HEADER_TOP_INSET : HCW_PIVOT_STANDARD_HEADER_TOP_INSET;
 }
 
 static egui_dim_t hcw_pivot_header_height(uint8_t compact_mode)
@@ -302,14 +302,14 @@ static egui_dim_t hcw_pivot_header_height(uint8_t compact_mode)
     return compact_mode ? HCW_PIVOT_COMPACT_HEADER_HEIGHT : HCW_PIVOT_STANDARD_HEADER_HEIGHT;
 }
 
-static egui_dim_t hcw_pivot_divider_y(uint8_t compact_mode)
+static egui_dim_t hcw_pivot_header_divider_gap(uint8_t compact_mode)
 {
-    return compact_mode ? HCW_PIVOT_COMPACT_DIVIDER_Y : HCW_PIVOT_STANDARD_DIVIDER_Y;
+    return compact_mode ? HCW_PIVOT_COMPACT_HEADER_DIVIDER_GAP : HCW_PIVOT_STANDARD_HEADER_DIVIDER_GAP;
 }
 
-static egui_dim_t hcw_pivot_body_y(uint8_t compact_mode)
+static egui_dim_t hcw_pivot_divider_body_gap(uint8_t compact_mode)
 {
-    return compact_mode ? HCW_PIVOT_COMPACT_BODY_Y : HCW_PIVOT_STANDARD_BODY_Y;
+    return compact_mode ? HCW_PIVOT_COMPACT_DIVIDER_BODY_GAP : HCW_PIVOT_STANDARD_DIVIDER_BODY_GAP;
 }
 
 static egui_dim_t hcw_pivot_body_pad_x(uint8_t compact_mode)
@@ -346,11 +346,11 @@ static egui_color_t hcw_pivot_tone_accent(const hcw_pivot_t *local, uint8_t tone
     switch (tone)
     {
     case HCW_PIVOT_TONE_WARM:
-        return EGUI_COLOR_HEX(0xA15C00);
+        return HCW_COLOR_WARNING;
     case HCW_PIVOT_TONE_SUCCESS:
-        return EGUI_COLOR_HEX(0x0F7B45);
+        return HCW_COLOR_SUCCESS;
     case HCW_PIVOT_TONE_NEUTRAL:
-        return egui_rgb_mix(local->accent_color, local->text_color, 8);
+        return egui_rgb_mix(local->accent_color, local->text_color, EGUI_ALPHA_MAKE(8));
     case HCW_PIVOT_TONE_ACCENT:
     default:
         return local->accent_color;
@@ -359,18 +359,9 @@ static egui_color_t hcw_pivot_tone_accent(const hcw_pivot_t *local, uint8_t tone
 
 static egui_color_t hcw_pivot_tone_fill(const hcw_pivot_t *local, uint8_t tone)
 {
-    switch (tone)
-    {
-    case HCW_PIVOT_TONE_WARM:
-        return EGUI_COLOR_HEX(0xF8EFE3);
-    case HCW_PIVOT_TONE_SUCCESS:
-        return EGUI_COLOR_HEX(0xEAF6EF);
-    case HCW_PIVOT_TONE_ACCENT:
-        return EGUI_COLOR_HEX(0xEAF3FC);
-    case HCW_PIVOT_TONE_NEUTRAL:
-    default:
-        return local->card_surface_color;
-    }
+    EGUI_UNUSED(tone);
+
+    return local->card_surface_color;
 }
 
 static uint8_t hcw_pivot_prepare_header_layout(hcw_pivot_t *local, egui_view_t *self, hcw_pivot_layout_item_t *items)
@@ -399,7 +390,7 @@ static uint8_t hcw_pivot_prepare_header_layout(hcw_pivot_t *local, egui_view_t *
         return 0;
     }
 
-    header_y = region.location.y + hcw_pivot_header_y(local->compact_mode);
+    header_y = region.location.y + hcw_pivot_header_top_inset(local->compact_mode);
     header_height = hcw_pivot_header_height(local->compact_mode);
     if (hcw_pivot_measure_font_line_height(font) > header_height)
     {
@@ -494,7 +485,7 @@ static void hcw_pivot_draw_text(egui_view_t *self, const egui_font_t *font, cons
 }
 
 static void hcw_pivot_draw_body(egui_view_t *self, hcw_pivot_t *local, egui_color_t text_color, egui_color_t muted_text_color, egui_color_t border_color,
-                                uint8_t is_enabled)
+                                uint8_t is_enabled, egui_dim_t body_top_y)
 {
     char eyebrow_label[24];
     char title_label[32];
@@ -509,7 +500,6 @@ static void hcw_pivot_draw_body(egui_view_t *self, hcw_pivot_t *local, egui_colo
     egui_region_t meta_region;
     egui_color_t accent_color;
     egui_color_t body_fill;
-    egui_dim_t body_y;
     egui_dim_t body_pad_x;
     egui_dim_t body_pad_y;
     egui_dim_t eyebrow_height;
@@ -531,14 +521,13 @@ static void hcw_pivot_draw_body(egui_view_t *self, hcw_pivot_t *local, egui_colo
     }
 
     egui_view_get_work_region(self, &work_region);
-    body_y = hcw_pivot_body_y(local->compact_mode);
     body_pad_x = hcw_pivot_body_pad_x(local->compact_mode);
     body_pad_y = hcw_pivot_body_pad_y(local->compact_mode);
 
     body_region.location.x = work_region.location.x + body_pad_x;
-    body_region.location.y = work_region.location.y + body_y;
+    body_region.location.y = body_top_y;
     body_region.size.width = work_region.size.width - body_pad_x * 2;
-    body_region.size.height = work_region.size.height - body_y - body_pad_y;
+    body_region.size.height = work_region.location.y + work_region.size.height - body_top_y - body_pad_y;
     if (body_region.size.width <= 0 || body_region.size.height <= 0)
     {
         return;
@@ -552,8 +541,8 @@ static void hcw_pivot_draw_body(egui_view_t *self, hcw_pivot_t *local, egui_colo
 
     if (local->read_only_mode)
     {
-        body_fill = egui_rgb_mix(body_fill, EGUI_COLOR_HEX(0xF7F9FB), 28);
-        accent_color = egui_rgb_mix(accent_color, muted_text_color, 42);
+        body_fill = egui_rgb_mix(body_fill, HCW_COLOR_SURFACE_SUBTLE, EGUI_ALPHA_MAKE(10));
+        accent_color = egui_rgb_mix(accent_color, muted_text_color, EGUI_ALPHA_MAKE(34));
     }
     if (!is_enabled)
     {
@@ -564,10 +553,7 @@ static void hcw_pivot_draw_body(egui_view_t *self, hcw_pivot_t *local, egui_colo
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, body_region.location.x, body_region.location.y, body_region.size.width, body_region.size.height,
                                           local->compact_mode ? 8 : 10, body_fill, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_100));
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, body_region.location.x, body_region.location.y, body_region.size.width, body_region.size.height, local->compact_mode ? 8 : 10,
-                                     1, border_color, egui_color_alpha_mix(self->alpha, 42));
-
-    egui_canvas_draw_line(&uicode_get_core()->canvas, body_region.location.x + 8, body_region.location.y + 6, body_region.location.x + body_region.size.width - 8, body_region.location.y + 6,
-                          1, accent_color, egui_color_alpha_mix(self->alpha, local->read_only_mode ? 24 : 46));
+                                     1, border_color, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(local->read_only_mode ? 58 : 70)));
 
     eyebrow_height = hcw_pivot_measure_font_line_height(meta_font);
     title_height = hcw_pivot_measure_font_line_height(title_font);
@@ -589,7 +575,7 @@ static void hcw_pivot_draw_body(egui_view_t *self, hcw_pivot_t *local, egui_colo
     {
         meta_height = local->compact_mode ? 8 : 9;
     }
-    top_inset = local->compact_mode ? 4 : 6;
+    top_inset = local->compact_mode ? 5 : 8;
     eyebrow_gap = local->compact_mode ? 1 : 2;
     title_gap = local->compact_mode ? 1 : 3;
     body_gap = local->compact_mode ? 0 : 3;
@@ -666,21 +652,21 @@ static void hcw_pivot_on_draw(egui_view_t *self)
     is_enabled = egui_view_get_enable(self) ? 1 : 0;
     if (local->compact_mode)
     {
-        surface_color = egui_rgb_mix(surface_color, EGUI_COLOR_HEX(0xFBFCFD), 18);
+        surface_color = egui_rgb_mix(surface_color, HCW_COLOR_SURFACE_SUBTLE, EGUI_ALPHA_MAKE(18));
     }
     else
     {
-        surface_color = egui_rgb_mix(surface_color, EGUI_COLOR_HEX(0xFFFFFF), 16);
-        border_color = egui_rgb_mix(border_color, EGUI_COLOR_HEX(0xFFFFFF), 10);
+        surface_color = egui_rgb_mix(surface_color, HCW_COLOR_SURFACE, EGUI_ALPHA_MAKE(16));
+        border_color = egui_rgb_mix(border_color, HCW_COLOR_SURFACE, EGUI_ALPHA_MAKE(10));
     }
 
     if (local->read_only_mode)
     {
-        surface_color = egui_rgb_mix(surface_color, EGUI_COLOR_HEX(0xF7F9FB), 18);
-        border_color = egui_rgb_mix(border_color, muted_text_color, 18);
-        text_color = egui_rgb_mix(text_color, muted_text_color, 38);
-        muted_text_color = egui_rgb_mix(muted_text_color, border_color, 10);
-        accent_color = egui_rgb_mix(accent_color, muted_text_color, 54);
+        surface_color = egui_rgb_mix(surface_color, HCW_COLOR_SURFACE_SUBTLE, EGUI_ALPHA_MAKE(18));
+        border_color = egui_rgb_mix(border_color, muted_text_color, EGUI_ALPHA_MAKE(18));
+        text_color = egui_rgb_mix(text_color, muted_text_color, EGUI_ALPHA_MAKE(38));
+        muted_text_color = egui_rgb_mix(muted_text_color, border_color, EGUI_ALPHA_MAKE(10));
+        accent_color = egui_rgb_mix(accent_color, muted_text_color, EGUI_ALPHA_MAKE(42));
     }
     if (!is_enabled)
     {
@@ -698,11 +684,16 @@ static void hcw_pivot_on_draw(egui_view_t *self)
             region.location.x, region.location.y, region.size.width, region.size.height, local->compact_mode ? 10 : 12, 1, border_color,
             egui_color_alpha_mix(self->alpha, local->compact_mode ? HCW_PIVOT_COMPACT_BORDER_ALPHA : HCW_PIVOT_STANDARD_BORDER_ALPHA));
 
-    divider_y = region.location.y + hcw_pivot_divider_y(local->compact_mode);
-    egui_canvas_draw_line(&uicode_get_core()->canvas, region.location.x + hcw_pivot_pad_x(local->compact_mode), divider_y, region.location.x + region.size.width - hcw_pivot_pad_x(local->compact_mode),
-                          divider_y, 1, border_color, egui_color_alpha_mix(self->alpha, 18));
-
     count = hcw_pivot_prepare_header_layout(local, self, items);
+    if (count > 0)
+    {
+        divider_y = items[0].region.location.y + items[0].region.size.height + hcw_pivot_header_divider_gap(local->compact_mode);
+    }
+    else
+    {
+        divider_y = region.location.y + hcw_pivot_header_top_inset(local->compact_mode) + hcw_pivot_header_height(local->compact_mode) +
+                    hcw_pivot_header_divider_gap(local->compact_mode);
+    }
     for (index = 0; index < count; index++)
     {
         uint8_t is_active = index == local->current_index;
@@ -710,14 +701,12 @@ static void hcw_pivot_on_draw(egui_view_t *self)
 
         if (is_active)
         {
-            egui_color_t active_fill = egui_rgb_mix(surface_color, accent_color, local->compact_mode ? 3 : 4);
+            egui_color_t active_fill = egui_rgb_mix(surface_color, accent_color, EGUI_ALPHA_MAKE(local->compact_mode ? 3 : 4));
 
             egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, items[index].region.location.x, items[index].region.location.y - 1, items[index].region.size.width,
                                                   items[index].region.size.height + 2, local->compact_mode ? 5 : 6, active_fill,
                                                   egui_color_alpha_mix(self->alpha, local->compact_mode ? HCW_PIVOT_COMPACT_ACTIVE_FILL_ALPHA
                                                                                                         : HCW_PIVOT_STANDARD_ACTIVE_FILL_ALPHA));
-            egui_canvas_draw_line(&uicode_get_core()->canvas, items[index].region.location.x + 6, divider_y, items[index].region.location.x + items[index].region.size.width - 6, divider_y, 1,
-                                  accent_color, egui_color_alpha_mix(self->alpha, local->read_only_mode ? 24 : 56));
         }
         if (is_enabled && !local->read_only_mode && local->pressed_index == index)
         {
@@ -729,7 +718,7 @@ static void hcw_pivot_on_draw(egui_view_t *self)
         hcw_pivot_draw_text(self, hcw_pivot_get_font(local), items[index].label, &items[index].region, EGUI_ALIGN_CENTER, item_text_color);
     }
 
-    hcw_pivot_draw_body(self, local, text_color, muted_text_color, border_color, is_enabled);
+    hcw_pivot_draw_body(self, local, text_color, muted_text_color, border_color, is_enabled, divider_y + hcw_pivot_divider_body_gap(local->compact_mode));
 
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     if (self->is_focused && is_enabled)
@@ -741,8 +730,9 @@ static void hcw_pivot_on_draw(egui_view_t *self)
         egui_dim_t radius = local->compact_mode ? 8 : 10;
 
         egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, region.location.x, region.location.y, region.size.width, region.size.height, radius + 2, 2, EGUI_THEME_FOCUS,
-                                         egui_color_alpha_mix(self->alpha, 90));
-        egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, inner_x, inner_y, inner_w, inner_h, radius, 1, EGUI_THEME_FOCUS, egui_color_alpha_mix(self->alpha, 44));
+                                         egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(90)));
+        egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, inner_x, inner_y, inner_w, inner_h, radius, 1, EGUI_THEME_FOCUS,
+                                         egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(58)));
     }
 #endif
 }
@@ -754,12 +744,12 @@ static void hcw_pivot_apply_style(egui_view_t *self, uint8_t compact_mode, uint8
     hcw_pivot_clear_pressed_state(self);
     local->compact_mode = compact_mode ? 1 : 0;
     local->read_only_mode = read_only_mode ? 1 : 0;
-    local->surface_color = EGUI_COLOR_HEX(0xFFFFFF);
-    local->border_color = EGUI_COLOR_HEX(0xD4DCE4);
-    local->text_color = EGUI_COLOR_HEX(0x1D2732);
-    local->muted_text_color = EGUI_COLOR_HEX(0x6A7886);
-    local->accent_color = EGUI_COLOR_HEX(0x0F6CBD);
-    local->card_surface_color = EGUI_COLOR_HEX(0xF7F9FB);
+    local->surface_color = HCW_COLOR_SURFACE;
+    local->border_color = HCW_COLOR_BORDER;
+    local->text_color = HCW_COLOR_TEXT_STRONG;
+    local->muted_text_color = HCW_COLOR_TEXT_MUTED;
+    local->accent_color = HCW_COLOR_PRIMARY;
+    local->card_surface_color = HCW_COLOR_SURFACE_SUBTLE;
     egui_view_invalidate(self);
 }
 

@@ -64,6 +64,9 @@ The default SDK resolution order is:
 - Bootstrap the local environment:
   Windows: `setup.bat`
   Linux / macOS: `./setup.sh`
+- Build from Visual Studio:
+  Open `EmbeddedGUI_Widgets.sln` and build `HelloCustomWidgets` with `Debug|x64`, `Release|x64`, or one of the generated `HCW_<category>_<widget>_Debug|x64` / `HCW_<category>_<widget>_Release|x64` configurations. The solution uses the root `Makefile`, so Visual Studio builds follow the same SDK submodule and app source layout as command-line builds.
+  This requires the Visual Studio C++ workload plus a working `make`/`gcc` toolchain on `PATH`; set `EGUI_MAKE` if `make` is installed under a custom path. PC simulator logs are routed to the Visual Studio Output window when launched under the debugger.
 - Bootstrap from Python directly:
   `python scripts/setup_env.py --skip-emsdk`
 - Build one widget on PC:

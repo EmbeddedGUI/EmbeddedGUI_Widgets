@@ -89,8 +89,8 @@ static void setup_preview_number_box(void)
     egui_view_number_box_set_range(EGUI_VIEW_OF(&preview_box), 0, 24);
     egui_view_number_box_set_step(EGUI_VIEW_OF(&preview_box), 2);
     egui_view_number_box_set_compact_mode(EGUI_VIEW_OF(&preview_box), 1);
-    egui_view_number_box_set_palette(EGUI_VIEW_OF(&preview_box), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD8DFE6), EGUI_COLOR_HEX(0x1A2734),
-                                     EGUI_COLOR_HEX(0x6B7A89), EGUI_COLOR_HEX(0x2F76B7));
+    egui_view_number_box_set_palette(EGUI_VIEW_OF(&preview_box), HCW_COLOR_PANEL, HCW_COLOR_BORDER_STRONG, HCW_COLOR_TEXT_STRONG,
+                                     HCW_COLOR_TEXT_SOFT, HCW_COLOR_PRIMARY_DARK);
     egui_view_number_box_set_value(EGUI_VIEW_OF(&preview_box), 12);
     egui_view_number_box_set_on_value_changed_listener(EGUI_VIEW_OF(&preview_box), on_value_changed);
     egui_view_number_box_override_static_preview_api(EGUI_VIEW_OF(&preview_box), &preview_api);
@@ -266,6 +266,11 @@ static void test_number_box_step_normalization(void)
 static void test_number_box_setters_clear_pressed_state_and_clamp(void)
 {
     setup_number_box();
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PANEL.full, test_box.surface_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_BORDER_STRONG.full, test_box.border_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT_STRONG.full, test_box.text_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT_SOFT.full, test_box.muted_text_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PRIMARY_DARK.full, test_box.accent_color.full);
 
     test_box.pressed_part = EGUI_VIEW_NUMBER_BOX_PART_DEC;
     egui_view_set_pressed(EGUI_VIEW_OF(&test_box), true);

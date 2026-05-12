@@ -32,7 +32,7 @@ static egui_view_api_t flyout_compact_api;
 static egui_view_api_t flyout_disabled_api;
 static uint8_t ui_ready;
 
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, HCW_COLOR_PAGE_BG, EGUI_ALPHA_100, 14);
 EGUI_BACKGROUND_PARAM_INIT(bg_page_panel_params, &bg_page_panel_param, NULL, NULL);
 EGUI_BACKGROUND_COLOR_STATIC_CONST_INIT(bg_page_panel, &bg_page_panel_params);
 
@@ -119,7 +119,7 @@ void test_init_ui(void)
     egui_view_label_set_text(EGUI_VIEW_OF(&title_label), title_text);
     egui_view_label_set_align_type(EGUI_VIEW_OF(&title_label), EGUI_ALIGN_CENTER);
     hello_custom_widgets_demo_set_label_font_with_min_height(EGUI_VIEW_OF(&title_label), (const egui_font_t *)&egui_res_font_montserrat_12_4);
-    egui_view_label_set_font_color(EGUI_VIEW_OF(&title_label), EGUI_COLOR_HEX(0x21303F), EGUI_ALPHA_100);
+    egui_view_label_set_font_color(EGUI_VIEW_OF(&title_label), HCW_COLOR_TEXT, EGUI_ALPHA_100);
     egui_view_set_margin(EGUI_VIEW_OF(&title_label), 0, 8, 0, 4);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label));
 
@@ -157,9 +157,9 @@ void test_init_ui(void)
     egui_view_flyout_set_snapshots(EGUI_VIEW_OF(&flyout_disabled), &disabled_snapshot, 1);
     egui_view_flyout_set_compact_mode(EGUI_VIEW_OF(&flyout_disabled), 1);
     egui_view_flyout_set_disabled_mode(EGUI_VIEW_OF(&flyout_disabled), 1);
-    egui_view_flyout_set_palette(EGUI_VIEW_OF(&flyout_disabled), EGUI_COLOR_HEX(0xFBFCFD), EGUI_COLOR_HEX(0xD8DFE6), EGUI_COLOR_HEX(0x536474),
-                                 EGUI_COLOR_HEX(0x8896A4), EGUI_COLOR_HEX(0xA7B4C1), EGUI_COLOR_HEX(0xB2C4BA), EGUI_COLOR_HEX(0xC4B8A4),
-                                 EGUI_COLOR_HEX(0xB4BDC8), EGUI_COLOR_HEX(0xE8EDF2), EGUI_COLOR_HEX(0xF7F9FB), EGUI_COLOR_HEX(0xD9E1E8));
+    egui_view_flyout_set_palette(EGUI_VIEW_OF(&flyout_disabled), HCW_COLOR_PANEL, HCW_COLOR_BORDER_STRONG, HCW_COLOR_TEXT_SOFT,
+                                 HCW_COLOR_TEXT_SOFT, HCW_COLOR_NEUTRAL, HCW_COLOR_NEUTRAL, HCW_COLOR_NEUTRAL,
+                                 HCW_COLOR_NEUTRAL, HCW_COLOR_BORDER_STRONG, HCW_COLOR_PANEL, HCW_COLOR_BORDER_STRONG);
     egui_view_flyout_override_static_preview_api(EGUI_VIEW_OF(&flyout_disabled), &flyout_disabled_api);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&flyout_disabled), 0);
@@ -261,4 +261,3 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     return false;
 }
 #endif
-

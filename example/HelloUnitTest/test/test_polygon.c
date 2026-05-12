@@ -63,8 +63,8 @@ static void setup_preview_control(void)
 {
     egui_view_polygon_init(EGUI_VIEW_OF(&preview_control));
     egui_view_set_size(EGUI_VIEW_OF(&preview_control), 68, 38);
-    egui_view_polygon_set_palette(EGUI_VIEW_OF(&preview_control), EGUI_COLOR_HEX(0xDCEDEA), EGUI_COLOR_HEX(0x0C7C73),
-                                  EGUI_COLOR_HEX(0xBFDCD8));
+    egui_view_polygon_set_palette(EGUI_VIEW_OF(&preview_control), HCW_COLOR_PRIMARY_TINT, HCW_COLOR_PRIMARY,
+                                  HCW_COLOR_PRIMARY_SOFT);
     egui_view_polygon_set_stroke_width(EGUI_VIEW_OF(&preview_control), 1);
     egui_view_polygon_set_points(EGUI_VIEW_OF(&preview_control), test_polygon_triangle_points, 3);
     egui_view_polygon_override_static_preview_api(EGUI_VIEW_OF(&preview_control), &preview_api);
@@ -171,8 +171,8 @@ static void test_polygon_init_defaults(void)
     EGUI_TEST_ASSERT_EQUAL_INT(4, egui_view_polygon_get_point_count(EGUI_VIEW_OF(&test_control)));
     assert_point(EGUI_VIEW_OF(&test_control), 0, 50, 8);
     assert_point(EGUI_VIEW_OF(&test_control), 3, 10, 50);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xDDEBFA).full, test_control.fill_color.full);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x0F6CBD).full, test_control.stroke_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PRIMARY_TINT.full, test_control.fill_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PRIMARY.full, test_control.stroke_color.full);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_MARGIN_PADDING
     EGUI_TEST_ASSERT_EQUAL_INT(2, EGUI_VIEW_OF(&test_control)->padding.left);
     EGUI_TEST_ASSERT_EQUAL_INT(2, EGUI_VIEW_OF(&test_control)->padding.right);
@@ -229,15 +229,15 @@ static void test_polygon_styles(void)
     EGUI_TEST_ASSERT_EQUAL_INT(5, egui_view_polygon_get_point_count(EGUI_VIEW_OF(&test_control)));
     assert_point(EGUI_VIEW_OF(&test_control), 1, 92, 36);
 
-    egui_view_polygon_set_palette(EGUI_VIEW_OF(&test_control), EGUI_COLOR_HEX(0xDCEDEA), EGUI_COLOR_HEX(0x0C7C73),
-                                  EGUI_COLOR_HEX(0xBFDCD8));
+    egui_view_polygon_set_palette(EGUI_VIEW_OF(&test_control), HCW_COLOR_PRIMARY_TINT, HCW_COLOR_PRIMARY,
+                                  HCW_COLOR_PRIMARY_SOFT);
     egui_view_polygon_set_stroke_width(EGUI_VIEW_OF(&test_control), 1);
     egui_view_polygon_set_points(EGUI_VIEW_OF(&test_control), test_polygon_triangle_points, 3);
     EGUI_TEST_ASSERT_EQUAL_INT(3, egui_view_polygon_get_point_count(EGUI_VIEW_OF(&test_control)));
     assert_point(EGUI_VIEW_OF(&test_control), 2, 14, 82);
 
-    egui_view_polygon_set_palette(EGUI_VIEW_OF(&test_control), EGUI_COLOR_HEX(0xE1E6EB), EGUI_COLOR_HEX(0x687684),
-                                  EGUI_COLOR_HEX(0xCCD4DC));
+    egui_view_polygon_set_palette(EGUI_VIEW_OF(&test_control), HCW_COLOR_BORDER, HCW_COLOR_TEXT_SOFT,
+                                  HCW_COLOR_BORDER_STRONG);
     egui_view_polygon_set_stroke_width(EGUI_VIEW_OF(&test_control), 1);
     egui_view_polygon_set_points(EGUI_VIEW_OF(&test_control), test_polygon_muted_points, 4);
     EGUI_TEST_ASSERT_EQUAL_INT(4, egui_view_polygon_get_point_count(EGUI_VIEW_OF(&test_control)));

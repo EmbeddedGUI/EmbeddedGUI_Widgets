@@ -242,7 +242,7 @@ static void test_repeat_button_setters_and_style_helpers_clear_pressed_state(voi
     egui_view_repeat_button_apply_disabled_style(EGUI_VIEW_OF(&test_widget));
     assert_pressed_state_cleared(&test_widget);
     EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&test_widget)->background == EGUI_BG_OF(&repeat_button_disabled_background));
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x708090).full, test_widget.base.base.color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT_SOFT.full, test_widget.base.base.color.full);
     EGUI_TEST_ASSERT_EQUAL_INT(4, test_widget.base.icon_text_gap);
 
     EGUI_TEST_ASSERT_TRUE(send_touch_action(EGUI_VIEW_OF(&test_widget), EGUI_MOTION_EVENT_ACTION_DOWN, center_x, center_y));

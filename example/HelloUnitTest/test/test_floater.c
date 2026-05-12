@@ -1,4 +1,4 @@
-﻿#include <string.h>
+#include <string.h>
 
 #include "egui.h"
 #include "test/egui_test.h"
@@ -213,8 +213,8 @@ static void test_floater_init_defaults(void)
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_FLOATER_ALIGN_LEFT, egui_view_floater_get_align(EGUI_VIEW_OF(&test_control)));
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_floater_get_compact_mode(EGUI_VIEW_OF(&test_control)));
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_floater_get_read_only_mode(EGUI_VIEW_OF(&test_control)));
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xFFFFFF).full, test_control.surface_color.full);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x0F6CBD).full, test_control.accent_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_SURFACE.full, test_control.surface_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PRIMARY.full, test_control.accent_color.full);
 }
 
 static void test_floater_child_regions_and_layout(void)
@@ -298,7 +298,7 @@ static void test_floater_styles_palette_text_and_clamps(void)
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_FLOATER_ALIGN_FULL, egui_view_floater_get_align(EGUI_VIEW_OF(&test_control)));
     EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_floater_get_compact_mode(EGUI_VIEW_OF(&test_control)));
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_floater_get_read_only_mode(EGUI_VIEW_OF(&test_control)));
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x0C7C73).full, test_control.accent_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PRIMARY.full, test_control.accent_color.full);
 
     egui_view_floater_apply_read_only_style(EGUI_VIEW_OF(&test_control));
     EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_floater_get_compact_mode(EGUI_VIEW_OF(&test_control)));

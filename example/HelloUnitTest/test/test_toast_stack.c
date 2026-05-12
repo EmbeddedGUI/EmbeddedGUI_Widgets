@@ -533,7 +533,7 @@ static void test_toast_stack_internal_helpers_cover_severity_and_text(void)
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x888888).full, egui_view_toast_stack_severity_color(&test_stack, 2).full);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x999999).full, egui_view_toast_stack_severity_color(&test_stack, 3).full);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x666666).full, egui_view_toast_stack_severity_color(&test_stack, 9).full);
-    EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(sample, EGUI_COLOR_DARK_GREY, 68).full, mixed.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(sample, EGUI_COLOR_DARK_GREY, EGUI_ALPHA_MAKE(52)).full, mixed.full);
 }
 
 void test_toast_stack_run(void)

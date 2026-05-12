@@ -159,7 +159,7 @@ static void egui_view_status_bar_fit_text_to_width(const egui_font_t *font, cons
 
 static egui_color_t egui_view_status_bar_mix_disabled(egui_color_t color)
 {
-    return egui_rgb_mix(color, EGUI_COLOR_HEX(0x8A97A5), 58);
+    return egui_rgb_mix(color, HCW_COLOR_TEXT_SOFT, EGUI_ALPHA_MAKE(38));
 }
 
 static uint8_t egui_view_status_bar_normalize_state(uint8_t state)
@@ -347,8 +347,8 @@ static void egui_view_status_bar_draw_item(egui_view_t *self, egui_view_status_b
     if (item->emphasized)
     {
         egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, item_region.location.x, item_region.location.y, item_region.size.width,
-                                              item_region.size.height, 9, egui_rgb_mix(local->surface_color, state_color, 10),
-                                              egui_color_alpha_mix(self->alpha, 78));
+                                              item_region.size.height, 9, egui_rgb_mix(local->surface_color, state_color, EGUI_ALPHA_MAKE(20)),
+                                              egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(88)));
     }
 
     dot_region.location.x = item_region.location.x + 5;
@@ -356,7 +356,7 @@ static void egui_view_status_bar_draw_item(egui_view_t *self, egui_view_status_b
     dot_region.size.width = dot_size;
     dot_region.size.height = dot_size;
     egui_canvas_draw_circle_fill_basic(&uicode_get_core()->canvas, dot_region.location.x + dot_size / 2, dot_region.location.y + dot_size / 2,
-                                       EGUI_MAX(dot_size / 2, 2), state_color, egui_color_alpha_mix(self->alpha, 92));
+                                       EGUI_MAX(dot_size / 2, 2), state_color, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(92)));
 
     text_x = dot_region.location.x + dot_size + 5;
     label_region.location.x = text_x;
@@ -417,13 +417,13 @@ static void egui_view_status_bar_on_draw(egui_view_t *self)
 
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.region.location.x, metrics.region.location.y, metrics.region.size.width,
                                           metrics.region.size.height, EGUI_VIEW_STATUS_BAR_RADIUS, surface,
-                                          egui_color_alpha_mix(self->alpha, 98));
+                                          egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(98)));
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics.region.location.x, metrics.region.location.y, metrics.region.size.width,
-                                     metrics.region.size.height, EGUI_VIEW_STATUS_BAR_RADIUS, 1, border, egui_color_alpha_mix(self->alpha, 58));
+                                     metrics.region.size.height, EGUI_VIEW_STATUS_BAR_RADIUS, 1, border, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(78)));
     if (metrics.region.size.width > 22)
     {
         egui_canvas_draw_rectangle_fill(&uicode_get_core()->canvas, metrics.region.location.x + 9, metrics.region.location.y + 5,
-                                        28, 2, accent, egui_color_alpha_mix(self->alpha, 46));
+                                        28, 2, accent, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(72)));
     }
 
     for (index = 0; index < local->item_count; ++index)
@@ -433,7 +433,7 @@ static void egui_view_status_bar_on_draw(egui_view_t *self)
             egui_dim_t x = metrics.item_regions[index].location.x - 3;
 
             egui_canvas_draw_rectangle_fill(&uicode_get_core()->canvas, x, metrics.item_regions[index].location.y + 3, 1,
-                                            metrics.item_regions[index].size.height - 6, separator, egui_color_alpha_mix(self->alpha, 48));
+                                            metrics.item_regions[index].size.height - 6, separator, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(68)));
         }
         egui_view_status_bar_draw_item(self, local, &metrics, index);
     }
@@ -613,13 +613,13 @@ void egui_view_status_bar_init(egui_view_t *self)
     local->value_font = (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT;
     local->item_count = 0;
     egui_view_status_bar_reset_items(local);
-    local->surface_color = EGUI_COLOR_HEX(0xFFFFFF);
-    local->border_color = EGUI_COLOR_HEX(0xCCD6E0);
-    local->separator_color = EGUI_COLOR_HEX(0xDCE4EC);
-    local->text_color = EGUI_COLOR_HEX(0x1D2A36);
-    local->muted_text_color = EGUI_COLOR_HEX(0x637283);
-    local->accent_color = EGUI_COLOR_HEX(0x0F6CBD);
-    local->ok_color = EGUI_COLOR_HEX(0x107C41);
-    local->warn_color = EGUI_COLOR_HEX(0xB26A00);
+    local->surface_color = HCW_COLOR_SURFACE;
+    local->border_color = HCW_COLOR_BORDER;
+    local->separator_color = HCW_COLOR_BORDER;
+    local->text_color = HCW_COLOR_TEXT;
+    local->muted_text_color = HCW_COLOR_TEXT_MUTED;
+    local->accent_color = HCW_COLOR_PRIMARY;
+    local->ok_color = HCW_COLOR_SUCCESS;
+    local->warn_color = HCW_COLOR_WARNING;
     egui_view_set_view_name(self, "egui_view_status_bar");
 }

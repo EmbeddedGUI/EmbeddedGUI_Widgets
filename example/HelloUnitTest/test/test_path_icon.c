@@ -154,7 +154,7 @@ static void test_path_icon_init_uses_default_data_and_standard_palette(void)
     EGUI_TEST_ASSERT_TRUE(egui_view_path_icon_get_data(EGUI_VIEW_OF(&test_path_icon)) == egui_view_path_icon_get_bookmark_data());
     EGUI_TEST_ASSERT_TRUE(egui_view_path_icon_get_bookmark_data() != egui_view_path_icon_get_heart_data());
     EGUI_TEST_ASSERT_TRUE(egui_view_path_icon_get_bookmark_data() != egui_view_path_icon_get_send_data());
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x0F6CBD).full, test_path_icon.icon_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PRIMARY.full, test_path_icon.icon_color.full);
 }
 
 static void test_path_icon_style_helpers_and_setters_clear_pressed_state(void)
@@ -164,17 +164,17 @@ static void test_path_icon_style_helpers_and_setters_clear_pressed_state(void)
     egui_view_set_pressed(EGUI_VIEW_OF(&test_path_icon), 1);
     egui_view_path_icon_apply_standard_style(EGUI_VIEW_OF(&test_path_icon));
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_path_icon)->is_pressed);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x0F6CBD).full, test_path_icon.icon_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PRIMARY.full, test_path_icon.icon_color.full);
 
     egui_view_set_pressed(EGUI_VIEW_OF(&test_path_icon), 1);
     egui_view_path_icon_apply_subtle_style(EGUI_VIEW_OF(&test_path_icon));
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_path_icon)->is_pressed);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x6F7C8A).full, test_path_icon.icon_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT_MUTED.full, test_path_icon.icon_color.full);
 
     egui_view_set_pressed(EGUI_VIEW_OF(&test_path_icon), 1);
     egui_view_path_icon_apply_accent_style(EGUI_VIEW_OF(&test_path_icon));
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_path_icon)->is_pressed);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xA15C00).full, test_path_icon.icon_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_WARNING.full, test_path_icon.icon_color.full);
 
     egui_view_set_pressed(EGUI_VIEW_OF(&test_path_icon), 1);
     egui_view_path_icon_set_data(EGUI_VIEW_OF(&test_path_icon), egui_view_path_icon_get_heart_data());
@@ -182,9 +182,9 @@ static void test_path_icon_style_helpers_and_setters_clear_pressed_state(void)
     EGUI_TEST_ASSERT_TRUE(egui_view_path_icon_get_data(EGUI_VIEW_OF(&test_path_icon)) == egui_view_path_icon_get_heart_data());
 
     egui_view_set_pressed(EGUI_VIEW_OF(&test_path_icon), 1);
-    egui_view_path_icon_set_palette(EGUI_VIEW_OF(&test_path_icon), EGUI_COLOR_HEX(0x0F7B45));
+    egui_view_path_icon_set_palette(EGUI_VIEW_OF(&test_path_icon), HCW_COLOR_SUCCESS);
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_path_icon)->is_pressed);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x0F7B45).full, test_path_icon.icon_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_SUCCESS.full, test_path_icon.icon_color.full);
 
     egui_view_set_pressed(EGUI_VIEW_OF(&test_path_icon), 1);
     egui_view_path_icon_set_data(EGUI_VIEW_OF(&test_path_icon), NULL);

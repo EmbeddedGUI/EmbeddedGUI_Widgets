@@ -48,7 +48,7 @@ static void hcw_radio_button_on_draw(egui_view_t *self)
 
     egui_view_get_work_region(self, &region);
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, region.location.x, region.location.y, region.size.width, region.size.height, 8, 1, local->dot_color,
-                                     egui_color_alpha_mix(self->alpha, 56));
+                                     egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(56)));
 #else
     EGUI_UNUSED(local);
 #endif
@@ -56,7 +56,7 @@ static void hcw_radio_button_on_draw(egui_view_t *self)
 
 void hcw_radio_button_apply_standard_style(egui_view_t *self)
 {
-    hcw_radio_button_apply_style(self, EGUI_COLOR_HEX(0xC6D2DE), EGUI_COLOR_HEX(0x2563EB), EGUI_COLOR_HEX(0x1A2734), 8);
+    hcw_radio_button_apply_style(self, HCW_COLOR_BORDER, HCW_COLOR_PRIMARY, HCW_COLOR_TEXT, 8);
 }
 
 void hcw_radio_button_set_checked(egui_view_t *self, uint8_t is_checked)

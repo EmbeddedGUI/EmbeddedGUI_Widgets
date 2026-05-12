@@ -44,17 +44,17 @@ static egui_view_api_t secondary_preview_api;
 static egui_view_api_t muted_preview_api;
 static uint8_t ui_ready;
 
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, HCW_COLOR_PAGE_BG, EGUI_ALPHA_100, 14);
 EGUI_BACKGROUND_PARAM_INIT(bg_page_panel_params, &bg_page_panel_param, NULL, NULL);
 EGUI_BACKGROUND_COLOR_STATIC_CONST_INIT(bg_page_panel, &bg_page_panel_params);
 
 static const char *title_text = "Label";
 
 static const label_control_snapshot_t primary_snapshots[] = {
-        {"Username", "TextBox target", "Caption / access key", EGUI_COLOR_HEX(0x0F6CBD), 0, 1, 0},
-        {"Save target", "Alt+S", "Accent / target highlighted", EGUI_COLOR_HEX(0x0F6CBD), 0, 0, 1},
-        {"Mode", "", "Small label / caption only", EGUI_COLOR_HEX(0x0C7C73), EGUI_VIEW_LABEL_CONTROL_ACCESS_NONE, 0, 2},
-        {"Locked field", "Muted target", "Muted palette / required", EGUI_COLOR_HEX(0x65717E), EGUI_VIEW_LABEL_CONTROL_ACCESS_NONE, 1, 3},
+        {"Username", "TextBox target", "Caption / access key", HCW_COLOR_PRIMARY, 0, 1, 0},
+        {"Save target", "Alt+S", "Accent / target highlighted", HCW_COLOR_PRIMARY, 0, 0, 1},
+        {"Mode", "", "Small label / caption only", HCW_COLOR_PRIMARY, EGUI_VIEW_LABEL_CONTROL_ACCESS_NONE, 0, 2},
+        {"Locked field", "Muted target", "Muted palette / required", HCW_COLOR_TEXT_MUTED, EGUI_VIEW_LABEL_CONTROL_ACCESS_NONE, 1, 3},
 };
 
 static void layout_page(void);
@@ -72,32 +72,32 @@ static void init_text_label(egui_view_label_t *label, egui_dim_t width, egui_dim
 
 static void configure_label_control_standard(egui_view_t *view)
 {
-    egui_view_label_control_set_palette(view, EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD5DEE8), EGUI_COLOR_HEX(0x1D2A36),
-                                        EGUI_COLOR_HEX(0x647484), EGUI_COLOR_HEX(0x0F6CBD), EGUI_COLOR_HEX(0xC2410C));
+    egui_view_label_control_set_palette(view, HCW_COLOR_SURFACE, HCW_COLOR_BORDER, HCW_COLOR_TEXT,
+                                        HCW_COLOR_TEXT_MUTED, HCW_COLOR_PRIMARY, HCW_COLOR_DANGER_DARK);
     egui_view_label_control_set_align_type(view, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER);
     egui_view_label_control_set_target_highlighted(view, 0);
 }
 
 static void configure_label_control_accent(egui_view_t *view)
 {
-    egui_view_label_control_set_palette(view, EGUI_COLOR_HEX(0xF7FBFF), EGUI_COLOR_HEX(0xB9D6F0), EGUI_COLOR_HEX(0x173247),
-                                        EGUI_COLOR_HEX(0x5D7183), EGUI_COLOR_HEX(0x0F6CBD), EGUI_COLOR_HEX(0xA15C00));
+    egui_view_label_control_set_palette(view, HCW_COLOR_SURFACE_SUBTLE, HCW_COLOR_PRIMARY_SOFT, HCW_COLOR_TEXT,
+                                        HCW_COLOR_TEXT_MUTED, HCW_COLOR_PRIMARY, HCW_COLOR_WARNING);
     egui_view_label_control_set_align_type(view, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER);
     egui_view_label_control_set_target_highlighted(view, 1);
 }
 
 static void configure_label_control_small(egui_view_t *view)
 {
-    egui_view_label_control_set_palette(view, EGUI_COLOR_HEX(0xF8FBFD), EGUI_COLOR_HEX(0xD2DCE6), EGUI_COLOR_HEX(0x22313C),
-                                        EGUI_COLOR_HEX(0x6E7E8E), EGUI_COLOR_HEX(0x0C7C73), EGUI_COLOR_HEX(0xA15C00));
+    egui_view_label_control_set_palette(view, HCW_COLOR_SURFACE_PRESS, HCW_COLOR_BORDER, HCW_COLOR_TEXT,
+                                        HCW_COLOR_TEXT_MUTED, HCW_COLOR_PRIMARY, HCW_COLOR_WARNING);
     egui_view_label_control_set_align_type(view, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER);
     egui_view_label_control_set_target_highlighted(view, 0);
 }
 
 static void configure_label_control_muted(egui_view_t *view)
 {
-    egui_view_label_control_set_palette(view, EGUI_COLOR_HEX(0xF5F7FA), EGUI_COLOR_HEX(0xD7DEE6), EGUI_COLOR_HEX(0x687684),
-                                        EGUI_COLOR_HEX(0x8B98A5), EGUI_COLOR_HEX(0x788593), EGUI_COLOR_HEX(0x92765F));
+    egui_view_label_control_set_palette(view, HCW_COLOR_SURFACE_SUBTLE, HCW_COLOR_BORDER, HCW_COLOR_TEXT_MUTED,
+                                        HCW_COLOR_TEXT_SOFT, HCW_COLOR_TEXT_SOFT, HCW_COLOR_WARNING_DARK);
     egui_view_label_control_set_align_type(view, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER);
     egui_view_label_control_set_target_highlighted(view, 0);
 }
@@ -195,7 +195,7 @@ void test_init_ui(void)
     egui_view_set_background(EGUI_VIEW_OF(&root_layout), EGUI_BG_OF(&bg_page_panel));
 
     init_text_label(&title_label, LABEL_CONTROL_ROOT_WIDTH, 18, title_text, (const egui_font_t *)&egui_res_font_montserrat_12_4,
-                    EGUI_COLOR_HEX(0x21303F), EGUI_ALIGN_CENTER);
+                    HCW_COLOR_TEXT, EGUI_ALIGN_CENTER);
     egui_view_set_margin(EGUI_VIEW_OF(&title_label), 0, 8, 0, 10);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label));
 
@@ -207,7 +207,7 @@ void test_init_ui(void)
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&primary_control));
 
     init_text_label(&caption_label, LABEL_CONTROL_ROOT_WIDTH, 12, "Caption / access key", (const egui_font_t *)&egui_res_font_montserrat_8_4,
-                    EGUI_COLOR_HEX(0x0F6CBD), EGUI_ALIGN_CENTER);
+                    HCW_COLOR_PRIMARY, EGUI_ALIGN_CENTER);
     egui_view_set_margin(EGUI_VIEW_OF(&caption_label), 0, 0, 0, 16);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&caption_label));
 

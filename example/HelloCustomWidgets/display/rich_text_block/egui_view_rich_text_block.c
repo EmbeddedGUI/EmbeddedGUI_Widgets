@@ -24,7 +24,7 @@ static uint8_t egui_view_rich_text_block_clear_pressed_state(egui_view_t *self)
 
 static egui_color_t egui_view_rich_text_block_mix_disabled(egui_color_t color)
 {
-    return egui_rgb_mix(color, EGUI_COLOR_DARK_GREY, 64);
+    return egui_rgb_mix(color, HCW_COLOR_SURFACE_SUBTLE, EGUI_ALPHA_MAKE(44));
 }
 
 static uint8_t egui_view_rich_text_block_clamp_count(uint8_t paragraph_count)
@@ -72,7 +72,7 @@ static egui_color_t egui_view_rich_text_block_resolve_color(egui_view_rich_text_
     switch (egui_view_rich_text_block_clamp_style(style))
     {
     case EGUI_VIEW_RICH_TEXT_BLOCK_STYLE_EMPHASIS:
-        return egui_rgb_mix(local->text_color, local->accent_color, 18);
+        return egui_rgb_mix(local->text_color, local->accent_color, EGUI_ALPHA_MAKE(18));
     case EGUI_VIEW_RICH_TEXT_BLOCK_STYLE_ACCENT:
         return local->accent_color;
     case EGUI_VIEW_RICH_TEXT_BLOCK_STYLE_CAPTION:
@@ -498,8 +498,8 @@ static egui_dim_t egui_view_rich_text_block_measure_content_height(egui_view_ric
 
 static void egui_view_rich_text_block_draw_accent_box(egui_view_rich_text_block_t *local, egui_view_t *self, const egui_view_rich_text_block_paragraph_layout_t *layout)
 {
-    egui_color_t box_fill = egui_rgb_mix(local->surface_color, local->accent_color, 14);
-    egui_color_t box_border = egui_rgb_mix(local->border_color, local->accent_color, 28);
+    egui_color_t box_fill = egui_rgb_mix(local->surface_color, local->accent_color, EGUI_ALPHA_MAKE(18));
+    egui_color_t box_border = egui_rgb_mix(local->border_color, local->accent_color, EGUI_ALPHA_MAKE(34));
     egui_color_t strip_color = local->accent_color;
 
     if (!egui_view_get_enable(self))
@@ -510,11 +510,11 @@ static void egui_view_rich_text_block_draw_accent_box(egui_view_rich_text_block_
     }
 
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, layout->box_region.location.x, layout->box_region.location.y, layout->box_region.size.width, layout->box_region.size.height,
-                                          8, box_fill, egui_color_alpha_mix(self->alpha, 96));
+                                          8, box_fill, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(96)));
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, layout->box_region.location.x, layout->box_region.location.y, layout->box_region.size.width, layout->box_region.size.height,
-                                     8, 1, box_border, egui_color_alpha_mix(self->alpha, 42));
+                                     8, 1, box_border, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(76)));
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, layout->strip_region.location.x, layout->strip_region.location.y, layout->strip_region.size.width,
-                                          layout->strip_region.size.height, 1, strip_color, egui_color_alpha_mix(self->alpha, 92));
+                                          layout->strip_region.size.height, 1, strip_color, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(92)));
 }
 
 static void egui_view_rich_text_block_on_draw(egui_view_t *self)
@@ -551,7 +551,7 @@ static void egui_view_rich_text_block_on_draw(egui_view_t *self)
         }
 
         egui_view_rich_text_block_draw_wrapped_text(layout.font, local->paragraphs[i].text, &layout.text_region, local->line_space, text_color,
-                                                    egui_color_alpha_mix(self->alpha, 100));
+                                                    egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(100)));
 
         y += layout.has_box ? layout.box_region.size.height : layout.text_region.size.height;
         if ((i + 1) < local->paragraph_count)
@@ -676,11 +676,11 @@ void egui_view_rich_text_block_init(egui_view_t *self)
     local->font = (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT;
     local->emphasis_font = NULL;
     local->caption_font = NULL;
-    local->surface_color = EGUI_COLOR_HEX(0xFFFFFF);
-    local->border_color = EGUI_COLOR_HEX(0xDCE3E8);
-    local->text_color = EGUI_COLOR_HEX(0x1E2A36);
-    local->muted_text_color = EGUI_COLOR_HEX(0x627181);
-    local->accent_color = EGUI_COLOR_HEX(0x0F6CBD);
+    local->surface_color = HCW_COLOR_SURFACE;
+    local->border_color = HCW_COLOR_BORDER;
+    local->text_color = HCW_COLOR_TEXT;
+    local->muted_text_color = HCW_COLOR_TEXT_MUTED;
+    local->accent_color = HCW_COLOR_PRIMARY;
     local->line_space = 2;
     local->paragraph_gap = 6;
     local->paragraph_count = 0;

@@ -171,7 +171,7 @@ static void test_counter_badge_init_uses_defaults(void)
     EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_counter_badge_get_count(EGUI_VIEW_OF(&test_badge_widget)));
     EGUI_TEST_ASSERT_EQUAL_INT(99, egui_view_counter_badge_get_max_display(EGUI_VIEW_OF(&test_badge_widget)));
     EGUI_TEST_ASSERT_FALSE(egui_view_counter_badge_get_dot_mode(EGUI_VIEW_OF(&test_badge_widget)));
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xC42B1C).full, test_badge_widget.badge_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_DANGER.full, test_badge_widget.badge_color.full);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_WHITE.full, test_badge_widget.text_color.full);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_WHITE.full, test_badge_widget.outline_color.full);
 }
@@ -228,7 +228,7 @@ static void test_counter_badge_helpers_compute_regions_and_modes(void)
     EGUI_TEST_ASSERT_TRUE(egui_view_counter_badge_get_badge_region(EGUI_VIEW_OF(&test_badge_widget), &region));
     dot_width = region.size.width;
     EGUI_TEST_ASSERT_TRUE(dot_width < overflow_width);
-    EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(sample, EGUI_COLOR_HEX(0x83909D), 48).full, egui_view_counter_badge_mix_disabled(sample).full);
+    EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(sample, HCW_COLOR_TEXT_SOFT, EGUI_ALPHA_MAKE(38)).full, egui_view_counter_badge_mix_disabled(sample).full);
 }
 
 static void test_counter_badge_static_preview_consumes_input_and_keeps_state(void)

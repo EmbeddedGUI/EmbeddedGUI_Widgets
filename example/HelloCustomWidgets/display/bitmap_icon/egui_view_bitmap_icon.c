@@ -98,17 +98,17 @@ static void egui_view_bitmap_icon_apply_color(egui_view_t *self, egui_color_t ic
 
 void egui_view_bitmap_icon_apply_standard_style(egui_view_t *self)
 {
-    egui_view_bitmap_icon_apply_color(self, EGUI_COLOR_HEX(0x0F6CBD));
+    egui_view_bitmap_icon_apply_color(self, HCW_COLOR_PRIMARY);
 }
 
 void egui_view_bitmap_icon_apply_subtle_style(egui_view_t *self)
 {
-    egui_view_bitmap_icon_apply_color(self, EGUI_COLOR_HEX(0x6F7C8A));
+    egui_view_bitmap_icon_apply_color(self, HCW_COLOR_TEXT_MUTED);
 }
 
 void egui_view_bitmap_icon_apply_accent_style(egui_view_t *self)
 {
-    egui_view_bitmap_icon_apply_color(self, EGUI_COLOR_HEX(0xA15C00));
+    egui_view_bitmap_icon_apply_color(self, HCW_COLOR_WARNING);
 }
 
 void egui_view_bitmap_icon_set_image(egui_view_t *self, const egui_image_t *image)
@@ -181,7 +181,7 @@ static void egui_view_bitmap_icon_on_draw(egui_view_t *self)
 
     if (!egui_view_get_enable(self))
     {
-        icon_color = egui_rgb_mix(icon_color, EGUI_COLOR_HEX(0x97A4B1), 58);
+        icon_color = egui_rgb_mix(icon_color, HCW_COLOR_TEXT_SOFT, EGUI_ALPHA_MAKE(36));
     }
 
     for (egui_dim_t y = 0; y < draw_height; ++y)

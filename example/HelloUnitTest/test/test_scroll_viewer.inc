@@ -232,6 +232,7 @@ static void scroll_viewer_assert_pressed_cleared(egui_view_scroll_viewer_t *widg
 {
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_SCROLL_VIEWER_PART_NONE, widget->pressed_part);
     EGUI_TEST_ASSERT_EQUAL_INT(0, widget->thumb_dragging);
+    EGUI_TEST_ASSERT_EQUAL_INT(0, widget->surface_dragging);
     EGUI_TEST_ASSERT_EQUAL_INT(0, widget->track_direction);
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(widget)->is_pressed);
 }
@@ -370,6 +371,8 @@ static void test_scroll_viewer_regions_scroll_and_listener(void)
 
 static void test_scroll_viewer_touch_same_target_release_and_drag_behavior(void)
 {
+    egui_dim_t surface_x;
+    egui_dim_t surface_y;
     egui_dim_t track_x;
     egui_dim_t track_y;
     egui_dim_t thumb_x;
@@ -380,9 +383,38 @@ static void test_scroll_viewer_touch_same_target_release_and_drag_behavior(void)
 
     scroll_viewer_setup_widget(scroll_viewer_snapshots, EGUI_ARRAY_SIZE(scroll_viewer_snapshots));
     scroll_viewer_layout_widget();
+    EGUI_TEST_ASSERT_TRUE(scroll_viewer_get_part_center(EGUI_VIEW_OF(&scroll_viewer_test_widget), EGUI_VIEW_SCROLL_VIEWER_PART_SURFACE, &surface_x, &surface_y));
     EGUI_TEST_ASSERT_TRUE(scroll_viewer_get_track_press_point(EGUI_VIEW_OF(&scroll_viewer_test_widget), 1, &track_x, &track_y));
     EGUI_TEST_ASSERT_TRUE(scroll_viewer_get_part_center(EGUI_VIEW_OF(&scroll_viewer_test_widget), EGUI_VIEW_SCROLL_VIEWER_PART_THUMB, &thumb_x, &thumb_y));
     scroll_viewer_get_view_outside_point(EGUI_VIEW_OF(&scroll_viewer_test_widget), &outside_x, &outside_y);
+
+    egui_view_scroll_viewer_set_vertical_offset(EGUI_VIEW_OF(&scroll_viewer_test_widget), 0);
+    egui_view_scroll_viewer_set_horizontal_offset(EGUI_VIEW_OF(&scroll_viewer_test_widget), 0);
+    scroll_viewer_reset_change_state();
+    EGUI_TEST_ASSERT_TRUE(scroll_viewer_send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, surface_x, surface_y));
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_SCROLL_VIEWER_PART_SURFACE, scroll_viewer_test_widget.pressed_part);
+    EGUI_TEST_ASSERT_EQUAL_INT(1, scroll_viewer_test_widget.surface_dragging);
+    EGUI_TEST_ASSERT_TRUE(scroll_viewer_send_touch(EGUI_MOTION_EVENT_ACTION_MOVE, surface_x, surface_y + 34));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_scroll_viewer_get_vertical_offset(EGUI_VIEW_OF(&scroll_viewer_test_widget)));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_scroll_viewer_get_horizontal_offset(EGUI_VIEW_OF(&scroll_viewer_test_widget)));
+    EGUI_TEST_ASSERT_TRUE(scroll_viewer_send_touch(EGUI_MOTION_EVENT_ACTION_UP, surface_x, surface_y + 34));
+    EGUI_TEST_ASSERT_EQUAL_INT(0, scroll_viewer_change_count);
+    scroll_viewer_assert_pressed_cleared(&scroll_viewer_test_widget);
+
+    scroll_viewer_reset_change_state();
+    EGUI_TEST_ASSERT_TRUE(scroll_viewer_send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, surface_x, surface_y));
+    EGUI_TEST_ASSERT_TRUE(scroll_viewer_send_touch(EGUI_MOTION_EVENT_ACTION_MOVE, surface_x - 12, surface_y - 20));
+    EGUI_TEST_ASSERT_EQUAL_INT(20, egui_view_scroll_viewer_get_vertical_offset(EGUI_VIEW_OF(&scroll_viewer_test_widget)));
+    EGUI_TEST_ASSERT_EQUAL_INT(12, egui_view_scroll_viewer_get_horizontal_offset(EGUI_VIEW_OF(&scroll_viewer_test_widget)));
+    EGUI_TEST_ASSERT_TRUE(scroll_viewer_send_touch(EGUI_MOTION_EVENT_ACTION_UP, surface_x - 12, surface_y - 20));
+    EGUI_TEST_ASSERT_TRUE(scroll_viewer_change_count > 0);
+    scroll_viewer_assert_pressed_cleared(&scroll_viewer_test_widget);
+
+    egui_view_scroll_viewer_set_vertical_offset(EGUI_VIEW_OF(&scroll_viewer_test_widget), 24);
+    egui_view_scroll_viewer_set_horizontal_offset(EGUI_VIEW_OF(&scroll_viewer_test_widget), 6);
+    EGUI_TEST_ASSERT_TRUE(scroll_viewer_get_track_press_point(EGUI_VIEW_OF(&scroll_viewer_test_widget), 1, &track_x, &track_y));
+    EGUI_TEST_ASSERT_TRUE(scroll_viewer_get_part_center(EGUI_VIEW_OF(&scroll_viewer_test_widget), EGUI_VIEW_SCROLL_VIEWER_PART_THUMB, &thumb_x, &thumb_y));
+    scroll_viewer_reset_change_state();
 
     initial_offset = egui_view_scroll_viewer_get_vertical_offset(EGUI_VIEW_OF(&scroll_viewer_test_widget));
     EGUI_TEST_ASSERT_TRUE(scroll_viewer_send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, track_x, track_y));

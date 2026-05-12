@@ -80,8 +80,8 @@ static void setup_preview_token_input(const char **tokens, uint8_t count)
     egui_view_token_input_set_placeholder(EGUI_VIEW_OF(&preview_token_input), "Add");
     egui_view_token_input_set_font(EGUI_VIEW_OF(&preview_token_input), (const egui_font_t *)&egui_res_font_montserrat_8_4);
     egui_view_token_input_set_meta_font(EGUI_VIEW_OF(&preview_token_input), (const egui_font_t *)&egui_res_font_montserrat_8_4);
-    egui_view_token_input_set_palette(EGUI_VIEW_OF(&preview_token_input), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD5DCE4), EGUI_COLOR_HEX(0x1A2734),
-                                      EGUI_COLOR_HEX(0x6B7A89), EGUI_COLOR_HEX(0x0F6CBD), EGUI_COLOR_HEX(0xEAF0F6));
+    egui_view_token_input_set_palette(EGUI_VIEW_OF(&preview_token_input), HCW_COLOR_PANEL, HCW_COLOR_BORDER_STRONG, HCW_COLOR_TEXT_STRONG,
+                                      HCW_COLOR_TEXT_SOFT, HCW_COLOR_PRIMARY_DARK, HCW_COLOR_TRACK_STRONG);
     egui_view_token_input_set_tokens(EGUI_VIEW_OF(&preview_token_input), tokens, count);
     egui_view_token_input_set_compact_mode(EGUI_VIEW_OF(&preview_token_input), 1);
     egui_view_token_input_set_on_changed_listener(EGUI_VIEW_OF(&preview_token_input), on_token_input_changed);
@@ -1116,6 +1116,12 @@ static void test_token_input_setters_clear_pressed_state(void)
     static const char *next_tokens[] = {"ui", "qa", "ops"};
 
     setup_token_input(tokens, 2);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PANEL.full, test_token_input.surface_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_BORDER_STRONG.full, test_token_input.border_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT_STRONG.full, test_token_input.text_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT_SOFT.full, test_token_input.muted_text_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PRIMARY_DARK.full, test_token_input.accent_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TRACK_STRONG.full, test_token_input.shadow_color.full);
 
     seed_pressed_state(0, 1);
     egui_view_token_input_set_font(EGUI_VIEW_OF(&test_token_input), NULL);
@@ -1126,8 +1132,9 @@ static void test_token_input_setters_clear_pressed_state(void)
     assert_pressed_cleared();
 
     seed_pressed_state(0, 1);
-    egui_view_token_input_set_palette(EGUI_VIEW_OF(&test_token_input), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD7DFE7), EGUI_COLOR_HEX(0x1F2A35),
-                                      EGUI_COLOR_HEX(0x7A8794), EGUI_COLOR_HEX(0x4A86E8), EGUI_COLOR_HEX(0xDCE5EE));
+    egui_view_token_input_set_palette(EGUI_VIEW_OF(&test_token_input), EGUI_COLOR_HEX(0x101112), EGUI_COLOR_HEX(0x202122),
+                                      EGUI_COLOR_HEX(0x303132), EGUI_COLOR_HEX(0x404142), EGUI_COLOR_HEX(0x505152),
+                                      EGUI_COLOR_HEX(0x606162));
     assert_pressed_cleared();
 
     seed_pressed_state(0, 1);

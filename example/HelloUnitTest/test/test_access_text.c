@@ -60,24 +60,24 @@ static void setup_access_text(void)
 
 static void configure_access_text_accent(egui_view_t *view)
 {
-    egui_view_access_text_set_palette(view, EGUI_COLOR_HEX(0xF6FAFF), EGUI_COLOR_HEX(0xB9D6F0), EGUI_COLOR_HEX(0x173247),
-                                      EGUI_COLOR_HEX(0xCFE2F3), EGUI_COLOR_HEX(0x0F6CBD));
+    egui_view_access_text_set_palette(view, HCW_COLOR_SURFACE_SUBTLE, HCW_COLOR_PRIMARY_SOFT, HCW_COLOR_TEXT,
+                                      HCW_COLOR_PRIMARY_TINT, HCW_COLOR_PRIMARY);
     egui_view_access_text_set_align_type(view, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER);
     egui_view_access_text_set_keyboard_cue_visible(view, 1);
 }
 
 static void configure_access_text_secondary(egui_view_t *view)
 {
-    egui_view_access_text_set_palette(view, EGUI_COLOR_HEX(0xF8FBFD), EGUI_COLOR_HEX(0xD2DCE6), EGUI_COLOR_HEX(0x22313C),
-                                      EGUI_COLOR_HEX(0xD9E7E5), EGUI_COLOR_HEX(0x0C7C73));
+    egui_view_access_text_set_palette(view, HCW_COLOR_SURFACE_PRESS, HCW_COLOR_BORDER, HCW_COLOR_TEXT,
+                                      HCW_COLOR_PRIMARY_TINT, HCW_COLOR_PRIMARY);
     egui_view_access_text_set_align_type(view, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER);
     egui_view_access_text_set_keyboard_cue_visible(view, 1);
 }
 
 static void configure_access_text_muted(egui_view_t *view)
 {
-    egui_view_access_text_set_palette(view, EGUI_COLOR_HEX(0xF5F7FA), EGUI_COLOR_HEX(0xD7DEE6), EGUI_COLOR_HEX(0x687684),
-                                      EGUI_COLOR_HEX(0xE1E6EB), EGUI_COLOR_HEX(0x788593));
+    egui_view_access_text_set_palette(view, EGUI_COLOR_HEX(0xF5F7FA), EGUI_COLOR_HEX(0xD7DEE6), HCW_COLOR_TEXT_MUTED,
+                                      HCW_COLOR_BORDER, HCW_COLOR_TEXT_SOFT);
     egui_view_access_text_set_align_type(view, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER);
     egui_view_access_text_set_keyboard_cue_visible(view, 0);
 }
@@ -196,8 +196,8 @@ static void test_access_text_init_defaults(void)
     EGUI_TEST_ASSERT_EQUAL_INT('S', egui_view_access_text_get_access_key_char(EGUI_VIEW_OF(&test_control)));
     EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_access_text_get_keyboard_cue_visible(EGUI_VIEW_OF(&test_control)));
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, egui_view_access_text_get_align_type(EGUI_VIEW_OF(&test_control)));
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xFFFFFF).full, test_control.surface_color.full);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x0F6CBD).full, test_control.cue_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_SURFACE.full, test_control.surface_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PRIMARY.full, test_control.cue_color.full);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_MARGIN_PADDING
     EGUI_TEST_ASSERT_EQUAL_INT(2, EGUI_VIEW_OF(&test_control)->padding.left);
     EGUI_TEST_ASSERT_EQUAL_INT(2, EGUI_VIEW_OF(&test_control)->padding.right);
@@ -243,11 +243,11 @@ static void test_access_text_styles_palette_and_font(void)
     configure_access_text_accent(EGUI_VIEW_OF(&test_control));
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_control)->is_pressed);
     EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_access_text_get_keyboard_cue_visible(EGUI_VIEW_OF(&test_control)));
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x0F6CBD).full, test_control.cue_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PRIMARY.full, test_control.cue_color.full);
 
     configure_access_text_secondary(EGUI_VIEW_OF(&test_control));
     EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_access_text_get_keyboard_cue_visible(EGUI_VIEW_OF(&test_control)));
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x0C7C73).full, test_control.cue_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PRIMARY.full, test_control.cue_color.full);
 
     configure_access_text_muted(EGUI_VIEW_OF(&test_control));
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_access_text_get_keyboard_cue_visible(EGUI_VIEW_OF(&test_control)));

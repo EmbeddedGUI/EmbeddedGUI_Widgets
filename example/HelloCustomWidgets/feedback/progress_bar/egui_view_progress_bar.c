@@ -328,25 +328,25 @@ void hcw_progress_bar_init(egui_view_t *self)
 
 void hcw_progress_bar_apply_standard_style(egui_view_t *self)
 {
-    hcw_progress_bar_apply_style(self, EGUI_COLOR_HEX(0xD8E1EA), EGUI_COLOR_HEX(0x0F6CBD), EGUI_COLOR_HEX(0x0F6CBD));
+    hcw_progress_bar_apply_style(self, HCW_COLOR_TRACK, HCW_COLOR_PRIMARY, HCW_COLOR_PRIMARY);
     hcw_progress_bar_set_indeterminate_mode(self, 0);
 }
 
 void hcw_progress_bar_apply_paused_style(egui_view_t *self)
 {
-    hcw_progress_bar_apply_style(self, EGUI_COLOR_HEX(0xE7DDCA), EGUI_COLOR_HEX(0xB95A00), EGUI_COLOR_HEX(0xB95A00));
+    hcw_progress_bar_apply_style(self, HCW_COLOR_WARNING_SOFT, HCW_COLOR_WARNING, HCW_COLOR_WARNING);
     hcw_progress_bar_set_indeterminate_mode(self, 0);
 }
 
 void hcw_progress_bar_apply_error_style(egui_view_t *self)
 {
-    hcw_progress_bar_apply_style(self, EGUI_COLOR_HEX(0xEED6DA), EGUI_COLOR_HEX(0xC42B1C), EGUI_COLOR_HEX(0xC42B1C));
+    hcw_progress_bar_apply_style(self, HCW_COLOR_DANGER_SOFT, HCW_COLOR_DANGER, HCW_COLOR_DANGER);
     hcw_progress_bar_set_indeterminate_mode(self, 0);
 }
 
 void hcw_progress_bar_apply_indeterminate_style(egui_view_t *self)
 {
-    hcw_progress_bar_apply_style(self, EGUI_COLOR_HEX(0xD8E1EA), EGUI_COLOR_HEX(0x0F6CBD), EGUI_COLOR_HEX(0x0F6CBD));
+    hcw_progress_bar_apply_style(self, HCW_COLOR_TRACK, HCW_COLOR_PRIMARY, HCW_COLOR_PRIMARY);
     hcw_progress_bar_set_indeterminate_mode(self, 1);
 }
 

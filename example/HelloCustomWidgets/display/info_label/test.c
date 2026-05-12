@@ -48,7 +48,7 @@ static egui_view_api_t secondary_info_label_api;
 static egui_view_api_t muted_info_label_api;
 static uint8_t ui_ready;
 
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, HCW_COLOR_PAGE_BG, EGUI_ALPHA_100, 14);
 EGUI_BACKGROUND_PARAM_INIT(bg_page_panel_params, &bg_page_panel_param, NULL, NULL);
 EGUI_BACKGROUND_COLOR_STATIC_CONST_INIT(bg_page_panel, &bg_page_panel_params);
 
@@ -59,39 +59,39 @@ static const info_label_snapshot_t primary_snapshots[] = {
                 "Project policy",
                 "Versioning",
                 "Keep release notes aligned with the approved branch.",
-                EGUI_COLOR_HEX(0xFFFFFF),
-                EGUI_COLOR_HEX(0xD4DDE5),
-                EGUI_COLOR_HEX(0x1B2835),
-                EGUI_COLOR_HEX(0x697A8B),
-                EGUI_COLOR_HEX(0x0F6CBD),
-                EGUI_COLOR_HEX(0xF9FBFD),
-                EGUI_COLOR_HEX(0xDCE4EA),
+                HCW_COLOR_SURFACE,
+                HCW_COLOR_BORDER,
+                HCW_COLOR_TEXT_STRONG,
+                HCW_COLOR_TEXT_MUTED,
+                HCW_COLOR_PRIMARY,
+                HCW_COLOR_PANEL,
+                HCW_COLOR_BORDER,
                 0,
         },
         {
                 "Export guidance",
                 "Sensitive content",
                 "Mask personal data before sharing outside the tenant.",
-                EGUI_COLOR_HEX(0xFFFFFF),
-                EGUI_COLOR_HEX(0xE1D3C3),
-                EGUI_COLOR_HEX(0x3A2A1A),
-                EGUI_COLOR_HEX(0x8A6F55),
-                EGUI_COLOR_HEX(0xA15C00),
-                EGUI_COLOR_HEX(0xFFF8F1),
-                EGUI_COLOR_HEX(0xE8DDD0),
+                HCW_COLOR_SURFACE,
+                HCW_COLOR_WARNING_SOFT,
+                HCW_COLOR_TEXT_STRONG,
+                HCW_COLOR_WARNING_DARK,
+                HCW_COLOR_WARNING,
+                HCW_COLOR_WARNING_SOFT,
+                HCW_COLOR_WARNING_SOFT,
                 1,
         },
         {
                 "Reading help",
                 "Reference note",
                 "Use the small preview when the layout has limited width.",
-                EGUI_COLOR_HEX(0xFBFCFD),
-                EGUI_COLOR_HEX(0xD7DEE6),
-                EGUI_COLOR_HEX(0x334252),
-                EGUI_COLOR_HEX(0x778594),
-                EGUI_COLOR_HEX(0x6F8194),
-                EGUI_COLOR_HEX(0xF6F8FA),
-                EGUI_COLOR_HEX(0xD9E1E8),
+                HCW_COLOR_SURFACE_SUBTLE,
+                HCW_COLOR_BORDER,
+                HCW_COLOR_TEXT_STRONG,
+                HCW_COLOR_TEXT_MUTED,
+                HCW_COLOR_TEXT_MUTED,
+                HCW_COLOR_SURFACE_SUBTLE,
+                HCW_COLOR_BORDER,
                 1,
         },
 };
@@ -100,13 +100,13 @@ static const info_label_snapshot_t secondary_snapshot = {
         "Small help",
         "Inline note",
         "Small preview keeps the bubble concise.",
-        EGUI_COLOR_HEX(0xFFFFFF),
-        EGUI_COLOR_HEX(0xD6DEE6),
-        EGUI_COLOR_HEX(0x22303C),
-        EGUI_COLOR_HEX(0x73808C),
-        EGUI_COLOR_HEX(0x0C7C73),
-        EGUI_COLOR_HEX(0xF7FBFA),
-        EGUI_COLOR_HEX(0xD7E7E4),
+        HCW_COLOR_SURFACE,
+        HCW_COLOR_BORDER,
+        HCW_COLOR_TEXT,
+        HCW_COLOR_TEXT_MUTED,
+        HCW_COLOR_PRIMARY,
+        HCW_COLOR_SURFACE_SUBTLE,
+        HCW_COLOR_PRIMARY_TINT,
         1,
 };
 
@@ -114,13 +114,13 @@ static const info_label_snapshot_t muted_snapshot = {
         "Audit note",
         "Muted note",
         "Static preview uses subdued colors.",
-        EGUI_COLOR_HEX(0xFBFCFD),
-        EGUI_COLOR_HEX(0xD9E1E8),
-        EGUI_COLOR_HEX(0x566675),
-        EGUI_COLOR_HEX(0x8895A1),
-        EGUI_COLOR_HEX(0xA8B6C2),
-        EGUI_COLOR_HEX(0xF7F9FB),
-        EGUI_COLOR_HEX(0xE3E9EE),
+        HCW_COLOR_SURFACE_SUBTLE,
+        HCW_COLOR_BORDER,
+        HCW_COLOR_TEXT_MUTED,
+        HCW_COLOR_TEXT_SOFT,
+        HCW_COLOR_TEXT_SOFT,
+        HCW_COLOR_SURFACE_SUBTLE,
+        HCW_COLOR_BORDER,
         1,
 };
 
@@ -198,7 +198,7 @@ void test_init_ui(void)
     egui_view_label_set_text(EGUI_VIEW_OF(&title_label), title_text);
     egui_view_label_set_align_type(EGUI_VIEW_OF(&title_label), EGUI_ALIGN_CENTER);
     hello_custom_widgets_demo_set_label_font_with_min_height(EGUI_VIEW_OF(&title_label), (const egui_font_t *)&egui_res_font_montserrat_12_4);
-    egui_view_label_set_font_color(EGUI_VIEW_OF(&title_label), EGUI_COLOR_HEX(0x21303F), EGUI_ALPHA_100);
+    egui_view_label_set_font_color(EGUI_VIEW_OF(&title_label), HCW_COLOR_TEXT, EGUI_ALPHA_100);
     egui_view_set_margin(EGUI_VIEW_OF(&title_label), 0, 8, 0, 8);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label));
 

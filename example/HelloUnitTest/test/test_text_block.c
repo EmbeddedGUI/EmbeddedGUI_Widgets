@@ -213,7 +213,7 @@ static void test_text_block_init_uses_display_defaults(void)
     EGUI_TEST_ASSERT_FALSE(test_widget.base.is_border_enabled);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_ALIGN_LEFT | EGUI_ALIGN_TOP, test_widget.base.align_type);
     EGUI_TEST_ASSERT_EQUAL_INT(4, test_widget.base.line_space);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x22303F).full, test_widget.base.color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT.full, test_widget.base.color.full);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_ALPHA_100, test_widget.base.alpha);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_TEXT_BLOCK_STYLE_STANDARD, test_widget.style);
 }
@@ -226,13 +226,13 @@ static void test_text_block_style_helpers_and_setters_clear_pressed_state(void)
     egui_view_text_block_apply_subtle_style(EGUI_VIEW_OF(&test_widget));
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_widget)->is_pressed);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_TEXT_BLOCK_STYLE_SUBTLE, test_widget.style);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x6B7A89).full, test_widget.base.color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT_MUTED.full, test_widget.base.color.full);
 
     egui_view_set_pressed(EGUI_VIEW_OF(&test_widget), 1);
     egui_view_text_block_apply_accent_style(EGUI_VIEW_OF(&test_widget));
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_widget)->is_pressed);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_TEXT_BLOCK_STYLE_ACCENT, test_widget.style);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x0F6CBD).full, test_widget.base.color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PRIMARY.full, test_widget.base.color.full);
 
     egui_view_set_pressed(EGUI_VIEW_OF(&test_widget), 1);
     egui_view_text_block_set_palette(EGUI_VIEW_OF(&test_widget), EGUI_COLOR_HEX(0x111213), EGUI_COLOR_HEX(0x212223), EGUI_COLOR_HEX(0x313233), 88);
@@ -268,7 +268,7 @@ static void test_text_block_set_font_and_style_preserve_display_only_defaults(vo
     EGUI_TEST_ASSERT_EQUAL_INT(2, test_widget.base.max_lines);
     EGUI_TEST_ASSERT_FALSE(test_widget.base.is_scroll_enabled);
     EGUI_TEST_ASSERT_FALSE(test_widget.base.is_border_enabled);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x22303F).full, test_widget.base.color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT.full, test_widget.base.color.full);
 }
 
 static void test_text_block_static_preview_consumes_input_and_keeps_state(void)

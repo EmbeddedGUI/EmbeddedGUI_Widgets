@@ -2,6 +2,8 @@
 
 #include <string.h>
 
+#include "../../hcw_text_center.h"
+
 #define HCW_FIELD_STANDARD_FIELD_RADIUS         10
 #define HCW_FIELD_STANDARD_TOP_PAD              6
 #define HCW_FIELD_STANDARD_SIDE_PAD             2
@@ -100,7 +102,7 @@ static uint8_t hcw_field_show_info(const hcw_field_t *local)
 
 static egui_color_t hcw_field_mix_disabled(egui_color_t color)
 {
-    return egui_rgb_mix(color, EGUI_COLOR_HEX(0x8A96A3), 58);
+    return egui_rgb_mix(color, HCW_COLOR_TEXT_SOFT, EGUI_ALPHA_MAKE(38));
 }
 
 static egui_color_t hcw_field_validation_tone(hcw_field_t *local)
@@ -316,6 +318,7 @@ static void hcw_field_draw_text(egui_view_t *self, const egui_font_t *font, cons
     }
 
     draw_region = *region;
+    draw_region.location.y += hcw_text_center_get_delta(font, text, region, align);
     egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, font, text, &draw_region, align, color, egui_color_alpha_mix(self->alpha, alpha));
 }
 
@@ -613,9 +616,9 @@ static void hcw_field_draw_bubble_arrow(egui_view_t *self, hcw_field_t *local, c
     top_y = metrics->bubble_region.location.y;
 
     egui_canvas_draw_triangle_fill(&uicode_get_core()->canvas, center_x - arrow_w / 2, top_y + 1, center_x + arrow_w / 2, top_y + 1, center_x, top_y - arrow_h, fill_color,
-                                   egui_color_alpha_mix(self->alpha, 96));
+                                   egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(96)));
     egui_canvas_draw_triangle(&uicode_get_core()->canvas, center_x - arrow_w / 2, top_y + 1, center_x + arrow_w / 2, top_y + 1, center_x, top_y - arrow_h, border_color,
-                              egui_color_alpha_mix(self->alpha, 42));
+                              egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(88)));
 }
 
 static void hcw_field_on_draw(egui_view_t *self)
@@ -646,35 +649,35 @@ static void hcw_field_on_draw(egui_view_t *self)
 
     if (local->compact_mode)
     {
-        field_fill = egui_rgb_mix(field_fill, EGUI_COLOR_HEX(0xFBFCFD), 20);
-        bubble_surface_color = egui_rgb_mix(bubble_surface_color, EGUI_COLOR_HEX(0xFCFDFE), 14);
+        field_fill = egui_rgb_mix(field_fill, HCW_COLOR_SURFACE_SUBTLE, EGUI_ALPHA_MAKE(20));
+        bubble_surface_color = egui_rgb_mix(bubble_surface_color, HCW_COLOR_SURFACE_SUBTLE, EGUI_ALPHA_MAKE(24));
     }
     else
     {
-        field_fill = egui_rgb_mix(field_fill, EGUI_COLOR_HEX(0xFFFFFF), 18);
-        bubble_surface_color = egui_rgb_mix(bubble_surface_color, EGUI_COLOR_HEX(0xFFFFFF), 12);
+        field_fill = egui_rgb_mix(field_fill, HCW_COLOR_SURFACE, EGUI_ALPHA_MAKE(18));
+        bubble_surface_color = egui_rgb_mix(bubble_surface_color, HCW_COLOR_SURFACE, EGUI_ALPHA_MAKE(22));
     }
 
     if (metrics.show_validation && local->validation_state != HCW_FIELD_VALIDATION_NONE)
     {
-        field_border = egui_rgb_mix(field_border, validation_color, local->compact_mode ? 24 : 36);
-        field_fill = egui_rgb_mix(field_fill, validation_color, local->compact_mode ? 2 : 4);
+        field_border = egui_rgb_mix(field_border, validation_color, EGUI_ALPHA_MAKE(local->compact_mode ? 34 : 48));
+        field_fill = egui_rgb_mix(field_fill, validation_color, EGUI_ALPHA_MAKE(local->compact_mode ? 10 : 16));
     }
     if (metrics.show_info && local->open)
     {
-        field_border = egui_rgb_mix(field_border, accent_color, local->compact_mode ? 10 : 14);
+        field_border = egui_rgb_mix(field_border, accent_color, EGUI_ALPHA_MAKE(local->compact_mode ? 34 : 46));
     }
 
     if (local->read_only_mode)
     {
-        field_fill = egui_rgb_mix(field_fill, EGUI_COLOR_HEX(0xF7F9FB), 42);
-        field_border = egui_rgb_mix(field_border, muted_text_color, 26);
-        text_color = egui_rgb_mix(text_color, muted_text_color, 38);
-        muted_text_color = egui_rgb_mix(muted_text_color, field_border, 10);
-        accent_color = egui_rgb_mix(accent_color, muted_text_color, 54);
-        validation_color = egui_rgb_mix(validation_color, muted_text_color, 34);
-        bubble_surface_color = egui_rgb_mix(bubble_surface_color, EGUI_COLOR_HEX(0xFBFCFD), 16);
-        shadow_color = egui_rgb_mix(shadow_color, bubble_surface_color, 34);
+        field_fill = egui_rgb_mix(field_fill, HCW_COLOR_SURFACE_SUBTLE, EGUI_ALPHA_MAKE(32));
+        field_border = egui_rgb_mix(field_border, HCW_COLOR_BORDER_STRONG, EGUI_ALPHA_MAKE(52));
+        text_color = egui_rgb_mix(text_color, HCW_COLOR_TEXT_STRONG, EGUI_ALPHA_MAKE(46));
+        muted_text_color = egui_rgb_mix(muted_text_color, HCW_COLOR_TEXT_STRONG, EGUI_ALPHA_MAKE(32));
+        accent_color = egui_rgb_mix(accent_color, HCW_COLOR_TEXT_STRONG, EGUI_ALPHA_MAKE(42));
+        validation_color = egui_rgb_mix(validation_color, HCW_COLOR_TEXT_STRONG, EGUI_ALPHA_MAKE(38));
+        bubble_surface_color = egui_rgb_mix(bubble_surface_color, HCW_COLOR_SURFACE_SUBTLE, EGUI_ALPHA_MAKE(12));
+        shadow_color = egui_rgb_mix(shadow_color, bubble_surface_color, EGUI_ALPHA_MAKE(34));
     }
     if (!egui_view_get_enable(self))
     {
@@ -688,12 +691,12 @@ static void hcw_field_on_draw(egui_view_t *self)
         shadow_color = hcw_field_mix_disabled(shadow_color);
     }
 
-    required_color = egui_rgb_mix(local->error_color, text_color, 22);
+    required_color = egui_rgb_mix(local->error_color, text_color, EGUI_ALPHA_MAKE(22));
     field_radius = hcw_field_radius(local->compact_mode);
     info_radius = hcw_field_info_radius(local->compact_mode);
-    info_fill = egui_rgb_mix(field_fill, accent_color, local->open ? 7 : 4);
-    info_border = egui_rgb_mix(field_border, accent_color, local->open ? 16 : 10);
-    info_text = egui_rgb_mix(accent_color, text_color, local->open ? 6 : 14);
+    info_fill = egui_rgb_mix(field_fill, accent_color, EGUI_ALPHA_MAKE(local->open ? 42 : 30));
+    info_border = egui_rgb_mix(field_border, accent_color, EGUI_ALPHA_MAKE(local->open ? 58 : 46));
+    info_text = egui_rgb_mix(accent_color, text_color, EGUI_ALPHA_MAKE(local->open ? 16 : 22));
     placeholder_active = hcw_field_has_text(local->field_text) ? 0 : 1;
 
     hcw_field_draw_text(self, hcw_field_get_font(local), local->label, &metrics.label_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, text_color,
@@ -714,7 +717,7 @@ static void hcw_field_on_draw(egui_view_t *self)
     {
         if (self->is_focused && egui_view_get_enable(self))
         {
-            hcw_field_draw_focus_ring(self, &metrics.info_region, info_radius, EGUI_THEME_FOCUS, 68);
+            hcw_field_draw_focus_ring(self, &metrics.info_region, info_radius, EGUI_THEME_FOCUS, EGUI_ALPHA_MAKE(84));
         }
 
         if (egui_view_get_enable(self) && !local->read_only_mode && local->pressed_part == HCW_FIELD_PART_INFO_BUTTON)
@@ -725,10 +728,10 @@ static void hcw_field_on_draw(egui_view_t *self)
         else
         {
             egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.info_region.location.x, metrics.info_region.location.y, metrics.info_region.size.width,
-                                                  metrics.info_region.size.height, info_radius, info_fill, egui_color_alpha_mix(self->alpha, 18));
+                                                  metrics.info_region.size.height, info_radius, info_fill, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(90)));
         }
         egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics.info_region.location.x, metrics.info_region.location.y, metrics.info_region.size.width,
-                                         metrics.info_region.size.height, info_radius, 1, info_border, egui_color_alpha_mix(self->alpha, 58));
+                                         metrics.info_region.size.height, info_radius, 1, info_border, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(94)));
         hcw_field_draw_text(self, hcw_field_get_icon_font(local), EGUI_ICON_MS_INFO, &metrics.info_region, EGUI_ALIGN_CENTER, info_text, EGUI_ALPHA_100);
     }
 
@@ -736,17 +739,17 @@ static void hcw_field_on_draw(egui_view_t *self)
     {
         egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.bubble_region.location.x + 1, metrics.bubble_region.location.y + 2, metrics.bubble_region.size.width,
                                               metrics.bubble_region.size.height, hcw_field_bubble_radius(local->compact_mode), shadow_color,
-                                              egui_color_alpha_mix(self->alpha, local->compact_mode ? 10 : 16));
+                                              egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(local->compact_mode ? 10 : 16)));
         hcw_field_draw_bubble_arrow(self, local, &metrics, bubble_surface_color, field_border);
         egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.bubble_region.location.x, metrics.bubble_region.location.y, metrics.bubble_region.size.width,
                                               metrics.bubble_region.size.height, hcw_field_bubble_radius(local->compact_mode), bubble_surface_color,
-                                              egui_color_alpha_mix(self->alpha, 96));
+                                              egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(96)));
         egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics.bubble_region.location.x, metrics.bubble_region.location.y, metrics.bubble_region.size.width,
                                          metrics.bubble_region.size.height, hcw_field_bubble_radius(local->compact_mode), 1, field_border,
-                                         egui_color_alpha_mix(self->alpha, 44));
+                                         egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(94)));
         egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.bubble_region.location.x + hcw_field_bubble_pad_x(local->compact_mode),
                                               metrics.bubble_region.location.y + (local->compact_mode ? 5 : 6), local->compact_mode ? 12 : 16, 2, 1, accent_color,
-                                              egui_color_alpha_mix(self->alpha, local->compact_mode ? 52 : 68));
+                                              egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(local->compact_mode ? 86 : 96)));
         hcw_field_draw_text(self, hcw_field_get_font(local), local->info_title, &metrics.bubble_title_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, text_color,
                             EGUI_ALPHA_100);
         hcw_field_draw_text(self, hcw_field_get_meta_font(local), local->info_body, &metrics.bubble_body_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_TOP,
@@ -756,15 +759,15 @@ static void hcw_field_on_draw(egui_view_t *self)
     if (metrics.field_region.size.width > 0 && metrics.field_region.size.height > 0)
     {
         egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.field_region.location.x, metrics.field_region.location.y, metrics.field_region.size.width,
-                                              metrics.field_region.size.height, field_radius, field_fill, egui_color_alpha_mix(self->alpha, 96));
+                                              metrics.field_region.size.height, field_radius, field_fill, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(96)));
         egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics.field_region.location.x, metrics.field_region.location.y, metrics.field_region.size.width,
-                                         metrics.field_region.size.height, field_radius, 1, field_border, egui_color_alpha_mix(self->alpha, 72));
+                                         metrics.field_region.size.height, field_radius, 1, field_border, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(96)));
         if (local->read_only_mode || !egui_view_get_enable(self))
         {
             egui_canvas_draw_line(&uicode_get_core()->canvas, metrics.field_region.location.x + 8, metrics.field_region.location.y + metrics.field_region.size.height - 6,
                                   metrics.field_region.location.x + metrics.field_region.size.width - 8,
                                   metrics.field_region.location.y + metrics.field_region.size.height - 6, 1, field_border,
-                                  egui_color_alpha_mix(self->alpha, 24));
+                                  egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(78)));
         }
 
         if (placeholder_active)
@@ -789,7 +792,7 @@ static void hcw_field_on_draw(egui_view_t *self)
     {
         egui_canvas_draw_circle_fill(&uicode_get_core()->canvas, metrics.validation_dot_region.location.x + metrics.validation_dot_region.size.width / 2,
                                      metrics.validation_dot_region.location.y + metrics.validation_dot_region.size.height / 2,
-                                     metrics.validation_dot_region.size.width / 2, validation_color, egui_color_alpha_mix(self->alpha, 82));
+                                     metrics.validation_dot_region.size.width / 2, validation_color, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(94)));
         hcw_field_draw_text(self, hcw_field_get_meta_font(local), local->validation_text, &metrics.validation_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER,
                             validation_color, EGUI_ALPHA_100);
     }
@@ -802,20 +805,20 @@ static void hcw_field_apply_style(egui_view_t *self, uint8_t compact_mode, uint8
     hcw_field_clear_pressed_state(self);
     local->compact_mode = compact_mode ? 1 : 0;
     local->read_only_mode = read_only_mode ? 1 : 0;
-    local->surface_color = EGUI_COLOR_HEX(0xFFFFFF);
-    local->border_color = EGUI_COLOR_HEX(0xD4DDE5);
-    local->text_color = EGUI_COLOR_HEX(0x1B2835);
-    local->muted_text_color = EGUI_COLOR_HEX(0x697A8B);
-    local->accent_color = compact_mode ? EGUI_COLOR_HEX(0x0C7C73) : EGUI_COLOR_HEX(0x0F6CBD);
-    local->success_color = EGUI_COLOR_HEX(0x0F9D58);
-    local->warning_color = EGUI_COLOR_HEX(0xC27C12);
-    local->error_color = EGUI_COLOR_HEX(0xC93C37);
-    local->bubble_surface_color = compact_mode ? EGUI_COLOR_HEX(0xF7FBFA) : EGUI_COLOR_HEX(0xF9FBFD);
-    local->shadow_color = compact_mode ? EGUI_COLOR_HEX(0xD7E7E4) : EGUI_COLOR_HEX(0xDCE4EA);
+    local->surface_color = HCW_COLOR_SURFACE;
+    local->border_color = HCW_COLOR_BORDER_STRONG;
+    local->text_color = HCW_COLOR_TEXT_STRONG;
+    local->muted_text_color = HCW_COLOR_TEXT_SOFT;
+    local->accent_color = HCW_COLOR_PRIMARY_DARK;
+    local->success_color = HCW_COLOR_SUCCESS;
+    local->warning_color = HCW_COLOR_WARNING;
+    local->error_color = HCW_COLOR_DANGER;
+    local->bubble_surface_color = compact_mode ? HCW_COLOR_SURFACE_SUBTLE : HCW_COLOR_PANEL;
+    local->shadow_color = compact_mode ? HCW_COLOR_PRIMARY_SOFT : HCW_COLOR_TRACK_STRONG;
     if (read_only_mode)
     {
-        local->accent_color = EGUI_COLOR_HEX(0xA8B6C2);
-        local->bubble_surface_color = EGUI_COLOR_HEX(0xFBFCFD);
+        local->accent_color = HCW_COLOR_TEXT_SOFT;
+        local->bubble_surface_color = HCW_COLOR_SURFACE_SUBTLE;
     }
     egui_view_invalidate(self);
 }

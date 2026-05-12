@@ -40,17 +40,17 @@ static egui_view_api_t line_preview_api;
 static egui_view_api_t muted_preview_api;
 static uint8_t ui_ready;
 
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, HCW_COLOR_PAGE_BG, EGUI_ALPHA_100, 14);
 EGUI_BACKGROUND_PARAM_INIT(bg_page_panel_params, &bg_page_panel_param, NULL, NULL);
 EGUI_BACKGROUND_COLOR_STATIC_CONST_INIT(bg_page_panel, &bg_page_panel_params);
 
 static const char *title_text = "Path";
 
 static const path_snapshot_t primary_snapshots[] = {
-        {"Standard / geometry", EGUI_COLOR_HEX(0x0F6CBD), 0},
-        {"Accent / curve", EGUI_COLOR_HEX(0x0F6CBD), 1},
-        {"Line data", EGUI_COLOR_HEX(0x0C7C73), 2},
-        {"Muted silhouette", EGUI_COLOR_HEX(0x65717E), 3},
+        {"Standard / geometry", HCW_COLOR_PRIMARY, 0},
+        {"Accent / curve", HCW_COLOR_PRIMARY, 1},
+        {"Line data", HCW_COLOR_PRIMARY, 2},
+        {"Muted silhouette", HCW_COLOR_TEXT_MUTED, 3},
 };
 
 static void layout_page(void);
@@ -68,14 +68,14 @@ static void init_text_label(egui_view_label_t *label, egui_dim_t width, egui_dim
 
 static void apply_path_line_style(egui_view_t *view)
 {
-    egui_view_path_set_palette(view, EGUI_COLOR_HEX(0xDCEDEA), EGUI_COLOR_HEX(0x0C7C73), EGUI_COLOR_HEX(0xBFDCD8));
+    egui_view_path_set_palette(view, HCW_COLOR_PRIMARY_TINT, HCW_COLOR_PRIMARY, HCW_COLOR_PRIMARY_SOFT);
     egui_view_path_set_stroke_width(view, 1);
     egui_view_path_set_data(view, egui_view_path_get_line_data());
 }
 
 static void apply_path_muted_style(egui_view_t *view)
 {
-    egui_view_path_set_palette(view, EGUI_COLOR_HEX(0xE1E6EB), EGUI_COLOR_HEX(0x687684), EGUI_COLOR_HEX(0xCCD4DC));
+    egui_view_path_set_palette(view, HCW_COLOR_BORDER, HCW_COLOR_TEXT_SOFT, HCW_COLOR_BORDER_STRONG);
     egui_view_path_set_stroke_width(view, 1);
     egui_view_path_set_data(view, egui_view_path_get_bookmark_data());
 }
@@ -160,7 +160,7 @@ void test_init_ui(void)
     egui_view_set_background(EGUI_VIEW_OF(&root_layout), EGUI_BG_OF(&bg_page_panel));
 
     init_text_label(&title_label, PATH_ROOT_WIDTH, 18, title_text, (const egui_font_t *)&egui_res_font_montserrat_12_4,
-                    EGUI_COLOR_HEX(0x21303F), EGUI_ALIGN_CENTER);
+                    HCW_COLOR_TEXT, EGUI_ALIGN_CENTER);
     egui_view_set_margin(EGUI_VIEW_OF(&title_label), 0, 8, 0, 8);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label));
 
@@ -170,7 +170,7 @@ void test_init_ui(void)
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&primary_control));
 
     init_text_label(&caption_label, PATH_ROOT_WIDTH, 12, "Standard / geometry", (const egui_font_t *)&egui_res_font_montserrat_8_4,
-                    EGUI_COLOR_HEX(0x0F6CBD), EGUI_ALIGN_CENTER);
+                    HCW_COLOR_PRIMARY, EGUI_ALIGN_CENTER);
     egui_view_set_margin(EGUI_VIEW_OF(&caption_label), 0, 0, 0, 14);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&caption_label));
 

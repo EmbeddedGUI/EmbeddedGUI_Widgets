@@ -156,7 +156,7 @@ static void test_bitmap_icon_init_uses_resize_mode_default_image_and_standard_pa
     EGUI_TEST_ASSERT_TRUE(egui_view_bitmap_icon_get_image(EGUI_VIEW_OF(&test_bitmap_icon)) == egui_view_bitmap_icon_get_document_image());
     EGUI_TEST_ASSERT_TRUE(egui_view_bitmap_icon_get_document_image() != egui_view_bitmap_icon_get_mail_image());
     EGUI_TEST_ASSERT_TRUE(egui_view_bitmap_icon_get_document_image() != egui_view_bitmap_icon_get_alert_image());
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x0F6CBD).full, test_bitmap_icon.image_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PRIMARY.full, test_bitmap_icon.image_color.full);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_ALPHA_100, test_bitmap_icon.image_color_alpha);
 }
 
@@ -167,12 +167,12 @@ static void test_bitmap_icon_style_helpers_and_setters_clear_pressed_state(void)
     egui_view_set_pressed(EGUI_VIEW_OF(&test_bitmap_icon), 1);
     egui_view_bitmap_icon_apply_subtle_style(EGUI_VIEW_OF(&test_bitmap_icon));
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_bitmap_icon)->is_pressed);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x6F7C8A).full, test_bitmap_icon.image_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT_MUTED.full, test_bitmap_icon.image_color.full);
 
     egui_view_set_pressed(EGUI_VIEW_OF(&test_bitmap_icon), 1);
     egui_view_bitmap_icon_apply_accent_style(EGUI_VIEW_OF(&test_bitmap_icon));
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_bitmap_icon)->is_pressed);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xA15C00).full, test_bitmap_icon.image_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_WARNING.full, test_bitmap_icon.image_color.full);
 
     egui_view_set_pressed(EGUI_VIEW_OF(&test_bitmap_icon), 1);
     egui_view_bitmap_icon_set_image(EGUI_VIEW_OF(&test_bitmap_icon), egui_view_bitmap_icon_get_mail_image());
@@ -180,9 +180,9 @@ static void test_bitmap_icon_style_helpers_and_setters_clear_pressed_state(void)
     EGUI_TEST_ASSERT_TRUE(egui_view_bitmap_icon_get_image(EGUI_VIEW_OF(&test_bitmap_icon)) == egui_view_bitmap_icon_get_mail_image());
 
     egui_view_set_pressed(EGUI_VIEW_OF(&test_bitmap_icon), 1);
-    egui_view_bitmap_icon_set_palette(EGUI_VIEW_OF(&test_bitmap_icon), EGUI_COLOR_HEX(0x0F7B45));
+    egui_view_bitmap_icon_set_palette(EGUI_VIEW_OF(&test_bitmap_icon), HCW_COLOR_SUCCESS);
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_bitmap_icon)->is_pressed);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x0F7B45).full, test_bitmap_icon.image_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_SUCCESS.full, test_bitmap_icon.image_color.full);
 
     egui_view_set_pressed(EGUI_VIEW_OF(&test_bitmap_icon), 1);
     egui_view_bitmap_icon_set_image(EGUI_VIEW_OF(&test_bitmap_icon), NULL);

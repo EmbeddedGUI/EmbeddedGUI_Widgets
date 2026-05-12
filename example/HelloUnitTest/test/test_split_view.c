@@ -385,7 +385,7 @@ static void test_split_view_font_palette_helpers_and_pane_listener(void)
     EGUI_TEST_ASSERT_TRUE(strcmp("...", label) == 0);
     sv_fit_text_to_width(NULL, "Open", label, sizeof(label), 20, 4);
     EGUI_TEST_ASSERT_TRUE(strcmp("Open", label) == 0);
-    EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(sample, EGUI_COLOR_DARK_GREY, 68).full, sv_mix_disabled(sample).full);
+    EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(sample, EGUI_COLOR_DARK_GREY, EGUI_ALPHA_MAKE(52)).full, sv_mix_disabled(sample).full);
 
     egui_view_split_view_toggle_pane(EGUI_VIEW_OF(&test_split_view));
     EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_split_view_get_pane_expanded(EGUI_VIEW_OF(&test_split_view)));

@@ -53,7 +53,7 @@ static void setup_preview_control(void)
     egui_view_set_size(EGUI_VIEW_OF(&preview_control), 72, 34);
     egui_view_glyphs_set_unicode_string(EGUI_VIEW_OF(&preview_control), "ID-42");
     egui_view_glyphs_set_font(EGUI_VIEW_OF(&preview_control), (const egui_font_t *)&egui_res_font_montserrat_10_4, 10);
-    egui_view_glyphs_set_fill(EGUI_VIEW_OF(&preview_control), EGUI_COLOR_HEX(0x0C7C73), EGUI_COLOR_HEX(0xBFDCD8));
+    egui_view_glyphs_set_fill(EGUI_VIEW_OF(&preview_control), HCW_COLOR_PRIMARY, HCW_COLOR_PRIMARY_SOFT);
     egui_view_glyphs_set_origin(EGUI_VIEW_OF(&preview_control), 8, 24);
     egui_view_glyphs_override_static_preview_api(EGUI_VIEW_OF(&preview_control), &preview_api);
 }
@@ -168,7 +168,7 @@ static void test_glyphs_init_defaults(void)
     EGUI_TEST_ASSERT_TRUE(strcmp("Glyphs", egui_view_glyphs_get_unicode_string(EGUI_VIEW_OF(&test_control))) == 0);
     EGUI_TEST_ASSERT_TRUE(egui_view_glyphs_get_font(EGUI_VIEW_OF(&test_control)) == (const egui_font_t *)&egui_res_font_montserrat_16_4);
     EGUI_TEST_ASSERT_EQUAL_INT(16, egui_view_glyphs_get_font_rendering_em_size(EGUI_VIEW_OF(&test_control)));
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x21303F).full, test_control.fill_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT.full, test_control.fill_color.full);
     assert_origin(EGUI_VIEW_OF(&test_control), 8, 18);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_MARGIN_PADDING
     EGUI_TEST_ASSERT_EQUAL_INT(2, EGUI_VIEW_OF(&test_control)->padding.left);
@@ -206,24 +206,24 @@ static void test_glyphs_styles(void)
     egui_view_set_pressed(EGUI_VIEW_OF(&test_control), 1);
     egui_view_glyphs_set_unicode_string(EGUI_VIEW_OF(&test_control), "A1 B2 C3");
     egui_view_glyphs_set_font(EGUI_VIEW_OF(&test_control), (const egui_font_t *)&egui_res_font_montserrat_14_4, 14);
-    egui_view_glyphs_set_fill(EGUI_VIEW_OF(&test_control), EGUI_COLOR_HEX(0x0F6CBD), EGUI_COLOR_HEX(0xCFE2F3));
+    egui_view_glyphs_set_fill(EGUI_VIEW_OF(&test_control), HCW_COLOR_PRIMARY, HCW_COLOR_PRIMARY_TINT);
     egui_view_glyphs_set_origin(EGUI_VIEW_OF(&test_control), 10, 20);
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_control)->is_pressed);
     EGUI_TEST_ASSERT_TRUE(strcmp("A1 B2 C3", egui_view_glyphs_get_unicode_string(EGUI_VIEW_OF(&test_control))) == 0);
     EGUI_TEST_ASSERT_EQUAL_INT(14, egui_view_glyphs_get_font_rendering_em_size(EGUI_VIEW_OF(&test_control)));
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x0F6CBD).full, test_control.fill_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PRIMARY.full, test_control.fill_color.full);
     assert_origin(EGUI_VIEW_OF(&test_control), 10, 20);
 
     egui_view_glyphs_set_unicode_string(EGUI_VIEW_OF(&test_control), "ID-42");
     egui_view_glyphs_set_font(EGUI_VIEW_OF(&test_control), (const egui_font_t *)&egui_res_font_montserrat_10_4, 10);
-    egui_view_glyphs_set_fill(EGUI_VIEW_OF(&test_control), EGUI_COLOR_HEX(0x0C7C73), EGUI_COLOR_HEX(0xBFDCD8));
+    egui_view_glyphs_set_fill(EGUI_VIEW_OF(&test_control), HCW_COLOR_PRIMARY, HCW_COLOR_PRIMARY_SOFT);
     egui_view_glyphs_set_origin(EGUI_VIEW_OF(&test_control), 8, 24);
     EGUI_TEST_ASSERT_TRUE(strcmp("ID-42", egui_view_glyphs_get_unicode_string(EGUI_VIEW_OF(&test_control))) == 0);
     EGUI_TEST_ASSERT_EQUAL_INT(10, egui_view_glyphs_get_font_rendering_em_size(EGUI_VIEW_OF(&test_control)));
     assert_origin(EGUI_VIEW_OF(&test_control), 8, 24);
 
     egui_view_glyphs_set_unicode_string(EGUI_VIEW_OF(&test_control), "Locked");
-    egui_view_glyphs_set_fill(EGUI_VIEW_OF(&test_control), EGUI_COLOR_HEX(0x65717E), EGUI_COLOR_HEX(0xCCD4DC));
+    egui_view_glyphs_set_fill(EGUI_VIEW_OF(&test_control), EGUI_COLOR_HEX(0x65717E), HCW_COLOR_BORDER);
     EGUI_TEST_ASSERT_TRUE(strcmp("Locked", egui_view_glyphs_get_unicode_string(EGUI_VIEW_OF(&test_control))) == 0);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x65717E).full, test_control.fill_color.full);
 }

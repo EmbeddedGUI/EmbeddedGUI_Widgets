@@ -42,7 +42,7 @@ static egui_view_api_t secondary_preview_api;
 static egui_view_api_t muted_preview_api;
 static uint8_t ui_ready;
 
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, HCW_COLOR_PAGE_BG, EGUI_ALPHA_100, 14);
 EGUI_BACKGROUND_PARAM_INIT(bg_page_panel_params, &bg_page_panel_param, NULL, NULL);
 EGUI_BACKGROUND_COLOR_STATIC_CONST_INIT(bg_page_panel, &bg_page_panel_params);
 
@@ -54,28 +54,28 @@ static image_control_snapshot_t primary_snapshots[] = {
                 "Landscape",
                 EGUI_VIEW_IMAGE_CONTROL_STRETCH_UNIFORM,
                 "Landscape / Uniform",
-                EGUI_COLOR_HEX(0x0F6CBD),
+                HCW_COLOR_PRIMARY,
         },
         {
                 NULL,
                 "Portrait",
                 EGUI_VIEW_IMAGE_CONTROL_STRETCH_UNIFORM,
                 "Portrait / Uniform",
-                EGUI_COLOR_HEX(0x8A5A00),
+                HCW_COLOR_WARNING_DARK,
         },
         {
                 NULL,
                 "Square",
                 EGUI_VIEW_IMAGE_CONTROL_STRETCH_FILL,
                 "Square / Fill",
-                EGUI_COLOR_HEX(0x0F7B45),
+                HCW_COLOR_SUCCESS,
         },
         {
                 NULL,
                 "Landscape",
                 EGUI_VIEW_IMAGE_CONTROL_STRETCH_NONE,
                 "Landscape / None",
-                EGUI_COLOR_HEX(0x4F5F70),
+                HCW_COLOR_TEXT_MUTED,
         },
 };
 
@@ -93,8 +93,8 @@ static void apply_primary_snapshot(uint8_t index)
 {
     const image_control_snapshot_t *snapshot = &primary_snapshots[index % PRIMARY_SNAPSHOT_COUNT];
 
-    egui_view_image_control_set_palette(EGUI_VIEW_OF(&primary_image), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xB8C7D7),
-                                        EGUI_COLOR_HEX(0x0F6CBD), EGUI_COLOR_HEX(0x798694));
+    egui_view_image_control_set_palette(EGUI_VIEW_OF(&primary_image), HCW_COLOR_SURFACE, HCW_COLOR_BORDER_STRONG,
+                                        HCW_COLOR_PRIMARY, HCW_COLOR_TEXT_SOFT);
     egui_view_image_control_set_source(EGUI_VIEW_OF(&primary_image), snapshot->image, snapshot->source_name);
     egui_view_image_control_set_stretch(EGUI_VIEW_OF(&primary_image), snapshot->stretch);
     egui_view_label_set_text(EGUI_VIEW_OF(&caption_label), snapshot->caption);
@@ -112,13 +112,13 @@ static void apply_primary_default_state(void)
 
 static void apply_preview_states(void)
 {
-    egui_view_image_control_set_palette(EGUI_VIEW_OF(&secondary_preview), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD0D9E2),
-                                        EGUI_COLOR_HEX(0x0F7B45), EGUI_COLOR_HEX(0x7E8A97));
+    egui_view_image_control_set_palette(EGUI_VIEW_OF(&secondary_preview), HCW_COLOR_SURFACE, HCW_COLOR_BORDER,
+                                        HCW_COLOR_SUCCESS, HCW_COLOR_TEXT_MUTED);
     egui_view_image_control_set_source(EGUI_VIEW_OF(&secondary_preview), egui_view_image_control_get_square_image(), "Square");
     egui_view_image_control_set_stretch(EGUI_VIEW_OF(&secondary_preview), EGUI_VIEW_IMAGE_CONTROL_STRETCH_FILL);
 
-    egui_view_image_control_set_palette(EGUI_VIEW_OF(&muted_preview), EGUI_COLOR_HEX(0xF7F9FB), EGUI_COLOR_HEX(0xD3DCE5),
-                                        EGUI_COLOR_HEX(0x6B7785), EGUI_COLOR_HEX(0x7E8A97));
+    egui_view_image_control_set_palette(EGUI_VIEW_OF(&muted_preview), HCW_COLOR_PANEL, HCW_COLOR_BORDER,
+                                        HCW_COLOR_TEXT_MUTED, HCW_COLOR_TEXT_MUTED);
     egui_view_image_control_set_source(EGUI_VIEW_OF(&muted_preview), egui_view_image_control_get_portrait_image(), "Portrait");
     egui_view_image_control_set_stretch(EGUI_VIEW_OF(&muted_preview), EGUI_VIEW_IMAGE_CONTROL_STRETCH_UNIFORM);
 
@@ -165,7 +165,7 @@ void test_init_ui(void)
     egui_view_label_set_text(EGUI_VIEW_OF(&title_label), title_text);
     egui_view_label_set_align_type(EGUI_VIEW_OF(&title_label), EGUI_ALIGN_CENTER);
     hello_custom_widgets_demo_set_label_font_with_min_height(EGUI_VIEW_OF(&title_label), (const egui_font_t *)&egui_res_font_montserrat_12_4);
-    egui_view_label_set_font_color(EGUI_VIEW_OF(&title_label), EGUI_COLOR_HEX(0x21303F), EGUI_ALPHA_100);
+    egui_view_label_set_font_color(EGUI_VIEW_OF(&title_label), HCW_COLOR_TEXT, EGUI_ALPHA_100);
     egui_view_set_margin(EGUI_VIEW_OF(&title_label), 0, 8, 0, 8);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label));
 
@@ -182,7 +182,7 @@ void test_init_ui(void)
     egui_view_label_set_text(EGUI_VIEW_OF(&caption_label), "Landscape / Uniform");
     egui_view_label_set_align_type(EGUI_VIEW_OF(&caption_label), EGUI_ALIGN_CENTER);
     hello_custom_widgets_demo_set_label_font_with_min_height(EGUI_VIEW_OF(&caption_label), (const egui_font_t *)&egui_res_font_montserrat_10_4);
-    egui_view_label_set_font_color(EGUI_VIEW_OF(&caption_label), EGUI_COLOR_HEX(0x0F6CBD), EGUI_ALPHA_100);
+    egui_view_label_set_font_color(EGUI_VIEW_OF(&caption_label), HCW_COLOR_PRIMARY, EGUI_ALPHA_100);
     egui_view_set_margin(EGUI_VIEW_OF(&caption_label), 0, 0, 0, 10);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&caption_label));
 

@@ -1,4 +1,6 @@
 #include "egui_view_badge_group.h"
+#include "../../hcw_text_center.h"
+#include "../../hcw_top_accent.h"
 
 static uint8_t egui_view_badge_group_clamp_snapshot_count(uint8_t count)
 {
@@ -219,7 +221,7 @@ static uint8_t egui_view_badge_group_focus_index(const egui_view_badge_group_sna
 
 static egui_color_t egui_view_badge_group_mix_disabled(egui_color_t color)
 {
-    return egui_rgb_mix(color, EGUI_COLOR_DARK_GREY, 68);
+    return egui_rgb_mix(color, HCW_COLOR_TEXT_SOFT, EGUI_ALPHA_MAKE(32));
 }
 
 static uint8_t egui_view_badge_group_clear_pressed_state(egui_view_t *self)
@@ -250,12 +252,14 @@ static egui_color_t egui_view_badge_group_tone_color(egui_view_badge_group_t *lo
 static void egui_view_badge_group_draw_text(const egui_font_t *font, egui_view_t *self, const char *text, const egui_region_t *region, uint8_t align,
                                             egui_color_t color)
 {
-    egui_region_t draw_region = *region;
+    egui_region_t draw_region;
 
-    if (text == NULL || text[0] == '\0')
+    if (font == NULL || text == NULL || text[0] == '\0' || region == NULL || region->size.width <= 0 || region->size.height <= 0)
     {
         return;
     }
+    draw_region = *region;
+    draw_region.location.y += hcw_text_center_get_delta(font, text, region, align);
     egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, font, text, &draw_region, align, color, self->alpha);
 }
 
@@ -300,26 +304,27 @@ static void egui_view_badge_group_draw_badge(egui_view_t *self, egui_view_badge_
     uint8_t is_enabled;
 
     tone_color = egui_view_badge_group_tone_color(local, item->tone);
-    fill_color = item->outlined ? local->surface_color : egui_rgb_mix(local->surface_color, tone_color, item->emphasized ? 10 : 6);
-    border_color = egui_rgb_mix(local->border_color, tone_color, focused ? 18 : (item->outlined ? 12 : 10));
-    text_color = focused ? egui_rgb_mix(local->text_color, tone_color, 20) : egui_rgb_mix(local->text_color, tone_color, item->emphasized ? 8 : 3);
-    meta_fill = egui_rgb_mix(local->surface_color, tone_color, item->emphasized ? 16 : 10);
-    meta_text = egui_rgb_mix(local->text_color, tone_color, 18);
+    fill_color = item->outlined ? HCW_COLOR_PANEL : egui_rgb_mix(HCW_COLOR_PANEL, tone_color, EGUI_ALPHA_MAKE(item->emphasized ? 6 : 3));
+    border_color = egui_rgb_mix(local->border_color, tone_color, EGUI_ALPHA_MAKE(focused ? 12 : (item->outlined ? 8 : 6)));
+    text_color = focused ? egui_rgb_mix(local->text_color, tone_color, EGUI_ALPHA_MAKE(18)) : local->text_color;
+    meta_fill = HCW_COLOR_PANEL;
+    meta_text = egui_rgb_mix(local->text_color, tone_color, EGUI_ALPHA_MAKE(18));
     radius = height / 2;
     is_enabled = egui_view_get_enable(self) ? 1 : 0;
 
     if (!is_enabled)
     {
-        fill_color = egui_view_badge_group_mix_disabled(fill_color);
-        border_color = egui_view_badge_group_mix_disabled(border_color);
+        fill_color = HCW_COLOR_PANEL;
+        border_color = egui_rgb_mix(local->border_color, local->muted_text_color, EGUI_ALPHA_MAKE(22));
         text_color = egui_view_badge_group_mix_disabled(text_color);
-        meta_fill = egui_view_badge_group_mix_disabled(meta_fill);
-        meta_text = egui_view_badge_group_mix_disabled(meta_text);
+        meta_fill = HCW_COLOR_PANEL;
+        meta_text = local->muted_text_color;
     }
 
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, x, y, width, height, radius, fill_color,
-                                          egui_color_alpha_mix(self->alpha, item->outlined ? 74 : (focused ? 96 : 90)));
-    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, x, y, width, height, radius, 1, border_color, egui_color_alpha_mix(self->alpha, focused ? 54 : 42));
+                                          egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(item->outlined ? 74 : (focused ? 96 : 90))));
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, x, y, width, height, radius, 1, border_color,
+                                     egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(focused ? 76 : 64)));
 
     meta_w = 0;
     if (egui_view_badge_group_has_text(item->meta))
@@ -339,7 +344,7 @@ static void egui_view_badge_group_draw_badge(egui_view_t *self, egui_view_badge_
         }
 
         egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, x + width - meta_w - 3, y + 2, meta_w, height - 4, (height - 4) / 2, meta_fill,
-                                              egui_color_alpha_mix(self->alpha, focused ? 80 : 74));
+                                              egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(focused ? 88 : 82)));
 
         text_region.location.x = x + width - meta_w - 3;
         text_region.location.y = y;
@@ -358,7 +363,7 @@ static void egui_view_badge_group_draw_badge(egui_view_t *self, egui_view_badge_
         text_region.size.width = 0;
     }
     egui_view_badge_group_fit_text_to_width(local->meta_font, item->label, label_text, sizeof(label_text), text_region.size.width, dense_layout ? 4 : 5);
-    egui_view_badge_group_draw_text(local->meta_font, self, label_text, &text_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, text_color);
+    egui_view_badge_group_draw_text(local->meta_font, self, label_text, &text_region, EGUI_ALIGN_CENTER, text_color);
 }
 
 void egui_view_badge_group_set_snapshots(egui_view_t *self, const egui_view_badge_group_snapshot_t *snapshots, uint8_t snapshot_count)
@@ -473,6 +478,9 @@ static void egui_view_badge_group_on_draw(egui_view_t *self)
     egui_dim_t y;
     egui_dim_t w;
     egui_dim_t h;
+    egui_dim_t radius;
+    egui_dim_t accent_h;
+    egui_dim_t content_y;
     egui_dim_t padding;
     egui_dim_t badge_h;
     egui_dim_t title_h;
@@ -515,39 +523,42 @@ static void egui_view_badge_group_on_draw(egui_view_t *self)
     focus_item = &snapshot->items[focus_index];
     dense_layout = egui_view_badge_group_should_use_dense_layout(&region);
     focus_color = egui_view_badge_group_tone_color(local, focus_item->tone);
-    card_fill = egui_rgb_mix(local->surface_color, focus_color, dense_layout ? 3 : 4);
-    card_border = egui_rgb_mix(local->border_color, focus_color, dense_layout ? 7 : 10);
+    card_fill = HCW_COLOR_PANEL;
+    card_border = egui_rgb_mix(local->border_color, focus_color, EGUI_ALPHA_MAKE(dense_layout ? 5 : 6));
     title_color = local->text_color;
-    body_color = egui_rgb_mix(local->muted_text_color, local->text_color, dense_layout ? 10 : 16);
-    footer_color = egui_rgb_mix(local->muted_text_color, focus_color, dense_layout ? 8 : 12);
-    footer_fill = egui_rgb_mix(local->surface_color, focus_color, dense_layout ? 4 : 6);
-    footer_border = egui_rgb_mix(local->border_color, focus_color, dense_layout ? 8 : 10);
-    eyebrow_fill = egui_rgb_mix(local->surface_color, focus_color, dense_layout ? 7 : 10);
-    eyebrow_border = egui_rgb_mix(local->border_color, focus_color, dense_layout ? 10 : 14);
-    focus_fill = egui_rgb_mix(local->surface_color, focus_color, dense_layout ? 8 : 10);
-    focus_border = egui_rgb_mix(local->border_color, focus_color, dense_layout ? 10 : 14);
+    body_color = egui_rgb_mix(local->muted_text_color, local->text_color, EGUI_ALPHA_MAKE(dense_layout ? 18 : 24));
+    footer_color = egui_rgb_mix(local->muted_text_color, focus_color, EGUI_ALPHA_MAKE(dense_layout ? 8 : 10));
+    footer_fill = HCW_COLOR_PANEL;
+    footer_border = egui_rgb_mix(local->border_color, focus_color, EGUI_ALPHA_MAKE(dense_layout ? 5 : 6));
+    eyebrow_fill = egui_rgb_mix(HCW_COLOR_PANEL, focus_color, EGUI_ALPHA_MAKE(dense_layout ? 4 : 5));
+    eyebrow_border = egui_rgb_mix(local->border_color, focus_color, EGUI_ALPHA_MAKE(dense_layout ? 6 : 8));
+    focus_fill = egui_rgb_mix(HCW_COLOR_PANEL, focus_color, EGUI_ALPHA_MAKE(dense_layout ? 5 : 6));
+    focus_border = egui_rgb_mix(local->border_color, focus_color, EGUI_ALPHA_MAKE(dense_layout ? 6 : 8));
 
     if (!egui_view_get_enable(self))
     {
-        focus_color = egui_view_badge_group_mix_disabled(focus_color);
-        card_fill = egui_view_badge_group_mix_disabled(card_fill);
-        card_border = egui_view_badge_group_mix_disabled(card_border);
+        focus_color = local->muted_text_color;
+        card_fill = HCW_COLOR_PANEL;
+        card_border = egui_rgb_mix(local->border_color, local->muted_text_color, EGUI_ALPHA_MAKE(22));
         title_color = egui_view_badge_group_mix_disabled(title_color);
-        body_color = egui_view_badge_group_mix_disabled(body_color);
-        footer_color = egui_view_badge_group_mix_disabled(footer_color);
-        footer_fill = egui_view_badge_group_mix_disabled(footer_fill);
-        footer_border = egui_view_badge_group_mix_disabled(footer_border);
-        eyebrow_fill = egui_view_badge_group_mix_disabled(eyebrow_fill);
-        eyebrow_border = egui_view_badge_group_mix_disabled(eyebrow_border);
-        focus_fill = egui_view_badge_group_mix_disabled(focus_fill);
-        focus_border = egui_view_badge_group_mix_disabled(focus_border);
+        body_color = local->muted_text_color;
+        footer_color = local->muted_text_color;
+        footer_fill = HCW_COLOR_PANEL;
+        footer_border = egui_rgb_mix(local->border_color, local->muted_text_color, EGUI_ALPHA_MAKE(22));
+        eyebrow_fill = HCW_COLOR_PANEL;
+        eyebrow_border = egui_rgb_mix(local->border_color, local->muted_text_color, EGUI_ALPHA_MAKE(20));
+        focus_fill = HCW_COLOR_PANEL;
+        focus_border = egui_rgb_mix(local->border_color, local->muted_text_color, EGUI_ALPHA_MAKE(20));
     }
 
     x = region.location.x;
     y = region.location.y;
     w = region.size.width;
     h = region.size.height;
+    radius = dense_layout ? 8 : 10;
+    accent_h = dense_layout ? 3 : 4;
     padding = dense_layout ? 7 : 9;
+    content_y = y + hcw_top_accent_content_offset(&region, radius, accent_h, dense_layout ? 2 : 3);
     badge_h = egui_view_badge_group_get_badge_height(local, dense_layout);
     title_h = egui_view_badge_group_get_title_height(local, dense_layout);
     body_h = egui_view_badge_group_get_body_height(local, dense_layout);
@@ -555,7 +566,7 @@ static void egui_view_badge_group_on_draw(egui_view_t *self)
     badge_gap = dense_layout ? 3 : 4;
     footer_h = egui_view_badge_group_get_footer_height(local, dense_layout);
     footer_y = y + h - padding - footer_h;
-    title_y = y + padding + badge_h + 4;
+    title_y = content_y + badge_h + 4;
     body_y = title_y + title_h + 2;
     badges_y = body_y;
     if (body_h > 0)
@@ -577,16 +588,27 @@ static void egui_view_badge_group_on_draw(egui_view_t *self)
     focus_pill_x = x + padding + 4;
     focus_pill_y = footer_y + (footer_h - focus_pill_h) / 2;
 
-    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, x, y, w, h, dense_layout ? 8 : 10, card_fill, egui_color_alpha_mix(self->alpha, 100));
-    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, x, y, w, h, dense_layout ? 8 : 10, 1, card_border, egui_color_alpha_mix(self->alpha, 58));
-    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, x + 2, y + 2, w - 4, dense_layout ? 3 : 4, dense_layout ? 6 : 8, focus_color,
-                                          egui_color_alpha_mix(self->alpha, 14));
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, x, y, w, h, radius, card_fill,
+                                          egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(100)));
+    {
+        egui_region_t card_region;
 
-    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, x + padding, y + padding, eyebrow_w, badge_h, badge_h / 2, eyebrow_fill, egui_color_alpha_mix(self->alpha, 82));
-    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, x + padding, y + padding, eyebrow_w, badge_h, badge_h / 2, 1, eyebrow_border, egui_color_alpha_mix(self->alpha, 40));
+        card_region.location.x = x;
+        card_region.location.y = y;
+        card_region.size.width = w;
+        card_region.size.height = h;
+        hcw_top_accent_draw(&card_region, radius, accent_h, focus_color, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(24)));
+    }
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, x, y, w, h, radius, 1, card_border,
+                                     egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(76)));
+
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, x + padding, content_y, eyebrow_w, badge_h, badge_h / 2, eyebrow_fill,
+                                          egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(88)));
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, x + padding, content_y, eyebrow_w, badge_h, badge_h / 2, 1, eyebrow_border,
+                                     egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(76)));
 
     text_region.location.x = x + padding;
-    text_region.location.y = y + padding;
+    text_region.location.y = content_y;
     text_region.size.width = eyebrow_w;
     text_region.size.height = badge_h;
     egui_view_badge_group_fit_text_to_width(local->meta_font, snapshot->eyebrow, eyebrow_text, sizeof(eyebrow_text), text_region.size.width - 4, 4);
@@ -643,16 +665,16 @@ static void egui_view_badge_group_on_draw(egui_view_t *self)
     }
 
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, x + padding, footer_y, w - padding * 2, footer_h, dense_layout ? 6 : 8, footer_fill,
-                                          egui_color_alpha_mix(self->alpha, dense_layout ? 16 : 20));
+                                          egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(dense_layout ? 54 : 62)));
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, x + padding, footer_y, w - padding * 2, footer_h, dense_layout ? 6 : 8, 1, footer_border,
-                                     egui_color_alpha_mix(self->alpha, dense_layout ? 22 : 26));
+                                     egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(dense_layout ? 70 : 76)));
 
     if (!dense_layout)
     {
         egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, focus_pill_x, focus_pill_y, focus_pill_w, focus_pill_h, focus_pill_h / 2, focus_fill,
-                                              egui_color_alpha_mix(self->alpha, 78));
+                                              egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(88)));
         egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, focus_pill_x, focus_pill_y, focus_pill_w, focus_pill_h, focus_pill_h / 2, 1, focus_border,
-                                         egui_color_alpha_mix(self->alpha, 38));
+                                         egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(76)));
 
         text_region.location.x = focus_pill_x;
         text_region.location.y = focus_pill_y;
@@ -770,14 +792,14 @@ void egui_view_badge_group_init(egui_view_t *self)
     local->snapshots = NULL;
     local->font = (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT;
     local->meta_font = (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT;
-    local->surface_color = EGUI_COLOR_HEX(0xFFFFFF);
-    local->border_color = EGUI_COLOR_HEX(0xD2DBE3);
-    local->text_color = EGUI_COLOR_HEX(0x1A2734);
-    local->muted_text_color = EGUI_COLOR_HEX(0x6B7A89);
-    local->accent_color = EGUI_COLOR_HEX(0x0F6CBD);
-    local->success_color = EGUI_COLOR_HEX(0x0F7B45);
-    local->warning_color = EGUI_COLOR_HEX(0x9D5D00);
-    local->neutral_color = EGUI_COLOR_HEX(0x7A8796);
+    local->surface_color = HCW_COLOR_SURFACE;
+    local->border_color = HCW_COLOR_BORDER;
+    local->text_color = HCW_COLOR_TEXT;
+    local->muted_text_color = HCW_COLOR_TEXT_MUTED;
+    local->accent_color = HCW_COLOR_PRIMARY;
+    local->success_color = HCW_COLOR_SUCCESS;
+    local->warning_color = HCW_COLOR_WARNING;
+    local->neutral_color = HCW_COLOR_NEUTRAL;
     local->snapshot_count = 0;
     local->current_snapshot = 0;
 }

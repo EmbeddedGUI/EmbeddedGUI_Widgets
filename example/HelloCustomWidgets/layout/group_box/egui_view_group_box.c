@@ -20,7 +20,7 @@ static uint8_t egui_view_group_box_clear_pressed_state(egui_view_t *self)
 
 static egui_color_t egui_view_group_box_mix_disabled(egui_color_t color)
 {
-    return egui_rgb_mix(color, EGUI_COLOR_HEX(0x8A97A5), 58);
+    return egui_rgb_mix(color, HCW_COLOR_TEXT_SOFT, EGUI_ALPHA_MAKE(38));
 }
 
 static egui_dim_t egui_view_group_box_clamp_radius(egui_dim_t radius)
@@ -113,11 +113,63 @@ static egui_dim_t egui_view_group_box_align_y(egui_dim_t parent_height, egui_dim
     return 0;
 }
 
+static void egui_view_group_box_constrain_child_backdrop(egui_region_t *child_region, const egui_region_t *container_region, egui_dim_t inset)
+{
+    egui_dim_t min_x;
+    egui_dim_t min_y;
+    egui_dim_t max_right;
+    egui_dim_t max_bottom;
+
+    if (child_region == NULL || container_region == NULL)
+    {
+        return;
+    }
+
+    if (inset < 0)
+    {
+        inset = 0;
+    }
+    min_x = container_region->location.x + inset;
+    min_y = container_region->location.y + inset;
+    max_right = container_region->location.x + container_region->size.width - inset;
+    max_bottom = container_region->location.y + container_region->size.height - inset;
+
+    if (child_region->location.x < min_x)
+    {
+        child_region->size.width -= min_x - child_region->location.x;
+        child_region->location.x = min_x;
+    }
+    if (child_region->location.y < min_y)
+    {
+        child_region->size.height -= min_y - child_region->location.y;
+        child_region->location.y = min_y;
+    }
+    if (child_region->location.x + child_region->size.width > max_right)
+    {
+        child_region->size.width = max_right - child_region->location.x;
+    }
+    if (child_region->location.y + child_region->size.height > max_bottom)
+    {
+        child_region->size.height = max_bottom - child_region->location.y;
+    }
+    if (child_region->size.width < 0)
+    {
+        child_region->size.width = 0;
+    }
+    if (child_region->size.height < 0)
+    {
+        child_region->size.height = 0;
+    }
+}
+
 static void egui_view_group_box_get_content_region(egui_view_t *self, egui_region_t *content_region)
 {
     egui_view_group_box_t *local = egui_view_group_box_local(self);
 
-    egui_view_get_work_region(self, content_region);
+    content_region->location.x = local->content_padding_left;
+    content_region->location.y = local->content_padding_top;
+    content_region->size.width = self->region.size.width - (local->content_padding_left + local->content_padding_right);
+    content_region->size.height = self->region.size.height - (local->content_padding_top + local->content_padding_bottom);
     if (content_region->size.width < 0)
     {
         content_region->size.width = 0;
@@ -152,9 +204,9 @@ static void egui_view_group_box_on_draw(egui_view_t *self)
     egui_color_t accent_color = local->accent_color;
     egui_dim_t radius = local->corner_radius;
     egui_alpha_t border_alpha = EGUI_ALPHA_100;
-    egui_alpha_t header_alpha = local->compact_mode ? 78 : 88;
-    egui_alpha_t content_alpha = local->compact_mode ? 42 : 54;
-    egui_alpha_t accent_alpha = local->compact_mode ? 34 : 48;
+    egui_alpha_t header_alpha = EGUI_ALPHA_MAKE(local->compact_mode ? 78 : 88);
+    egui_alpha_t content_alpha = EGUI_ALPHA_MAKE(local->compact_mode ? 42 : 54);
+    egui_alpha_t accent_alpha = EGUI_ALPHA_MAKE(local->compact_mode ? 34 : 48);
 
     region.location.x = 0;
     region.location.y = 0;
@@ -171,15 +223,15 @@ static void egui_view_group_box_on_draw(egui_view_t *self)
     }
     if (local->read_only_mode)
     {
-        surface_color = egui_rgb_mix(surface_color, EGUI_COLOR_HEX(0xF7F9FB), 52);
-        border_color = egui_rgb_mix(border_color, EGUI_COLOR_HEX(0xAEB8C2), 50);
-        header_surface_color = egui_rgb_mix(header_surface_color, EGUI_COLOR_HEX(0xEEF2F6), 56);
-        content_surface_color = egui_rgb_mix(content_surface_color, EGUI_COLOR_HEX(0xEEF2F6), 52);
-        accent_color = egui_rgb_mix(accent_color, EGUI_COLOR_HEX(0x7A8794), 58);
-        border_alpha = 70;
-        header_alpha = 66;
-        content_alpha = 36;
-        accent_alpha = 18;
+        surface_color = egui_rgb_mix(surface_color, HCW_COLOR_SURFACE_SUBTLE, EGUI_ALPHA_MAKE(34));
+        border_color = egui_rgb_mix(border_color, HCW_COLOR_TEXT_SOFT, EGUI_ALPHA_MAKE(32));
+        header_surface_color = egui_rgb_mix(header_surface_color, HCW_COLOR_SURFACE_DISABLED, EGUI_ALPHA_MAKE(36));
+        content_surface_color = egui_rgb_mix(content_surface_color, HCW_COLOR_SURFACE_DISABLED, EGUI_ALPHA_MAKE(34));
+        accent_color = egui_rgb_mix(accent_color, HCW_COLOR_TEXT_MUTED, EGUI_ALPHA_MAKE(36));
+        border_alpha = EGUI_ALPHA_MAKE(82);
+        header_alpha = EGUI_ALPHA_MAKE(76);
+        content_alpha = EGUI_ALPHA_MAKE(48);
+        accent_alpha = EGUI_ALPHA_MAKE(30);
     }
     if (!egui_view_get_enable(self))
     {
@@ -188,10 +240,10 @@ static void egui_view_group_box_on_draw(egui_view_t *self)
         header_surface_color = egui_view_group_box_mix_disabled(header_surface_color);
         content_surface_color = egui_view_group_box_mix_disabled(content_surface_color);
         accent_color = egui_view_group_box_mix_disabled(accent_color);
-        border_alpha = 50;
-        header_alpha = 50;
-        content_alpha = 28;
-        accent_alpha = 14;
+        border_alpha = EGUI_ALPHA_MAKE(64);
+        header_alpha = EGUI_ALPHA_MAKE(62);
+        content_alpha = EGUI_ALPHA_MAKE(40);
+        accent_alpha = EGUI_ALPHA_MAKE(24);
     }
 
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, region.location.x, region.location.y, region.size.width, region.size.height, radius,
@@ -208,30 +260,20 @@ static void egui_view_group_box_on_draw(egui_view_t *self)
     if (local->header != NULL)
     {
         egui_region_t header_region;
+        egui_dim_t header_pad_x = local->compact_mode ? 8 : 10;
+        egui_dim_t header_pad_y = local->compact_mode ? 3 : 4;
 
-        header_region.location.x = local->header->region.location.x - (local->compact_mode ? 4 : 6);
-        header_region.location.y = local->header->region.location.y - (local->compact_mode ? 2 : 3);
-        header_region.size.width = local->header->region.size.width + (local->compact_mode ? 8 : 12);
-        header_region.size.height = local->header->region.size.height + (local->compact_mode ? 4 : 6);
-        if (header_region.location.x < 1)
-        {
-            header_region.location.x = 1;
-        }
-        if (header_region.location.y < 1)
-        {
-            header_region.location.y = 1;
-        }
+        header_region.location.x = local->header->region.location.x - header_pad_x;
+        header_region.location.y = local->header->region.location.y - header_pad_y;
+        header_region.size.width = local->header->region.size.width + header_pad_x * 2;
+        header_region.size.height = local->header->region.size.height + header_pad_y * 2;
+        egui_view_group_box_constrain_child_backdrop(&header_region, &region, local->border_width);
         egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, header_region.location.x, header_region.location.y, header_region.size.width,
                                               header_region.size.height, local->compact_mode ? 5 : 7, header_surface_color,
                                               egui_color_alpha_mix(self->alpha, header_alpha));
     }
-
-    if (region.size.width > 22 && region.size.height > 14)
-    {
-        egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, region.location.x + 8, region.location.y + 7,
-                                              local->compact_mode ? 20 : 28, local->compact_mode ? 2 : 3, 1, accent_color,
-                                              egui_color_alpha_mix(self->alpha, accent_alpha));
-    }
+    EGUI_UNUSED(accent_color);
+    EGUI_UNUSED(accent_alpha);
 
     if (local->border_width > 0)
     {
@@ -322,7 +364,10 @@ void egui_view_group_box_layout_childs(egui_view_t *self)
     egui_region_t work_region;
     egui_region_t content_region;
 
-    egui_view_get_work_region(self, &work_region);
+    work_region.location.x = local->content_padding_left;
+    work_region.location.y = local->content_padding_top;
+    work_region.size.width = self->region.size.width - (local->content_padding_left + local->content_padding_right);
+    work_region.size.height = self->region.size.height - (local->content_padding_top + local->content_padding_bottom);
     if (work_region.size.width < 0)
     {
         work_region.size.width = 0;
@@ -336,7 +381,7 @@ void egui_view_group_box_layout_childs(egui_view_t *self)
     {
         egui_dim_t header_x;
         egui_dim_t header_width = local->header->region.size.width;
-        egui_dim_t header_parent_width = work_region.size.width - local->header_indent;
+        egui_dim_t header_parent_width = work_region.size.width - local->header_indent * 2;
 
         if (header_parent_width < 0)
         {
@@ -361,8 +406,13 @@ void egui_view_group_box_layout_childs(egui_view_t *self)
 void egui_view_group_box_set_padding(egui_view_t *self, egui_dim_margin_padding_t left, egui_dim_margin_padding_t right,
                                      egui_dim_margin_padding_t top, egui_dim_margin_padding_t bottom)
 {
+    egui_view_group_box_t *local = egui_view_group_box_local(self);
+
     egui_view_group_box_clear_pressed_state(self);
-    egui_view_set_padding(self, left, right, top, bottom);
+    local->content_padding_left = left;
+    local->content_padding_right = right;
+    local->content_padding_top = top;
+    local->content_padding_bottom = bottom;
     egui_view_group_box_layout_childs(self);
     egui_view_invalidate(self);
 }
@@ -515,14 +565,14 @@ uint8_t egui_view_group_box_get_read_only_mode(egui_view_t *self)
 
 void egui_view_group_box_apply_standard_style(egui_view_t *self)
 {
-    egui_view_group_box_set_palette(self, EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xC7D3DE), EGUI_COLOR_HEX(0xEDF5FD),
-                                    EGUI_COLOR_HEX(0xF6FAFD), EGUI_COLOR_HEX(0x0F6CBD));
+    egui_view_group_box_set_palette(self, HCW_COLOR_SURFACE, HCW_COLOR_BORDER_STRONG, HCW_COLOR_PRIMARY_TINT,
+                                    HCW_COLOR_PANEL, HCW_COLOR_PRIMARY);
     egui_view_group_box_set_corner_radius(self, 8);
     egui_view_group_box_set_border_width(self, 1);
     egui_view_group_box_set_header_gap(self, 7);
     egui_view_group_box_set_header_indent(self, 10);
     egui_view_group_box_set_padding(self, 12, 12, 10, 10);
-    egui_view_group_box_set_header_align_type(self, EGUI_ALIGN_TOP_LEFT);
+    egui_view_group_box_set_header_align_type(self, EGUI_ALIGN_TOP_MID);
     egui_view_group_box_set_content_align_type(self, EGUI_ALIGN_CENTER);
     egui_view_group_box_set_compact_mode(self, 0);
     egui_view_group_box_set_read_only_mode(self, 0);
@@ -530,14 +580,14 @@ void egui_view_group_box_apply_standard_style(egui_view_t *self)
 
 void egui_view_group_box_apply_accent_style(egui_view_t *self)
 {
-    egui_view_group_box_set_palette(self, EGUI_COLOR_HEX(0xF8FBFF), EGUI_COLOR_HEX(0xA7CBEA), EGUI_COLOR_HEX(0xEAF4FE),
-                                    EGUI_COLOR_HEX(0xF4F9FF), EGUI_COLOR_HEX(0x0F6CBD));
+    egui_view_group_box_set_palette(self, HCW_COLOR_PANEL, HCW_COLOR_PRIMARY_SOFT, HCW_COLOR_PRIMARY_TINT,
+                                    HCW_COLOR_PRIMARY_TINT, HCW_COLOR_PRIMARY);
     egui_view_group_box_set_corner_radius(self, 8);
     egui_view_group_box_set_border_width(self, 1);
     egui_view_group_box_set_header_gap(self, 7);
     egui_view_group_box_set_header_indent(self, 10);
     egui_view_group_box_set_padding(self, 12, 12, 10, 10);
-    egui_view_group_box_set_header_align_type(self, EGUI_ALIGN_TOP_LEFT);
+    egui_view_group_box_set_header_align_type(self, EGUI_ALIGN_TOP_MID);
     egui_view_group_box_set_content_align_type(self, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER);
     egui_view_group_box_set_compact_mode(self, 0);
     egui_view_group_box_set_read_only_mode(self, 0);
@@ -545,14 +595,14 @@ void egui_view_group_box_apply_accent_style(egui_view_t *self)
 
 void egui_view_group_box_apply_compact_style(egui_view_t *self)
 {
-    egui_view_group_box_set_palette(self, EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD3DCE5), EGUI_COLOR_HEX(0xF3F7FA),
-                                    EGUI_COLOR_HEX(0xF7FAFC), EGUI_COLOR_HEX(0x0F7B45));
+    egui_view_group_box_set_palette(self, HCW_COLOR_SURFACE, HCW_COLOR_BORDER, HCW_COLOR_PANEL,
+                                    HCW_COLOR_PANEL, HCW_COLOR_SUCCESS);
     egui_view_group_box_set_corner_radius(self, 6);
     egui_view_group_box_set_border_width(self, 1);
     egui_view_group_box_set_header_gap(self, 5);
     egui_view_group_box_set_header_indent(self, 8);
     egui_view_group_box_set_padding(self, 8, 8, 6, 6);
-    egui_view_group_box_set_header_align_type(self, EGUI_ALIGN_TOP_LEFT);
+    egui_view_group_box_set_header_align_type(self, EGUI_ALIGN_TOP_MID);
     egui_view_group_box_set_content_align_type(self, EGUI_ALIGN_TOP_LEFT);
     egui_view_group_box_set_compact_mode(self, 1);
     egui_view_group_box_set_read_only_mode(self, 0);
@@ -560,14 +610,14 @@ void egui_view_group_box_apply_compact_style(egui_view_t *self)
 
 void egui_view_group_box_apply_read_only_style(egui_view_t *self)
 {
-    egui_view_group_box_set_palette(self, EGUI_COLOR_HEX(0xF7F9FB), EGUI_COLOR_HEX(0xD8E0E8), EGUI_COLOR_HEX(0xEEF2F6),
-                                    EGUI_COLOR_HEX(0xF3F6F9), EGUI_COLOR_HEX(0x6B7785));
+    egui_view_group_box_set_palette(self, HCW_COLOR_SURFACE_SUBTLE, HCW_COLOR_BORDER_STRONG, HCW_COLOR_SURFACE_SUBTLE,
+                                    HCW_COLOR_PANEL, HCW_COLOR_TEXT_SOFT);
     egui_view_group_box_set_corner_radius(self, 6);
     egui_view_group_box_set_border_width(self, 1);
     egui_view_group_box_set_header_gap(self, 5);
     egui_view_group_box_set_header_indent(self, 8);
     egui_view_group_box_set_padding(self, 8, 8, 6, 6);
-    egui_view_group_box_set_header_align_type(self, EGUI_ALIGN_TOP_LEFT);
+    egui_view_group_box_set_header_align_type(self, EGUI_ALIGN_TOP_MID);
     egui_view_group_box_set_content_align_type(self, EGUI_ALIGN_CENTER);
     egui_view_group_box_set_compact_mode(self, 1);
     egui_view_group_box_set_read_only_mode(self, 1);
@@ -615,19 +665,22 @@ void egui_view_group_box_init(egui_view_t *self)
 
     local->header = NULL;
     local->content = NULL;
-    local->surface_color = EGUI_COLOR_HEX(0xFFFFFF);
-    local->border_color = EGUI_COLOR_HEX(0xC7D3DE);
-    local->header_surface_color = EGUI_COLOR_HEX(0xEDF5FD);
-    local->content_surface_color = EGUI_COLOR_HEX(0xF6FAFD);
-    local->accent_color = EGUI_COLOR_HEX(0x0F6CBD);
+    local->surface_color = HCW_COLOR_SURFACE;
+    local->border_color = HCW_COLOR_BORDER_STRONG;
+    local->header_surface_color = HCW_COLOR_PRIMARY_TINT;
+    local->content_surface_color = HCW_COLOR_PANEL;
+    local->accent_color = HCW_COLOR_PRIMARY;
     local->corner_radius = 8;
     local->border_width = 1;
     local->header_gap = 7;
     local->header_indent = 10;
-    local->header_align_type = EGUI_ALIGN_TOP_LEFT;
+    local->content_padding_left = 12;
+    local->content_padding_right = 12;
+    local->content_padding_top = 10;
+    local->content_padding_bottom = 10;
+    local->header_align_type = EGUI_ALIGN_TOP_MID;
     local->content_align_type = EGUI_ALIGN_CENTER;
     local->compact_mode = 0;
     local->read_only_mode = 0;
-    egui_view_set_padding(self, 12, 12, 10, 10);
     egui_view_set_view_name(self, "egui_view_group_box");
 }

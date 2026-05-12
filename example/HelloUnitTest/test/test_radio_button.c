@@ -95,9 +95,9 @@ static void setup_preview_group(uint8_t selected_index)
         egui_view_set_size(EGUI_VIEW_OF(&preview_buttons[i]), 104, 24);
         hcw_radio_button_set_font(EGUI_VIEW_OF(&preview_buttons[i]), (const egui_font_t *)&egui_res_font_montserrat_10_4);
         hcw_radio_button_apply_standard_style(EGUI_VIEW_OF(&preview_buttons[i]));
-        preview_buttons[i].circle_color = EGUI_COLOR_HEX(0xC7D8CE);
-        preview_buttons[i].dot_color = EGUI_COLOR_HEX(0x0C7C73);
-        preview_buttons[i].text_color = EGUI_COLOR_HEX(0x21303F);
+        preview_buttons[i].circle_color = HCW_COLOR_BORDER;
+        preview_buttons[i].dot_color = HCW_COLOR_PRIMARY;
+        preview_buttons[i].text_color = HCW_COLOR_TEXT;
         preview_buttons[i].text_gap = 6;
         hcw_radio_button_set_text(EGUI_VIEW_OF(&preview_buttons[i]), texts[i]);
         hcw_radio_button_override_static_preview_api(EGUI_VIEW_OF(&preview_buttons[i]), &preview_button_api[i]);
@@ -211,9 +211,9 @@ static void test_radio_button_style_helper_updates_palette_and_clear_pressed_sta
     egui_view_set_pressed(EGUI_VIEW_OF(local), 1);
     hcw_radio_button_apply_standard_style(EGUI_VIEW_OF(local));
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(local)->is_pressed);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xC6D2DE).full, local->circle_color.full);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x2563EB).full, local->dot_color.full);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x1A2734).full, local->text_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_BORDER.full, local->circle_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PRIMARY.full, local->dot_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT.full, local->text_color.full);
     EGUI_TEST_ASSERT_EQUAL_INT(8, local->text_gap);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_RADIO_BUTTON_MARK_STYLE_DOT, local->mark_style);
 }

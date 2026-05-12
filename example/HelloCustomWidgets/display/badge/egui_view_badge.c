@@ -1,4 +1,5 @@
 #include "egui_view_badge.h"
+#include "../../hcw_text_center.h"
 
 #include <string.h>
 
@@ -12,7 +13,7 @@ struct egui_view_badge_metrics
 
 static egui_color_t egui_view_badge_mix_disabled(egui_color_t color)
 {
-    return egui_rgb_mix(color, EGUI_COLOR_HEX(0x83909D), 48);
+    return egui_rgb_mix(color, HCW_COLOR_TEXT_SOFT, EGUI_ALPHA_MAKE(38));
 }
 
 static uint8_t egui_view_badge_text_len(const char *text)
@@ -303,6 +304,19 @@ static void egui_view_badge_draw_text(const egui_font_t *font, egui_view_t *self
     egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, font, text, &draw_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, color, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_100));
 }
 
+static void egui_view_badge_draw_center_text(const egui_font_t *font, egui_view_t *self, const char *text, const egui_region_t *region, egui_color_t color)
+{
+    egui_region_t draw_region = *region;
+
+    if (text == NULL || text[0] == '\0' || region->size.width <= 0 || region->size.height <= 0)
+    {
+        return;
+    }
+
+    draw_region.location.y += hcw_text_center_get_delta(font, text, region, EGUI_ALIGN_CENTER);
+    egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, font, text, &draw_region, EGUI_ALIGN_CENTER, color, self->alpha);
+}
+
 static void egui_view_badge_on_draw(egui_view_t *self)
 {
     EGUI_LOCAL_INIT(egui_view_badge_t);
@@ -313,7 +327,7 @@ static void egui_view_badge_on_draw(egui_view_t *self)
     egui_color_t border_color = local->border_color;
     egui_color_t text_color = local->text_color;
     egui_color_t accent_color = local->accent_color;
-    egui_alpha_t border_alpha = local->subtle_mode ? 28 : (local->outline_mode ? 54 : 74);
+    egui_alpha_t border_alpha = local->subtle_mode ? EGUI_ALPHA_MAKE(44) : (local->outline_mode ? EGUI_ALPHA_MAKE(62) : EGUI_ALPHA_MAKE(78));
     egui_dim_t radius = 10;
 
     egui_view_get_work_region(self, &region);
@@ -338,8 +352,7 @@ static void egui_view_badge_on_draw(egui_view_t *self)
 
     if (metrics.show_icon)
     {
-        egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, egui_view_badge_get_icon_font(local), local->icon, &metrics.icon_region, EGUI_ALIGN_CENTER, accent_color,
-                                      egui_color_alpha_mix(self->alpha, EGUI_ALPHA_100));
+        egui_view_badge_draw_center_text(egui_view_badge_get_icon_font(local), self, local->icon, &metrics.icon_region, accent_color);
     }
     egui_view_badge_fit_text_to_width(egui_view_badge_get_text_font(local), local->text, fitted_text, sizeof(fitted_text), metrics.text_region.size.width,
                                       5);
@@ -353,8 +366,8 @@ void egui_view_badge_apply_filled_style(egui_view_t *self)
     egui_view_badge_clear_pressed_state(self);
     local->outline_mode = 0;
     local->subtle_mode = 0;
-    local->surface_color = EGUI_COLOR_HEX(0x0F6CBD);
-    local->border_color = EGUI_COLOR_HEX(0x0F6CBD);
+    local->surface_color = HCW_COLOR_PRIMARY;
+    local->border_color = HCW_COLOR_PRIMARY;
     local->text_color = EGUI_COLOR_WHITE;
     local->accent_color = EGUI_COLOR_WHITE;
     egui_view_invalidate(self);
@@ -367,10 +380,10 @@ void egui_view_badge_apply_outline_style(egui_view_t *self)
     egui_view_badge_clear_pressed_state(self);
     local->outline_mode = 1;
     local->subtle_mode = 0;
-    local->surface_color = EGUI_COLOR_HEX(0xFFFFFF);
-    local->border_color = EGUI_COLOR_HEX(0xB3C7E5);
-    local->text_color = EGUI_COLOR_HEX(0x0F548C);
-    local->accent_color = EGUI_COLOR_HEX(0x0F6CBD);
+    local->surface_color = HCW_COLOR_SURFACE;
+    local->border_color = HCW_COLOR_PRIMARY_SOFT;
+    local->text_color = HCW_COLOR_PRIMARY_DARK;
+    local->accent_color = HCW_COLOR_PRIMARY;
     egui_view_invalidate(self);
 }
 
@@ -381,10 +394,10 @@ void egui_view_badge_apply_subtle_style(egui_view_t *self)
     egui_view_badge_clear_pressed_state(self);
     local->outline_mode = 0;
     local->subtle_mode = 1;
-    local->surface_color = EGUI_COLOR_HEX(0xF3F7FB);
-    local->border_color = EGUI_COLOR_HEX(0xD6E3F3);
-    local->text_color = EGUI_COLOR_HEX(0x12456F);
-    local->accent_color = EGUI_COLOR_HEX(0x0F6CBD);
+    local->surface_color = HCW_COLOR_PANEL;
+    local->border_color = HCW_COLOR_PRIMARY_TINT;
+    local->text_color = HCW_COLOR_PRIMARY_DARK;
+    local->accent_color = HCW_COLOR_PRIMARY;
     egui_view_invalidate(self);
 }
 

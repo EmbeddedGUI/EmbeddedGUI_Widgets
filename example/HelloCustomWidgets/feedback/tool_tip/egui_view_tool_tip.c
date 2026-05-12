@@ -4,8 +4,8 @@
 #define EGUI_VIEW_TOOL_TIP_DELAY_MIN     120
 
 #define EGUI_VIEW_TOOL_TIP_STANDARD_RADIUS        10
-#define EGUI_VIEW_TOOL_TIP_STANDARD_FILL_ALPHA    90
-#define EGUI_VIEW_TOOL_TIP_STANDARD_BORDER_ALPHA  52
+#define EGUI_VIEW_TOOL_TIP_STANDARD_FILL_ALPHA    EGUI_ALPHA_MAKE(94)
+#define EGUI_VIEW_TOOL_TIP_STANDARD_BORDER_ALPHA  EGUI_ALPHA_MAKE(90)
 #define EGUI_VIEW_TOOL_TIP_STANDARD_PAD_X         10
 #define EGUI_VIEW_TOOL_TIP_STANDARD_PAD_Y         9
 #define EGUI_VIEW_TOOL_TIP_STANDARD_TARGET_HEIGHT 24
@@ -16,8 +16,8 @@
 #define EGUI_VIEW_TOOL_TIP_STANDARD_ARROW_HEIGHT  8
 
 #define EGUI_VIEW_TOOL_TIP_COMPACT_RADIUS        8
-#define EGUI_VIEW_TOOL_TIP_COMPACT_FILL_ALPHA    88
-#define EGUI_VIEW_TOOL_TIP_COMPACT_BORDER_ALPHA  48
+#define EGUI_VIEW_TOOL_TIP_COMPACT_FILL_ALPHA    EGUI_ALPHA_MAKE(92)
+#define EGUI_VIEW_TOOL_TIP_COMPACT_BORDER_ALPHA  EGUI_ALPHA_MAKE(88)
 #define EGUI_VIEW_TOOL_TIP_COMPACT_PAD_X         8
 #define EGUI_VIEW_TOOL_TIP_COMPACT_PAD_Y         7
 #define EGUI_VIEW_TOOL_TIP_COMPACT_TARGET_HEIGHT 18
@@ -352,7 +352,7 @@ static uint16_t egui_view_tool_tip_resolve_delay(uint16_t show_delay_ms)
 
 static egui_color_t egui_view_tool_tip_mix_disabled(egui_color_t color)
 {
-    return egui_rgb_mix(color, EGUI_COLOR_HEX(0x7D8894), 60);
+    return egui_rgb_mix(color, HCW_COLOR_TEXT_SOFT, EGUI_ALPHA_MAKE(38));
 }
 
 static egui_color_t egui_view_tool_tip_tone_color(egui_view_tool_tip_t *local, uint8_t tone)
@@ -560,18 +560,18 @@ static void egui_view_tool_tip_draw_arrow(egui_view_t *self, egui_view_tool_tip_
         egui_dim_t top_y = metrics->bubble_region.location.y + metrics->bubble_region.size.height;
 
         egui_canvas_draw_triangle_fill(&uicode_get_core()->canvas, center_x - arrow_w / 2, top_y - 1, center_x + arrow_w / 2, top_y - 1, center_x, top_y + arrow_h, fill_color,
-                                       egui_color_alpha_mix(self->alpha, 94));
+                                       egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(96)));
         egui_canvas_draw_triangle(&uicode_get_core()->canvas, center_x - arrow_w / 2, top_y - 1, center_x + arrow_w / 2, top_y - 1, center_x, top_y + arrow_h, border_color,
-                                  egui_color_alpha_mix(self->alpha, 46));
+                                  egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(92)));
     }
     else
     {
         egui_dim_t top_y = metrics->bubble_region.location.y;
 
         egui_canvas_draw_triangle_fill(&uicode_get_core()->canvas, center_x - arrow_w / 2, top_y + 1, center_x + arrow_w / 2, top_y + 1, center_x, top_y - arrow_h, fill_color,
-                                       egui_color_alpha_mix(self->alpha, 94));
+                                       egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(96)));
         egui_canvas_draw_triangle(&uicode_get_core()->canvas, center_x - arrow_w / 2, top_y + 1, center_x + arrow_w / 2, top_y + 1, center_x, top_y - arrow_h, border_color,
-                                  egui_color_alpha_mix(self->alpha, 46));
+                                  egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(92)));
     }
 }
 
@@ -580,12 +580,14 @@ static void egui_view_tool_tip_draw_target(egui_view_t *self, egui_view_tool_tip
                                            egui_color_t border_color)
 {
     char target_label[24];
-    egui_color_t target_fill = egui_rgb_mix(local->target_fill_color, tone_color, local->open ? 10 : 4);
-    egui_color_t target_outline = egui_rgb_mix(local->target_border_color, tone_color, local->open ? 14 : 6);
-    egui_color_t target_text = egui_rgb_mix(text_color, tone_color, local->open ? 10 : 3);
-    egui_color_t focus_color = egui_rgb_mix(tone_color, EGUI_COLOR_HEX(0xF4FAFF), 18);
-    egui_alpha_t fill_alpha = egui_color_alpha_mix(self->alpha, local->read_only_mode ? 68 : (self->is_pressed ? 86 : 92));
+    egui_color_t target_fill = egui_rgb_mix(local->target_fill_color, tone_color, EGUI_ALPHA_MAKE(local->open ? 10 : 4));
+    egui_color_t target_outline = egui_rgb_mix(local->target_border_color, tone_color, EGUI_ALPHA_MAKE(local->open ? 34 : 24));
+    egui_color_t target_text = egui_rgb_mix(text_color, tone_color, EGUI_ALPHA_MAKE(local->open ? 16 : 8));
+    egui_color_t focus_color = egui_rgb_mix(tone_color, HCW_COLOR_PRIMARY_TINT, EGUI_ALPHA_MAKE(24));
+    egui_alpha_t fill_alpha = egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(local->read_only_mode ? 90 : (self->is_pressed ? 92 : 98)));
     egui_dim_t radius = local->compact_mode ? 6 : 8;
+
+    EGUI_UNUSED(border_color);
 
     if (!egui_view_get_enable(self))
     {
@@ -595,26 +597,20 @@ static void egui_view_tool_tip_draw_target(egui_view_t *self, egui_view_tool_tip
     }
     else if (local->read_only_mode)
     {
-        target_fill = egui_rgb_mix(target_fill, local->surface_color, 34);
-        target_outline = egui_rgb_mix(target_outline, local->muted_text_color, 36);
-        target_text = egui_rgb_mix(target_text, local->muted_text_color, 26);
+        target_fill = egui_rgb_mix(target_fill, local->surface_color, EGUI_ALPHA_MAKE(22));
+        target_outline = egui_rgb_mix(target_outline, local->muted_text_color, EGUI_ALPHA_MAKE(22));
+        target_text = egui_rgb_mix(target_text, local->muted_text_color, EGUI_ALPHA_MAKE(8));
     }
 
     if (self->is_focused && egui_view_get_enable(self))
     {
-        egui_view_tool_tip_draw_focus_ring(&metrics->target_region, radius, focus_color, egui_color_alpha_mix(self->alpha, 54));
+        egui_view_tool_tip_draw_focus_ring(&metrics->target_region, radius, focus_color, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(76)));
     }
 
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics->target_region.location.x, metrics->target_region.location.y, metrics->target_region.size.width,
                                           metrics->target_region.size.height, radius, target_fill, fill_alpha);
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics->target_region.location.x, metrics->target_region.location.y, metrics->target_region.size.width,
-                                     metrics->target_region.size.height, radius, 1, target_outline, egui_color_alpha_mix(self->alpha, 52));
-    if (local->open && metrics->target_region.size.width > 18)
-    {
-        egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics->target_region.location.x + 8, metrics->target_region.location.y + metrics->target_region.size.height - 4,
-                                              metrics->target_region.size.width - 16, 2, 1, tone_color, egui_color_alpha_mix(self->alpha, 70));
-    }
-
+                                     metrics->target_region.size.height, radius, 1, target_outline, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(98)));
     egui_view_tool_tip_fit_text_to_width(local->font, snapshot != NULL ? snapshot->target_label : "", target_label, sizeof(target_label), metrics->target_region.size.width - 16,
                                          local->compact_mode ? 4 : 5);
     egui_view_tool_tip_draw_text(local->font, self, target_label, &metrics->target_region, EGUI_ALIGN_CENTER, target_text);
@@ -628,9 +624,9 @@ static void egui_view_tool_tip_draw_bubble(egui_view_t *self, egui_view_tool_tip
     char title_label[24];
     char body_label[40];
     char badge_label[16];
-    egui_color_t bubble_fill = egui_rgb_mix(local->surface_color, tone_color, local->compact_mode ? 6 : 8);
-    egui_color_t bubble_border = egui_rgb_mix(border_color, tone_color, local->compact_mode ? 10 : 14);
-    egui_color_t body_color = egui_rgb_mix(text_color, muted_text_color, local->compact_mode ? 62 : 56);
+    egui_color_t bubble_fill = HCW_COLOR_PANEL;
+    egui_color_t bubble_border = egui_rgb_mix(border_color, tone_color, EGUI_ALPHA_MAKE(local->compact_mode ? 28 : 34));
+    egui_color_t body_color = egui_rgb_mix(text_color, muted_text_color, EGUI_ALPHA_MAKE(local->compact_mode ? 44 : 40));
     egui_dim_t bubble_radius = local->compact_mode ? EGUI_VIEW_TOOL_TIP_COMPACT_BUBBLE_RADIUS : EGUI_VIEW_TOOL_TIP_STANDARD_BUBBLE_RADIUS;
 
     if (!metrics->show_bubble || snapshot == NULL)
@@ -647,23 +643,20 @@ static void egui_view_tool_tip_draw_bubble(egui_view_t *self, egui_view_tool_tip
     }
     else if (local->read_only_mode)
     {
-        bubble_fill = egui_rgb_mix(bubble_fill, local->surface_color, 26);
-        bubble_border = egui_rgb_mix(bubble_border, muted_text_color, 26);
-        body_color = egui_rgb_mix(body_color, muted_text_color, 20);
-        shadow_color = egui_rgb_mix(shadow_color, local->surface_color, 36);
+        bubble_fill = egui_rgb_mix(bubble_fill, local->surface_color, EGUI_ALPHA_MAKE(16));
+        bubble_border = egui_rgb_mix(bubble_border, muted_text_color, EGUI_ALPHA_MAKE(18));
+        body_color = egui_rgb_mix(body_color, muted_text_color, EGUI_ALPHA_MAKE(8));
+        shadow_color = egui_rgb_mix(shadow_color, local->surface_color, EGUI_ALPHA_MAKE(28));
     }
 
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics->bubble_region.location.x + 1, metrics->bubble_region.location.y + 2, metrics->bubble_region.size.width,
                                           metrics->bubble_region.size.height, bubble_radius, shadow_color,
-                                          egui_color_alpha_mix(self->alpha, local->compact_mode ? 10 : 18));
+                                          egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(local->compact_mode ? 22 : 34)));
     egui_view_tool_tip_draw_arrow(self, local, snapshot, metrics, bubble_fill, bubble_border);
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics->bubble_region.location.x, metrics->bubble_region.location.y, metrics->bubble_region.size.width,
-                                          metrics->bubble_region.size.height, bubble_radius, bubble_fill, egui_color_alpha_mix(self->alpha, 96));
+                                          metrics->bubble_region.size.height, bubble_radius, bubble_fill, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(96)));
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics->bubble_region.location.x, metrics->bubble_region.location.y, metrics->bubble_region.size.width,
-                                     metrics->bubble_region.size.height, bubble_radius, 1, bubble_border, egui_color_alpha_mix(self->alpha, 54));
-    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics->bubble_region.location.x + (local->compact_mode ? 8 : 10), metrics->bubble_region.location.y + 6,
-                                          local->compact_mode ? 14 : 18, 2, 1, tone_color, egui_color_alpha_mix(self->alpha, local->compact_mode ? 58 : 70));
-
+                                     metrics->bubble_region.size.height, bubble_radius, 1, bubble_border, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(98)));
     if (metrics->show_hint)
     {
         egui_view_tool_tip_fit_text_to_width(local->meta_font, snapshot->hint, hint_label, sizeof(hint_label), metrics->hint_region.size.width, 4);
@@ -695,8 +688,8 @@ static void egui_view_tool_tip_draw_bubble(egui_view_t *self, egui_view_tool_tip
     if (local->read_only_mode)
     {
         egui_region_t badge_region;
-        egui_color_t badge_fill = egui_rgb_mix(local->surface_color, tone_color, 4);
-        egui_color_t badge_text_color = egui_rgb_mix(muted_text_color, text_color, 18);
+        egui_color_t badge_fill = egui_rgb_mix(local->surface_color, tone_color, EGUI_ALPHA_MAKE(18));
+        egui_color_t badge_text_color = egui_rgb_mix(muted_text_color, text_color, EGUI_ALPHA_MAKE(18));
         egui_dim_t badge_h = egui_view_tool_tip_read_only_badge_height(local);
         egui_dim_t badge_w = egui_view_tool_tip_read_only_badge_width(local);
 
@@ -709,9 +702,9 @@ static void egui_view_tool_tip_draw_bubble(egui_view_t *self, egui_view_tool_tip
         badge_region.location.x = metrics->bubble_region.location.x + metrics->bubble_region.size.width - badge_region.size.width - (local->compact_mode ? 8 : 10);
         badge_region.location.y = metrics->bubble_region.location.y + metrics->bubble_region.size.height - badge_region.size.height - (local->compact_mode ? 6 : 8);
         egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, badge_region.location.x, badge_region.location.y, badge_region.size.width, badge_region.size.height, 5, badge_fill,
-                                              egui_color_alpha_mix(self->alpha, 46));
+                                              egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(94)));
         egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, badge_region.location.x, badge_region.location.y, badge_region.size.width, badge_region.size.height, 5, 1, bubble_border,
-                                         egui_color_alpha_mix(self->alpha, 28));
+                                         egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(90)));
         egui_view_tool_tip_fit_text_to_width(local->meta_font, "Read only", badge_label, sizeof(badge_label), badge_region.size.width - 4, 4);
         egui_view_tool_tip_draw_text(local->meta_font, self, badge_label, &badge_region, EGUI_ALIGN_CENTER, badge_text_color);
     }
@@ -739,11 +732,11 @@ static void egui_view_tool_tip_on_draw(egui_view_t *self)
     tone_color = egui_view_tool_tip_tone_color(local, snapshot != NULL ? snapshot->tone : EGUI_VIEW_TOOL_TIP_TONE_ACCENT);
     if (local->read_only_mode)
     {
-        tone_color = egui_rgb_mix(tone_color, muted_text_color, 44);
-        border_color = egui_rgb_mix(border_color, muted_text_color, 12);
-        text_color = egui_rgb_mix(text_color, muted_text_color, 20);
-        muted_text_color = egui_rgb_mix(muted_text_color, surface_color, 10);
-        shadow_color = egui_rgb_mix(shadow_color, surface_color, 36);
+        tone_color = egui_rgb_mix(tone_color, muted_text_color, EGUI_ALPHA_MAKE(28));
+        border_color = egui_rgb_mix(border_color, muted_text_color, EGUI_ALPHA_MAKE(18));
+        text_color = egui_rgb_mix(text_color, muted_text_color, EGUI_ALPHA_MAKE(10));
+        muted_text_color = egui_rgb_mix(muted_text_color, text_color, EGUI_ALPHA_MAKE(8));
+        shadow_color = egui_rgb_mix(shadow_color, surface_color, EGUI_ALPHA_MAKE(36));
     }
     if (!egui_view_get_enable(self))
     {
@@ -1226,16 +1219,16 @@ void egui_view_tool_tip_init(egui_view_t *self)
     local->snapshots = NULL;
     local->font = (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT;
     local->meta_font = (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT;
-    local->surface_color = EGUI_COLOR_HEX(0xFFFFFF);
-    local->border_color = EGUI_COLOR_HEX(0xD5DDE5);
-    local->text_color = EGUI_COLOR_HEX(0x1E2C39);
-    local->muted_text_color = EGUI_COLOR_HEX(0x6C7A88);
-    local->accent_color = EGUI_COLOR_HEX(0x0F6CBD);
-    local->warning_color = EGUI_COLOR_HEX(0x9D5D00);
-    local->neutral_color = EGUI_COLOR_HEX(0x6A7785);
-    local->shadow_color = EGUI_COLOR_HEX(0xDDE5EB);
-    local->target_fill_color = EGUI_COLOR_HEX(0xF5F8FB);
-    local->target_border_color = EGUI_COLOR_HEX(0xD0D9E2);
+    local->surface_color = HCW_COLOR_SURFACE;
+    local->border_color = HCW_COLOR_BORDER;
+    local->text_color = HCW_COLOR_TEXT;
+    local->muted_text_color = HCW_COLOR_TEXT_MUTED;
+    local->accent_color = HCW_COLOR_PRIMARY;
+    local->warning_color = HCW_COLOR_WARNING;
+    local->neutral_color = HCW_COLOR_TEXT_MUTED;
+    local->shadow_color = HCW_COLOR_BORDER;
+    local->target_fill_color = HCW_COLOR_PANEL;
+    local->target_border_color = HCW_COLOR_BORDER;
     local->show_delay_ms = EGUI_VIEW_TOOL_TIP_DELAY_DEFAULT;
     local->snapshot_count = 0;
     local->current_snapshot = 0;

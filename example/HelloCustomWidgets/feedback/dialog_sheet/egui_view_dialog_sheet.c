@@ -1,8 +1,8 @@
 #include "egui_view_dialog_sheet.h"
 
 #define DIALOG_SHEET_STANDARD_RADIUS            12
-#define DIALOG_SHEET_STANDARD_OVERLAY_ALPHA     18
-#define DIALOG_SHEET_STANDARD_BORDER_ALPHA      40
+#define DIALOG_SHEET_STANDARD_OVERLAY_ALPHA     EGUI_ALPHA_MAKE(18)
+#define DIALOG_SHEET_STANDARD_BORDER_ALPHA      EGUI_ALPHA_MAKE(72)
 #define DIALOG_SHEET_STANDARD_SHEET_TOP_GAP     14
 #define DIALOG_SHEET_STANDARD_SHEET_SIDE_GAP    4
 #define DIALOG_SHEET_STANDARD_SHEET_BOTTOM_GAP  4
@@ -20,8 +20,8 @@
 #define DIALOG_SHEET_STANDARD_MIN_FOOTER_TEXT_W 24
 
 #define DIALOG_SHEET_COMPACT_RADIUS            8
-#define DIALOG_SHEET_COMPACT_OVERLAY_ALPHA     14
-#define DIALOG_SHEET_COMPACT_BORDER_ALPHA      34
+#define DIALOG_SHEET_COMPACT_OVERLAY_ALPHA     EGUI_ALPHA_MAKE(14)
+#define DIALOG_SHEET_COMPACT_BORDER_ALPHA      EGUI_ALPHA_MAKE(68)
 #define DIALOG_SHEET_COMPACT_SHEET_TOP_GAP     8
 #define DIALOG_SHEET_COMPACT_SHEET_SIDE_GAP    2
 #define DIALOG_SHEET_COMPACT_SHEET_BOTTOM_GAP  2
@@ -265,7 +265,7 @@ static egui_dim_t egui_view_dialog_sheet_meta_height(egui_view_dialog_sheet_t *l
 
 static egui_color_t egui_view_dialog_sheet_mix_disabled(egui_color_t color)
 {
-    return egui_rgb_mix(color, EGUI_COLOR_DARK_GREY, 68);
+    return egui_rgb_mix(color, HCW_COLOR_SURFACE_SUBTLE, EGUI_ALPHA_MAKE(44));
 }
 
 static egui_color_t egui_view_dialog_sheet_tone_color(egui_view_dialog_sheet_t *local, uint8_t tone)
@@ -417,32 +417,32 @@ static void egui_view_dialog_sheet_draw_button(egui_view_dialog_sheet_t *local, 
         return;
     }
 
-    fill_color = egui_rgb_mix(local->surface_color, border_color, local->compact_mode ? 4 : 6);
-    draw_border = egui_rgb_mix(border_color, tone_color, local->compact_mode ? 5 : 7);
+    fill_color = egui_rgb_mix(local->surface_color, border_color, EGUI_ALPHA_MAKE(local->compact_mode ? 4 : 6));
+    draw_border = egui_rgb_mix(border_color, tone_color, EGUI_ALPHA_MAKE(local->compact_mode ? 5 : 7));
     text_color = idle_text_color;
-    fill_alpha = local->compact_mode ? 26 : 30;
-    border_alpha = local->compact_mode ? 20 : 24;
+    fill_alpha = EGUI_ALPHA_MAKE(local->compact_mode ? 26 : 30);
+    border_alpha = EGUI_ALPHA_MAKE(local->compact_mode ? 34 : 38);
 
     if (focused)
     {
-        fill_color = egui_rgb_mix(tone_color, local->surface_color, local->compact_mode ? 42 : 36);
-        draw_border = egui_rgb_mix(tone_color, local->surface_color, local->compact_mode ? 14 : 12);
-        text_color = local->surface_color;
-        fill_alpha = local->read_only_mode ? 22 : 82;
-        border_alpha = local->read_only_mode ? 24 : 72;
+        fill_color = egui_rgb_mix(local->surface_color, tone_color, EGUI_ALPHA_MAKE(local->compact_mode ? 8 : 6));
+        draw_border = egui_rgb_mix(border_color, tone_color, EGUI_ALPHA_MAKE(local->compact_mode ? 10 : 12));
+        text_color = tone_color;
+        fill_alpha = EGUI_ALPHA_MAKE(local->read_only_mode ? 22 : 92);
+        border_alpha = EGUI_ALPHA_MAKE(local->read_only_mode ? 24 : 74);
         if (local->read_only_mode)
         {
-            fill_color = egui_rgb_mix(local->surface_color, tone_color, local->compact_mode ? 5 : 7);
+            fill_color = egui_rgb_mix(local->surface_color, tone_color, EGUI_ALPHA_MAKE(local->compact_mode ? 5 : 7));
             text_color = tone_color;
-            fill_alpha = local->compact_mode ? 12 : 16;
-            border_alpha = local->compact_mode ? 14 : 18;
+            fill_alpha = EGUI_ALPHA_MAKE(local->compact_mode ? 12 : 16);
+            border_alpha = EGUI_ALPHA_MAKE(local->compact_mode ? 24 : 28);
         }
     }
 
     if (pressed)
     {
-        fill_color = egui_rgb_mix(fill_color, EGUI_COLOR_BLACK, 8);
-        draw_border = egui_rgb_mix(draw_border, EGUI_COLOR_BLACK, 6);
+        fill_color = egui_rgb_mix(fill_color, EGUI_COLOR_BLACK, EGUI_ALPHA_MAKE(8));
+        draw_border = egui_rgb_mix(draw_border, EGUI_COLOR_BLACK, EGUI_ALPHA_MAKE(6));
     }
 
     if (!enabled)
@@ -872,43 +872,43 @@ static void egui_view_dialog_sheet_on_draw(egui_view_t *self)
 
     tone_color = egui_view_dialog_sheet_tone_color(local, snapshot->tone);
     overlay_fill = local->overlay_color;
-    overlay_line = egui_rgb_mix(local->border_color, tone_color, local->compact_mode ? 4 : 6);
-    sheet_fill = egui_rgb_mix(local->surface_color, tone_color, local->compact_mode ? 3 : 4);
-    sheet_border = egui_rgb_mix(local->border_color, tone_color, local->compact_mode ? 7 : 10);
+    overlay_line = egui_rgb_mix(local->border_color, tone_color, EGUI_ALPHA_MAKE(local->compact_mode ? 4 : 6));
+    sheet_fill = HCW_COLOR_PANEL;
+    sheet_border = egui_rgb_mix(local->border_color, tone_color, EGUI_ALPHA_MAKE(local->compact_mode ? 4 : 5));
     title_color = local->text_color;
-    body_color = egui_rgb_mix(local->muted_text_color, local->text_color, local->compact_mode ? 24 : 14);
-    eyebrow_color = egui_rgb_mix(local->muted_text_color, tone_color, local->compact_mode ? 16 : 20);
-    hero_fill = egui_rgb_mix(local->surface_color, tone_color, local->compact_mode ? 10 : 12);
-    hero_border = egui_rgb_mix(local->border_color, tone_color, local->compact_mode ? 10 : 14);
-    footer_fill = egui_rgb_mix(local->surface_color, tone_color, local->compact_mode ? 4 : 6);
-    footer_border = egui_rgb_mix(local->border_color, tone_color, local->compact_mode ? 6 : 10);
-    footer_color = egui_rgb_mix(local->muted_text_color, tone_color, local->compact_mode ? 12 : 16);
-    tag_fill = egui_rgb_mix(local->surface_color, tone_color, local->compact_mode ? 8 : 12);
-    tag_border = egui_rgb_mix(local->border_color, tone_color, local->compact_mode ? 10 : 14);
+    body_color = egui_rgb_mix(local->muted_text_color, local->text_color, EGUI_ALPHA_MAKE(local->compact_mode ? 24 : 14));
+    eyebrow_color = egui_rgb_mix(local->muted_text_color, tone_color, EGUI_ALPHA_MAKE(local->compact_mode ? 16 : 20));
+    hero_fill = HCW_COLOR_PANEL;
+    hero_border = egui_rgb_mix(local->border_color, tone_color, EGUI_ALPHA_MAKE(local->compact_mode ? 4 : 5));
+    footer_fill = HCW_COLOR_PANEL;
+    footer_border = egui_rgb_mix(local->border_color, tone_color, EGUI_ALPHA_MAKE(local->compact_mode ? 6 : 10));
+    footer_color = egui_rgb_mix(local->muted_text_color, tone_color, EGUI_ALPHA_MAKE(local->compact_mode ? 12 : 16));
+    tag_fill = HCW_COLOR_PANEL;
+    tag_border = egui_rgb_mix(local->border_color, tone_color, EGUI_ALPHA_MAKE(local->compact_mode ? 5 : 6));
     tag_text = tone_color;
-    hero_glyph_color = local->surface_color;
-    handle_color = egui_rgb_mix(local->border_color, tone_color, local->compact_mode ? 6 : 8);
-    shadow_color = egui_rgb_mix(EGUI_COLOR_BLACK, local->border_color, 18);
+    hero_glyph_color = tone_color;
+    handle_color = egui_rgb_mix(local->border_color, tone_color, EGUI_ALPHA_MAKE(local->compact_mode ? 6 : 8));
+    shadow_color = egui_rgb_mix(EGUI_COLOR_BLACK, local->border_color, EGUI_ALPHA_MAKE(18));
 
     if (local->read_only_mode)
     {
-        tone_color = egui_rgb_mix(tone_color, local->muted_text_color, 156);
-        overlay_fill = egui_rgb_mix(overlay_fill, local->surface_color, 54);
-        overlay_line = egui_rgb_mix(overlay_line, local->muted_text_color, 84);
-        sheet_fill = egui_rgb_mix(sheet_fill, local->surface_color, 44);
-        sheet_border = egui_rgb_mix(sheet_border, local->muted_text_color, 82);
-        title_color = egui_rgb_mix(title_color, local->muted_text_color, 52);
-        body_color = egui_rgb_mix(body_color, local->muted_text_color, 58);
-        eyebrow_color = egui_rgb_mix(eyebrow_color, local->muted_text_color, 92);
-        hero_fill = egui_rgb_mix(hero_fill, local->surface_color, 56);
-        hero_border = egui_rgb_mix(hero_border, local->muted_text_color, 90);
-        hero_glyph_color = egui_rgb_mix(hero_glyph_color, local->muted_text_color, 40);
-        footer_fill = egui_rgb_mix(footer_fill, local->surface_color, 52);
-        footer_border = egui_rgb_mix(footer_border, local->muted_text_color, 84);
-        footer_color = egui_rgb_mix(footer_color, local->muted_text_color, 68);
-        tag_fill = egui_rgb_mix(tag_fill, local->surface_color, 56);
-        tag_border = egui_rgb_mix(tag_border, local->muted_text_color, 88);
-        tag_text = egui_rgb_mix(tag_text, local->muted_text_color, 96);
+        tone_color = egui_rgb_mix(tone_color, local->muted_text_color, EGUI_ALPHA_MAKE(100));
+        overlay_fill = egui_rgb_mix(overlay_fill, local->surface_color, EGUI_ALPHA_MAKE(28));
+        overlay_line = egui_rgb_mix(overlay_line, local->muted_text_color, EGUI_ALPHA_MAKE(58));
+        sheet_fill = HCW_COLOR_PANEL;
+        sheet_border = egui_rgb_mix(sheet_border, local->muted_text_color, EGUI_ALPHA_MAKE(50));
+        title_color = egui_rgb_mix(title_color, local->muted_text_color, EGUI_ALPHA_MAKE(24));
+        body_color = egui_rgb_mix(body_color, local->muted_text_color, EGUI_ALPHA_MAKE(30));
+        eyebrow_color = egui_rgb_mix(eyebrow_color, local->muted_text_color, EGUI_ALPHA_MAKE(42));
+        hero_fill = egui_rgb_mix(hero_fill, local->surface_color, EGUI_ALPHA_MAKE(24));
+        hero_border = egui_rgb_mix(hero_border, local->muted_text_color, EGUI_ALPHA_MAKE(58));
+        hero_glyph_color = egui_rgb_mix(hero_glyph_color, local->muted_text_color, EGUI_ALPHA_MAKE(26));
+        footer_fill = HCW_COLOR_PANEL;
+        footer_border = egui_rgb_mix(footer_border, local->muted_text_color, EGUI_ALPHA_MAKE(56));
+        footer_color = egui_rgb_mix(footer_color, local->muted_text_color, EGUI_ALPHA_MAKE(38));
+        tag_fill = egui_rgb_mix(tag_fill, local->surface_color, EGUI_ALPHA_MAKE(42));
+        tag_border = egui_rgb_mix(tag_border, local->muted_text_color, EGUI_ALPHA_MAKE(54));
+        tag_text = egui_rgb_mix(tag_text, local->muted_text_color, EGUI_ALPHA_MAKE(48));
     }
 
     if (!enabled)
@@ -939,7 +939,7 @@ static void egui_view_dialog_sheet_on_draw(egui_view_t *self)
             radius, overlay_fill,
             egui_color_alpha_mix(self->alpha, local->compact_mode ? DIALOG_SHEET_COMPACT_OVERLAY_ALPHA : DIALOG_SHEET_STANDARD_OVERLAY_ALPHA));
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics.backdrop_region.location.x, metrics.backdrop_region.location.y, metrics.backdrop_region.size.width,
-                                     metrics.backdrop_region.size.height, radius, 1, overlay_line, egui_color_alpha_mix(self->alpha, 10));
+                                     metrics.backdrop_region.size.height, radius, 1, overlay_line, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(10)));
 
     preview_region.location.x = metrics.backdrop_region.location.x + (local->compact_mode ? 8 : 14);
     preview_region.location.y = metrics.backdrop_region.location.y + (local->compact_mode ? 6 : 10);
@@ -948,7 +948,7 @@ static void egui_view_dialog_sheet_on_draw(egui_view_t *self)
     if (!local->compact_mode && preview_region.size.height > 8)
     {
         egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, preview_region.location.x, preview_region.location.y, preview_region.size.width, 8, 4, overlay_line,
-                                              egui_color_alpha_mix(self->alpha, 6));
+                                              egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(6)));
 
         preview_line_region.location.x = preview_region.location.x;
         preview_line_region.location.y = preview_region.location.y + 6;
@@ -956,29 +956,29 @@ static void egui_view_dialog_sheet_on_draw(egui_view_t *self)
         preview_line_region.size.height = 4;
         egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, preview_line_region.location.x, preview_line_region.location.y, preview_line_region.size.width,
                                               preview_line_region.size.height, preview_line_region.size.height / 2, overlay_line,
-                                              egui_color_alpha_mix(self->alpha, 4));
+                                              egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(4)));
     }
 
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.sheet_region.location.x + 2, metrics.sheet_region.location.y + 3, metrics.sheet_region.size.width,
                                           metrics.sheet_region.size.height, radius, shadow_color,
-                                          egui_color_alpha_mix(self->alpha, local->compact_mode ? 4 : 6));
+                                          egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(local->compact_mode ? 4 : 6)));
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.sheet_region.location.x, metrics.sheet_region.location.y, metrics.sheet_region.size.width,
-                                          metrics.sheet_region.size.height, radius, sheet_fill, egui_color_alpha_mix(self->alpha, 94));
+                                          metrics.sheet_region.size.height, radius, sheet_fill, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(94)));
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, 
             metrics.sheet_region.location.x, metrics.sheet_region.location.y, metrics.sheet_region.size.width, metrics.sheet_region.size.height, radius, 1,
             sheet_border, egui_color_alpha_mix(self->alpha, local->compact_mode ? DIALOG_SHEET_COMPACT_BORDER_ALPHA : DIALOG_SHEET_STANDARD_BORDER_ALPHA));
 
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.handle_region.location.x, metrics.handle_region.location.y, metrics.handle_region.size.width,
                                           metrics.handle_region.size.height, metrics.handle_region.size.height / 2, handle_color,
-                                          egui_color_alpha_mix(self->alpha, local->read_only_mode ? 12 : (local->compact_mode ? 30 : 40)));
+                                          egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(local->read_only_mode ? 36 : (local->compact_mode ? 48 : 56))));
     egui_canvas_draw_circle_fill(&uicode_get_core()->canvas, metrics.hero_region.location.x + metrics.hero_region.size.width / 2,
                                  metrics.hero_region.location.y + metrics.hero_region.size.height / 2, metrics.hero_region.size.width / 2, hero_fill,
-                                 egui_color_alpha_mix(self->alpha, local->read_only_mode ? 32 : 80));
+                                 egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(local->read_only_mode ? 46 : 80)));
     if (!local->compact_mode)
     {
         egui_canvas_draw_circle(&uicode_get_core()->canvas, metrics.hero_region.location.x + metrics.hero_region.size.width / 2,
                                 metrics.hero_region.location.y + metrics.hero_region.size.height / 2, metrics.hero_region.size.width / 2, 1, hero_border,
-                                egui_color_alpha_mix(self->alpha, local->read_only_mode ? 18 : 40));
+                                egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(local->read_only_mode ? 18 : 40)));
     }
     egui_view_dialog_sheet_draw_text(local->meta_font, self, egui_view_dialog_sheet_tone_glyph(snapshot->tone), &metrics.hero_region, EGUI_ALIGN_CENTER,
                                      hero_glyph_color);
@@ -1000,9 +1000,9 @@ static void egui_view_dialog_sheet_on_draw(egui_view_t *self)
     if (show_close && metrics.close_region.size.width > 0)
     {
         egui_canvas_draw_line(&uicode_get_core()->canvas, metrics.close_region.location.x + 2, metrics.close_region.location.y + 2, metrics.close_region.location.x + 6,
-                              metrics.close_region.location.y + 6, 1, body_color, egui_color_alpha_mix(self->alpha, 40));
+                              metrics.close_region.location.y + 6, 1, body_color, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(66)));
         egui_canvas_draw_line(&uicode_get_core()->canvas, metrics.close_region.location.x + 6, metrics.close_region.location.y + 2, metrics.close_region.location.x + 2,
-                              metrics.close_region.location.y + 6, 1, body_color, egui_color_alpha_mix(self->alpha, 40));
+                              metrics.close_region.location.y + 6, 1, body_color, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(66)));
     }
 
     if (metrics.footer_text_region.size.width > 0 && snapshot->footer != NULL && snapshot->footer[0] != '\0')
@@ -1011,8 +1011,8 @@ static void egui_view_dialog_sheet_on_draw(egui_view_t *self)
         egui_dim_t summary_h = metrics.footer_region.size.height - (local->compact_mode ? 4 : 2);
         egui_region_t footer_text_draw_region = metrics.footer_text_region;
         egui_dim_t summary_pad_x = local->compact_mode ? 3 : 4;
-        egui_alpha_t summary_fill_alpha = local->read_only_mode ? (local->compact_mode ? 10 : 12) : (local->compact_mode ? 14 : 18);
-        egui_alpha_t summary_border_alpha = local->read_only_mode ? (local->compact_mode ? 12 : 14) : (local->compact_mode ? 16 : 20);
+        egui_alpha_t summary_fill_alpha = EGUI_ALPHA_MAKE(local->read_only_mode ? (local->compact_mode ? 28 : 30) : (local->compact_mode ? 26 : 32));
+        egui_alpha_t summary_border_alpha = EGUI_ALPHA_MAKE(local->read_only_mode ? (local->compact_mode ? 38 : 42) : (local->compact_mode ? 42 : 50));
 
         egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.footer_text_region.location.x, summary_y, metrics.footer_text_region.size.width, summary_h, summary_h / 2,
                                               footer_fill, egui_color_alpha_mix(self->alpha, summary_fill_alpha));
@@ -1031,8 +1031,8 @@ static void egui_view_dialog_sheet_on_draw(egui_view_t *self)
 
     if (metrics.tag_region.size.width > 0)
     {
-        egui_alpha_t tag_fill_alpha = local->read_only_mode ? 52 : 72;
-        egui_alpha_t tag_border_alpha = local->read_only_mode ? 18 : 24;
+        egui_alpha_t tag_fill_alpha = EGUI_ALPHA_MAKE(local->read_only_mode ? 66 : 72);
+        egui_alpha_t tag_border_alpha = EGUI_ALPHA_MAKE(local->read_only_mode ? 40 : 48);
 
         egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.tag_region.location.x, metrics.tag_region.location.y, metrics.tag_region.size.width,
                                               metrics.tag_region.size.height, metrics.tag_region.size.height / 2, tag_fill,
@@ -1061,7 +1061,7 @@ static void egui_view_dialog_sheet_on_draw(egui_view_t *self)
                               metrics.sheet_region.location.y + metrics.sheet_region.size.height - (local->compact_mode ? 6 : 8),
                               metrics.sheet_region.location.x + metrics.sheet_region.size.width - (local->compact_mode ? 6 : 8),
                               metrics.sheet_region.location.y + metrics.sheet_region.size.height - (local->compact_mode ? 6 : 8), 1, sheet_border,
-                              egui_color_alpha_mix(self->alpha, 16));
+                              egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(54)));
     }
 }
 
@@ -1280,16 +1280,16 @@ void egui_view_dialog_sheet_init(egui_view_t *self)
     local->font = (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT;
     local->meta_font = (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT;
     local->on_action_changed = NULL;
-    local->surface_color = EGUI_COLOR_HEX(0xFFFFFF);
-    local->overlay_color = EGUI_COLOR_HEX(0xD2DBE3);
-    local->border_color = EGUI_COLOR_HEX(0xD2DBE3);
-    local->text_color = EGUI_COLOR_HEX(0x17212B);
-    local->muted_text_color = EGUI_COLOR_HEX(0x62707E);
-    local->accent_color = EGUI_COLOR_HEX(0x0F6CBD);
-    local->success_color = EGUI_COLOR_HEX(0x0F7B45);
-    local->warning_color = EGUI_COLOR_HEX(0x9D5D00);
-    local->error_color = EGUI_COLOR_HEX(0xC23934);
-    local->neutral_color = EGUI_COLOR_HEX(0x7A8796);
+    local->surface_color = HCW_COLOR_SURFACE;
+    local->overlay_color = HCW_COLOR_BORDER;
+    local->border_color = HCW_COLOR_BORDER;
+    local->text_color = HCW_COLOR_TEXT_STRONG;
+    local->muted_text_color = HCW_COLOR_TEXT_MUTED;
+    local->accent_color = HCW_COLOR_PRIMARY;
+    local->success_color = HCW_COLOR_SUCCESS;
+    local->warning_color = HCW_COLOR_WARNING;
+    local->error_color = HCW_COLOR_DANGER_DARK;
+    local->neutral_color = HCW_COLOR_NEUTRAL;
     local->snapshot_count = 0;
     local->current_snapshot = 0;
     local->current_action = EGUI_VIEW_DIALOG_SHEET_ACTION_NONE;

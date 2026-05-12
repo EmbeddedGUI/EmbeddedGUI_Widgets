@@ -106,16 +106,16 @@ static void setup_widget(void)
 
 static void configure_info_label_secondary(egui_view_t *view)
 {
-    hcw_info_label_set_palette(view, EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD6DEE6), EGUI_COLOR_HEX(0x22303C),
-                               EGUI_COLOR_HEX(0x73808C), EGUI_COLOR_HEX(0x0C7C73), EGUI_COLOR_HEX(0xF7FBFA),
-                               EGUI_COLOR_HEX(0xD7E7E4));
+    hcw_info_label_set_palette(view, HCW_COLOR_SURFACE, EGUI_COLOR_HEX(0xD6DEE6), EGUI_COLOR_HEX(0x22303C),
+                               HCW_COLOR_TEXT_MUTED, HCW_COLOR_PRIMARY, HCW_COLOR_SURFACE_SUBTLE,
+                               HCW_COLOR_PRIMARY_TINT);
 }
 
 static void configure_info_label_muted(egui_view_t *view)
 {
-    hcw_info_label_set_palette(view, EGUI_COLOR_HEX(0xFBFCFD), EGUI_COLOR_HEX(0xD9E1E8), EGUI_COLOR_HEX(0x566675),
-                               EGUI_COLOR_HEX(0x8895A1), EGUI_COLOR_HEX(0xA8B6C2), EGUI_COLOR_HEX(0xF7F9FB),
-                               EGUI_COLOR_HEX(0xE3E9EE));
+    hcw_info_label_set_palette(view, HCW_COLOR_SURFACE_SUBTLE, HCW_COLOR_BORDER, HCW_COLOR_TEXT_MUTED,
+                               HCW_COLOR_TEXT_SOFT, HCW_COLOR_TEXT_SOFT, HCW_COLOR_SURFACE_PRESS,
+                               HCW_COLOR_BORDER);
 }
 
 static void setup_preview_widget(void)
@@ -277,12 +277,12 @@ static void test_info_label_style_helpers_and_setters_clear_pressed_state(void)
     seed_pressed_state(&test_widget, 1);
     configure_info_label_secondary(EGUI_VIEW_OF(&test_widget));
     assert_pressed_cleared(&test_widget);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x0C7C73).full, test_widget.accent_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PRIMARY.full, test_widget.accent_color.full);
 
     seed_pressed_state(&test_widget, 0);
     configure_info_label_muted(EGUI_VIEW_OF(&test_widget));
     assert_pressed_cleared(&test_widget);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xA8B6C2).full, test_widget.accent_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT_SOFT.full, test_widget.accent_color.full);
 
     seed_pressed_state(&test_widget, 1);
     hcw_info_label_set_text(EGUI_VIEW_OF(&test_widget), "Export guidance");

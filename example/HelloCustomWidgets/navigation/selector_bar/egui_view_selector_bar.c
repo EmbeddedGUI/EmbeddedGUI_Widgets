@@ -1,6 +1,7 @@
 #include <stdlib.h>
 
 #include "egui_view_selector_bar.h"
+#include "../../hcw_text_center.h"
 #include "egui_view_icon_font.h"
 
 #define EGUI_VIEW_SELECTOR_BAR_STANDARD_BASE_WIDTH        20
@@ -16,11 +17,11 @@
 #define EGUI_VIEW_SELECTOR_BAR_STANDARD_LABEL_HEIGHT      11
 #define EGUI_VIEW_SELECTOR_BAR_STANDARD_STACK_GAP         1
 #define EGUI_VIEW_SELECTOR_BAR_STANDARD_DIVIDER_OFFSET    7
-#define EGUI_VIEW_SELECTOR_BAR_STANDARD_FILL_ALPHA        82
-#define EGUI_VIEW_SELECTOR_BAR_STANDARD_BORDER_ALPHA      38
-#define EGUI_VIEW_SELECTOR_BAR_STANDARD_ACTIVE_FILL_ALPHA 24
-#define EGUI_VIEW_SELECTOR_BAR_STANDARD_ACTIVE_FILL_MIX   5
-#define EGUI_VIEW_SELECTOR_BAR_STANDARD_TEXT_MIX          9
+#define EGUI_VIEW_SELECTOR_BAR_STANDARD_FILL_ALPHA        EGUI_ALPHA_MAKE(82)
+#define EGUI_VIEW_SELECTOR_BAR_STANDARD_BORDER_ALPHA      EGUI_ALPHA_MAKE(64)
+#define EGUI_VIEW_SELECTOR_BAR_STANDARD_ACTIVE_FILL_ALPHA EGUI_ALPHA_MAKE(60)
+#define EGUI_VIEW_SELECTOR_BAR_STANDARD_ACTIVE_FILL_MIX   EGUI_ALPHA_MAKE(5)
+#define EGUI_VIEW_SELECTOR_BAR_STANDARD_TEXT_MIX          EGUI_ALPHA_MAKE(9)
 
 #define EGUI_VIEW_SELECTOR_BAR_COMPACT_BASE_WIDTH        14
 #define EGUI_VIEW_SELECTOR_BAR_COMPACT_CHAR_WIDTH        4
@@ -35,11 +36,11 @@
 #define EGUI_VIEW_SELECTOR_BAR_COMPACT_LABEL_HEIGHT      9
 #define EGUI_VIEW_SELECTOR_BAR_COMPACT_STACK_GAP         0
 #define EGUI_VIEW_SELECTOR_BAR_COMPACT_DIVIDER_OFFSET    6
-#define EGUI_VIEW_SELECTOR_BAR_COMPACT_FILL_ALPHA        80
-#define EGUI_VIEW_SELECTOR_BAR_COMPACT_BORDER_ALPHA      34
-#define EGUI_VIEW_SELECTOR_BAR_COMPACT_ACTIVE_FILL_ALPHA 18
-#define EGUI_VIEW_SELECTOR_BAR_COMPACT_ACTIVE_FILL_MIX   4
-#define EGUI_VIEW_SELECTOR_BAR_COMPACT_TEXT_MIX          8
+#define EGUI_VIEW_SELECTOR_BAR_COMPACT_FILL_ALPHA        EGUI_ALPHA_MAKE(80)
+#define EGUI_VIEW_SELECTOR_BAR_COMPACT_BORDER_ALPHA      EGUI_ALPHA_MAKE(62)
+#define EGUI_VIEW_SELECTOR_BAR_COMPACT_ACTIVE_FILL_ALPHA EGUI_ALPHA_MAKE(54)
+#define EGUI_VIEW_SELECTOR_BAR_COMPACT_ACTIVE_FILL_MIX   EGUI_ALPHA_MAKE(4)
+#define EGUI_VIEW_SELECTOR_BAR_COMPACT_TEXT_MIX          EGUI_ALPHA_MAKE(8)
 
 typedef struct egui_view_selector_bar_layout_item egui_view_selector_bar_layout_item_t;
 struct egui_view_selector_bar_layout_item
@@ -60,7 +61,7 @@ static uint8_t egui_view_selector_bar_clamp_count(uint8_t count)
 
 static egui_color_t egui_view_selector_bar_mix_disabled(egui_color_t color)
 {
-    return egui_rgb_mix(color, EGUI_COLOR_DARK_GREY, 64);
+    return egui_rgb_mix(color, HCW_COLOR_SURFACE_SUBTLE, EGUI_ALPHA_MAKE(44));
 }
 
 static const egui_font_t *egui_view_selector_bar_resolve_font(const egui_view_selector_bar_t *local)
@@ -277,6 +278,20 @@ static void egui_view_selector_bar_fit_label_to_width(const egui_font_t *font, u
     }
 }
 
+static void egui_view_selector_bar_draw_text(const egui_font_t *font, egui_view_t *self, const char *text, const egui_region_t *region, uint8_t align,
+                                             egui_color_t color)
+{
+    egui_region_t draw_region = *region;
+
+    if (!EGUI_VIEW_TEXT_VALID(text) || region->size.width <= 0 || region->size.height <= 0)
+    {
+        return;
+    }
+
+    draw_region.location.y += hcw_text_center_get_delta(font, text, region, align);
+    egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, font, text, &draw_region, align, color, self->alpha);
+}
+
 static egui_dim_t egui_view_selector_bar_item_gap(uint8_t compact_mode)
 {
     return compact_mode ? EGUI_VIEW_SELECTOR_BAR_COMPACT_GAP : EGUI_VIEW_SELECTOR_BAR_STANDARD_GAP;
@@ -427,9 +442,9 @@ static void egui_view_selector_bar_draw_item_content(egui_view_selector_bar_t *l
         icon_font = EGUI_VIEW_ICON_FONT_RESOLVE(local->icon_font, content_region.size.height, 18, 22);
         if (icon_font != NULL)
         {
-            egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, icon_font, icon, &icon_region, EGUI_ALIGN_CENTER, color, self->alpha);
+            egui_view_selector_bar_draw_text(icon_font, self, icon, &icon_region, EGUI_ALIGN_CENTER, color);
         }
-        egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, local->font, text, &text_region, EGUI_ALIGN_CENTER, color, self->alpha);
+        egui_view_selector_bar_draw_text(local->font, self, text, &text_region, EGUI_ALIGN_CENTER, color);
         return;
     }
 
@@ -438,14 +453,14 @@ static void egui_view_selector_bar_draw_item_content(egui_view_selector_bar_t *l
         icon_font = EGUI_VIEW_ICON_FONT_RESOLVE(local->icon_font, content_region.size.height, 18, 22);
         if (icon_font != NULL)
         {
-            egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, icon_font, icon, &content_region, EGUI_ALIGN_CENTER, color, self->alpha);
+            egui_view_selector_bar_draw_text(icon_font, self, icon, &content_region, EGUI_ALIGN_CENTER, color);
         }
         return;
     }
 
     if (has_text)
     {
-        egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, local->font, text, &content_region, EGUI_ALIGN_CENTER, color, self->alpha);
+        egui_view_selector_bar_draw_text(local->font, self, text, &content_region, EGUI_ALIGN_CENTER, color);
     }
 }
 
@@ -642,13 +657,13 @@ static void egui_view_selector_bar_on_draw(egui_view_t *self)
 
     if (!local->compact_mode)
     {
-        surface_color = egui_rgb_mix(surface_color, EGUI_COLOR_HEX(0xFFFFFF), 16);
-        border_color = egui_rgb_mix(border_color, EGUI_COLOR_HEX(0xFFFFFF), 10);
+        surface_color = egui_rgb_mix(surface_color, HCW_COLOR_SURFACE, EGUI_ALPHA_MAKE(16));
+        border_color = egui_rgb_mix(border_color, HCW_COLOR_SURFACE, EGUI_ALPHA_MAKE(10));
     }
     else
     {
-        surface_color = egui_rgb_mix(surface_color, EGUI_COLOR_HEX(0xFBFCFD), 20);
-        muted_text_color = egui_rgb_mix(muted_text_color, text_color, 4);
+        surface_color = egui_rgb_mix(surface_color, HCW_COLOR_SURFACE_SUBTLE, EGUI_ALPHA_MAKE(20));
+        muted_text_color = egui_rgb_mix(muted_text_color, text_color, EGUI_ALPHA_MAKE(10));
     }
 
     if (!is_enabled)
@@ -685,8 +700,6 @@ static void egui_view_selector_bar_on_draw(egui_view_t *self)
     }
 
     count = egui_view_selector_bar_prepare_layout(local, content_x, content_w, items);
-    egui_canvas_draw_line(&uicode_get_core()->canvas, content_x, divider_y, content_x + content_w, divider_y, 1, border_color,
-                          egui_color_alpha_mix(self->alpha, local->compact_mode ? 20 : 18));
 
     for (i = 0; i < count; i++)
     {
@@ -730,22 +743,6 @@ static void egui_view_selector_bar_on_draw(egui_view_t *self)
         }
 
         egui_view_selector_bar_draw_item_content(local, self, &item_region, icon, items[i].label, item_text_color);
-
-        if (is_active)
-        {
-            egui_dim_t indicator_w = item_region.size.width - (local->compact_mode ? 10 : 12);
-            egui_dim_t indicator_x;
-
-            if (indicator_w < (local->compact_mode ? 10 : 14))
-            {
-                indicator_w = local->compact_mode ? 10 : 14;
-            }
-            indicator_x = item_region.location.x + (item_region.size.width - indicator_w) / 2;
-            egui_canvas_draw_line(&uicode_get_core()->canvas, indicator_x, divider_y, indicator_x + indicator_w, divider_y, 1, accent_color,
-                                  egui_color_alpha_mix(self->alpha, 56));
-            egui_canvas_draw_line(&uicode_get_core()->canvas, indicator_x, divider_y + 1, indicator_x + indicator_w, divider_y + 1, 1, accent_color,
-                                  egui_color_alpha_mix(self->alpha, 22));
-        }
     }
 
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
@@ -757,9 +754,10 @@ static void egui_view_selector_bar_on_draw(egui_view_t *self)
         egui_dim_t focus_h = region.size.height - 4;
         egui_dim_t focus_radius = radius > 2 ? radius - 2 : radius;
 
-        egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, region.location.x, region.location.y, region.size.width, region.size.height, radius, 2, EGUI_THEME_FOCUS,
-                                         egui_color_alpha_mix(self->alpha, 96));
-        egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, focus_x, focus_y, focus_w, focus_h, focus_radius, 1, EGUI_THEME_FOCUS, egui_color_alpha_mix(self->alpha, 48));
+        egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, region.location.x, region.location.y, region.size.width, region.size.height, radius, 2,
+                                         EGUI_THEME_FOCUS, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(96)));
+        egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, focus_x, focus_y, focus_w, focus_h, focus_radius, 1, EGUI_THEME_FOCUS,
+                                         egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(78)));
     }
 #endif
 }
@@ -1000,11 +998,11 @@ void egui_view_selector_bar_init(egui_view_t *self)
     local->item_icons = NULL;
     local->font = (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT;
     local->icon_font = NULL;
-    local->surface_color = EGUI_COLOR_HEX(0xFFFFFF);
-    local->border_color = EGUI_COLOR_HEX(0xD4DCE4);
-    local->text_color = EGUI_COLOR_HEX(0x1D2732);
-    local->muted_text_color = EGUI_COLOR_HEX(0x687786);
-    local->accent_color = EGUI_COLOR_HEX(0x0F6CBD);
+    local->surface_color = HCW_COLOR_SURFACE;
+    local->border_color = HCW_COLOR_BORDER;
+    local->text_color = HCW_COLOR_TEXT_STRONG;
+    local->muted_text_color = HCW_COLOR_TEXT_MUTED;
+    local->accent_color = HCW_COLOR_PRIMARY;
     local->item_count = 0;
     local->current_index = EGUI_VIEW_SELECTOR_BAR_INDEX_NONE;
     local->compact_mode = 0;

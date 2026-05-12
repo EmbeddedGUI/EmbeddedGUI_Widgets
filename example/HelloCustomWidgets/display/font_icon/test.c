@@ -3,17 +3,18 @@
 #include "uicode_disp0.h"
 #include "demo_scaffold.h"
 #include "resource/egui_icon_material_symbols.h"
+#include "resource/egui_icon_font_icon.h"
 
 #if EGUI_CONFIG_RECORDING_TEST
 #include "core/egui_input_simulator.h"
 #endif
 
 #define FONT_ICON_ROOT_WIDTH        224
-#define FONT_ICON_ROOT_HEIGHT       148
-#define FONT_ICON_PRIMARY_SIZE      48
-#define FONT_ICON_PREVIEW_SIZE      28
-#define FONT_ICON_BOTTOM_ROW_WIDTH  64
-#define FONT_ICON_BOTTOM_ROW_HEIGHT 28
+#define FONT_ICON_ROOT_HEIGHT       166
+#define FONT_ICON_PRIMARY_SIZE      56
+#define FONT_ICON_PREVIEW_SIZE      40
+#define FONT_ICON_BOTTOM_ROW_WIDTH  88
+#define FONT_ICON_BOTTOM_ROW_HEIGHT 40
 #define FONT_ICON_RECORD_WAIT       90
 #define FONT_ICON_RECORD_FRAME_WAIT 170
 #define FONT_ICON_RECORD_FINAL_WAIT 280
@@ -41,7 +42,7 @@ static egui_view_api_t ms16_icon_api;
 static egui_view_api_t ms20_icon_api;
 static uint8_t ui_ready;
 
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, HCW_COLOR_PAGE_BG, EGUI_ALPHA_100, 14);
 EGUI_BACKGROUND_PARAM_INIT(bg_page_panel_params, &bg_page_panel_param, NULL, NULL);
 EGUI_BACKGROUND_COLOR_STATIC_CONST_INIT(bg_page_panel, &bg_page_panel_params);
 
@@ -49,22 +50,22 @@ static const char *title_text = "FontIcon";
 
 static const font_icon_snapshot_t primary_snapshots[] = {
         {
-                "Search / MS24",
+                "Search / 32px",
                 EGUI_ICON_MS_SEARCH,
-                EGUI_FONT_ICON_MS_24,
-                EGUI_COLOR_HEX(0x0F6CBD),
+                EGUI_FONT_FONT_ICON_SYMBOLS_32,
+                HCW_COLOR_PRIMARY,
         },
         {
-                "Favorite / MS20",
+                "Favorite / 32px",
                 EGUI_ICON_MS_FAVORITE,
-                EGUI_FONT_ICON_MS_20,
-                EGUI_COLOR_HEX(0xA15C00),
+                EGUI_FONT_FONT_ICON_SYMBOLS_32,
+                HCW_COLOR_WARNING,
         },
         {
-                "Settings / MS16",
+                "Settings / 32px",
                 EGUI_ICON_MS_SETTINGS,
-                EGUI_FONT_ICON_MS_16,
-                EGUI_COLOR_HEX(0x0F7B45),
+                EGUI_FONT_FONT_ICON_SYMBOLS_32,
+                HCW_COLOR_SUCCESS,
         },
 };
 
@@ -94,11 +95,11 @@ static void apply_preview_states(void)
 {
     egui_view_font_icon_apply_subtle_style(EGUI_VIEW_OF(&ms16_icon));
     egui_view_font_icon_set_glyph(EGUI_VIEW_OF(&ms16_icon), EGUI_ICON_MS_SEARCH);
-    egui_view_font_icon_set_icon_font(EGUI_VIEW_OF(&ms16_icon), EGUI_FONT_ICON_MS_16);
+    egui_view_font_icon_set_icon_font(EGUI_VIEW_OF(&ms16_icon), EGUI_FONT_FONT_ICON_SYMBOLS_32);
 
     egui_view_font_icon_apply_accent_style(EGUI_VIEW_OF(&ms20_icon));
     egui_view_font_icon_set_glyph(EGUI_VIEW_OF(&ms20_icon), EGUI_ICON_MS_FAVORITE);
-    egui_view_font_icon_set_icon_font(EGUI_VIEW_OF(&ms20_icon), EGUI_FONT_ICON_MS_20);
+    egui_view_font_icon_set_icon_font(EGUI_VIEW_OF(&ms20_icon), EGUI_FONT_FONT_ICON_SYMBOLS_32);
 
     if (ui_ready)
     {
@@ -141,7 +142,7 @@ void test_init_ui(void)
     egui_view_label_set_text(EGUI_VIEW_OF(&title_label), title_text);
     egui_view_label_set_align_type(EGUI_VIEW_OF(&title_label), EGUI_ALIGN_CENTER);
     hello_custom_widgets_demo_set_label_font_with_min_height(EGUI_VIEW_OF(&title_label), (const egui_font_t *)&egui_res_font_montserrat_12_4);
-    egui_view_label_set_font_color(EGUI_VIEW_OF(&title_label), EGUI_COLOR_HEX(0x21303F), EGUI_ALPHA_100);
+    egui_view_label_set_font_color(EGUI_VIEW_OF(&title_label), HCW_COLOR_TEXT, EGUI_ALPHA_100);
     egui_view_set_margin(EGUI_VIEW_OF(&title_label), 0, 8, 0, 8);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label));
 
@@ -155,10 +156,10 @@ void test_init_ui(void)
 
     egui_view_label_init(EGUI_VIEW_OF(&primary_name_label), uicode_get_core());
     egui_view_set_size(EGUI_VIEW_OF(&primary_name_label), FONT_ICON_ROOT_WIDTH, 12);
-    egui_view_label_set_text(EGUI_VIEW_OF(&primary_name_label), "Search / MS24");
+    egui_view_label_set_text(EGUI_VIEW_OF(&primary_name_label), "Search / 32px");
     egui_view_label_set_align_type(EGUI_VIEW_OF(&primary_name_label), EGUI_ALIGN_CENTER);
     hello_custom_widgets_demo_set_label_font_with_min_height(EGUI_VIEW_OF(&primary_name_label), (const egui_font_t *)&egui_res_font_montserrat_10_4);
-    egui_view_label_set_font_color(EGUI_VIEW_OF(&primary_name_label), EGUI_COLOR_HEX(0x0F6CBD), EGUI_ALPHA_100);
+    egui_view_label_set_font_color(EGUI_VIEW_OF(&primary_name_label), HCW_COLOR_PRIMARY, EGUI_ALPHA_100);
     egui_view_set_margin(EGUI_VIEW_OF(&primary_name_label), 0, 0, 0, 10);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&primary_name_label));
 
@@ -263,4 +264,3 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     }
 }
 #endif
-

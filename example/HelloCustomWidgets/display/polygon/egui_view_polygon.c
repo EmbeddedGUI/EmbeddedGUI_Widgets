@@ -52,7 +52,7 @@ static uint8_t egui_view_polygon_clamp_percent(uint8_t value)
 
 static egui_color_t egui_view_polygon_mix_disabled(egui_color_t color)
 {
-    return egui_rgb_mix(color, EGUI_COLOR_HEX(0xAEB8C2), 62);
+    return egui_rgb_mix(color, HCW_COLOR_TEXT_SOFT, EGUI_ALPHA_MAKE(40));
 }
 
 static egui_dim_t egui_view_polygon_resolve_axis(egui_dim_t origin, egui_dim_t length, uint8_t percent)
@@ -80,8 +80,8 @@ static void egui_view_polygon_on_draw(egui_view_t *self)
     egui_color_t fill_color = local->fill_color;
     egui_color_t stroke_color = local->stroke_color;
     egui_color_t accent_color = local->accent_color;
-    egui_alpha_t fill_alpha = 52;
-    egui_alpha_t stroke_alpha = 82;
+    egui_alpha_t fill_alpha = EGUI_ALPHA_MAKE(96);
+    egui_alpha_t stroke_alpha = EGUI_ALPHA_100;
     egui_dim_t points[EGUI_VIEW_POLYGON_MAX_POINTS * 2];
 
     egui_view_get_work_region(self, &region);
@@ -95,12 +95,12 @@ static void egui_view_polygon_on_draw(egui_view_t *self)
         fill_color = egui_view_polygon_mix_disabled(fill_color);
         stroke_color = egui_view_polygon_mix_disabled(stroke_color);
         accent_color = egui_view_polygon_mix_disabled(accent_color);
-        fill_alpha = 28;
-        stroke_alpha = 34;
+        fill_alpha = EGUI_ALPHA_MAKE(58);
+        stroke_alpha = EGUI_ALPHA_MAKE(68);
     }
     if (egui_view_get_pressed(self))
     {
-        stroke_color = egui_rgb_mix(stroke_color, accent_color, 18);
+        stroke_color = egui_rgb_mix(stroke_color, accent_color, EGUI_ALPHA_MAKE(18));
     }
 
     egui_view_polygon_resolve_points(local, &region, points);
@@ -199,14 +199,14 @@ void egui_view_polygon_get_point(egui_view_t *self, uint8_t index, uint8_t *x_pe
 
 void egui_view_polygon_apply_standard_style(egui_view_t *self)
 {
-    egui_view_polygon_set_palette(self, EGUI_COLOR_HEX(0xDDEBFA), EGUI_COLOR_HEX(0x0F6CBD), EGUI_COLOR_HEX(0xBBD7F0));
+    egui_view_polygon_set_palette(self, HCW_COLOR_PRIMARY_TINT, HCW_COLOR_PRIMARY, HCW_COLOR_PRIMARY_SOFT);
     egui_view_polygon_set_stroke_width(self, 2);
     egui_view_polygon_set_points(self, polygon_standard_points, 4);
 }
 
 void egui_view_polygon_apply_accent_style(egui_view_t *self)
 {
-    egui_view_polygon_set_palette(self, EGUI_COLOR_HEX(0xD4E8FA), EGUI_COLOR_HEX(0x0F6CBD), EGUI_COLOR_HEX(0x9EC7EA));
+    egui_view_polygon_set_palette(self, HCW_COLOR_PRIMARY_TINT, HCW_COLOR_PRIMARY, HCW_COLOR_PRIMARY_LIGHT);
     egui_view_polygon_set_stroke_width(self, 3);
     egui_view_polygon_set_points(self, polygon_accent_points, 5);
 }

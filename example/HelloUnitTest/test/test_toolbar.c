@@ -285,6 +285,17 @@ static void test_toolbar_setters_clear_pressed_and_update_state(void)
 {
     setup_toolbar();
 
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_SURFACE.full, test_toolbar.surface_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PANEL.full, test_toolbar.item_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PRIMARY_DARK.full, test_toolbar.checked_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PRIMARY_DARK.full, test_toolbar.pressed_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_BORDER_STRONG.full, test_toolbar.border_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PRIMARY_DARK.full, test_toolbar.focus_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT_STRONG.full, test_toolbar.text_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT_SOFT.full, test_toolbar.muted_text_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT_SOFT.full, test_toolbar.icon_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PRIMARY_DARK.full, test_toolbar.checked_icon_color.full);
+
     seed_pressed_state(&test_toolbar, 0, 1);
     egui_view_toolbar_set_current_index(EGUI_VIEW_OF(&test_toolbar), 1);
     EGUI_TEST_ASSERT_EQUAL_INT(1, test_toolbar.current_index);

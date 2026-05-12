@@ -159,7 +159,7 @@ static void egui_view_card_panel_fit_text_to_width(const egui_font_t *font, cons
 
 static egui_color_t egui_view_card_panel_mix_disabled(egui_color_t color)
 {
-    return egui_rgb_mix(color, EGUI_COLOR_DARK_GREY, 68);
+    return egui_rgb_mix(color, HCW_COLOR_TEXT_SOFT, EGUI_ALPHA_MAKE(32));
 }
 
 static uint8_t egui_view_card_panel_clear_pressed_state(egui_view_t *self)
@@ -398,39 +398,39 @@ static void egui_view_card_panel_on_draw(egui_view_t *self)
 
     snapshot = &local->snapshots[local->current_snapshot];
     tone_color = egui_view_card_panel_tone_color(local, snapshot->tone);
-    card_fill = egui_rgb_mix(local->surface_color, tone_color, snapshot->emphasized ? 8 : 4);
-    card_border = egui_rgb_mix(local->border_color, tone_color, snapshot->emphasized ? 16 : 10);
+    card_fill = HCW_COLOR_PANEL;
+    card_border = egui_rgb_mix(local->border_color, tone_color, EGUI_ALPHA_MAKE(snapshot->emphasized ? 8 : 5));
     title_color = local->text_color;
-    body_color = egui_rgb_mix(local->muted_text_color, local->text_color, 18);
-    footer_color = egui_rgb_mix(local->muted_text_color, tone_color, 12);
-    section_fill = egui_rgb_mix(local->surface_color, tone_color, 6);
-    section_border = egui_rgb_mix(local->border_color, tone_color, 10);
-    badge_fill = egui_rgb_mix(local->surface_color, tone_color, 10);
-    badge_border = egui_rgb_mix(local->border_color, tone_color, 16);
-    action_fill = egui_rgb_mix(local->surface_color, tone_color, 4);
-    action_border = egui_rgb_mix(local->border_color, tone_color, 10);
-    value_fill = egui_rgb_mix(local->surface_color, tone_color, 8);
-    value_border = egui_rgb_mix(local->border_color, tone_color, 12);
-    value_color = egui_rgb_mix(local->text_color, tone_color, snapshot->emphasized ? 24 : 8);
+    body_color = egui_rgb_mix(local->muted_text_color, local->text_color, EGUI_ALPHA_MAKE(18));
+    footer_color = egui_rgb_mix(local->muted_text_color, tone_color, EGUI_ALPHA_MAKE(8));
+    section_fill = HCW_COLOR_PANEL;
+    section_border = egui_rgb_mix(local->border_color, tone_color, EGUI_ALPHA_MAKE(8));
+    badge_fill = egui_rgb_mix(HCW_COLOR_PANEL, tone_color, EGUI_ALPHA_MAKE(4));
+    badge_border = egui_rgb_mix(local->border_color, tone_color, EGUI_ALPHA_MAKE(8));
+    action_fill = egui_rgb_mix(HCW_COLOR_PANEL, tone_color, EGUI_ALPHA_MAKE(3));
+    action_border = egui_rgb_mix(local->border_color, tone_color, EGUI_ALPHA_MAKE(8));
+    value_fill = egui_rgb_mix(HCW_COLOR_PANEL, tone_color, EGUI_ALPHA_MAKE(4));
+    value_border = egui_rgb_mix(local->border_color, tone_color, EGUI_ALPHA_MAKE(8));
+    value_color = egui_rgb_mix(local->text_color, tone_color, EGUI_ALPHA_MAKE(snapshot->emphasized ? 28 : 16));
 
     is_enabled = egui_view_get_enable(self) ? 1 : 0;
     if (!is_enabled)
     {
-        tone_color = egui_view_card_panel_mix_disabled(tone_color);
-        card_fill = egui_view_card_panel_mix_disabled(card_fill);
-        card_border = egui_view_card_panel_mix_disabled(card_border);
+        tone_color = local->muted_text_color;
+        card_fill = HCW_COLOR_PANEL;
+        card_border = egui_rgb_mix(local->border_color, local->muted_text_color, EGUI_ALPHA_MAKE(22));
         title_color = egui_view_card_panel_mix_disabled(title_color);
-        body_color = egui_view_card_panel_mix_disabled(body_color);
-        footer_color = egui_view_card_panel_mix_disabled(footer_color);
-        section_fill = egui_view_card_panel_mix_disabled(section_fill);
-        section_border = egui_view_card_panel_mix_disabled(section_border);
-        badge_fill = egui_view_card_panel_mix_disabled(badge_fill);
-        badge_border = egui_view_card_panel_mix_disabled(badge_border);
-        action_fill = egui_view_card_panel_mix_disabled(action_fill);
-        action_border = egui_view_card_panel_mix_disabled(action_border);
-        value_fill = egui_view_card_panel_mix_disabled(value_fill);
-        value_border = egui_view_card_panel_mix_disabled(value_border);
-        value_color = egui_view_card_panel_mix_disabled(value_color);
+        body_color = local->muted_text_color;
+        footer_color = local->muted_text_color;
+        section_fill = HCW_COLOR_PANEL;
+        section_border = egui_rgb_mix(local->border_color, local->muted_text_color, EGUI_ALPHA_MAKE(22));
+        badge_fill = HCW_COLOR_PANEL;
+        badge_border = egui_rgb_mix(local->border_color, local->muted_text_color, EGUI_ALPHA_MAKE(20));
+        action_fill = HCW_COLOR_PANEL;
+        action_border = egui_rgb_mix(local->border_color, local->muted_text_color, EGUI_ALPHA_MAKE(20));
+        value_fill = HCW_COLOR_PANEL;
+        value_border = egui_rgb_mix(local->border_color, local->muted_text_color, EGUI_ALPHA_MAKE(20));
+        value_color = local->muted_text_color;
     }
 
     x = region.location.x;
@@ -486,20 +486,18 @@ static void egui_view_card_panel_on_draw(egui_view_t *self)
         body_h = 10;
     }
 
-    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, x, y, w, h, radius, card_fill, egui_color_alpha_mix(self->alpha, 100));
-    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, x, y, w, h, radius, 1, card_border, egui_color_alpha_mix(self->alpha, 62));
-    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, x + 2, y + 2, w - 4, 3, radius - 2, tone_color,
-                                          egui_color_alpha_mix(self->alpha, snapshot->emphasized ? 22 : 12));
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, x, y, w, h, radius, card_fill, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(100)));
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, x, y, w, h, radius, 1, card_border, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(78)));
 
     egui_view_card_panel_draw_pill(local->meta_font, self, snapshot->badge, x + padding, y + padding, badge_w, badge_h, 5, badge_fill,
-                                   30, badge_border, 40, tone_color);
+                                   EGUI_ALPHA_MAKE(62), badge_border, EGUI_ALPHA_MAKE(76), tone_color);
 
     show_action = (snapshot->action != NULL && snapshot->action[0] != '\0' && is_enabled) ? 1 : 0;
     if (show_action)
     {
         action_x = x + w - padding - action_w;
         egui_view_card_panel_draw_pill(local->meta_font, self, snapshot->action, action_x, y + padding, action_w, action_h, 5, action_fill,
-                                       22, action_border, 32, tone_color);
+                                       EGUI_ALPHA_MAKE(58), action_border, EGUI_ALPHA_MAKE(72), tone_color);
     }
 
     text_region.location.x = title_x;
@@ -517,11 +515,9 @@ static void egui_view_card_panel_on_draw(egui_view_t *self)
     egui_view_card_panel_draw_text(local->font, self, body_text, &text_region, EGUI_ALIGN_LEFT, body_color);
 
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, summary_x, summary_y, summary_w, summary_h, 8, value_fill,
-                                          egui_color_alpha_mix(self->alpha, 26));
+                                          egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(74)));
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, summary_x, summary_y, summary_w, summary_h, 8, 1, value_border,
-                                     egui_color_alpha_mix(self->alpha, 34));
-    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, summary_x + 4, summary_y + summary_h - 6, summary_w - 8, 2, 1, tone_color,
-                                          egui_color_alpha_mix(self->alpha, snapshot->emphasized ? 46 : 24));
+                                     egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(80)));
 
     text_region.location.x = summary_x;
     text_region.location.y = summary_y + 7;
@@ -538,9 +534,9 @@ static void egui_view_card_panel_on_draw(egui_view_t *self)
     egui_view_card_panel_draw_text(local->meta_font, self, value_label_text, &text_region, EGUI_ALIGN_CENTER, body_color);
 
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, x + padding, detail_y, w - padding * 2, detail_h, 8, section_fill,
-                                          egui_color_alpha_mix(self->alpha, 20));
+                                          egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(74)));
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, x + padding, detail_y, w - padding * 2, detail_h, 8, 1, section_border,
-                                     egui_color_alpha_mix(self->alpha, 26));
+                                     egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(78)));
 
     text_region.location.x = x + padding + 6;
     text_region.location.y = detail_y + 5;
@@ -563,10 +559,6 @@ static void egui_view_card_panel_on_draw(egui_view_t *self)
     egui_view_card_panel_fit_text_to_width(local->meta_font, snapshot->footer, footer_text, sizeof(footer_text), text_region.size.width, 4);
     egui_view_card_panel_draw_text(local->meta_font, self, footer_text, &text_region, EGUI_ALIGN_LEFT, footer_color);
 
-    if (!is_enabled)
-    {
-        egui_canvas_draw_line(&uicode_get_core()->canvas, x + padding, footer_y - 2, x + w - padding, footer_y - 2, 1, card_border, egui_color_alpha_mix(self->alpha, 24));
-    }
 }
 
 #if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
@@ -664,14 +656,14 @@ void egui_view_card_panel_init(egui_view_t *self)
     local->snapshots = NULL;
     local->font = (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT;
     local->meta_font = (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT;
-    local->surface_color = EGUI_COLOR_HEX(0xFFFFFF);
-    local->border_color = EGUI_COLOR_HEX(0xD2DBE3);
-    local->text_color = EGUI_COLOR_HEX(0x1A2734);
-    local->muted_text_color = EGUI_COLOR_HEX(0x6B7A89);
-    local->accent_color = EGUI_COLOR_HEX(0x0F6CBD);
-    local->success_color = EGUI_COLOR_HEX(0x0F7B45);
-    local->warning_color = EGUI_COLOR_HEX(0x9D5D00);
-    local->neutral_color = EGUI_COLOR_HEX(0x7A8796);
+    local->surface_color = HCW_COLOR_SURFACE;
+    local->border_color = HCW_COLOR_BORDER;
+    local->text_color = HCW_COLOR_TEXT;
+    local->muted_text_color = HCW_COLOR_TEXT_MUTED;
+    local->accent_color = HCW_COLOR_PRIMARY;
+    local->success_color = HCW_COLOR_SUCCESS;
+    local->warning_color = HCW_COLOR_WARNING;
+    local->neutral_color = HCW_COLOR_NEUTRAL;
     local->snapshot_count = 0;
     local->current_snapshot = 0;
 }

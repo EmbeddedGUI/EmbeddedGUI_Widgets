@@ -1,4 +1,5 @@
 #include "egui_view_person_picture.h"
+#include "../../hcw_text_center.h"
 
 static uint8_t egui_view_person_picture_clear_pressed_state(egui_view_t *self)
 {
@@ -10,7 +11,7 @@ static uint8_t egui_view_person_picture_clear_pressed_state(egui_view_t *self)
 
 static egui_color_t egui_view_person_picture_mix_disabled(egui_color_t color)
 {
-    return egui_rgb_mix(color, EGUI_COLOR_DARK_GREY, 66);
+    return egui_rgb_mix(color, HCW_COLOR_SURFACE_SUBTLE, EGUI_ALPHA_MAKE(44));
 }
 
 static uint8_t egui_view_person_picture_clamp_tone(uint8_t tone)
@@ -198,7 +199,7 @@ static egui_color_t egui_view_person_picture_presence_color(egui_view_person_pic
     case EGUI_VIEW_PERSON_PICTURE_PRESENCE_BUSY:
         return local->warning_color;
     case EGUI_VIEW_PERSON_PICTURE_PRESENCE_AWAY:
-        return egui_rgb_mix(local->warning_color, local->accent_color, 24);
+        return egui_rgb_mix(local->warning_color, local->accent_color, EGUI_ALPHA_MAKE(24));
     case EGUI_VIEW_PERSON_PICTURE_PRESENCE_OFFLINE:
         return local->neutral_color;
     default:
@@ -215,6 +216,7 @@ static void egui_view_person_picture_draw_text(const egui_font_t *font, egui_vie
         return;
     }
 
+    draw_region.location.y += hcw_text_center_get_delta(font, text, region, EGUI_ALIGN_CENTER);
     egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, font, text, &draw_region, EGUI_ALIGN_CENTER, color, self->alpha);
 }
 
@@ -312,7 +314,7 @@ static void egui_view_person_picture_on_draw(egui_view_t *self)
     radius = avatar_region.size.width / 2;
 
     fill_color = egui_view_person_picture_tone_color(local, local->tone);
-    border_color = egui_rgb_mix(local->border_color, fill_color, 14);
+    border_color = egui_rgb_mix(local->border_color, fill_color, EGUI_ALPHA_MAKE(24));
     foreground_color = local->foreground_color;
     presence_color = egui_view_person_picture_presence_color(local, local->presence);
     presence_outline_color = local->surface_color;
@@ -326,7 +328,7 @@ static void egui_view_person_picture_on_draw(egui_view_t *self)
         presence_outline_color = egui_view_person_picture_mix_disabled(presence_outline_color);
     }
 
-    egui_canvas_draw_circle_fill_basic(&uicode_get_core()->canvas, center_x, center_y, radius, fill_color, egui_color_alpha_mix(self->alpha, 92));
+    egui_canvas_draw_circle_fill_hq(&uicode_get_core()->canvas, center_x, center_y, radius, fill_color, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(92)));
 
     if (local->image != NULL)
     {
@@ -351,11 +353,12 @@ static void egui_view_person_picture_on_draw(egui_view_t *self)
         }
     }
 
-    egui_canvas_draw_circle_basic(&uicode_get_core()->canvas, center_x, center_y, radius, 1, border_color, egui_color_alpha_mix(self->alpha, 28));
+    egui_canvas_draw_circle_hq(&uicode_get_core()->canvas, center_x, center_y, radius, 1, border_color, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(90)));
     if (radius > 1)
     {
-        egui_canvas_draw_circle_basic(&uicode_get_core()->canvas, center_x, center_y, radius - 1, 1, egui_rgb_mix(fill_color, local->surface_color, 16),
-                                      egui_color_alpha_mix(self->alpha, 10));
+        egui_canvas_draw_circle_hq(&uicode_get_core()->canvas, center_x, center_y, radius - 1, 1,
+                                   egui_rgb_mix(fill_color, local->surface_color, EGUI_ALPHA_MAKE(16)),
+                                   egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(74)));
     }
 
     if (egui_view_person_picture_should_draw_presence(local))
@@ -370,12 +373,12 @@ static void egui_view_person_picture_on_draw(egui_view_t *self)
             presence_center_x = presence_region.location.x + presence_region.size.width / 2;
             presence_center_y = presence_region.location.y + presence_region.size.height / 2;
             presence_radius = presence_region.size.width / 2;
-            egui_canvas_draw_circle_fill_basic(&uicode_get_core()->canvas, presence_center_x, presence_center_y, presence_radius, presence_outline_color,
-                                               egui_color_alpha_mix(self->alpha, 96));
+            egui_canvas_draw_circle_fill_hq(&uicode_get_core()->canvas, presence_center_x, presence_center_y, presence_radius, presence_outline_color,
+                                            egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(96)));
             if (presence_radius > 1)
             {
-                egui_canvas_draw_circle_fill_basic(&uicode_get_core()->canvas, presence_center_x, presence_center_y, presence_radius - 1, presence_color,
-                                                   egui_color_alpha_mix(self->alpha, 92));
+                egui_canvas_draw_circle_fill_hq(&uicode_get_core()->canvas, presence_center_x, presence_center_y, presence_radius - 1, presence_color,
+                                                egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(92)));
             }
         }
     }
@@ -564,14 +567,14 @@ void egui_view_person_picture_init(egui_view_t *self)
     local->image = NULL;
     local->font = (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT;
     local->icon_font = NULL;
-    local->surface_color = EGUI_COLOR_HEX(0xFFFFFF);
-    local->border_color = EGUI_COLOR_HEX(0xD2DBE3);
-    local->foreground_color = EGUI_COLOR_HEX(0xFFFFFF);
-    local->accent_color = EGUI_COLOR_HEX(0x0F6CBD);
-    local->success_color = EGUI_COLOR_HEX(0x0F7B45);
-    local->warning_color = EGUI_COLOR_HEX(0x9D5D00);
-    local->neutral_color = EGUI_COLOR_HEX(0x7A8796);
-    local->muted_color = EGUI_COLOR_HEX(0x6B7A89);
+    local->surface_color = HCW_COLOR_SURFACE;
+    local->border_color = HCW_COLOR_BORDER;
+    local->foreground_color = HCW_COLOR_SURFACE;
+    local->accent_color = HCW_COLOR_PRIMARY;
+    local->success_color = HCW_COLOR_SUCCESS;
+    local->warning_color = HCW_COLOR_WARNING;
+    local->neutral_color = HCW_COLOR_NEUTRAL;
+    local->muted_color = HCW_COLOR_TEXT_MUTED;
     local->tone = EGUI_VIEW_PERSON_PICTURE_TONE_NEUTRAL;
     local->presence = EGUI_VIEW_PERSON_PICTURE_PRESENCE_NONE;
 

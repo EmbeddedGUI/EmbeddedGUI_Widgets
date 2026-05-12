@@ -1,4 +1,5 @@
 #include "egui_view_radio_buttons.h"
+#include "../../hcw_text_center.h"
 
 #define EGUI_VIEW_RADIO_BUTTONS_STANDARD_CONTENT_PAD_X 10
 #define EGUI_VIEW_RADIO_BUTTONS_STANDARD_CONTENT_PAD_Y 10
@@ -35,7 +36,7 @@ static uint8_t egui_view_radio_buttons_clamp_count(uint8_t count)
 
 static egui_color_t egui_view_radio_buttons_mix_disabled(egui_color_t color)
 {
-    return egui_rgb_mix(color, EGUI_COLOR_DARK_GREY, 64);
+    return egui_rgb_mix(color, HCW_COLOR_SURFACE_SUBTLE, EGUI_ALPHA_MAKE(44));
 }
 
 static uint8_t egui_view_radio_buttons_clear_pressed_state(egui_view_t *self)
@@ -287,16 +288,16 @@ static void egui_view_radio_buttons_on_draw(egui_view_t *self)
 
     if (local->compact_mode)
     {
-        surface_color = egui_rgb_mix(surface_color, EGUI_COLOR_HEX(0xFBFCFD), 18);
+        surface_color = egui_rgb_mix(surface_color, HCW_COLOR_SURFACE_SUBTLE, EGUI_ALPHA_MAKE(18));
     }
 
     if (local->read_only_mode)
     {
-        surface_color = egui_rgb_mix(surface_color, EGUI_COLOR_HEX(0xEFF3F7), 26);
-        border_color = egui_rgb_mix(border_color, EGUI_COLOR_HEX(0xA7B4C1), 20);
-        text_color = egui_rgb_mix(text_color, muted_text_color, 18);
-        muted_text_color = egui_rgb_mix(muted_text_color, border_color, 24);
-        accent_color = egui_rgb_mix(accent_color, muted_text_color, 40);
+        surface_color = egui_rgb_mix(surface_color, HCW_COLOR_SURFACE_DISABLED, EGUI_ALPHA_MAKE(26));
+        border_color = egui_rgb_mix(border_color, HCW_COLOR_TEXT_SOFT, EGUI_ALPHA_MAKE(20));
+        text_color = egui_rgb_mix(text_color, muted_text_color, EGUI_ALPHA_MAKE(18));
+        muted_text_color = egui_rgb_mix(muted_text_color, border_color, EGUI_ALPHA_MAKE(24));
+        accent_color = egui_rgb_mix(accent_color, muted_text_color, EGUI_ALPHA_MAKE(40));
     }
 
     if (!is_enabled)
@@ -310,10 +311,10 @@ static void egui_view_radio_buttons_on_draw(egui_view_t *self)
 
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, work_region.location.x, work_region.location.y, work_region.size.width, work_region.size.height,
                                           egui_view_radio_buttons_panel_radius(local->compact_mode), surface_color,
-                                          egui_color_alpha_mix(self->alpha, local->compact_mode ? 82 : 88));
+                                          egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(local->compact_mode ? 82 : 88)));
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, work_region.location.x, work_region.location.y, work_region.size.width, work_region.size.height,
                                      egui_view_radio_buttons_panel_radius(local->compact_mode), 1, border_color,
-                                     egui_color_alpha_mix(self->alpha, local->compact_mode ? 34 : 40));
+                                     egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(local->compact_mode ? 34 : 40)));
 
     for (i = 0; i < count; i++)
     {
@@ -327,19 +328,19 @@ static void egui_view_radio_buttons_on_draw(egui_view_t *self)
 
         if (is_selected)
         {
-            egui_color_t active_fill = egui_rgb_mix(surface_color, accent_color, local->read_only_mode ? 3 : 7);
-            egui_alpha_t active_alpha = local->read_only_mode ? 16 : 22;
+            egui_color_t active_fill = egui_rgb_mix(surface_color, accent_color, EGUI_ALPHA_MAKE(local->read_only_mode ? 3 : 7));
+            egui_alpha_t active_alpha = EGUI_ALPHA_MAKE(local->read_only_mode ? 16 : 22);
 
             egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, item_region.location.x, item_region.location.y, item_region.size.width, item_region.size.height,
                                                   egui_view_radio_buttons_item_radius(local->compact_mode), active_fill,
                                                   egui_color_alpha_mix(self->alpha, active_alpha));
             ring_color = accent_color;
-            item_text_color = egui_rgb_mix(text_color, accent_color, local->read_only_mode ? 2 : 6);
+            item_text_color = egui_rgb_mix(text_color, accent_color, EGUI_ALPHA_MAKE(local->read_only_mode ? 2 : 6));
         }
         else if (local->read_only_mode)
         {
-            ring_color = egui_rgb_mix(border_color, muted_text_color, 18);
-            item_text_color = egui_rgb_mix(text_color, muted_text_color, 24);
+            ring_color = egui_rgb_mix(border_color, muted_text_color, EGUI_ALPHA_MAKE(18));
+            item_text_color = egui_rgb_mix(text_color, muted_text_color, EGUI_ALPHA_MAKE(24));
             fill_color = muted_text_color;
         }
 
@@ -359,6 +360,7 @@ static void egui_view_radio_buttons_on_draw(egui_view_t *self)
         text_region.size.height = item_region.size.height;
         if (text_region.size.width > 0 && local->font != NULL && local->items[i] != NULL)
         {
+            text_region.location.y += hcw_text_center_get_delta(local->font, local->items[i], &text_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER);
             egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, local->font, local->items[i], &text_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, item_text_color, self->alpha);
         }
 
@@ -367,7 +369,7 @@ static void egui_view_radio_buttons_on_draw(egui_view_t *self)
             egui_dim_t divider_y = item_region.location.y + item_region.size.height + egui_view_radio_buttons_item_gap(local->compact_mode) / 2;
 
             egui_canvas_draw_line(&uicode_get_core()->canvas, item_region.location.x + 2, divider_y, item_region.location.x + item_region.size.width - 2, divider_y, 1, border_color,
-                                  egui_color_alpha_mix(self->alpha, local->compact_mode ? 14 : 18));
+                                  egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(local->compact_mode ? 14 : 18)));
         }
 
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
@@ -375,7 +377,7 @@ static void egui_view_radio_buttons_on_draw(egui_view_t *self)
         {
             egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, item_region.location.x, item_region.location.y, item_region.size.width, item_region.size.height,
                                              egui_view_radio_buttons_item_radius(local->compact_mode), 1, EGUI_THEME_FOCUS,
-                                             egui_color_alpha_mix(self->alpha, local->compact_mode ? 52 : 64));
+                                             egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(local->compact_mode ? 52 : 64)));
         }
 #endif
     }
@@ -765,11 +767,11 @@ void egui_view_radio_buttons_init(egui_view_t *self)
     local->on_selection_changed = NULL;
     local->items = NULL;
     local->font = (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT;
-    local->surface_color = EGUI_COLOR_HEX(0xFFFFFF);
-    local->border_color = EGUI_COLOR_HEX(0xD4DCE4);
-    local->text_color = EGUI_COLOR_HEX(0x1A2734);
-    local->muted_text_color = EGUI_COLOR_HEX(0x6B7A89);
-    local->accent_color = EGUI_COLOR_HEX(0x0F6CBD);
+    local->surface_color = HCW_COLOR_SURFACE;
+    local->border_color = HCW_COLOR_BORDER_STRONG;
+    local->text_color = HCW_COLOR_TEXT;
+    local->muted_text_color = HCW_COLOR_TEXT_SOFT;
+    local->accent_color = HCW_COLOR_PRIMARY_DARK;
     local->item_count = 0;
     local->current_index = EGUI_VIEW_RADIO_BUTTONS_INDEX_NONE;
     local->compact_mode = 0;

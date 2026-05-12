@@ -48,7 +48,7 @@ static egui_view_api_t muted_api;
 static uint8_t primary_snapshot_index;
 static uint8_t ui_ready;
 
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, HCW_COLOR_PAGE_BG, EGUI_ALPHA_100, 14);
 EGUI_BACKGROUND_PARAM_INIT(bg_page_panel_params, &bg_page_panel_param, NULL, NULL);
 EGUI_BACKGROUND_COLOR_STATIC_CONST_INIT(bg_page_panel, &bg_page_panel_params);
 
@@ -59,34 +59,34 @@ static const tag_snapshot_t primary_snapshots[] = {
                 "Assigned",
                 "Today",
                 "Assigned / standard",
-                EGUI_COLOR_HEX(0x51606F),
-                EGUI_COLOR_HEX(0xFFFFFF),
-                EGUI_COLOR_HEX(0xD5DDE6),
-                EGUI_COLOR_HEX(0x1F2A35),
-                EGUI_COLOR_HEX(0x637283),
-                EGUI_COLOR_HEX(0x0F6CBD),
+                HCW_COLOR_TEXT_MUTED,
+                HCW_COLOR_SURFACE,
+                HCW_COLOR_BORDER,
+                HCW_COLOR_TEXT,
+                HCW_COLOR_TEXT_MUTED,
+                HCW_COLOR_PRIMARY,
         },
         {
                 "Needs review",
                 "2 files",
                 "Needs review / warm",
-                EGUI_COLOR_HEX(0xA15C00),
-                EGUI_COLOR_HEX(0xFFFBF5),
-                EGUI_COLOR_HEX(0xE4D7C7),
-                EGUI_COLOR_HEX(0x332611),
-                EGUI_COLOR_HEX(0x8C6E52),
-                EGUI_COLOR_HEX(0xA15C00),
+                HCW_COLOR_WARNING,
+                HCW_COLOR_WARNING_SOFT,
+                HCW_COLOR_WARNING_SOFT,
+                HCW_COLOR_TEXT_STRONG,
+                HCW_COLOR_WARNING_DARK,
+                HCW_COLOR_WARNING,
         },
         {
                 "Pinned",
                 "Release",
                 "Pinned / calm",
-                EGUI_COLOR_HEX(0x0F7B45),
-                EGUI_COLOR_HEX(0xF7FBF8),
-                EGUI_COLOR_HEX(0xD1E1D7),
-                EGUI_COLOR_HEX(0x1D3327),
-                EGUI_COLOR_HEX(0x5F7D69),
-                EGUI_COLOR_HEX(0x0F7B45),
+                HCW_COLOR_SUCCESS,
+                HCW_COLOR_SURFACE_SUBTLE,
+                HCW_COLOR_TRACK,
+                HCW_COLOR_TEXT_STRONG,
+                HCW_COLOR_SUCCESS,
+                HCW_COLOR_SUCCESS,
         },
 };
 
@@ -131,8 +131,8 @@ static void apply_secondary_state(void)
     egui_view_tag_set_text(EGUI_VIEW_OF(&secondary_tag), "Queued");
     egui_view_tag_set_secondary_text(EGUI_VIEW_OF(&secondary_tag), "Open");
     egui_view_tag_set_dismissible(EGUI_VIEW_OF(&secondary_tag), 1);
-    egui_view_tag_set_palette(EGUI_VIEW_OF(&secondary_tag), EGUI_COLOR_HEX(0xF8FBFD), EGUI_COLOR_HEX(0xCCD8E3), EGUI_COLOR_HEX(0x1D3440),
-                              EGUI_COLOR_HEX(0x6A7A88), EGUI_COLOR_HEX(0x0C7C73));
+    egui_view_tag_set_palette(EGUI_VIEW_OF(&secondary_tag), HCW_COLOR_SURFACE_PRESS, HCW_COLOR_BORDER, HCW_COLOR_TEXT_STRONG,
+                              HCW_COLOR_TEXT_MUTED, HCW_COLOR_PRIMARY);
 }
 
 static void apply_muted_state(void)
@@ -140,8 +140,8 @@ static void apply_muted_state(void)
     egui_view_tag_set_text(EGUI_VIEW_OF(&muted_tag), "System");
     egui_view_tag_set_secondary_text(EGUI_VIEW_OF(&muted_tag), "Locked");
     egui_view_tag_set_dismissible(EGUI_VIEW_OF(&muted_tag), 0);
-    egui_view_tag_set_palette(EGUI_VIEW_OF(&muted_tag), EGUI_COLOR_HEX(0xF5F7FA), EGUI_COLOR_HEX(0xD7DEE6), EGUI_COLOR_HEX(0x73808C),
-                              EGUI_COLOR_HEX(0x8E99A4), EGUI_COLOR_HEX(0x9AA6B2));
+    egui_view_tag_set_palette(EGUI_VIEW_OF(&muted_tag), HCW_COLOR_PANEL, HCW_COLOR_BORDER, HCW_COLOR_TEXT_MUTED,
+                              HCW_COLOR_TEXT_SOFT, HCW_COLOR_TEXT_SOFT);
 }
 
 static void apply_preview_states(void)
@@ -191,7 +191,7 @@ void test_init_ui(void)
     egui_view_linearlayout_set_align_type(EGUI_VIEW_OF(&root_layout), EGUI_ALIGN_HCENTER);
     egui_view_set_background(EGUI_VIEW_OF(&root_layout), EGUI_BG_OF(&bg_page_panel));
 
-    init_text_label(&title_label, TAG_ROOT_WIDTH, 18, title_text, (const egui_font_t *)&egui_res_font_montserrat_12_4, EGUI_COLOR_HEX(0x21303F),
+    init_text_label(&title_label, TAG_ROOT_WIDTH, 18, title_text, (const egui_font_t *)&egui_res_font_montserrat_12_4, HCW_COLOR_TEXT,
                     EGUI_ALIGN_CENTER);
     egui_view_set_margin(EGUI_VIEW_OF(&title_label), 0, 8, 0, 10);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label));
@@ -205,7 +205,7 @@ void test_init_ui(void)
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&primary_tag));
 
     init_text_label(&primary_status_label, TAG_ROOT_WIDTH, 12, "Assigned / standard", (const egui_font_t *)&egui_res_font_montserrat_10_4,
-                    EGUI_COLOR_HEX(0x51606F), EGUI_ALIGN_CENTER);
+                    HCW_COLOR_TEXT_MUTED, EGUI_ALIGN_CENTER);
     egui_view_set_margin(EGUI_VIEW_OF(&primary_status_label), 0, 0, 0, 14);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&primary_status_label));
 

@@ -312,7 +312,7 @@ static void test_accordion_internal_helpers_cover_text_fitting_and_tones(void)
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x888888).full, egui_view_accordion_tone_color(&test_widget, EGUI_VIEW_ACCORDION_TONE_WARNING).full);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x999999).full, egui_view_accordion_tone_color(&test_widget, EGUI_VIEW_ACCORDION_TONE_NEUTRAL).full);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x666666).full, egui_view_accordion_tone_color(&test_widget, 99).full);
-    EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(sample, EGUI_COLOR_DARK_GREY, 66).full, mixed.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(sample, EGUI_COLOR_DARK_GREY, EGUI_ALPHA_MAKE(52)).full, mixed.full);
 }
 
 static void test_accordion_set_items_clamp_and_defaults(void)

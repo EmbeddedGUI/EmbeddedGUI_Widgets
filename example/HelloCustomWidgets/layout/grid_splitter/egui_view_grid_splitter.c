@@ -294,7 +294,7 @@ static egui_dim_t grid_splitter_get_pane_body_height(egui_view_grid_splitter_t *
 
 static egui_color_t grid_splitter_mix_disabled(egui_color_t color)
 {
-    return egui_rgb_mix(color, EGUI_COLOR_DARK_GREY, 68);
+    return egui_rgb_mix(color, HCW_COLOR_SURFACE_SUBTLE, EGUI_ALPHA_MAKE(44));
 }
 
 static uint8_t grid_splitter_region_contains_point(const egui_region_t *region, egui_dim_t x, egui_dim_t y)
@@ -543,12 +543,12 @@ static void grid_splitter_draw_pane(egui_view_t *self, egui_view_grid_splitter_t
     char title_label[24];
     char meta_label[24];
     char body_label[64];
-    egui_color_t fill_color = egui_rgb_mix(local->surface_color, local->accent_color, emphasized ? 14 : 5);
-    egui_color_t border_color = egui_rgb_mix(local->border_color, local->accent_color, emphasized ? 24 : 10);
-    egui_color_t stripe_color = egui_rgb_mix(local->section_color, local->accent_color, emphasized ? 34 : 16);
-    egui_color_t title_color = egui_rgb_mix(local->text_color, local->accent_color, emphasized ? 16 : 6);
-    egui_color_t meta_color = egui_rgb_mix(local->muted_text_color, local->accent_color, emphasized ? 20 : 8);
-    egui_color_t body_color = egui_rgb_mix(local->text_color, local->muted_text_color, local->compact_mode ? 20 : 12);
+    egui_color_t fill_color = HCW_COLOR_PANEL;
+    egui_color_t border_color = egui_rgb_mix(local->border_color, local->accent_color, EGUI_ALPHA_MAKE(emphasized ? 34 : 24));
+    egui_color_t stripe_color = egui_rgb_mix(HCW_COLOR_PANEL, local->accent_color, EGUI_ALPHA_MAKE(emphasized ? 14 : 8));
+    egui_color_t title_color = egui_rgb_mix(local->text_color, local->accent_color, EGUI_ALPHA_MAKE(emphasized ? 24 : 14));
+    egui_color_t meta_color = egui_rgb_mix(local->muted_text_color, local->accent_color, EGUI_ALPHA_MAKE(emphasized ? 30 : 18));
+    egui_color_t body_color = egui_rgb_mix(local->text_color, local->muted_text_color, EGUI_ALPHA_MAKE(local->compact_mode ? 14 : 8));
     egui_dim_t radius = local->compact_mode ? 5 : 6;
     egui_dim_t pad_x = local->compact_mode ? 5 : 6;
     egui_dim_t pad_y = local->compact_mode ? 4 : 5;
@@ -572,12 +572,12 @@ static void grid_splitter_draw_pane(egui_view_t *self, egui_view_grid_splitter_t
 
     if (local->read_only_mode)
     {
-        fill_color = egui_rgb_mix(fill_color, local->surface_color, 24);
-        border_color = egui_rgb_mix(border_color, local->muted_text_color, 20);
-        stripe_color = egui_rgb_mix(stripe_color, local->muted_text_color, 28);
-        title_color = egui_rgb_mix(title_color, local->muted_text_color, 18);
-        meta_color = egui_rgb_mix(meta_color, local->muted_text_color, 18);
-        body_color = egui_rgb_mix(body_color, local->muted_text_color, 24);
+        fill_color = HCW_COLOR_PANEL;
+        border_color = egui_rgb_mix(border_color, local->muted_text_color, EGUI_ALPHA_MAKE(20));
+        stripe_color = egui_rgb_mix(stripe_color, local->muted_text_color, EGUI_ALPHA_MAKE(28));
+        title_color = egui_rgb_mix(title_color, local->muted_text_color, EGUI_ALPHA_MAKE(18));
+        meta_color = egui_rgb_mix(meta_color, local->muted_text_color, EGUI_ALPHA_MAKE(18));
+        body_color = egui_rgb_mix(body_color, local->muted_text_color, EGUI_ALPHA_MAKE(24));
     }
     if (!egui_view_get_enable(self))
     {
@@ -590,9 +590,9 @@ static void grid_splitter_draw_pane(egui_view_t *self, egui_view_grid_splitter_t
     }
 
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, region->location.x, region->location.y, region->size.width, region->size.height, radius, fill_color,
-                                          egui_color_alpha_mix(self->alpha, 96));
+                                          egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(96)));
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, region->location.x, region->location.y, region->size.width, region->size.height, radius, 1, border_color,
-                                     egui_color_alpha_mix(self->alpha, 44));
+                                     egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(local->read_only_mode ? 76 : 94)));
 
     stripe_region.location.x = region->location.x + 1;
     stripe_region.location.y = region->location.y + 1;
@@ -601,7 +601,8 @@ static void grid_splitter_draw_pane(egui_view_t *self, egui_view_grid_splitter_t
     if (stripe_region.size.width > 0)
     {
         egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, stripe_region.location.x, stripe_region.location.y, stripe_region.size.width, stripe_region.size.height, radius,
-                                              stripe_color, egui_color_alpha_mix(self->alpha, emphasized ? 82 : 68));
+                                              stripe_color,
+                                              egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(local->read_only_mode ? (emphasized ? 88 : 78) : (emphasized ? 98 : 92))));
     }
 
     top_y = region->location.y + pad_y + stripe_region.size.height + 1;
@@ -642,7 +643,8 @@ static void grid_splitter_draw_pane(egui_view_t *self, egui_view_grid_splitter_t
                 continue;
             }
             egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, line_region.location.x, line_region.location.y + i * (local->compact_mode ? 4 : 5),
-                                                  line_region.size.width, line_region.size.height, 1, stripe_color, egui_color_alpha_mix(self->alpha, emphasized ? 54 : 42));
+                                                  line_region.size.width, line_region.size.height, 1, stripe_color,
+                                                  egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(emphasized ? 54 : 42)));
         }
     }
 }
@@ -885,17 +887,17 @@ static void egui_view_grid_splitter_on_draw(egui_view_t *self)
     egui_view_grid_splitter_metrics_t metrics;
     egui_color_t card_fill = local->surface_color;
     egui_color_t card_border = local->border_color;
-    egui_color_t badge_fill = egui_rgb_mix(local->section_color, local->accent_color, 26);
-    egui_color_t badge_text = egui_rgb_mix(local->text_color, local->accent_color, 28);
+    egui_color_t badge_fill = egui_rgb_mix(HCW_COLOR_PANEL, local->accent_color, EGUI_ALPHA_MAKE(12));
+    egui_color_t badge_text = egui_rgb_mix(local->text_color, local->accent_color, EGUI_ALPHA_MAKE(20));
     egui_color_t title_color = local->text_color;
     egui_color_t summary_color = local->muted_text_color;
-    egui_color_t shell_fill = egui_rgb_mix(local->section_color, local->accent_color, 8);
-    egui_color_t shell_border = egui_rgb_mix(local->border_color, local->accent_color, 10);
-    egui_color_t handle_fill = egui_rgb_mix(local->section_color, local->accent_color, self->is_pressed ? 34 : (self->is_focused ? 24 : 16));
-    egui_color_t handle_line = egui_rgb_mix(local->border_color, local->accent_color, self->is_pressed ? 46 : 22);
-    egui_color_t footer_fill = egui_rgb_mix(local->surface_color, local->accent_color, 18);
-    egui_color_t footer_border = egui_rgb_mix(local->border_color, local->accent_color, 20);
-    egui_color_t footer_text = egui_rgb_mix(local->muted_text_color, local->accent_color, 18);
+    egui_color_t shell_fill = HCW_COLOR_PANEL;
+    egui_color_t shell_border = egui_rgb_mix(local->border_color, local->accent_color, EGUI_ALPHA_MAKE(26));
+    egui_color_t handle_fill = egui_rgb_mix(HCW_COLOR_PANEL, local->accent_color, EGUI_ALPHA_MAKE(self->is_pressed ? 24 : (self->is_focused ? 18 : 14)));
+    egui_color_t handle_line = egui_rgb_mix(local->border_color, local->accent_color, EGUI_ALPHA_MAKE(self->is_pressed ? 44 : 30));
+    egui_color_t footer_fill = egui_rgb_mix(HCW_COLOR_PANEL, local->accent_color, EGUI_ALPHA_MAKE(10));
+    egui_color_t footer_border = egui_rgb_mix(local->border_color, local->accent_color, EGUI_ALPHA_MAKE(24));
+    egui_color_t footer_text = egui_rgb_mix(local->muted_text_color, local->accent_color, EGUI_ALPHA_MAKE(18));
     egui_color_t focus_color = local->accent_color;
     egui_dim_t title_char_width = local->compact_mode ? 4 : 5;
     egui_dim_t meta_char_width = 4;
@@ -915,18 +917,18 @@ static void egui_view_grid_splitter_on_draw(egui_view_t *self)
 
     if (local->read_only_mode)
     {
-        badge_fill = egui_rgb_mix(badge_fill, local->surface_color, 26);
-        badge_text = egui_rgb_mix(badge_text, local->muted_text_color, 18);
-        title_color = egui_rgb_mix(title_color, local->muted_text_color, 12);
-        summary_color = egui_rgb_mix(summary_color, local->muted_text_color, 18);
-        shell_fill = egui_rgb_mix(shell_fill, local->surface_color, 24);
-        shell_border = egui_rgb_mix(shell_border, local->muted_text_color, 16);
-        handle_fill = egui_rgb_mix(handle_fill, local->surface_color, 18);
-        handle_line = egui_rgb_mix(handle_line, local->muted_text_color, 20);
-        footer_fill = egui_rgb_mix(footer_fill, local->surface_color, 18);
-        footer_border = egui_rgb_mix(footer_border, local->muted_text_color, 16);
-        footer_text = egui_rgb_mix(footer_text, local->muted_text_color, 18);
-        focus_color = egui_rgb_mix(focus_color, local->muted_text_color, 16);
+        badge_fill = egui_rgb_mix(badge_fill, local->surface_color, EGUI_ALPHA_MAKE(26));
+        badge_text = egui_rgb_mix(badge_text, local->muted_text_color, EGUI_ALPHA_MAKE(18));
+        title_color = egui_rgb_mix(title_color, local->muted_text_color, EGUI_ALPHA_MAKE(12));
+        summary_color = egui_rgb_mix(summary_color, local->muted_text_color, EGUI_ALPHA_MAKE(18));
+        shell_fill = egui_rgb_mix(shell_fill, local->surface_color, EGUI_ALPHA_MAKE(24));
+        shell_border = egui_rgb_mix(shell_border, local->muted_text_color, EGUI_ALPHA_MAKE(16));
+        handle_fill = egui_rgb_mix(handle_fill, local->surface_color, EGUI_ALPHA_MAKE(18));
+        handle_line = egui_rgb_mix(handle_line, local->muted_text_color, EGUI_ALPHA_MAKE(20));
+        footer_fill = egui_rgb_mix(footer_fill, local->surface_color, EGUI_ALPHA_MAKE(18));
+        footer_border = egui_rgb_mix(footer_border, local->muted_text_color, EGUI_ALPHA_MAKE(16));
+        footer_text = egui_rgb_mix(footer_text, local->muted_text_color, EGUI_ALPHA_MAKE(18));
+        focus_color = egui_rgb_mix(focus_color, local->muted_text_color, EGUI_ALPHA_MAKE(16));
     }
     if (!egui_view_get_enable(self))
     {
@@ -947,21 +949,22 @@ static void egui_view_grid_splitter_on_draw(egui_view_t *self)
     }
 
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.content_region.location.x, metrics.content_region.location.y, metrics.content_region.size.width,
-                                          metrics.content_region.size.height, radius, card_fill, egui_color_alpha_mix(self->alpha, 96));
+                                          metrics.content_region.size.height, radius, card_fill, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(96)));
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics.content_region.location.x, metrics.content_region.location.y, metrics.content_region.size.width,
-                                     metrics.content_region.size.height, radius, 1, card_border, egui_color_alpha_mix(self->alpha, 54));
+                                     metrics.content_region.size.height, radius, 1, card_border,
+                                     egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(local->read_only_mode ? 76 : 92)));
 
     if (self->is_focused && egui_view_get_enable(self) && !local->read_only_mode)
     {
         egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics.content_region.location.x, metrics.content_region.location.y, metrics.content_region.size.width,
-                                         metrics.content_region.size.height, radius, 2, focus_color, egui_color_alpha_mix(self->alpha, 92));
+                                         metrics.content_region.size.height, radius, 2, focus_color, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(92)));
     }
 
     if (snapshot != NULL && metrics.badge_region.size.width > 0)
     {
         egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.badge_region.location.x, metrics.badge_region.location.y, metrics.badge_region.size.width,
                                               metrics.badge_region.size.height, metrics.badge_region.size.height / 2, badge_fill,
-                                              egui_color_alpha_mix(self->alpha, 98));
+                                              egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(98)));
         grid_splitter_fit_text_to_width(local->meta_font, snapshot->header, header_label, sizeof(header_label), metrics.badge_region.size.width - badge_min_width,
                                         meta_char_width);
         grid_splitter_draw_text(local->meta_font, self, header_label, &metrics.badge_region, EGUI_ALIGN_CENTER, badge_text);
@@ -978,9 +981,10 @@ static void egui_view_grid_splitter_on_draw(egui_view_t *self)
     if (metrics.shell_region.size.width > 0 && metrics.shell_region.size.height > 0)
     {
         egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.shell_region.location.x, metrics.shell_region.location.y, metrics.shell_region.size.width,
-                                              metrics.shell_region.size.height, shell_radius, shell_fill, egui_color_alpha_mix(self->alpha, 98));
+                                              metrics.shell_region.size.height, shell_radius, shell_fill, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(98)));
         egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics.shell_region.location.x, metrics.shell_region.location.y, metrics.shell_region.size.width,
-                                         metrics.shell_region.size.height, shell_radius, 1, shell_border, egui_color_alpha_mix(self->alpha, 40));
+                                         metrics.shell_region.size.height, shell_radius, 1, shell_border,
+                                         egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(local->read_only_mode ? 78 : 94)));
     }
 
     if (snapshot != NULL)
@@ -997,28 +1001,28 @@ static void egui_view_grid_splitter_on_draw(egui_view_t *self)
 
         egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.handle_region.location.x, metrics.handle_region.location.y, metrics.handle_region.size.width,
                                               metrics.handle_region.size.height, metrics.handle_region.size.width / 2, handle_fill,
-                                              egui_color_alpha_mix(self->alpha, 92));
+                                              egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(local->read_only_mode ? 92 : 98)));
         egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics.handle_region.location.x, metrics.handle_region.location.y, metrics.handle_region.size.width,
                                          metrics.handle_region.size.height, metrics.handle_region.size.width / 2, 1, handle_line,
-                                         egui_color_alpha_mix(self->alpha, 54));
+                                         egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(local->read_only_mode ? 78 : 94)));
 
         if (self->is_focused && egui_view_get_enable(self) && !local->read_only_mode)
         {
             egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics.handle_region.location.x - 1, metrics.handle_region.location.y - 1, metrics.handle_region.size.width + 2,
                                              metrics.handle_region.size.height + 2, metrics.handle_region.size.width / 2, 1, focus_color,
-                                             egui_color_alpha_mix(self->alpha, 70));
+                                             egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(94)));
         }
 
         if (handle_h > 0)
         {
             egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, handle_x, handle_y, local->compact_mode ? 4 : 6, handle_h, 2, handle_line,
-                                                  egui_color_alpha_mix(self->alpha, 84));
+                                                  egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(local->read_only_mode ? 84 : 96)));
             for (i = 0; i < 3; i++)
             {
                 egui_dim_t dot_y = metrics.handle_region.location.y + metrics.handle_region.size.height / 2 - (local->compact_mode ? 4 : 6) +
                                    i * (local->compact_mode ? 4 : 5);
                 egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.handle_region.location.x + metrics.handle_region.size.width / 2 - 1, dot_y, 2, 2, 1,
-                                                      local->surface_color, egui_color_alpha_mix(self->alpha, 98));
+                                                      local->surface_color, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(98)));
             }
         }
     }
@@ -1027,10 +1031,10 @@ static void egui_view_grid_splitter_on_draw(egui_view_t *self)
     {
         egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.footer_region.location.x, metrics.footer_region.location.y, metrics.footer_region.size.width,
                                               metrics.footer_region.size.height, metrics.footer_region.size.height / 2, footer_fill,
-                                              egui_color_alpha_mix(self->alpha, 96));
+                                              egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(local->read_only_mode ? 96 : 98)));
         egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics.footer_region.location.x, metrics.footer_region.location.y, metrics.footer_region.size.width,
                                          metrics.footer_region.size.height, metrics.footer_region.size.height / 2, 1, footer_border,
-                                         egui_color_alpha_mix(self->alpha, 36));
+                                         egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(local->read_only_mode ? 76 : 92)));
         grid_splitter_fit_text_to_width(local->meta_font, snapshot->footer, footer_label, sizeof(footer_label), metrics.footer_region.size.width - footer_min_width,
                                         meta_char_width);
         grid_splitter_draw_text(local->meta_font, self, footer_label, &metrics.footer_region, EGUI_ALIGN_CENTER, footer_text);
@@ -1256,12 +1260,12 @@ void egui_view_grid_splitter_init(egui_view_t *self)
     local->font = (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT;
     local->meta_font = (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT;
     local->on_ratio_changed = NULL;
-    local->surface_color = EGUI_COLOR_HEX(0xFFFFFF);
-    local->section_color = EGUI_COLOR_HEX(0xF5F8FA);
-    local->border_color = EGUI_COLOR_HEX(0xD4DDE6);
-    local->text_color = EGUI_COLOR_HEX(0x1B2834);
-    local->muted_text_color = EGUI_COLOR_HEX(0x6D7C8A);
-    local->accent_color = EGUI_COLOR_HEX(0x0F6CBD);
+    local->surface_color = HCW_COLOR_SURFACE;
+    local->section_color = HCW_COLOR_SURFACE_PRESS;
+    local->border_color = HCW_COLOR_BORDER;
+    local->text_color = HCW_COLOR_TEXT;
+    local->muted_text_color = HCW_COLOR_TEXT_MUTED;
+    local->accent_color = HCW_COLOR_PRIMARY;
     local->snapshot_count = 0;
     local->current_snapshot = 0;
     local->split_ratio = EGUI_VIEW_GRID_SPLITTER_SPLIT_RATIO_DEFAULT;

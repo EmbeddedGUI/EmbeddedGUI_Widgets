@@ -40,7 +40,7 @@ static egui_view_api_t compact_api;
 static egui_view_api_t muted_api;
 static uint8_t ui_ready;
 
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, HCW_COLOR_PAGE_BG, EGUI_ALPHA_100, 14);
 EGUI_BACKGROUND_PARAM_INIT(bg_page_panel_params, &bg_page_panel_param, NULL, NULL);
 EGUI_BACKGROUND_COLOR_STATIC_CONST_INIT(bg_page_panel, &bg_page_panel_params);
 
@@ -48,9 +48,9 @@ static const char *title_text = "Spinner";
 static void layout_page(void);
 
 static const spinner_snapshot_t primary_snapshots[] = {
-        {"Syncing files", EGUI_COLOR_HEX(0x0F6CBD), 4, 104},
-        {"Publishing docs", EGUI_COLOR_HEX(0xB95A00), 4, 112},
-        {"Refreshing cache", EGUI_COLOR_HEX(0x0C7C73), 3, 88},
+        {"Syncing files", HCW_COLOR_PRIMARY, 4, 104},
+        {"Publishing docs", HCW_COLOR_WARNING, 4, 112},
+        {"Refreshing cache", HCW_COLOR_PRIMARY, 3, 88},
 };
 
 static void init_text_label(egui_view_label_t *label, egui_dim_t width, egui_dim_t height, const char *text, const egui_font_t *font, egui_color_t color,
@@ -130,7 +130,7 @@ void test_init_ui(void)
     egui_view_linearlayout_set_align_type(EGUI_VIEW_OF(&root_layout), EGUI_ALIGN_HCENTER);
     egui_view_set_background(EGUI_VIEW_OF(&root_layout), EGUI_BG_OF(&bg_page_panel));
 
-    init_text_label(&title_label, SPINNER_ROOT_WIDTH, 18, title_text, (const egui_font_t *)&egui_res_font_montserrat_12_4, EGUI_COLOR_HEX(0x21303F),
+    init_text_label(&title_label, SPINNER_ROOT_WIDTH, 18, title_text, (const egui_font_t *)&egui_res_font_montserrat_12_4, HCW_COLOR_TEXT,
                     EGUI_ALIGN_CENTER);
     egui_view_set_margin(EGUI_VIEW_OF(&title_label), 0, 6, 0, 6);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label));
@@ -141,7 +141,7 @@ void test_init_ui(void)
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&primary_spinner));
 
     init_text_label(&primary_status_label, SPINNER_STATUS_WIDTH, SPINNER_STATUS_HEIGHT, "Syncing files",
-                    (const egui_font_t *)&egui_res_font_montserrat_10_4, EGUI_COLOR_HEX(0x233241), EGUI_ALIGN_CENTER);
+                    (const egui_font_t *)&egui_res_font_montserrat_10_4, HCW_COLOR_TEXT, EGUI_ALIGN_CENTER);
     egui_view_set_margin(EGUI_VIEW_OF(&primary_status_label), 0, 0, 0, 10);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&primary_status_label));
 

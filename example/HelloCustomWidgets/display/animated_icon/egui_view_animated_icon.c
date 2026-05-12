@@ -1,6 +1,7 @@
 #include <string.h>
 
 #include "egui_view_animated_icon.h"
+#include "../../hcw_text_center.h"
 
 #include "resource/egui_icon_material_symbols.h"
 #include "../../../../sdk/EmbeddedGUI/src/widget/egui_view_icon_font.h"
@@ -280,17 +281,17 @@ static void egui_view_animated_icon_apply_color(egui_view_t *self, egui_color_t 
 
 void egui_view_animated_icon_apply_standard_style(egui_view_t *self)
 {
-    egui_view_animated_icon_apply_color(self, EGUI_COLOR_HEX(0x0F6CBD));
+    egui_view_animated_icon_apply_color(self, HCW_COLOR_PRIMARY);
 }
 
 void egui_view_animated_icon_apply_subtle_style(egui_view_t *self)
 {
-    egui_view_animated_icon_apply_color(self, EGUI_COLOR_HEX(0x6F7C8A));
+    egui_view_animated_icon_apply_color(self, HCW_COLOR_TEXT_MUTED);
 }
 
 void egui_view_animated_icon_apply_accent_style(egui_view_t *self)
 {
-    egui_view_animated_icon_apply_color(self, EGUI_COLOR_HEX(0xA15C00));
+    egui_view_animated_icon_apply_color(self, HCW_COLOR_WARNING);
 }
 
 void egui_view_animated_icon_set_source(egui_view_t *self, const egui_view_animated_icon_source_t *source)
@@ -540,6 +541,7 @@ static void egui_view_animated_icon_draw_fallback(egui_view_t *self, egui_view_a
     }
 
     draw_region = *region;
+    draw_region.location.y += hcw_text_center_get_delta(font, glyph, region, EGUI_ALIGN_CENTER);
     egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, font, glyph, &draw_region, EGUI_ALIGN_CENTER, color, self->alpha);
 }
 
@@ -557,7 +559,7 @@ static void egui_view_animated_icon_on_draw(egui_view_t *self)
 
     if (!egui_view_get_enable(self))
     {
-        color = egui_rgb_mix(color, EGUI_COLOR_HEX(0x97A4B1), 58);
+        color = egui_rgb_mix(color, HCW_COLOR_TEXT_SOFT, EGUI_ALPHA_MAKE(38));
     }
 
     if (!egui_view_animated_icon_source_is_valid(local->source))
@@ -652,7 +654,7 @@ void egui_view_animated_icon_init(egui_view_t *self)
     local->source = &egui_view_animated_icon_back_source;
     local->icon_font = NULL;
     local->fallback_glyph = egui_view_animated_icon_default_fallback_glyph(local->source);
-    local->icon_color = EGUI_COLOR_HEX(0x0F6CBD);
+    local->icon_color = HCW_COLOR_PRIMARY;
     local->current_state = EGUI_VIEW_ANIMATED_ICON_STATE_NORMAL;
     local->current_progress = 0;
     local->from_progress = 0;

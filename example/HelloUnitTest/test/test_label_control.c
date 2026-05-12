@@ -65,9 +65,9 @@ static void setup_preview_control(void)
 {
     egui_view_label_control_init(EGUI_VIEW_OF(&preview_control));
     egui_view_set_size(EGUI_VIEW_OF(&preview_control), 92, 30);
-    egui_view_label_control_set_palette(EGUI_VIEW_OF(&preview_control), EGUI_COLOR_HEX(0xF8FBFD), EGUI_COLOR_HEX(0xD2DCE6),
-                                        EGUI_COLOR_HEX(0x22313C), EGUI_COLOR_HEX(0x6E7E8E), EGUI_COLOR_HEX(0x0C7C73),
-                                        EGUI_COLOR_HEX(0xA15C00));
+    egui_view_label_control_set_palette(EGUI_VIEW_OF(&preview_control), HCW_COLOR_SURFACE_PRESS, HCW_COLOR_BORDER,
+                                        HCW_COLOR_TEXT, HCW_COLOR_TEXT_MUTED, HCW_COLOR_PRIMARY,
+                                        HCW_COLOR_WARNING);
     egui_view_label_control_set_text(EGUI_VIEW_OF(&preview_control), "Small");
     egui_view_label_control_set_target_hint(EGUI_VIEW_OF(&preview_control), "");
     egui_view_label_control_set_access_key_index(EGUI_VIEW_OF(&preview_control), 0);
@@ -185,8 +185,8 @@ static void test_label_control_init_defaults(void)
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_LABEL_CONTROL_ACCESS_NONE, egui_view_label_control_get_access_key_index(EGUI_VIEW_OF(&test_control)));
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_label_control_get_required(EGUI_VIEW_OF(&test_control)));
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_label_control_get_target_highlighted(EGUI_VIEW_OF(&test_control)));
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xFFFFFF).full, test_control.surface_color.full);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x0F6CBD).full, test_control.accent_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_SURFACE.full, test_control.surface_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PRIMARY.full, test_control.accent_color.full);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_MARGIN_PADDING
     EGUI_TEST_ASSERT_EQUAL_INT(2, EGUI_VIEW_OF(&test_control)->padding.left);
     EGUI_TEST_ASSERT_EQUAL_INT(2, EGUI_VIEW_OF(&test_control)->padding.right);
@@ -228,14 +228,14 @@ static void test_label_control_palette_fonts_and_highlight(void)
     setup_label_control();
 
     egui_view_set_pressed(EGUI_VIEW_OF(&test_control), 1);
-    egui_view_label_control_set_palette(EGUI_VIEW_OF(&test_control), EGUI_COLOR_HEX(0xF7FBFF), EGUI_COLOR_HEX(0xB9D6F0),
-                                        EGUI_COLOR_HEX(0x173247), EGUI_COLOR_HEX(0x5D7183), EGUI_COLOR_HEX(0x0F6CBD),
-                                        EGUI_COLOR_HEX(0xA15C00));
+    egui_view_label_control_set_palette(EGUI_VIEW_OF(&test_control), HCW_COLOR_SURFACE_SUBTLE, HCW_COLOR_PRIMARY_SOFT,
+                                        HCW_COLOR_TEXT, EGUI_COLOR_HEX(0x5D7183), HCW_COLOR_PRIMARY,
+                                        HCW_COLOR_WARNING);
     egui_view_label_control_set_target_highlighted(EGUI_VIEW_OF(&test_control), 1);
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_control)->is_pressed);
     EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_label_control_get_target_highlighted(EGUI_VIEW_OF(&test_control)));
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xF7FBFF).full, test_control.surface_color.full);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x0F6CBD).full, test_control.accent_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_SURFACE_SUBTLE.full, test_control.surface_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PRIMARY.full, test_control.accent_color.full);
 
     egui_view_label_control_set_fonts(EGUI_VIEW_OF(&test_control), (const egui_font_t *)&egui_res_font_montserrat_10_4,
                                       (const egui_font_t *)&egui_res_font_montserrat_8_4);

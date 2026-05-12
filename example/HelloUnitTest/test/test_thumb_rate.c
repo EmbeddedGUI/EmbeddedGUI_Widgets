@@ -5,6 +5,9 @@
 #include "test_thumb_rate.h"
 
 #include "../../HelloCustomWidgets/input/thumb_rate/egui_view_thumb_rate.h"
+#include "../../HelloCustomWidgets/input/thumb_rate/resource/font/egui_res_font_thumb_rate_icons_16_4.c"
+#include "../../HelloCustomWidgets/input/thumb_rate/resource/font/egui_res_font_thumb_rate_icons_20_4.c"
+#include "../../HelloCustomWidgets/input/thumb_rate/resource/font/egui_res_font_thumb_rate_icons_24_4.c"
 #include "../../HelloCustomWidgets/input/thumb_rate/egui_view_thumb_rate.c"
 
 static egui_view_thumb_rate_t test_thumb_rate;
@@ -113,7 +116,13 @@ static void test_thumb_rate_style_helpers_update_flags_and_clear_pressed_state(v
 
     EGUI_TEST_ASSERT_EQUAL_INT(0, test_thumb_rate.compact_mode);
     EGUI_TEST_ASSERT_EQUAL_INT(0, test_thumb_rate.read_only_mode);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x0F6CBD).full, test_thumb_rate.like_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_SURFACE.full, test_thumb_rate.surface_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_BORDER_STRONG.full, test_thumb_rate.border_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT_STRONG.full, test_thumb_rate.text_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT_SOFT.full, test_thumb_rate.muted_text_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PRIMARY_DARK.full, test_thumb_rate.like_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_DANGER.full, test_thumb_rate.dislike_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_SHADOW.full, test_thumb_rate.shadow_color.full);
 
     EGUI_VIEW_OF(&test_thumb_rate)->is_pressed = 1;
     test_thumb_rate.pressed_part = EGUI_VIEW_THUMB_RATE_PART_LIKE;
@@ -122,7 +131,9 @@ static void test_thumb_rate_style_helpers_update_flags_and_clear_pressed_state(v
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_THUMB_RATE_PART_NONE, test_thumb_rate.pressed_part);
     EGUI_TEST_ASSERT_EQUAL_INT(1, test_thumb_rate.compact_mode);
     EGUI_TEST_ASSERT_EQUAL_INT(0, test_thumb_rate.read_only_mode);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x0F766E).full, test_thumb_rate.like_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_BORDER_STRONG.full, test_thumb_rate.border_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT_SOFT.full, test_thumb_rate.muted_text_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PRIMARY_DARK.full, test_thumb_rate.like_color.full);
 
     EGUI_VIEW_OF(&test_thumb_rate)->is_pressed = 1;
     test_thumb_rate.pressed_part = EGUI_VIEW_THUMB_RATE_PART_DISLIKE;
@@ -131,6 +142,10 @@ static void test_thumb_rate_style_helpers_update_flags_and_clear_pressed_state(v
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_THUMB_RATE_PART_NONE, test_thumb_rate.pressed_part);
     EGUI_TEST_ASSERT_EQUAL_INT(1, test_thumb_rate.compact_mode);
     EGUI_TEST_ASSERT_EQUAL_INT(1, test_thumb_rate.read_only_mode);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TRACK_STRONG.full, test_thumb_rate.border_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT_SOFT.full, test_thumb_rate.text_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT_SOFT.full, test_thumb_rate.muted_text_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT_SOFT.full, test_thumb_rate.like_color.full);
 }
 
 static void test_thumb_rate_setters_clear_pressed_state_and_normalize(void)

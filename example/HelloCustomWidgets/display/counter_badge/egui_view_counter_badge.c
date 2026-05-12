@@ -21,7 +21,7 @@ static egui_view_notification_badge_t *egui_view_counter_badge_as_notification(e
 
 static egui_color_t egui_view_counter_badge_mix_disabled(egui_color_t color)
 {
-    return egui_rgb_mix(color, EGUI_COLOR_HEX(0x83909D), 48);
+    return egui_rgb_mix(color, HCW_COLOR_TEXT_SOFT, EGUI_ALPHA_MAKE(38));
 }
 
 static uint8_t egui_view_counter_badge_clear_pressed_state(egui_view_t *self)
@@ -173,7 +173,7 @@ static void egui_view_counter_badge_on_draw(egui_view_t *self)
     egui_color_t badge_color = local->badge_color;
     egui_color_t text_color = local->text_color;
     egui_color_t outline_color = local->outline_color;
-    egui_alpha_t outline_alpha = local->dot_mode ? 72 : 88;
+    egui_alpha_t outline_alpha = EGUI_ALPHA_MAKE(local->dot_mode ? 72 : 88);
     const egui_font_t *font = egui_view_counter_badge_get_text_font(local);
 
     egui_view_counter_badge_get_metrics(self, local, &metrics);
@@ -187,7 +187,7 @@ static void egui_view_counter_badge_on_draw(egui_view_t *self)
         badge_color = egui_view_counter_badge_mix_disabled(badge_color);
         text_color = egui_view_counter_badge_mix_disabled(text_color);
         outline_color = egui_view_counter_badge_mix_disabled(outline_color);
-        outline_alpha = 58;
+        outline_alpha = EGUI_ALPHA_MAKE(58);
     }
 
     if (local->dot_mode)
@@ -346,7 +346,7 @@ void egui_view_counter_badge_init(egui_view_t *self)
 
     local->count = 1;
     local->max_display = 99;
-    local->badge_color = EGUI_COLOR_HEX(0xC42B1C);
+    local->badge_color = HCW_COLOR_DANGER;
     local->text_color = EGUI_COLOR_WHITE;
     local->font = (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT;
     local->content_style = EGUI_VIEW_NOTIFICATION_BADGE_CONTENT_STYLE_COUNT;

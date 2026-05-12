@@ -18,7 +18,7 @@ static uint8_t egui_view_content_control_clear_pressed_state(egui_view_t *self)
 
 static egui_color_t egui_view_content_control_mix_disabled(egui_color_t color)
 {
-    return egui_rgb_mix(color, EGUI_COLOR_HEX(0x8A97A5), 58);
+    return egui_rgb_mix(color, HCW_COLOR_TEXT_SOFT, EGUI_ALPHA_MAKE(38));
 }
 
 static egui_dim_t egui_view_content_control_clamp_radius(egui_dim_t radius)
@@ -53,10 +53,8 @@ static void egui_view_content_control_on_draw(egui_view_t *self)
     egui_region_t region;
     egui_color_t surface_color = local->surface_color;
     egui_color_t border_color = local->border_color;
-    egui_color_t accent_color = local->accent_color;
     egui_dim_t radius = local->corner_radius;
     egui_alpha_t border_alpha = EGUI_ALPHA_100;
-    egui_alpha_t accent_alpha = local->compact_mode ? 30 : 42;
 
     region.location.x = 0;
     region.location.y = 0;
@@ -73,19 +71,15 @@ static void egui_view_content_control_on_draw(egui_view_t *self)
     }
     if (local->read_only_mode)
     {
-        surface_color = egui_rgb_mix(surface_color, EGUI_COLOR_HEX(0xF7F9FB), 48);
-        border_color = egui_rgb_mix(border_color, EGUI_COLOR_HEX(0xAEB8C2), 46);
-        accent_color = egui_rgb_mix(accent_color, EGUI_COLOR_HEX(0x7A8794), 54);
-        border_alpha = 70;
-        accent_alpha = 22;
+        surface_color = egui_rgb_mix(surface_color, HCW_COLOR_SURFACE_SUBTLE, EGUI_ALPHA_MAKE(32));
+        border_color = egui_rgb_mix(border_color, HCW_COLOR_TEXT_SOFT, EGUI_ALPHA_MAKE(30));
+        border_alpha = EGUI_ALPHA_MAKE(82);
     }
     if (!egui_view_get_enable(self))
     {
         surface_color = egui_view_content_control_mix_disabled(surface_color);
         border_color = egui_view_content_control_mix_disabled(border_color);
-        accent_color = egui_view_content_control_mix_disabled(accent_color);
-        border_alpha = 52;
-        accent_alpha = 18;
+        border_alpha = EGUI_ALPHA_MAKE(64);
     }
 
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, region.location.x, region.location.y, region.size.width, region.size.height, radius,
@@ -95,13 +89,6 @@ static void egui_view_content_control_on_draw(egui_view_t *self)
     {
         egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, region.location.x, region.location.y, region.size.width, region.size.height, radius,
                                          local->border_width, border_color, egui_color_alpha_mix(self->alpha, border_alpha));
-    }
-
-    if (region.size.width > 12 && region.size.height > 12)
-    {
-        egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, region.location.x + 5, region.location.y + 5,
-                                              region.size.width - 10, local->compact_mode ? 2 : 3, 1, accent_color,
-                                              egui_color_alpha_mix(self->alpha, accent_alpha));
     }
 }
 
@@ -268,7 +255,7 @@ uint8_t egui_view_content_control_get_read_only_mode(egui_view_t *self)
 
 void egui_view_content_control_apply_standard_style(egui_view_t *self)
 {
-    egui_view_content_control_set_palette(self, EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xC9D4DE), EGUI_COLOR_HEX(0x0F6CBD));
+    egui_view_content_control_set_palette(self, HCW_COLOR_SURFACE, HCW_COLOR_BORDER, HCW_COLOR_PRIMARY);
     egui_view_content_control_set_corner_radius(self, 10);
     egui_view_content_control_set_border_width(self, 1);
     egui_view_content_control_set_padding(self, 16, 16, 12, 12);
@@ -279,7 +266,7 @@ void egui_view_content_control_apply_standard_style(egui_view_t *self)
 
 void egui_view_content_control_apply_leading_style(egui_view_t *self)
 {
-    egui_view_content_control_set_palette(self, EGUI_COLOR_HEX(0xF7FBFF), EGUI_COLOR_HEX(0xA8CBEA), EGUI_COLOR_HEX(0x0F6CBD));
+    egui_view_content_control_set_palette(self, HCW_COLOR_SURFACE_SUBTLE, HCW_COLOR_PRIMARY_SOFT, HCW_COLOR_PRIMARY);
     egui_view_content_control_set_corner_radius(self, 10);
     egui_view_content_control_set_border_width(self, 1);
     egui_view_content_control_set_padding(self, 16, 16, 12, 12);
@@ -290,7 +277,7 @@ void egui_view_content_control_apply_leading_style(egui_view_t *self)
 
 void egui_view_content_control_apply_compact_style(egui_view_t *self)
 {
-    egui_view_content_control_set_palette(self, EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD3DCE5), EGUI_COLOR_HEX(0x0F7B45));
+    egui_view_content_control_set_palette(self, HCW_COLOR_SURFACE, HCW_COLOR_BORDER, HCW_COLOR_SUCCESS);
     egui_view_content_control_set_corner_radius(self, 6);
     egui_view_content_control_set_border_width(self, 1);
     egui_view_content_control_set_padding(self, 8, 8, 6, 6);
@@ -301,7 +288,7 @@ void egui_view_content_control_apply_compact_style(egui_view_t *self)
 
 void egui_view_content_control_apply_read_only_style(egui_view_t *self)
 {
-    egui_view_content_control_set_palette(self, EGUI_COLOR_HEX(0xF7F9FB), EGUI_COLOR_HEX(0xD8E0E8), EGUI_COLOR_HEX(0x6B7785));
+    egui_view_content_control_set_palette(self, HCW_COLOR_SURFACE_SUBTLE, HCW_COLOR_BORDER_STRONG, HCW_COLOR_TEXT_SOFT);
     egui_view_content_control_set_corner_radius(self, 6);
     egui_view_content_control_set_border_width(self, 1);
     egui_view_content_control_set_padding(self, 8, 8, 6, 6);
@@ -351,9 +338,9 @@ void egui_view_content_control_init(egui_view_t *self)
 #endif
 
     local->child = NULL;
-    local->surface_color = EGUI_COLOR_HEX(0xFFFFFF);
-    local->border_color = EGUI_COLOR_HEX(0xC9D4DE);
-    local->accent_color = EGUI_COLOR_HEX(0x0F6CBD);
+    local->surface_color = HCW_COLOR_SURFACE;
+    local->border_color = HCW_COLOR_BORDER;
+    local->accent_color = HCW_COLOR_PRIMARY;
     local->corner_radius = 10;
     local->border_width = 1;
     local->content_align_type = EGUI_ALIGN_CENTER;

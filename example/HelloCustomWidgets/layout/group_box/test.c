@@ -2,6 +2,7 @@
 #include "egui_view_group_box.h"
 #include "uicode_disp0.h"
 #include "demo_scaffold.h"
+#include "../../hcw_text_center.h"
 
 #if EGUI_CONFIG_RECORDING_TEST
 #include "core/egui_input_simulator.h"
@@ -22,6 +23,8 @@
 #define GROUP_BOX_RECORD_FRAME_WAIT 170
 #define GROUP_BOX_RECORD_FINAL_WAIT 280
 #define GROUP_BOX_DEFAULT_SNAPSHOT  0
+#define GROUP_BOX_TEXT_PAD_X        5
+#define GROUP_BOX_TEXT_PAD_Y        2
 
 #define PRIMARY_SNAPSHOT_COUNT ((uint8_t)EGUI_ARRAY_SIZE(primary_snapshots))
 
@@ -48,11 +51,12 @@ static egui_view_label_t compact_content;
 static egui_view_group_box_t read_only_preview;
 static egui_view_label_t read_only_header;
 static egui_view_label_t read_only_content;
+static egui_view_api_t content_label_api;
 static egui_view_api_t compact_preview_api;
 static egui_view_api_t read_only_preview_api;
 static uint8_t ui_ready;
 
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, HCW_COLOR_PAGE_BG, EGUI_ALPHA_100, 14);
 EGUI_BACKGROUND_PARAM_INIT(bg_page_panel_params, &bg_page_panel_param, NULL, NULL);
 EGUI_BACKGROUND_COLOR_STATIC_CONST_INIT(bg_page_panel, &bg_page_panel_params);
 
@@ -63,33 +67,70 @@ static const group_box_snapshot_t primary_snapshots[] = {
                 "Settings group",
                 "Content region",
                 "Standard / centered content",
-                EGUI_COLOR_HEX(0x0F6CBD),
+                HCW_COLOR_PRIMARY,
                 0,
         },
         {
                 "Policy group",
                 "Leading content",
                 "Accent / leading content",
-                EGUI_COLOR_HEX(0x0F6CBD),
+                HCW_COLOR_PRIMARY,
                 1,
         },
         {
                 "Compact",
                 "Top left",
                 "Compact / framed group",
-                EGUI_COLOR_HEX(0x0F7B45),
+                HCW_COLOR_SUCCESS,
                 2,
         },
         {
                 "Read only",
                 "Muted",
                 "Read only / muted group",
-                EGUI_COLOR_HEX(0x65717E),
+                HCW_COLOR_TEXT_SOFT,
                 3,
         },
 };
 
 static void layout_page(void);
+
+static void content_label_on_draw(egui_view_t *self)
+{
+    egui_view_label_t *label = EGUI_CAST_TO(egui_view_label_t, self);
+    egui_region_t region;
+
+    if (label->font == NULL || label->text == NULL)
+    {
+        egui_view_label_on_draw(self);
+        return;
+    }
+
+    egui_view_get_work_region(self, &region);
+    if (region.size.width <= 0 || region.size.height <= 0)
+    {
+        return;
+    }
+    if (region.size.width > GROUP_BOX_TEXT_PAD_X * 2)
+    {
+        region.location.x += GROUP_BOX_TEXT_PAD_X;
+        region.size.width -= GROUP_BOX_TEXT_PAD_X * 2;
+    }
+    if (region.size.height > GROUP_BOX_TEXT_PAD_Y * 2)
+    {
+        region.location.y += GROUP_BOX_TEXT_PAD_Y;
+        region.size.height -= GROUP_BOX_TEXT_PAD_Y * 2;
+    }
+    region.location.y += hcw_text_center_get_delta(label->font, label->text, &region, label->align_type);
+    egui_canvas_draw_text_in_rect_with_line_space(egui_view_get_canvas(self), label->font, label->text, &region, label->align_type, label->line_space,
+                                                  label->color, label->alpha);
+}
+
+static void apply_content_label_api(egui_view_t *label)
+{
+    egui_view_copy_api(label, &content_label_api);
+    content_label_api.on_draw = content_label_on_draw;
+}
 
 static void init_text_label(egui_view_label_t *label, egui_dim_t width, egui_dim_t height, const char *text, const egui_font_t *font,
                             egui_color_t color, uint8_t align_type)
@@ -100,6 +141,7 @@ static void init_text_label(egui_view_label_t *label, egui_dim_t width, egui_dim
     egui_view_label_set_align_type(EGUI_VIEW_OF(label), align_type);
     hello_custom_widgets_demo_set_label_font_with_min_height(EGUI_VIEW_OF(label), font);
     egui_view_label_set_font_color(EGUI_VIEW_OF(label), color, EGUI_ALPHA_100);
+    apply_content_label_api(EGUI_VIEW_OF(label));
 }
 
 static void apply_group_box_style(egui_view_t *view, uint8_t style)
@@ -149,15 +191,15 @@ static void apply_preview_states(void)
     egui_view_group_box_apply_compact_style(EGUI_VIEW_OF(&compact_preview));
     egui_view_label_set_text(EGUI_VIEW_OF(&compact_header), "Compact");
     egui_view_label_set_text(EGUI_VIEW_OF(&compact_content), "Top left");
-    egui_view_label_set_font_color(EGUI_VIEW_OF(&compact_header), EGUI_COLOR_HEX(0x0F7B45), EGUI_ALPHA_100);
-    egui_view_label_set_font_color(EGUI_VIEW_OF(&compact_content), EGUI_COLOR_HEX(0x0F7B45), EGUI_ALPHA_100);
+    egui_view_label_set_font_color(EGUI_VIEW_OF(&compact_header), HCW_COLOR_SUCCESS, EGUI_ALPHA_100);
+    egui_view_label_set_font_color(EGUI_VIEW_OF(&compact_content), HCW_COLOR_SUCCESS, EGUI_ALPHA_100);
     egui_view_group_box_layout_childs(EGUI_VIEW_OF(&compact_preview));
 
     egui_view_group_box_apply_read_only_style(EGUI_VIEW_OF(&read_only_preview));
     egui_view_label_set_text(EGUI_VIEW_OF(&read_only_header), "Read only");
     egui_view_label_set_text(EGUI_VIEW_OF(&read_only_content), "Muted");
-    egui_view_label_set_font_color(EGUI_VIEW_OF(&read_only_header), EGUI_COLOR_HEX(0x65717E), EGUI_ALPHA_100);
-    egui_view_label_set_font_color(EGUI_VIEW_OF(&read_only_content), EGUI_COLOR_HEX(0x65717E), EGUI_ALPHA_100);
+    egui_view_label_set_font_color(EGUI_VIEW_OF(&read_only_header), HCW_COLOR_TEXT_SOFT, EGUI_ALPHA_100);
+    egui_view_label_set_font_color(EGUI_VIEW_OF(&read_only_content), HCW_COLOR_TEXT_SOFT, EGUI_ALPHA_100);
     egui_view_group_box_layout_childs(EGUI_VIEW_OF(&read_only_preview));
 
     if (ui_ready)
@@ -205,7 +247,7 @@ void test_init_ui(void)
     egui_view_label_set_text(EGUI_VIEW_OF(&title_label), title_text);
     egui_view_label_set_align_type(EGUI_VIEW_OF(&title_label), EGUI_ALIGN_CENTER);
     hello_custom_widgets_demo_set_label_font_with_min_height(EGUI_VIEW_OF(&title_label), (const egui_font_t *)&egui_res_font_montserrat_12_4);
-    egui_view_label_set_font_color(EGUI_VIEW_OF(&title_label), EGUI_COLOR_HEX(0x21303F), EGUI_ALPHA_100);
+    egui_view_label_set_font_color(EGUI_VIEW_OF(&title_label), HCW_COLOR_TEXT, EGUI_ALPHA_100);
     egui_view_set_margin(EGUI_VIEW_OF(&title_label), 0, 8, 0, 8);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label));
 
@@ -213,9 +255,9 @@ void test_init_ui(void)
     egui_view_set_size(EGUI_VIEW_OF(&primary_control), GROUP_BOX_PRIMARY_WIDTH, GROUP_BOX_PRIMARY_HEIGHT);
     egui_view_set_margin(EGUI_VIEW_OF(&primary_control), 0, 0, 0, 8);
     init_text_label(&primary_header, GROUP_BOX_HEADER_WIDTH, GROUP_BOX_HEADER_HEIGHT, "Settings group",
-                    (const egui_font_t *)&egui_res_font_montserrat_8_4, EGUI_COLOR_HEX(0x0F6CBD), EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER);
+                    (const egui_font_t *)&egui_res_font_montserrat_8_4, HCW_COLOR_PRIMARY, EGUI_ALIGN_CENTER);
     init_text_label(&primary_content, GROUP_BOX_CONTENT_WIDTH, GROUP_BOX_CONTENT_HEIGHT, "Content region",
-                    (const egui_font_t *)&egui_res_font_montserrat_10_4, EGUI_COLOR_HEX(0x0F6CBD), EGUI_ALIGN_CENTER);
+                    (const egui_font_t *)&egui_res_font_montserrat_10_4, HCW_COLOR_PRIMARY, EGUI_ALIGN_CENTER);
     egui_view_group_box_set_header(EGUI_VIEW_OF(&primary_control), EGUI_VIEW_OF(&primary_header));
     egui_view_group_box_set_content(EGUI_VIEW_OF(&primary_control), EGUI_VIEW_OF(&primary_content));
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&primary_control));
@@ -225,7 +267,7 @@ void test_init_ui(void)
     egui_view_label_set_text(EGUI_VIEW_OF(&caption_label), "Standard / centered content");
     egui_view_label_set_align_type(EGUI_VIEW_OF(&caption_label), EGUI_ALIGN_CENTER);
     hello_custom_widgets_demo_set_label_font_with_min_height(EGUI_VIEW_OF(&caption_label), (const egui_font_t *)&egui_res_font_montserrat_8_4);
-    egui_view_label_set_font_color(EGUI_VIEW_OF(&caption_label), EGUI_COLOR_HEX(0x0F6CBD), EGUI_ALPHA_100);
+    egui_view_label_set_font_color(EGUI_VIEW_OF(&caption_label), HCW_COLOR_PRIMARY, EGUI_ALPHA_100);
     egui_view_set_margin(EGUI_VIEW_OF(&caption_label), 0, 0, 0, 10);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&caption_label));
 
@@ -237,9 +279,8 @@ void test_init_ui(void)
 
     egui_view_group_box_init(EGUI_VIEW_OF(&compact_preview));
     egui_view_set_size(EGUI_VIEW_OF(&compact_preview), GROUP_BOX_PREVIEW_WIDTH, GROUP_BOX_PREVIEW_HEIGHT);
-    init_text_label(&compact_header, 62, 12, "Compact", (const egui_font_t *)&egui_res_font_montserrat_8_4, EGUI_COLOR_HEX(0x0F7B45),
-                    EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER);
-    init_text_label(&compact_content, 68, 16, "Top left", (const egui_font_t *)&egui_res_font_montserrat_8_4, EGUI_COLOR_HEX(0x0F7B45),
+    init_text_label(&compact_header, 62, 12, "Compact", (const egui_font_t *)&egui_res_font_montserrat_8_4, HCW_COLOR_SUCCESS, EGUI_ALIGN_CENTER);
+    init_text_label(&compact_content, 68, 16, "Top left", (const egui_font_t *)&egui_res_font_montserrat_8_4, HCW_COLOR_SUCCESS,
                     EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER);
     egui_view_group_box_set_header(EGUI_VIEW_OF(&compact_preview), EGUI_VIEW_OF(&compact_header));
     egui_view_group_box_set_content(EGUI_VIEW_OF(&compact_preview), EGUI_VIEW_OF(&compact_content));
@@ -252,9 +293,8 @@ void test_init_ui(void)
     egui_view_group_box_init(EGUI_VIEW_OF(&read_only_preview));
     egui_view_set_size(EGUI_VIEW_OF(&read_only_preview), GROUP_BOX_PREVIEW_WIDTH, GROUP_BOX_PREVIEW_HEIGHT);
     egui_view_set_margin(EGUI_VIEW_OF(&read_only_preview), 12, 0, 0, 0);
-    init_text_label(&read_only_header, 68, 12, "Read only", (const egui_font_t *)&egui_res_font_montserrat_8_4, EGUI_COLOR_HEX(0x65717E),
-                    EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER);
-    init_text_label(&read_only_content, 68, 16, "Muted", (const egui_font_t *)&egui_res_font_montserrat_8_4, EGUI_COLOR_HEX(0x65717E),
+    init_text_label(&read_only_header, 68, 12, "Read only", (const egui_font_t *)&egui_res_font_montserrat_8_4, HCW_COLOR_TEXT_SOFT, EGUI_ALIGN_CENTER);
+    init_text_label(&read_only_content, 68, 16, "Muted", (const egui_font_t *)&egui_res_font_montserrat_8_4, HCW_COLOR_TEXT_SOFT,
                     EGUI_ALIGN_CENTER);
     egui_view_group_box_set_header(EGUI_VIEW_OF(&read_only_preview), EGUI_VIEW_OF(&read_only_header));
     egui_view_group_box_set_content(EGUI_VIEW_OF(&read_only_preview), EGUI_VIEW_OF(&read_only_content));

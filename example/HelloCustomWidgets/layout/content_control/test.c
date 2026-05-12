@@ -48,7 +48,7 @@ static egui_view_api_t compact_preview_api;
 static egui_view_api_t read_only_preview_api;
 static uint8_t ui_ready;
 
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, HCW_COLOR_PAGE_BG, EGUI_ALPHA_100, 14);
 EGUI_BACKGROUND_PARAM_INIT(bg_page_panel_params, &bg_page_panel_param, NULL, NULL);
 EGUI_BACKGROUND_COLOR_STATIC_CONST_INIT(bg_page_panel, &bg_page_panel_params);
 
@@ -58,25 +58,25 @@ static const content_control_snapshot_t primary_snapshots[] = {
         {
                 "Center host",
                 "Center / padding 16",
-                EGUI_COLOR_HEX(0x0F6CBD),
+                HCW_COLOR_PRIMARY,
                 0,
         },
         {
                 "Leading slot",
                 "Left / vertical center",
-                EGUI_COLOR_HEX(0x0F6CBD),
+                HCW_COLOR_PRIMARY,
                 1,
         },
         {
                 "Compact top",
                 "Compact / top left",
-                EGUI_COLOR_HEX(0x0F7B45),
+                HCW_COLOR_SUCCESS,
                 2,
         },
         {
                 "Read only",
                 "Read only / muted content",
-                EGUI_COLOR_HEX(0x65717E),
+                HCW_COLOR_TEXT_SOFT,
                 3,
         },
 };
@@ -138,12 +138,12 @@ static void apply_preview_states(void)
 {
     egui_view_content_control_apply_compact_style(EGUI_VIEW_OF(&compact_preview));
     egui_view_label_set_text(EGUI_VIEW_OF(&compact_content), "Compact");
-    egui_view_label_set_font_color(EGUI_VIEW_OF(&compact_content), EGUI_COLOR_HEX(0x0F7B45), EGUI_ALPHA_100);
+    egui_view_label_set_font_color(EGUI_VIEW_OF(&compact_content), HCW_COLOR_SUCCESS, EGUI_ALPHA_100);
     egui_view_content_control_layout_child(EGUI_VIEW_OF(&compact_preview));
 
     egui_view_content_control_apply_read_only_style(EGUI_VIEW_OF(&read_only_preview));
     egui_view_label_set_text(EGUI_VIEW_OF(&read_only_content), "Read only");
-    egui_view_label_set_font_color(EGUI_VIEW_OF(&read_only_content), EGUI_COLOR_HEX(0x65717E), EGUI_ALPHA_100);
+    egui_view_label_set_font_color(EGUI_VIEW_OF(&read_only_content), HCW_COLOR_TEXT_SOFT, EGUI_ALPHA_100);
     egui_view_content_control_layout_child(EGUI_VIEW_OF(&read_only_preview));
 
     if (ui_ready)
@@ -191,7 +191,7 @@ void test_init_ui(void)
     egui_view_label_set_text(EGUI_VIEW_OF(&title_label), title_text);
     egui_view_label_set_align_type(EGUI_VIEW_OF(&title_label), EGUI_ALIGN_CENTER);
     hello_custom_widgets_demo_set_label_font_with_min_height(EGUI_VIEW_OF(&title_label), (const egui_font_t *)&egui_res_font_montserrat_12_4);
-    egui_view_label_set_font_color(EGUI_VIEW_OF(&title_label), EGUI_COLOR_HEX(0x21303F), EGUI_ALPHA_100);
+    egui_view_label_set_font_color(EGUI_VIEW_OF(&title_label), HCW_COLOR_TEXT, EGUI_ALPHA_100);
     egui_view_set_margin(EGUI_VIEW_OF(&title_label), 0, 8, 0, 8);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label));
 
@@ -199,7 +199,7 @@ void test_init_ui(void)
     egui_view_set_size(EGUI_VIEW_OF(&primary_control), CONTENT_CONTROL_PRIMARY_WIDTH, CONTENT_CONTROL_PRIMARY_HEIGHT);
     egui_view_set_margin(EGUI_VIEW_OF(&primary_control), 0, 0, 0, 8);
     init_content_label(&primary_content, CONTENT_CONTROL_CONTENT_WIDTH, CONTENT_CONTROL_CONTENT_HEIGHT, "Center host",
-                       (const egui_font_t *)&egui_res_font_montserrat_10_4, EGUI_COLOR_HEX(0x0F6CBD));
+                       (const egui_font_t *)&egui_res_font_montserrat_10_4, HCW_COLOR_PRIMARY);
     egui_view_content_control_set_child(EGUI_VIEW_OF(&primary_control), EGUI_VIEW_OF(&primary_content));
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&primary_control));
 
@@ -208,7 +208,7 @@ void test_init_ui(void)
     egui_view_label_set_text(EGUI_VIEW_OF(&caption_label), "Center / padding 16");
     egui_view_label_set_align_type(EGUI_VIEW_OF(&caption_label), EGUI_ALIGN_CENTER);
     hello_custom_widgets_demo_set_label_font_with_min_height(EGUI_VIEW_OF(&caption_label), (const egui_font_t *)&egui_res_font_montserrat_8_4);
-    egui_view_label_set_font_color(EGUI_VIEW_OF(&caption_label), EGUI_COLOR_HEX(0x0F6CBD), EGUI_ALPHA_100);
+    egui_view_label_set_font_color(EGUI_VIEW_OF(&caption_label), HCW_COLOR_PRIMARY, EGUI_ALPHA_100);
     egui_view_set_margin(EGUI_VIEW_OF(&caption_label), 0, 0, 0, 10);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&caption_label));
 
@@ -221,7 +221,7 @@ void test_init_ui(void)
     egui_view_content_control_init(EGUI_VIEW_OF(&compact_preview));
     egui_view_set_size(EGUI_VIEW_OF(&compact_preview), CONTENT_CONTROL_PREVIEW_WIDTH, CONTENT_CONTROL_PREVIEW_HEIGHT);
     init_content_label(&compact_content, CONTENT_CONTROL_PREVIEW_LABEL_W, CONTENT_CONTROL_PREVIEW_LABEL_H, "Compact",
-                       (const egui_font_t *)&egui_res_font_montserrat_8_4, EGUI_COLOR_HEX(0x0F7B45));
+                       (const egui_font_t *)&egui_res_font_montserrat_8_4, HCW_COLOR_SUCCESS);
     egui_view_content_control_set_child(EGUI_VIEW_OF(&compact_preview), EGUI_VIEW_OF(&compact_content));
     egui_view_content_control_override_static_preview_api(EGUI_VIEW_OF(&compact_preview), &compact_preview_api);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
@@ -233,7 +233,7 @@ void test_init_ui(void)
     egui_view_set_size(EGUI_VIEW_OF(&read_only_preview), CONTENT_CONTROL_PREVIEW_WIDTH, CONTENT_CONTROL_PREVIEW_HEIGHT);
     egui_view_set_margin(EGUI_VIEW_OF(&read_only_preview), 12, 0, 0, 0);
     init_content_label(&read_only_content, CONTENT_CONTROL_PREVIEW_LABEL_W, CONTENT_CONTROL_PREVIEW_LABEL_H, "Read only",
-                       (const egui_font_t *)&egui_res_font_montserrat_8_4, EGUI_COLOR_HEX(0x65717E));
+                       (const egui_font_t *)&egui_res_font_montserrat_8_4, HCW_COLOR_TEXT_SOFT);
     egui_view_content_control_set_child(EGUI_VIEW_OF(&read_only_preview), EGUI_VIEW_OF(&read_only_content));
     egui_view_content_control_override_static_preview_api(EGUI_VIEW_OF(&read_only_preview), &read_only_preview_api);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS

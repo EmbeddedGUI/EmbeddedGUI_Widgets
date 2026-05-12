@@ -46,7 +46,7 @@ static egui_view_api_t compact_widget_api;
 static egui_view_api_t read_only_widget_api;
 static uint8_t ui_ready;
 
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, HCW_COLOR_PAGE_BG, EGUI_ALPHA_100, 14);
 EGUI_BACKGROUND_PARAM_INIT(bg_page_panel_params, &bg_page_panel_param, NULL, NULL);
 EGUI_BACKGROUND_COLOR_STATIC_CONST_INIT(bg_page_panel, &bg_page_panel_params);
 
@@ -150,7 +150,7 @@ void test_init_ui(void)
     egui_view_label_set_text(EGUI_VIEW_OF(&title_label), title_text);
     egui_view_label_set_align_type(EGUI_VIEW_OF(&title_label), EGUI_ALIGN_CENTER);
     hello_custom_widgets_demo_set_label_font_with_min_height(EGUI_VIEW_OF(&title_label), (const egui_font_t *)&egui_res_font_montserrat_12_4);
-    egui_view_label_set_font_color(EGUI_VIEW_OF(&title_label), EGUI_COLOR_HEX(0x21303F), EGUI_ALPHA_100);
+    egui_view_label_set_font_color(EGUI_VIEW_OF(&title_label), HCW_COLOR_TEXT, EGUI_ALPHA_100);
     egui_view_set_margin(EGUI_VIEW_OF(&title_label), 0, 8, 0, 8);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label));
 
@@ -179,6 +179,8 @@ void test_init_ui(void)
     egui_view_set_size(EGUI_VIEW_OF(&read_only_widget), RADIO_BUTTONS_PREVIEW_WIDTH, RADIO_BUTTONS_PREVIEW_HEIGHT);
     egui_view_set_margin(EGUI_VIEW_OF(&read_only_widget), 8, 0, 0, 0);
     egui_view_radio_buttons_set_font(EGUI_VIEW_OF(&read_only_widget), (const egui_font_t *)&egui_res_font_montserrat_10_4);
+    egui_view_radio_buttons_set_palette(EGUI_VIEW_OF(&read_only_widget), HCW_COLOR_PANEL, HCW_COLOR_TRACK_STRONG, HCW_COLOR_TEXT,
+                                        HCW_COLOR_TEXT_SOFT, HCW_COLOR_TEXT);
     egui_view_radio_buttons_override_static_preview_api(EGUI_VIEW_OF(&read_only_widget), &read_only_widget_api);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&read_only_widget), 0);
@@ -260,4 +262,3 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     }
 }
 #endif
-

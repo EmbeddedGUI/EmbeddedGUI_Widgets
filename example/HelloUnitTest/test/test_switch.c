@@ -71,8 +71,8 @@ static void setup_preview_switch(uint8_t checked)
     egui_view_switch_init(EGUI_VIEW_OF(&preview_switch), uicode_get_core());
     egui_view_set_size(EGUI_VIEW_OF(&preview_switch), 76, 32);
     hcw_switch_apply_standard_style(EGUI_VIEW_OF(&preview_switch));
-    preview_switch.bk_color_on = EGUI_COLOR_HEX(0x0C7C73);
-    preview_switch.bk_color_off = EGUI_COLOR_HEX(0xD9E5DE);
+    preview_switch.bk_color_on = HCW_COLOR_PRIMARY;
+    preview_switch.bk_color_off = HCW_COLOR_TRACK;
     preview_switch.switch_color_on = EGUI_COLOR_WHITE;
     preview_switch.switch_color_off = EGUI_COLOR_WHITE;
     hcw_switch_set_state_icons(EGUI_VIEW_OF(&preview_switch), EGUI_ICON_MS_DONE, NULL);
@@ -176,8 +176,8 @@ static void test_switch_style_helper_updates_palette_and_clear_pressed_state(voi
     egui_view_set_pressed(EGUI_VIEW_OF(local), 1);
     hcw_switch_apply_standard_style(EGUI_VIEW_OF(local));
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(local)->is_pressed);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x2563EB).full, local->bk_color_on.full);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xD8E0E9).full, local->bk_color_off.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PRIMARY.full, local->bk_color_on.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_BORDER.full, local->bk_color_off.full);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_WHITE.full, local->switch_color_on.full);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_WHITE.full, local->switch_color_off.full);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_ALPHA_100, local->alpha);

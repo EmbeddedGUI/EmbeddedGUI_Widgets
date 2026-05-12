@@ -41,7 +41,7 @@ static egui_view_switch_t disabled_switch;
 static egui_view_api_t disabled_switch_api;
 static uint8_t ui_ready;
 
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, HCW_COLOR_PAGE_BG, EGUI_ALPHA_100, 14);
 EGUI_BACKGROUND_PARAM_INIT(bg_page_panel_params, &bg_page_panel_param, NULL, NULL);
 EGUI_BACKGROUND_COLOR_STATIC_CONST_INIT(bg_page_panel, &bg_page_panel_params);
 
@@ -95,18 +95,18 @@ static void apply_preview_states(void)
 
 static void apply_secondary_preview_palette(egui_view_switch_t *control)
 {
-    control->bk_color_on = EGUI_COLOR_HEX(0x0C7C73);
-    control->bk_color_off = EGUI_COLOR_HEX(0xD9E5DE);
+    control->bk_color_on = HCW_COLOR_PRIMARY;
+    control->bk_color_off = HCW_COLOR_TRACK;
     control->switch_color_on = EGUI_COLOR_WHITE;
     control->switch_color_off = EGUI_COLOR_WHITE;
 }
 
 static void apply_disabled_preview_palette(egui_view_switch_t *control)
 {
-    control->bk_color_on = EGUI_COLOR_HEX(0xAFB8C3);
-    control->bk_color_off = EGUI_COLOR_HEX(0xE4E9EE);
-    control->switch_color_on = EGUI_COLOR_HEX(0xF7F9FB);
-    control->switch_color_off = EGUI_COLOR_HEX(0xF7F9FB);
+    control->bk_color_on = HCW_COLOR_BORDER_STRONG;
+    control->bk_color_off = HCW_COLOR_SURFACE_DISABLED;
+    control->switch_color_on = HCW_COLOR_SURFACE_SUBTLE;
+    control->switch_color_off = HCW_COLOR_SURFACE_SUBTLE;
 }
 
 static void layout_local_views(void)
@@ -152,7 +152,7 @@ void test_init_ui(void)
     egui_view_label_set_text(EGUI_VIEW_OF(&title_label), title_text);
     egui_view_label_set_align_type(EGUI_VIEW_OF(&title_label), EGUI_ALIGN_CENTER);
     hello_custom_widgets_demo_set_label_font_with_min_height(EGUI_VIEW_OF(&title_label), (const egui_font_t *)&egui_res_font_montserrat_12_4);
-    egui_view_label_set_font_color(EGUI_VIEW_OF(&title_label), EGUI_COLOR_HEX(0x21303F), EGUI_ALPHA_100);
+    egui_view_label_set_font_color(EGUI_VIEW_OF(&title_label), HCW_COLOR_TEXT, EGUI_ALPHA_100);
     egui_view_set_margin(EGUI_VIEW_OF(&title_label), 0, 8, 0, 6);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label));
 
@@ -190,7 +190,6 @@ void test_init_ui(void)
     apply_disabled_preview_palette(&disabled_switch);
     hcw_switch_set_icon_font(EGUI_VIEW_OF(&disabled_switch), EGUI_FONT_ICON_MS_16);
     hcw_switch_override_static_preview_api(EGUI_VIEW_OF(&disabled_switch), &disabled_switch_api);
-    egui_view_set_enable(EGUI_VIEW_OF(&disabled_switch), 0);
     egui_view_set_margin(EGUI_VIEW_OF(&disabled_switch), 8, 0, 0, 0);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&disabled_switch), 0);

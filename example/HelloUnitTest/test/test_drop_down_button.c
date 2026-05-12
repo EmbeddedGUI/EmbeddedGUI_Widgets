@@ -103,6 +103,13 @@ static void layout_preview_button(void)
     egui_region_copy(&EGUI_VIEW_OF(&preview_button)->region_screen, &region);
 }
 
+static void get_button_metrics(egui_view_drop_down_button_t *button, egui_view_drop_down_button_metrics_t *metrics)
+{
+    const egui_view_drop_down_button_snapshot_t *snapshot = egui_view_drop_down_button_get_snapshot(button);
+
+    egui_view_drop_down_button_get_metrics(button, EGUI_VIEW_OF(button), snapshot, metrics);
+}
+
 static void capture_preview_snapshot(drop_down_button_preview_snapshot_t *snapshot)
 {
     snapshot->region_screen = EGUI_VIEW_OF(&preview_button)->region_screen;
@@ -248,10 +255,44 @@ static void test_drop_down_button_setters_clear_pressed_state(void)
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_button)->is_pressed);
 
     EGUI_VIEW_OF(&test_button)->is_pressed = true;
-    egui_view_drop_down_button_set_palette(EGUI_VIEW_OF(&test_button), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD6DEE7), EGUI_COLOR_HEX(0x1D2630),
-                                           EGUI_COLOR_HEX(0x6F7B89), EGUI_COLOR_HEX(0x2563EB), EGUI_COLOR_HEX(0x178454), EGUI_COLOR_HEX(0xB87A16),
-                                           EGUI_COLOR_HEX(0xB13A35), EGUI_COLOR_HEX(0x7A8795));
+    egui_view_drop_down_button_set_palette(EGUI_VIEW_OF(&test_button), HCW_COLOR_SURFACE, HCW_COLOR_BORDER_STRONG, HCW_COLOR_TEXT_STRONG,
+                                           HCW_COLOR_TEXT_SOFT, HCW_COLOR_PRIMARY_DARK, HCW_COLOR_SUCCESS, HCW_COLOR_WARNING_DARK,
+                                           HCW_COLOR_DANGER_DARK, HCW_COLOR_TEXT_SOFT);
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_button)->is_pressed);
+}
+
+static void test_drop_down_button_default_palette_is_high_contrast(void)
+{
+    setup_button();
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PANEL.full, test_button.surface_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_BORDER_STRONG.full, test_button.border_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT_SOFT.full, test_button.muted_text_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PRIMARY_DARK.full, test_button.accent_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_WARNING_DARK.full, test_button.warning_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT_SOFT.full, test_button.neutral_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(HCW_COLOR_PRIMARY_DARK, HCW_COLOR_TEXT_SOFT, EGUI_ALPHA_MAKE(38)).full,
+                               egui_view_drop_down_button_mix_disabled(HCW_COLOR_PRIMARY_DARK).full);
+}
+
+static void test_drop_down_button_metrics_keep_inner_content_away_from_card_edge(void)
+{
+    egui_view_drop_down_button_metrics_t metrics;
+
+    setup_button();
+    layout_button();
+    get_button_metrics(&test_button, &metrics);
+    EGUI_TEST_ASSERT_TRUE(metrics.card_region.size.width > metrics.row_region.size.width);
+    EGUI_TEST_ASSERT_TRUE(metrics.row_region.location.x - metrics.card_region.location.x >= EGUI_VIEW_DROP_DOWN_BUTTON_STANDARD_CARD_OUTSET);
+    EGUI_TEST_ASSERT_TRUE(metrics.card_region.location.x + metrics.card_region.size.width -
+                          (metrics.row_region.location.x + metrics.row_region.size.width) >= EGUI_VIEW_DROP_DOWN_BUTTON_STANDARD_CARD_OUTSET);
+
+    setup_preview_button();
+    layout_preview_button();
+    get_button_metrics(&preview_button, &metrics);
+    EGUI_TEST_ASSERT_TRUE(metrics.card_region.size.width > metrics.row_region.size.width);
+    EGUI_TEST_ASSERT_TRUE(metrics.row_region.location.x - metrics.card_region.location.x >= EGUI_VIEW_DROP_DOWN_BUTTON_COMPACT_CARD_OUTSET);
+    EGUI_TEST_ASSERT_TRUE(metrics.card_region.location.x + metrics.card_region.size.width -
+                          (metrics.row_region.location.x + metrics.row_region.size.width) >= EGUI_VIEW_DROP_DOWN_BUTTON_COMPACT_CARD_OUTSET);
 }
 
 static void test_drop_down_button_touch_click_listener(void)
@@ -413,6 +454,8 @@ void test_drop_down_button_run(void)
     EGUI_TEST_SUITE_BEGIN(drop_down_button);
     EGUI_TEST_RUN(test_drop_down_button_snapshot_switching_clears_pressed_state);
     EGUI_TEST_RUN(test_drop_down_button_setters_clear_pressed_state);
+    EGUI_TEST_RUN(test_drop_down_button_default_palette_is_high_contrast);
+    EGUI_TEST_RUN(test_drop_down_button_metrics_keep_inner_content_away_from_card_edge);
     EGUI_TEST_RUN(test_drop_down_button_touch_click_listener);
     EGUI_TEST_RUN(test_drop_down_button_keyboard_enter_click_listener);
     EGUI_TEST_RUN(test_drop_down_button_same_target_release_requires_return_to_origin);

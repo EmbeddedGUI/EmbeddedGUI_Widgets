@@ -767,7 +767,7 @@ static void test_dialog_sheet_internal_helpers_cover_tone_glyph_metrics_and_regi
     EGUI_TEST_ASSERT_EQUAL_INT(0, region.location.y);
     EGUI_TEST_ASSERT_EQUAL_INT(0, region.size.width);
     EGUI_TEST_ASSERT_EQUAL_INT(0, region.size.height);
-    EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(sample, EGUI_COLOR_DARK_GREY, 68).full, mixed.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(sample, EGUI_COLOR_DARK_GREY, EGUI_ALPHA_MAKE(52)).full, mixed.full);
 
     layout_sheet();
     get_metrics(&metrics);

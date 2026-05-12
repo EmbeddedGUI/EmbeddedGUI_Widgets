@@ -42,7 +42,7 @@ static egui_view_api_t note_widget_api;
 static egui_view_api_t muted_widget_api;
 static uint8_t ui_ready;
 
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, HCW_COLOR_PAGE_BG, EGUI_ALPHA_100, 14);
 EGUI_BACKGROUND_PARAM_INIT(bg_page_panel_params, &bg_page_panel_param, NULL, NULL);
 EGUI_BACKGROUND_COLOR_STATIC_CONST_INIT(bg_page_panel, &bg_page_panel_params);
 
@@ -53,19 +53,19 @@ static const text_block_snapshot_t primary_snapshots[] = {
                 "A TextBlock keeps one paragraph readable\nwithout acting like an editor.",
                 EGUI_VIEW_TEXT_BLOCK_STYLE_STANDARD,
                 "Standard / body",
-                EGUI_COLOR_HEX(0x51606F),
+                HCW_COLOR_TEXT_MUTED,
         },
         {
                 "Subtle copy can wrap across two lines\nwhile staying quieter than body text.",
                 EGUI_VIEW_TEXT_BLOCK_STYLE_SUBTLE,
                 "Subtle / note",
-                EGUI_COLOR_HEX(0x6B7A89),
+                HCW_COLOR_TEXT_MUTED,
         },
         {
                 "Accent text can call out one action\nwithout turning the block into a card.",
                 EGUI_VIEW_TEXT_BLOCK_STYLE_ACCENT,
                 "Accent / emphasis",
-                EGUI_COLOR_HEX(0x0F6CBD),
+                HCW_COLOR_PRIMARY,
         },
 };
 
@@ -121,13 +121,15 @@ static void apply_primary_default_state(void)
 static void apply_preview_states(void)
 {
     egui_view_text_block_set_text(EGUI_VIEW_OF(&note_widget), "Note copy\nfor tight rows.");
+    egui_view_text_block_set_palette(EGUI_VIEW_OF(&note_widget), HCW_COLOR_TEXT, HCW_COLOR_TEXT_SOFT, HCW_COLOR_PRIMARY,
+                                     EGUI_ALPHA_100);
     apply_text_style(EGUI_VIEW_OF(&note_widget), EGUI_VIEW_TEXT_BLOCK_STYLE_SUBTLE);
     egui_view_textblock_set_line_space(EGUI_VIEW_OF(&note_widget), 2);
     egui_view_textblock_set_max_lines(EGUI_VIEW_OF(&note_widget), 2);
 
     egui_view_text_block_set_text(EGUI_VIEW_OF(&muted_widget), "Muted copy\nbefore publish.");
-    egui_view_text_block_set_palette(EGUI_VIEW_OF(&muted_widget), EGUI_COLOR_HEX(0x7B8794), EGUI_COLOR_HEX(0x7B8794),
-                                     EGUI_COLOR_HEX(0x65717E), 72);
+    egui_view_text_block_set_palette(EGUI_VIEW_OF(&muted_widget), HCW_COLOR_TEXT_SOFT, HCW_COLOR_TEXT_SOFT,
+                                     HCW_COLOR_PRIMARY_DARK, EGUI_ALPHA_100);
     apply_text_style(EGUI_VIEW_OF(&muted_widget), EGUI_VIEW_TEXT_BLOCK_STYLE_STANDARD);
     egui_view_textblock_set_line_space(EGUI_VIEW_OF(&muted_widget), 2);
     egui_view_textblock_set_max_lines(EGUI_VIEW_OF(&muted_widget), 2);
@@ -168,7 +170,7 @@ void test_init_ui(void)
     egui_view_linearlayout_set_align_type(EGUI_VIEW_OF(&root_layout), EGUI_ALIGN_HCENTER);
     egui_view_set_background(EGUI_VIEW_OF(&root_layout), EGUI_BG_OF(&bg_page_panel));
 
-    init_text_label(&title_label, TEXT_BLOCK_ROOT_WIDTH, 18, title_text, (const egui_font_t *)&egui_res_font_montserrat_12_4, EGUI_COLOR_HEX(0x21303F),
+    init_text_label(&title_label, TEXT_BLOCK_ROOT_WIDTH, 18, title_text, (const egui_font_t *)&egui_res_font_montserrat_12_4, HCW_COLOR_TEXT,
                     EGUI_ALIGN_CENTER);
     egui_view_set_margin(EGUI_VIEW_OF(&title_label), 0, 8, 0, 6);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label));
@@ -181,7 +183,7 @@ void test_init_ui(void)
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&primary_widget));
 
     init_text_label(&primary_status_label, TEXT_BLOCK_ROOT_WIDTH, 12, "Standard / body", (const egui_font_t *)&egui_res_font_montserrat_10_4,
-                    EGUI_COLOR_HEX(0x51606F), EGUI_ALIGN_CENTER);
+                    HCW_COLOR_TEXT_MUTED, EGUI_ALIGN_CENTER);
     egui_view_set_margin(EGUI_VIEW_OF(&primary_status_label), 0, 0, 0, 10);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&primary_status_label));
 

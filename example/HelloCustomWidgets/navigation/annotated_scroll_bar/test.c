@@ -45,7 +45,7 @@ static egui_view_api_t annotated_scroll_bar_compact_api;
 static egui_view_api_t annotated_scroll_bar_read_only_api;
 static uint8_t ui_ready;
 
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, HCW_COLOR_PAGE_BG, EGUI_ALPHA_100, 14);
 EGUI_BACKGROUND_PARAM_INIT(bg_page_panel_params, &bg_page_panel_param, NULL, NULL);
 EGUI_BACKGROUND_COLOR_STATIC_CONST_INIT(bg_page_panel, &bg_page_panel_params);
 
@@ -53,35 +53,35 @@ static const char *title_text = "Annotated Scroll Bar";
 static uint8_t primary_snapshot_index = 0;
 
 static const egui_view_annotated_scroll_bar_marker_t gallery_markers[] = {
-        {"2019", "Travel imports", 0, EGUI_COLOR_HEX(0x0F6CBD)},    {"2020", "Remote shoots", 146, EGUI_COLOR_HEX(0x0F6CBD)},
-        {"2021", "Archive cleanup", 312, EGUI_COLOR_HEX(0x0F6CBD)}, {"2022", "Color picks", 486, EGUI_COLOR_HEX(0x0F6CBD)},
-        {"2023", "Review batch", 674, EGUI_COLOR_HEX(0x0F6CBD)},    {"2024", "Client selects", 860, EGUI_COLOR_HEX(0x0F6CBD)},
+        {"2019", "Travel imports", 0, HCW_COLOR_PRIMARY},    {"2020", "Remote shoots", 146, HCW_COLOR_PRIMARY},
+        {"2021", "Archive cleanup", 312, HCW_COLOR_PRIMARY}, {"2022", "Color picks", 486, HCW_COLOR_PRIMARY},
+        {"2023", "Review batch", 674, HCW_COLOR_PRIMARY},    {"2024", "Client selects", 860, HCW_COLOR_PRIMARY},
 };
 
 static const egui_view_annotated_scroll_bar_marker_t release_markers[] = {
-        {"Alpha", "Feature freeze", 0, EGUI_COLOR_HEX(0x9D5D00)}, {"Beta", "Docs pass", 124, EGUI_COLOR_HEX(0x9D5D00)},
-        {"RC1", "Perf sweep", 278, EGUI_COLOR_HEX(0x9D5D00)},     {"RC2", "Bug triage", 412, EGUI_COLOR_HEX(0x9D5D00)},
-        {"GA", "Ship review", 588, EGUI_COLOR_HEX(0x9D5D00)},     {"Patch", "Audit notes", 760, EGUI_COLOR_HEX(0x9D5D00)},
+        {"Alpha", "Feature freeze", 0, HCW_COLOR_WARNING}, {"Beta", "Docs pass", 124, HCW_COLOR_WARNING},
+        {"RC1", "Perf sweep", 278, HCW_COLOR_WARNING},     {"RC2", "Bug triage", 412, HCW_COLOR_WARNING},
+        {"GA", "Ship review", 588, HCW_COLOR_WARNING},     {"Patch", "Audit notes", 760, HCW_COLOR_WARNING},
 };
 
 static const egui_view_annotated_scroll_bar_marker_t incident_markers[] = {
-        {"Ingress", "Wake edge", 0, EGUI_COLOR_HEX(0x0F766E)},  {"Auth", "Token burst", 144, EGUI_COLOR_HEX(0x0F766E)},
-        {"Queue", "Retry wall", 284, EGUI_COLOR_HEX(0x0F766E)}, {"Core", "Shard fail", 452, EGUI_COLOR_HEX(0x0F766E)},
-        {"Audit", "Replay export", 620, EGUI_COLOR_HEX(0x0F766E)},
+        {"Ingress", "Wake edge", 0, HCW_COLOR_PRIMARY},  {"Auth", "Token burst", 144, HCW_COLOR_PRIMARY},
+        {"Queue", "Retry wall", 284, HCW_COLOR_PRIMARY}, {"Core", "Shard fail", 452, HCW_COLOR_PRIMARY},
+        {"Audit", "Replay export", 620, HCW_COLOR_PRIMARY},
 };
 
 static const egui_view_annotated_scroll_bar_marker_t compact_preview_markers[] = {
-        {"Mix", "Intro", 0, EGUI_COLOR_HEX(0x0F6CBD)},
-        {"Edit", "Board", 104, EGUI_COLOR_HEX(0x0F6CBD)},
-        {"Focus", "Focus", 222, EGUI_COLOR_HEX(0x0F6CBD)},
-        {"Wrap", "Wrap", 360, EGUI_COLOR_HEX(0x0F6CBD)},
+        {"Mix", "Intro", 0, HCW_COLOR_PRIMARY},
+        {"Edit", "Board", 104, HCW_COLOR_PRIMARY},
+        {"Focus", "Focus", 222, HCW_COLOR_PRIMARY},
+        {"Wrap", "Wrap", 360, HCW_COLOR_PRIMARY},
 };
 
 static const egui_view_annotated_scroll_bar_marker_t read_only_markers[] = {
-        {"Plan", "Static rail", 0, EGUI_COLOR_HEX(0xA7B4C1)},
-        {"Check", "No input", 118, EGUI_COLOR_HEX(0xA7B4C1)},
-        {"Ship", "Read only", 246, EGUI_COLOR_HEX(0xA7B4C1)},
-        {"Archive", "Audit trail", 384, EGUI_COLOR_HEX(0xA7B4C1)},
+        {"Plan", "Static rail", 0, HCW_COLOR_TEXT_SOFT},
+        {"Check", "No input", 118, HCW_COLOR_TEXT_SOFT},
+        {"Ship", "Read only", 246, HCW_COLOR_TEXT_SOFT},
+        {"Archive", "Audit trail", 384, HCW_COLOR_TEXT_SOFT},
 };
 
 static const annotated_scroll_bar_snapshot_t primary_snapshots[] = {
@@ -188,7 +188,7 @@ void test_init_ui(void)
     egui_view_label_set_text(EGUI_VIEW_OF(&title_label), title_text);
     egui_view_label_set_align_type(EGUI_VIEW_OF(&title_label), EGUI_ALIGN_CENTER);
     hello_custom_widgets_demo_set_label_font_with_min_height(EGUI_VIEW_OF(&title_label), (const egui_font_t *)&egui_res_font_montserrat_12_4);
-    egui_view_label_set_font_color(EGUI_VIEW_OF(&title_label), EGUI_COLOR_HEX(0x21303F), EGUI_ALPHA_100);
+    egui_view_label_set_font_color(EGUI_VIEW_OF(&title_label), HCW_COLOR_TEXT, EGUI_ALPHA_100);
     egui_view_set_margin(EGUI_VIEW_OF(&title_label), 0, 8, 0, 4);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label));
 
@@ -196,8 +196,8 @@ void test_init_ui(void)
     egui_view_set_size(EGUI_VIEW_OF(&annotated_scroll_bar_primary), ANNOTATED_SCROLL_BAR_PRIMARY_WIDTH, ANNOTATED_SCROLL_BAR_PRIMARY_HEIGHT);
     egui_view_annotated_scroll_bar_set_font(EGUI_VIEW_OF(&annotated_scroll_bar_primary), (const egui_font_t *)&egui_res_font_montserrat_10_4);
     egui_view_annotated_scroll_bar_set_meta_font(EGUI_VIEW_OF(&annotated_scroll_bar_primary), (const egui_font_t *)&egui_res_font_montserrat_8_4);
-    egui_view_annotated_scroll_bar_set_palette(EGUI_VIEW_OF(&annotated_scroll_bar_primary), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD2DBE3),
-                                               EGUI_COLOR_HEX(0x1A2734), EGUI_COLOR_HEX(0x6B7A89), EGUI_COLOR_HEX(0x0F6CBD), EGUI_COLOR_HEX(0xB9CCE0));
+    egui_view_annotated_scroll_bar_set_palette(EGUI_VIEW_OF(&annotated_scroll_bar_primary), HCW_COLOR_SURFACE, HCW_COLOR_BORDER,
+                                               HCW_COLOR_TEXT, HCW_COLOR_TEXT_MUTED, HCW_COLOR_PRIMARY, HCW_COLOR_PRIMARY_SOFT);
     egui_view_set_margin(EGUI_VIEW_OF(&annotated_scroll_bar_primary), 0, 0, 0, 8);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&annotated_scroll_bar_primary));
 
@@ -212,8 +212,8 @@ void test_init_ui(void)
     egui_view_annotated_scroll_bar_set_font(EGUI_VIEW_OF(&annotated_scroll_bar_compact), (const egui_font_t *)&egui_res_font_montserrat_10_4);
     egui_view_annotated_scroll_bar_set_meta_font(EGUI_VIEW_OF(&annotated_scroll_bar_compact), (const egui_font_t *)&egui_res_font_montserrat_8_4);
     egui_view_annotated_scroll_bar_set_compact_mode(EGUI_VIEW_OF(&annotated_scroll_bar_compact), 1);
-    egui_view_annotated_scroll_bar_set_palette(EGUI_VIEW_OF(&annotated_scroll_bar_compact), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD2DBE3),
-                                               EGUI_COLOR_HEX(0x1A2734), EGUI_COLOR_HEX(0x6B7A89), EGUI_COLOR_HEX(0x0F6CBD), EGUI_COLOR_HEX(0xB9CCE0));
+    egui_view_annotated_scroll_bar_set_palette(EGUI_VIEW_OF(&annotated_scroll_bar_compact), HCW_COLOR_SURFACE, HCW_COLOR_BORDER,
+                                               HCW_COLOR_TEXT, HCW_COLOR_TEXT_MUTED, HCW_COLOR_PRIMARY, HCW_COLOR_PRIMARY_SOFT);
     egui_view_annotated_scroll_bar_override_static_preview_api(EGUI_VIEW_OF(&annotated_scroll_bar_compact), &annotated_scroll_bar_compact_api);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&annotated_scroll_bar_compact), false);
@@ -227,8 +227,8 @@ void test_init_ui(void)
     egui_view_annotated_scroll_bar_set_meta_font(EGUI_VIEW_OF(&annotated_scroll_bar_read_only), (const egui_font_t *)&egui_res_font_montserrat_8_4);
     egui_view_annotated_scroll_bar_set_compact_mode(EGUI_VIEW_OF(&annotated_scroll_bar_read_only), 1);
     egui_view_annotated_scroll_bar_set_read_only_mode(EGUI_VIEW_OF(&annotated_scroll_bar_read_only), 1);
-    egui_view_annotated_scroll_bar_set_palette(EGUI_VIEW_OF(&annotated_scroll_bar_read_only), EGUI_COLOR_HEX(0xFBFCFD), EGUI_COLOR_HEX(0xD8DFE6),
-                                               EGUI_COLOR_HEX(0x536474), EGUI_COLOR_HEX(0x8896A4), EGUI_COLOR_HEX(0xA7B4C1), EGUI_COLOR_HEX(0xC5D2DE));
+    egui_view_annotated_scroll_bar_set_palette(EGUI_VIEW_OF(&annotated_scroll_bar_read_only), HCW_COLOR_PANEL, HCW_COLOR_BORDER,
+                                               HCW_COLOR_TEXT_MUTED, HCW_COLOR_TEXT_SOFT, HCW_COLOR_TEXT_SOFT, HCW_COLOR_BORDER);
     egui_view_annotated_scroll_bar_override_static_preview_api(EGUI_VIEW_OF(&annotated_scroll_bar_read_only), &annotated_scroll_bar_read_only_api);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&annotated_scroll_bar_read_only), false);
@@ -356,4 +356,3 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     }
 }
 #endif
-

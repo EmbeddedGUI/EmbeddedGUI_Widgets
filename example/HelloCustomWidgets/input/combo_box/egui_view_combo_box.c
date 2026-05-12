@@ -47,20 +47,20 @@ static void hcw_combo_box_apply_palette(egui_view_t *self, egui_dim_t collapsed_
 
 void hcw_combo_box_apply_standard_style(egui_view_t *self)
 {
-    hcw_combo_box_apply_palette(self, 34, 24, 4, EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD5DCE4), EGUI_COLOR_HEX(0x1A2734), EGUI_COLOR_HEX(0x657789),
-                                EGUI_COLOR_HEX(0x5B7FD6));
+    hcw_combo_box_apply_palette(self, 34, 24, 4, HCW_COLOR_SURFACE, HCW_COLOR_BORDER_STRONG, HCW_COLOR_TEXT_STRONG, HCW_COLOR_TEXT_SOFT,
+                                HCW_COLOR_PRIMARY_DARK);
 }
 
 void hcw_combo_box_apply_compact_style(egui_view_t *self)
 {
-    hcw_combo_box_apply_palette(self, 28, 21, 3, EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD5DCE4), EGUI_COLOR_HEX(0x1A2734), EGUI_COLOR_HEX(0x657789),
-                                EGUI_COLOR_HEX(0x5B7FD6));
+    hcw_combo_box_apply_palette(self, 28, 21, 3, HCW_COLOR_SURFACE, HCW_COLOR_BORDER_STRONG, HCW_COLOR_TEXT_STRONG, HCW_COLOR_TEXT_SOFT,
+                                HCW_COLOR_PRIMARY_DARK);
 }
 
 void hcw_combo_box_apply_read_only_style(egui_view_t *self)
 {
-    hcw_combo_box_apply_palette(self, 28, 21, 3, EGUI_COLOR_HEX(0xFBFCFD), EGUI_COLOR_HEX(0xDCE2E8), EGUI_COLOR_HEX(0x546474), EGUI_COLOR_HEX(0x7A8796),
-                                EGUI_COLOR_HEX(0x6F8FD8));
+    hcw_combo_box_apply_palette(self, 28, 21, 3, HCW_COLOR_PANEL, HCW_COLOR_BORDER_STRONG, HCW_COLOR_TEXT_STRONG,
+                                HCW_COLOR_TEXT_SOFT, HCW_COLOR_PRIMARY_DARK);
 }
 
 void hcw_combo_box_set_items(egui_view_t *self, const char **items, uint8_t count)

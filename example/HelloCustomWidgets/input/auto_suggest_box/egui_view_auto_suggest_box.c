@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "egui.h"
+#include "../../hcw_text_center.h"
 #include "../../../../sdk/EmbeddedGUI/src/resource/egui_icon_material_symbols.h"
 #include "../../../../sdk/EmbeddedGUI/src/widget/egui_view_icon_font.h"
 
@@ -12,16 +13,17 @@
 #define HCW_AUTO_SUGGEST_BOX_TEXT_INSET_Y    1
 #define HCW_AUTO_SUGGEST_BOX_POPUP_INSET_X   2
 #define HCW_AUTO_SUGGEST_BOX_POPUP_INSET_Y   2
+#define HCW_AUTO_SUGGEST_BOX_POPUP_EDGE_INSET 1
 
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_auto_suggest_box_standard_bg_normal_param, EGUI_COLOR_HEX(0xFFFFFF), EGUI_ALPHA_100,
-                                                        HCW_AUTO_SUGGEST_BOX_STANDARD_RADIUS, 1, EGUI_COLOR_HEX(0xD5DCE4), EGUI_ALPHA_100);
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_auto_suggest_box_standard_bg_pressed_param, EGUI_COLOR_HEX(0xF8FBFE), EGUI_ALPHA_100,
-                                                        HCW_AUTO_SUGGEST_BOX_STANDARD_RADIUS, 1, EGUI_COLOR_HEX(0xC4D5E7), EGUI_ALPHA_100);
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_auto_suggest_box_standard_bg_disabled_param, EGUI_COLOR_HEX(0xF1F4F7), EGUI_ALPHA_100,
-                                                        HCW_AUTO_SUGGEST_BOX_STANDARD_RADIUS, 1, EGUI_COLOR_HEX(0xD8E0E7), EGUI_ALPHA_100);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_auto_suggest_box_standard_bg_normal_param, HCW_COLOR_SURFACE, EGUI_ALPHA_100,
+                                                        HCW_AUTO_SUGGEST_BOX_STANDARD_RADIUS, 1, HCW_COLOR_BORDER_STRONG, EGUI_ALPHA_100);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_auto_suggest_box_standard_bg_pressed_param, HCW_COLOR_SURFACE_PRESS, EGUI_ALPHA_100,
+                                                        HCW_AUTO_SUGGEST_BOX_STANDARD_RADIUS, 1, HCW_COLOR_PRIMARY, EGUI_ALPHA_100);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_auto_suggest_box_standard_bg_disabled_param, HCW_COLOR_SURFACE_DISABLED, EGUI_ALPHA_100,
+                                                        HCW_AUTO_SUGGEST_BOX_STANDARD_RADIUS, 1, HCW_COLOR_BORDER_STRONG, EGUI_ALPHA_100);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_auto_suggest_box_standard_bg_focused_param, EGUI_COLOR_HEX(0xFFFFFF), EGUI_ALPHA_100,
-                                                        HCW_AUTO_SUGGEST_BOX_STANDARD_RADIUS, 2, EGUI_COLOR_HEX(0x0F6CBD), EGUI_ALPHA_100);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_auto_suggest_box_standard_bg_focused_param, HCW_COLOR_SURFACE, EGUI_ALPHA_100,
+                                                        HCW_AUTO_SUGGEST_BOX_STANDARD_RADIUS, 2, HCW_COLOR_PRIMARY, EGUI_ALPHA_100);
 EGUI_BACKGROUND_PARAM_INIT_WITH_FOCUS(hcw_auto_suggest_box_standard_bg_params, &hcw_auto_suggest_box_standard_bg_normal_param,
                                       &hcw_auto_suggest_box_standard_bg_pressed_param, &hcw_auto_suggest_box_standard_bg_disabled_param,
                                       &hcw_auto_suggest_box_standard_bg_focused_param);
@@ -31,15 +33,15 @@ EGUI_BACKGROUND_PARAM_INIT(hcw_auto_suggest_box_standard_bg_params, &hcw_auto_su
 #endif
 EGUI_BACKGROUND_COLOR_STATIC_CONST_INIT(hcw_auto_suggest_box_standard_background, &hcw_auto_suggest_box_standard_bg_params);
 
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_auto_suggest_box_compact_bg_normal_param, EGUI_COLOR_HEX(0xF7FBFB), EGUI_ALPHA_100,
-                                                        HCW_AUTO_SUGGEST_BOX_COMPACT_RADIUS, 1, EGUI_COLOR_HEX(0xC9D9D7), EGUI_ALPHA_100);
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_auto_suggest_box_compact_bg_pressed_param, EGUI_COLOR_HEX(0xEEF7F5), EGUI_ALPHA_100,
-                                                        HCW_AUTO_SUGGEST_BOX_COMPACT_RADIUS, 1, EGUI_COLOR_HEX(0xBDD0CD), EGUI_ALPHA_100);
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_auto_suggest_box_compact_bg_disabled_param, EGUI_COLOR_HEX(0xEDF4F3), EGUI_ALPHA_100,
-                                                        HCW_AUTO_SUGGEST_BOX_COMPACT_RADIUS, 1, EGUI_COLOR_HEX(0xD4DFDE), EGUI_ALPHA_100);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_auto_suggest_box_compact_bg_normal_param, HCW_COLOR_SURFACE_SUBTLE, EGUI_ALPHA_100,
+                                                        HCW_AUTO_SUGGEST_BOX_COMPACT_RADIUS, 1, HCW_COLOR_BORDER_STRONG, EGUI_ALPHA_100);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_auto_suggest_box_compact_bg_pressed_param, HCW_COLOR_SURFACE_SUBTLE, EGUI_ALPHA_100,
+                                                        HCW_AUTO_SUGGEST_BOX_COMPACT_RADIUS, 1, HCW_COLOR_BORDER_STRONG, EGUI_ALPHA_100);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_auto_suggest_box_compact_bg_disabled_param, HCW_COLOR_SURFACE_SUBTLE, EGUI_ALPHA_100,
+                                                        HCW_AUTO_SUGGEST_BOX_COMPACT_RADIUS, 1, HCW_COLOR_BORDER_STRONG, EGUI_ALPHA_100);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_auto_suggest_box_compact_bg_focused_param, EGUI_COLOR_HEX(0xF7FBFB), EGUI_ALPHA_100,
-                                                        HCW_AUTO_SUGGEST_BOX_COMPACT_RADIUS, 2, EGUI_COLOR_HEX(0x0C7C73), EGUI_ALPHA_100);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_auto_suggest_box_compact_bg_focused_param, HCW_COLOR_SURFACE_SUBTLE, EGUI_ALPHA_100,
+                                                        HCW_AUTO_SUGGEST_BOX_COMPACT_RADIUS, 2, HCW_COLOR_PRIMARY, EGUI_ALPHA_100);
 EGUI_BACKGROUND_PARAM_INIT_WITH_FOCUS(hcw_auto_suggest_box_compact_bg_params, &hcw_auto_suggest_box_compact_bg_normal_param,
                                       &hcw_auto_suggest_box_compact_bg_pressed_param, &hcw_auto_suggest_box_compact_bg_disabled_param,
                                       &hcw_auto_suggest_box_compact_bg_focused_param);
@@ -49,15 +51,15 @@ EGUI_BACKGROUND_PARAM_INIT(hcw_auto_suggest_box_compact_bg_params, &hcw_auto_sug
 #endif
 EGUI_BACKGROUND_COLOR_STATIC_CONST_INIT(hcw_auto_suggest_box_compact_background, &hcw_auto_suggest_box_compact_bg_params);
 
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_auto_suggest_box_read_only_bg_normal_param, EGUI_COLOR_HEX(0xF5F7FA), EGUI_ALPHA_100,
-                                                        HCW_AUTO_SUGGEST_BOX_COMPACT_RADIUS, 1, EGUI_COLOR_HEX(0xD7DEE6), EGUI_ALPHA_100);
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_auto_suggest_box_read_only_bg_pressed_param, EGUI_COLOR_HEX(0xF5F7FA), EGUI_ALPHA_100,
-                                                        HCW_AUTO_SUGGEST_BOX_COMPACT_RADIUS, 1, EGUI_COLOR_HEX(0xD7DEE6), EGUI_ALPHA_100);
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_auto_suggest_box_read_only_bg_disabled_param, EGUI_COLOR_HEX(0xF5F7FA), EGUI_ALPHA_100,
-                                                        HCW_AUTO_SUGGEST_BOX_COMPACT_RADIUS, 1, EGUI_COLOR_HEX(0xD7DEE6), EGUI_ALPHA_100);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_auto_suggest_box_read_only_bg_normal_param, HCW_COLOR_SURFACE_SUBTLE, EGUI_ALPHA_100,
+                                                        HCW_AUTO_SUGGEST_BOX_COMPACT_RADIUS, 1, HCW_COLOR_BORDER_STRONG, EGUI_ALPHA_100);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_auto_suggest_box_read_only_bg_pressed_param, HCW_COLOR_SURFACE_SUBTLE, EGUI_ALPHA_100,
+                                                        HCW_AUTO_SUGGEST_BOX_COMPACT_RADIUS, 1, HCW_COLOR_BORDER_STRONG, EGUI_ALPHA_100);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_auto_suggest_box_read_only_bg_disabled_param, HCW_COLOR_SURFACE_SUBTLE, EGUI_ALPHA_100,
+                                                        HCW_AUTO_SUGGEST_BOX_COMPACT_RADIUS, 1, HCW_COLOR_BORDER_STRONG, EGUI_ALPHA_100);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_auto_suggest_box_read_only_bg_focused_param, EGUI_COLOR_HEX(0xF5F7FA), EGUI_ALPHA_100,
-                                                        HCW_AUTO_SUGGEST_BOX_COMPACT_RADIUS, 1, EGUI_COLOR_HEX(0xD7DEE6), EGUI_ALPHA_100);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_auto_suggest_box_read_only_bg_focused_param, HCW_COLOR_SURFACE_SUBTLE, EGUI_ALPHA_100,
+                                                        HCW_AUTO_SUGGEST_BOX_COMPACT_RADIUS, 1, HCW_COLOR_BORDER_STRONG, EGUI_ALPHA_100);
 EGUI_BACKGROUND_PARAM_INIT_WITH_FOCUS(hcw_auto_suggest_box_read_only_bg_params, &hcw_auto_suggest_box_read_only_bg_normal_param,
                                       &hcw_auto_suggest_box_read_only_bg_pressed_param, &hcw_auto_suggest_box_read_only_bg_disabled_param,
                                       &hcw_auto_suggest_box_read_only_bg_focused_param);
@@ -278,25 +280,109 @@ static void auto_suggest_box_inset_region(egui_region_t *region, egui_dim_t left
     }
 }
 
+static egui_dim_t auto_suggest_box_get_effective_pad_left(egui_view_t *self)
+{
+#if EGUI_CONFIG_FUNCTION_SUPPORT_MARGIN_PADDING
+    return self->padding.left;
+#else
+    egui_view_auto_suggest_box_t *local = (egui_view_auto_suggest_box_t *)self;
+    return local->content_pad_left;
+#endif
+}
+
+static egui_dim_t auto_suggest_box_get_effective_pad_right(egui_view_t *self)
+{
+#if EGUI_CONFIG_FUNCTION_SUPPORT_MARGIN_PADDING
+    return self->padding.right;
+#else
+    egui_view_auto_suggest_box_t *local = (egui_view_auto_suggest_box_t *)self;
+    return local->content_pad_right;
+#endif
+}
+
+static egui_dim_t auto_suggest_box_get_effective_pad_top(egui_view_t *self)
+{
+#if EGUI_CONFIG_FUNCTION_SUPPORT_MARGIN_PADDING
+    return self->padding.top;
+#else
+    egui_view_auto_suggest_box_t *local = (egui_view_auto_suggest_box_t *)self;
+    return local->content_pad_y;
+#endif
+}
+
+static egui_dim_t auto_suggest_box_get_effective_pad_bottom(egui_view_t *self)
+{
+#if EGUI_CONFIG_FUNCTION_SUPPORT_MARGIN_PADDING
+    return self->padding.bottom;
+#else
+    egui_view_auto_suggest_box_t *local = (egui_view_auto_suggest_box_t *)self;
+    return local->content_pad_y;
+#endif
+}
+
 static void auto_suggest_box_get_text_region(egui_view_t *self, egui_region_t *region)
+{
+    EGUI_LOCAL_INIT(egui_view_auto_suggest_box_t);
+    egui_dim_t pad_left;
+    egui_dim_t pad_right;
+    egui_dim_t pad_top;
+    egui_dim_t pad_bottom;
+
+    auto_suggest_box_sync_external_scale(self);
+    pad_left = auto_suggest_box_get_effective_pad_left(self);
+    pad_right = auto_suggest_box_get_effective_pad_right(self);
+    pad_top = auto_suggest_box_get_effective_pad_top(self);
+    pad_bottom = auto_suggest_box_get_effective_pad_bottom(self);
+    region->location.x = pad_left;
+    region->location.y = pad_top;
+    region->size.width = self->region.size.width - (pad_left + pad_right);
+    region->size.height = local->collapsed_height - (pad_top + pad_bottom);
+    auto_suggest_box_inset_region(region, HCW_AUTO_SUGGEST_BOX_TEXT_INSET_X, HCW_AUTO_SUGGEST_BOX_TEXT_INSET_X, HCW_AUTO_SUGGEST_BOX_TEXT_INSET_Y,
+                                  HCW_AUTO_SUGGEST_BOX_TEXT_INSET_Y);
+}
+
+static void auto_suggest_box_get_field_region(egui_view_t *self, egui_region_t *region)
 {
     EGUI_LOCAL_INIT(egui_view_auto_suggest_box_t);
 
     auto_suggest_box_sync_external_scale(self);
-    region->location.x = self->padding.left;
-    region->location.y = self->padding.top;
-    region->size.width = self->region.size.width - (self->padding.left + self->padding.right);
-    region->size.height = local->collapsed_height - (self->padding.top + self->padding.bottom);
-    auto_suggest_box_inset_region(region, HCW_AUTO_SUGGEST_BOX_TEXT_INSET_X, HCW_AUTO_SUGGEST_BOX_TEXT_INSET_X, HCW_AUTO_SUGGEST_BOX_TEXT_INSET_Y,
-                                  HCW_AUTO_SUGGEST_BOX_TEXT_INSET_Y);
+    region->location.x = 0;
+    region->location.y = 0;
+    region->size.width = self->region.size.width;
+    region->size.height = local->collapsed_height;
+}
+
+static uint8_t auto_suggest_box_get_popup_region(egui_view_t *self, uint8_t visible_count, egui_region_t *region)
+{
+    EGUI_LOCAL_INIT(egui_view_auto_suggest_box_t);
+    egui_region_t field_region;
+
+    if (visible_count == 0 || local->item_height <= 0)
+    {
+        region->location.x = 0;
+        region->location.y = 0;
+        region->size.width = 0;
+        region->size.height = 0;
+        return 0;
+    }
+
+    auto_suggest_box_get_field_region(self, &field_region);
+    region->location.x = field_region.location.x + HCW_AUTO_SUGGEST_BOX_POPUP_EDGE_INSET;
+    region->location.y = field_region.location.y + field_region.size.height;
+    region->size.width = field_region.size.width - HCW_AUTO_SUGGEST_BOX_POPUP_EDGE_INSET * 2;
+    region->size.height = visible_count * local->item_height;
+    return (region->size.width > 0 && region->size.height > 0) ? 1 : 0;
 }
 
 static void auto_suggest_box_get_search_icon_region(egui_view_t *self, egui_region_t *region)
 {
     EGUI_LOCAL_INIT(egui_view_auto_suggest_box_t);
+    egui_dim_t pad_left;
+    egui_dim_t slot_width;
 
     auto_suggest_box_sync_external_scale(self);
-    egui_dim_t size = EGUI_MIN(self->padding.left - local->icon_text_gap, local->collapsed_height - 10);
+    pad_left = auto_suggest_box_get_effective_pad_left(self);
+    egui_dim_t size = EGUI_MIN(pad_left - local->icon_text_gap, local->collapsed_height - 10);
 
     if (size < 12)
     {
@@ -305,7 +391,12 @@ static void auto_suggest_box_get_search_icon_region(egui_view_t *self, egui_regi
 
     region->size.width = size;
     region->size.height = size;
-    region->location.x = 8;
+    slot_width = pad_left - local->icon_text_gap;
+    if (slot_width < size)
+    {
+        slot_width = size;
+    }
+    region->location.x = (slot_width - size) / 2;
     region->location.y = (local->collapsed_height - size) / 2;
 }
 
@@ -599,6 +690,7 @@ static void auto_suggest_box_draw_icon(egui_view_t *self, const egui_region_t *r
     }
 
     draw_region = *region;
+    draw_region.location.y += hcw_text_center_get_delta(icon_font, icon, region, EGUI_ALIGN_CENTER);
     egui_canvas_draw_text_in_rect(canvas, icon_font, icon, &draw_region, EGUI_ALIGN_CENTER, color, EGUI_ALPHA_100);
 }
 
@@ -632,12 +724,7 @@ static void auto_suggest_box_draw_popup(egui_view_t *self)
         return;
     }
 
-    popup_region.location.x = 1;
-    popup_region.location.y = local->collapsed_height;
-    popup_region.size.width = self->region.size.width - 2;
-    popup_region.size.height = visible_count * local->item_height;
-
-    if (popup_region.size.width <= 0 || popup_region.size.height <= 0)
+    if (!auto_suggest_box_get_popup_region(self, visible_count, &popup_region))
     {
         return;
     }
@@ -649,13 +736,14 @@ static void auto_suggest_box_draw_popup(egui_view_t *self)
     for (row = 0; row < visible_count; row++)
     {
         egui_region_t item_region;
-        egui_dim_t item_row_y = local->collapsed_height + row * local->item_height;
+        egui_dim_t item_row_y = popup_region.location.y + row * local->item_height;
         uint8_t source_index = auto_suggest_box_get_source_index_for_filtered_row(local, (uint8_t)(start_row + row));
         egui_color_t item_text_color = text_color;
 
-        item_region.location.x = self->padding.left;
+        item_region.location.x = auto_suggest_box_get_effective_pad_left(self);
         item_region.location.y = item_row_y;
-        item_region.size.width = self->region.size.width - (self->padding.left + self->padding.right);
+        item_region.size.width =
+                self->region.size.width - (auto_suggest_box_get_effective_pad_left(self) + auto_suggest_box_get_effective_pad_right(self));
         item_region.size.height = local->item_height;
         auto_suggest_box_inset_region(&item_region, HCW_AUTO_SUGGEST_BOX_POPUP_INSET_X, HCW_AUTO_SUGGEST_BOX_POPUP_INSET_X, HCW_AUTO_SUGGEST_BOX_POPUP_INSET_Y,
                                       HCW_AUTO_SUGGEST_BOX_POPUP_INSET_Y);
@@ -666,10 +754,12 @@ static void auto_suggest_box_draw_popup(egui_view_t *self)
         }
         if (source_index == local->current_index)
         {
-            egui_canvas_draw_rectangle_fill(canvas, 1, item_row_y, self->region.size.width - 2, local->item_height, local->highlight_color, EGUI_ALPHA_100);
+            egui_canvas_draw_rectangle_fill(canvas, popup_region.location.x, item_row_y, popup_region.size.width, local->item_height,
+                                            local->highlight_color, EGUI_ALPHA_100);
             item_text_color = EGUI_COLOR_WHITE;
         }
 
+        item_region.location.y += hcw_text_center_get_delta(local->textinput.font, local->suggestions[source_index], &item_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER);
         egui_canvas_draw_text_in_rect(canvas, local->textinput.font, local->suggestions[source_index], &item_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER,
                                       item_text_color, self->alpha);
     }
@@ -685,6 +775,7 @@ static void auto_suggest_box_on_draw(egui_view_t *self)
     egui_region_t text_screen_region;
     egui_region_t icon_region;
     egui_dim_t border_radius;
+    egui_alpha_t text_alpha = self->is_enable ? input->text_alpha : EGUI_ALPHA_100;
 
     if (input->font == NULL)
     {
@@ -701,7 +792,10 @@ static void auto_suggest_box_on_draw(egui_view_t *self)
     {
         if (input->text_len == 0 && !self->is_focused && input->placeholder != NULL)
         {
-            egui_canvas_draw_text_in_rect(canvas, input->font, input->placeholder, &text_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, input->placeholder_color,
+            egui_region_t placeholder_region = text_region;
+
+            placeholder_region.location.y += hcw_text_center_get_delta(input->font, input->placeholder, &text_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER);
+            egui_canvas_draw_text_in_rect(canvas, input->font, input->placeholder, &placeholder_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, input->placeholder_color,
                                           input->placeholder_alpha);
         }
         else if (input->text_len > 0)
@@ -714,7 +808,8 @@ static void auto_suggest_box_on_draw(egui_view_t *self)
             input->font->api->get_str_size(input->font, input->text, 0, 0, &text_width, &text_height);
             text_x = text_region.location.x - input->scroll_offset_x;
             text_y = text_region.location.y + (text_region.size.height - text_height) / 2;
-            egui_canvas_draw_text(canvas, input->font, input->text, text_x, text_y, input->text_color, input->text_alpha);
+            text_y += hcw_text_center_get_delta(input->font, input->text, &text_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER);
+            egui_canvas_draw_text(canvas, input->font, input->text, text_x, text_y, input->text_color, text_alpha);
         }
 
         if (self->is_enable && self->is_focused && input->cursor_visible)
@@ -742,10 +837,10 @@ static void auto_suggest_box_on_draw(egui_view_t *self)
         if (self->is_focused && egui_view_get_enable(self) && self->region.size.width > 4 && self->region.size.height > 4)
         {
             egui_canvas_draw_round_rectangle(canvas, 0, 0, self->region.size.width, self->region.size.height, border_radius, 2, local->border_color,
-                                             egui_color_alpha_mix(self->alpha, 100));
+                                             egui_color_alpha_mix(self->alpha, EGUI_ALPHA_100));
             egui_canvas_draw_round_rectangle(canvas, 2, 2, self->region.size.width - 4, self->region.size.height - 4,
                                              border_radius > 2 ? (border_radius - 2) : border_radius, 1, local->border_color,
-                                             egui_color_alpha_mix(self->alpha, 56));
+                                             egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(78)));
         }
         else
         {
@@ -759,7 +854,10 @@ static uint8_t auto_suggest_box_get_touch_target(egui_view_t *self, egui_dim_t t
                                                  uint8_t *filtered_row)
 {
     EGUI_LOCAL_INIT(egui_view_auto_suggest_box_t);
+    egui_dim_t local_x;
     egui_dim_t local_y;
+    egui_region_t field_region;
+    egui_region_t popup_region;
     uint8_t visible_count;
     uint8_t start_row;
     uint8_t row;
@@ -774,8 +872,10 @@ static uint8_t auto_suggest_box_get_touch_target(egui_view_t *self, egui_dim_t t
         return 0;
     }
 
+    local_x = touch_x - self->region_screen.location.x;
     local_y = touch_y - self->region_screen.location.y;
-    if (local_y < local->collapsed_height)
+    auto_suggest_box_get_field_region(self, &field_region);
+    if (egui_region_pt_in_rect(&field_region, local_x, local_y))
     {
         *part = EGUI_VIEW_AUTO_SUGGEST_BOX_PART_FIELD;
         return 1;
@@ -786,8 +886,12 @@ static uint8_t auto_suggest_box_get_touch_target(egui_view_t *self, egui_dim_t t
     }
 
     visible_count = auto_suggest_box_get_current_visible_count(self, local);
+    if (!auto_suggest_box_get_popup_region(self, visible_count, &popup_region) || !egui_region_pt_in_rect(&popup_region, local_x, local_y))
+    {
+        return 0;
+    }
     start_row = auto_suggest_box_get_visible_start_row(self, local, visible_count);
-    row = (uint8_t)((local_y - local->collapsed_height) / local->item_height);
+    row = (uint8_t)((local_y - popup_region.location.y) / local->item_height);
     if (row >= visible_count)
     {
         return 0;
@@ -1020,6 +1124,9 @@ static void hcw_auto_suggest_box_apply_style(egui_view_t *self, egui_background_
     egui_view_set_shadow(self, NULL);
     egui_view_set_background(self, background);
     egui_view_set_padding(self, pad_left, pad_right, pad_y, pad_y);
+    local->content_pad_left = pad_left;
+    local->content_pad_right = pad_right;
+    local->content_pad_y = pad_y;
     egui_view_textinput_set_text_color(self, text_color, EGUI_ALPHA_100);
     egui_view_textinput_set_placeholder_color(self, muted_text_color, EGUI_ALPHA_100);
     egui_view_textinput_set_cursor_color(self, cursor_color);
@@ -1052,23 +1159,23 @@ static void hcw_auto_suggest_box_apply_style(egui_view_t *self, egui_background_
 
 void hcw_auto_suggest_box_apply_standard_style(egui_view_t *self)
 {
-    hcw_auto_suggest_box_apply_style(self, EGUI_BG_OF(&hcw_auto_suggest_box_standard_background), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xDCE3EB),
-                                     EGUI_COLOR_HEX(0x1A2734), EGUI_COLOR_HEX(0x6B7A89), EGUI_COLOR_HEX(0x5B7FD6), EGUI_COLOR_HEX(0x5C6B79),
-                                     EGUI_COLOR_HEX(0x0F6CBD), 28, 10, 8, 34, 24, 4, 1, 0);
+    hcw_auto_suggest_box_apply_style(self, EGUI_BG_OF(&hcw_auto_suggest_box_standard_background), HCW_COLOR_SURFACE, HCW_COLOR_BORDER_STRONG,
+                                     HCW_COLOR_TEXT_STRONG, HCW_COLOR_TEXT_SOFT, HCW_COLOR_PRIMARY_DARK, HCW_COLOR_TEXT_SOFT,
+                                     HCW_COLOR_PRIMARY_DARK, 28, 10, 8, 34, 24, 4, 1, 0);
 }
 
 void hcw_auto_suggest_box_apply_compact_style(egui_view_t *self)
 {
-    hcw_auto_suggest_box_apply_style(self, EGUI_BG_OF(&hcw_auto_suggest_box_compact_background), EGUI_COLOR_HEX(0xF7FBFB), EGUI_COLOR_HEX(0xD4E1DF),
-                                     EGUI_COLOR_HEX(0x183235), EGUI_COLOR_HEX(0x66817E), EGUI_COLOR_HEX(0x0C7C73), EGUI_COLOR_HEX(0x55716D),
-                                     EGUI_COLOR_HEX(0x0C7C73), 24, 8, 6, 28, 21, 3, 1, 0);
+    hcw_auto_suggest_box_apply_style(self, EGUI_BG_OF(&hcw_auto_suggest_box_compact_background), HCW_COLOR_SURFACE_SUBTLE, HCW_COLOR_BORDER_STRONG,
+                                     HCW_COLOR_TEXT_STRONG, HCW_COLOR_TEXT_SOFT, HCW_COLOR_PRIMARY_DARK, HCW_COLOR_TEXT_SOFT,
+                                     HCW_COLOR_PRIMARY_DARK, 24, 8, 6, 28, 21, 3, 1, 0);
 }
 
 void hcw_auto_suggest_box_apply_read_only_style(egui_view_t *self)
 {
-    hcw_auto_suggest_box_apply_style(self, EGUI_BG_OF(&hcw_auto_suggest_box_read_only_background), EGUI_COLOR_HEX(0xF5F7FA), EGUI_COLOR_HEX(0xE0E6ED),
-                                     EGUI_COLOR_HEX(0x7A8796), EGUI_COLOR_HEX(0x95A1AE), EGUI_COLOR_HEX(0xA9B7C4), EGUI_COLOR_HEX(0x8A97A5),
-                                     EGUI_COLOR_HEX(0x7A8796), 24, 8, 6, 28, 21, 3, 0, 1);
+    hcw_auto_suggest_box_apply_style(self, EGUI_BG_OF(&hcw_auto_suggest_box_read_only_background), HCW_COLOR_SURFACE_SUBTLE, HCW_COLOR_TRACK_STRONG,
+                                     HCW_COLOR_TEXT_STRONG, HCW_COLOR_TEXT_SOFT, HCW_COLOR_TEXT_SOFT, HCW_COLOR_TEXT,
+                                     HCW_COLOR_TEXT_SOFT, 24, 8, 6, 28, 21, 3, 0, 1);
 }
 
 void hcw_auto_suggest_box_set_suggestions(egui_view_t *self, const char **suggestions, uint8_t count)
@@ -1335,13 +1442,16 @@ void egui_view_auto_suggest_box_init(egui_view_t *self, egui_core_t *core)
     local->collapsed_height = 34;
     local->item_height = 24;
     local->icon_text_gap = 6;
-    local->popup_color = EGUI_COLOR_HEX(0xFFFFFF);
-    local->popup_border_color = EGUI_COLOR_HEX(0xDCE3EB);
-    local->border_color = EGUI_COLOR_HEX(0x0F6CBD);
-    local->text_color = EGUI_COLOR_HEX(0x1A2734);
-    local->muted_text_color = EGUI_COLOR_HEX(0x6B7A89);
-    local->highlight_color = EGUI_COLOR_HEX(0x5B7FD6);
-    local->icon_color = EGUI_COLOR_HEX(0x5C6B79);
+    local->content_pad_left = 28;
+    local->content_pad_right = 10;
+    local->content_pad_y = 8;
+    local->popup_color = HCW_COLOR_SURFACE;
+    local->popup_border_color = HCW_COLOR_BORDER_STRONG;
+    local->border_color = HCW_COLOR_PRIMARY_DARK;
+    local->text_color = HCW_COLOR_TEXT_STRONG;
+    local->muted_text_color = HCW_COLOR_TEXT_SOFT;
+    local->highlight_color = HCW_COLOR_PRIMARY_DARK;
+    local->icon_color = HCW_COLOR_TEXT_SOFT;
 
     egui_view_textinput_set_font(self, (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT);
     egui_view_textinput_set_placeholder(self, "Type to filter");

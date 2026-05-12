@@ -51,7 +51,7 @@ static egui_view_api_t overflow_badge_api;
 static egui_view_api_t attention_badge_api;
 static uint8_t ui_ready;
 
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, HCW_COLOR_PAGE_BG, EGUI_ALPHA_100, 14);
 EGUI_BACKGROUND_PARAM_INIT(bg_page_panel_params, &bg_page_panel_param, NULL, NULL);
 EGUI_BACKGROUND_COLOR_STATIC_CONST_INIT(bg_page_panel, &bg_page_panel_params);
 
@@ -61,32 +61,32 @@ static const info_badge_snapshot_t primary_snapshots[] = {
         {
                 "Inbox updates",
                 18,
-                EGUI_COLOR_HEX(0xC42B1C),
+                HCW_COLOR_DANGER,
                 "Policy note",
                 EGUI_ICON_MS_INFO,
-                EGUI_COLOR_HEX(0x0F6CBD),
+                HCW_COLOR_PRIMARY,
                 "Review pending",
-                EGUI_COLOR_HEX(0xC42B1C),
+                HCW_COLOR_DANGER,
         },
         {
                 "Build blockers",
                 7,
-                EGUI_COLOR_HEX(0xC42B1C),
+                HCW_COLOR_DANGER,
                 "QA warning",
                 EGUI_ICON_MS_WARNING,
-                EGUI_COLOR_HEX(0xB95A00),
+                HCW_COLOR_WARNING,
                 "Deployment paused",
-                EGUI_COLOR_HEX(0xC42B1C),
+                HCW_COLOR_DANGER,
         },
         {
                 "Finished checks",
                 2,
-                EGUI_COLOR_HEX(0x0F7B45),
+                HCW_COLOR_SUCCESS,
                 "Published",
                 EGUI_ICON_MS_DONE,
-                EGUI_COLOR_HEX(0x0F7B45),
+                HCW_COLOR_SUCCESS,
                 "Watch list",
-                EGUI_COLOR_HEX(0x0F6CBD),
+                HCW_COLOR_PRIMARY,
         },
 };
 
@@ -145,11 +145,11 @@ static void apply_preview_states(void)
 {
     hcw_info_badge_apply_count_style(EGUI_VIEW_OF(&overflow_badge));
     hcw_info_badge_set_count(EGUI_VIEW_OF(&overflow_badge), 128);
-    hcw_info_badge_set_palette(EGUI_VIEW_OF(&overflow_badge), EGUI_COLOR_HEX(0xC42B1C), EGUI_COLOR_WHITE);
+    hcw_info_badge_set_palette(EGUI_VIEW_OF(&overflow_badge), HCW_COLOR_DANGER, EGUI_COLOR_WHITE);
     egui_view_notification_badge_set_max_display(EGUI_VIEW_OF(&overflow_badge), 99);
 
     hcw_info_badge_apply_attention_style(EGUI_VIEW_OF(&attention_badge));
-    hcw_info_badge_set_palette(EGUI_VIEW_OF(&attention_badge), EGUI_COLOR_HEX(0xC42B1C), EGUI_COLOR_WHITE);
+    hcw_info_badge_set_palette(EGUI_VIEW_OF(&attention_badge), HCW_COLOR_DANGER, EGUI_COLOR_WHITE);
 
     if (ui_ready)
     {
@@ -195,7 +195,7 @@ void test_init_ui(void)
     egui_view_label_set_text(EGUI_VIEW_OF(&title_label), title_text);
     egui_view_label_set_align_type(EGUI_VIEW_OF(&title_label), EGUI_ALIGN_CENTER);
     hello_custom_widgets_demo_set_label_font_with_min_height(EGUI_VIEW_OF(&title_label), (const egui_font_t *)&egui_res_font_montserrat_12_4);
-    egui_view_label_set_font_color(EGUI_VIEW_OF(&title_label), EGUI_COLOR_HEX(0x21303F), EGUI_ALPHA_100);
+    egui_view_label_set_font_color(EGUI_VIEW_OF(&title_label), HCW_COLOR_TEXT, EGUI_ALPHA_100);
     egui_view_set_margin(EGUI_VIEW_OF(&title_label), 0, 8, 0, 8);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label));
 
@@ -203,7 +203,7 @@ void test_init_ui(void)
     egui_view_set_margin(EGUI_VIEW_OF(&count_row), 0, 0, 0, 4);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&count_row));
 
-    init_text_label(&count_row_label, 124, 12, "Inbox updates", (const egui_font_t *)&egui_res_font_montserrat_8_4, EGUI_COLOR_HEX(0x233241),
+    init_text_label(&count_row_label, 124, 12, "Inbox updates", (const egui_font_t *)&egui_res_font_montserrat_8_4, HCW_COLOR_TEXT,
                     EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER);
     egui_view_group_add_child(EGUI_VIEW_OF(&count_row), EGUI_VIEW_OF(&count_row_label));
 
@@ -220,7 +220,7 @@ void test_init_ui(void)
     egui_view_set_margin(EGUI_VIEW_OF(&icon_row), 0, 0, 0, 4);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&icon_row));
 
-    init_text_label(&icon_row_label, 124, 12, "Policy note", (const egui_font_t *)&egui_res_font_montserrat_8_4, EGUI_COLOR_HEX(0x233241),
+    init_text_label(&icon_row_label, 124, 12, "Policy note", (const egui_font_t *)&egui_res_font_montserrat_8_4, HCW_COLOR_TEXT,
                     EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER);
     egui_view_group_add_child(EGUI_VIEW_OF(&icon_row), EGUI_VIEW_OF(&icon_row_label));
 
@@ -237,7 +237,7 @@ void test_init_ui(void)
     egui_view_set_margin(EGUI_VIEW_OF(&dot_row), 0, 0, 0, 10);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&dot_row));
 
-    init_text_label(&dot_row_label, 124, 12, "Review pending", (const egui_font_t *)&egui_res_font_montserrat_8_4, EGUI_COLOR_HEX(0x233241),
+    init_text_label(&dot_row_label, 124, 12, "Review pending", (const egui_font_t *)&egui_res_font_montserrat_8_4, HCW_COLOR_TEXT,
                     EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER);
     egui_view_group_add_child(EGUI_VIEW_OF(&dot_row), EGUI_VIEW_OF(&dot_row_label));
 

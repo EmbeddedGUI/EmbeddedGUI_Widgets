@@ -329,6 +329,18 @@ static void test_command_bar_flyout_setters_clamp_and_clear_pressed_state(void)
 {
     setup_flyout(g_snapshots, EGUI_ARRAY_SIZE(g_snapshots));
 
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PANEL.full, test_flyout.surface_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_SURFACE_PRESS.full, test_flyout.section_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_BORDER_STRONG.full, test_flyout.border_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT_STRONG.full, test_flyout.text_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT_SOFT.full, test_flyout.muted_text_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PRIMARY_DARK.full, test_flyout.accent_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_SUCCESS.full, test_flyout.success_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_WARNING_DARK.full, test_flyout.warning_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_DANGER_DARK.full, test_flyout.danger_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT_SOFT.full, test_flyout.neutral_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_BORDER_STRONG.full, test_flyout.shadow_color.full);
+
     seed_pressed_state(&test_flyout, EGUI_VIEW_COMMAND_BAR_FLYOUT_PRIMARY_PART(0), 1);
     egui_view_command_bar_flyout_set_snapshots(EGUI_VIEW_OF(&test_flyout), g_overflow_snapshots, EGUI_ARRAY_SIZE(g_overflow_snapshots));
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_COMMAND_BAR_FLYOUT_MAX_SNAPSHOTS, test_flyout.snapshot_count);
@@ -448,7 +460,8 @@ static void test_command_bar_flyout_metrics_hit_testing_and_helpers(void)
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_COMMAND_BAR_FLYOUT_PRIMARY_PART(0), egui_view_command_bar_flyout_find_primary_part(&g_snapshots[0], 1, 0, 1));
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_COMMAND_BAR_FLYOUT_SECONDARY_PART(2), egui_view_command_bar_flyout_find_secondary_part(&g_snapshots[0], 1, 1, 1));
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_COMMAND_BAR_FLYOUT_PRIMARY_PART(0), egui_view_command_bar_flyout_resolve_default_part(&test_flyout, &g_snapshots[1]));
-    EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(sample, EGUI_COLOR_DARK_GREY, 68).full, egui_view_command_bar_flyout_mix_disabled(sample).full);
+    EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(sample, HCW_COLOR_TEXT_SOFT, EGUI_ALPHA_MAKE(28)).full,
+                               egui_view_command_bar_flyout_mix_disabled(sample).full);
 }
 
 static void test_command_bar_flyout_touch_trigger_and_same_target_release(void)

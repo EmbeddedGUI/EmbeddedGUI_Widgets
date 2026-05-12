@@ -1,15 +1,15 @@
 #include "egui.h"
 #include "egui_view_button.h"
 
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_button_standard_bg_normal_param, EGUI_COLOR_HEX(0x2563EB), EGUI_ALPHA_100, 10, 1,
-                                                        EGUI_COLOR_HEX(0x1E54C8), EGUI_ALPHA_100);
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_button_standard_bg_pressed_param, EGUI_COLOR_HEX(0x1E4FCA), EGUI_ALPHA_100, 10, 1,
-                                                        EGUI_COLOR_HEX(0x1840A7), EGUI_ALPHA_100);
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_button_standard_bg_disabled_param, EGUI_COLOR_HEX(0xAAB5C1), EGUI_ALPHA_100, 10, 1,
-                                                        EGUI_COLOR_HEX(0xAAB5C1), EGUI_ALPHA_100);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_button_standard_bg_normal_param, HCW_COLOR_PRIMARY, EGUI_ALPHA_100, 10, 1,
+                                                        HCW_COLOR_PRIMARY_DARK, EGUI_ALPHA_100);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_button_standard_bg_pressed_param, HCW_COLOR_PRIMARY_DARK, EGUI_ALPHA_100, 10, 1,
+                                                        HCW_COLOR_PRIMARY_DARK, EGUI_ALPHA_100);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_button_standard_bg_disabled_param, HCW_COLOR_DISABLED, EGUI_ALPHA_100, 10, 1,
+                                                        HCW_COLOR_DISABLED, EGUI_ALPHA_100);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_button_standard_bg_focused_param, EGUI_COLOR_HEX(0x2563EB), EGUI_ALPHA_100, 10, 2,
-                                                        EGUI_COLOR_HEX(0x9AC5FF), EGUI_ALPHA_100);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_button_standard_bg_focused_param, HCW_COLOR_PRIMARY, EGUI_ALPHA_100, 10, 2,
+                                                        HCW_COLOR_PRIMARY_LIGHT, EGUI_ALPHA_100);
 EGUI_BACKGROUND_PARAM_INIT_WITH_FOCUS(hcw_button_standard_bg_params, &hcw_button_standard_bg_normal_param, &hcw_button_standard_bg_pressed_param,
                                       &hcw_button_standard_bg_disabled_param, &hcw_button_standard_bg_focused_param);
 #else
@@ -18,15 +18,15 @@ EGUI_BACKGROUND_PARAM_INIT(hcw_button_standard_bg_params, &hcw_button_standard_b
 #endif
 EGUI_BACKGROUND_COLOR_STATIC_CONST_INIT(hcw_button_standard_background, &hcw_button_standard_bg_params);
 
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_button_disabled_bg_normal_param, EGUI_COLOR_HEX(0xEEF2F6), EGUI_ALPHA_100, 8, 1,
-                                                        EGUI_COLOR_HEX(0xD0D8E1), EGUI_ALPHA_100);
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_button_disabled_bg_pressed_param, EGUI_COLOR_HEX(0xE6ECF2), EGUI_ALPHA_100, 8, 1,
-                                                        EGUI_COLOR_HEX(0xCBD4DE), EGUI_ALPHA_100);
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_button_disabled_bg_disabled_param, EGUI_COLOR_HEX(0xEEF2F6), EGUI_ALPHA_100, 8, 1,
-                                                        EGUI_COLOR_HEX(0xD0D8E1), EGUI_ALPHA_100);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_button_disabled_bg_normal_param, HCW_COLOR_SURFACE_DISABLED, EGUI_ALPHA_100, 8, 1,
+                                                        HCW_COLOR_BORDER, EGUI_ALPHA_100);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_button_disabled_bg_pressed_param, HCW_COLOR_SURFACE_DISABLED, EGUI_ALPHA_100, 8, 1,
+                                                        HCW_COLOR_BORDER, EGUI_ALPHA_100);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_button_disabled_bg_disabled_param, HCW_COLOR_SURFACE_DISABLED, EGUI_ALPHA_100, 8, 1,
+                                                        HCW_COLOR_BORDER, EGUI_ALPHA_100);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_button_disabled_bg_focused_param, EGUI_COLOR_HEX(0xEEF2F6), EGUI_ALPHA_100, 8, 2,
-                                                        EGUI_COLOR_HEX(0xC5D1DD), EGUI_ALPHA_100);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_button_disabled_bg_focused_param, HCW_COLOR_SURFACE_DISABLED, EGUI_ALPHA_100, 8, 2,
+                                                        HCW_COLOR_BORDER, EGUI_ALPHA_100);
 EGUI_BACKGROUND_PARAM_INIT_WITH_FOCUS(hcw_button_disabled_bg_params, &hcw_button_disabled_bg_normal_param, &hcw_button_disabled_bg_pressed_param,
                                       &hcw_button_disabled_bg_disabled_param, &hcw_button_disabled_bg_focused_param);
 #else
@@ -75,7 +75,7 @@ void hcw_button_apply_standard_style(egui_view_t *self)
 
 void hcw_button_apply_disabled_style(egui_view_t *self)
 {
-    hcw_button_apply_style(self, EGUI_BG_OF(&hcw_button_disabled_background), EGUI_COLOR_HEX(0x708090), 4, 10);
+    hcw_button_apply_style(self, EGUI_BG_OF(&hcw_button_disabled_background), HCW_COLOR_NEUTRAL, 4, 10);
 }
 
 void hcw_button_set_text(egui_view_t *self, const char *text)

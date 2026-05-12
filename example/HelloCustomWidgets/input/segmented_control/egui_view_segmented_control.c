@@ -292,20 +292,20 @@ static int hcw_segmented_control_on_static_key_event(egui_view_t *self, egui_key
 
 void hcw_segmented_control_apply_standard_style(egui_view_t *self)
 {
-    hcw_segmented_control_apply_style(self, 10, 2, 2, EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0x2563EB), EGUI_COLOR_HEX(0x1E2933), EGUI_COLOR_HEX(0xFFFFFF),
-                                      EGUI_COLOR_HEX(0xD7DEE7));
+    hcw_segmented_control_apply_style(self, 10, 2, 2, HCW_COLOR_SURFACE, HCW_COLOR_PRIMARY, HCW_COLOR_TEXT, HCW_COLOR_SURFACE,
+                                      HCW_COLOR_BORDER);
 }
 
 void hcw_segmented_control_apply_compact_style(egui_view_t *self)
 {
-    hcw_segmented_control_apply_style(self, 8, 1, 1, EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0x0C7C73), EGUI_COLOR_HEX(0x203039), EGUI_COLOR_HEX(0xFFFFFF),
-                                      EGUI_COLOR_HEX(0xD3DEDA));
+    hcw_segmented_control_apply_style(self, 8, 1, 1, HCW_COLOR_SURFACE, HCW_COLOR_PRIMARY, HCW_COLOR_TEXT, HCW_COLOR_SURFACE,
+                                      HCW_COLOR_BORDER);
 }
 
 void hcw_segmented_control_apply_read_only_style(egui_view_t *self)
 {
-    hcw_segmented_control_apply_style(self, 8, 1, 1, EGUI_COLOR_HEX(0xFBFCFD), EGUI_COLOR_HEX(0x97A4B4), EGUI_COLOR_HEX(0x5B6976), EGUI_COLOR_HEX(0xFFFFFF),
-                                      EGUI_COLOR_HEX(0xDBE2E8));
+    hcw_segmented_control_apply_style(self, 8, 1, 1, HCW_COLOR_SURFACE_SUBTLE, HCW_COLOR_TEXT_SOFT, HCW_COLOR_TEXT_MUTED, HCW_COLOR_SURFACE,
+                                      HCW_COLOR_BORDER);
 }
 
 void hcw_segmented_control_set_segments(egui_view_t *self, const char **segment_texts, uint8_t segment_count)

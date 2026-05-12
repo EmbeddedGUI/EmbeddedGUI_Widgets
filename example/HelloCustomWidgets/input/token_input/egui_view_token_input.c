@@ -2,6 +2,7 @@
 
 #include <string.h>
 
+#include "../../hcw_text_center.h"
 #include "resource/egui_icon_material_symbols.h"
 
 #define TOKEN_STD_RADIUS      10
@@ -540,10 +541,11 @@ static void token_input_draw_text(const egui_font_t *font, egui_view_t *self, co
 {
     egui_region_t draw_region = *region;
 
-    if (text == NULL || text[0] == '\0')
+    if (region == NULL || region->size.width <= 0 || region->size.height <= 0 || text == NULL || text[0] == '\0')
     {
         return;
     }
+    draw_region.location.y += hcw_text_center_get_delta(font, text, region, align);
     egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, font, text, &draw_region, align, color, egui_color_alpha_mix(self->alpha, alpha));
 }
 
@@ -560,27 +562,29 @@ static void token_input_draw_item(egui_view_t *self, egui_view_token_input_t *lo
 
     if (placeholder)
     {
-        fill_color = egui_rgb_mix(surface_color, muted_color, focused ? 8 : 4);
-        item_border_color = egui_rgb_mix(border_color, accent_color, focused ? 24 : 8);
-        item_text_color = muted_color;
+        fill_color = egui_rgb_mix(surface_color, muted_color, EGUI_ALPHA_MAKE(focused ? 18 : 12));
+        item_border_color = egui_rgb_mix(border_color, accent_color, EGUI_ALPHA_MAKE(focused ? 68 : 52));
+        item_text_color = egui_rgb_mix(muted_color, text_color, EGUI_ALPHA_MAKE(focused ? 64 : 50));
     }
     else
     {
-        fill_color = egui_rgb_mix(surface_color, accent_color, pressed ? 22 : (focused ? 16 : 10));
-        item_border_color = egui_rgb_mix(border_color, accent_color, focused ? 34 : 18);
-        item_text_color = focused ? egui_rgb_mix(text_color, accent_color, 18) : text_color;
+        fill_color = egui_rgb_mix(surface_color, accent_color, EGUI_ALPHA_MAKE(pressed ? 48 : (focused ? 40 : 30)));
+        item_border_color = egui_rgb_mix(border_color, accent_color, EGUI_ALPHA_MAKE(focused ? 76 : 60));
+        item_text_color = focused ? egui_rgb_mix(text_color, accent_color, EGUI_ALPHA_MAKE(18)) : text_color;
     }
-    item_icon_color = focused ? egui_rgb_mix(item_text_color, accent_color, 24) : egui_rgb_mix(muted_color, text_color, 22);
+    item_icon_color = focused ? egui_rgb_mix(item_text_color, accent_color, EGUI_ALPHA_MAKE(32))
+                              : egui_rgb_mix(muted_color, text_color, EGUI_ALPHA_MAKE(72));
     if (pressed)
     {
-        item_icon_color = egui_rgb_mix(item_icon_color, accent_color, 30);
+        item_icon_color = egui_rgb_mix(item_icon_color, accent_color, EGUI_ALPHA_MAKE(48));
     }
 
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, region->location.x, region->location.y, region->size.width, region->size.height, radius, fill_color,
-                                          egui_color_alpha_mix(self->alpha, placeholder ? 92 : 96));
+                                          egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(placeholder ? 98 : 100)));
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, region->location.x, region->location.y, region->size.width, region->size.height, radius, 1, item_border_color,
-                                     egui_color_alpha_mix(self->alpha, focused ? 76 : 54));
-    token_input_draw_text(local->font, self, text, text_region == NULL ? region : text_region, text_align, item_text_color, placeholder ? 86 : EGUI_ALPHA_100);
+                                     egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(focused ? 100 : 92)));
+    token_input_draw_text(local->font, self, text, text_region == NULL ? region : text_region, text_align, item_text_color,
+                          placeholder ? EGUI_ALPHA_MAKE(96) : EGUI_ALPHA_100);
     if (show_icon && icon_region != NULL)
     {
         token_input_draw_text(token_input_get_remove_icon_font(local), self, EGUI_ICON_MS_CLOSE, icon_region, EGUI_ALIGN_CENTER, item_icon_color,
@@ -615,34 +619,36 @@ static void egui_view_token_input_on_draw(egui_view_t *self)
 
     if (local->read_only_mode)
     {
-        accent_color = egui_rgb_mix(accent_color, muted_color, 64);
-        surface_color = egui_rgb_mix(surface_color, EGUI_COLOR_HEX(0xFBFCFD), 26);
-        border_color = egui_rgb_mix(border_color, muted_color, 26);
-        text_color = egui_rgb_mix(text_color, muted_color, 28);
-        shadow_color = egui_rgb_mix(shadow_color, surface_color, 34);
+        accent_color = egui_rgb_mix(accent_color, HCW_COLOR_PRIMARY_DARK, EGUI_ALPHA_MAKE(42));
+        surface_color = egui_rgb_mix(surface_color, HCW_COLOR_PANEL, EGUI_ALPHA_MAKE(8));
+        border_color = egui_rgb_mix(border_color, HCW_COLOR_BORDER_STRONG, EGUI_ALPHA_MAKE(66));
+        text_color = egui_rgb_mix(text_color, HCW_COLOR_TEXT_STRONG, EGUI_ALPHA_MAKE(68));
+        muted_color = egui_rgb_mix(muted_color, HCW_COLOR_TEXT_STRONG, EGUI_ALPHA_MAKE(54));
+        shadow_color = egui_rgb_mix(shadow_color, border_color, EGUI_ALPHA_MAKE(42));
     }
     if (!enabled)
     {
-        accent_color = egui_rgb_mix(accent_color, muted_color, 70);
-        surface_color = egui_rgb_mix(surface_color, EGUI_COLOR_HEX(0xFBFCFD), 28);
-        border_color = egui_rgb_mix(border_color, muted_color, 30);
-        text_color = egui_rgb_mix(text_color, muted_color, 34);
-        shadow_color = egui_rgb_mix(shadow_color, surface_color, 38);
+        accent_color = egui_rgb_mix(accent_color, muted_color, EGUI_ALPHA_MAKE(52));
+        surface_color = egui_rgb_mix(surface_color, HCW_COLOR_SURFACE_SUBTLE, EGUI_ALPHA_MAKE(28));
+        border_color = egui_rgb_mix(border_color, muted_color, EGUI_ALPHA_MAKE(30));
+        text_color = egui_rgb_mix(text_color, muted_color, EGUI_ALPHA_MAKE(34));
+        shadow_color = egui_rgb_mix(shadow_color, surface_color, EGUI_ALPHA_MAKE(38));
     }
 
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, region.location.x, region.location.y + 2, region.size.width, region.size.height,
                                           local->compact_mode ? TOKEN_COMPACT_RADIUS + 1 : TOKEN_STD_RADIUS + 1, shadow_color,
-                                          egui_color_alpha_mix(self->alpha, enabled ? 16 : 10));
+                                          egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(enabled ? 16 : 10)));
     frame_border_color = border_color;
     if (self->is_focused && enabled && !local->read_only_mode)
     {
-        frame_border_color = egui_rgb_mix(border_color, accent_color, 24);
+        frame_border_color = egui_rgb_mix(border_color, accent_color, EGUI_ALPHA_MAKE(52));
     }
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, region.location.x, region.location.y, region.size.width, region.size.height,
-                                          local->compact_mode ? TOKEN_COMPACT_RADIUS : TOKEN_STD_RADIUS, surface_color, egui_color_alpha_mix(self->alpha, 96));
+                                          local->compact_mode ? TOKEN_COMPACT_RADIUS : TOKEN_STD_RADIUS, surface_color,
+                                          egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(96)));
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, region.location.x, region.location.y, region.size.width, region.size.height,
                                      local->compact_mode ? TOKEN_COMPACT_RADIUS : TOKEN_STD_RADIUS, 1, frame_border_color,
-                                     egui_color_alpha_mix(self->alpha, 58));
+                                     egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(94)));
 
     token_input_get_metrics(local, self, &metrics);
     for (index = 0; index < metrics.visible_token_count; index++)
@@ -1143,12 +1149,12 @@ void egui_view_token_input_init(egui_view_t *self)
     local->font = (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT;
     local->meta_font = (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT;
     local->on_changed = NULL;
-    local->surface_color = EGUI_COLOR_HEX(0xFFFFFF);
-    local->border_color = EGUI_COLOR_HEX(0xD7DFE7);
-    local->text_color = EGUI_COLOR_HEX(0x1F2A35);
-    local->muted_text_color = EGUI_COLOR_HEX(0x7A8794);
-    local->accent_color = EGUI_COLOR_HEX(0x4A86E8);
-    local->shadow_color = EGUI_COLOR_HEX(0xDCE5EE);
+    local->surface_color = HCW_COLOR_PANEL;
+    local->border_color = HCW_COLOR_BORDER_STRONG;
+    local->text_color = HCW_COLOR_TEXT_STRONG;
+    local->muted_text_color = HCW_COLOR_TEXT_SOFT;
+    local->accent_color = HCW_COLOR_PRIMARY_DARK;
+    local->shadow_color = HCW_COLOR_TRACK_STRONG;
     token_input_copy_text(local->placeholder, sizeof(local->placeholder), "Add token");
     local->draft_text[0] = '\0';
     local->token_count = 0;

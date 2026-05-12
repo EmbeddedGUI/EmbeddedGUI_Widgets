@@ -9,15 +9,15 @@ void egui_view_button_on_draw(egui_view_t *self);
 static egui_view_api_t g_hcw_hyperlink_button_api;
 static uint8_t g_hcw_hyperlink_button_api_ready;
 
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_hyperlink_button_standard_bg_normal_param, EGUI_COLOR_HEX(0xFFFFFF), EGUI_ALPHA_0, 6, 0,
-                                                        EGUI_COLOR_HEX(0xFFFFFF), EGUI_ALPHA_0);
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_hyperlink_button_standard_bg_pressed_param, EGUI_COLOR_HEX(0xE8F2FF), EGUI_ALPHA_100, 6, 0,
-                                                        EGUI_COLOR_HEX(0xE8F2FF), EGUI_ALPHA_0);
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_hyperlink_button_standard_bg_disabled_param, EGUI_COLOR_HEX(0xFFFFFF), EGUI_ALPHA_0, 6, 0,
-                                                        EGUI_COLOR_HEX(0xFFFFFF), EGUI_ALPHA_0);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_hyperlink_button_standard_bg_normal_param, HCW_COLOR_SURFACE, EGUI_ALPHA_0, 6, 0,
+                                                        HCW_COLOR_SURFACE, EGUI_ALPHA_0);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_hyperlink_button_standard_bg_pressed_param, HCW_COLOR_SURFACE_PRESS, EGUI_ALPHA_100, 6, 0,
+                                                        HCW_COLOR_SURFACE_PRESS, EGUI_ALPHA_0);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_hyperlink_button_standard_bg_disabled_param, HCW_COLOR_SURFACE, EGUI_ALPHA_0, 6, 0,
+                                                        HCW_COLOR_SURFACE, EGUI_ALPHA_0);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_hyperlink_button_standard_bg_focused_param, EGUI_COLOR_HEX(0xF4F9FF), EGUI_ALPHA_100, 6, 1,
-                                                        EGUI_COLOR_HEX(0x9AC5FF), EGUI_ALPHA_100);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_hyperlink_button_standard_bg_focused_param, HCW_COLOR_SURFACE, EGUI_ALPHA_0, 6, 0,
+                                                        HCW_COLOR_SURFACE, EGUI_ALPHA_0);
 EGUI_BACKGROUND_PARAM_INIT_WITH_FOCUS(hcw_hyperlink_button_standard_bg_params, &hcw_hyperlink_button_standard_bg_normal_param,
                                       &hcw_hyperlink_button_standard_bg_pressed_param, &hcw_hyperlink_button_standard_bg_disabled_param,
                                       &hcw_hyperlink_button_standard_bg_focused_param);
@@ -27,15 +27,15 @@ EGUI_BACKGROUND_PARAM_INIT(hcw_hyperlink_button_standard_bg_params, &hcw_hyperli
 #endif
 EGUI_BACKGROUND_COLOR_STATIC_CONST_INIT(hcw_hyperlink_button_standard_background, &hcw_hyperlink_button_standard_bg_params);
 
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_hyperlink_button_inline_bg_normal_param, EGUI_COLOR_HEX(0xFFFFFF), EGUI_ALPHA_0, 6, 0,
-                                                        EGUI_COLOR_HEX(0xFFFFFF), EGUI_ALPHA_0);
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_hyperlink_button_inline_bg_pressed_param, EGUI_COLOR_HEX(0xEDF4FA), EGUI_ALPHA_100, 6, 0,
-                                                        EGUI_COLOR_HEX(0xEDF4FA), EGUI_ALPHA_0);
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_hyperlink_button_inline_bg_disabled_param, EGUI_COLOR_HEX(0xFFFFFF), EGUI_ALPHA_0, 6, 0,
-                                                        EGUI_COLOR_HEX(0xFFFFFF), EGUI_ALPHA_0);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_hyperlink_button_inline_bg_normal_param, HCW_COLOR_SURFACE, EGUI_ALPHA_0, 6, 0,
+                                                        HCW_COLOR_SURFACE, EGUI_ALPHA_0);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_hyperlink_button_inline_bg_pressed_param, HCW_COLOR_SURFACE_DISABLED, EGUI_ALPHA_100, 6, 0,
+                                                        HCW_COLOR_SURFACE_DISABLED, EGUI_ALPHA_0);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_hyperlink_button_inline_bg_disabled_param, HCW_COLOR_SURFACE, EGUI_ALPHA_0, 6, 0,
+                                                        HCW_COLOR_SURFACE, EGUI_ALPHA_0);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_hyperlink_button_inline_bg_focused_param, EGUI_COLOR_HEX(0xF6FAFD), EGUI_ALPHA_100, 6, 1,
-                                                        EGUI_COLOR_HEX(0xB5C3D1), EGUI_ALPHA_100);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_hyperlink_button_inline_bg_focused_param, HCW_COLOR_SURFACE, EGUI_ALPHA_0, 6, 0,
+                                                        HCW_COLOR_SURFACE, EGUI_ALPHA_0);
 EGUI_BACKGROUND_PARAM_INIT_WITH_FOCUS(hcw_hyperlink_button_inline_bg_params, &hcw_hyperlink_button_inline_bg_normal_param,
                                       &hcw_hyperlink_button_inline_bg_pressed_param, &hcw_hyperlink_button_inline_bg_disabled_param,
                                       &hcw_hyperlink_button_inline_bg_focused_param);
@@ -45,15 +45,15 @@ EGUI_BACKGROUND_PARAM_INIT(hcw_hyperlink_button_inline_bg_params, &hcw_hyperlink
 #endif
 EGUI_BACKGROUND_COLOR_STATIC_CONST_INIT(hcw_hyperlink_button_inline_background, &hcw_hyperlink_button_inline_bg_params);
 
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_hyperlink_button_disabled_bg_normal_param, EGUI_COLOR_HEX(0xFFFFFF), EGUI_ALPHA_0, 6, 0,
-                                                        EGUI_COLOR_HEX(0xFFFFFF), EGUI_ALPHA_0);
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_hyperlink_button_disabled_bg_pressed_param, EGUI_COLOR_HEX(0xFFFFFF), EGUI_ALPHA_0, 6, 0,
-                                                        EGUI_COLOR_HEX(0xFFFFFF), EGUI_ALPHA_0);
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_hyperlink_button_disabled_bg_disabled_param, EGUI_COLOR_HEX(0xFFFFFF), EGUI_ALPHA_0, 6, 0,
-                                                        EGUI_COLOR_HEX(0xFFFFFF), EGUI_ALPHA_0);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_hyperlink_button_disabled_bg_normal_param, HCW_COLOR_SURFACE, EGUI_ALPHA_0, 6, 0,
+                                                        HCW_COLOR_SURFACE, EGUI_ALPHA_0);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_hyperlink_button_disabled_bg_pressed_param, HCW_COLOR_SURFACE, EGUI_ALPHA_0, 6, 0,
+                                                        HCW_COLOR_SURFACE, EGUI_ALPHA_0);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_hyperlink_button_disabled_bg_disabled_param, HCW_COLOR_SURFACE, EGUI_ALPHA_0, 6, 0,
+                                                        HCW_COLOR_SURFACE, EGUI_ALPHA_0);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_hyperlink_button_disabled_bg_focused_param, EGUI_COLOR_HEX(0xFFFFFF), EGUI_ALPHA_0, 6, 0,
-                                                        EGUI_COLOR_HEX(0xFFFFFF), EGUI_ALPHA_0);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_hyperlink_button_disabled_bg_focused_param, HCW_COLOR_SURFACE, EGUI_ALPHA_0, 6, 0,
+                                                        HCW_COLOR_SURFACE, EGUI_ALPHA_0);
 EGUI_BACKGROUND_PARAM_INIT_WITH_FOCUS(hcw_hyperlink_button_disabled_bg_params, &hcw_hyperlink_button_disabled_bg_normal_param,
                                       &hcw_hyperlink_button_disabled_bg_pressed_param, &hcw_hyperlink_button_disabled_bg_disabled_param,
                                       &hcw_hyperlink_button_disabled_bg_focused_param);
@@ -97,7 +97,7 @@ static void hcw_hyperlink_button_draw_underline(egui_view_t *self)
     egui_dim_t start_x;
     egui_dim_t line_y;
     egui_dim_t end_x;
-    egui_alpha_t alpha = egui_color_alpha_mix(self->alpha, self->is_pressed ? 96 : 84);
+    egui_alpha_t alpha = egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(self->is_pressed ? 96 : 84));
 
     if (!egui_view_get_enable(self) || !EGUI_VIEW_TEXT_VALID(text) || font == NULL || font->api == NULL || font->api->get_str_size == NULL)
     {
@@ -202,17 +202,17 @@ static void hcw_hyperlink_button_apply_style(egui_view_t *self, egui_background_
 
 void hcw_hyperlink_button_apply_standard_style(egui_view_t *self)
 {
-    hcw_hyperlink_button_apply_style(self, EGUI_BG_OF(&hcw_hyperlink_button_standard_background), EGUI_COLOR_HEX(0x0F6CBD));
+    hcw_hyperlink_button_apply_style(self, EGUI_BG_OF(&hcw_hyperlink_button_standard_background), HCW_COLOR_PRIMARY_DARK);
 }
 
 void hcw_hyperlink_button_apply_inline_style(egui_view_t *self)
 {
-    hcw_hyperlink_button_apply_style(self, EGUI_BG_OF(&hcw_hyperlink_button_inline_background), EGUI_COLOR_HEX(0x24527A));
+    hcw_hyperlink_button_apply_style(self, EGUI_BG_OF(&hcw_hyperlink_button_inline_background), HCW_COLOR_PRIMARY_DARK);
 }
 
 void hcw_hyperlink_button_apply_disabled_style(egui_view_t *self)
 {
-    hcw_hyperlink_button_apply_style(self, EGUI_BG_OF(&hcw_hyperlink_button_disabled_background), EGUI_COLOR_HEX(0x8A96A3));
+    hcw_hyperlink_button_apply_style(self, EGUI_BG_OF(&hcw_hyperlink_button_disabled_background), HCW_COLOR_TEXT_SOFT);
 }
 
 void hcw_hyperlink_button_set_text(egui_view_t *self, const char *text)

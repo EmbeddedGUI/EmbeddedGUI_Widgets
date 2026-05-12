@@ -31,7 +31,7 @@ static egui_view_t *s_captured_demo;
 static uint8_t s_capture_enabled;
 static uint8_t s_active_category;
 
-EGUI_BACKGROUND_COLOR_PARAM_INIT_SOLID(bg_page_param, EGUI_COLOR_HEX(0xF4F7FB), EGUI_ALPHA_100);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_SOLID(bg_page_param, HCW_COLOR_PAGE_BG, EGUI_ALPHA_100);
 EGUI_BACKGROUND_PARAM_INIT(bg_page_params, &bg_page_param, NULL, NULL);
 EGUI_BACKGROUND_COLOR_STATIC_CONST_INIT(bg_page, &bg_page_params);
 
@@ -39,7 +39,7 @@ EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_nav_normal_param, EGUI_COLOR
 EGUI_BACKGROUND_PARAM_INIT(bg_nav_normal_params, &bg_nav_normal_param, NULL, NULL);
 EGUI_BACKGROUND_COLOR_STATIC_CONST_INIT(bg_nav_normal, &bg_nav_normal_params);
 
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_nav_active_param, EGUI_COLOR_HEX(0x0F6CBD), EGUI_ALPHA_100, 10);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_nav_active_param, HCW_COLOR_PRIMARY, EGUI_ALPHA_100, 10);
 EGUI_BACKGROUND_PARAM_INIT(bg_nav_active_params, &bg_nav_active_param, NULL, NULL);
 EGUI_BACKGROUND_COLOR_STATIC_CONST_INIT(bg_nav_active, &bg_nav_active_params);
 

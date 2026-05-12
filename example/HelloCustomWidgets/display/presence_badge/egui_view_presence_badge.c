@@ -10,7 +10,7 @@ static uint8_t egui_view_presence_badge_clear_pressed_state(egui_view_t *self)
 
 static egui_color_t egui_view_presence_badge_mix_disabled(egui_color_t color)
 {
-    return egui_rgb_mix(color, EGUI_COLOR_HEX(0x83909D), 54);
+    return egui_rgb_mix(color, HCW_COLOR_TEXT_SOFT, EGUI_ALPHA_MAKE(38));
 }
 
 static uint8_t egui_view_presence_badge_clamp_status(uint8_t status)
@@ -154,29 +154,34 @@ static void egui_view_presence_badge_on_draw(egui_view_t *self)
     outer_radius = outer_region.size.width / 2;
     mark_radius = mark_region.size.width / 2;
 
-    egui_canvas_draw_circle_fill_basic(&uicode_get_core()->canvas, center_x, center_y, outer_radius, surface_color, egui_color_alpha_mix(self->alpha, 96));
+    egui_canvas_draw_circle_fill_basic(&uicode_get_core()->canvas, center_x, center_y, outer_radius, surface_color,
+                                       egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(96)));
 
     if (local->status == EGUI_VIEW_PRESENCE_BADGE_STATUS_OFFLINE)
     {
         if (mark_radius > 0)
         {
-            egui_canvas_draw_circle_basic(&uicode_get_core()->canvas, center_x, center_y, mark_radius, 1, status_color, egui_color_alpha_mix(self->alpha, 92));
+            egui_canvas_draw_circle_basic(&uicode_get_core()->canvas, center_x, center_y, mark_radius, 1, status_color,
+                                          egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(92)));
             if (mark_radius > 2)
             {
-                egui_canvas_draw_circle_basic(&uicode_get_core()->canvas, center_x, center_y, mark_radius - 1, 1, status_color, egui_color_alpha_mix(self->alpha, 40));
+                egui_canvas_draw_circle_basic(&uicode_get_core()->canvas, center_x, center_y, mark_radius - 1, 1, status_color,
+                                              egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(58)));
             }
         }
     }
     else
     {
-        egui_canvas_draw_circle_fill_basic(&uicode_get_core()->canvas, center_x, center_y, mark_radius, status_color, egui_color_alpha_mix(self->alpha, 92));
+        egui_canvas_draw_circle_fill_basic(&uicode_get_core()->canvas, center_x, center_y, mark_radius, status_color,
+                                           egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(92)));
         if (local->status == EGUI_VIEW_PRESENCE_BADGE_STATUS_DO_NOT_DISTURB)
         {
             egui_view_presence_badge_draw_do_not_disturb_glyph(self, &mark_region, glyph_color);
         }
     }
 
-    egui_canvas_draw_circle_basic(&uicode_get_core()->canvas, center_x, center_y, outer_radius, 1, outline_color, egui_color_alpha_mix(self->alpha, 30));
+    egui_canvas_draw_circle_basic(&uicode_get_core()->canvas, center_x, center_y, outer_radius, 1, outline_color,
+                                  egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(60)));
 }
 
 #if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
@@ -292,15 +297,15 @@ void egui_view_presence_badge_init(egui_view_t *self)
     egui_view_set_padding_all(self, 0);
     egui_view_set_focusable(self, 0);
 
-    local->surface_color = EGUI_COLOR_HEX(0xFFFFFF);
-    local->outline_color = EGUI_COLOR_HEX(0xD5DEE6);
-    local->available_color = EGUI_COLOR_HEX(0x107C41);
-    local->busy_color = EGUI_COLOR_HEX(0xC4314B);
-    local->away_color = EGUI_COLOR_HEX(0xC17C00);
-    local->do_not_disturb_color = EGUI_COLOR_HEX(0xC4314B);
-    local->offline_color = EGUI_COLOR_HEX(0x7A8796);
+    local->surface_color = HCW_COLOR_SURFACE;
+    local->outline_color = HCW_COLOR_BORDER;
+    local->available_color = HCW_COLOR_SUCCESS;
+    local->busy_color = HCW_COLOR_DANGER_DARK;
+    local->away_color = HCW_COLOR_WARNING_DARK;
+    local->do_not_disturb_color = HCW_COLOR_DANGER_DARK;
+    local->offline_color = HCW_COLOR_NEUTRAL;
     local->glyph_color = EGUI_COLOR_WHITE;
-    local->muted_color = EGUI_COLOR_HEX(0x6B7A89);
+    local->muted_color = HCW_COLOR_TEXT_MUTED;
     local->status = EGUI_VIEW_PRESENCE_BADGE_STATUS_AVAILABLE;
 
     egui_view_set_view_name(self, "egui_view_presence_badge");

@@ -60,7 +60,7 @@
 - 底部 preview 行：`216 x 72`
 - 单个 preview：`104 x 72`
 - 页面结构：标题 -> 主 `tab_view` -> 底部 `compact / read only`
-- 风格约束：浅底 `page panel`、轻边框 tab shell、低噪音 body card 和 footer badge；active tab 只保留轻量 fill、细 underline 与 close 入口，不回退到厚重按钮化风格
+- 风格约束：浅底 `page panel`、轻边框 tab shell、低噪音 body card 和 footer badge；active tab 只保留轻量 fill、文字层级与 close 入口，不回退到厚重按钮化风格
 
 ## 6. 状态矩阵
 | 状态 | 主控件 | Compact preview | Read only preview |

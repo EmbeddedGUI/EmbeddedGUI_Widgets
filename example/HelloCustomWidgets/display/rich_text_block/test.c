@@ -42,7 +42,7 @@ static egui_view_api_t secondary_widget_api;
 static egui_view_api_t muted_widget_api;
 static uint8_t ui_ready;
 
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, HCW_COLOR_PAGE_BG, EGUI_ALPHA_100, 14);
 EGUI_BACKGROUND_PARAM_INIT(bg_page_panel_params, &bg_page_panel_param, NULL, NULL);
 EGUI_BACKGROUND_COLOR_STATIC_CONST_INIT(bg_page_panel, &bg_page_panel_params);
 
@@ -81,19 +81,19 @@ static const rich_text_block_snapshot_t primary_snapshots[] = {
                 snapshot_release_note,
                 (uint8_t)EGUI_ARRAY_SIZE(snapshot_release_note),
                 "Release note / emphasis + body + caption",
-                EGUI_COLOR_HEX(0x0F6CBD),
+                HCW_COLOR_PRIMARY,
         },
         {
                 snapshot_policy_callout,
                 (uint8_t)EGUI_ARRAY_SIZE(snapshot_policy_callout),
                 "Policy callout / body + accent + caption",
-                EGUI_COLOR_HEX(0x0F7B45),
+                HCW_COLOR_SUCCESS,
         },
         {
                 snapshot_editorial_brief,
                 (uint8_t)EGUI_ARRAY_SIZE(snapshot_editorial_brief),
                 "Editorial brief / emphasis + body + caption",
-                EGUI_COLOR_HEX(0x8F4C11),
+                HCW_COLOR_WARNING_DARK,
         },
 };
 
@@ -131,12 +131,12 @@ static void apply_primary_default_state(void)
 static void apply_preview_states(void)
 {
     egui_view_rich_text_block_set_paragraphs(EGUI_VIEW_OF(&secondary_widget), compact_preview_snapshot, (uint8_t)EGUI_ARRAY_SIZE(compact_preview_snapshot));
-    egui_view_rich_text_block_set_palette(EGUI_VIEW_OF(&secondary_widget), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xDCE3E8), EGUI_COLOR_HEX(0x1E2A36),
-                                          EGUI_COLOR_HEX(0x627181), EGUI_COLOR_HEX(0x0F6CBD));
+    egui_view_rich_text_block_set_palette(EGUI_VIEW_OF(&secondary_widget), HCW_COLOR_SURFACE, HCW_COLOR_BORDER, HCW_COLOR_TEXT,
+                                          HCW_COLOR_TEXT_SOFT, HCW_COLOR_PRIMARY);
 
     egui_view_rich_text_block_set_paragraphs(EGUI_VIEW_OF(&muted_widget), read_only_preview_snapshot, (uint8_t)EGUI_ARRAY_SIZE(read_only_preview_snapshot));
-    egui_view_rich_text_block_set_palette(EGUI_VIEW_OF(&muted_widget), EGUI_COLOR_HEX(0xFBFCFD), EGUI_COLOR_HEX(0xD8DFE6), EGUI_COLOR_HEX(0x425160),
-                                          EGUI_COLOR_HEX(0x738191), EGUI_COLOR_HEX(0x8AA2B5));
+    egui_view_rich_text_block_set_palette(EGUI_VIEW_OF(&muted_widget), HCW_COLOR_PANEL, HCW_COLOR_BORDER_STRONG, HCW_COLOR_TEXT_SOFT,
+                                          HCW_COLOR_TEXT_SOFT, HCW_COLOR_TEXT_SOFT);
     if (ui_ready)
     {
         layout_page();
@@ -173,7 +173,7 @@ void test_init_ui(void)
     egui_view_linearlayout_set_align_type(EGUI_VIEW_OF(&root_layout), EGUI_ALIGN_HCENTER);
     egui_view_set_background(EGUI_VIEW_OF(&root_layout), EGUI_BG_OF(&bg_page_panel));
 
-    init_text_label(&title_label, RICH_TEXT_BLOCK_ROOT_WIDTH, 18, title_text, (const egui_font_t *)&egui_res_font_montserrat_12_4, EGUI_COLOR_HEX(0x21303F),
+    init_text_label(&title_label, RICH_TEXT_BLOCK_ROOT_WIDTH, 18, title_text, (const egui_font_t *)&egui_res_font_montserrat_12_4, HCW_COLOR_TEXT,
                     EGUI_ALIGN_CENTER);
     egui_view_set_margin(EGUI_VIEW_OF(&title_label), 0, 8, 0, 8);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label));
@@ -183,11 +183,11 @@ void test_init_ui(void)
     egui_view_set_margin(EGUI_VIEW_OF(&primary_widget), 0, 0, 0, 10);
     egui_view_rich_text_block_set_font(EGUI_VIEW_OF(&primary_widget), (const egui_font_t *)&egui_res_font_montserrat_10_4);
     egui_view_rich_text_block_set_emphasis_font(EGUI_VIEW_OF(&primary_widget), (const egui_font_t *)&egui_res_font_montserrat_12_4);
-    egui_view_rich_text_block_set_caption_font(EGUI_VIEW_OF(&primary_widget), (const egui_font_t *)&egui_res_font_montserrat_8_4);
+    egui_view_rich_text_block_set_caption_font(EGUI_VIEW_OF(&primary_widget), (const egui_font_t *)&egui_res_font_montserrat_10_4);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&primary_widget));
 
     init_text_label(&primary_status_label, RICH_TEXT_BLOCK_ROOT_WIDTH, 12, "Release note / emphasis + body + caption",
-                    (const egui_font_t *)&egui_res_font_montserrat_10_4, EGUI_COLOR_HEX(0x0F6CBD), EGUI_ALIGN_CENTER);
+                    (const egui_font_t *)&egui_res_font_montserrat_10_4, HCW_COLOR_PRIMARY, EGUI_ALIGN_CENTER);
     egui_view_set_margin(EGUI_VIEW_OF(&primary_status_label), 0, 0, 0, 10);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&primary_status_label));
 

@@ -282,25 +282,25 @@ void hcw_activity_ring_init(egui_view_t *self)
 
 void hcw_activity_ring_apply_standard_style(egui_view_t *self)
 {
-    hcw_activity_ring_apply_style(self, 8, EGUI_COLOR_HEX(0x0F6CBD), EGUI_COLOR_HEX(0xD8E1EA));
+    hcw_activity_ring_apply_style(self, 8, HCW_COLOR_PRIMARY, HCW_COLOR_TRACK);
     hcw_activity_ring_set_indeterminate_mode(self, 0);
 }
 
 void hcw_activity_ring_apply_compact_style(egui_view_t *self)
 {
-    hcw_activity_ring_apply_style(self, 6, EGUI_COLOR_HEX(0x0F6CBD), EGUI_COLOR_HEX(0xD8E1EA));
+    hcw_activity_ring_apply_style(self, 6, HCW_COLOR_PRIMARY, HCW_COLOR_TRACK);
     hcw_activity_ring_set_indeterminate_mode(self, 0);
 }
 
 void hcw_activity_ring_apply_paused_style(egui_view_t *self)
 {
-    hcw_activity_ring_apply_style(self, 6, EGUI_COLOR_HEX(0xB95A00), EGUI_COLOR_HEX(0xE7DDCA));
+    hcw_activity_ring_apply_style(self, 6, HCW_COLOR_WARNING, HCW_COLOR_WARNING_SOFT);
     hcw_activity_ring_set_indeterminate_mode(self, 0);
 }
 
 void hcw_activity_ring_apply_indeterminate_style(egui_view_t *self)
 {
-    hcw_activity_ring_apply_style(self, 8, EGUI_COLOR_HEX(0x0F6CBD), EGUI_COLOR_HEX(0xD8E1EA));
+    hcw_activity_ring_apply_style(self, 8, HCW_COLOR_PRIMARY, HCW_COLOR_TRACK);
     hcw_activity_ring_set_indeterminate_mode(self, 1);
 }
 

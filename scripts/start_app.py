@@ -12,6 +12,9 @@ from pathlib import Path
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
 EXAMPLE_DIR = ROOT_DIR / "example"
+CUSTOM_WIDGETS_APP = "HelloCustomWidgets"
+CUSTOM_WIDGETS_ROOT = EXAMPLE_DIR / CUSTOM_WIDGETS_APP
+CATEGORY_ORDER = ["input", "layout", "navigation", "display", "feedback"]
 MAKE_JOBS = max(1, min(8, (os.cpu_count() or 1)))
 
 
@@ -28,30 +31,57 @@ class AppCase:
 
 
 def get_example_list() -> list[str]:
-    if not EXAMPLE_DIR.exists():
+    if not (CUSTOM_WIDGETS_ROOT / "build.mk").exists():
         return []
-    return sorted(path.name for path in EXAMPLE_DIR.iterdir() if path.is_dir() and (path / "build.mk").exists())
+    return [CUSTOM_WIDGETS_APP]
 
 
-def get_custom_widget_sub_apps() -> list[str]:
-    root = EXAMPLE_DIR / "HelloCustomWidgets"
-    if not root.exists():
-        return []
+def sort_category_ids(category_ids: list[str]) -> list[str]:
+    def sort_key(category_id: str) -> tuple[int, str]:
+        try:
+            return (CATEGORY_ORDER.index(category_id), category_id)
+        except ValueError:
+            return (len(CATEGORY_ORDER), category_id)
 
-    sub_apps = ["showcase"] if (root / "showcase").is_dir() else []
-    for category_dir in sorted(path for path in root.iterdir() if path.is_dir()):
+    return sorted(category_ids, key=sort_key)
+
+
+def get_custom_widget_category_index() -> dict[str, list[str]]:
+    if not CUSTOM_WIDGETS_ROOT.exists():
+        return {}
+
+    categories: dict[str, list[str]] = {}
+    if (CUSTOM_WIDGETS_ROOT / "showcase" / "test.c").exists():
+        categories["showcase"] = ["showcase"]
+
+    for category_dir in sorted(path for path in CUSTOM_WIDGETS_ROOT.iterdir() if path.is_dir()):
         if category_dir.name.startswith(".") or category_dir.name.startswith("__"):
             continue
         if category_dir.name == "showcase":
             continue
+        widgets = []
         for widget_dir in sorted(path for path in category_dir.iterdir() if path.is_dir()):
             if (widget_dir / "test.c").exists():
-                sub_apps.append(f"{category_dir.name}/{widget_dir.name}")
+                widgets.append(widget_dir.name)
+        if widgets:
+            categories[category_dir.name] = widgets
+
+    return {category: categories[category] for category in sort_category_ids(list(categories))}
+
+
+def get_custom_widget_sub_apps() -> list[str]:
+    sub_apps = []
+    for category, widgets in get_custom_widget_category_index().items():
+        if category == "showcase":
+            sub_apps.append("showcase")
+            continue
+        for widget in widgets:
+            sub_apps.append(f"{category}/{widget}")
     return sub_apps
 
 
 def get_example_sub_list(app: str) -> list[str]:
-    if app == "HelloCustomWidgets":
+    if app == CUSTOM_WIDGETS_APP:
         return get_custom_widget_sub_apps()
     return []
 
@@ -69,15 +99,14 @@ def build_run_command(case: AppCase, port: str, make_jobs: int, extra_make_args:
     return cmd
 
 
-def print_cases(apps: list[str], sub_apps: dict[str, list[str]]) -> None:
-    for app in apps:
-        app_sub_list = sub_apps.get(app, [])
-        if not app_sub_list:
-            print(app)
+def print_cases(category_index: dict[str, list[str]]) -> None:
+    for category, widgets in category_index.items():
+        if category == "showcase":
+            print("showcase")
             continue
-        print(f"{app}:")
-        for app_sub in app_sub_list:
-            print(f"  {app}/{app_sub}")
+        print(f"{category}:")
+        for widget in widgets:
+            print(f"  {category}/{widget}")
 
 
 def print_numbered(title: str, items: list[str]) -> None:
@@ -113,26 +142,27 @@ def read_choice(prompt: str, max_value: int, allow_back: bool = False) -> int | 
         print("Selection out of range.")
 
 
-def choose_case(apps: list[str], sub_apps: dict[str, list[str]]) -> AppCase | None:
+def choose_case(category_index: dict[str, list[str]]) -> AppCase | None:
     while True:
-        print_numbered("Applications", apps)
-        app_index = read_choice("Select app", len(apps))
-        if app_index is None:
+        categories = list(category_index)
+        print_numbered("HelloCustomWidgets categories", categories)
+        category_index_value = read_choice("Select category", len(categories))
+        if category_index_value is None:
             return None
 
-        app = apps[app_index]
-        app_sub_list = sub_apps.get(app, [])
-        if not app_sub_list:
-            return AppCase(app)
+        category = categories[category_index_value]
+        widgets = category_index[category]
+        if category == "showcase":
+            return AppCase(CUSTOM_WIDGETS_APP, "showcase")
 
         while True:
-            print_numbered(f"{app} sub applications", app_sub_list)
-            sub_index = read_choice("Select sub app", len(app_sub_list), allow_back=True)
-            if sub_index is None:
+            print_numbered(f"{category} widgets", widgets)
+            widget_index = read_choice("Select widget", len(widgets), allow_back=True)
+            if widget_index is None:
                 return None
-            if sub_index == "back":
+            if widget_index == "back":
                 break
-            return AppCase(app, app_sub_list[sub_index])
+            return AppCase(CUSTOM_WIDGETS_APP, f"{category}/{widgets[widget_index]}")
 
 
 def validate_case(app: str, app_sub: str | None, apps: list[str], sub_apps: dict[str, list[str]]) -> AppCase | None:
@@ -165,6 +195,16 @@ def validate_case(app: str, app_sub: str | None, apps: list[str], sub_apps: dict
     return AppCase(app)
 
 
+def validate_custom_widget_sub_app(app_sub: str, sub_apps: list[str]) -> AppCase | None:
+    if app_sub not in sub_apps:
+        print(f"Unknown APP_SUB for {CUSTOM_WIDGETS_APP}: {app_sub}", file=sys.stderr)
+        print("Available sub apps:", file=sys.stderr)
+        for item in sub_apps:
+            print(f"  {item}", file=sys.stderr)
+        return None
+    return AppCase(CUSTOM_WIDGETS_APP, app_sub)
+
+
 def run_case(case: AppCase, port: str, make_jobs: int, extra_make_args: list[str], dry_run: bool) -> int:
     cmd = build_run_command(case, port, make_jobs, extra_make_args)
     print()
@@ -176,10 +216,10 @@ def run_case(case: AppCase, port: str, make_jobs: int, extra_make_args: list[str
 
 
 def parse_args(argv: list[str]) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Run EmbeddedGUI widget examples from an interactive menu.")
-    parser.add_argument("--list", action="store_true", help="List available apps and sub apps.")
-    parser.add_argument("--app", help="Run a specific app.")
-    parser.add_argument("--app-sub", help="Run a specific APP_SUB.")
+    parser = argparse.ArgumentParser(description="Run HelloCustomWidgets examples from an interactive menu.")
+    parser.add_argument("--list", action="store_true", help="List available categories and widgets.")
+    parser.add_argument("--app", help="Run a specific app. Only HelloCustomWidgets is supported.")
+    parser.add_argument("--app-sub", help="Run a specific HelloCustomWidgets APP_SUB.")
     parser.add_argument("--port", default="pc", help="Target port, default: pc.")
     parser.add_argument("-j", "--jobs", type=int, default=MAKE_JOBS, help=f"make -j value, default: {MAKE_JOBS}.")
     parser.add_argument("--dry-run", action="store_true", help="Print the make command without running it.")
@@ -190,12 +230,16 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
 def main(argv: list[str]) -> int:
     args = parse_args(argv)
     apps, sub_apps = build_app_index()
+    category_index = get_custom_widget_category_index()
     if not apps:
-        print("No example apps found.", file=sys.stderr)
+        print("HelloCustomWidgets was not found.", file=sys.stderr)
+        return 1
+    if not category_index:
+        print("No HelloCustomWidgets demos found.", file=sys.stderr)
         return 1
 
     if args.list:
-        print_cases(apps, sub_apps)
+        print_cases(category_index)
         return 0
 
     if args.app:
@@ -205,10 +249,12 @@ def main(argv: list[str]) -> int:
         return run_case(case, args.port, max(1, args.jobs), args.make_args, args.dry_run)
 
     if args.app_sub:
-        print("--app-sub requires --app.", file=sys.stderr)
-        return 2
+        case = validate_custom_widget_sub_app(args.app_sub, sub_apps[CUSTOM_WIDGETS_APP])
+        if case is None:
+            return 2
+        return run_case(case, args.port, max(1, args.jobs), args.make_args, args.dry_run)
 
-    case = choose_case(apps, sub_apps)
+    case = choose_case(category_index)
     if case is None:
         return 0
     return run_case(case, args.port, max(1, args.jobs), args.make_args, args.dry_run)

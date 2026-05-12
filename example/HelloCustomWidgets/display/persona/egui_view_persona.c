@@ -50,7 +50,7 @@ static uint8_t egui_view_persona_clear_pressed_state(egui_view_t *self)
 
 static egui_color_t egui_view_persona_mix_disabled(egui_color_t color)
 {
-    return egui_rgb_mix(color, EGUI_COLOR_HEX(0x83909D), 54);
+    return egui_rgb_mix(color, HCW_COLOR_TEXT_SOFT, EGUI_ALPHA_MAKE(38));
 }
 
 static uint8_t egui_view_persona_clamp_tone(uint8_t tone)
@@ -224,15 +224,15 @@ static egui_color_t egui_view_persona_status_color(const egui_view_persona_t *lo
     switch (status)
     {
     case EGUI_VIEW_PERSONA_STATUS_BUSY:
-        return EGUI_COLOR_HEX(0xC4314B);
+        return HCW_COLOR_DANGER_DARK;
     case EGUI_VIEW_PERSONA_STATUS_AWAY:
-        return EGUI_COLOR_HEX(0xC17C00);
+        return HCW_COLOR_WARNING_DARK;
     case EGUI_VIEW_PERSONA_STATUS_DO_NOT_DISTURB:
-        return EGUI_COLOR_HEX(0xC4314B);
+        return HCW_COLOR_DANGER_DARK;
     case EGUI_VIEW_PERSONA_STATUS_OFFLINE:
         return local->neutral_color;
     default:
-        return EGUI_COLOR_HEX(0x107C41);
+        return HCW_COLOR_SUCCESS;
     }
 }
 
@@ -690,16 +690,16 @@ static void egui_view_persona_on_draw(egui_view_t *self)
 
     tone_color = egui_view_persona_tone_color(local, local->tone);
     surface_color = local->surface_color;
-    border_color = egui_rgb_mix(local->border_color, tone_color, 16);
-    section_color = egui_rgb_mix(local->section_color, tone_color, 16);
+    border_color = egui_rgb_mix(local->border_color, tone_color, EGUI_ALPHA_MAKE(16));
+    section_color = egui_rgb_mix(local->section_color, tone_color, EGUI_ALPHA_MAKE(16));
     title_color = local->text_color;
     meta_color = local->muted_text_color;
     avatar_fill = tone_color;
     avatar_text_color = EGUI_COLOR_WHITE;
-    avatar_border = egui_rgb_mix(tone_color, local->surface_color, 24);
+    avatar_border = egui_rgb_mix(tone_color, local->surface_color, EGUI_ALPHA_MAKE(24));
     presence_color = egui_view_persona_status_color(local, local->status);
     presence_outline = local->surface_color;
-    shadow_color = egui_rgb_mix(local->border_color, EGUI_COLOR_HEX(0xAAB7C4), 48);
+    shadow_color = egui_rgb_mix(local->border_color, HCW_COLOR_TEXT_SOFT, EGUI_ALPHA_MAKE(36));
     panel_radius = 12;
     section_radius = 10;
     if (!egui_view_get_enable(self))
@@ -720,35 +720,22 @@ static void egui_view_persona_on_draw(egui_view_t *self)
     if (metrics.panel_region.size.height >= 34)
     {
         egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.panel_region.location.x, metrics.panel_region.location.y + 2, metrics.panel_region.size.width,
-                                              metrics.panel_region.size.height, panel_radius, shadow_color, egui_color_alpha_mix(self->alpha, 22));
+                                              metrics.panel_region.size.height, panel_radius, shadow_color, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(34)));
     }
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.panel_region.location.x, metrics.panel_region.location.y, metrics.panel_region.size.width,
-                                          metrics.panel_region.size.height, panel_radius, surface_color, egui_color_alpha_mix(self->alpha, 96));
+                                          metrics.panel_region.size.height, panel_radius, surface_color, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(96)));
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics.panel_region.location.x, metrics.panel_region.location.y, metrics.panel_region.size.width,
                                      metrics.panel_region.size.height, panel_radius, 1, border_color,
-                                     egui_color_alpha_mix(self->alpha, 52));
+                                     egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(90)));
 
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.section_region.location.x, metrics.section_region.location.y, metrics.section_region.size.width,
-                                          metrics.section_region.size.height, section_radius, section_color, egui_color_alpha_mix(self->alpha, 82));
-    if (metrics.section_region.size.height > 10)
-    {
-        egui_dim_t indicator_h = metrics.section_region.size.height - 14;
-        egui_dim_t indicator_y = metrics.section_region.location.y + (metrics.section_region.size.height - indicator_h) / 2;
-
-        if (indicator_h < 6)
-        {
-            indicator_h = 6;
-            indicator_y = metrics.section_region.location.y + (metrics.section_region.size.height - indicator_h) / 2;
-        }
-        egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.section_region.location.x + 4, indicator_y, 4, indicator_h, 1, tone_color,
-                                              egui_color_alpha_mix(self->alpha, 62));
-    }
+                                          metrics.section_region.size.height, section_radius, section_color, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(92)));
 
     avatar_center_x = metrics.avatar_region.location.x + metrics.avatar_region.size.width / 2;
     avatar_center_y = metrics.avatar_region.location.y + metrics.avatar_region.size.height / 2;
     avatar_radius = metrics.avatar_region.size.width / 2;
-    egui_canvas_draw_circle_fill_basic(&uicode_get_core()->canvas, avatar_center_x, avatar_center_y, avatar_radius, avatar_fill, egui_color_alpha_mix(self->alpha, 92));
-    egui_canvas_draw_circle_basic(&uicode_get_core()->canvas, avatar_center_x, avatar_center_y, avatar_radius, 1, avatar_border, egui_color_alpha_mix(self->alpha, 36));
+    egui_canvas_draw_circle_fill_hq(&uicode_get_core()->canvas, avatar_center_x, avatar_center_y, avatar_radius, avatar_fill, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(92)));
+    egui_canvas_draw_circle_hq(&uicode_get_core()->canvas, avatar_center_x, avatar_center_y, avatar_radius, 1, avatar_border, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(90)));
 
     egui_view_persona_resolve_initials(local->initials, local->display_name, resolved_initials);
     if (resolved_initials[0] != '\0')
@@ -768,20 +755,20 @@ static void egui_view_persona_on_draw(egui_view_t *self)
         egui_dim_t presence_center_y = metrics.presence_region.location.y + metrics.presence_region.size.height / 2;
         egui_dim_t presence_radius = metrics.presence_region.size.width / 2;
 
-        egui_canvas_draw_circle_fill_basic(&uicode_get_core()->canvas, presence_center_x, presence_center_y, presence_radius, presence_outline,
-                                           egui_color_alpha_mix(self->alpha, EGUI_ALPHA_100));
+        egui_canvas_draw_circle_fill_hq(&uicode_get_core()->canvas, presence_center_x, presence_center_y, presence_radius, presence_outline,
+                                        egui_color_alpha_mix(self->alpha, EGUI_ALPHA_100));
         if (local->status == EGUI_VIEW_PERSONA_STATUS_OFFLINE)
         {
             if (presence_radius > 1)
             {
-                egui_canvas_draw_circle_basic(&uicode_get_core()->canvas, presence_center_x, presence_center_y, presence_radius - 1, 1, presence_color,
-                                              egui_color_alpha_mix(self->alpha, 92));
+                egui_canvas_draw_circle_hq(&uicode_get_core()->canvas, presence_center_x, presence_center_y, presence_radius - 1, 1, presence_color,
+                                           egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(92)));
             }
         }
         else if (presence_radius > 1)
         {
-            egui_canvas_draw_circle_fill_basic(&uicode_get_core()->canvas, presence_center_x, presence_center_y, presence_radius - 1, presence_color,
-                                               egui_color_alpha_mix(self->alpha, 92));
+            egui_canvas_draw_circle_fill_hq(&uicode_get_core()->canvas, presence_center_x, presence_center_y, presence_radius - 1, presence_color,
+                                            egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(92)));
             if (local->status == EGUI_VIEW_PERSONA_STATUS_DO_NOT_DISTURB)
             {
                 egui_view_persona_draw_do_not_disturb_glyph(self, &metrics.presence_region, EGUI_COLOR_WHITE);
@@ -806,14 +793,14 @@ static void egui_view_persona_on_draw(egui_view_t *self)
         egui_view_persona_fit_text_to_width(egui_view_persona_get_meta_font(local), local->tertiary_text, tertiary_label, sizeof(tertiary_label),
                                             metrics.tertiary_region.size.width, 4);
         egui_view_persona_draw_text(self, egui_view_persona_get_meta_font(local), tertiary_label, &metrics.tertiary_region,
-                                    EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, meta_color, 88);
+                                    EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, meta_color, EGUI_ALPHA_MAKE(96));
     }
     if (metrics.show_quaternary)
     {
         egui_view_persona_fit_text_to_width(egui_view_persona_get_meta_font(local), local->quaternary_text, quaternary_label, sizeof(quaternary_label),
                                             metrics.quaternary_region.size.width, 4);
         egui_view_persona_draw_text(self, egui_view_persona_get_meta_font(local), quaternary_label, &metrics.quaternary_region,
-                                    EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, meta_color, 74);
+                                    EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, meta_color, EGUI_ALPHA_MAKE(88));
     }
 }
 
@@ -1070,15 +1057,15 @@ void egui_view_persona_init(egui_view_t *self)
     local->initials = NULL;
     local->font = egui_view_persona_default_font();
     local->meta_font = egui_view_persona_default_font();
-    local->surface_color = EGUI_COLOR_HEX(0xFFFFFF);
-    local->border_color = EGUI_COLOR_HEX(0xD2DBE3);
-    local->section_color = EGUI_COLOR_HEX(0xEEF3F7);
-    local->text_color = EGUI_COLOR_HEX(0x1A2734);
-    local->muted_text_color = EGUI_COLOR_HEX(0x6B7A89);
-    local->accent_color = EGUI_COLOR_HEX(0x0F6CBD);
-    local->success_color = EGUI_COLOR_HEX(0x0F7B45);
-    local->warning_color = EGUI_COLOR_HEX(0x9D5D00);
-    local->neutral_color = EGUI_COLOR_HEX(0x7A8796);
+    local->surface_color = HCW_COLOR_SURFACE;
+    local->border_color = HCW_COLOR_BORDER;
+    local->section_color = HCW_COLOR_SURFACE_DISABLED;
+    local->text_color = HCW_COLOR_TEXT;
+    local->muted_text_color = HCW_COLOR_TEXT_MUTED;
+    local->accent_color = HCW_COLOR_PRIMARY;
+    local->success_color = HCW_COLOR_SUCCESS;
+    local->warning_color = HCW_COLOR_WARNING;
+    local->neutral_color = HCW_COLOR_NEUTRAL;
     local->tone = EGUI_VIEW_PERSONA_TONE_NEUTRAL;
     local->status = EGUI_VIEW_PERSONA_STATUS_NONE;
 

@@ -1,6 +1,7 @@
 #include "egui_view_scroll_bar.h"
 
 #include "utils/egui_sprintf.h"
+#include "../../hcw_text_center.h"
 
 #define SB_STD_RADIUS         10
 #define SB_STD_PAD_X          10
@@ -15,7 +16,6 @@
 #define SB_STD_BAR_W          28
 #define SB_STD_BUTTON_H       18
 #define SB_STD_THUMB_MIN_H    22
-#define SB_STD_PREVIEW_BOX_Y  12
 #define SB_STD_PREVIEW_FOOTER 10
 
 #define SB_COMPACT_RADIUS      8
@@ -176,20 +176,21 @@ static void scroll_bar_draw_text(const egui_font_t *font, egui_view_t *self, con
         return;
     }
 
+    draw_region.location.y += hcw_text_center_get_delta(font, text, region, align);
     egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, font, text, &draw_region, align, color, self->alpha);
 }
 
-static void scroll_bar_draw_focus(egui_view_t *self, const egui_region_t *region, egui_dim_t radius, egui_color_t color, egui_alpha_t alpha)
+static void scroll_bar_draw_focus(egui_view_t *self, const egui_region_t *region, egui_dim_t radius, egui_color_t color, uint8_t alpha_percent)
 {
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, region->location.x - 1, region->location.y - 1, region->size.width + 2, region->size.height + 2, radius, 1, color,
-                                     egui_color_alpha_mix(self->alpha, alpha));
+                                     egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(alpha_percent)));
 }
 
 static void scroll_bar_draw_chevron(egui_view_t *self, const egui_region_t *region, egui_color_t color, uint8_t is_increase)
 {
     egui_dim_t cx = region->location.x + region->size.width / 2;
     egui_dim_t cy = region->location.y + region->size.height / 2;
-    egui_alpha_t alpha = egui_color_alpha_mix(self->alpha, 92);
+    egui_alpha_t alpha = egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(92));
 
     if (is_increase)
     {
@@ -336,9 +337,10 @@ static void scroll_bar_get_metrics(egui_view_scroll_bar_t *local, egui_view_t *s
         metrics->preview_region.size.height = body_height;
 
         metrics->preview_box_region.location.x = metrics->preview_region.location.x;
-        metrics->preview_box_region.location.y = metrics->preview_region.location.y + SB_STD_PREVIEW_BOX_Y;
+        metrics->preview_box_region.location.y = metrics->preview_region.location.y + scroll_bar_resolve_line_height(local->meta_font, SB_STD_LABEL_H) + 2;
         metrics->preview_box_region.size.width = metrics->preview_region.size.width;
-        metrics->preview_box_region.size.height = metrics->preview_region.size.height - SB_STD_PREVIEW_BOX_Y - preview_footer_h;
+        metrics->preview_box_region.size.height =
+                metrics->preview_region.location.y + metrics->preview_region.size.height - metrics->preview_box_region.location.y - preview_footer_h;
         if (metrics->preview_box_region.size.height < 18)
         {
             metrics->preview_box_region.size.height = 18;
@@ -605,9 +607,10 @@ static void scroll_bar_draw_preview(egui_view_t *self, egui_view_scroll_bar_t *l
     }
 
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, preview_box.location.x, preview_box.location.y, preview_box.size.width, preview_box.size.height, 7,
-                                          egui_rgb_mix(surface_color, preview_color, 10), egui_color_alpha_mix(self->alpha, 92));
+                                          egui_rgb_mix(surface_color, preview_color, EGUI_ALPHA_MAKE(12)),
+                                          egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(100)));
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, preview_box.location.x, preview_box.location.y, preview_box.size.width, preview_box.size.height, 7, 1,
-                                     egui_rgb_mix(border_color, preview_color, 18), egui_color_alpha_mix(self->alpha, 58));
+                                     egui_rgb_mix(border_color, preview_color, EGUI_ALPHA_MAKE(78)), egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(98)));
 
     for (index = 0; index < 4; index++)
     {
@@ -618,8 +621,9 @@ static void scroll_bar_draw_preview(egui_view_t *self, egui_view_scroll_bar_t *l
         {
             width = 4;
         }
-        egui_canvas_draw_rectangle_fill(&uicode_get_core()->canvas, preview_inner.location.x + 1, y, width, 2, egui_rgb_mix(preview_color, muted_color, 40),
-                                        egui_color_alpha_mix(self->alpha, 48));
+        egui_canvas_draw_rectangle_fill(&uicode_get_core()->canvas, preview_inner.location.x + 1, y, width, 2,
+                                        egui_rgb_mix(preview_color, accent_color, EGUI_ALPHA_MAKE(48)),
+                                        egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(96)));
     }
 
     viewport_h = (egui_dim_t)(((int32_t)preview_inner.size.height * local->viewport_length) / total_length);
@@ -637,49 +641,60 @@ static void scroll_bar_draw_preview(egui_view_t *self, egui_view_scroll_bar_t *l
     }
 
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, preview_inner.location.x, preview_inner.location.y + viewport_y, preview_inner.size.width, viewport_h, 5,
-                                          egui_rgb_mix(preview_color, accent_color, 42), egui_color_alpha_mix(self->alpha, 80));
+                                          egui_rgb_mix(preview_color, accent_color, EGUI_ALPHA_MAKE(84)),
+                                          egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(98)));
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, preview_inner.location.x, preview_inner.location.y + viewport_y, preview_inner.size.width, viewport_h, 5, 1,
-                                     egui_rgb_mix(accent_color, EGUI_COLOR_WHITE, 10), egui_color_alpha_mix(self->alpha, 76));
+                                     egui_rgb_mix(accent_color, EGUI_COLOR_WHITE, EGUI_ALPHA_MAKE(4)),
+                                     egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(96)));
 
     scroll_bar_draw_text(local->meta_font, self, "Viewport", &title_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, muted_color);
     scroll_bar_format_pair(local->viewport_length, total_length, footer_text, (int)sizeof(footer_text));
-    scroll_bar_draw_text(local->meta_font, self, footer_text, &footer_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, egui_rgb_mix(text_color, muted_color, 34));
+    scroll_bar_draw_text(local->meta_font, self, footer_text, &footer_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER,
+                         egui_rgb_mix(text_color, muted_color, EGUI_ALPHA_MAKE(12)));
 }
 
 static void scroll_bar_draw_button(egui_view_t *self, const egui_region_t *region, egui_color_t surface_color, egui_color_t border_color,
                                    egui_color_t icon_color, egui_color_t accent_color, uint8_t focused, uint8_t pressed, uint8_t is_increase)
 {
-    egui_color_t fill_color = egui_rgb_mix(surface_color, focused ? accent_color : border_color, pressed ? 18 : (focused ? 12 : 8));
-    egui_color_t line_color = egui_rgb_mix(border_color, focused ? accent_color : icon_color, focused ? 24 : 12);
+    egui_color_t fill_color = egui_rgb_mix(surface_color, focused ? accent_color : border_color, EGUI_ALPHA_MAKE(pressed ? 28 : (focused ? 24 : 14)));
+    egui_color_t line_color = egui_rgb_mix(border_color, focused ? accent_color : icon_color, EGUI_ALPHA_MAKE(focused ? 90 : 84));
 
     if (focused)
     {
-        scroll_bar_draw_focus(self, region, 5, egui_rgb_mix(accent_color, EGUI_COLOR_WHITE, 8), 56);
+        scroll_bar_draw_focus(self, region, 5, egui_rgb_mix(accent_color, EGUI_COLOR_WHITE, EGUI_ALPHA_MAKE(8)), 98);
     }
 
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, region->location.x, region->location.y, region->size.width, region->size.height, 5, fill_color,
-                                          egui_color_alpha_mix(self->alpha, 94));
+                                          egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(98)));
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, region->location.x, region->location.y, region->size.width, region->size.height, 5, 1, line_color,
-                                     egui_color_alpha_mix(self->alpha, 60));
-    scroll_bar_draw_chevron(self, region, egui_rgb_mix(icon_color, accent_color, focused ? 24 : 10), is_increase);
+                                     egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(96)));
+    scroll_bar_draw_chevron(self, region, egui_rgb_mix(icon_color, accent_color, EGUI_ALPHA_MAKE(focused ? 64 : 52)), is_increase);
 }
 
 static void scroll_bar_draw_track(egui_view_t *self, egui_view_scroll_bar_t *local, const egui_view_scroll_bar_metrics_t *metrics, egui_color_t surface_color,
                                   egui_color_t border_color, egui_color_t accent_color, egui_color_t preview_color)
 {
     egui_region_t thumb_region = metrics->thumb_region;
-    egui_color_t track_fill = egui_rgb_mix(surface_color, border_color, 10);
-    egui_color_t thumb_fill = scroll_bar_get_max_offset_inner(local) > 0 ? accent_color : egui_rgb_mix(preview_color, border_color, 32);
-    egui_color_t thumb_border = egui_rgb_mix(thumb_fill, EGUI_COLOR_WHITE, 8);
-    egui_color_t grip_color = egui_rgb_mix(thumb_fill, EGUI_COLOR_WHITE, 26);
+    egui_color_t track_fill = egui_rgb_mix(surface_color, preview_color, EGUI_ALPHA_MAKE(14));
+    egui_color_t thumb_fill = scroll_bar_get_max_offset_inner(local) > 0 ? accent_color : egui_rgb_mix(preview_color, border_color, EGUI_ALPHA_MAKE(32));
+    egui_color_t thumb_border = egui_rgb_mix(border_color, thumb_fill, EGUI_ALPHA_MAKE(86));
+    egui_color_t grip_color = egui_rgb_mix(thumb_fill, EGUI_COLOR_WHITE, EGUI_ALPHA_MAKE(8));
     uint8_t thumb_focused = (local->current_part == EGUI_VIEW_SCROLL_BAR_PART_THUMB && !local->read_only_mode && !local->compact_mode) ? 1 : 0;
     uint8_t thumb_pressed = (local->pressed_part == EGUI_VIEW_SCROLL_BAR_PART_THUMB || local->thumb_dragging) ? 1 : 0;
 
+    if (local->read_only_mode)
+    {
+        track_fill = egui_rgb_mix(track_fill, border_color, EGUI_ALPHA_MAKE(18));
+        thumb_fill = egui_rgb_mix(thumb_fill, HCW_COLOR_PRIMARY_DARK, EGUI_ALPHA_MAKE(24));
+        thumb_border = egui_rgb_mix(thumb_border, border_color, EGUI_ALPHA_MAKE(32));
+        grip_color = egui_rgb_mix(grip_color, HCW_COLOR_TEXT_STRONG, EGUI_ALPHA_MAKE(28));
+    }
+
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics->track_region.location.x, metrics->track_region.location.y, metrics->track_region.size.width,
-                                          metrics->track_region.size.height, 6, track_fill, egui_color_alpha_mix(self->alpha, 86));
+                                          metrics->track_region.size.height, 6, track_fill, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(96)));
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics->track_region.location.x, metrics->track_region.location.y, metrics->track_region.size.width,
-                                     metrics->track_region.size.height, 6, 1, egui_rgb_mix(border_color, preview_color, 14),
-                                     egui_color_alpha_mix(self->alpha, 48));
+                                     metrics->track_region.size.height, 6, 1, egui_rgb_mix(border_color, preview_color, EGUI_ALPHA_MAKE(82)),
+                                     egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(100)));
 
     if (local->pressed_part == EGUI_VIEW_SCROLL_BAR_PART_TRACK && local->pressed_track_direction != 0)
     {
@@ -698,7 +713,8 @@ static void scroll_bar_draw_track(egui_view_t *self, egui_view_scroll_bar_t *loc
         if (page_region.size.height > 0)
         {
             egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, page_region.location.x + 2, page_region.location.y, page_region.size.width - 4, page_region.size.height, 4,
-                                                  egui_rgb_mix(preview_color, accent_color, 28), egui_color_alpha_mix(self->alpha, 32));
+                                                  egui_rgb_mix(preview_color, accent_color, EGUI_ALPHA_MAKE(80)),
+                                                  egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(100)));
         }
     }
 
@@ -709,27 +725,27 @@ static void scroll_bar_draw_track(egui_view_t *self, egui_view_scroll_bar_t *loc
 
     if (thumb_focused)
     {
-        scroll_bar_draw_focus(self, &thumb_region, 6, egui_rgb_mix(accent_color, EGUI_COLOR_WHITE, 8), 60);
+        scroll_bar_draw_focus(self, &thumb_region, 6, egui_rgb_mix(accent_color, EGUI_COLOR_WHITE, EGUI_ALPHA_MAKE(8)), 96);
     }
 
     if (thumb_pressed)
     {
-        thumb_fill = egui_rgb_mix(thumb_fill, EGUI_COLOR_WHITE, 8);
-        thumb_border = egui_rgb_mix(thumb_border, accent_color, 12);
+        thumb_fill = egui_rgb_mix(thumb_fill, EGUI_COLOR_WHITE, EGUI_ALPHA_MAKE(8));
+        thumb_border = egui_rgb_mix(thumb_border, accent_color, EGUI_ALPHA_MAKE(24));
     }
 
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, thumb_region.location.x, thumb_region.location.y, thumb_region.size.width, thumb_region.size.height, 6, thumb_fill,
-                                          egui_color_alpha_mix(self->alpha, 94));
+                                          egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(100)));
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, thumb_region.location.x, thumb_region.location.y, thumb_region.size.width, thumb_region.size.height, 6, 1, thumb_border,
-                                     egui_color_alpha_mix(self->alpha, 78));
+                                     egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(98)));
 
     if (thumb_region.size.height > 10)
     {
         egui_dim_t cx = thumb_region.location.x + thumb_region.size.width / 2;
         egui_dim_t cy = thumb_region.location.y + thumb_region.size.height / 2;
 
-        egui_canvas_draw_line(&uicode_get_core()->canvas, cx - 4, cy - 2, cx + 4, cy - 2, 1, grip_color, egui_color_alpha_mix(self->alpha, 84));
-        egui_canvas_draw_line(&uicode_get_core()->canvas, cx - 4, cy + 2, cx + 4, cy + 2, 1, grip_color, egui_color_alpha_mix(self->alpha, 84));
+        egui_canvas_draw_line(&uicode_get_core()->canvas, cx - 4, cy - 2, cx + 4, cy - 2, 1, grip_color, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(92)));
+        egui_canvas_draw_line(&uicode_get_core()->canvas, cx - 4, cy + 2, cx + 4, cy + 2, 1, grip_color, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(92)));
     }
 }
 
@@ -760,38 +776,39 @@ static void egui_view_scroll_bar_on_draw(egui_view_t *self)
 
     if (local->read_only_mode)
     {
-        accent_color = egui_rgb_mix(accent_color, muted_color, 64);
-        preview_color = egui_rgb_mix(preview_color, muted_color, 52);
-        surface_color = egui_rgb_mix(surface_color, EGUI_COLOR_HEX(0xFBFCFD), 32);
-        border_color = egui_rgb_mix(border_color, muted_color, 28);
-        text_color = egui_rgb_mix(text_color, muted_color, 34);
+        accent_color = egui_rgb_mix(accent_color, HCW_COLOR_PRIMARY_DARK, EGUI_ALPHA_MAKE(10));
+        preview_color = egui_rgb_mix(preview_color, border_color, EGUI_ALPHA_MAKE(36));
+        surface_color = egui_rgb_mix(surface_color, HCW_COLOR_SURFACE_SUBTLE, EGUI_ALPHA_MAKE(8));
+        border_color = egui_rgb_mix(border_color, HCW_COLOR_BORDER_STRONG, EGUI_ALPHA_MAKE(32));
+        muted_color = egui_rgb_mix(muted_color, text_color, EGUI_ALPHA_MAKE(38));
+        text_color = egui_rgb_mix(text_color, HCW_COLOR_TEXT_STRONG, EGUI_ALPHA_MAKE(24));
     }
     if (!enabled)
     {
-        accent_color = egui_rgb_mix(accent_color, muted_color, 72);
-        preview_color = egui_rgb_mix(preview_color, muted_color, 64);
-        surface_color = egui_rgb_mix(surface_color, EGUI_COLOR_HEX(0xFBFCFD), 34);
-        border_color = egui_rgb_mix(border_color, muted_color, 34);
-        text_color = egui_rgb_mix(text_color, muted_color, 40);
-        muted_color = egui_rgb_mix(muted_color, surface_color, 14);
+        accent_color = egui_rgb_mix(accent_color, muted_color, EGUI_ALPHA_MAKE(34));
+        preview_color = egui_rgb_mix(preview_color, muted_color, EGUI_ALPHA_MAKE(30));
+        surface_color = egui_rgb_mix(surface_color, HCW_COLOR_SURFACE_SUBTLE, EGUI_ALPHA_MAKE(18));
+        border_color = egui_rgb_mix(border_color, muted_color, EGUI_ALPHA_MAKE(18));
+        text_color = egui_rgb_mix(text_color, muted_color, EGUI_ALPHA_MAKE(14));
+        muted_color = egui_rgb_mix(muted_color, surface_color, EGUI_ALPHA_MAKE(4));
     }
 
     scroll_bar_get_metrics(local, self, &metrics);
-    shadow_color = egui_rgb_mix(border_color, surface_color, 36);
+    shadow_color = egui_rgb_mix(border_color, surface_color, EGUI_ALPHA_MAKE(26));
     decrease_focused = (local->current_part == EGUI_VIEW_SCROLL_BAR_PART_DECREASE && !local->read_only_mode && !local->compact_mode) ? 1 : 0;
     increase_focused = (local->current_part == EGUI_VIEW_SCROLL_BAR_PART_INCREASE && !local->read_only_mode && !local->compact_mode) ? 1 : 0;
 
     if (!local->compact_mode)
     {
         egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, region.location.x, region.location.y + 2, region.size.width, region.size.height, SB_STD_RADIUS + 1, shadow_color,
-                                              egui_color_alpha_mix(self->alpha, enabled ? 18 : 10));
+                                              egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(enabled ? 56 : 22)));
     }
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, region.location.x, region.location.y, region.size.width, region.size.height,
                                           local->compact_mode ? SB_COMPACT_RADIUS : SB_STD_RADIUS, surface_color,
-                                          egui_color_alpha_mix(self->alpha, local->compact_mode ? 94 : 96));
+                                          egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(100)));
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, region.location.x, region.location.y, region.size.width, region.size.height,
                                      local->compact_mode ? SB_COMPACT_RADIUS : SB_STD_RADIUS, 1, border_color,
-                                     egui_color_alpha_mix(self->alpha, local->compact_mode ? 56 : 60));
+                                     egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(100)));
 
     if (metrics.show_label)
     {
@@ -800,25 +817,27 @@ static void egui_view_scroll_bar_on_draw(egui_view_t *self)
     if (metrics.show_helper)
     {
         scroll_bar_draw_text(local->meta_font, self, local->helper, &metrics.helper_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER,
-                             egui_rgb_mix(text_color, muted_color, 36));
+                             egui_rgb_mix(text_color, muted_color, EGUI_ALPHA_MAKE(16)));
     }
     if (metrics.show_preview)
     {
         scroll_bar_draw_preview(self, local, &metrics, surface_color, border_color, text_color, muted_color, accent_color, preview_color);
         scroll_bar_format_pair(local->offset, scroll_bar_get_max_offset_inner(local), summary_text, (int)sizeof(summary_text));
-        scroll_bar_draw_text(local->meta_font, self, summary_text, &metrics.summary_region, EGUI_ALIGN_CENTER, egui_rgb_mix(text_color, muted_color, 28));
+        scroll_bar_draw_text(local->meta_font, self, summary_text, &metrics.summary_region, EGUI_ALIGN_CENTER,
+                             egui_rgb_mix(text_color, muted_color, EGUI_ALPHA_MAKE(12)));
     }
     else
     {
         percent = scroll_bar_get_max_offset_inner(local) > 0 ? (egui_dim_t)(((int32_t)local->offset * 100) / scroll_bar_get_max_offset_inner(local)) : 0;
         scroll_bar_format_percent(percent, summary_text, (int)sizeof(summary_text));
         egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.summary_region.location.x, metrics.summary_region.location.y, metrics.summary_region.size.width,
-                                              metrics.summary_region.size.height, 6, egui_rgb_mix(surface_color, preview_color, 12),
-                                              egui_color_alpha_mix(self->alpha, 94));
+                                              metrics.summary_region.size.height, 6, egui_rgb_mix(surface_color, preview_color, EGUI_ALPHA_MAKE(42)),
+                                              egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(94)));
         egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics.summary_region.location.x, metrics.summary_region.location.y, metrics.summary_region.size.width,
-                                         metrics.summary_region.size.height, 6, 1, egui_rgb_mix(border_color, preview_color, 18),
-                                         egui_color_alpha_mix(self->alpha, 60));
-        scroll_bar_draw_text(local->meta_font, self, summary_text, &metrics.summary_region, EGUI_ALIGN_CENTER, egui_rgb_mix(text_color, accent_color, 18));
+                                         metrics.summary_region.size.height, 6, 1, egui_rgb_mix(border_color, preview_color, EGUI_ALPHA_MAKE(68)),
+                                         egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(98)));
+        scroll_bar_draw_text(local->meta_font, self, summary_text, &metrics.summary_region, EGUI_ALIGN_CENTER,
+                             egui_rgb_mix(text_color, accent_color, EGUI_ALPHA_MAKE(40)));
     }
 
     scroll_bar_draw_button(self, &metrics.decrease_region, surface_color, border_color, text_color, accent_color, decrease_focused,
@@ -1392,12 +1411,12 @@ void egui_view_scroll_bar_init(egui_view_t *self)
     local->meta_font = (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT;
     local->label = NULL;
     local->helper = NULL;
-    local->surface_color = EGUI_COLOR_HEX(0xFFFFFF);
-    local->border_color = EGUI_COLOR_HEX(0xD7DFE7);
-    local->text_color = EGUI_COLOR_HEX(0x18222D);
-    local->muted_text_color = EGUI_COLOR_HEX(0x6D7C8B);
-    local->accent_color = EGUI_COLOR_HEX(0x2563EB);
-    local->preview_color = EGUI_COLOR_HEX(0x58A6FF);
+    local->surface_color = HCW_COLOR_SURFACE;
+    local->border_color = HCW_COLOR_BORDER_STRONG;
+    local->text_color = HCW_COLOR_TEXT_STRONG;
+    local->muted_text_color = HCW_COLOR_TEXT_SOFT;
+    local->accent_color = HCW_COLOR_PRIMARY_DARK;
+    local->preview_color = HCW_COLOR_PRIMARY_DARK;
     local->content_length = 840;
     local->viewport_length = 220;
     local->offset = 168;

@@ -19,7 +19,7 @@ static uint8_t egui_view_items_control_clear_pressed_state(egui_view_t *self)
 
 static egui_color_t egui_view_items_control_mix_disabled(egui_color_t color)
 {
-    return egui_rgb_mix(color, EGUI_COLOR_HEX(0x8A97A5), 58);
+    return egui_rgb_mix(color, HCW_COLOR_TEXT_SOFT, EGUI_ALPHA_MAKE(38));
 }
 
 static egui_dim_t egui_view_items_control_clamp_radius(egui_dim_t radius)
@@ -118,6 +118,55 @@ static egui_dim_t egui_view_items_control_child_height(egui_view_t *child)
     return child->region.size.height + child->margin.top + child->margin.bottom;
 }
 
+static void egui_view_items_control_constrain_child_backdrop(egui_region_t *item_region, const egui_region_t *container_region, egui_dim_t inset)
+{
+    egui_dim_t min_x;
+    egui_dim_t min_y;
+    egui_dim_t max_right;
+    egui_dim_t max_bottom;
+
+    if (item_region == NULL || container_region == NULL)
+    {
+        return;
+    }
+
+    if (inset < 0)
+    {
+        inset = 0;
+    }
+    min_x = container_region->location.x + inset;
+    min_y = container_region->location.y + inset;
+    max_right = container_region->location.x + container_region->size.width - inset;
+    max_bottom = container_region->location.y + container_region->size.height - inset;
+
+    if (item_region->location.x < min_x)
+    {
+        item_region->size.width -= min_x - item_region->location.x;
+        item_region->location.x = min_x;
+    }
+    if (item_region->location.y < min_y)
+    {
+        item_region->size.height -= min_y - item_region->location.y;
+        item_region->location.y = min_y;
+    }
+    if (item_region->location.x + item_region->size.width > max_right)
+    {
+        item_region->size.width = max_right - item_region->location.x;
+    }
+    if (item_region->location.y + item_region->size.height > max_bottom)
+    {
+        item_region->size.height = max_bottom - item_region->location.y;
+    }
+    if (item_region->size.width < 0)
+    {
+        item_region->size.width = 0;
+    }
+    if (item_region->size.height < 0)
+    {
+        item_region->size.height = 0;
+    }
+}
+
 static void egui_view_items_control_get_linear_size(egui_view_t *self, uint8_t horizontal, egui_dim_t gap, egui_dim_t *width, egui_dim_t *height)
 {
     egui_view_items_control_t *local = egui_view_items_control_local(self);
@@ -180,11 +229,9 @@ static void egui_view_items_control_on_draw(egui_view_t *self)
     egui_color_t surface_color = local->surface_color;
     egui_color_t border_color = local->border_color;
     egui_color_t item_surface_color = local->item_surface_color;
-    egui_color_t accent_color = local->accent_color;
     egui_dim_t radius = local->corner_radius;
     egui_alpha_t border_alpha = EGUI_ALPHA_100;
-    egui_alpha_t item_alpha = local->compact_mode ? 76 : 86;
-    egui_alpha_t accent_alpha = local->compact_mode ? 28 : 40;
+    egui_alpha_t item_alpha = EGUI_ALPHA_MAKE(local->compact_mode ? 76 : 86);
 
     region.location.x = 0;
     region.location.y = 0;
@@ -201,23 +248,19 @@ static void egui_view_items_control_on_draw(egui_view_t *self)
     }
     if (local->read_only_mode)
     {
-        surface_color = egui_rgb_mix(surface_color, EGUI_COLOR_HEX(0xF7F9FB), 52);
-        border_color = egui_rgb_mix(border_color, EGUI_COLOR_HEX(0xAEB8C2), 50);
-        item_surface_color = egui_rgb_mix(item_surface_color, EGUI_COLOR_HEX(0xEEF2F6), 54);
-        accent_color = egui_rgb_mix(accent_color, EGUI_COLOR_HEX(0x7A8794), 58);
-        border_alpha = 70;
-        item_alpha = 64;
-        accent_alpha = 18;
+        surface_color = egui_rgb_mix(surface_color, HCW_COLOR_SURFACE_SUBTLE, EGUI_ALPHA_MAKE(34));
+        border_color = egui_rgb_mix(border_color, HCW_COLOR_TEXT_SOFT, EGUI_ALPHA_MAKE(32));
+        item_surface_color = egui_rgb_mix(item_surface_color, HCW_COLOR_SURFACE_DISABLED, EGUI_ALPHA_MAKE(36));
+        border_alpha = EGUI_ALPHA_MAKE(96);
+        item_alpha = EGUI_ALPHA_MAKE(74);
     }
     if (!egui_view_get_enable(self))
     {
         surface_color = egui_view_items_control_mix_disabled(surface_color);
         border_color = egui_view_items_control_mix_disabled(border_color);
         item_surface_color = egui_view_items_control_mix_disabled(item_surface_color);
-        accent_color = egui_view_items_control_mix_disabled(accent_color);
-        border_alpha = 50;
-        item_alpha = 48;
-        accent_alpha = 14;
+        border_alpha = EGUI_ALPHA_MAKE(64);
+        item_alpha = EGUI_ALPHA_MAKE(60);
     }
 
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, region.location.x, region.location.y, region.size.width, region.size.height, radius,
@@ -236,24 +279,10 @@ static void egui_view_items_control_on_draw(egui_view_t *self)
         item_region.location.y = child->region.location.y - (local->compact_mode ? 1 : 2);
         item_region.size.width = child->region.size.width + (local->compact_mode ? 4 : 6);
         item_region.size.height = child->region.size.height + (local->compact_mode ? 2 : 4);
-        if (item_region.location.x < 1)
-        {
-            item_region.location.x = 1;
-        }
-        if (item_region.location.y < 1)
-        {
-            item_region.location.y = 1;
-        }
+        egui_view_items_control_constrain_child_backdrop(&item_region, &region, local->border_width);
         egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, item_region.location.x, item_region.location.y, item_region.size.width,
                                               item_region.size.height, local->compact_mode ? 4 : 6, item_surface_color,
                                               egui_color_alpha_mix(self->alpha, item_alpha));
-    }
-
-    if (region.size.width > 18 && region.size.height > 14)
-    {
-        egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, region.location.x + 7, region.location.y + 6,
-                                              local->compact_mode ? 22 : 30, local->compact_mode ? 2 : 3, 1, accent_color,
-                                              egui_color_alpha_mix(self->alpha, accent_alpha));
     }
 
     if (local->border_width > 0)
@@ -317,7 +346,10 @@ void egui_view_items_control_layout_items(egui_view_t *self)
     egui_dim_t total_height;
     egui_dim_t line_height;
 
-    egui_view_get_work_region(self, &work_region);
+    work_region.location.x = local->content_padding_left;
+    work_region.location.y = local->content_padding_top;
+    work_region.size.width = self->region.size.width - (local->content_padding_left + local->content_padding_right);
+    work_region.size.height = self->region.size.height - (local->content_padding_top + local->content_padding_bottom);
     if (work_region.size.width < 0)
     {
         work_region.size.width = 0;
@@ -391,8 +423,13 @@ void egui_view_items_control_layout_items(egui_view_t *self)
 void egui_view_items_control_set_padding(egui_view_t *self, egui_dim_margin_padding_t left, egui_dim_margin_padding_t right,
                                          egui_dim_margin_padding_t top, egui_dim_margin_padding_t bottom)
 {
+    egui_view_items_control_t *local = egui_view_items_control_local(self);
+
     egui_view_items_control_clear_pressed_state(self);
-    egui_view_set_padding(self, left, right, top, bottom);
+    local->content_padding_left = left;
+    local->content_padding_right = right;
+    local->content_padding_top = top;
+    local->content_padding_bottom = bottom;
     egui_view_items_control_layout_items(self);
     egui_view_invalidate(self);
 }
@@ -527,8 +564,8 @@ uint8_t egui_view_items_control_get_read_only_mode(egui_view_t *self)
 
 void egui_view_items_control_apply_standard_style(egui_view_t *self)
 {
-    egui_view_items_control_set_palette(self, EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xC7D3DE), EGUI_COLOR_HEX(0xF2F7FC),
-                                        EGUI_COLOR_HEX(0x0F6CBD));
+    egui_view_items_control_set_palette(self, HCW_COLOR_SURFACE, HCW_COLOR_BORDER_STRONG, HCW_COLOR_SURFACE_PRESS,
+                                        HCW_COLOR_PRIMARY);
     egui_view_items_control_set_corner_radius(self, 8);
     egui_view_items_control_set_border_width(self, 1);
     egui_view_items_control_set_item_gap(self, 6);
@@ -541,8 +578,8 @@ void egui_view_items_control_apply_standard_style(egui_view_t *self)
 
 void egui_view_items_control_apply_strip_style(egui_view_t *self)
 {
-    egui_view_items_control_set_palette(self, EGUI_COLOR_HEX(0xF8FBFF), EGUI_COLOR_HEX(0xA7CBEA), EGUI_COLOR_HEX(0xEEF6FD),
-                                        EGUI_COLOR_HEX(0x0F6CBD));
+    egui_view_items_control_set_palette(self, HCW_COLOR_PANEL, HCW_COLOR_PRIMARY_SOFT, HCW_COLOR_PRIMARY_TINT,
+                                        HCW_COLOR_PRIMARY);
     egui_view_items_control_set_corner_radius(self, 8);
     egui_view_items_control_set_border_width(self, 1);
     egui_view_items_control_set_item_gap(self, 6);
@@ -555,8 +592,8 @@ void egui_view_items_control_apply_strip_style(egui_view_t *self)
 
 void egui_view_items_control_apply_wrap_style(egui_view_t *self)
 {
-    egui_view_items_control_set_palette(self, EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD3DCE5), EGUI_COLOR_HEX(0xF3F8F5),
-                                        EGUI_COLOR_HEX(0x0F7B45));
+    egui_view_items_control_set_palette(self, HCW_COLOR_SURFACE, HCW_COLOR_BORDER, HCW_COLOR_SURFACE_SUBTLE,
+                                        HCW_COLOR_SUCCESS);
     egui_view_items_control_set_corner_radius(self, 6);
     egui_view_items_control_set_border_width(self, 1);
     egui_view_items_control_set_item_gap(self, 5);
@@ -569,8 +606,8 @@ void egui_view_items_control_apply_wrap_style(egui_view_t *self)
 
 void egui_view_items_control_apply_read_only_style(egui_view_t *self)
 {
-    egui_view_items_control_set_palette(self, EGUI_COLOR_HEX(0xF7F9FB), EGUI_COLOR_HEX(0xD8E0E8), EGUI_COLOR_HEX(0xEEF2F6),
-                                        EGUI_COLOR_HEX(0x6B7785));
+    egui_view_items_control_set_palette(self, HCW_COLOR_SURFACE_SUBTLE, HCW_COLOR_BORDER_STRONG, HCW_COLOR_SURFACE_DISABLED,
+                                        HCW_COLOR_TEXT_SOFT);
     egui_view_items_control_set_corner_radius(self, 6);
     egui_view_items_control_set_border_width(self, 1);
     egui_view_items_control_set_item_gap(self, 5);
@@ -621,17 +658,20 @@ void egui_view_items_control_init(egui_view_t *self)
     egui_view_set_focusable(self, 0);
 #endif
 
-    local->surface_color = EGUI_COLOR_HEX(0xFFFFFF);
-    local->border_color = EGUI_COLOR_HEX(0xC7D3DE);
-    local->item_surface_color = EGUI_COLOR_HEX(0xF2F7FC);
-    local->accent_color = EGUI_COLOR_HEX(0x0F6CBD);
+    local->surface_color = HCW_COLOR_SURFACE;
+    local->border_color = HCW_COLOR_BORDER_STRONG;
+    local->item_surface_color = HCW_COLOR_SURFACE_PRESS;
+    local->accent_color = HCW_COLOR_PRIMARY;
     local->corner_radius = 8;
     local->border_width = 1;
     local->item_gap = 6;
+    local->content_padding_left = 10;
+    local->content_padding_right = 10;
+    local->content_padding_top = 8;
+    local->content_padding_bottom = 8;
     local->layout_mode = EGUI_VIEW_ITEMS_CONTROL_LAYOUT_VERTICAL;
     local->item_align_type = EGUI_ALIGN_TOP_LEFT;
     local->compact_mode = 0;
     local->read_only_mode = 0;
-    egui_view_set_padding(self, 10, 10, 8, 8);
     egui_view_set_view_name(self, "egui_view_items_control");
 }

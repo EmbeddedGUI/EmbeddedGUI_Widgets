@@ -43,17 +43,17 @@ static egui_view_api_t compact_preview_api;
 static egui_view_api_t read_only_preview_api;
 static uint8_t ui_ready;
 
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, HCW_COLOR_PAGE_BG, EGUI_ALPHA_100, 14);
 EGUI_BACKGROUND_PARAM_INIT(bg_page_panel_params, &bg_page_panel_param, NULL, NULL);
 EGUI_BACKGROUND_COLOR_STATIC_CONST_INIT(bg_page_panel, &bg_page_panel_params);
 
 static const char *title_text = "BulletDecorator";
 
 static const bullet_decorator_snapshot_t primary_snapshots[] = {
-        {"Decorated content", "", "Dot bullet / content slot", EGUI_COLOR_HEX(0x0F6CBD), EGUI_VIEW_BULLET_DECORATOR_BULLET_DOT, 0},
-        {"Square marker", "", "Square bullet / accent", EGUI_COLOR_HEX(0x0F6CBD), EGUI_VIEW_BULLET_DECORATOR_BULLET_SQUARE, 1},
-        {"Numbered content", "1.", "Numbered bullet / compact", EGUI_COLOR_HEX(0x0C7C73), EGUI_VIEW_BULLET_DECORATOR_BULLET_TEXT, 2},
-        {"Muted content", "2.", "Read only / muted", EGUI_COLOR_HEX(0x65717E), EGUI_VIEW_BULLET_DECORATOR_BULLET_TEXT, 3},
+        {"Decorated content", "", "Dot bullet / content slot", HCW_COLOR_PRIMARY, EGUI_VIEW_BULLET_DECORATOR_BULLET_DOT, 0},
+        {"Square marker", "", "Square bullet / accent", HCW_COLOR_PRIMARY, EGUI_VIEW_BULLET_DECORATOR_BULLET_SQUARE, 1},
+        {"Numbered content", "1.", "Numbered bullet / compact", HCW_COLOR_PRIMARY, EGUI_VIEW_BULLET_DECORATOR_BULLET_TEXT, 2},
+        {"Muted content", "2.", "Read only / muted", HCW_COLOR_TEXT_MUTED, EGUI_VIEW_BULLET_DECORATOR_BULLET_TEXT, 3},
 };
 
 static void layout_page(void);
@@ -158,7 +158,7 @@ void test_init_ui(void)
     egui_view_set_background(EGUI_VIEW_OF(&root_layout), EGUI_BG_OF(&bg_page_panel));
 
     init_text_label(&title_label, BULLET_DECORATOR_ROOT_WIDTH, 18, title_text, (const egui_font_t *)&egui_res_font_montserrat_12_4,
-                    EGUI_COLOR_HEX(0x21303F), EGUI_ALIGN_CENTER);
+                    HCW_COLOR_TEXT, EGUI_ALIGN_CENTER);
     egui_view_set_margin(EGUI_VIEW_OF(&title_label), 0, 8, 0, 10);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label));
 
@@ -170,7 +170,7 @@ void test_init_ui(void)
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&primary_control));
 
     init_text_label(&caption_label, BULLET_DECORATOR_ROOT_WIDTH, 12, "Dot bullet / content slot",
-                    (const egui_font_t *)&egui_res_font_montserrat_8_4, EGUI_COLOR_HEX(0x0F6CBD), EGUI_ALIGN_CENTER);
+                    (const egui_font_t *)&egui_res_font_montserrat_8_4, HCW_COLOR_PRIMARY, EGUI_ALIGN_CENTER);
     egui_view_set_margin(EGUI_VIEW_OF(&caption_label), 0, 0, 0, 16);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&caption_label));
 

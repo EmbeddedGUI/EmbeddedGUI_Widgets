@@ -1,4 +1,5 @@
 #include "egui_view_tag.h"
+#include "../../hcw_text_center.h"
 
 #include <string.h>
 
@@ -16,7 +17,7 @@ struct egui_view_tag_metrics
 
 static egui_color_t egui_view_tag_mix_disabled(egui_color_t color)
 {
-    return egui_rgb_mix(color, EGUI_COLOR_HEX(0x7B8794), 48);
+    return egui_rgb_mix(color, HCW_COLOR_TEXT_SOFT, EGUI_ALPHA_MAKE(38));
 }
 
 static uint8_t egui_view_tag_text_len(const char *text)
@@ -331,6 +332,20 @@ static void egui_view_tag_draw_text(const egui_font_t *font, egui_view_t *self, 
     egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, font, text, &draw_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, color, egui_color_alpha_mix(self->alpha, alpha));
 }
 
+static void egui_view_tag_draw_center_text(const egui_font_t *font, egui_view_t *self, const char *text, const egui_region_t *region, egui_color_t color,
+                                           egui_alpha_t alpha)
+{
+    egui_region_t draw_region = *region;
+
+    if (text == NULL || text[0] == '\0' || region->size.width <= 0 || region->size.height <= 0)
+    {
+        return;
+    }
+
+    draw_region.location.y += hcw_text_center_get_delta(font, text, region, EGUI_ALIGN_CENTER);
+    egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, font, text, &draw_region, EGUI_ALIGN_CENTER, color, egui_color_alpha_mix(self->alpha, alpha));
+}
+
 static void egui_view_tag_notify_dismiss(egui_view_t *self)
 {
     EGUI_LOCAL_INIT(egui_view_tag_t);
@@ -370,14 +385,14 @@ static void egui_view_tag_on_draw(egui_view_t *self)
     egui_view_tag_get_metrics(self, local, &metrics);
     if (self->is_focused && egui_view_tag_has_dismiss(self, local))
     {
-        fill_color = egui_rgb_mix(fill_color, accent_color, 8);
-        border_color = egui_rgb_mix(border_color, accent_color, 44);
+        fill_color = egui_rgb_mix(fill_color, accent_color, EGUI_ALPHA_MAKE(8));
+        border_color = egui_rgb_mix(border_color, accent_color, EGUI_ALPHA_MAKE(44));
     }
     if (self->is_pressed)
     {
-        fill_color = egui_rgb_mix(fill_color, accent_color, 12);
-        border_color = egui_rgb_mix(border_color, accent_color, 56);
-        text_color = egui_rgb_mix(text_color, accent_color, 16);
+        fill_color = egui_rgb_mix(fill_color, accent_color, EGUI_ALPHA_MAKE(12));
+        border_color = egui_rgb_mix(border_color, accent_color, EGUI_ALPHA_MAKE(56));
+        text_color = egui_rgb_mix(text_color, accent_color, EGUI_ALPHA_MAKE(16));
     }
     if (!egui_view_get_enable(self))
     {
@@ -388,9 +403,9 @@ static void egui_view_tag_on_draw(egui_view_t *self)
     }
 
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, region.location.x, region.location.y, region.size.width, region.size.height, radius, fill_color,
-                                          egui_color_alpha_mix(self->alpha, 100));
+                                          egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(100)));
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, region.location.x, region.location.y, region.size.width, region.size.height, radius, 1, border_color,
-                                     egui_color_alpha_mix(self->alpha, self->is_focused ? 88 : 64));
+                                     egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(self->is_focused ? 88 : 64)));
 
     egui_view_tag_fit_text_to_width(egui_view_tag_get_text_font(local), local->text, primary_label, sizeof(primary_label), metrics.primary_region.size.width, 5);
     egui_view_tag_draw_text(egui_view_tag_get_text_font(local), self, primary_label, &metrics.primary_region, text_color, EGUI_ALPHA_100);
@@ -405,10 +420,10 @@ static void egui_view_tag_on_draw(egui_view_t *self)
     if (metrics.show_dismiss)
     {
         egui_dim_t radius_fill = EGUI_MAX(metrics.dismiss_region.size.width / 2 - 1, 4);
-        egui_alpha_t fill_alpha = local->dismiss_pressed ? 78 : (self->is_focused ? 52 : 38);
+        egui_alpha_t fill_alpha = egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(local->dismiss_pressed ? 82 : (self->is_focused ? 58 : 46)));
 
-        dismiss_fill = egui_rgb_mix(local->surface_color, accent_color, local->dismiss_pressed ? 18 : 10);
-        dismiss_icon = local->dismiss_pressed ? egui_rgb_mix(text_color, accent_color, 30) : egui_rgb_mix(secondary_color, text_color, 18);
+        dismiss_fill = egui_rgb_mix(local->surface_color, accent_color, EGUI_ALPHA_MAKE(local->dismiss_pressed ? 18 : 10));
+        dismiss_icon = local->dismiss_pressed ? egui_rgb_mix(text_color, accent_color, EGUI_ALPHA_MAKE(30)) : egui_rgb_mix(secondary_color, text_color, EGUI_ALPHA_MAKE(18));
         if (!egui_view_get_enable(self))
         {
             dismiss_fill = egui_view_tag_mix_disabled(dismiss_fill);
@@ -417,8 +432,7 @@ static void egui_view_tag_on_draw(egui_view_t *self)
 
         egui_canvas_draw_circle_fill_basic(&uicode_get_core()->canvas, metrics.dismiss_region.location.x + metrics.dismiss_region.size.width / 2,
                                            metrics.dismiss_region.location.y + metrics.dismiss_region.size.height / 2, radius_fill, dismiss_fill, fill_alpha);
-        egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, egui_view_tag_get_icon_font(local), EGUI_ICON_MS_CLOSE, &metrics.dismiss_region, EGUI_ALIGN_CENTER, dismiss_icon,
-                                      egui_color_alpha_mix(self->alpha, EGUI_ALPHA_100));
+        egui_view_tag_draw_center_text(egui_view_tag_get_icon_font(local), self, EGUI_ICON_MS_CLOSE, &metrics.dismiss_region, dismiss_icon, EGUI_ALPHA_100);
     }
 }
 
@@ -694,11 +708,11 @@ void egui_view_tag_init(egui_view_t *self)
     local->on_dismiss = NULL;
     local->dismissible = 1;
     local->dismiss_pressed = 0;
-    local->surface_color = EGUI_COLOR_HEX(0xFFFFFF);
-    local->border_color = EGUI_COLOR_HEX(0xD5DDE6);
-    local->text_color = EGUI_COLOR_HEX(0x1F2A35);
-    local->secondary_color = EGUI_COLOR_HEX(0x637283);
-    local->accent_color = EGUI_COLOR_HEX(0x0F6CBD);
+    local->surface_color = HCW_COLOR_SURFACE;
+    local->border_color = HCW_COLOR_BORDER;
+    local->text_color = HCW_COLOR_TEXT;
+    local->secondary_color = HCW_COLOR_TEXT_MUTED;
+    local->accent_color = HCW_COLOR_PRIMARY;
     egui_view_tag_copy_text(local->text, sizeof(local->text), "Tag");
     egui_view_tag_copy_text(local->secondary_text, sizeof(local->secondary_text), "");
     egui_view_set_view_name(self, "egui_view_tag");

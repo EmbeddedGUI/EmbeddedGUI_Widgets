@@ -1,4 +1,5 @@
 #include "egui_view_toolbar.h"
+#include "../../hcw_text_center.h"
 
 #define EGUI_VIEW_TOOLBAR_RADIUS          8
 #define EGUI_VIEW_TOOLBAR_COMPACT_RADIUS  7
@@ -184,7 +185,7 @@ static void egui_view_toolbar_fit_text_to_width(const egui_font_t *font, const c
 
 static egui_color_t egui_view_toolbar_mix_disabled(egui_color_t color)
 {
-    return egui_rgb_mix(color, EGUI_COLOR_DARK_GREY, 66);
+    return egui_rgb_mix(color, HCW_COLOR_SURFACE_SUBTLE, EGUI_ALPHA_MAKE(44));
 }
 
 static uint8_t egui_view_toolbar_is_valid_index(egui_view_toolbar_t *local, uint8_t index)
@@ -336,6 +337,7 @@ static void egui_view_toolbar_draw_text(const egui_font_t *font, egui_view_t *se
     {
         return;
     }
+    draw_region.location.y += hcw_text_center_get_delta(font, text, region, align);
     egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, font, text, &draw_region, align, color, self->alpha);
 }
 
@@ -361,18 +363,18 @@ static void egui_view_toolbar_draw_item(egui_view_t *self, egui_view_toolbar_t *
         return;
     }
 
-    fill = checked ? local->checked_color : local->item_color;
+    fill = checked ? egui_rgb_mix(local->checked_color, local->focus_color, EGUI_ALPHA_MAKE(18)) : local->item_color;
     if (is_pressed)
     {
         fill = local->pressed_color;
     }
     else if (is_current && !checked)
     {
-        fill = egui_rgb_mix(fill, local->focus_color, 8);
+        fill = egui_rgb_mix(fill, local->focus_color, EGUI_ALPHA_MAKE(10));
     }
-    border = is_current ? local->focus_color : local->border_color;
-    text = checked ? local->text_color : local->muted_text_color;
-    icon = checked ? local->checked_icon_color : local->icon_color;
+    border = is_current ? local->focus_color : egui_rgb_mix(local->border_color, local->focus_color, EGUI_ALPHA_MAKE(92));
+    text = checked ? HCW_COLOR_ON_PRIMARY : egui_rgb_mix(local->text_color, local->focus_color, EGUI_ALPHA_MAKE(10));
+    icon = checked ? HCW_COLOR_ON_PRIMARY : egui_rgb_mix(local->icon_color, local->text_color, EGUI_ALPHA_MAKE(86));
 
     if (disabled || !egui_view_get_enable(self))
     {
@@ -383,23 +385,17 @@ static void egui_view_toolbar_draw_item(egui_view_t *self, egui_view_toolbar_t *
     }
     else if (local->read_only_mode)
     {
-        fill = egui_rgb_mix(fill, EGUI_COLOR_WHITE, 35);
-        border = egui_rgb_mix(border, local->muted_text_color, 30);
-        text = egui_rgb_mix(text, local->muted_text_color, 36);
-        icon = egui_rgb_mix(icon, local->muted_text_color, 38);
+        fill = egui_rgb_mix(fill, local->border_color, EGUI_ALPHA_MAKE(6));
+        border = egui_rgb_mix(border, HCW_COLOR_TEXT_STRONG, EGUI_ALPHA_MAKE(28));
+        text = egui_rgb_mix(text, local->text_color, EGUI_ALPHA_MAKE(34));
+        icon = egui_rgb_mix(icon, local->text_color, EGUI_ALPHA_MAKE(34));
     }
 
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, item_region.location.x, item_region.location.y, item_region.size.width,
-                                          item_region.size.height, radius, fill, egui_color_alpha_mix(self->alpha, 94));
+                                          item_region.size.height, radius, fill, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(98)));
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, item_region.location.x, item_region.location.y, item_region.size.width,
                                      item_region.size.height, radius, is_current && self->is_focused ? 2 : 1, border,
-                                     egui_color_alpha_mix(self->alpha, is_current ? 76 : 48));
-
-    if (checked)
-    {
-        egui_canvas_draw_rectangle_fill(&uicode_get_core()->canvas, item_region.location.x + 7, item_region.location.y + item_region.size.height - 3,
-                                        item_region.size.width - 14, 2, local->checked_icon_color, egui_color_alpha_mix(self->alpha, 88));
-    }
+                                     egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(is_current ? 100 : 98)));
 
     if (local->compact_mode || item_region.size.width < 42)
     {
@@ -422,8 +418,6 @@ static void egui_view_toolbar_draw_item(egui_view_t *self, egui_view_toolbar_t *
     label_region = item_region;
     label_region.location.x = icon_region.location.x + icon_region.size.width + EGUI_VIEW_TOOLBAR_LABEL_GAP;
     label_region.size.width = item_region.size.width - (label_region.location.x - item_region.location.x) - 5;
-    label_region.location.y += 1;
-    label_region.size.height -= 2;
     egui_view_toolbar_fit_text_to_width(local->label_font, item->label, label, sizeof(label), label_region.size.width, 5);
     egui_view_toolbar_draw_text(local->label_font, self, label, &label_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, text);
 }
@@ -442,8 +436,8 @@ static void egui_view_toolbar_on_draw(egui_view_t *self)
         return;
     }
 
-    surface = local->surface_color;
-    border = local->border_color;
+    surface = HCW_COLOR_PANEL;
+    border = egui_rgb_mix(local->border_color, local->focus_color, EGUI_ALPHA_MAKE(78));
     if (!egui_view_get_enable(self))
     {
         surface = egui_view_toolbar_mix_disabled(surface);
@@ -451,14 +445,14 @@ static void egui_view_toolbar_on_draw(egui_view_t *self)
     }
     else if (local->read_only_mode)
     {
-        surface = egui_rgb_mix(surface, EGUI_COLOR_WHITE, 30);
-        border = egui_rgb_mix(border, local->muted_text_color, 26);
+        surface = egui_rgb_mix(surface, local->border_color, EGUI_ALPHA_MAKE(6));
+        border = egui_rgb_mix(border, HCW_COLOR_TEXT_STRONG, EGUI_ALPHA_MAKE(32));
     }
 
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.region.location.x, metrics.region.location.y, metrics.region.size.width,
-                                          metrics.region.size.height, 12, surface, egui_color_alpha_mix(self->alpha, 96));
+                                          metrics.region.size.height, 12, surface, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(98)));
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics.region.location.x, metrics.region.location.y, metrics.region.size.width,
-                                     metrics.region.size.height, 12, 1, border, egui_color_alpha_mix(self->alpha, 54));
+                                     metrics.region.size.height, 12, 1, border, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(96)));
 
     for (index = 0; index < local->item_count; ++index)
     {
@@ -918,15 +912,15 @@ void egui_view_toolbar_init(egui_view_t *self)
     local->pressed_index = EGUI_VIEW_TOOLBAR_INDEX_NONE;
     local->compact_mode = 0;
     local->read_only_mode = 0;
-    local->surface_color = EGUI_COLOR_HEX(0xFFFFFF);
-    local->item_color = EGUI_COLOR_HEX(0xF7F9FC);
-    local->checked_color = EGUI_COLOR_HEX(0xE7F1FB);
-    local->pressed_color = EGUI_COLOR_HEX(0xD9EAFB);
-    local->border_color = EGUI_COLOR_HEX(0xC9D3DD);
-    local->focus_color = EGUI_COLOR_HEX(0x78B7F2);
-    local->text_color = EGUI_COLOR_HEX(0x182331);
-    local->muted_text_color = EGUI_COLOR_HEX(0x5E6B78);
-    local->icon_color = EGUI_COLOR_HEX(0x5E6B78);
-    local->checked_icon_color = EGUI_COLOR_HEX(0x0F6CBD);
+    local->surface_color = HCW_COLOR_SURFACE;
+    local->item_color = HCW_COLOR_PANEL;
+    local->checked_color = HCW_COLOR_PRIMARY_DARK;
+    local->pressed_color = HCW_COLOR_PRIMARY_DARK;
+    local->border_color = HCW_COLOR_BORDER_STRONG;
+    local->focus_color = HCW_COLOR_PRIMARY_DARK;
+    local->text_color = HCW_COLOR_TEXT_STRONG;
+    local->muted_text_color = HCW_COLOR_TEXT_SOFT;
+    local->icon_color = HCW_COLOR_TEXT_SOFT;
+    local->checked_icon_color = HCW_COLOR_PRIMARY_DARK;
     egui_view_set_view_name(self, "egui_view_toolbar");
 }

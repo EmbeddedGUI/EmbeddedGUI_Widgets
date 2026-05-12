@@ -124,7 +124,7 @@ static egui_dim_t egui_view_path_clamp_dim(egui_dim_t value, egui_dim_t min_valu
 
 static egui_color_t egui_view_path_mix_disabled(egui_color_t color)
 {
-    return egui_rgb_mix(color, EGUI_COLOR_HEX(0xAEB8C2), 62);
+    return egui_rgb_mix(color, HCW_COLOR_TEXT_SOFT, EGUI_ALPHA_MAKE(40));
 }
 
 static int16_t egui_view_path_eval_quad_component(int16_t p0, int16_t c0, int16_t p1, int step, int total_steps)
@@ -285,8 +285,8 @@ static void egui_view_path_on_draw(egui_view_t *self)
     egui_color_t fill_color = local->fill_color;
     egui_color_t stroke_color = local->stroke_color;
     egui_color_t accent_color = local->accent_color;
-    egui_alpha_t fill_alpha = 48;
-    egui_alpha_t stroke_alpha = 86;
+    egui_alpha_t fill_alpha = EGUI_ALPHA_MAKE(96);
+    egui_alpha_t stroke_alpha = EGUI_ALPHA_100;
     uint8_t contour_count = 0;
     uint8_t contour_closed = 0;
     uint8_t has_current = 0;
@@ -309,12 +309,12 @@ static void egui_view_path_on_draw(egui_view_t *self)
         fill_color = egui_view_path_mix_disabled(fill_color);
         stroke_color = egui_view_path_mix_disabled(stroke_color);
         accent_color = egui_view_path_mix_disabled(accent_color);
-        fill_alpha = 26;
-        stroke_alpha = 34;
+        fill_alpha = EGUI_ALPHA_MAKE(58);
+        stroke_alpha = EGUI_ALPHA_MAKE(68);
     }
     if (egui_view_get_pressed(self))
     {
-        stroke_color = egui_rgb_mix(stroke_color, accent_color, 18);
+        stroke_color = egui_rgb_mix(stroke_color, accent_color, EGUI_ALPHA_MAKE(18));
     }
 
     egui_view_path_prepare_transform(&region, data, &transform);
@@ -474,14 +474,14 @@ egui_dim_t egui_view_path_get_stroke_width(egui_view_t *self)
 
 void egui_view_path_apply_standard_style(egui_view_t *self)
 {
-    egui_view_path_set_palette(self, EGUI_COLOR_HEX(0xDDEBFA), EGUI_COLOR_HEX(0x0F6CBD), EGUI_COLOR_HEX(0xBBD7F0));
+    egui_view_path_set_palette(self, HCW_COLOR_PRIMARY_TINT, HCW_COLOR_PRIMARY, HCW_COLOR_PRIMARY_SOFT);
     egui_view_path_set_stroke_width(self, 2);
     egui_view_path_set_data(self, &path_shield_data);
 }
 
 void egui_view_path_apply_accent_style(egui_view_t *self)
 {
-    egui_view_path_set_palette(self, EGUI_COLOR_HEX(0xD4E8FA), EGUI_COLOR_HEX(0x0F6CBD), EGUI_COLOR_HEX(0x8ABCE5));
+    egui_view_path_set_palette(self, HCW_COLOR_PRIMARY_TINT, HCW_COLOR_PRIMARY, HCW_COLOR_PRIMARY_LIGHT);
     egui_view_path_set_stroke_width(self, 3);
     egui_view_path_set_data(self, &path_curve_data);
 }

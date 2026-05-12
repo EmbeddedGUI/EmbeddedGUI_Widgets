@@ -348,6 +348,13 @@ static void test_spin_button_text_font_palette_and_modes(void)
 
     setup_spin_button();
 
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PANEL.full, test_spin.surface_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_SURFACE_PRESS.full, test_spin.field_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_BORDER_STRONG.full, test_spin.border_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT_STRONG.full, test_spin.text_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT_SOFT.full, test_spin.muted_text_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PRIMARY_DARK.full, test_spin.accent_color.full);
+
     seed_active_state(&test_spin, EGUI_VIEW_SPIN_BUTTON_PART_INCREMENT, 1);
     egui_view_spin_button_set_texts(EGUI_VIEW_OF(&test_spin), value_label, value_suffix, value_helper);
     EGUI_TEST_ASSERT_TRUE(test_spin.label == value_label);

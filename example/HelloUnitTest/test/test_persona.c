@@ -331,11 +331,11 @@ static void test_persona_helpers_compute_regions_and_colors(void)
     EGUI_TEST_ASSERT_EQUAL_INT(test_persona.success_color.full, egui_view_persona_tone_color(&test_persona, EGUI_VIEW_PERSONA_TONE_SUCCESS).full);
     EGUI_TEST_ASSERT_EQUAL_INT(test_persona.warning_color.full, egui_view_persona_tone_color(&test_persona, EGUI_VIEW_PERSONA_TONE_WARNING).full);
     EGUI_TEST_ASSERT_EQUAL_INT(test_persona.neutral_color.full, egui_view_persona_tone_color(&test_persona, EGUI_VIEW_PERSONA_TONE_NEUTRAL).full);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x107C41).full, egui_view_persona_status_color(&test_persona, EGUI_VIEW_PERSONA_STATUS_AVAILABLE).full);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xC4314B).full, egui_view_persona_status_color(&test_persona, EGUI_VIEW_PERSONA_STATUS_BUSY).full);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xC17C00).full, egui_view_persona_status_color(&test_persona, EGUI_VIEW_PERSONA_STATUS_AWAY).full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_SUCCESS.full, egui_view_persona_status_color(&test_persona, EGUI_VIEW_PERSONA_STATUS_AVAILABLE).full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_DANGER_DARK.full, egui_view_persona_status_color(&test_persona, EGUI_VIEW_PERSONA_STATUS_BUSY).full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_WARNING_DARK.full, egui_view_persona_status_color(&test_persona, EGUI_VIEW_PERSONA_STATUS_AWAY).full);
     EGUI_TEST_ASSERT_EQUAL_INT(test_persona.neutral_color.full, egui_view_persona_status_color(&test_persona, EGUI_VIEW_PERSONA_STATUS_OFFLINE).full);
-    EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(sample, EGUI_COLOR_HEX(0x83909D), 54).full, egui_view_persona_mix_disabled(sample).full);
+    EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(sample, HCW_COLOR_TEXT_SOFT, EGUI_ALPHA_MAKE(38)).full, egui_view_persona_mix_disabled(sample).full);
 
     egui_view_persona_set_status(EGUI_VIEW_OF(&test_persona), EGUI_VIEW_PERSONA_STATUS_DO_NOT_DISTURB);
     EGUI_TEST_ASSERT_TRUE(egui_view_persona_should_draw_presence(&test_persona));

@@ -174,7 +174,7 @@ static void test_spinner_style_helpers_apply_expected_geometry_and_palette(void)
     EGUI_TEST_ASSERT_EQUAL_INT(4, test_spinner_widget.stroke_width);
     EGUI_TEST_ASSERT_EQUAL_INT(104, test_spinner_widget.arc_length);
     EGUI_TEST_ASSERT_EQUAL_INT(-90, test_spinner_widget.rotation_angle);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x0F6CBD).full, test_spinner_widget.color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PRIMARY.full, test_spinner_widget.color.full);
     EGUI_TEST_ASSERT_TRUE(test_spinner_widget.is_spinning);
 
     egui_view_set_pressed(EGUI_VIEW_OF(&test_spinner_widget), 1);
@@ -189,7 +189,7 @@ static void test_spinner_style_helpers_apply_expected_geometry_and_palette(void)
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_spinner_widget)->is_pressed);
     EGUI_TEST_ASSERT_EQUAL_INT(3, test_spinner_widget.stroke_width);
     EGUI_TEST_ASSERT_EQUAL_INT(76, test_spinner_widget.arc_length);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x8A96A2).full, test_spinner_widget.color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT_SOFT.full, test_spinner_widget.color.full);
 }
 
 static void test_spinner_setters_clear_pressed_state_and_clamp(void)

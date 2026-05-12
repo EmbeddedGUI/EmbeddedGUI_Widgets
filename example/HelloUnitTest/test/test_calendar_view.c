@@ -449,8 +449,8 @@ static void test_calendar_view_setters_clear_pressed_state(void)
     EGUI_VIEW_OF(&test_calendar_view)->is_pressed = 1;
     test_calendar_view.pressed_part = EGUI_VIEW_CALENDAR_VIEW_PART_NEXT;
     test_calendar_view.pressed_day = 0;
-    egui_view_calendar_view_set_palette(EGUI_VIEW_OF(&test_calendar_view), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD5DCE4), EGUI_COLOR_HEX(0x1A2734),
-                                        EGUI_COLOR_HEX(0x6B7A89), EGUI_COLOR_HEX(0x0F6CBD), EGUI_COLOR_HEX(0x0F6CBD));
+    egui_view_calendar_view_set_palette(EGUI_VIEW_OF(&test_calendar_view), HCW_COLOR_SURFACE, HCW_COLOR_BORDER_STRONG, HCW_COLOR_TEXT_STRONG,
+                                        HCW_COLOR_TEXT_SOFT, HCW_COLOR_PRIMARY_DARK, HCW_COLOR_PRIMARY_DARK);
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_calendar_view)->is_pressed);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_CALENDAR_VIEW_PART_NONE, test_calendar_view.pressed_part);
     EGUI_TEST_ASSERT_EQUAL_INT(0, test_calendar_view.pressed_day);
@@ -463,6 +463,13 @@ static void test_calendar_view_setters_clear_pressed_state(void)
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_CALENDAR_VIEW_PART_NONE, test_calendar_view.pressed_part);
     EGUI_TEST_ASSERT_EQUAL_INT(0, test_calendar_view.pressed_day);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_CALENDAR_VIEW_PART_PREV, egui_view_calendar_view_get_current_part(EGUI_VIEW_OF(&test_calendar_view)));
+
+    egui_view_calendar_view_init(EGUI_VIEW_OF(&test_calendar_view));
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PANEL.full, test_calendar_view.surface_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_BORDER_STRONG.full, test_calendar_view.border_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT_SOFT.full, test_calendar_view.muted_text_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PRIMARY_DARK.full, test_calendar_view.accent_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PRIMARY_DARK.full, test_calendar_view.today_color.full);
 }
 
 static void test_calendar_view_set_range_clamps_order(void)

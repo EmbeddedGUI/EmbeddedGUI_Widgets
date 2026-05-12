@@ -1,8 +1,10 @@
 #include "egui_view_tree_view.h"
+#include "../../hcw_selection_marker.h"
+#include "../../hcw_top_accent.h"
 
 #define EGUI_VIEW_TREE_VIEW_STANDARD_RADIUS          8
-#define EGUI_VIEW_TREE_VIEW_STANDARD_FILL_ALPHA      88
-#define EGUI_VIEW_TREE_VIEW_STANDARD_BORDER_ALPHA    46
+#define EGUI_VIEW_TREE_VIEW_STANDARD_FILL_ALPHA      EGUI_ALPHA_MAKE(98)
+#define EGUI_VIEW_TREE_VIEW_STANDARD_BORDER_ALPHA    EGUI_ALPHA_MAKE(94)
 #define EGUI_VIEW_TREE_VIEW_STANDARD_PAD_X           9
 #define EGUI_VIEW_TREE_VIEW_STANDARD_PAD_Y           8
 #define EGUI_VIEW_TREE_VIEW_STANDARD_HEADER_HEIGHT   11
@@ -23,8 +25,8 @@
 #define EGUI_VIEW_TREE_VIEW_STANDARD_META_HEIGHT     10
 
 #define EGUI_VIEW_TREE_VIEW_COMPACT_RADIUS          7
-#define EGUI_VIEW_TREE_VIEW_COMPACT_FILL_ALPHA      84
-#define EGUI_VIEW_TREE_VIEW_COMPACT_BORDER_ALPHA    42
+#define EGUI_VIEW_TREE_VIEW_COMPACT_FILL_ALPHA      EGUI_ALPHA_MAKE(96)
+#define EGUI_VIEW_TREE_VIEW_COMPACT_BORDER_ALPHA    EGUI_ALPHA_MAKE(92)
 #define EGUI_VIEW_TREE_VIEW_COMPACT_PAD_X           6
 #define EGUI_VIEW_TREE_VIEW_COMPACT_PAD_Y           5
 #define EGUI_VIEW_TREE_VIEW_COMPACT_HEADER_HEIGHT   10
@@ -296,7 +298,7 @@ static void egui_view_tree_view_update_regions(const egui_region_t *region, egui
 
 static egui_color_t egui_view_tree_view_mix_disabled(egui_color_t color)
 {
-    return egui_rgb_mix(color, EGUI_COLOR_DARK_GREY, 68);
+    return egui_rgb_mix(color, HCW_COLOR_TEXT_SOFT, EGUI_ALPHA_MAKE(26));
 }
 
 static uint8_t egui_view_tree_view_clear_pressed_state(egui_view_t *self)
@@ -441,20 +443,24 @@ static void egui_view_tree_view_draw_folder_glyph(egui_view_t *self, egui_dim_t 
 
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, x + 1, y, tab_w, tab_h, radius, fill, egui_color_alpha_mix(self->alpha, alpha));
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, x, y + 1, width, height - 1, radius, fill, egui_color_alpha_mix(self->alpha, alpha));
-    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, x, y + 1, width, height - 1, radius, 1, border, egui_color_alpha_mix(self->alpha, 42));
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, x, y + 1, width, height - 1, radius, 1, border, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(88)));
 }
 
 static void egui_view_tree_view_draw_leaf_glyph(egui_view_t *self, egui_dim_t x, egui_dim_t y, egui_dim_t width, egui_dim_t height, egui_color_t fill,
                                                 egui_color_t border, egui_alpha_t alpha, egui_dim_t radius)
 {
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, x, y, width, height, radius, fill, egui_color_alpha_mix(self->alpha, alpha));
-    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, x, y, width, height, radius, 1, border, egui_color_alpha_mix(self->alpha, 40));
-    egui_canvas_draw_line(&uicode_get_core()->canvas, x + 2, y + 2, x + width - 3, y + 2, 1, border, egui_color_alpha_mix(self->alpha, 32));
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, x, y, width, height, radius, 1, border, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(86)));
+    egui_canvas_draw_line(&uicode_get_core()->canvas, x + 2, y + 2, x + width - 3, y + 2, 1, border, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(90)));
 }
 
 static void egui_view_tree_view_get_metrics(egui_view_tree_view_t *local, egui_view_t *self, uint8_t item_count, egui_view_tree_view_metrics_t *metrics)
 {
     egui_region_t region;
+    egui_region_t accent_region;
+    egui_dim_t radius = local->compact_mode ? EGUI_VIEW_TREE_VIEW_COMPACT_RADIUS : EGUI_VIEW_TREE_VIEW_STANDARD_RADIUS;
+    egui_dim_t accent_h = local->compact_mode ? 3 : 4;
+    egui_dim_t accent_gap = local->compact_mode ? 2 : 3;
     egui_dim_t pad_x = local->compact_mode ? EGUI_VIEW_TREE_VIEW_COMPACT_PAD_X : EGUI_VIEW_TREE_VIEW_STANDARD_PAD_X;
     egui_dim_t pad_y = local->compact_mode ? EGUI_VIEW_TREE_VIEW_COMPACT_PAD_Y : EGUI_VIEW_TREE_VIEW_STANDARD_PAD_Y;
     egui_dim_t packed_pad_y = local->compact_mode ? 4 : 6;
@@ -472,6 +478,9 @@ static void egui_view_tree_view_get_metrics(egui_view_tree_view_t *local, egui_v
     uint8_t i;
 
     egui_view_get_work_region(self, &region);
+    accent_region = region;
+    region.location.y += hcw_top_accent_content_offset(&accent_region, radius, accent_h, accent_gap);
+    region.size.height -= region.location.y - accent_region.location.y;
     egui_view_tree_view_update_regions(&region, pad_x, pad_y, header_h, header_gap, list_gap, footer_h, metrics);
 
     metrics->visible_item_count = egui_view_tree_view_clamp_item_count(item_count);
@@ -816,18 +825,18 @@ static void egui_view_tree_view_draw_row(egui_view_t *self, egui_view_tree_view_
     char meta_label[32];
     char title_label[64];
     egui_color_t tone_color = egui_view_tree_view_tone_color(local, item->tone);
-    egui_color_t guide_color = egui_rgb_mix(list_border, tone_color, 6);
-    egui_color_t row_fill =
-            egui_rgb_mix(list_fill, tone_color, index == local->current_index ? (local->compact_mode ? 6 : 8) : (index == local->pressed_index ? 4 : 0));
-    egui_color_t row_border = egui_rgb_mix(list_border, tone_color, index == local->current_index ? 12 : 5);
-    egui_color_t caret_color = index == local->current_index ? tone_color : egui_rgb_mix(muted_text_color, tone_color, 6);
-    egui_color_t glyph_fill = egui_rgb_mix(local->surface_color, tone_color, item->kind == EGUI_VIEW_TREE_VIEW_KIND_FOLDER ? 8 : 5);
-    egui_color_t glyph_border = egui_rgb_mix(list_border, tone_color, item->kind == EGUI_VIEW_TREE_VIEW_KIND_FOLDER ? 10 : 7);
+    egui_color_t guide_color = egui_rgb_mix(list_border, tone_color, EGUI_ALPHA_MAKE(16));
+    egui_color_t row_fill = index == local->current_index ? egui_rgb_mix(HCW_COLOR_PANEL, HCW_COLOR_SURFACE_SUBTLE, EGUI_ALPHA_MAKE(72))
+                                                          : (index == local->pressed_index ? egui_rgb_mix(HCW_COLOR_PANEL, tone_color, EGUI_ALPHA_MAKE(3)) : HCW_COLOR_PANEL);
+    egui_color_t row_border = egui_rgb_mix(list_border, tone_color, EGUI_ALPHA_MAKE(index == local->current_index ? 7 : 2));
+    egui_color_t caret_color = index == local->current_index ? egui_rgb_mix(text_color, tone_color, EGUI_ALPHA_MAKE(16)) : muted_text_color;
+    egui_color_t glyph_fill = HCW_COLOR_PANEL;
+    egui_color_t glyph_border = egui_rgb_mix(list_border, tone_color, EGUI_ALPHA_MAKE(item->kind == EGUI_VIEW_TREE_VIEW_KIND_FOLDER ? 6 : 4));
     egui_color_t title_color =
-            item->kind == EGUI_VIEW_TREE_VIEW_KIND_FOLDER ? egui_rgb_mix(text_color, tone_color, 3) : egui_rgb_mix(text_color, muted_text_color, 20);
-    egui_color_t meta_fill = egui_rgb_mix(local->surface_color, tone_color, index == local->current_index ? 7 : 4);
-    egui_color_t meta_border = egui_rgb_mix(list_border, tone_color, index == local->current_index ? 12 : 7);
-    egui_color_t meta_color = index == local->current_index ? egui_rgb_mix(tone_color, text_color, 12) : egui_rgb_mix(muted_text_color, tone_color, 9);
+            item->kind == EGUI_VIEW_TREE_VIEW_KIND_FOLDER ? egui_rgb_mix(text_color, tone_color, EGUI_ALPHA_MAKE(16)) : egui_rgb_mix(text_color, muted_text_color, EGUI_ALPHA_MAKE(12));
+    egui_color_t meta_fill = HCW_COLOR_PANEL;
+    egui_color_t meta_border = egui_rgb_mix(list_border, tone_color, EGUI_ALPHA_MAKE(index == local->current_index ? 6 : 2));
+    egui_color_t meta_color = index == local->current_index ? egui_rgb_mix(text_color, tone_color, EGUI_ALPHA_MAKE(16)) : muted_text_color;
     egui_dim_t indent = local->compact_mode ? EGUI_VIEW_TREE_VIEW_COMPACT_INDENT : EGUI_VIEW_TREE_VIEW_STANDARD_INDENT;
     egui_dim_t caret_box_w = local->compact_mode ? EGUI_VIEW_TREE_VIEW_COMPACT_CARET_BOX_WIDTH : EGUI_VIEW_TREE_VIEW_STANDARD_CARET_BOX_WIDTH;
     egui_dim_t caret_size = local->compact_mode ? EGUI_VIEW_TREE_VIEW_COMPACT_CARET_SIZE : EGUI_VIEW_TREE_VIEW_STANDARD_CARET_SIZE;
@@ -844,56 +853,68 @@ static void egui_view_tree_view_draw_row(egui_view_t *self, egui_view_tree_view_
     egui_dim_t meta_w = egui_view_tree_view_meta_width(local->meta_font, item->meta, local->compact_mode, item_region->size.width / 3);
     egui_dim_t meta_x = item_region->location.x + item_region->size.width - meta_w - 6;
     egui_dim_t mid_y = item_region->location.y + item_region->size.height / 2;
-    egui_alpha_t guide_alpha = local->compact_mode ? 10 : 18;
+    egui_dim_t row_radius = local->compact_mode ? EGUI_VIEW_TREE_VIEW_COMPACT_ROW_RADIUS : EGUI_VIEW_TREE_VIEW_STANDARD_ROW_RADIUS;
+    egui_alpha_t guide_alpha = EGUI_ALPHA_MAKE(local->compact_mode ? 64 : 72);
     egui_dim_t guide_tail_w = local->compact_mode ? 3 : 5;
     uint8_t selected = index == local->current_index;
     uint8_t pressed = index == local->pressed_index;
     uint8_t level;
 
+    EGUI_UNUSED(list_fill);
+
+    if (selected)
+    {
+        branch_base_x = item_region->location.x + row_radius + (local->compact_mode ? 3 : 4);
+        caret_x = branch_base_x + item->depth * indent;
+        glyph_x = caret_x + caret_box_w + 3;
+        title_x = glyph_x + glyph_w + 6;
+    }
+
     if (local->read_only_mode)
     {
-        guide_color = egui_rgb_mix(guide_color, muted_text_color, 22);
-        row_fill = egui_rgb_mix(row_fill, list_fill, 40);
-        row_border = egui_rgb_mix(row_border, muted_text_color, 32);
-        caret_color = egui_rgb_mix(caret_color, muted_text_color, 40);
-        glyph_fill = egui_rgb_mix(glyph_fill, list_fill, 38);
-        glyph_border = egui_rgb_mix(glyph_border, muted_text_color, 30);
-        title_color = egui_rgb_mix(title_color, muted_text_color, 28);
-        meta_fill = egui_rgb_mix(meta_fill, list_fill, 36);
-        meta_border = egui_rgb_mix(meta_border, muted_text_color, 30);
-        meta_color = egui_rgb_mix(meta_color, muted_text_color, 34);
+        tone_color = muted_text_color;
+        guide_color = egui_rgb_mix(guide_color, muted_text_color, EGUI_ALPHA_MAKE(14));
+        row_fill = HCW_COLOR_PANEL;
+        row_border = egui_rgb_mix(row_border, muted_text_color, EGUI_ALPHA_MAKE(20));
+        caret_color = muted_text_color;
+        glyph_fill = HCW_COLOR_PANEL;
+        glyph_border = egui_rgb_mix(glyph_border, muted_text_color, EGUI_ALPHA_MAKE(18));
+        title_color = egui_rgb_mix(title_color, muted_text_color, EGUI_ALPHA_MAKE(12));
+        meta_fill = HCW_COLOR_PANEL;
+        meta_border = egui_rgb_mix(meta_border, muted_text_color, EGUI_ALPHA_MAKE(18));
+        meta_color = muted_text_color;
+        guide_alpha = EGUI_ALPHA_MAKE(local->compact_mode ? 30 : 38);
     }
 
     if (!egui_view_get_enable(self))
     {
         guide_color = egui_view_tree_view_mix_disabled(guide_color);
-        row_fill = egui_view_tree_view_mix_disabled(row_fill);
+        row_fill = HCW_COLOR_PANEL;
         row_border = egui_view_tree_view_mix_disabled(row_border);
         caret_color = egui_view_tree_view_mix_disabled(caret_color);
-        glyph_fill = egui_view_tree_view_mix_disabled(glyph_fill);
+        glyph_fill = HCW_COLOR_PANEL;
         glyph_border = egui_view_tree_view_mix_disabled(glyph_border);
         title_color = egui_view_tree_view_mix_disabled(title_color);
-        meta_fill = egui_view_tree_view_mix_disabled(meta_fill);
+        meta_fill = HCW_COLOR_PANEL;
         meta_border = egui_view_tree_view_mix_disabled(meta_border);
         meta_color = egui_view_tree_view_mix_disabled(meta_color);
     }
 
     if (selected || pressed)
     {
-        egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, item_region->location.x, item_region->location.y, item_region->size.width, item_region->size.height,
-                                              local->compact_mode ? EGUI_VIEW_TREE_VIEW_COMPACT_ROW_RADIUS : EGUI_VIEW_TREE_VIEW_STANDARD_ROW_RADIUS, row_fill,
-                                              egui_color_alpha_mix(self->alpha, selected ? 54 : 34));
-        egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, item_region->location.x, item_region->location.y, item_region->size.width, item_region->size.height,
-                                         local->compact_mode ? EGUI_VIEW_TREE_VIEW_COMPACT_ROW_RADIUS : EGUI_VIEW_TREE_VIEW_STANDARD_ROW_RADIUS, 1, row_border,
-                                         egui_color_alpha_mix(self->alpha, selected ? 24 : 14));
+        egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, item_region->location.x, item_region->location.y, item_region->size.width, item_region->size.height, row_radius,
+                                              row_fill,
+                                              egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(selected ? (local->read_only_mode ? 62 : 96) : (local->read_only_mode ? 44 : 82))));
     }
 
     if (selected)
     {
-        egui_dim_t indicator_w = local->compact_mode ? 2 : 3;
-
-        egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, item_region->location.x + 2, item_region->location.y + 3, indicator_w, item_region->size.height - 6, 1,
-                                              tone_color, egui_color_alpha_mix(self->alpha, 60));
+        hcw_selection_marker_draw_left(item_region, row_radius, row_radius, tone_color, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(local->read_only_mode ? 42 : 60)));
+    }
+    if (selected || pressed)
+    {
+        egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, item_region->location.x, item_region->location.y, item_region->size.width, item_region->size.height, row_radius, 1,
+                                         row_border, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(selected ? (local->read_only_mode ? 56 : 94) : (local->read_only_mode ? 38 : 84))));
     }
 
     for (level = 1; level < (uint8_t)(item->depth + 1); ++level)
@@ -916,24 +937,24 @@ static void egui_view_tree_view_draw_row(egui_view_t *self, egui_view_tree_view_
 
     if (item->has_children)
     {
-        egui_view_tree_view_draw_caret(self, caret_x, caret_y, caret_size, item->expanded ? 1 : 0, caret_color, selected ? 88 : 72);
+        egui_view_tree_view_draw_caret(self, caret_x, caret_y, caret_size, item->expanded ? 1 : 0, caret_color, EGUI_ALPHA_MAKE(selected ? 96 : 86));
     }
 
     if (item->kind == EGUI_VIEW_TREE_VIEW_KIND_FOLDER)
     {
-        egui_view_tree_view_draw_folder_glyph(self, glyph_x, glyph_y, glyph_w, glyph_h, glyph_fill, glyph_border, 84, glyph_radius);
+        egui_view_tree_view_draw_folder_glyph(self, glyph_x, glyph_y, glyph_w, glyph_h, glyph_fill, glyph_border, EGUI_ALPHA_MAKE(98), glyph_radius);
     }
     else
     {
-        egui_view_tree_view_draw_leaf_glyph(self, glyph_x, glyph_y, glyph_w, glyph_h, glyph_fill, glyph_border, 78, glyph_radius);
+        egui_view_tree_view_draw_leaf_glyph(self, glyph_x, glyph_y, glyph_w, glyph_h, glyph_fill, glyph_border, EGUI_ALPHA_MAKE(96), glyph_radius);
     }
 
     if (meta_w > 0)
     {
         egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, meta_x, item_region->location.y + (item_region->size.height - meta_h) / 2, meta_w, meta_h, meta_h / 2, meta_fill,
-                                              egui_color_alpha_mix(self->alpha, 76));
+                                              egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(local->read_only_mode ? 68 : 96)));
         egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, meta_x, item_region->location.y + (item_region->size.height - meta_h) / 2, meta_w, meta_h, meta_h / 2, 1, meta_border,
-                                         egui_color_alpha_mix(self->alpha, 20));
+                                         egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(local->read_only_mode ? 62 : 90)));
 
         text_region.location.x = meta_x;
         text_region.location.y = item_region->location.y + (item_region->size.height - meta_h) / 2;
@@ -1003,49 +1024,49 @@ static void egui_view_tree_view_on_draw(egui_view_t *self)
     local->current_index = current_index;
     focus_item = &snapshot->items[current_index];
     focus_color = egui_view_tree_view_tone_color(local, focus_item->tone);
-    card_fill = egui_rgb_mix(local->surface_color, focus_color, local->compact_mode ? 1 : 2);
-    card_border = egui_rgb_mix(local->border_color, focus_color, local->compact_mode ? 5 : 7);
-    list_fill = egui_rgb_mix(local->section_color, focus_color, local->compact_mode ? 1 : 2);
-    list_border = egui_rgb_mix(local->border_color, focus_color, local->compact_mode ? 4 : 5);
+    card_fill = HCW_COLOR_PANEL;
+    card_border = egui_rgb_mix(local->border_color, focus_color, EGUI_ALPHA_MAKE(local->compact_mode ? 4 : 5));
+    list_fill = HCW_COLOR_PANEL;
+    list_border = egui_rgb_mix(local->border_color, focus_color, EGUI_ALPHA_MAKE(local->compact_mode ? 4 : 5));
     title_color = local->text_color;
     muted_text_color = local->muted_text_color;
-    caption_fill = egui_rgb_mix(local->surface_color, focus_color, local->compact_mode ? 5 : 7);
-    caption_border = egui_rgb_mix(local->border_color, focus_color, local->compact_mode ? 7 : 9);
-    caption_color = egui_rgb_mix(focus_color, title_color, 18);
-    footer_fill = egui_rgb_mix(local->surface_color, focus_color, local->compact_mode ? 4 : 6);
-    footer_border = egui_rgb_mix(local->border_color, focus_color, local->compact_mode ? 6 : 8);
-    footer_color = egui_rgb_mix(local->muted_text_color, focus_color, local->compact_mode ? 8 : 10);
+    caption_fill = HCW_COLOR_PANEL;
+    caption_border = egui_rgb_mix(local->border_color, focus_color, EGUI_ALPHA_MAKE(local->compact_mode ? 5 : 6));
+    caption_color = egui_rgb_mix(focus_color, title_color, EGUI_ALPHA_MAKE(18));
+    footer_fill = HCW_COLOR_PANEL;
+    footer_border = egui_rgb_mix(local->border_color, focus_color, EGUI_ALPHA_MAKE(local->compact_mode ? 5 : 6));
+    footer_color = egui_rgb_mix(local->muted_text_color, focus_color, EGUI_ALPHA_MAKE(local->compact_mode ? 18 : 22));
 
     if (local->read_only_mode)
     {
-        focus_color = egui_rgb_mix(focus_color, muted_text_color, 80);
-        card_fill = egui_rgb_mix(card_fill, local->surface_color, 30);
-        card_border = egui_rgb_mix(card_border, muted_text_color, 26);
-        list_fill = egui_rgb_mix(list_fill, local->surface_color, 24);
-        list_border = egui_rgb_mix(list_border, muted_text_color, 26);
-        title_color = egui_rgb_mix(title_color, muted_text_color, 24);
-        muted_text_color = egui_rgb_mix(muted_text_color, title_color, 4);
-        caption_fill = egui_rgb_mix(caption_fill, local->surface_color, 30);
-        caption_border = egui_rgb_mix(caption_border, muted_text_color, 28);
-        caption_color = egui_rgb_mix(caption_color, muted_text_color, 38);
-        footer_fill = egui_rgb_mix(footer_fill, local->surface_color, 30);
-        footer_border = egui_rgb_mix(footer_border, muted_text_color, 28);
-        footer_color = egui_rgb_mix(footer_color, muted_text_color, 30);
+        focus_color = egui_rgb_mix(focus_color, muted_text_color, EGUI_ALPHA_MAKE(26));
+        card_fill = HCW_COLOR_PANEL;
+        card_border = egui_rgb_mix(card_border, muted_text_color, EGUI_ALPHA_MAKE(10));
+        list_fill = HCW_COLOR_PANEL;
+        list_border = egui_rgb_mix(list_border, muted_text_color, EGUI_ALPHA_MAKE(10));
+        title_color = egui_rgb_mix(title_color, muted_text_color, EGUI_ALPHA_MAKE(2));
+        muted_text_color = egui_rgb_mix(muted_text_color, title_color, EGUI_ALPHA_MAKE(8));
+        caption_fill = HCW_COLOR_PANEL;
+        caption_border = egui_rgb_mix(caption_border, muted_text_color, EGUI_ALPHA_MAKE(10));
+        caption_color = muted_text_color;
+        footer_fill = HCW_COLOR_PANEL;
+        footer_border = egui_rgb_mix(footer_border, muted_text_color, EGUI_ALPHA_MAKE(10));
+        footer_color = muted_text_color;
     }
 
     if (!egui_view_get_enable(self))
     {
         focus_color = egui_view_tree_view_mix_disabled(focus_color);
-        card_fill = egui_view_tree_view_mix_disabled(card_fill);
+        card_fill = HCW_COLOR_PANEL;
         card_border = egui_view_tree_view_mix_disabled(card_border);
-        list_fill = egui_view_tree_view_mix_disabled(list_fill);
+        list_fill = HCW_COLOR_PANEL;
         list_border = egui_view_tree_view_mix_disabled(list_border);
         title_color = egui_view_tree_view_mix_disabled(title_color);
         muted_text_color = egui_view_tree_view_mix_disabled(muted_text_color);
-        caption_fill = egui_view_tree_view_mix_disabled(caption_fill);
+        caption_fill = HCW_COLOR_PANEL;
         caption_border = egui_view_tree_view_mix_disabled(caption_border);
         caption_color = egui_view_tree_view_mix_disabled(caption_color);
-        footer_fill = egui_view_tree_view_mix_disabled(footer_fill);
+        footer_fill = HCW_COLOR_PANEL;
         footer_border = egui_view_tree_view_mix_disabled(footer_border);
         footer_color = egui_view_tree_view_mix_disabled(footer_color);
     }
@@ -1055,11 +1076,11 @@ static void egui_view_tree_view_on_draw(egui_view_t *self)
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, 
             region.location.x, region.location.y, region.size.width, region.size.height, radius, card_fill,
             egui_color_alpha_mix(self->alpha, local->compact_mode ? EGUI_VIEW_TREE_VIEW_COMPACT_FILL_ALPHA : EGUI_VIEW_TREE_VIEW_STANDARD_FILL_ALPHA));
+    hcw_top_accent_draw(&region, radius, local->compact_mode ? 3 : 4, focus_color,
+                        egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(local->read_only_mode ? 16 : 20)));
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, 
             region.location.x, region.location.y, region.size.width, region.size.height, radius, 1, card_border,
             egui_color_alpha_mix(self->alpha, local->compact_mode ? EGUI_VIEW_TREE_VIEW_COMPACT_BORDER_ALPHA : EGUI_VIEW_TREE_VIEW_STANDARD_BORDER_ALPHA));
-    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, region.location.x + 2, region.location.y + 2, region.size.width - 4, local->compact_mode ? 3 : 4, radius, focus_color,
-                                          egui_color_alpha_mix(self->alpha, local->read_only_mode ? 5 : 10));
 
     caption_w = egui_view_tree_view_caption_width(local->meta_font, snapshot->caption, local->compact_mode, metrics.header_region.size.width / 2);
     if (egui_view_tree_view_has_text(snapshot->caption))
@@ -1067,10 +1088,10 @@ static void egui_view_tree_view_on_draw(egui_view_t *self)
         egui_dim_t caption_h = egui_view_tree_view_get_meta_height(local);
 
         egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.header_region.location.x + metrics.header_region.size.width - caption_w, metrics.header_region.location.y,
-                                              caption_w, caption_h, caption_h / 2, caption_fill, egui_color_alpha_mix(self->alpha, 78));
+                                              caption_w, caption_h, caption_h / 2, caption_fill, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(local->read_only_mode ? 70 : 94)));
         egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics.header_region.location.x + metrics.header_region.size.width - caption_w, metrics.header_region.location.y,
                                          caption_w, caption_h, caption_h / 2, 1, caption_border,
-                                         egui_color_alpha_mix(self->alpha, local->compact_mode ? 20 : 24));
+                                         egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(local->read_only_mode ? 58 : (local->compact_mode ? 82 : 86))));
 
         text_region.location.x = metrics.header_region.location.x + metrics.header_region.size.width - caption_w;
         text_region.location.y = metrics.header_region.location.y;
@@ -1092,9 +1113,10 @@ static void egui_view_tree_view_on_draw(egui_view_t *self)
     egui_view_tree_view_draw_text(local->font, self, title_label, &text_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, title_color);
 
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.list_region.location.x, metrics.list_region.location.y, metrics.list_region.size.width,
-                                          metrics.list_region.size.height, local->compact_mode ? 6 : 7, list_fill, egui_color_alpha_mix(self->alpha, 80));
+                                          metrics.list_region.size.height, local->compact_mode ? 6 : 7, list_fill, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(96)));
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics.list_region.location.x, metrics.list_region.location.y, metrics.list_region.size.width,
-                                     metrics.list_region.size.height, local->compact_mode ? 6 : 7, 1, list_border, egui_color_alpha_mix(self->alpha, 18));
+                                     metrics.list_region.size.height, local->compact_mode ? 6 : 7, 1, list_border,
+                                     egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(local->read_only_mode ? 82 : 92)));
 
     for (i = 0; i < metrics.visible_item_count; ++i)
     {
@@ -1104,10 +1126,10 @@ static void egui_view_tree_view_on_draw(egui_view_t *self)
 
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.footer_region.location.x, metrics.footer_region.location.y, metrics.footer_region.size.width,
                                           metrics.footer_region.size.height, metrics.footer_region.size.height / 2, footer_fill,
-                                          egui_color_alpha_mix(self->alpha, local->compact_mode ? 14 : 18));
+                                          egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(local->read_only_mode ? 54 : (local->compact_mode ? 88 : 92))));
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics.footer_region.location.x, metrics.footer_region.location.y, metrics.footer_region.size.width,
                                      metrics.footer_region.size.height, metrics.footer_region.size.height / 2, 1, footer_border,
-                                     egui_color_alpha_mix(self->alpha, local->compact_mode ? 16 : 20));
+                                     egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(local->read_only_mode ? 58 : (local->compact_mode ? 80 : 86))));
 
     text_region.location.x = metrics.footer_region.location.x + (local->compact_mode ? 4 : 6);
     text_region.location.y = metrics.footer_region.location.y;
@@ -1305,15 +1327,15 @@ void egui_view_tree_view_init(egui_view_t *self)
     local->font = (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT;
     local->meta_font = (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT;
     local->on_selection_changed = NULL;
-    local->surface_color = EGUI_COLOR_HEX(0xFFFFFF);
-    local->section_color = EGUI_COLOR_HEX(0xF6F8FA);
-    local->border_color = EGUI_COLOR_HEX(0xD2DBE3);
-    local->text_color = EGUI_COLOR_HEX(0x18222D);
-    local->muted_text_color = EGUI_COLOR_HEX(0x6B7A89);
-    local->accent_color = EGUI_COLOR_HEX(0x0F6CBD);
-    local->success_color = EGUI_COLOR_HEX(0x178454);
-    local->warning_color = EGUI_COLOR_HEX(0xB77719);
-    local->neutral_color = EGUI_COLOR_HEX(0x7A8796);
+    local->surface_color = HCW_COLOR_SURFACE;
+    local->section_color = HCW_COLOR_SURFACE_SUBTLE;
+    local->border_color = HCW_COLOR_BORDER;
+    local->text_color = HCW_COLOR_TEXT_STRONG;
+    local->muted_text_color = HCW_COLOR_TEXT_MUTED;
+    local->accent_color = HCW_COLOR_PRIMARY;
+    local->success_color = HCW_COLOR_SUCCESS;
+    local->warning_color = HCW_COLOR_WARNING;
+    local->neutral_color = HCW_COLOR_NEUTRAL;
     local->snapshot_count = 0;
     local->current_snapshot = 0;
     local->current_index = 0;

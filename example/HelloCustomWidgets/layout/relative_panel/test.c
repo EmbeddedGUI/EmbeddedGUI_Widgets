@@ -33,7 +33,7 @@ static uint8_t ui_ready;
 
 static void layout_page(void);
 
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, HCW_COLOR_PAGE_BG, EGUI_ALPHA_100, 14);
 EGUI_BACKGROUND_PARAM_INIT(bg_page_panel_params, &bg_page_panel_param, NULL, NULL);
 EGUI_BACKGROUND_COLOR_STATIC_CONST_INIT(bg_page_panel, &bg_page_panel_params);
 
@@ -63,6 +63,11 @@ static const egui_view_relative_panel_item_t dense_items[] = {
         {"PM", "Footer note", "Support card", "Align left with Detail", 0, 118, 98, 28, EGUI_VIEW_RELATIVE_PANEL_TONE_NEUTRAL, 0, 2},
 };
 
+static const egui_view_relative_panel_item_t preview_items[] = {
+        {"SUM", "Summary", "Anchor card", "Align left + top", 0, 0, 88, 52, EGUI_VIEW_RELATIVE_PANEL_TONE_ACCENT, 1,
+         EGUI_VIEW_RELATIVE_PANEL_ITEM_NONE},
+};
+
 static const egui_view_relative_panel_snapshot_t primary_snapshots[] = {
         {"OPS", "Anchored summary", "Cards stay attached through explicit right-of and below rules.", "Rule highlight mirrors the focused card.",
          summary_items, 4, 0, 192, 152},
@@ -73,10 +78,10 @@ static const egui_view_relative_panel_snapshot_t primary_snapshots[] = {
 };
 
 static const egui_view_relative_panel_snapshot_t compact_snapshot = {
-        "UI", "Compact anchor", "", "Compact preview", summary_items, 4, 0, 192, 152};
+        "UI", "Compact anchor", "", "Compact preview", preview_items, 1, 0, 96, 70};
 
 static const egui_view_relative_panel_snapshot_t read_only_snapshot = {
-        "LOCK", "Read only anchor", "", "Static preview", rail_items, 4, 1, 192, 152};
+        "LOCK", "Read only anchor", "", "Static preview", preview_items, 1, 0, 96, 70};
 
 static void apply_primary_snapshot(uint8_t index)
 {
@@ -138,7 +143,7 @@ void test_init_ui(void)
     egui_view_label_set_text(EGUI_VIEW_OF(&title_label), title_text);
     egui_view_label_set_align_type(EGUI_VIEW_OF(&title_label), EGUI_ALIGN_CENTER);
     hello_custom_widgets_demo_set_label_font_with_min_height(EGUI_VIEW_OF(&title_label), (const egui_font_t *)&egui_res_font_montserrat_12_4);
-    egui_view_label_set_font_color(EGUI_VIEW_OF(&title_label), EGUI_COLOR_HEX(0x21303F), EGUI_ALPHA_100);
+    egui_view_label_set_font_color(EGUI_VIEW_OF(&title_label), HCW_COLOR_TEXT, EGUI_ALPHA_100);
     egui_view_set_margin(EGUI_VIEW_OF(&title_label), 0, 8, 0, 6);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label));
 
@@ -147,9 +152,9 @@ void test_init_ui(void)
     egui_view_relative_panel_set_snapshots(EGUI_VIEW_OF(&relative_panel_primary), primary_snapshots, PRIMARY_SNAPSHOT_COUNT);
     egui_view_relative_panel_set_font(EGUI_VIEW_OF(&relative_panel_primary), (const egui_font_t *)&egui_res_font_montserrat_10_4);
     egui_view_relative_panel_set_meta_font(EGUI_VIEW_OF(&relative_panel_primary), (const egui_font_t *)&egui_res_font_montserrat_8_4);
-    egui_view_relative_panel_set_palette(EGUI_VIEW_OF(&relative_panel_primary), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xF7FAFD),
-                                         EGUI_COLOR_HEX(0xD4DDE6), EGUI_COLOR_HEX(0x1B2834), EGUI_COLOR_HEX(0x6D7C8A), EGUI_COLOR_HEX(0x0F6CBD),
-                                         EGUI_COLOR_HEX(0x6AA8FF));
+    egui_view_relative_panel_set_palette(EGUI_VIEW_OF(&relative_panel_primary), HCW_COLOR_PANEL, HCW_COLOR_PANEL,
+                                         HCW_COLOR_BORDER, HCW_COLOR_TEXT, HCW_COLOR_TEXT_MUTED, HCW_COLOR_PRIMARY,
+                                         HCW_COLOR_PRIMARY_LIGHT);
     egui_view_set_margin(EGUI_VIEW_OF(&relative_panel_primary), 0, 0, 0, 8);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&relative_panel_primary));
 
@@ -165,9 +170,9 @@ void test_init_ui(void)
     egui_view_relative_panel_set_font(EGUI_VIEW_OF(&relative_panel_compact), (const egui_font_t *)&egui_res_font_montserrat_8_4);
     egui_view_relative_panel_set_meta_font(EGUI_VIEW_OF(&relative_panel_compact), (const egui_font_t *)&egui_res_font_montserrat_8_4);
     egui_view_relative_panel_set_compact_mode(EGUI_VIEW_OF(&relative_panel_compact), 1);
-    egui_view_relative_panel_set_palette(EGUI_VIEW_OF(&relative_panel_compact), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xF3FBF9),
-                                         EGUI_COLOR_HEX(0xCEE2DC), EGUI_COLOR_HEX(0x173330), EGUI_COLOR_HEX(0x5F7B74), EGUI_COLOR_HEX(0x0D9488),
-                                         EGUI_COLOR_HEX(0x67D4C6));
+    egui_view_relative_panel_set_palette(EGUI_VIEW_OF(&relative_panel_compact), HCW_COLOR_PANEL, HCW_COLOR_PANEL,
+                                         HCW_COLOR_BORDER, HCW_COLOR_TEXT, HCW_COLOR_TEXT_MUTED, HCW_COLOR_PRIMARY,
+                                         HCW_COLOR_PRIMARY_LIGHT);
     egui_view_relative_panel_override_static_preview_api(EGUI_VIEW_OF(&relative_panel_compact), &relative_panel_compact_api);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&relative_panel_compact), false);
@@ -182,9 +187,9 @@ void test_init_ui(void)
     egui_view_relative_panel_set_meta_font(EGUI_VIEW_OF(&relative_panel_read_only), (const egui_font_t *)&egui_res_font_montserrat_8_4);
     egui_view_relative_panel_set_compact_mode(EGUI_VIEW_OF(&relative_panel_read_only), 1);
     egui_view_relative_panel_set_read_only_mode(EGUI_VIEW_OF(&relative_panel_read_only), 1);
-    egui_view_relative_panel_set_palette(EGUI_VIEW_OF(&relative_panel_read_only), EGUI_COLOR_HEX(0xFBFCFD), EGUI_COLOR_HEX(0xF7F9FB),
-                                         EGUI_COLOR_HEX(0xD9E1E8), EGUI_COLOR_HEX(0x556575), EGUI_COLOR_HEX(0x8997A4), EGUI_COLOR_HEX(0xA3B2BE),
-                                         EGUI_COLOR_HEX(0xC4D2DE));
+    egui_view_relative_panel_set_palette(EGUI_VIEW_OF(&relative_panel_read_only), HCW_COLOR_PANEL, HCW_COLOR_PANEL,
+                                         HCW_COLOR_BORDER, HCW_COLOR_TEXT_MUTED, HCW_COLOR_TEXT_SOFT, HCW_COLOR_TEXT_SOFT,
+                                         HCW_COLOR_BORDER);
     egui_view_relative_panel_override_static_preview_api(EGUI_VIEW_OF(&relative_panel_read_only), &relative_panel_read_only_api);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&relative_panel_read_only), false);

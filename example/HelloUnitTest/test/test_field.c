@@ -277,18 +277,38 @@ static void test_field_style_helpers_and_setters_clear_pressed_state(void)
     EGUI_TEST_ASSERT_FALSE(test_widget.read_only_mode);
     EGUI_TEST_ASSERT_EQUAL_INT(HCW_FIELD_VALIDATION_ERROR, test_widget.validation_state);
     EGUI_TEST_ASSERT_TRUE(test_widget.required);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_SURFACE.full, test_widget.surface_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_BORDER_STRONG.full, test_widget.border_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT_STRONG.full, test_widget.text_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT_SOFT.full, test_widget.muted_text_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PRIMARY_DARK.full, test_widget.accent_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_SUCCESS.full, test_widget.success_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_WARNING.full, test_widget.warning_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_DANGER.full, test_widget.error_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PANEL.full, test_widget.bubble_surface_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TRACK_STRONG.full, test_widget.shadow_color.full);
 
     seed_pressed_state(&test_widget, 1);
     hcw_field_apply_compact_style(EGUI_VIEW_OF(&test_widget));
     assert_pressed_cleared(&test_widget);
     EGUI_TEST_ASSERT_TRUE(test_widget.compact_mode);
     EGUI_TEST_ASSERT_FALSE(test_widget.read_only_mode);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_BORDER_STRONG.full, test_widget.border_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT_SOFT.full, test_widget.muted_text_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PRIMARY_DARK.full, test_widget.accent_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_SURFACE_SUBTLE.full, test_widget.bubble_surface_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PRIMARY_SOFT.full, test_widget.shadow_color.full);
 
     seed_pressed_state(&test_widget, 0);
     hcw_field_apply_read_only_style(EGUI_VIEW_OF(&test_widget));
     assert_pressed_cleared(&test_widget);
     EGUI_TEST_ASSERT_FALSE(test_widget.compact_mode);
     EGUI_TEST_ASSERT_TRUE(test_widget.read_only_mode);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_BORDER_STRONG.full, test_widget.border_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT_SOFT.full, test_widget.muted_text_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT_SOFT.full, test_widget.accent_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_SURFACE_SUBTLE.full, test_widget.bubble_surface_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TRACK_STRONG.full, test_widget.shadow_color.full);
 
     seed_pressed_state(&test_widget, 1);
     hcw_field_set_label(EGUI_VIEW_OF(&test_widget), "Approval mail");

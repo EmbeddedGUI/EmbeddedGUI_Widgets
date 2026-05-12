@@ -48,17 +48,17 @@ static egui_view_api_t compact_preview_api;
 static egui_view_api_t read_only_preview_api;
 static uint8_t ui_ready;
 
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, HCW_COLOR_PAGE_BG, EGUI_ALPHA_100, 14);
 EGUI_BACKGROUND_PARAM_INIT(bg_page_panel_params, &bg_page_panel_param, NULL, NULL);
 EGUI_BACKGROUND_COLOR_STATIC_CONST_INIT(bg_page_panel, &bg_page_panel_params);
 
 static const char *title_text = "AdornerDecorator";
 
 static const adorner_snapshot_t primary_snapshots[] = {
-        {"Child host", "Focus adorner layer", EGUI_COLOR_HEX(0x2563EB), 0},
-        {"Validated", "Validation adorner", EGUI_COLOR_HEX(0xC42B1C), 1},
-        {"Resizable", "Resize handles", EGUI_COLOR_HEX(0x0C7C73), 2},
-        {"Read only", "Muted overlay", EGUI_COLOR_HEX(0x65717E), 3},
+        {"Child host", "Focus adorner layer", HCW_COLOR_PRIMARY, 0},
+        {"Validated", "Validation adorner", HCW_COLOR_DANGER, 1},
+        {"Resizable", "Resize handles", HCW_COLOR_PRIMARY, 2},
+        {"Read only", "Muted overlay", HCW_COLOR_TEXT_SOFT, 3},
 };
 
 static void layout_page(void);
@@ -117,12 +117,12 @@ static void apply_preview_states(void)
 {
     egui_view_adorner_decorator_apply_compact_style(EGUI_VIEW_OF(&compact_preview));
     egui_view_label_set_text(EGUI_VIEW_OF(&compact_content), "Compact");
-    egui_view_label_set_font_color(EGUI_VIEW_OF(&compact_content), EGUI_COLOR_HEX(0x0C7C73), EGUI_ALPHA_100);
+    egui_view_label_set_font_color(EGUI_VIEW_OF(&compact_content), HCW_COLOR_PRIMARY, EGUI_ALPHA_100);
     egui_view_adorner_decorator_layout_child(EGUI_VIEW_OF(&compact_preview));
 
     egui_view_adorner_decorator_apply_read_only_style(EGUI_VIEW_OF(&read_only_preview));
     egui_view_label_set_text(EGUI_VIEW_OF(&read_only_content), "Read only");
-    egui_view_label_set_font_color(EGUI_VIEW_OF(&read_only_content), EGUI_COLOR_HEX(0x65717E), EGUI_ALPHA_100);
+    egui_view_label_set_font_color(EGUI_VIEW_OF(&read_only_content), HCW_COLOR_TEXT_SOFT, EGUI_ALPHA_100);
     egui_view_adorner_decorator_layout_child(EGUI_VIEW_OF(&read_only_preview));
 
     if (ui_ready)
@@ -170,7 +170,7 @@ void test_init_ui(void)
     egui_view_label_set_text(EGUI_VIEW_OF(&title_label), title_text);
     egui_view_label_set_align_type(EGUI_VIEW_OF(&title_label), EGUI_ALIGN_CENTER);
     hello_custom_widgets_demo_set_label_font_with_min_height(EGUI_VIEW_OF(&title_label), (const egui_font_t *)&egui_res_font_montserrat_12_4);
-    egui_view_label_set_font_color(EGUI_VIEW_OF(&title_label), EGUI_COLOR_HEX(0x21303F), EGUI_ALPHA_100);
+    egui_view_label_set_font_color(EGUI_VIEW_OF(&title_label), HCW_COLOR_TEXT, EGUI_ALPHA_100);
     egui_view_set_margin(EGUI_VIEW_OF(&title_label), 0, 8, 0, 8);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label));
 
@@ -178,7 +178,7 @@ void test_init_ui(void)
     egui_view_set_size(EGUI_VIEW_OF(&primary_decorator), ADORNER_PRIMARY_WIDTH, ADORNER_PRIMARY_HEIGHT);
     egui_view_set_margin(EGUI_VIEW_OF(&primary_decorator), 0, 0, 0, 8);
     init_content_label(&primary_content, ADORNER_CONTENT_WIDTH, ADORNER_CONTENT_HEIGHT, "Child host", (const egui_font_t *)&egui_res_font_montserrat_10_4,
-                       EGUI_COLOR_HEX(0x2563EB));
+                       HCW_COLOR_PRIMARY);
     egui_view_adorner_decorator_set_child(EGUI_VIEW_OF(&primary_decorator), EGUI_VIEW_OF(&primary_content));
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&primary_decorator));
 
@@ -187,7 +187,7 @@ void test_init_ui(void)
     egui_view_label_set_text(EGUI_VIEW_OF(&caption_label), "Focus adorner layer");
     egui_view_label_set_align_type(EGUI_VIEW_OF(&caption_label), EGUI_ALIGN_CENTER);
     hello_custom_widgets_demo_set_label_font_with_min_height(EGUI_VIEW_OF(&caption_label), (const egui_font_t *)&egui_res_font_montserrat_8_4);
-    egui_view_label_set_font_color(EGUI_VIEW_OF(&caption_label), EGUI_COLOR_HEX(0x2563EB), EGUI_ALPHA_100);
+    egui_view_label_set_font_color(EGUI_VIEW_OF(&caption_label), HCW_COLOR_PRIMARY, EGUI_ALPHA_100);
     egui_view_set_margin(EGUI_VIEW_OF(&caption_label), 0, 0, 0, 12);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&caption_label));
 
@@ -200,7 +200,7 @@ void test_init_ui(void)
     egui_view_adorner_decorator_init(EGUI_VIEW_OF(&compact_preview));
     egui_view_set_size(EGUI_VIEW_OF(&compact_preview), ADORNER_PREVIEW_WIDTH, ADORNER_PREVIEW_HEIGHT);
     init_content_label(&compact_content, ADORNER_PREVIEW_LABEL_W, ADORNER_PREVIEW_LABEL_H, "Compact", (const egui_font_t *)&egui_res_font_montserrat_8_4,
-                       EGUI_COLOR_HEX(0x0C7C73));
+                       HCW_COLOR_PRIMARY);
     egui_view_adorner_decorator_set_child(EGUI_VIEW_OF(&compact_preview), EGUI_VIEW_OF(&compact_content));
     egui_view_adorner_decorator_override_static_preview_api(EGUI_VIEW_OF(&compact_preview), &compact_preview_api);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
@@ -212,7 +212,7 @@ void test_init_ui(void)
     egui_view_set_size(EGUI_VIEW_OF(&read_only_preview), ADORNER_PREVIEW_WIDTH, ADORNER_PREVIEW_HEIGHT);
     egui_view_set_margin(EGUI_VIEW_OF(&read_only_preview), 12, 0, 0, 0);
     init_content_label(&read_only_content, ADORNER_PREVIEW_LABEL_W, ADORNER_PREVIEW_LABEL_H, "Read only", (const egui_font_t *)&egui_res_font_montserrat_8_4,
-                       EGUI_COLOR_HEX(0x65717E));
+                       HCW_COLOR_TEXT_SOFT);
     egui_view_adorner_decorator_set_child(EGUI_VIEW_OF(&read_only_preview), EGUI_VIEW_OF(&read_only_content));
     egui_view_adorner_decorator_override_static_preview_api(EGUI_VIEW_OF(&read_only_preview), &read_only_preview_api);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS

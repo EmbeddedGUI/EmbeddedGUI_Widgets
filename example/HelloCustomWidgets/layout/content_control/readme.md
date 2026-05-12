@@ -23,7 +23,7 @@
 
 ## 4. 视觉与布局规格
 
-宿主使用浅色 surface、低对比边框、细 accent slot guide 和克制圆角。默认尺寸为 `168 x 94`，主区 child 使用 `116 x 24` 文本内容。compact 模式收紧到 `padding 8 / 6` 与 `radius 6`，read only 模式降低边框、accent 和文字对比。
+宿主使用浅色 surface、低对比边框和克制圆角，不再额外绘制顶部 accent guide。默认尺寸为 `168 x 94`，主区 child 使用 `116 x 24` 文本内容。compact 模式收紧到 `padding 8 / 6` 与 `radius 6`，read only 模式降低边框、accent 和文字对比。
 
 ## 5. 控件清单与状态矩阵
 

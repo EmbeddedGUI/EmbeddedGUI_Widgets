@@ -76,7 +76,7 @@ static void setup_preview_badge(void)
     egui_view_set_on_click_listener(EGUI_VIEW_OF(&preview_badge), on_preview_click);
     egui_view_notification_badge_set_icon_font(EGUI_VIEW_OF(&preview_badge), EGUI_FONT_ICON_MS_16);
     hcw_info_badge_apply_attention_style(EGUI_VIEW_OF(&preview_badge));
-    hcw_info_badge_set_palette(EGUI_VIEW_OF(&preview_badge), EGUI_COLOR_HEX(0xC42B1C), EGUI_COLOR_WHITE);
+    hcw_info_badge_set_palette(EGUI_VIEW_OF(&preview_badge), HCW_COLOR_DANGER, EGUI_COLOR_WHITE);
     hcw_info_badge_override_static_preview_api(EGUI_VIEW_OF(&preview_badge), &preview_api);
     g_click_count = 0;
 }
@@ -179,7 +179,7 @@ static void test_info_badge_style_helpers_apply_expected_modes_and_palette(void)
 
     EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&test_badge)->api->on_draw != EGUI_VIEW_API_TABLE_NAME(egui_view_notification_badge_t).on_draw);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_NOTIFICATION_BADGE_CONTENT_STYLE_COUNT, test_badge.content_style);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xC42B1C).full, test_badge.badge_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_DANGER.full, test_badge.badge_color.full);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_WHITE.full, test_badge.text_color.full);
 
     egui_view_set_pressed(EGUI_VIEW_OF(&test_badge), 1);
@@ -187,14 +187,14 @@ static void test_info_badge_style_helpers_apply_expected_modes_and_palette(void)
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_badge)->is_pressed);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_NOTIFICATION_BADGE_CONTENT_STYLE_ICON, test_badge.content_style);
     EGUI_TEST_ASSERT_EQUAL_INT(0, strcmp(test_badge.icon, EGUI_ICON_MS_INFO));
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x0F6CBD).full, test_badge.badge_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PRIMARY.full, test_badge.badge_color.full);
 
     egui_view_set_pressed(EGUI_VIEW_OF(&test_badge), 1);
     hcw_info_badge_apply_attention_style(EGUI_VIEW_OF(&test_badge));
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_badge)->is_pressed);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_NOTIFICATION_BADGE_CONTENT_STYLE_ICON, test_badge.content_style);
     EGUI_TEST_ASSERT_NULL(test_badge.icon);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xC42B1C).full, test_badge.badge_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_DANGER.full, test_badge.badge_color.full);
 }
 
 static void test_info_badge_setters_clear_pressed_state_and_switch_modes(void)

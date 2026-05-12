@@ -26,7 +26,6 @@ struct egui_view_accordion_metrics
     egui_region_t item_region[EGUI_VIEW_ACCORDION_MAX_ITEMS];
     egui_region_t header_region[EGUI_VIEW_ACCORDION_MAX_ITEMS];
     egui_region_t body_region[EGUI_VIEW_ACCORDION_MAX_ITEMS];
-    egui_region_t accent_region[EGUI_VIEW_ACCORDION_MAX_ITEMS];
     egui_region_t icon_region[EGUI_VIEW_ACCORDION_MAX_ITEMS];
     egui_region_t title_region[EGUI_VIEW_ACCORDION_MAX_ITEMS];
     egui_region_t description_region[EGUI_VIEW_ACCORDION_MAX_ITEMS];
@@ -208,7 +207,7 @@ static void egui_view_accordion_fit_text_to_width(const egui_font_t *font, const
 
 static egui_color_t egui_view_accordion_mix_disabled(egui_color_t color)
 {
-    return egui_rgb_mix(color, EGUI_COLOR_DARK_GREY, 66);
+    return egui_rgb_mix(color, HCW_COLOR_SURFACE_SUBTLE, EGUI_ALPHA_MAKE(44));
 }
 
 static egui_color_t egui_view_accordion_tone_color(egui_view_accordion_t *local, uint8_t tone)
@@ -458,7 +457,6 @@ static void egui_view_accordion_clear_metrics(egui_view_accordion_metrics_t *met
         metrics->item_region[index] = metrics->region;
         metrics->header_region[index] = metrics->region;
         metrics->body_region[index] = metrics->region;
-        metrics->accent_region[index] = metrics->region;
         metrics->icon_region[index] = metrics->region;
         metrics->title_region[index] = metrics->region;
         metrics->description_region[index] = metrics->region;
@@ -528,11 +526,6 @@ static void egui_view_accordion_get_metrics(egui_view_accordion_t *local, egui_v
 
         metrics->header_region[index] = metrics->item_region[index];
         metrics->header_region[index].size.height = header_h;
-
-        metrics->accent_region[index].location.x = metrics->item_region[index].location.x;
-        metrics->accent_region[index].location.y = metrics->item_region[index].location.y + 2;
-        metrics->accent_region[index].size.width = local->expanded_index == index ? 3 : 2;
-        metrics->accent_region[index].size.height = header_h - 4;
 
         metrics->icon_region[index].location.x = metrics->header_region[index].location.x + (local->compact_mode ? 6 : 8);
         metrics->icon_region[index].location.y = metrics->header_region[index].location.y + (header_h - icon_size) / 2;
@@ -613,12 +606,12 @@ static void egui_view_accordion_draw_chevron(egui_view_t *self, const egui_regio
     if (expanded)
     {
         egui_canvas_draw_triangle_fill(&uicode_get_core()->canvas, x, y + 1, x + w, y + 1, x + w / 2, y + h - 1, color,
-                                       egui_color_alpha_mix(self->alpha, 92));
+                                       egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(92)));
     }
     else
     {
         egui_canvas_draw_triangle_fill(&uicode_get_core()->canvas, x + 1, y, x + 1, y + h, x + w - 1, y + h / 2, color,
-                                       egui_color_alpha_mix(self->alpha, 92));
+                                       egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(92)));
     }
 }
 
@@ -641,9 +634,9 @@ static void egui_view_accordion_on_draw(egui_view_t *self)
     }
 
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.region.location.x, metrics.region.location.y, metrics.region.size.width,
-                                          metrics.region.size.height, radius + 2, local->surface_color, egui_color_alpha_mix(self->alpha, 96));
+                                          metrics.region.size.height, radius + 2, HCW_COLOR_PANEL, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(96)));
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics.region.location.x, metrics.region.location.y, metrics.region.size.width,
-                                     metrics.region.size.height, radius + 2, 1, local->border_color, egui_color_alpha_mix(self->alpha, 55));
+                                     metrics.region.size.height, radius + 2, 1, local->border_color, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(72)));
 
     for (index = 0; index < local->item_count; index++)
     {
@@ -664,8 +657,8 @@ static void egui_view_accordion_on_draw(egui_view_t *self)
         }
 
         tone_color = egui_view_accordion_tone_color(local, item->tone);
-        section_fill = expanded ? egui_rgb_mix(local->section_color, tone_color, 5) : local->section_color;
-        border_color = focused ? egui_rgb_mix(local->border_color, tone_color, 18) : local->border_color;
+        section_fill = expanded ? egui_rgb_mix(HCW_COLOR_PANEL, tone_color, EGUI_ALPHA_MAKE(3)) : HCW_COLOR_PANEL;
+        border_color = focused ? egui_rgb_mix(local->border_color, tone_color, EGUI_ALPHA_MAKE(32)) : local->border_color;
         if (!egui_view_get_enable(self))
         {
             tone_color = egui_view_accordion_mix_disabled(tone_color);
@@ -677,31 +670,28 @@ static void egui_view_accordion_on_draw(egui_view_t *self)
         }
         else if (local->read_only_mode)
         {
-            tone_color = egui_rgb_mix(tone_color, local->muted_text_color, 54);
-            section_fill = egui_rgb_mix(section_fill, local->surface_color, 24);
-            border_color = egui_rgb_mix(border_color, local->muted_text_color, 32);
-            text_color = egui_rgb_mix(text_color, local->muted_text_color, 30);
-            muted_color = egui_rgb_mix(muted_color, local->text_color, 8);
-            icon_text = egui_rgb_mix(icon_text, local->muted_text_color, 28);
+            tone_color = egui_rgb_mix(tone_color, local->muted_text_color, EGUI_ALPHA_MAKE(54));
+            section_fill = egui_rgb_mix(section_fill, HCW_COLOR_PANEL, EGUI_ALPHA_MAKE(34));
+            border_color = egui_rgb_mix(border_color, local->muted_text_color, EGUI_ALPHA_MAKE(32));
+            text_color = egui_rgb_mix(text_color, local->muted_text_color, EGUI_ALPHA_MAKE(30));
+            muted_color = egui_rgb_mix(muted_color, local->text_color, EGUI_ALPHA_MAKE(8));
+            icon_text = egui_rgb_mix(icon_text, local->muted_text_color, EGUI_ALPHA_MAKE(28));
         }
         else if (pressed)
         {
-            section_fill = egui_rgb_mix(section_fill, tone_color, 7);
-            border_color = egui_rgb_mix(border_color, tone_color, 28);
+            section_fill = egui_rgb_mix(section_fill, tone_color, EGUI_ALPHA_MAKE(5));
+            border_color = egui_rgb_mix(border_color, tone_color, EGUI_ALPHA_MAKE(42));
         }
 
         egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.item_region[index].location.x, metrics.item_region[index].location.y,
                                               metrics.item_region[index].size.width, metrics.item_region[index].size.height, radius, section_fill,
-                                              egui_color_alpha_mix(self->alpha, 94));
+                                              egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(94)));
         egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics.item_region[index].location.x, metrics.item_region[index].location.y,
                                          metrics.item_region[index].size.width, metrics.item_region[index].size.height, radius, 1, border_color,
-                                         egui_color_alpha_mix(self->alpha, focused ? 74 : 44));
-        egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.accent_region[index].location.x, metrics.accent_region[index].location.y,
-                                              metrics.accent_region[index].size.width, metrics.accent_region[index].size.height, 2, tone_color,
-                                              egui_color_alpha_mix(self->alpha, expanded ? 76 : 34));
+                                         egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(focused ? 84 : 64)));
         egui_canvas_draw_circle_fill(&uicode_get_core()->canvas, metrics.icon_region[index].location.x + metrics.icon_region[index].size.width / 2,
                                      metrics.icon_region[index].location.y + metrics.icon_region[index].size.height / 2,
-                                     metrics.icon_region[index].size.width / 2, tone_color, egui_color_alpha_mix(self->alpha, expanded ? 78 : 48));
+                                     metrics.icon_region[index].size.width / 2, tone_color, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(expanded ? 90 : 70)));
         egui_view_accordion_copy_elided(meta_label, sizeof(meta_label), item->meta, 2);
         egui_view_accordion_draw_text(local->meta_font, self, meta_label, &metrics.icon_region[index], EGUI_ALIGN_CENTER, icon_text);
 
@@ -719,7 +709,8 @@ static void egui_view_accordion_on_draw(egui_view_t *self)
             egui_view_accordion_fit_text_to_width(local->meta_font, item->meta, meta_label, sizeof(meta_label), metrics.meta_region[index].size.width, 4);
             egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.meta_region[index].location.x, metrics.meta_region[index].location.y,
                                                   metrics.meta_region[index].size.width, metrics.meta_region[index].size.height, 5,
-                                                  egui_rgb_mix(local->surface_color, tone_color, expanded ? 8 : 3), egui_color_alpha_mix(self->alpha, 58));
+                                                  egui_rgb_mix(HCW_COLOR_PANEL, tone_color, EGUI_ALPHA_MAKE(expanded ? 5 : 2)),
+                                                  egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(84)));
             egui_view_accordion_draw_text(local->meta_font, self, meta_label, &metrics.meta_region[index], EGUI_ALIGN_CENTER, muted_color);
         }
         egui_view_accordion_draw_chevron(self, &metrics.chevron_region[index], expanded, tone_color);
@@ -727,11 +718,11 @@ static void egui_view_accordion_on_draw(egui_view_t *self)
         if (expanded && metrics.body_region[index].size.width > 0)
         {
             egui_region_t text_region = metrics.body_region[index];
-            egui_color_t body_fill = egui_rgb_mix(local->surface_color, tone_color, local->compact_mode ? 2 : 3);
+            egui_color_t body_fill = HCW_COLOR_PANEL;
 
             egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.body_region[index].location.x, metrics.body_region[index].location.y,
                                                   metrics.body_region[index].size.width, metrics.body_region[index].size.height, local->compact_mode ? 5 : 6,
-                                                  body_fill, egui_color_alpha_mix(self->alpha, 88));
+                                                  body_fill, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(94)));
             text_region.location.x += local->compact_mode ? 5 : 7;
             text_region.size.width -= local->compact_mode ? 10 : 14;
             egui_view_accordion_fit_text_to_width(local->meta_font, item->body, body_label, sizeof(body_label), text_region.size.width,
@@ -989,15 +980,15 @@ void egui_view_accordion_init(egui_view_t *self)
     local->on_action = NULL;
     local->font = (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT;
     local->meta_font = (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT;
-    local->surface_color = EGUI_COLOR_HEX(0xFFFFFF);
-    local->section_color = EGUI_COLOR_HEX(0xF7F9FC);
-    local->border_color = EGUI_COLOR_HEX(0xD3DCE5);
-    local->text_color = EGUI_COLOR_HEX(0x182331);
-    local->muted_text_color = EGUI_COLOR_HEX(0x667789);
-    local->accent_color = EGUI_COLOR_HEX(0x0F6CBD);
-    local->success_color = EGUI_COLOR_HEX(0x107C41);
-    local->warning_color = EGUI_COLOR_HEX(0x9A6400);
-    local->neutral_color = EGUI_COLOR_HEX(0x687484);
+    local->surface_color = HCW_COLOR_SURFACE;
+    local->section_color = HCW_COLOR_SURFACE_PRESS;
+    local->border_color = HCW_COLOR_BORDER;
+    local->text_color = HCW_COLOR_TEXT_STRONG;
+    local->muted_text_color = HCW_COLOR_TEXT_MUTED;
+    local->accent_color = HCW_COLOR_PRIMARY;
+    local->success_color = HCW_COLOR_SUCCESS;
+    local->warning_color = HCW_COLOR_WARNING_DARK;
+    local->neutral_color = HCW_COLOR_TEXT_MUTED;
     local->item_count = 0;
     local->expanded_index = EGUI_VIEW_ACCORDION_INDEX_NONE;
     local->focused_index = EGUI_VIEW_ACCORDION_INDEX_NONE;

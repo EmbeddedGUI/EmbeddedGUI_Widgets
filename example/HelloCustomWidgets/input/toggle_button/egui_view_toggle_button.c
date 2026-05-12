@@ -32,7 +32,7 @@ static void hcw_toggle_button_apply_style(egui_view_t *self, egui_dim_t radius, 
 
 void hcw_toggle_button_apply_standard_style(egui_view_t *self)
 {
-    hcw_toggle_button_apply_style(self, 10, EGUI_COLOR_HEX(0x2563EB), EGUI_COLOR_HEX(0xEAF1FB), EGUI_COLOR_WHITE, 5);
+    hcw_toggle_button_apply_style(self, 10, HCW_COLOR_PRIMARY, HCW_COLOR_PRIMARY_TINT, EGUI_COLOR_WHITE, 5);
 }
 
 #if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH

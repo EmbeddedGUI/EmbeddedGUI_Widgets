@@ -51,7 +51,7 @@ static void setup_preview_control(void)
 {
     egui_view_shape_line_init(EGUI_VIEW_OF(&preview_control));
     egui_view_set_size(EGUI_VIEW_OF(&preview_control), 72, 34);
-    egui_view_shape_line_set_palette(EGUI_VIEW_OF(&preview_control), EGUI_COLOR_HEX(0x0C7C73), EGUI_COLOR_HEX(0xD9E7E5));
+    egui_view_shape_line_set_palette(EGUI_VIEW_OF(&preview_control), HCW_COLOR_PRIMARY, HCW_COLOR_PRIMARY_TINT);
     egui_view_shape_line_set_stroke_width(EGUI_VIEW_OF(&preview_control), 1);
     egui_view_shape_line_set_points(EGUI_VIEW_OF(&preview_control), 50, 12, 50, 88);
     egui_view_shape_line_override_static_preview_api(EGUI_VIEW_OF(&preview_control), &preview_api);
@@ -162,7 +162,7 @@ static void test_line_init_defaults(void)
 
     EGUI_TEST_ASSERT_EQUAL_INT(2, egui_view_shape_line_get_stroke_width(EGUI_VIEW_OF(&test_control)));
     assert_points(EGUI_VIEW_OF(&test_control), 8, 50, 92, 50);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x0F6CBD).full, test_control.stroke_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PRIMARY.full, test_control.stroke_color.full);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_MARGIN_PADDING
     EGUI_TEST_ASSERT_EQUAL_INT(2, EGUI_VIEW_OF(&test_control)->padding.left);
     EGUI_TEST_ASSERT_EQUAL_INT(2, EGUI_VIEW_OF(&test_control)->padding.right);
@@ -198,12 +198,12 @@ static void test_line_styles(void)
     EGUI_TEST_ASSERT_EQUAL_INT(3, egui_view_shape_line_get_stroke_width(EGUI_VIEW_OF(&test_control)));
     assert_points(EGUI_VIEW_OF(&test_control), 10, 82, 90, 18);
 
-    egui_view_shape_line_set_palette(EGUI_VIEW_OF(&test_control), EGUI_COLOR_HEX(0x0C7C73), EGUI_COLOR_HEX(0xD9E7E5));
+    egui_view_shape_line_set_palette(EGUI_VIEW_OF(&test_control), HCW_COLOR_PRIMARY, HCW_COLOR_PRIMARY_TINT);
     egui_view_shape_line_set_stroke_width(EGUI_VIEW_OF(&test_control), 1);
     egui_view_shape_line_set_points(EGUI_VIEW_OF(&test_control), 50, 12, 50, 88);
     assert_points(EGUI_VIEW_OF(&test_control), 50, 12, 50, 88);
 
-    egui_view_shape_line_set_palette(EGUI_VIEW_OF(&test_control), EGUI_COLOR_HEX(0x687684), EGUI_COLOR_HEX(0xE1E6EB));
+    egui_view_shape_line_set_palette(EGUI_VIEW_OF(&test_control), HCW_COLOR_TEXT_SOFT, HCW_COLOR_BORDER_STRONG);
     egui_view_shape_line_set_stroke_width(EGUI_VIEW_OF(&test_control), 1);
     egui_view_shape_line_set_points(EGUI_VIEW_OF(&test_control), 12, 50, 88, 50);
     assert_points(EGUI_VIEW_OF(&test_control), 12, 50, 88, 50);

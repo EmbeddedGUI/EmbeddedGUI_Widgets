@@ -1,8 +1,8 @@
 #include "egui_view_split_button.h"
 
 #define EGUI_VIEW_SPLIT_BUTTON_STANDARD_RADIUS               10
-#define EGUI_VIEW_SPLIT_BUTTON_STANDARD_FILL_ALPHA           94
-#define EGUI_VIEW_SPLIT_BUTTON_STANDARD_BORDER_ALPHA         60
+#define EGUI_VIEW_SPLIT_BUTTON_STANDARD_FILL_ALPHA           EGUI_ALPHA_MAKE(100)
+#define EGUI_VIEW_SPLIT_BUTTON_STANDARD_BORDER_ALPHA         EGUI_ALPHA_MAKE(100)
 #define EGUI_VIEW_SPLIT_BUTTON_STANDARD_CONTENT_PAD_X        10
 #define EGUI_VIEW_SPLIT_BUTTON_STANDARD_CONTENT_PAD_Y        8
 #define EGUI_VIEW_SPLIT_BUTTON_STANDARD_TITLE_HEIGHT         10
@@ -12,14 +12,14 @@
 #define EGUI_VIEW_SPLIT_BUTTON_STANDARD_HELPER_HEIGHT        10
 #define EGUI_VIEW_SPLIT_BUTTON_STANDARD_MENU_WIDTH           28
 #define EGUI_VIEW_SPLIT_BUTTON_STANDARD_SEGMENT_RADIUS       7
-#define EGUI_VIEW_SPLIT_BUTTON_STANDARD_SEGMENT_FILL_ALPHA   96
-#define EGUI_VIEW_SPLIT_BUTTON_STANDARD_SEGMENT_BORDER_ALPHA 46
+#define EGUI_VIEW_SPLIT_BUTTON_STANDARD_SEGMENT_FILL_ALPHA   EGUI_ALPHA_MAKE(100)
+#define EGUI_VIEW_SPLIT_BUTTON_STANDARD_SEGMENT_BORDER_ALPHA EGUI_ALPHA_MAKE(100)
 #define EGUI_VIEW_SPLIT_BUTTON_STANDARD_GLYPH_WIDTH          16
 #define EGUI_VIEW_SPLIT_BUTTON_STANDARD_GLYPH_HEIGHT         14
 
 #define EGUI_VIEW_SPLIT_BUTTON_COMPACT_RADIUS               8
-#define EGUI_VIEW_SPLIT_BUTTON_COMPACT_FILL_ALPHA           92
-#define EGUI_VIEW_SPLIT_BUTTON_COMPACT_BORDER_ALPHA         56
+#define EGUI_VIEW_SPLIT_BUTTON_COMPACT_FILL_ALPHA           EGUI_ALPHA_MAKE(100)
+#define EGUI_VIEW_SPLIT_BUTTON_COMPACT_BORDER_ALPHA         EGUI_ALPHA_MAKE(100)
 #define EGUI_VIEW_SPLIT_BUTTON_COMPACT_CONTENT_PAD_X        7
 #define EGUI_VIEW_SPLIT_BUTTON_COMPACT_CONTENT_PAD_Y        6
 #define EGUI_VIEW_SPLIT_BUTTON_COMPACT_TITLE_HEIGHT         9
@@ -27,8 +27,8 @@
 #define EGUI_VIEW_SPLIT_BUTTON_COMPACT_ROW_HEIGHT           22
 #define EGUI_VIEW_SPLIT_BUTTON_COMPACT_MENU_WIDTH           20
 #define EGUI_VIEW_SPLIT_BUTTON_COMPACT_SEGMENT_RADIUS       5
-#define EGUI_VIEW_SPLIT_BUTTON_COMPACT_SEGMENT_FILL_ALPHA   94
-#define EGUI_VIEW_SPLIT_BUTTON_COMPACT_SEGMENT_BORDER_ALPHA 42
+#define EGUI_VIEW_SPLIT_BUTTON_COMPACT_SEGMENT_FILL_ALPHA   EGUI_ALPHA_MAKE(100)
+#define EGUI_VIEW_SPLIT_BUTTON_COMPACT_SEGMENT_BORDER_ALPHA EGUI_ALPHA_MAKE(100)
 
 typedef struct egui_view_split_button_metrics egui_view_split_button_metrics_t;
 struct egui_view_split_button_metrics
@@ -126,7 +126,7 @@ static egui_color_t egui_view_split_button_tone_color(egui_view_split_button_t *
 
 static egui_color_t egui_view_split_button_mix_disabled(egui_color_t color)
 {
-    return egui_rgb_mix(color, EGUI_COLOR_DARK_GREY, 68);
+    return egui_rgb_mix(color, HCW_COLOR_TEXT_SOFT, EGUI_ALPHA_MAKE(30));
 }
 
 static uint8_t egui_view_split_button_clear_pressed_state(egui_view_t *self, egui_view_split_button_t *local)
@@ -211,11 +211,11 @@ static void egui_view_split_button_draw_text(const egui_font_t *font, egui_view_
     egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, font, text, &draw_region, align, color, self->alpha);
 }
 
-static void egui_view_split_button_draw_chevron(egui_view_t *self, const egui_region_t *region, egui_color_t color, egui_alpha_t alpha)
+static void egui_view_split_button_draw_chevron(egui_view_t *self, const egui_region_t *region, egui_color_t color, uint8_t alpha_percent)
 {
     egui_dim_t cx = region->location.x + region->size.width / 2;
     egui_dim_t cy = region->location.y + region->size.height / 2;
-    egui_alpha_t mixed_alpha = egui_color_alpha_mix(self->alpha, alpha);
+    egui_alpha_t mixed_alpha = egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(alpha_percent));
 
     egui_canvas_draw_line(&uicode_get_core()->canvas, cx - 3, cy - 1, cx, cy + 2, 1, color, mixed_alpha);
     egui_canvas_draw_line(&uicode_get_core()->canvas, cx, cy + 2, cx + 3, cy - 1, 1, color, mixed_alpha);
@@ -566,21 +566,25 @@ static void egui_view_split_button_on_draw(egui_view_t *self)
     }
 
     tone_color = egui_view_split_button_tone_color(local, snapshot->tone);
-    card_fill = egui_rgb_mix(local->surface_color, tone_color, local->compact_mode ? 5 : 7);
-    card_border = egui_rgb_mix(local->border_color, tone_color, local->compact_mode ? 14 : 16);
-    title_color = local->muted_text_color;
-    helper_color = egui_rgb_mix(local->muted_text_color, tone_color, local->compact_mode ? 8 : 12);
-    row_fill = egui_rgb_mix(local->surface_color, tone_color, local->compact_mode ? 4 : 6);
-    row_border = egui_rgb_mix(local->border_color, tone_color, local->compact_mode ? 16 : 18);
-    primary_fill = snapshot->emphasized ? tone_color
-                                        : egui_rgb_mix(local->surface_color, tone_color, local->current_part == EGUI_VIEW_SPLIT_BUTTON_PART_PRIMARY ? 16 : 9);
-    primary_border = egui_rgb_mix(local->border_color, tone_color, local->current_part == EGUI_VIEW_SPLIT_BUTTON_PART_PRIMARY ? 28 : 18);
-    primary_text = snapshot->emphasized ? EGUI_COLOR_WHITE : (snapshot->tone == EGUI_VIEW_SPLIT_BUTTON_TONE_DANGER ? tone_color : local->text_color);
-    menu_fill = egui_rgb_mix(local->surface_color, tone_color, local->current_part == EGUI_VIEW_SPLIT_BUTTON_PART_MENU ? 14 : 7);
-    menu_border = egui_rgb_mix(local->border_color, tone_color, local->current_part == EGUI_VIEW_SPLIT_BUTTON_PART_MENU ? 28 : 16);
-    menu_text = local->current_part == EGUI_VIEW_SPLIT_BUTTON_PART_MENU ? tone_color : egui_rgb_mix(local->text_color, tone_color, 10);
-    divider_color = egui_rgb_mix(local->border_color, tone_color, 18);
-    glyph_fill = snapshot->emphasized ? egui_rgb_mix(tone_color, EGUI_COLOR_WHITE, 26) : egui_rgb_mix(local->surface_color, tone_color, 12);
+    card_fill = HCW_COLOR_PANEL;
+    card_border = egui_rgb_mix(local->border_color, tone_color, EGUI_ALPHA_MAKE(local->compact_mode ? 18 : 22));
+    title_color = egui_rgb_mix(local->text_color, tone_color, EGUI_ALPHA_MAKE(local->compact_mode ? 8 : 10));
+    helper_color = egui_rgb_mix(local->text_color, local->muted_text_color, EGUI_ALPHA_MAKE(local->compact_mode ? 16 : 20));
+    row_fill = HCW_COLOR_PANEL;
+    row_border = egui_rgb_mix(local->border_color, tone_color, EGUI_ALPHA_MAKE(local->compact_mode ? 18 : 22));
+    primary_fill = snapshot->emphasized ? egui_rgb_mix(HCW_COLOR_PANEL, tone_color, EGUI_ALPHA_MAKE(6))
+                                        : egui_rgb_mix(local->surface_color, tone_color,
+                                                       EGUI_ALPHA_MAKE(local->current_part == EGUI_VIEW_SPLIT_BUTTON_PART_PRIMARY ? 6 : 2));
+    primary_border = egui_rgb_mix(local->border_color, tone_color, EGUI_ALPHA_MAKE(local->current_part == EGUI_VIEW_SPLIT_BUTTON_PART_PRIMARY ? 20 : 16));
+    primary_text = snapshot->emphasized ? egui_rgb_mix(local->text_color, tone_color, EGUI_ALPHA_MAKE(12))
+                                        : (snapshot->tone == EGUI_VIEW_SPLIT_BUTTON_TONE_DANGER ? tone_color
+                                                                                                 : egui_rgb_mix(local->text_color, tone_color, EGUI_ALPHA_MAKE(8)));
+    menu_fill = egui_rgb_mix(HCW_COLOR_PANEL, tone_color, EGUI_ALPHA_MAKE(local->current_part == EGUI_VIEW_SPLIT_BUTTON_PART_MENU ? 6 : 2));
+    menu_border = egui_rgb_mix(local->border_color, tone_color, EGUI_ALPHA_MAKE(local->current_part == EGUI_VIEW_SPLIT_BUTTON_PART_MENU ? 20 : 16));
+    menu_text = local->current_part == EGUI_VIEW_SPLIT_BUTTON_PART_MENU ? tone_color : egui_rgb_mix(local->text_color, tone_color, EGUI_ALPHA_MAKE(14));
+    divider_color = egui_rgb_mix(local->border_color, tone_color, EGUI_ALPHA_MAKE(16));
+    glyph_fill = snapshot->emphasized ? egui_rgb_mix(HCW_COLOR_PANEL, tone_color, EGUI_ALPHA_MAKE(6))
+                                      : egui_rgb_mix(HCW_COLOR_PANEL, tone_color, EGUI_ALPHA_MAKE(4));
     primary_enabled = egui_view_split_button_part_is_enabled(local, self, snapshot, EGUI_VIEW_SPLIT_BUTTON_PART_PRIMARY);
     menu_enabled = egui_view_split_button_part_is_enabled(local, self, snapshot, EGUI_VIEW_SPLIT_BUTTON_PART_MENU);
     radius = local->compact_mode ? EGUI_VIEW_SPLIT_BUTTON_COMPACT_RADIUS : EGUI_VIEW_SPLIT_BUTTON_STANDARD_RADIUS;
@@ -588,28 +592,46 @@ static void egui_view_split_button_on_draw(egui_view_t *self)
 
     if (local->pressed_part == EGUI_VIEW_SPLIT_BUTTON_PART_PRIMARY && primary_enabled)
     {
-        primary_fill = egui_rgb_mix(primary_fill, tone_color, 18);
+        primary_fill = egui_rgb_mix(primary_fill, tone_color, EGUI_ALPHA_MAKE(10));
     }
     if (local->pressed_part == EGUI_VIEW_SPLIT_BUTTON_PART_MENU && menu_enabled)
     {
-        menu_fill = egui_rgb_mix(menu_fill, tone_color, 18);
+        menu_fill = egui_rgb_mix(menu_fill, tone_color, EGUI_ALPHA_MAKE(10));
     }
 
     if (!primary_enabled)
     {
-        primary_fill = egui_rgb_mix(primary_fill, row_fill, 26);
-        primary_border = egui_rgb_mix(primary_border, local->muted_text_color, 28);
-        primary_text = egui_rgb_mix(primary_text, local->muted_text_color, 34);
-        glyph_fill = egui_rgb_mix(glyph_fill, row_fill, 24);
+        primary_fill = egui_rgb_mix(primary_fill, row_fill, EGUI_ALPHA_MAKE(12));
+        primary_border = egui_rgb_mix(primary_border, local->muted_text_color, EGUI_ALPHA_MAKE(20));
+        primary_text = egui_rgb_mix(primary_text, local->muted_text_color, EGUI_ALPHA_MAKE(12));
+        glyph_fill = egui_rgb_mix(glyph_fill, row_fill, EGUI_ALPHA_MAKE(12));
     }
     if (!menu_enabled)
     {
-        menu_fill = egui_rgb_mix(menu_fill, row_fill, 26);
-        menu_border = egui_rgb_mix(menu_border, local->muted_text_color, 30);
-        menu_text = egui_rgb_mix(menu_text, local->muted_text_color, 34);
+        menu_fill = egui_rgb_mix(menu_fill, row_fill, EGUI_ALPHA_MAKE(12));
+        menu_border = egui_rgb_mix(menu_border, local->muted_text_color, EGUI_ALPHA_MAKE(20));
+        menu_text = egui_rgb_mix(menu_text, local->muted_text_color, EGUI_ALPHA_MAKE(12));
     }
 
-    if (!egui_view_get_enable(self) || local->disabled_mode)
+    if (local->disabled_mode)
+    {
+        card_fill = egui_rgb_mix(card_fill, local->border_color, EGUI_ALPHA_MAKE(8));
+        card_border = egui_rgb_mix(card_border, local->border_color, EGUI_ALPHA_MAKE(36));
+        title_color = egui_rgb_mix(title_color, local->text_color, EGUI_ALPHA_MAKE(38));
+        helper_color = egui_rgb_mix(helper_color, local->text_color, EGUI_ALPHA_MAKE(32));
+        row_fill = egui_rgb_mix(row_fill, local->border_color, EGUI_ALPHA_MAKE(10));
+        row_border = egui_rgb_mix(row_border, local->border_color, EGUI_ALPHA_MAKE(38));
+        primary_fill = egui_rgb_mix(primary_fill, local->border_color, EGUI_ALPHA_MAKE(10));
+        primary_border = egui_rgb_mix(primary_border, local->border_color, EGUI_ALPHA_MAKE(40));
+        primary_text = egui_rgb_mix(primary_text, local->text_color, EGUI_ALPHA_MAKE(42));
+        menu_fill = egui_rgb_mix(menu_fill, local->border_color, EGUI_ALPHA_MAKE(10));
+        menu_border = egui_rgb_mix(menu_border, local->border_color, EGUI_ALPHA_MAKE(40));
+        menu_text = egui_rgb_mix(menu_text, local->text_color, EGUI_ALPHA_MAKE(42));
+        divider_color = egui_rgb_mix(divider_color, local->border_color, EGUI_ALPHA_MAKE(42));
+        glyph_fill = egui_rgb_mix(glyph_fill, local->border_color, EGUI_ALPHA_MAKE(10));
+    }
+
+    if (!egui_view_get_enable(self))
     {
         card_fill = egui_view_split_button_mix_disabled(card_fill);
         card_border = egui_view_split_button_mix_disabled(card_border);
@@ -627,7 +649,7 @@ static void egui_view_split_button_on_draw(egui_view_t *self)
         glyph_fill = egui_view_split_button_mix_disabled(glyph_fill);
     }
 
-    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, 
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas,
             metrics.content_region.location.x - 2, metrics.content_region.location.y - 2, metrics.content_region.size.width + 4,
             metrics.content_region.size.height + 4, radius, card_fill,
             egui_color_alpha_mix(self->alpha, local->compact_mode ? EGUI_VIEW_SPLIT_BUTTON_COMPACT_FILL_ALPHA : EGUI_VIEW_SPLIT_BUTTON_STANDARD_FILL_ALPHA));
@@ -664,17 +686,18 @@ static void egui_view_split_button_on_draw(egui_view_t *self)
     menu_fill_region.size.height = metrics.menu_region.size.height - 2;
 
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, primary_fill_region.location.x, primary_fill_region.location.y, primary_fill_region.size.width,
-                                          primary_fill_region.size.height, segment_radius, primary_fill, egui_color_alpha_mix(self->alpha, 100));
+                                          primary_fill_region.size.height, segment_radius, primary_fill, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(100)));
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, primary_fill_region.location.x, primary_fill_region.location.y, primary_fill_region.size.width,
-                                     primary_fill_region.size.height, segment_radius, 1, primary_border, egui_color_alpha_mix(self->alpha, 30));
+                                     primary_fill_region.size.height, segment_radius, 1, primary_border, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(98)));
 
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, menu_fill_region.location.x, menu_fill_region.location.y, menu_fill_region.size.width, menu_fill_region.size.height,
-                                          segment_radius, menu_fill, egui_color_alpha_mix(self->alpha, 100));
+                                          segment_radius, menu_fill, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(100)));
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, menu_fill_region.location.x, menu_fill_region.location.y, menu_fill_region.size.width, menu_fill_region.size.height,
-                                     segment_radius, 1, menu_border, egui_color_alpha_mix(self->alpha, 26));
+                                     segment_radius, 1, menu_border, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(98)));
 
     egui_canvas_draw_line(&uicode_get_core()->canvas, metrics.menu_region.location.x, metrics.row_region.location.y + 4, metrics.menu_region.location.x,
-                          metrics.row_region.location.y + metrics.row_region.size.height - 4, 1, divider_color, egui_color_alpha_mix(self->alpha, 44));
+                          metrics.row_region.location.y + metrics.row_region.size.height - 4, 1, divider_color,
+                          egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(94)));
 
     label_width = egui_view_split_button_measure_text_width(local->font, snapshot->label);
     if (label_width <= 0 && snapshot->label != NULL && snapshot->label[0] != '\0')
@@ -691,7 +714,7 @@ static void egui_view_split_button_on_draw(egui_view_t *self)
                                               primary_fill_region.location.y +
                                                       (primary_fill_region.size.height - EGUI_VIEW_SPLIT_BUTTON_STANDARD_GLYPH_HEIGHT) / 2,
                                               EGUI_VIEW_SPLIT_BUTTON_STANDARD_GLYPH_WIDTH, EGUI_VIEW_SPLIT_BUTTON_STANDARD_GLYPH_HEIGHT, 4, glyph_fill,
-                                              egui_color_alpha_mix(self->alpha, 96));
+                                              egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(96)));
 
         text_region.location.x = primary_fill_region.location.x + 5;
         text_region.location.y = primary_fill_region.location.y + (primary_fill_region.size.height - EGUI_VIEW_SPLIT_BUTTON_STANDARD_GLYPH_HEIGHT) / 2;
@@ -918,15 +941,15 @@ void egui_view_split_button_init(egui_view_t *self)
     local->font = (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT;
     local->meta_font = (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT;
     local->on_part_changed = NULL;
-    local->surface_color = EGUI_COLOR_HEX(0xFFFFFF);
-    local->border_color = EGUI_COLOR_HEX(0xD6DEE7);
-    local->text_color = EGUI_COLOR_HEX(0x1D2630);
-    local->muted_text_color = EGUI_COLOR_HEX(0x6F7B89);
-    local->accent_color = EGUI_COLOR_HEX(0x2563EB);
-    local->success_color = EGUI_COLOR_HEX(0x178454);
-    local->warning_color = EGUI_COLOR_HEX(0xB87A16);
-    local->danger_color = EGUI_COLOR_HEX(0xB13A35);
-    local->neutral_color = EGUI_COLOR_HEX(0x7A8795);
+    local->surface_color = HCW_COLOR_PANEL;
+    local->border_color = HCW_COLOR_BORDER_STRONG;
+    local->text_color = HCW_COLOR_TEXT_STRONG;
+    local->muted_text_color = HCW_COLOR_TEXT_SOFT;
+    local->accent_color = HCW_COLOR_PRIMARY_DARK;
+    local->success_color = HCW_COLOR_SUCCESS;
+    local->warning_color = HCW_COLOR_WARNING_DARK;
+    local->danger_color = HCW_COLOR_DANGER_DARK;
+    local->neutral_color = HCW_COLOR_TEXT_SOFT;
     local->snapshot_count = 0;
     local->current_snapshot = 0;
     local->current_part = EGUI_VIEW_SPLIT_BUTTON_PART_PRIMARY;

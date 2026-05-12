@@ -166,17 +166,17 @@ static void test_symbol_icon_style_helpers_apply_expected_palette_and_clear_pres
 {
     setup_symbol_icon();
 
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x0F6CBD).full, test_symbol_icon.icon_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PRIMARY.full, test_symbol_icon.icon_color.full);
 
     egui_view_set_pressed(EGUI_VIEW_OF(&test_symbol_icon), 1);
     egui_view_symbol_icon_apply_subtle_style(EGUI_VIEW_OF(&test_symbol_icon));
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_symbol_icon)->is_pressed);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x6F7C8A).full, test_symbol_icon.icon_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT_SOFT.full, test_symbol_icon.icon_color.full);
 
     egui_view_set_pressed(EGUI_VIEW_OF(&test_symbol_icon), 1);
     egui_view_symbol_icon_apply_accent_style(EGUI_VIEW_OF(&test_symbol_icon));
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_symbol_icon)->is_pressed);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xA15C00).full, test_symbol_icon.icon_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_WARNING.full, test_symbol_icon.icon_color.full);
 }
 
 static void test_symbol_icon_setters_update_symbol_font_and_palette(void)
@@ -194,9 +194,9 @@ static void test_symbol_icon_setters_update_symbol_font_and_palette(void)
     EGUI_TEST_ASSERT_TRUE(test_symbol_icon.icon_font == EGUI_FONT_ICON_MS_16);
 
     egui_view_set_pressed(EGUI_VIEW_OF(&test_symbol_icon), 1);
-    egui_view_symbol_icon_set_palette(EGUI_VIEW_OF(&test_symbol_icon), EGUI_COLOR_HEX(0x0F7B45));
+    egui_view_symbol_icon_set_palette(EGUI_VIEW_OF(&test_symbol_icon), HCW_COLOR_SUCCESS);
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_symbol_icon)->is_pressed);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x0F7B45).full, test_symbol_icon.icon_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_SUCCESS.full, test_symbol_icon.icon_color.full);
 
     egui_view_set_pressed(EGUI_VIEW_OF(&test_symbol_icon), 1);
     egui_view_symbol_icon_set_symbol(EGUI_VIEW_OF(&test_symbol_icon), NULL);

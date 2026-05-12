@@ -16,9 +16,11 @@
 /.pytest_cache/
 /.pytest-tmp/
 /.coverage
+/.vs/
 /.venv/
 /venv/
 /tools/
+*.vcxproj.user
 *.py[cod]
 *.o
 *.d
@@ -32,3 +34,4 @@
 iteration_log/
 *.log
 *.err
+UpgradeLog.htm

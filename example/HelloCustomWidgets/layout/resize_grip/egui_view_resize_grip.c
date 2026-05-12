@@ -46,7 +46,7 @@ static uint8_t egui_view_resize_grip_clamp_corner(uint8_t corner)
 
 static egui_color_t egui_view_resize_grip_mix_disabled(egui_color_t color)
 {
-    return egui_rgb_mix(color, EGUI_COLOR_HEX(0x8A97A5), 58);
+    return egui_rgb_mix(color, HCW_COLOR_TEXT_MUTED, EGUI_ALPHA_MAKE(44));
 }
 
 void egui_view_resize_grip_get_grip_region(egui_view_t *self, egui_region_t *grip_region)
@@ -183,9 +183,9 @@ static void egui_view_resize_grip_on_draw(egui_view_t *self)
     egui_color_t border_color = local->border_color;
     egui_color_t dot_color = local->dot_color;
     egui_color_t accent_color = local->accent_color;
-    egui_alpha_t surface_alpha = local->compact_mode ? 74 : 90;
-    egui_alpha_t dot_alpha = local->compact_mode ? 78 : 92;
-    egui_alpha_t accent_alpha = local->compact_mode ? 26 : 36;
+    egui_alpha_t surface_alpha = EGUI_ALPHA_MAKE(local->compact_mode ? 74 : 90);
+    egui_alpha_t dot_alpha = EGUI_ALPHA_MAKE(local->compact_mode ? 78 : 92);
+    egui_alpha_t accent_alpha = EGUI_ALPHA_MAKE(local->compact_mode ? 26 : 36);
 
     egui_view_get_work_region(self, &region);
     if (region.size.width <= 0 || region.size.height <= 0)
@@ -195,13 +195,20 @@ static void egui_view_resize_grip_on_draw(egui_view_t *self)
 
     if (local->read_only_mode || local->disabled_mode)
     {
-        surface_color = egui_rgb_mix(surface_color, EGUI_COLOR_HEX(0xF5F7FA), 48);
-        border_color = egui_rgb_mix(border_color, EGUI_COLOR_HEX(0xAEB8C2), 52);
-        dot_color = egui_rgb_mix(dot_color, EGUI_COLOR_HEX(0x8A97A5), 50);
-        accent_color = egui_rgb_mix(accent_color, EGUI_COLOR_HEX(0x8A97A5), 56);
-        surface_alpha = 72;
-        dot_alpha = local->disabled_mode ? 52 : 64;
-        accent_alpha = 18;
+        surface_color = egui_rgb_mix(surface_color, HCW_COLOR_SURFACE_SUBTLE, EGUI_ALPHA_MAKE(34));
+        border_color = egui_rgb_mix(border_color, HCW_COLOR_BORDER_STRONG, EGUI_ALPHA_MAKE(36));
+        dot_color = egui_rgb_mix(dot_color, HCW_COLOR_TEXT_SOFT, EGUI_ALPHA_MAKE(local->disabled_mode ? 28 : 16));
+        accent_color = egui_rgb_mix(accent_color, HCW_COLOR_BORDER_STRONG, EGUI_ALPHA_MAKE(30));
+        surface_alpha = EGUI_ALPHA_MAKE(82);
+        dot_alpha = EGUI_ALPHA_MAKE(local->disabled_mode ? 68 : 76);
+        accent_alpha = EGUI_ALPHA_MAKE(local->disabled_mode ? 24 : 32);
+        if (local->read_only_mode && !local->disabled_mode)
+        {
+            dot_color = egui_rgb_mix(dot_color, HCW_COLOR_TEXT_STRONG, EGUI_ALPHA_MAKE(18));
+            accent_color = egui_rgb_mix(accent_color, HCW_COLOR_TEXT_STRONG, EGUI_ALPHA_MAKE(10));
+            dot_alpha = EGUI_ALPHA_MAKE(88);
+            accent_alpha = EGUI_ALPHA_MAKE(38);
+        }
     }
     if (!egui_view_get_enable(self))
     {
@@ -209,19 +216,20 @@ static void egui_view_resize_grip_on_draw(egui_view_t *self)
         border_color = egui_view_resize_grip_mix_disabled(border_color);
         dot_color = egui_view_resize_grip_mix_disabled(dot_color);
         accent_color = egui_view_resize_grip_mix_disabled(accent_color);
-        surface_alpha = 58;
-        dot_alpha = 46;
-        accent_alpha = 14;
+        surface_alpha = EGUI_ALPHA_MAKE(68);
+        dot_alpha = EGUI_ALPHA_MAKE(60);
+        accent_alpha = EGUI_ALPHA_MAKE(22);
     }
     if (egui_view_get_pressed(self))
     {
-        surface_color = egui_rgb_mix(surface_color, accent_color, 14);
+        surface_color = egui_rgb_mix(surface_color, accent_color, EGUI_ALPHA_MAKE(14));
     }
 
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, region.location.x, region.location.y, region.size.width, region.size.height,
                                           local->corner_radius, surface_color, egui_color_alpha_mix(self->alpha, surface_alpha));
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, region.location.x, region.location.y, region.size.width, region.size.height,
-                                     local->corner_radius, 1, border_color, egui_color_alpha_mix(self->alpha, local->compact_mode ? 28 : 42));
+                                     local->corner_radius, 1, border_color,
+                                     egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(local->compact_mode ? 44 : 54)));
 
     egui_view_resize_grip_get_grip_region(self, &grip_region);
     egui_view_resize_grip_draw_diagonal_marks(self, local, &grip_region, accent_color, accent_alpha);
@@ -355,8 +363,8 @@ uint8_t egui_view_resize_grip_get_read_only_mode(egui_view_t *self)
 
 void egui_view_resize_grip_apply_standard_style(egui_view_t *self)
 {
-    egui_view_resize_grip_set_palette(self, EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD5DEE8), EGUI_COLOR_HEX(0x607080),
-                                      EGUI_COLOR_HEX(0xC9D5E0));
+    egui_view_resize_grip_set_palette(self, HCW_COLOR_SURFACE, HCW_COLOR_BORDER, HCW_COLOR_TEXT_SOFT,
+                                      HCW_COLOR_BORDER);
     egui_view_resize_grip_set_metrics(self, 34, 4, 5);
     egui_view_resize_grip_set_corner_radius(self, 8);
     egui_view_resize_grip_set_compact_mode(self, 0);
@@ -366,8 +374,8 @@ void egui_view_resize_grip_apply_standard_style(egui_view_t *self)
 
 void egui_view_resize_grip_apply_accent_style(egui_view_t *self)
 {
-    egui_view_resize_grip_set_palette(self, EGUI_COLOR_HEX(0xF7FBFF), EGUI_COLOR_HEX(0xB9D6F0), EGUI_COLOR_HEX(0x0F6CBD),
-                                      EGUI_COLOR_HEX(0xCFE2F3));
+    egui_view_resize_grip_set_palette(self, HCW_COLOR_SURFACE_SUBTLE, HCW_COLOR_PRIMARY_SOFT, HCW_COLOR_PRIMARY,
+                                      HCW_COLOR_PRIMARY_TINT);
     egui_view_resize_grip_set_metrics(self, 36, 4, 5);
     egui_view_resize_grip_set_corner_radius(self, 8);
     egui_view_resize_grip_set_compact_mode(self, 0);
@@ -377,8 +385,8 @@ void egui_view_resize_grip_apply_accent_style(egui_view_t *self)
 
 void egui_view_resize_grip_apply_compact_style(egui_view_t *self)
 {
-    egui_view_resize_grip_set_palette(self, EGUI_COLOR_HEX(0xF8FBFD), EGUI_COLOR_HEX(0xD2DCE6), EGUI_COLOR_HEX(0x0C7C73),
-                                      EGUI_COLOR_HEX(0xD9E7E5));
+    egui_view_resize_grip_set_palette(self, HCW_COLOR_SURFACE_PRESS, HCW_COLOR_BORDER, HCW_COLOR_PRIMARY,
+                                      HCW_COLOR_PRIMARY_TINT);
     egui_view_resize_grip_set_metrics(self, 24, 3, 4);
     egui_view_resize_grip_set_corner_radius(self, 6);
     egui_view_resize_grip_set_compact_mode(self, 1);
@@ -388,8 +396,8 @@ void egui_view_resize_grip_apply_compact_style(egui_view_t *self)
 
 void egui_view_resize_grip_apply_disabled_style(egui_view_t *self)
 {
-    egui_view_resize_grip_set_palette(self, EGUI_COLOR_HEX(0xF5F7FA), EGUI_COLOR_HEX(0xD7DEE6), EGUI_COLOR_HEX(0x788593),
-                                      EGUI_COLOR_HEX(0xE1E6EB));
+    egui_view_resize_grip_set_palette(self, HCW_COLOR_SURFACE_SUBTLE, HCW_COLOR_BORDER, HCW_COLOR_TEXT_SOFT,
+                                      HCW_COLOR_BORDER_STRONG);
     egui_view_resize_grip_set_metrics(self, 30, 3, 5);
     egui_view_resize_grip_set_corner_radius(self, 8);
     egui_view_resize_grip_set_compact_mode(self, 0);
@@ -399,8 +407,8 @@ void egui_view_resize_grip_apply_disabled_style(egui_view_t *self)
 
 void egui_view_resize_grip_apply_read_only_style(egui_view_t *self)
 {
-    egui_view_resize_grip_set_palette(self, EGUI_COLOR_HEX(0xF5F7FA), EGUI_COLOR_HEX(0xD7DEE6), EGUI_COLOR_HEX(0x687684),
-                                      EGUI_COLOR_HEX(0xE1E6EB));
+    egui_view_resize_grip_set_palette(self, HCW_COLOR_SURFACE_SUBTLE, HCW_COLOR_BORDER, HCW_COLOR_TEXT_SOFT,
+                                      HCW_COLOR_BORDER_STRONG);
     egui_view_resize_grip_set_metrics(self, 24, 3, 4);
     egui_view_resize_grip_set_corner_radius(self, 6);
     egui_view_resize_grip_set_compact_mode(self, 1);

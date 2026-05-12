@@ -2,6 +2,7 @@
 #include <string.h>
 
 #include "egui_view_rich_edit_box.h"
+#include "../../hcw_selection_marker.h"
 
 #define EGUI_VIEW_RICH_EDIT_BOX_STANDARD_RADIUS           10
 #define EGUI_VIEW_RICH_EDIT_BOX_STANDARD_PAD_X            10
@@ -184,7 +185,22 @@ static uint8_t rich_edit_box_clamp_style(uint8_t style)
 
 static egui_color_t rich_edit_box_mix_disabled(egui_color_t color)
 {
-    return egui_rgb_mix(color, EGUI_COLOR_DARK_GREY, 68);
+    return egui_rgb_mix(color, HCW_COLOR_SURFACE_SUBTLE, EGUI_ALPHA_MAKE(44));
+}
+
+static egui_color_t rich_edit_box_mix_read_only_surface(egui_color_t color)
+{
+    return egui_rgb_mix(color, HCW_COLOR_PANEL, EGUI_ALPHA_MAKE(10));
+}
+
+static egui_color_t rich_edit_box_mix_read_only_border(egui_color_t color)
+{
+    return egui_rgb_mix(color, HCW_COLOR_BORDER_STRONG, EGUI_ALPHA_MAKE(56));
+}
+
+static egui_color_t rich_edit_box_mix_read_only_text(egui_color_t color)
+{
+    return egui_rgb_mix(color, HCW_COLOR_TEXT_STRONG, EGUI_ALPHA_MAKE(68));
 }
 
 static const egui_view_rich_edit_box_document_t *rich_edit_box_get_document(egui_view_rich_edit_box_t *local)
@@ -918,17 +934,23 @@ static void rich_edit_box_draw_editor(egui_view_rich_edit_box_t *local, egui_vie
 
     if (style == EGUI_VIEW_RICH_EDIT_BOX_STYLE_CALLOUT)
     {
-        fill_color = egui_rgb_mix(local->editor_color, local->accent_color, 16);
-        border_color = egui_rgb_mix(local->border_color, local->accent_color, 18);
-        text_color = egui_rgb_mix(local->text_color, local->accent_color, 12);
+        fill_color = egui_rgb_mix(HCW_COLOR_PANEL, local->accent_color, EGUI_ALPHA_MAKE(4));
+        border_color = egui_rgb_mix(local->border_color, local->accent_color, EGUI_ALPHA_MAKE(26));
+        text_color = egui_rgb_mix(local->text_color, local->accent_color, EGUI_ALPHA_MAKE(12));
     }
     else if (style == EGUI_VIEW_RICH_EDIT_BOX_STYLE_CHECKLIST)
     {
-        fill_color = egui_rgb_mix(local->surface_color, local->accent_color, 8);
-        border_color = egui_rgb_mix(local->border_color, local->accent_color, 12);
+        fill_color = egui_rgb_mix(HCW_COLOR_PANEL, local->accent_color, EGUI_ALPHA_MAKE(3));
+        border_color = egui_rgb_mix(local->border_color, local->accent_color, EGUI_ALPHA_MAKE(22));
     }
 
-    if (local->read_only_mode || !egui_view_get_enable(self))
+    if (local->read_only_mode)
+    {
+        fill_color = rich_edit_box_mix_read_only_surface(fill_color);
+        border_color = rich_edit_box_mix_read_only_border(border_color);
+        text_color = rich_edit_box_mix_read_only_text(text_color);
+    }
+    if (!egui_view_get_enable(self))
     {
         fill_color = rich_edit_box_mix_disabled(fill_color);
         border_color = rich_edit_box_mix_disabled(border_color);
@@ -937,9 +959,15 @@ static void rich_edit_box_draw_editor(egui_view_rich_edit_box_t *local, egui_vie
 
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, editor_region->location.x, editor_region->location.y, editor_region->size.width, editor_region->size.height, radius,
                                           fill_color, self->alpha);
+
+    if (style == EGUI_VIEW_RICH_EDIT_BOX_STYLE_CALLOUT)
+    {
+        egui_dim_t strip_w = local->compact_mode ? 4 : 5;
+
+        hcw_selection_marker_draw_left(editor_region, radius, EGUI_MAX(strip_w, radius), local->accent_color, self->alpha);
+    }
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, editor_region->location.x, editor_region->location.y, editor_region->size.width, editor_region->size.height, radius, 1,
                                      border_color, self->alpha);
-
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     if (self->is_focused && self->is_enable && !local->read_only_mode && local->current_part == EGUI_VIEW_RICH_EDIT_BOX_PART_EDITOR)
     {
@@ -947,18 +975,10 @@ static void rich_edit_box_draw_editor(egui_view_rich_edit_box_t *local, egui_vie
     }
 #endif
 
-    if (style == EGUI_VIEW_RICH_EDIT_BOX_STYLE_CALLOUT)
-    {
-        egui_dim_t strip_w = local->compact_mode ? 4 : 5;
-
-        egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, editor_region->location.x + 2, editor_region->location.y + 2, strip_w,
-                                              editor_region->size.height > 4 ? (egui_dim_t)(editor_region->size.height - 4) : editor_region->size.height, strip_w / 2,
-                                              local->accent_color, self->alpha);
-    }
-
     if (!rich_edit_box_has_text(local->editor_text))
     {
-        rich_edit_box_draw_text(local->font, self, "Start typing...", text_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_TOP, local->muted_text_color);
+        rich_edit_box_draw_text(local->font, self, "Start typing...", text_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_TOP,
+                                local->read_only_mode ? rich_edit_box_mix_read_only_text(local->muted_text_color) : local->muted_text_color);
         return;
     }
 
@@ -983,7 +1003,7 @@ static void rich_edit_box_draw_editor(egui_view_rich_edit_box_t *local, egui_vie
 
 static void rich_edit_box_draw_preset(egui_view_rich_edit_box_t *local, egui_view_t *self, const egui_region_t *region, const char *label, uint8_t preset_index)
 {
-    egui_color_t fill_color = egui_rgb_mix(local->surface_color, local->accent_color, 6);
+    egui_color_t fill_color = egui_rgb_mix(HCW_COLOR_PANEL, local->accent_color, EGUI_ALPHA_MAKE(3));
     egui_color_t border_color = local->border_color;
     egui_color_t text_color = local->muted_text_color;
     egui_dim_t radius = region->size.height / 2;
@@ -993,20 +1013,26 @@ static void rich_edit_box_draw_preset(egui_view_rich_edit_box_t *local, egui_vie
 
     if (is_applied)
     {
-        fill_color = egui_rgb_mix(local->surface_color, local->accent_color, 18);
+        fill_color = egui_rgb_mix(HCW_COLOR_PANEL, local->accent_color, EGUI_ALPHA_MAKE(7));
         border_color = local->accent_color;
         text_color = local->text_color;
     }
     else if (is_current)
     {
-        fill_color = egui_rgb_mix(local->surface_color, local->accent_color, 11);
-        border_color = egui_rgb_mix(local->border_color, local->accent_color, 18);
+        fill_color = egui_rgb_mix(HCW_COLOR_PANEL, local->accent_color, EGUI_ALPHA_MAKE(5));
+        border_color = egui_rgb_mix(local->border_color, local->accent_color, EGUI_ALPHA_MAKE(34));
     }
     if (is_pressed)
     {
-        fill_color = egui_rgb_mix(fill_color, local->accent_color, 22);
+        fill_color = egui_rgb_mix(fill_color, local->accent_color, EGUI_ALPHA_MAKE(22));
     }
-    if (local->read_only_mode || !egui_view_get_enable(self))
+    if (local->read_only_mode)
+    {
+        fill_color = rich_edit_box_mix_read_only_surface(fill_color);
+        border_color = rich_edit_box_mix_read_only_border(border_color);
+        text_color = rich_edit_box_mix_read_only_text(text_color);
+    }
+    if (!egui_view_get_enable(self))
     {
         fill_color = rich_edit_box_mix_disabled(fill_color);
         border_color = rich_edit_box_mix_disabled(border_color);
@@ -1374,15 +1400,15 @@ static void egui_view_rich_edit_box_on_draw(egui_view_t *self)
     const egui_view_rich_edit_box_document_t *document = rich_edit_box_get_document(local);
     const egui_view_rich_edit_box_preset_t *preset;
     egui_view_rich_edit_box_metrics_t metrics;
-    egui_color_t card_fill = local->surface_color;
+    egui_color_t card_fill = HCW_COLOR_PANEL;
     egui_color_t card_border = local->border_color;
-    egui_color_t badge_fill = egui_rgb_mix(local->surface_color, local->accent_color, 14);
-    egui_color_t badge_text = egui_rgb_mix(local->text_color, local->accent_color, 26);
+    egui_color_t badge_fill = egui_rgb_mix(HCW_COLOR_PANEL, local->accent_color, EGUI_ALPHA_MAKE(5));
+    egui_color_t badge_text = egui_rgb_mix(local->text_color, local->accent_color, EGUI_ALPHA_MAKE(26));
     egui_color_t title_color = local->text_color;
     egui_color_t summary_color = local->muted_text_color;
-    egui_color_t footer_fill = egui_rgb_mix(local->surface_color, local->accent_color, 10);
-    egui_color_t footer_border = egui_rgb_mix(local->border_color, local->accent_color, 14);
-    egui_color_t footer_text = egui_rgb_mix(local->muted_text_color, local->accent_color, 12);
+    egui_color_t footer_fill = HCW_COLOR_PANEL;
+    egui_color_t footer_border = egui_rgb_mix(local->border_color, local->accent_color, EGUI_ALPHA_MAKE(24));
+    egui_color_t footer_text = egui_rgb_mix(local->muted_text_color, local->accent_color, EGUI_ALPHA_MAKE(22));
     egui_color_t shadow_color = local->shadow_color;
     egui_dim_t radius = local->compact_mode ? EGUI_VIEW_RICH_EDIT_BOX_COMPACT_RADIUS : EGUI_VIEW_RICH_EDIT_BOX_STANDARD_RADIUS;
     char char_count_text[24];
@@ -1408,14 +1434,15 @@ static void egui_view_rich_edit_box_on_draw(egui_view_t *self)
 
     if (local->read_only_mode)
     {
-        badge_fill = egui_rgb_mix(badge_fill, local->surface_color, 26);
-        badge_text = egui_rgb_mix(badge_text, local->muted_text_color, 18);
-        title_color = egui_rgb_mix(title_color, local->muted_text_color, 12);
-        summary_color = egui_rgb_mix(summary_color, local->muted_text_color, 18);
-        footer_fill = egui_rgb_mix(footer_fill, local->surface_color, 20);
-        footer_border = egui_rgb_mix(footer_border, local->muted_text_color, 18);
-        footer_text = egui_rgb_mix(footer_text, local->muted_text_color, 18);
-        shadow_color = egui_rgb_mix(shadow_color, local->surface_color, 42);
+        card_border = rich_edit_box_mix_read_only_border(card_border);
+        badge_fill = egui_rgb_mix(badge_fill, HCW_COLOR_PRIMARY_DARK, EGUI_ALPHA_MAKE(8));
+        badge_text = rich_edit_box_mix_read_only_text(badge_text);
+        title_color = rich_edit_box_mix_read_only_text(title_color);
+        summary_color = rich_edit_box_mix_read_only_text(summary_color);
+        footer_fill = rich_edit_box_mix_read_only_surface(footer_fill);
+        footer_border = rich_edit_box_mix_read_only_border(footer_border);
+        footer_text = rich_edit_box_mix_read_only_text(footer_text);
+        shadow_color = egui_rgb_mix(shadow_color, card_border, EGUI_ALPHA_MAKE(28));
     }
     if (!egui_view_get_enable(self))
     {
@@ -1432,17 +1459,17 @@ static void egui_view_rich_edit_box_on_draw(egui_view_t *self)
     }
 
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.content_region.location.x, metrics.content_region.location.y + 2, metrics.content_region.size.width,
-                                          metrics.content_region.size.height, radius, shadow_color, egui_color_alpha_mix(self->alpha, 20));
+                                          metrics.content_region.size.height, radius, shadow_color, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(20)));
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.content_region.location.x, metrics.content_region.location.y, metrics.content_region.size.width,
-                                          metrics.content_region.size.height, radius, card_fill, egui_color_alpha_mix(self->alpha, 97));
+                                          metrics.content_region.size.height, radius, card_fill, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(97)));
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics.content_region.location.x, metrics.content_region.location.y, metrics.content_region.size.width,
-                                     metrics.content_region.size.height, radius, 1, card_border, egui_color_alpha_mix(self->alpha, 54));
+                                     metrics.content_region.size.height, radius, 1, card_border, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(90)));
 
     if (document != NULL && metrics.badge_region.size.width > 0 && metrics.badge_region.size.height > 0)
     {
         egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.badge_region.location.x, metrics.badge_region.location.y, metrics.badge_region.size.width,
                                               metrics.badge_region.size.height, metrics.badge_region.size.height / 2, badge_fill,
-                                              egui_color_alpha_mix(self->alpha, 98));
+                                              egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(98)));
         rich_edit_box_draw_text(local->meta_font != NULL ? local->meta_font : local->font, self, document->header, &metrics.badge_region, EGUI_ALIGN_CENTER,
                                 badge_text);
     }
@@ -1478,10 +1505,10 @@ static void egui_view_rich_edit_box_on_draw(egui_view_t *self)
 
         egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.footer_region.location.x, metrics.footer_region.location.y, metrics.footer_region.size.width,
                                               metrics.footer_region.size.height, metrics.footer_region.size.height / 2, footer_fill,
-                                              egui_color_alpha_mix(self->alpha, 96));
+                                              egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(96)));
         egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics.footer_region.location.x, metrics.footer_region.location.y, metrics.footer_region.size.width,
                                          metrics.footer_region.size.height, metrics.footer_region.size.height / 2, 1, footer_border,
-                                         egui_color_alpha_mix(self->alpha, 36));
+                                         egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(88)));
         rich_edit_box_draw_text(local->meta_font != NULL ? local->meta_font : local->font, self, footer_meta_text, &footer_left_region,
                                 EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, footer_text);
         rich_edit_box_draw_text(local->meta_font != NULL ? local->meta_font : local->font, self, char_count_text, &footer_right_region,
@@ -1525,13 +1552,13 @@ void egui_view_rich_edit_box_init(egui_view_t *self)
     local->font = (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT;
     local->meta_font = (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT;
     local->on_action = NULL;
-    local->surface_color = EGUI_COLOR_HEX(0xFFFFFF);
-    local->border_color = EGUI_COLOR_HEX(0xD5DDE5);
-    local->editor_color = EGUI_COLOR_HEX(0xFBFCFE);
-    local->text_color = EGUI_COLOR_HEX(0x1B2834);
-    local->muted_text_color = EGUI_COLOR_HEX(0x6C7A89);
-    local->accent_color = EGUI_COLOR_HEX(0x0F6CBD);
-    local->shadow_color = EGUI_COLOR_HEX(0xDCE5EE);
+    local->surface_color = HCW_COLOR_SURFACE;
+    local->border_color = HCW_COLOR_BORDER_STRONG;
+    local->editor_color = HCW_COLOR_SURFACE;
+    local->text_color = HCW_COLOR_TEXT_STRONG;
+    local->muted_text_color = HCW_COLOR_TEXT_SOFT;
+    local->accent_color = HCW_COLOR_PRIMARY_DARK;
+    local->shadow_color = HCW_COLOR_TRACK_STRONG;
     local->document_count = 0;
     local->current_document = 0;
     local->current_part = EGUI_VIEW_RICH_EDIT_BOX_PART_EDITOR;

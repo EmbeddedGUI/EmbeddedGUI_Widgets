@@ -103,8 +103,8 @@ static void setup_preview_widget(void)
     hcw_pivot_set_font(EGUI_VIEW_OF(&preview_pivot), (const egui_font_t *)&egui_res_font_montserrat_8_4);
     hcw_pivot_set_meta_font(EGUI_VIEW_OF(&preview_pivot), (const egui_font_t *)&egui_res_font_montserrat_8_4);
     hcw_pivot_apply_compact_style(EGUI_VIEW_OF(&preview_pivot));
-    hcw_pivot_set_palette(EGUI_VIEW_OF(&preview_pivot), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD6DEE6), EGUI_COLOR_HEX(0x22303C),
-                          EGUI_COLOR_HEX(0x73808C), EGUI_COLOR_HEX(0x0F6CBD), EGUI_COLOR_HEX(0xF7F9FB));
+    hcw_pivot_set_palette(EGUI_VIEW_OF(&preview_pivot), HCW_COLOR_SURFACE, EGUI_COLOR_HEX(0xD6DEE6), EGUI_COLOR_HEX(0x22303C),
+                          HCW_COLOR_TEXT_MUTED, HCW_COLOR_PRIMARY, HCW_COLOR_SURFACE_PRESS);
     hcw_pivot_set_current_index(EGUI_VIEW_OF(&preview_pivot), 0);
     hcw_pivot_set_on_changed_listener(EGUI_VIEW_OF(&preview_pivot), on_pivot_changed);
     hcw_pivot_override_static_preview_api(EGUI_VIEW_OF(&preview_pivot), &preview_api);
@@ -245,10 +245,12 @@ static void assert_preview_state_unchanged(const pivot_preview_snapshot_t *snaps
 static void test_pivot_internal_helpers_cover_text_fitting(void)
 {
     char label[24];
+    egui_color_t sample = EGUI_COLOR_HEX(0x123456);
 
     EGUI_TEST_ASSERT_EQUAL_INT(0, hcw_pivot_text_len(NULL));
     EGUI_TEST_ASSERT_EQUAL_INT(10, hcw_pivot_text_len("Operations"));
     EGUI_TEST_ASSERT_EQUAL_INT(0, hcw_pivot_measure_text_width(NULL, "Ready"));
+    EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(sample, HCW_COLOR_TEXT_SOFT, EGUI_ALPHA_MAKE(38)).full, hcw_pivot_mix_disabled(sample).full);
 
     hcw_pivot_copy_elided(label, sizeof(label), "Documents", 6);
     EGUI_TEST_ASSERT_TRUE(strcmp("Doc...", label) == 0);

@@ -637,7 +637,7 @@ static void test_settings_expander_internal_helpers(void)
     EGUI_TEST_ASSERT_TRUE(strcmp("...", label) == 0);
     egui_view_settings_expander_fit_text_to_width(NULL, "Review", label, sizeof(label), 24, 4);
     EGUI_TEST_ASSERT_TRUE(strcmp("Review", label) == 0);
-    EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(sample, EGUI_COLOR_DARK_GREY, 68).full, egui_view_settings_expander_mix_disabled(sample).full);
+    EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(sample, HCW_COLOR_SURFACE_SUBTLE, EGUI_ALPHA_MAKE(44)).full, egui_view_settings_expander_mix_disabled(sample).full);
 }
 
 void test_settings_expander_run(void)

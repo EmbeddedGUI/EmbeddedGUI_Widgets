@@ -195,6 +195,7 @@ static void test_tick_bar_init_defaults(void)
     EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_tick_bar_get_show_selected_range(EGUI_VIEW_OF(&test_control)));
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_tick_bar_get_compact_mode(EGUI_VIEW_OF(&test_control)));
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_tick_bar_get_read_only_mode(EGUI_VIEW_OF(&test_control)));
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT_SOFT.full, test_control.tick_color.full);
     assert_selection(EGUI_VIEW_OF(&test_control), 20, 70);
 }
 
@@ -246,6 +247,8 @@ static void test_tick_bar_styles(void)
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_TICK_BAR_PLACEMENT_RIGHT, egui_view_tick_bar_get_placement(EGUI_VIEW_OF(&test_control)));
     EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_tick_bar_get_compact_mode(EGUI_VIEW_OF(&test_control)));
     EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_tick_bar_get_read_only_mode(EGUI_VIEW_OF(&test_control)));
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT_SOFT.full, test_control.tick_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT_SOFT.full, test_control.value_color.full);
 }
 
 static void test_tick_bar_static_preview_consumes_input_and_keeps_state(void)

@@ -556,7 +556,7 @@ static void test_tool_tip_internal_helpers(void)
     EGUI_TEST_ASSERT_EQUAL_INT(420, egui_view_tool_tip_resolve_delay(0));
     EGUI_TEST_ASSERT_EQUAL_INT(120, egui_view_tool_tip_resolve_delay(10));
     EGUI_TEST_ASSERT_EQUAL_INT(540, egui_view_tool_tip_resolve_delay(540));
-    EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(sample, EGUI_COLOR_HEX(0x7D8894), 60).full, egui_view_tool_tip_mix_disabled(sample).full);
+    EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(sample, HCW_COLOR_TEXT_SOFT, EGUI_ALPHA_MAKE(38)).full, egui_view_tool_tip_mix_disabled(sample).full);
 }
 
 void test_tool_tip_run(void)

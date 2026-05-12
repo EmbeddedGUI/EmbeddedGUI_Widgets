@@ -253,6 +253,12 @@ static void test_color_picker_setters_clear_pressed_state(void)
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_color_picker)->is_pressed);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_COLOR_PICKER_PART_NONE, test_color_picker.pressed_part);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_COLOR_PICKER_PART_PALETTE, egui_view_color_picker_get_current_part(EGUI_VIEW_OF(&test_color_picker)));
+
+    egui_view_color_picker_init(EGUI_VIEW_OF(&test_color_picker));
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PANEL.full, test_color_picker.surface_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_BORDER_STRONG.full, test_color_picker.border_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT_SOFT.full, test_color_picker.muted_text_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PRIMARY_DARK.full, test_color_picker.accent_color.full);
 }
 
 static void test_color_picker_tab_cycles_between_parts(void)

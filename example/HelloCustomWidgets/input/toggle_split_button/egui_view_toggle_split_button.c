@@ -1,4 +1,5 @@
 #include "egui_view_toggle_split_button.h"
+#include "../../hcw_text_center.h"
 
 #define TSB_STD_RADIUS     10
 #define TSB_STD_PAD_X      10
@@ -594,17 +595,36 @@ static void toggle_split_button_draw_text(const egui_font_t *font, egui_view_t *
     egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, font, text, &draw_region, align, color, self->alpha);
 }
 
+static void toggle_split_button_draw_badge_text(const egui_font_t *font, egui_view_t *self, const char *text, const egui_region_t *region,
+                                                egui_color_t color)
+{
+    egui_region_t draw_region = *region;
+
+    if (region == NULL || region->size.width <= 0 || region->size.height <= 0 || !toggle_split_button_has_text(text))
+    {
+        return;
+    }
+
+    if (draw_region.size.width > 2)
+    {
+        draw_region.location.x += 1;
+        draw_region.size.width -= 2;
+    }
+    draw_region.location.y += hcw_text_center_get_delta(font, text, region, EGUI_ALIGN_CENTER);
+    egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, font, text, &draw_region, EGUI_ALIGN_CENTER, color, self->alpha);
+}
+
 static void toggle_split_button_draw_focus(egui_view_t *self, const egui_region_t *region, egui_dim_t radius, egui_color_t color)
 {
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, region->location.x - 1, region->location.y - 1, region->size.width + 2, region->size.height + 2, radius, 1, color,
-                                     egui_color_alpha_mix(self->alpha, 72));
+                                     egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(92)));
 }
 
 static void toggle_split_button_draw_chevron(egui_view_t *self, const egui_region_t *region, egui_color_t color)
 {
     egui_dim_t cx = region->location.x + region->size.width / 2;
     egui_dim_t cy = region->location.y + region->size.height / 2;
-    egui_alpha_t alpha = egui_color_alpha_mix(self->alpha, 92);
+    egui_alpha_t alpha = egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(92));
 
     egui_canvas_draw_line(&uicode_get_core()->canvas, cx - 3, cy - 1, cx, cy + 2, 1, color, alpha);
     egui_canvas_draw_line(&uicode_get_core()->canvas, cx, cy + 2, cx + 3, cy - 1, 1, color, alpha);
@@ -640,63 +660,82 @@ static void egui_view_toggle_split_button_on_draw(egui_view_t *self)
 
     checked = local->checked_states[local->current_snapshot];
     tone_color = toggle_split_button_tone_color(local, snapshot->tone);
-    surface_color = local->read_only_mode ? egui_rgb_mix(local->surface_color, EGUI_COLOR_HEX(0xEFF3F7), 54) : local->surface_color;
-    border_color = local->read_only_mode ? egui_rgb_mix(local->border_color, EGUI_COLOR_HEX(0x9AA7B4), 50) : local->border_color;
-    text_color = local->read_only_mode ? egui_rgb_mix(local->text_color, EGUI_COLOR_HEX(0x7B8895), 42) : local->text_color;
-    muted_text_color = local->read_only_mode ? egui_rgb_mix(local->muted_text_color, EGUI_COLOR_HEX(0x8B98A5), 42) : local->muted_text_color;
+    surface_color = local->read_only_mode ? egui_rgb_mix(local->surface_color, HCW_COLOR_SURFACE_DISABLED, EGUI_ALPHA_MAKE(16)) : local->surface_color;
+    border_color = local->read_only_mode ? egui_rgb_mix(local->border_color, HCW_COLOR_TEXT_STRONG, EGUI_ALPHA_MAKE(20))
+                                         : egui_rgb_mix(local->border_color, tone_color, EGUI_ALPHA_MAKE(8));
+    text_color = local->read_only_mode ? egui_rgb_mix(local->text_color, HCW_COLOR_TEXT_SOFT, EGUI_ALPHA_MAKE(2))
+                                       : egui_rgb_mix(local->text_color, tone_color, EGUI_ALPHA_MAKE(10));
+    muted_text_color = local->read_only_mode ? egui_rgb_mix(local->text_color, HCW_COLOR_TEXT_SOFT, EGUI_ALPHA_MAKE(10))
+                                             : egui_rgb_mix(local->text_color, tone_color, EGUI_ALPHA_MAKE(12));
 
     toggle_split_button_get_metrics(local, self, snapshot, &metrics);
 
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, self->region_screen.location.x, self->region_screen.location.y, self->region_screen.size.width,
-                                          self->region_screen.size.height, outer_radius, surface_color, egui_color_alpha_mix(self->alpha, 96));
+                                          self->region_screen.size.height, outer_radius, surface_color, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(100)));
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, self->region_screen.location.x, self->region_screen.location.y, self->region_screen.size.width,
-                                     self->region_screen.size.height, outer_radius, 1, border_color, egui_color_alpha_mix(self->alpha, 58));
+                                     self->region_screen.size.height, outer_radius, 1, border_color, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(100)));
 
     toggle_split_button_draw_text(local->meta_font, self, snapshot->title, &metrics.title_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, muted_text_color);
     toggle_split_button_draw_text(local->meta_font, self, snapshot->helper, &metrics.helper_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, muted_text_color);
 
-    primary_fill = checked ? tone_color : egui_rgb_mix(surface_color, tone_color, local->compact_mode ? 16 : 12);
-    primary_border = local->current_part == EGUI_VIEW_TOGGLE_SPLIT_BUTTON_PART_PRIMARY && !local->read_only_mode ? tone_color
-                                                                                                                 : egui_rgb_mix(border_color, tone_color, 26);
-    primary_text = checked ? EGUI_COLOR_HEX(0xFFFFFF) : text_color;
+    primary_fill = checked ? egui_rgb_mix(surface_color, tone_color, EGUI_ALPHA_MAKE(local->compact_mode ? 12 : 10))
+                           : egui_rgb_mix(surface_color, tone_color, EGUI_ALPHA_MAKE(local->compact_mode ? 6 : 4));
+    primary_border = local->current_part == EGUI_VIEW_TOGGLE_SPLIT_BUTTON_PART_PRIMARY && !local->read_only_mode ? egui_rgb_mix(border_color, tone_color, EGUI_ALPHA_MAKE(14))
+                                                                                                                 : egui_rgb_mix(border_color, tone_color, EGUI_ALPHA_MAKE(8));
+    primary_text = checked ? egui_rgb_mix(text_color, tone_color, EGUI_ALPHA_MAKE(20)) : text_color;
+    if (local->read_only_mode)
+    {
+        primary_border = egui_rgb_mix(primary_border, HCW_COLOR_TEXT_STRONG, EGUI_ALPHA_MAKE(10));
+    }
     if (local->pressed_part == EGUI_VIEW_TOGGLE_SPLIT_BUTTON_PART_PRIMARY)
     {
-        primary_fill = egui_rgb_mix(primary_fill, tone_color, 26);
+        primary_fill = egui_rgb_mix(primary_fill, tone_color, EGUI_ALPHA_MAKE(6));
     }
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.primary_region.location.x, metrics.primary_region.location.y, metrics.primary_region.size.width,
-                                          metrics.primary_region.size.height, segment_radius, primary_fill, egui_color_alpha_mix(self->alpha, 96));
+                                          metrics.primary_region.size.height, segment_radius, primary_fill, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(100)));
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics.primary_region.location.x, metrics.primary_region.location.y, metrics.primary_region.size.width,
-                                     metrics.primary_region.size.height, segment_radius, 1, primary_border, egui_color_alpha_mix(self->alpha, 46));
+                                     metrics.primary_region.size.height, segment_radius, 1, primary_border, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(100)));
 
-    badge_fill = checked ? egui_rgb_mix(EGUI_COLOR_HEX(0xFFFFFF), tone_color, 14) : egui_rgb_mix(surface_color, border_color, 22);
-    badge_border = checked ? egui_rgb_mix(tone_color, EGUI_COLOR_HEX(0xFFFFFF), 28) : egui_rgb_mix(border_color, tone_color, 10);
-    badge_text = checked ? tone_color : muted_text_color;
+    badge_fill = HCW_COLOR_PANEL;
+    badge_border = checked ? egui_rgb_mix(border_color, tone_color, EGUI_ALPHA_MAKE(10)) : egui_rgb_mix(border_color, tone_color, EGUI_ALPHA_MAKE(4));
+    badge_text = checked ? egui_rgb_mix(text_color, tone_color, EGUI_ALPHA_MAKE(18)) : muted_text_color;
+    if (local->read_only_mode)
+    {
+        badge_fill = egui_rgb_mix(badge_fill, HCW_COLOR_TEXT_STRONG, EGUI_ALPHA_MAKE(8));
+        badge_border = egui_rgb_mix(badge_border, HCW_COLOR_TEXT_STRONG, EGUI_ALPHA_MAKE(12));
+        badge_text = egui_rgb_mix(badge_text, HCW_COLOR_TEXT_STRONG, EGUI_ALPHA_MAKE(14));
+    }
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.badge_region.location.x, metrics.badge_region.location.y, metrics.badge_region.size.width,
                                           metrics.badge_region.size.height, metrics.badge_region.size.height / 2, badge_fill,
-                                          egui_color_alpha_mix(self->alpha, 100));
+                                          egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(100)));
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics.badge_region.location.x, metrics.badge_region.location.y, metrics.badge_region.size.width,
                                      metrics.badge_region.size.height, metrics.badge_region.size.height / 2, 1, badge_border,
-                                     egui_color_alpha_mix(self->alpha, 68));
-    toggle_split_button_draw_text(local->meta_font, self, checked ? "ON" : "OFF", &metrics.badge_region, EGUI_ALIGN_CENTER, badge_text);
+                                     egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(100)));
+    toggle_split_button_draw_badge_text(local->meta_font, self, checked ? "ON" : "OFF", &metrics.badge_region, badge_text);
     toggle_split_button_draw_text(local->font, self, snapshot->label, &metrics.label_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, primary_text);
     if (metrics.show_glyph)
     {
         toggle_split_button_draw_text(local->meta_font, self, snapshot->glyph, &metrics.glyph_region, EGUI_ALIGN_RIGHT | EGUI_ALIGN_VCENTER,
-                                      checked ? egui_rgb_mix(EGUI_COLOR_HEX(0xFFFFFF), tone_color, 18) : muted_text_color);
+                                      checked ? egui_rgb_mix(HCW_COLOR_SURFACE, tone_color, EGUI_ALPHA_MAKE(10)) : muted_text_color);
     }
 
-    menu_fill = egui_rgb_mix(surface_color, tone_color, local->compact_mode ? 8 : 6);
+    menu_fill = egui_rgb_mix(surface_color, tone_color, EGUI_ALPHA_MAKE(local->compact_mode ? 6 : 4));
     menu_border =
-            local->current_part == EGUI_VIEW_TOGGLE_SPLIT_BUTTON_PART_MENU && !local->read_only_mode ? tone_color : egui_rgb_mix(border_color, tone_color, 24);
-    menu_text = egui_rgb_mix(text_color, tone_color, 24);
+            local->current_part == EGUI_VIEW_TOGGLE_SPLIT_BUTTON_PART_MENU && !local->read_only_mode ? egui_rgb_mix(border_color, tone_color, EGUI_ALPHA_MAKE(14)) : egui_rgb_mix(border_color, tone_color, EGUI_ALPHA_MAKE(8));
+    menu_text = egui_rgb_mix(text_color, tone_color, EGUI_ALPHA_MAKE(18));
+    if (local->read_only_mode)
+    {
+        menu_border = egui_rgb_mix(menu_border, HCW_COLOR_TEXT_STRONG, EGUI_ALPHA_MAKE(12));
+        menu_text = egui_rgb_mix(menu_text, HCW_COLOR_TEXT_STRONG, EGUI_ALPHA_MAKE(16));
+    }
     if (local->pressed_part == EGUI_VIEW_TOGGLE_SPLIT_BUTTON_PART_MENU)
     {
-        menu_fill = egui_rgb_mix(menu_fill, tone_color, 22);
+        menu_fill = egui_rgb_mix(menu_fill, tone_color, EGUI_ALPHA_MAKE(6));
     }
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.menu_region.location.x, metrics.menu_region.location.y, metrics.menu_region.size.width,
-                                          metrics.menu_region.size.height, segment_radius, menu_fill, egui_color_alpha_mix(self->alpha, 96));
+                                          metrics.menu_region.size.height, segment_radius, menu_fill, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(100)));
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics.menu_region.location.x, metrics.menu_region.location.y, metrics.menu_region.size.width,
-                                     metrics.menu_region.size.height, segment_radius, 1, menu_border, egui_color_alpha_mix(self->alpha, 44));
+                                     metrics.menu_region.size.height, segment_radius, 1, menu_border, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(100)));
     toggle_split_button_draw_chevron(self, &metrics.menu_region, menu_text);
 
     if (local->current_part == EGUI_VIEW_TOGGLE_SPLIT_BUTTON_PART_PRIMARY && !local->read_only_mode)
@@ -870,15 +909,15 @@ void egui_view_toggle_split_button_init(egui_view_t *self)
     local->font = (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT;
     local->meta_font = (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT;
     local->on_changed = NULL;
-    local->surface_color = EGUI_COLOR_HEX(0xFFFFFF);
-    local->border_color = EGUI_COLOR_HEX(0xD6DEE7);
-    local->text_color = EGUI_COLOR_HEX(0x1D2630);
-    local->muted_text_color = EGUI_COLOR_HEX(0x6F7B89);
-    local->accent_color = EGUI_COLOR_HEX(0x2563EB);
-    local->success_color = EGUI_COLOR_HEX(0x178454);
-    local->warning_color = EGUI_COLOR_HEX(0xB87A16);
-    local->danger_color = EGUI_COLOR_HEX(0xB13A35);
-    local->neutral_color = EGUI_COLOR_HEX(0x7A8795);
+    local->surface_color = HCW_COLOR_PANEL;
+    local->border_color = HCW_COLOR_BORDER_STRONG;
+    local->text_color = HCW_COLOR_TEXT_STRONG;
+    local->muted_text_color = HCW_COLOR_TEXT_SOFT;
+    local->accent_color = HCW_COLOR_PRIMARY_DARK;
+    local->success_color = HCW_COLOR_SUCCESS;
+    local->warning_color = HCW_COLOR_WARNING_DARK;
+    local->danger_color = HCW_COLOR_DANGER_DARK;
+    local->neutral_color = HCW_COLOR_TEXT_SOFT;
     local->snapshot_count = 0;
     local->current_snapshot = 0;
     local->current_part = EGUI_VIEW_TOGGLE_SPLIT_BUTTON_PART_PRIMARY;

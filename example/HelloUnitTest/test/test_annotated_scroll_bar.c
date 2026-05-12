@@ -17,10 +17,10 @@ static uint8_t last_active_marker;
 static uint8_t last_part;
 
 static const egui_view_annotated_scroll_bar_marker_t test_markers[] = {
-        {"A", "Intro", 0, EGUI_COLOR_HEX(0x2563EB)},
-        {"B", "Board", 180, EGUI_COLOR_HEX(0x2563EB)},
-        {"C", "Review", 420, EGUI_COLOR_HEX(0x2563EB)},
-        {"D", "Wrap", 780, EGUI_COLOR_HEX(0x2563EB)},
+        {"A", "Intro", 0, HCW_COLOR_PRIMARY},
+        {"B", "Board", 180, HCW_COLOR_PRIMARY},
+        {"C", "Review", 420, HCW_COLOR_PRIMARY},
+        {"D", "Wrap", 780, HCW_COLOR_PRIMARY},
 };
 
 static void on_changed(egui_view_t *self, egui_dim_t offset, egui_dim_t max_offset, uint8_t active_marker, uint8_t part)

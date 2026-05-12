@@ -89,35 +89,35 @@ static char footer_heading_text[16];
 static char footer_note_text[24];
 static char footer_card_title_text[DOCK_PANEL_FOOTER_ITEM_COUNT][8];
 
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, HCW_COLOR_PAGE_BG, EGUI_ALPHA_100, 14);
 EGUI_BACKGROUND_PARAM_INIT(bg_page_panel_params, &bg_page_panel_param, NULL, NULL);
 EGUI_BACKGROUND_COLOR_STATIC_CONST_INIT(bg_page_panel, &bg_page_panel_params);
 
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_surface_panel_param, EGUI_COLOR_HEX(0xFFFFFF), EGUI_ALPHA_100, 12);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_surface_panel_param, HCW_COLOR_SURFACE, EGUI_ALPHA_100, 12);
 EGUI_BACKGROUND_PARAM_INIT(bg_surface_panel_params, &bg_surface_panel_param, NULL, NULL);
 EGUI_BACKGROUND_COLOR_STATIC_CONST_INIT(bg_surface_panel, &bg_surface_panel_params);
 
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_muted_panel_param, EGUI_COLOR_HEX(0xFBFCFD), EGUI_ALPHA_100, 12);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_muted_panel_param, HCW_COLOR_SURFACE_SUBTLE, EGUI_ALPHA_100, 12);
 EGUI_BACKGROUND_PARAM_INIT(bg_muted_panel_params, &bg_muted_panel_param, NULL, NULL);
 EGUI_BACKGROUND_COLOR_STATIC_CONST_INIT(bg_muted_panel, &bg_muted_panel_params);
 
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_dock_standard_param, EGUI_COLOR_HEX(0xF9FBFD), EGUI_ALPHA_100, 10);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_dock_standard_param, HCW_COLOR_PANEL, EGUI_ALPHA_100, 10);
 EGUI_BACKGROUND_PARAM_INIT(bg_dock_standard_params, &bg_dock_standard_param, NULL, NULL);
 EGUI_BACKGROUND_COLOR_STATIC_CONST_INIT(bg_dock_standard, &bg_dock_standard_params);
 
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_dock_compact_param, EGUI_COLOR_HEX(0xF4F7FA), EGUI_ALPHA_100, 10);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_dock_compact_param, HCW_COLOR_SURFACE_SUBTLE, EGUI_ALPHA_100, 10);
 EGUI_BACKGROUND_PARAM_INIT(bg_dock_compact_params, &bg_dock_compact_param, NULL, NULL);
 EGUI_BACKGROUND_COLOR_STATIC_CONST_INIT(bg_dock_compact, &bg_dock_compact_params);
 
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_card_neutral_param, EGUI_COLOR_HEX(0xF4F7FA), EGUI_ALPHA_100, 10);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_card_neutral_param, HCW_COLOR_SURFACE_SUBTLE, EGUI_ALPHA_100, 10);
 EGUI_BACKGROUND_PARAM_INIT(bg_card_neutral_params, &bg_card_neutral_param, NULL, NULL);
 EGUI_BACKGROUND_COLOR_STATIC_CONST_INIT(bg_card_neutral, &bg_card_neutral_params);
 
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_card_accent_param, EGUI_COLOR_HEX(0xE8F1FB), EGUI_ALPHA_100, 10);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_card_accent_param, HCW_COLOR_PRIMARY_TINT, EGUI_ALPHA_100, 10);
 EGUI_BACKGROUND_PARAM_INIT(bg_card_accent_params, &bg_card_accent_param, NULL, NULL);
 EGUI_BACKGROUND_COLOR_STATIC_CONST_INIT(bg_card_accent, &bg_card_accent_params);
 
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_card_warm_param, EGUI_COLOR_HEX(0xF9EEE2), EGUI_ALPHA_100, 10);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_card_warm_param, HCW_COLOR_WARNING_SOFT, EGUI_ALPHA_100, 10);
 EGUI_BACKGROUND_PARAM_INIT(bg_card_warm_params, &bg_card_warm_param, NULL, NULL);
 EGUI_BACKGROUND_COLOR_STATIC_CONST_INIT(bg_card_warm, &bg_card_warm_params);
 
@@ -356,11 +356,11 @@ static egui_color_t dock_card_get_title_color(dock_item_tone_t tone)
     switch (tone)
     {
     case DOCK_ITEM_TONE_ACCENT:
-        return EGUI_COLOR_HEX(0x0F5EA6);
+        return HCW_COLOR_PRIMARY;
     case DOCK_ITEM_TONE_WARM:
-        return EGUI_COLOR_HEX(0x8C4A00);
+        return HCW_COLOR_WARNING_DARK;
     default:
-        return EGUI_COLOR_HEX(0x21303F);
+        return HCW_COLOR_TEXT;
     }
 }
 
@@ -394,23 +394,27 @@ static void init_card(egui_view_linearlayout_t *card, egui_view_label_t *title_v
     egui_view_set_padding(EGUI_VIEW_OF(card), 4, 4, 2, 2);
     egui_view_set_background(EGUI_VIEW_OF(card), EGUI_BG_OF(&bg_card_neutral));
 
-    init_text_label(title_value, width - 8, height - 4, "", (const egui_font_t *)&egui_res_font_montserrat_8_4, EGUI_COLOR_HEX(0x21303F), EGUI_ALIGN_CENTER);
+    init_text_label(title_value, width - 8, height - 4, "", (const egui_font_t *)&egui_res_font_montserrat_8_4, HCW_COLOR_TEXT, EGUI_ALIGN_CENTER);
     egui_view_group_add_child(EGUI_VIEW_OF(card), EGUI_VIEW_OF(title_value));
 }
 
 static void set_card_state(egui_view_linearlayout_t *card, egui_view_label_t *title_value, char *title_buffer, uint8_t title_buffer_size,
                            const dock_item_t *item, uint8_t visible)
 {
+    uint8_t thin_card;
+
     if (!visible)
     {
         egui_view_set_gone(EGUI_VIEW_OF(card), 1);
         return;
     }
 
+    thin_card = item->height <= 10 ? 1 : 0;
     egui_view_set_gone(EGUI_VIEW_OF(card), 0);
     egui_view_set_size(EGUI_VIEW_OF(card), item->width, item->height);
     egui_view_set_background(EGUI_VIEW_OF(card), dock_card_get_background(item->tone));
-    egui_view_set_size(EGUI_VIEW_OF(title_value), item->width - 8, item->height - 4);
+    egui_view_set_padding(EGUI_VIEW_OF(card), thin_card ? 3 : 4, thin_card ? 3 : 4, thin_card ? 1 : 2, thin_card ? 1 : 2);
+    egui_view_set_size(EGUI_VIEW_OF(title_value), item->width - (thin_card ? 6 : 8), item->height - (thin_card ? 2 : 4));
     dock_panel_set_fitted_label_text(title_value, title_buffer, title_buffer_size, item->title, 4);
     egui_view_label_set_font_color(EGUI_VIEW_OF(title_value), dock_card_get_title_color(item->tone), EGUI_ALPHA_100);
     hcw_dock_panel_set_child_dock(EGUI_VIEW_OF(card), item->dock_type);
@@ -537,7 +541,7 @@ void test_init_ui(void)
     egui_view_linearlayout_set_align_type(EGUI_VIEW_OF(&root_layout), EGUI_ALIGN_HCENTER);
     egui_view_set_background(EGUI_VIEW_OF(&root_layout), EGUI_BG_OF(&bg_page_panel));
 
-    init_text_label(&title_label, DOCK_PANEL_ROOT_WIDTH, 18, title_text, (const egui_font_t *)&egui_res_font_montserrat_12_4, EGUI_COLOR_HEX(0x21303F),
+    init_text_label(&title_label, DOCK_PANEL_ROOT_WIDTH, 18, title_text, (const egui_font_t *)&egui_res_font_montserrat_12_4, HCW_COLOR_TEXT,
                     EGUI_ALIGN_CENTER);
     egui_view_set_margin(EGUI_VIEW_OF(&title_label), 0, 0, 8, 6);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label));
@@ -547,7 +551,7 @@ void test_init_ui(void)
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&primary_panel));
 
     init_text_label(&primary_heading_label, 176, 12, primary_snapshots[DOCK_PANEL_DEFAULT_SNAPSHOT].heading, (const egui_font_t *)&egui_res_font_montserrat_8_4,
-                    EGUI_COLOR_HEX(0x5E6D7C), EGUI_ALIGN_CENTER);
+                    HCW_COLOR_TEXT_MUTED, EGUI_ALIGN_CENTER);
     egui_view_set_margin(EGUI_VIEW_OF(&primary_heading_label), 0, 0, 0, 4);
     egui_view_group_add_child(EGUI_VIEW_OF(&primary_panel), EGUI_VIEW_OF(&primary_heading_label));
 
@@ -563,7 +567,7 @@ void test_init_ui(void)
     }
 
     init_text_label(&primary_note_label, 176, 10, primary_snapshots[DOCK_PANEL_DEFAULT_SNAPSHOT].note,
-                    (const egui_font_t *)&egui_res_font_montserrat_8_4, EGUI_COLOR_HEX(0x6B7A89), EGUI_ALIGN_CENTER);
+                    (const egui_font_t *)&egui_res_font_montserrat_8_4, HCW_COLOR_TEXT_MUTED, EGUI_ALIGN_CENTER);
     egui_view_group_add_child(EGUI_VIEW_OF(&primary_panel), EGUI_VIEW_OF(&primary_note_label));
 
     egui_view_linearlayout_init(EGUI_VIEW_OF(&bottom_row), uicode_get_core());
@@ -575,7 +579,7 @@ void test_init_ui(void)
     init_panel(&rail_panel, DOCK_PANEL_PREVIEW_PANEL_WIDTH, DOCK_PANEL_PREVIEW_PANEL_HEIGHT, EGUI_BG_OF(&bg_muted_panel), EGUI_ALIGN_HCENTER);
     egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&rail_panel));
 
-    init_text_label(&rail_heading_label, 84, 12, "Rail", (const egui_font_t *)&egui_res_font_montserrat_8_4, EGUI_COLOR_HEX(0x233241), EGUI_ALIGN_CENTER);
+    init_text_label(&rail_heading_label, 84, 12, "Rail", (const egui_font_t *)&egui_res_font_montserrat_8_4, HCW_COLOR_TEXT, EGUI_ALIGN_CENTER);
     egui_view_set_margin(EGUI_VIEW_OF(&rail_heading_label), 0, 0, 0, 4);
     egui_view_group_add_child(EGUI_VIEW_OF(&rail_panel), EGUI_VIEW_OF(&rail_heading_label));
 
@@ -591,7 +595,7 @@ void test_init_ui(void)
         egui_view_group_add_child(EGUI_VIEW_OF(&rail_preview_panel), EGUI_VIEW_OF(&rail_cards[index]));
     }
 
-    init_text_label(&rail_note_label, 84, 10, "Static preview.", (const egui_font_t *)&egui_res_font_montserrat_8_4, EGUI_COLOR_HEX(0x6B7A89),
+    init_text_label(&rail_note_label, 84, 10, "Static preview.", (const egui_font_t *)&egui_res_font_montserrat_8_4, HCW_COLOR_TEXT_MUTED,
                     EGUI_ALIGN_CENTER);
     egui_view_group_add_child(EGUI_VIEW_OF(&rail_panel), EGUI_VIEW_OF(&rail_note_label));
 
@@ -599,7 +603,7 @@ void test_init_ui(void)
     egui_view_set_margin(EGUI_VIEW_OF(&footer_panel), 8, 0, 0, 0);
     egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&footer_panel));
 
-    init_text_label(&footer_heading_label, 84, 12, "Footer", (const egui_font_t *)&egui_res_font_montserrat_8_4, EGUI_COLOR_HEX(0x233241),
+    init_text_label(&footer_heading_label, 84, 12, "Footer", (const egui_font_t *)&egui_res_font_montserrat_8_4, HCW_COLOR_TEXT,
                     EGUI_ALIGN_CENTER);
     egui_view_set_margin(EGUI_VIEW_OF(&footer_heading_label), 0, 0, 0, 4);
     egui_view_group_add_child(EGUI_VIEW_OF(&footer_panel), EGUI_VIEW_OF(&footer_heading_label));
@@ -616,7 +620,7 @@ void test_init_ui(void)
         egui_view_group_add_child(EGUI_VIEW_OF(&footer_preview_panel), EGUI_VIEW_OF(&footer_cards[index]));
     }
 
-    init_text_label(&footer_note_label, 84, 10, "Quiet shell.", (const egui_font_t *)&egui_res_font_montserrat_8_4, EGUI_COLOR_HEX(0x6B7A89),
+    init_text_label(&footer_note_label, 84, 10, "Quiet shell.", (const egui_font_t *)&egui_res_font_montserrat_8_4, HCW_COLOR_TEXT_MUTED,
                     EGUI_ALIGN_CENTER);
     egui_view_group_add_child(EGUI_VIEW_OF(&footer_panel), EGUI_VIEW_OF(&footer_note_label));
 

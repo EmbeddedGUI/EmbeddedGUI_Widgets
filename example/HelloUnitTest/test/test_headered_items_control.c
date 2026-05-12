@@ -38,10 +38,10 @@ struct headered_items_control_preview_snapshot
     egui_dim_t item0_y;
     egui_dim_t item1_x;
     egui_dim_t item1_y;
-    egui_dim_margin_padding_t padding_left;
-    egui_dim_margin_padding_t padding_right;
-    egui_dim_margin_padding_t padding_top;
-    egui_dim_margin_padding_t padding_bottom;
+    egui_dim_margin_padding_t content_padding_left;
+    egui_dim_margin_padding_t content_padding_right;
+    egui_dim_margin_padding_t content_padding_top;
+    egui_dim_margin_padding_t content_padding_bottom;
 };
 
 static egui_view_headered_items_control_t test_control;
@@ -99,7 +99,7 @@ static void setup_header_and_three_items(void)
 static void setup_preview_control(void)
 {
     egui_view_headered_items_control_init(EGUI_VIEW_OF(&preview_control));
-    egui_view_set_size(EGUI_VIEW_OF(&preview_control), 92, 54);
+    egui_view_set_size(EGUI_VIEW_OF(&preview_control), 92, 68);
     setup_label(&preview_header, 58, 12, "Wrap");
     setup_label(&preview_item0, 36, 12, "One");
     setup_label(&preview_item1, 36, 12, "Two");
@@ -185,10 +185,10 @@ static void capture_preview_snapshot(headered_items_control_preview_snapshot_t *
     snapshot->item0_y = EGUI_VIEW_OF(&preview_item0)->region.location.y;
     snapshot->item1_x = EGUI_VIEW_OF(&preview_item1)->region.location.x;
     snapshot->item1_y = EGUI_VIEW_OF(&preview_item1)->region.location.y;
-    snapshot->padding_left = EGUI_VIEW_OF(&preview_control)->padding.left;
-    snapshot->padding_right = EGUI_VIEW_OF(&preview_control)->padding.right;
-    snapshot->padding_top = EGUI_VIEW_OF(&preview_control)->padding.top;
-    snapshot->padding_bottom = EGUI_VIEW_OF(&preview_control)->padding.bottom;
+    snapshot->content_padding_left = preview_control.content_padding_left;
+    snapshot->content_padding_right = preview_control.content_padding_right;
+    snapshot->content_padding_top = preview_control.content_padding_top;
+    snapshot->content_padding_bottom = preview_control.content_padding_bottom;
 }
 
 static void assert_preview_state_unchanged(const headered_items_control_preview_snapshot_t *snapshot)
@@ -221,10 +221,10 @@ static void assert_preview_state_unchanged(const headered_items_control_preview_
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->item0_y, EGUI_VIEW_OF(&preview_item0)->region.location.y);
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->item1_x, EGUI_VIEW_OF(&preview_item1)->region.location.x);
     EGUI_TEST_ASSERT_EQUAL_INT(snapshot->item1_y, EGUI_VIEW_OF(&preview_item1)->region.location.y);
-    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->padding_left, EGUI_VIEW_OF(&preview_control)->padding.left);
-    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->padding_right, EGUI_VIEW_OF(&preview_control)->padding.right);
-    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->padding_top, EGUI_VIEW_OF(&preview_control)->padding.top);
-    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->padding_bottom, EGUI_VIEW_OF(&preview_control)->padding.bottom);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->content_padding_left, preview_control.content_padding_left);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->content_padding_right, preview_control.content_padding_right);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->content_padding_top, preview_control.content_padding_top);
+    EGUI_TEST_ASSERT_EQUAL_INT(snapshot->content_padding_bottom, preview_control.content_padding_bottom);
     EGUI_TEST_ASSERT_EQUAL_INT(0, click_count);
 }
 
@@ -244,17 +244,15 @@ static void test_headered_items_control_init_defaults(void)
     EGUI_TEST_ASSERT_EQUAL_INT(5, egui_view_headered_items_control_get_item_gap(EGUI_VIEW_OF(&test_control)));
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_headered_items_control_get_compact_mode(EGUI_VIEW_OF(&test_control)));
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_headered_items_control_get_read_only_mode(EGUI_VIEW_OF(&test_control)));
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xFFFFFF).full, test_control.surface_color.full);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xC7D3DE).full, test_control.border_color.full);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xEDF5FD).full, test_control.header_color.full);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xF2F7FC).full, test_control.item_surface_color.full);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x0F6CBD).full, test_control.accent_color.full);
-#if EGUI_CONFIG_FUNCTION_SUPPORT_MARGIN_PADDING
-    EGUI_TEST_ASSERT_EQUAL_INT(12, EGUI_VIEW_OF(&test_control)->padding.left);
-    EGUI_TEST_ASSERT_EQUAL_INT(12, EGUI_VIEW_OF(&test_control)->padding.right);
-    EGUI_TEST_ASSERT_EQUAL_INT(10, EGUI_VIEW_OF(&test_control)->padding.top);
-    EGUI_TEST_ASSERT_EQUAL_INT(10, EGUI_VIEW_OF(&test_control)->padding.bottom);
-#endif
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_SURFACE.full, test_control.surface_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_BORDER_STRONG.full, test_control.border_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_SURFACE_SUBTLE.full, test_control.header_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PANEL.full, test_control.item_surface_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(18, test_control.content_padding_left);
+    EGUI_TEST_ASSERT_EQUAL_INT(18, test_control.content_padding_right);
+    EGUI_TEST_ASSERT_EQUAL_INT(14, test_control.content_padding_top);
+    EGUI_TEST_ASSERT_EQUAL_INT(14, test_control.content_padding_bottom);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PRIMARY.full, test_control.accent_color.full);
 }
 
 static void test_headered_items_control_header_and_linear_layout(void)
@@ -265,42 +263,36 @@ static void test_headered_items_control_header_and_linear_layout(void)
     EGUI_TEST_ASSERT_TRUE(egui_view_headered_items_control_get_header(EGUI_VIEW_OF(&test_control)) == EGUI_VIEW_OF(&test_header));
     EGUI_TEST_ASSERT_EQUAL_INT(3, egui_view_headered_items_control_get_item_count(EGUI_VIEW_OF(&test_control)));
     EGUI_TEST_ASSERT_EQUAL_INT(4, egui_view_group_get_child_count(EGUI_VIEW_OF(&test_control)));
-#if EGUI_CONFIG_FUNCTION_SUPPORT_MARGIN_PADDING
-    EGUI_TEST_ASSERT_EQUAL_INT(12, EGUI_VIEW_OF(&test_header)->region.location.x);
-    EGUI_TEST_ASSERT_EQUAL_INT(10, EGUI_VIEW_OF(&test_header)->region.location.y);
-    EGUI_TEST_ASSERT_EQUAL_INT(12, EGUI_VIEW_OF(&test_item0)->region.location.x);
-    EGUI_TEST_ASSERT_EQUAL_INT(32, EGUI_VIEW_OF(&test_item0)->region.location.y);
-    EGUI_TEST_ASSERT_EQUAL_INT(12, EGUI_VIEW_OF(&test_item1)->region.location.x);
-    EGUI_TEST_ASSERT_EQUAL_INT(51, EGUI_VIEW_OF(&test_item1)->region.location.y);
-    EGUI_TEST_ASSERT_EQUAL_INT(12, EGUI_VIEW_OF(&test_item2)->region.location.x);
-    EGUI_TEST_ASSERT_EQUAL_INT(70, EGUI_VIEW_OF(&test_item2)->region.location.y);
-#endif
+    EGUI_TEST_ASSERT_EQUAL_INT(18, EGUI_VIEW_OF(&test_header)->region.location.x);
+    EGUI_TEST_ASSERT_EQUAL_INT(14, EGUI_VIEW_OF(&test_header)->region.location.y);
+    EGUI_TEST_ASSERT_EQUAL_INT(18, EGUI_VIEW_OF(&test_item0)->region.location.x);
+    EGUI_TEST_ASSERT_EQUAL_INT(36, EGUI_VIEW_OF(&test_item0)->region.location.y);
+    EGUI_TEST_ASSERT_EQUAL_INT(18, EGUI_VIEW_OF(&test_item1)->region.location.x);
+    EGUI_TEST_ASSERT_EQUAL_INT(55, EGUI_VIEW_OF(&test_item1)->region.location.y);
+    EGUI_TEST_ASSERT_EQUAL_INT(18, EGUI_VIEW_OF(&test_item2)->region.location.x);
+    EGUI_TEST_ASSERT_EQUAL_INT(74, EGUI_VIEW_OF(&test_item2)->region.location.y);
 
     egui_view_headered_items_control_set_header_align_type(EGUI_VIEW_OF(&test_control), EGUI_ALIGN_TOP_RIGHT);
     egui_view_headered_items_control_set_item_align_type(EGUI_VIEW_OF(&test_control), EGUI_ALIGN_BOTTOM_RIGHT);
-#if EGUI_CONFIG_FUNCTION_SUPPORT_MARGIN_PADDING
-    EGUI_TEST_ASSERT_EQUAL_INT(66, EGUI_VIEW_OF(&test_header)->region.location.x);
-    EGUI_TEST_ASSERT_EQUAL_INT(68, EGUI_VIEW_OF(&test_item0)->region.location.x);
-    EGUI_TEST_ASSERT_EQUAL_INT(38, EGUI_VIEW_OF(&test_item0)->region.location.y);
-    EGUI_TEST_ASSERT_EQUAL_INT(68, EGUI_VIEW_OF(&test_item1)->region.location.x);
-    EGUI_TEST_ASSERT_EQUAL_INT(57, EGUI_VIEW_OF(&test_item1)->region.location.y);
-    EGUI_TEST_ASSERT_EQUAL_INT(68, EGUI_VIEW_OF(&test_item2)->region.location.x);
-    EGUI_TEST_ASSERT_EQUAL_INT(76, EGUI_VIEW_OF(&test_item2)->region.location.y);
-#endif
+    EGUI_TEST_ASSERT_EQUAL_INT(60, EGUI_VIEW_OF(&test_header)->region.location.x);
+    EGUI_TEST_ASSERT_EQUAL_INT(62, EGUI_VIEW_OF(&test_item0)->region.location.x);
+    EGUI_TEST_ASSERT_EQUAL_INT(36, EGUI_VIEW_OF(&test_item0)->region.location.y);
+    EGUI_TEST_ASSERT_EQUAL_INT(62, EGUI_VIEW_OF(&test_item1)->region.location.x);
+    EGUI_TEST_ASSERT_EQUAL_INT(55, EGUI_VIEW_OF(&test_item1)->region.location.y);
+    EGUI_TEST_ASSERT_EQUAL_INT(62, EGUI_VIEW_OF(&test_item2)->region.location.x);
+    EGUI_TEST_ASSERT_EQUAL_INT(74, EGUI_VIEW_OF(&test_item2)->region.location.y);
 
     egui_view_set_size(EGUI_VIEW_OF(&test_item0), 28, 14);
     egui_view_set_size(EGUI_VIEW_OF(&test_item1), 34, 14);
     egui_view_set_size(EGUI_VIEW_OF(&test_item2), 20, 14);
     egui_view_headered_items_control_set_layout_mode(EGUI_VIEW_OF(&test_control), EGUI_VIEW_HEADERED_ITEMS_CONTROL_LAYOUT_HORIZONTAL);
     egui_view_headered_items_control_set_item_align_type(EGUI_VIEW_OF(&test_control), EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER);
-#if EGUI_CONFIG_FUNCTION_SUPPORT_MARGIN_PADDING
-    EGUI_TEST_ASSERT_EQUAL_INT(12, EGUI_VIEW_OF(&test_item0)->region.location.x);
+    EGUI_TEST_ASSERT_EQUAL_INT(18, EGUI_VIEW_OF(&test_item0)->region.location.x);
     EGUI_TEST_ASSERT_EQUAL_INT(54, EGUI_VIEW_OF(&test_item0)->region.location.y);
-    EGUI_TEST_ASSERT_EQUAL_INT(45, EGUI_VIEW_OF(&test_item1)->region.location.x);
+    EGUI_TEST_ASSERT_EQUAL_INT(51, EGUI_VIEW_OF(&test_item1)->region.location.x);
     EGUI_TEST_ASSERT_EQUAL_INT(54, EGUI_VIEW_OF(&test_item1)->region.location.y);
-    EGUI_TEST_ASSERT_EQUAL_INT(84, EGUI_VIEW_OF(&test_item2)->region.location.x);
+    EGUI_TEST_ASSERT_EQUAL_INT(90, EGUI_VIEW_OF(&test_item2)->region.location.x);
     EGUI_TEST_ASSERT_EQUAL_INT(54, EGUI_VIEW_OF(&test_item2)->region.location.y);
-#endif
 }
 
 static void test_headered_items_control_wrap_layout_and_clear(void)
@@ -317,16 +309,14 @@ static void test_headered_items_control_wrap_layout_and_clear(void)
     egui_view_headered_items_control_add_item(EGUI_VIEW_OF(&test_control), EGUI_VIEW_OF(&test_item2));
     egui_view_headered_items_control_apply_wrap_style(EGUI_VIEW_OF(&test_control));
 
-#if EGUI_CONFIG_FUNCTION_SUPPORT_MARGIN_PADDING
-    EGUI_TEST_ASSERT_EQUAL_INT(8, EGUI_VIEW_OF(&test_header)->region.location.x);
-    EGUI_TEST_ASSERT_EQUAL_INT(6, EGUI_VIEW_OF(&test_header)->region.location.y);
-    EGUI_TEST_ASSERT_EQUAL_INT(8, EGUI_VIEW_OF(&test_item0)->region.location.x);
-    EGUI_TEST_ASSERT_EQUAL_INT(24, EGUI_VIEW_OF(&test_item0)->region.location.y);
-    EGUI_TEST_ASSERT_EQUAL_INT(55, EGUI_VIEW_OF(&test_item1)->region.location.x);
-    EGUI_TEST_ASSERT_EQUAL_INT(24, EGUI_VIEW_OF(&test_item1)->region.location.y);
-    EGUI_TEST_ASSERT_EQUAL_INT(8, EGUI_VIEW_OF(&test_item2)->region.location.x);
-    EGUI_TEST_ASSERT_EQUAL_INT(43, EGUI_VIEW_OF(&test_item2)->region.location.y);
-#endif
+    EGUI_TEST_ASSERT_EQUAL_INT(12, EGUI_VIEW_OF(&test_header)->region.location.x);
+    EGUI_TEST_ASSERT_EQUAL_INT(10, EGUI_VIEW_OF(&test_header)->region.location.y);
+    EGUI_TEST_ASSERT_EQUAL_INT(12, EGUI_VIEW_OF(&test_item0)->region.location.x);
+    EGUI_TEST_ASSERT_EQUAL_INT(28, EGUI_VIEW_OF(&test_item0)->region.location.y);
+    EGUI_TEST_ASSERT_EQUAL_INT(59, EGUI_VIEW_OF(&test_item1)->region.location.x);
+    EGUI_TEST_ASSERT_EQUAL_INT(28, EGUI_VIEW_OF(&test_item1)->region.location.y);
+    EGUI_TEST_ASSERT_EQUAL_INT(12, EGUI_VIEW_OF(&test_item2)->region.location.x);
+    EGUI_TEST_ASSERT_EQUAL_INT(47, EGUI_VIEW_OF(&test_item2)->region.location.y);
 
     egui_view_headered_items_control_clear_items(EGUI_VIEW_OF(&test_control));
     EGUI_TEST_ASSERT_TRUE(egui_view_headered_items_control_get_header(EGUI_VIEW_OF(&test_control)) == EGUI_VIEW_OF(&test_header));
@@ -367,6 +357,8 @@ static void test_headered_items_control_styles_palette_and_clamps(void)
     egui_view_headered_items_control_apply_strip_style(EGUI_VIEW_OF(&test_control));
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_HEADERED_ITEMS_CONTROL_LAYOUT_HORIZONTAL,
                                egui_view_headered_items_control_get_layout_mode(EGUI_VIEW_OF(&test_control)));
+    EGUI_TEST_ASSERT_EQUAL_INT(18, test_control.content_padding_left);
+    EGUI_TEST_ASSERT_EQUAL_INT(14, test_control.content_padding_top);
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_headered_items_control_get_compact_mode(EGUI_VIEW_OF(&test_control)));
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_headered_items_control_get_read_only_mode(EGUI_VIEW_OF(&test_control)));
 
@@ -377,10 +369,14 @@ static void test_headered_items_control_styles_palette_and_clamps(void)
     EGUI_TEST_ASSERT_EQUAL_INT(6, egui_view_headered_items_control_get_corner_radius(EGUI_VIEW_OF(&test_control)));
     EGUI_TEST_ASSERT_EQUAL_INT(4, egui_view_headered_items_control_get_header_gap(EGUI_VIEW_OF(&test_control)));
     EGUI_TEST_ASSERT_EQUAL_INT(5, egui_view_headered_items_control_get_item_gap(EGUI_VIEW_OF(&test_control)));
+    EGUI_TEST_ASSERT_EQUAL_INT(12, test_control.content_padding_left);
+    EGUI_TEST_ASSERT_EQUAL_INT(10, test_control.content_padding_top);
 
     egui_view_headered_items_control_apply_read_only_style(EGUI_VIEW_OF(&test_control));
     EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_headered_items_control_get_compact_mode(EGUI_VIEW_OF(&test_control)));
     EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_headered_items_control_get_read_only_mode(EGUI_VIEW_OF(&test_control)));
+    EGUI_TEST_ASSERT_EQUAL_INT(12, test_control.content_padding_left);
+    EGUI_TEST_ASSERT_EQUAL_INT(10, test_control.content_padding_top);
 }
 
 static void test_headered_items_control_static_preview_consumes_input_and_keeps_state(void)
@@ -390,7 +386,7 @@ static void test_headered_items_control_static_preview_consumes_input_and_keeps_
     egui_dim_t center_y;
 
     setup_preview_control();
-    layout_view(EGUI_VIEW_OF(&preview_control), 12, 18, 92, 54);
+    layout_view(EGUI_VIEW_OF(&preview_control), 12, 18, 92, 68);
     get_view_center(EGUI_VIEW_OF(&preview_control), &center_x, &center_y);
     capture_preview_snapshot(&initial_snapshot);
 

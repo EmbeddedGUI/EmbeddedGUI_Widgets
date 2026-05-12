@@ -177,7 +177,7 @@ static void test_badge_style_helpers_update_variant_and_palette(void)
 
     EGUI_TEST_ASSERT_FALSE(local->outline_mode);
     EGUI_TEST_ASSERT_FALSE(local->subtle_mode);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x0F6CBD).full, local->surface_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PRIMARY.full, local->surface_color.full);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_WHITE.full, local->text_color.full);
 
     egui_view_set_pressed(EGUI_VIEW_OF(local), 1);
@@ -185,15 +185,15 @@ static void test_badge_style_helpers_update_variant_and_palette(void)
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(local)->is_pressed);
     EGUI_TEST_ASSERT_TRUE(local->outline_mode);
     EGUI_TEST_ASSERT_FALSE(local->subtle_mode);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xFFFFFF).full, local->surface_color.full);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x0F6CBD).full, local->accent_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_SURFACE.full, local->surface_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PRIMARY.full, local->accent_color.full);
 
     egui_view_set_pressed(EGUI_VIEW_OF(local), 1);
     egui_view_badge_apply_subtle_style(EGUI_VIEW_OF(local));
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(local)->is_pressed);
     EGUI_TEST_ASSERT_FALSE(local->outline_mode);
     EGUI_TEST_ASSERT_TRUE(local->subtle_mode);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xF3F7FB).full, local->surface_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PANEL.full, local->surface_color.full);
 }
 
 static void test_badge_setters_clear_pressed_state_and_update_content(void)
@@ -224,7 +224,7 @@ static void test_badge_setters_clear_pressed_state_and_update_content(void)
     EGUI_TEST_ASSERT_TRUE(local->icon_font == EGUI_FONT_ICON_MS_20);
 
     egui_view_set_pressed(EGUI_VIEW_OF(local), 1);
-    egui_view_badge_set_palette(EGUI_VIEW_OF(local), EGUI_COLOR_HEX(0xF8F9FA), EGUI_COLOR_HEX(0xCCD3DA), EGUI_COLOR_HEX(0x22303F),
+    egui_view_badge_set_palette(EGUI_VIEW_OF(local), EGUI_COLOR_HEX(0xF8F9FA), EGUI_COLOR_HEX(0xCCD3DA), HCW_COLOR_TEXT,
                                 EGUI_COLOR_HEX(0x13579B));
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(local)->is_pressed);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x13579B).full, local->accent_color.full);

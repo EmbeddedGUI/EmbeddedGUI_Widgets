@@ -60,7 +60,7 @@
 - 底部行容器尺寸：`216 x 72`
 - 单个 preview 尺寸：`104 x 72`
 - 页面结构：标题 -> 主 `pivot` -> 底部 `compact / read only`
-- 页面风格：浅灰 page panel、白色主 surface、低噪音边框、轻量 active fill 与 underline
+- 页面风格：浅灰 page panel、白色主 surface、低噪音边框，当前项只通过轻量 active fill 和文字层级表达，不再保留底部 underline
 
 ## 6. 状态矩阵
 | 状态 / 区域 | 主控件 | Compact preview | Read only preview |

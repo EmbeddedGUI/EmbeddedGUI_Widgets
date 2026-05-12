@@ -2,6 +2,7 @@
 #define _UICODE_DISP0_H_
 
 #include "egui.h"
+#include "hcw_palette.h"
 
 #ifdef __cplusplus
 extern "C" {

@@ -47,7 +47,7 @@ static egui_view_api_t wrap_preview_api;
 static egui_view_api_t read_only_preview_api;
 static uint8_t ui_ready;
 
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, HCW_COLOR_PAGE_BG, EGUI_ALPHA_100, 14);
 EGUI_BACKGROUND_PARAM_INIT(bg_page_panel_params, &bg_page_panel_param, NULL, NULL);
 EGUI_BACKGROUND_COLOR_STATIC_CONST_INIT(bg_page_panel, &bg_page_panel_params);
 
@@ -57,7 +57,7 @@ static const items_control_snapshot_t primary_snapshots[] = {
         {
                 {"Inbox", "Design", "Review", "Done"},
                 "Vertical / item host",
-                EGUI_COLOR_HEX(0x0F6CBD),
+                HCW_COLOR_PRIMARY,
                 0,
                 130,
                 16,
@@ -65,7 +65,7 @@ static const items_control_snapshot_t primary_snapshots[] = {
         {
                 {"One", "Two", "Three", "Four"},
                 "Horizontal / strip",
-                EGUI_COLOR_HEX(0x0F6CBD),
+                HCW_COLOR_PRIMARY,
                 1,
                 34,
                 18,
@@ -73,7 +73,7 @@ static const items_control_snapshot_t primary_snapshots[] = {
         {
                 {"Alpha", "Beta", "Gamma", "Delta"},
                 "Wrap / compact chips",
-                EGUI_COLOR_HEX(0x0F7B45),
+                HCW_COLOR_SUCCESS,
                 2,
                 88,
                 18,
@@ -81,7 +81,7 @@ static const items_control_snapshot_t primary_snapshots[] = {
         {
                 {"Read", "Only", "Static", "Items"},
                 "Read only / muted list",
-                EGUI_COLOR_HEX(0x65717E),
+                HCW_COLOR_TEXT_SOFT,
                 3,
                 128,
                 16,
@@ -207,7 +207,7 @@ void test_init_ui(void)
     egui_view_label_set_text(EGUI_VIEW_OF(&title_label), title_text);
     egui_view_label_set_align_type(EGUI_VIEW_OF(&title_label), EGUI_ALIGN_CENTER);
     hello_custom_widgets_demo_set_label_font_with_min_height(EGUI_VIEW_OF(&title_label), (const egui_font_t *)&egui_res_font_montserrat_12_4);
-    egui_view_label_set_font_color(EGUI_VIEW_OF(&title_label), EGUI_COLOR_HEX(0x21303F), EGUI_ALPHA_100);
+    egui_view_label_set_font_color(EGUI_VIEW_OF(&title_label), HCW_COLOR_TEXT, EGUI_ALPHA_100);
     egui_view_set_margin(EGUI_VIEW_OF(&title_label), 0, 8, 0, 8);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label));
 
@@ -217,7 +217,7 @@ void test_init_ui(void)
     for (i = 0; i < ITEMS_CONTROL_ITEM_COUNT; i++)
     {
         init_item_label(&primary_items[i], 130, 16, primary_snapshots[0].items[i], (const egui_font_t *)&egui_res_font_montserrat_8_4,
-                        EGUI_COLOR_HEX(0x0F6CBD));
+                        HCW_COLOR_PRIMARY);
         egui_view_items_control_add_item(EGUI_VIEW_OF(&primary_control), EGUI_VIEW_OF(&primary_items[i]));
     }
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&primary_control));
@@ -227,7 +227,7 @@ void test_init_ui(void)
     egui_view_label_set_text(EGUI_VIEW_OF(&caption_label), "Vertical / item host");
     egui_view_label_set_align_type(EGUI_VIEW_OF(&caption_label), EGUI_ALIGN_CENTER);
     hello_custom_widgets_demo_set_label_font_with_min_height(EGUI_VIEW_OF(&caption_label), (const egui_font_t *)&egui_res_font_montserrat_8_4);
-    egui_view_label_set_font_color(EGUI_VIEW_OF(&caption_label), EGUI_COLOR_HEX(0x0F6CBD), EGUI_ALPHA_100);
+    egui_view_label_set_font_color(EGUI_VIEW_OF(&caption_label), HCW_COLOR_PRIMARY, EGUI_ALPHA_100);
     egui_view_set_margin(EGUI_VIEW_OF(&caption_label), 0, 0, 0, 10);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&caption_label));
 
@@ -241,7 +241,7 @@ void test_init_ui(void)
     egui_view_set_size(EGUI_VIEW_OF(&wrap_preview), ITEMS_CONTROL_PREVIEW_WIDTH, ITEMS_CONTROL_PREVIEW_HEIGHT);
     for (i = 0; i < 3; i++)
     {
-        init_item_label(&wrap_items[i], 34, 14, "Wrap", (const egui_font_t *)&egui_res_font_montserrat_8_4, EGUI_COLOR_HEX(0x0F7B45));
+        init_item_label(&wrap_items[i], 34, 14, "Wrap", (const egui_font_t *)&egui_res_font_montserrat_8_4, HCW_COLOR_SUCCESS);
         egui_view_items_control_add_item(EGUI_VIEW_OF(&wrap_preview), EGUI_VIEW_OF(&wrap_items[i]));
     }
     egui_view_items_control_override_static_preview_api(EGUI_VIEW_OF(&wrap_preview), &wrap_preview_api);
@@ -255,7 +255,7 @@ void test_init_ui(void)
     egui_view_set_margin(EGUI_VIEW_OF(&read_only_preview), 12, 0, 0, 0);
     for (i = 0; i < 3; i++)
     {
-        init_item_label(&read_only_items[i], 58, 12, "Read", (const egui_font_t *)&egui_res_font_montserrat_8_4, EGUI_COLOR_HEX(0x65717E));
+        init_item_label(&read_only_items[i], 58, 12, "Read", (const egui_font_t *)&egui_res_font_montserrat_8_4, HCW_COLOR_TEXT_SOFT);
         egui_view_items_control_add_item(EGUI_VIEW_OF(&read_only_preview), EGUI_VIEW_OF(&read_only_items[i]));
     }
     egui_view_items_control_override_static_preview_api(EGUI_VIEW_OF(&read_only_preview), &read_only_preview_api);

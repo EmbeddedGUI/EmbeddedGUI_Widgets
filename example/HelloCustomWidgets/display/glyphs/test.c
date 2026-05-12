@@ -40,17 +40,17 @@ static egui_view_api_t secondary_preview_api;
 static egui_view_api_t muted_preview_api;
 static uint8_t ui_ready;
 
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, HCW_COLOR_PAGE_BG, EGUI_ALPHA_100, 14);
 EGUI_BACKGROUND_PARAM_INIT(bg_page_panel_params, &bg_page_panel_param, NULL, NULL);
 EGUI_BACKGROUND_COLOR_STATIC_CONST_INIT(bg_page_panel, &bg_page_panel_params);
 
 static const char *title_text = "Glyphs";
 
 static const glyphs_snapshot_t primary_snapshots[] = {
-        {"Standard / UnicodeString", EGUI_COLOR_HEX(0x21303F), 0},
-        {"Accent / em size", EGUI_COLOR_HEX(0x0F6CBD), 1},
-        {"Small text / origin", EGUI_COLOR_HEX(0x0C7C73), 2},
-        {"Muted / fill", EGUI_COLOR_HEX(0x65717E), 3},
+        {"Standard / UnicodeString", HCW_COLOR_TEXT, 0},
+        {"Accent / em size", HCW_COLOR_PRIMARY, 1},
+        {"Small text / origin", HCW_COLOR_PRIMARY, 2},
+        {"Muted / fill", HCW_COLOR_TEXT_MUTED, 3},
 };
 
 static void layout_page(void);
@@ -70,7 +70,7 @@ static void configure_glyphs_standard(egui_view_t *view)
 {
     egui_view_glyphs_set_unicode_string(view, "Glyphs");
     egui_view_glyphs_set_font(view, (const egui_font_t *)&egui_res_font_montserrat_16_4, 16);
-    egui_view_glyphs_set_fill(view, EGUI_COLOR_HEX(0x21303F), EGUI_COLOR_HEX(0xBBD7F0));
+    egui_view_glyphs_set_fill(view, HCW_COLOR_TEXT, HCW_COLOR_PRIMARY_SOFT);
     egui_view_glyphs_set_origin(view, 8, 18);
 }
 
@@ -78,7 +78,7 @@ static void configure_glyphs_accent(egui_view_t *view)
 {
     egui_view_glyphs_set_unicode_string(view, "A1 B2 C3");
     egui_view_glyphs_set_font(view, (const egui_font_t *)&egui_res_font_montserrat_14_4, 14);
-    egui_view_glyphs_set_fill(view, EGUI_COLOR_HEX(0x0F6CBD), EGUI_COLOR_HEX(0xCFE2F3));
+    egui_view_glyphs_set_fill(view, HCW_COLOR_PRIMARY, HCW_COLOR_PRIMARY_TINT);
     egui_view_glyphs_set_origin(view, 10, 20);
 }
 
@@ -86,7 +86,7 @@ static void configure_glyphs_small_text(egui_view_t *view)
 {
     egui_view_glyphs_set_unicode_string(view, "ID-42");
     egui_view_glyphs_set_font(view, (const egui_font_t *)&egui_res_font_montserrat_10_4, 10);
-    egui_view_glyphs_set_fill(view, EGUI_COLOR_HEX(0x0C7C73), EGUI_COLOR_HEX(0xBFDCD8));
+    egui_view_glyphs_set_fill(view, HCW_COLOR_PRIMARY, HCW_COLOR_PRIMARY_SOFT);
     egui_view_glyphs_set_origin(view, 8, 24);
 }
 
@@ -94,7 +94,7 @@ static void configure_glyphs_muted(egui_view_t *view)
 {
     egui_view_glyphs_set_unicode_string(view, "Locked");
     egui_view_glyphs_set_font(view, (const egui_font_t *)&egui_res_font_montserrat_10_4, 10);
-    egui_view_glyphs_set_fill(view, EGUI_COLOR_HEX(0x65717E), EGUI_COLOR_HEX(0xCCD4DC));
+    egui_view_glyphs_set_fill(view, EGUI_COLOR_HEX(0x65717E), HCW_COLOR_BORDER);
     egui_view_glyphs_set_origin(view, 8, 24);
 }
 
@@ -178,7 +178,7 @@ void test_init_ui(void)
     egui_view_set_background(EGUI_VIEW_OF(&root_layout), EGUI_BG_OF(&bg_page_panel));
 
     init_text_label(&title_label, GLYPHS_ROOT_WIDTH, 18, title_text, (const egui_font_t *)&egui_res_font_montserrat_12_4,
-                    EGUI_COLOR_HEX(0x21303F), EGUI_ALIGN_CENTER);
+                    HCW_COLOR_TEXT, EGUI_ALIGN_CENTER);
     egui_view_set_margin(EGUI_VIEW_OF(&title_label), 0, 8, 0, 8);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label));
 
@@ -188,7 +188,7 @@ void test_init_ui(void)
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&primary_control));
 
     init_text_label(&caption_label, GLYPHS_ROOT_WIDTH, 12, "Standard / UnicodeString", (const egui_font_t *)&egui_res_font_montserrat_8_4,
-                    EGUI_COLOR_HEX(0x21303F), EGUI_ALIGN_CENTER);
+                    HCW_COLOR_TEXT, EGUI_ALIGN_CENTER);
     egui_view_set_margin(EGUI_VIEW_OF(&caption_label), 0, 0, 0, 14);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&caption_label));
 

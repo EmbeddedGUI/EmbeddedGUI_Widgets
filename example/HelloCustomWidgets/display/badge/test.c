@@ -54,7 +54,7 @@ static egui_view_api_t secondary_api;
 static egui_view_api_t muted_api;
 static uint8_t ui_ready;
 
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, HCW_COLOR_PAGE_BG, EGUI_ALPHA_100, 14);
 EGUI_BACKGROUND_PARAM_INIT(bg_page_panel_params, &bg_page_panel_param, NULL, NULL);
 EGUI_BACKGROUND_COLOR_STATIC_CONST_INIT(bg_page_panel, &bg_page_panel_params);
 
@@ -65,8 +65,8 @@ static const badge_snapshot_t primary_snapshots[] = {
                 "Verified",
                 EGUI_ICON_MS_DONE,
                 BADGE_STYLE_FILLED,
-                EGUI_COLOR_HEX(0x0F7B45),
-                EGUI_COLOR_HEX(0x0F7B45),
+                HCW_COLOR_SUCCESS,
+                HCW_COLOR_SUCCESS,
                 EGUI_COLOR_WHITE,
                 EGUI_COLOR_WHITE,
         },
@@ -74,19 +74,19 @@ static const badge_snapshot_t primary_snapshots[] = {
                 "Preview",
                 EGUI_ICON_MS_INFO,
                 BADGE_STYLE_OUTLINE,
-                EGUI_COLOR_HEX(0xFFFFFF),
-                EGUI_COLOR_HEX(0xB7CBE7),
-                EGUI_COLOR_HEX(0x0F548C),
-                EGUI_COLOR_HEX(0x0F6CBD),
+                HCW_COLOR_SURFACE,
+                HCW_COLOR_PRIMARY_SOFT,
+                HCW_COLOR_PRIMARY_DARK,
+                HCW_COLOR_PRIMARY,
         },
         {
                 "Needs review",
                 EGUI_ICON_MS_WARNING,
                 BADGE_STYLE_SUBTLE,
-                EGUI_COLOR_HEX(0xFFF6EE),
-                EGUI_COLOR_HEX(0xF2D4B2),
-                EGUI_COLOR_HEX(0x8F4C11),
-                EGUI_COLOR_HEX(0xB95A00),
+                HCW_COLOR_WARNING_SOFT,
+                HCW_COLOR_WARNING_SOFT,
+                HCW_COLOR_WARNING_DARK,
+                HCW_COLOR_WARNING,
         },
 };
 
@@ -131,8 +131,8 @@ static void apply_secondary_state(void)
     egui_view_badge_apply_outline_style(EGUI_VIEW_OF(&secondary_badge));
     egui_view_badge_set_text(EGUI_VIEW_OF(&secondary_badge), "Beta");
     egui_view_badge_set_icon(EGUI_VIEW_OF(&secondary_badge), EGUI_ICON_MS_INFO);
-    egui_view_badge_set_palette(EGUI_VIEW_OF(&secondary_badge), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xC6D5E8), EGUI_COLOR_HEX(0x124B78),
-                                EGUI_COLOR_HEX(0x0F6CBD));
+    egui_view_badge_set_palette(EGUI_VIEW_OF(&secondary_badge), HCW_COLOR_SURFACE, HCW_COLOR_BORDER, HCW_COLOR_PRIMARY_DARK,
+                                HCW_COLOR_PRIMARY);
 }
 
 static void apply_muted_state(void)
@@ -140,8 +140,8 @@ static void apply_muted_state(void)
     egui_view_badge_apply_subtle_style(EGUI_VIEW_OF(&muted_badge));
     egui_view_badge_set_text(EGUI_VIEW_OF(&muted_badge), "Archived");
     egui_view_badge_set_icon(EGUI_VIEW_OF(&muted_badge), NULL);
-    egui_view_badge_set_palette(EGUI_VIEW_OF(&muted_badge), EGUI_COLOR_HEX(0xF5F7FA), EGUI_COLOR_HEX(0xD7DEE6), EGUI_COLOR_HEX(0x73808C),
-                                EGUI_COLOR_HEX(0x87939E));
+    egui_view_badge_set_palette(EGUI_VIEW_OF(&muted_badge), HCW_COLOR_PANEL, HCW_COLOR_BORDER, HCW_COLOR_TEXT_MUTED,
+                                HCW_COLOR_TEXT_SOFT);
 }
 
 static void apply_preview_states(void)
@@ -190,7 +190,7 @@ void test_init_ui(void)
     egui_view_label_set_text(EGUI_VIEW_OF(&title_label), title_text);
     egui_view_label_set_align_type(EGUI_VIEW_OF(&title_label), EGUI_ALIGN_CENTER);
     hello_custom_widgets_demo_set_label_font_with_min_height(EGUI_VIEW_OF(&title_label), (const egui_font_t *)&egui_res_font_montserrat_12_4);
-    egui_view_label_set_font_color(EGUI_VIEW_OF(&title_label), EGUI_COLOR_HEX(0x21303F), EGUI_ALPHA_100);
+    egui_view_label_set_font_color(EGUI_VIEW_OF(&title_label), HCW_COLOR_TEXT, EGUI_ALPHA_100);
     egui_view_set_margin(EGUI_VIEW_OF(&title_label), 0, 8, 0, 8);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label));
 

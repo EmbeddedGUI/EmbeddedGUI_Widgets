@@ -75,8 +75,8 @@ static void setup_preview_button(void)
     egui_view_toggle_button_set_icon_font(EGUI_VIEW_OF(&preview_button), EGUI_FONT_ICON_MS_16);
     hcw_toggle_button_apply_standard_style(EGUI_VIEW_OF(&preview_button));
     preview_button.corner_radius = 7;
-    preview_button.on_color = EGUI_COLOR_HEX(0x0C7C73);
-    preview_button.off_color = EGUI_COLOR_HEX(0xDBEAE5);
+    preview_button.on_color = HCW_COLOR_PRIMARY;
+    preview_button.off_color = HCW_COLOR_PRIMARY_TINT;
     preview_button.text_color = EGUI_COLOR_WHITE;
     preview_button.icon_text_gap = 3;
     egui_view_toggle_button_set_on_toggled_listener(EGUI_VIEW_OF(&preview_button), on_toggled);
@@ -263,8 +263,8 @@ static void test_toggle_button_style_helper_updates_palette(void)
 
     hcw_toggle_button_apply_standard_style(EGUI_VIEW_OF(&test_button));
     EGUI_TEST_ASSERT_EQUAL_INT(10, test_button.corner_radius);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x2563EB).full, test_button.on_color.full);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xEAF1FB).full, test_button.off_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PRIMARY.full, test_button.on_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PRIMARY_TINT.full, test_button.off_color.full);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_WHITE.full, test_button.text_color.full);
     EGUI_TEST_ASSERT_EQUAL_INT(5, test_button.icon_text_gap);
 }

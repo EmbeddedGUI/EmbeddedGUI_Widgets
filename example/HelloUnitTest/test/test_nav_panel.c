@@ -251,7 +251,8 @@ static void test_nav_panel_setters_clear_pressed_state_and_helpers(void)
     EGUI_TEST_ASSERT_TRUE(strcmp("O", egui_view_nav_panel_get_badge_text(&g_items_primary[0])) == 0);
     EGUI_TEST_ASSERT_TRUE(strcmp("Files", egui_view_nav_panel_get_badge_text(&fallback_item)) == 0);
     EGUI_TEST_ASSERT_TRUE(strcmp("", egui_view_nav_panel_get_badge_text(&empty_item)) == 0);
-    EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(sample, EGUI_COLOR_DARK_GREY, 68).full, egui_view_nav_panel_mix_disabled(sample).full);
+    EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(sample, HCW_COLOR_SURFACE_SUBTLE, EGUI_ALPHA_MAKE(44)).full,
+                               egui_view_nav_panel_mix_disabled(sample).full);
 }
 
 static void test_nav_panel_internal_helpers_cover_text_fitting(void)

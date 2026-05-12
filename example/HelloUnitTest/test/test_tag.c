@@ -218,18 +218,18 @@ static void test_tag_init_uses_defaults_and_palette_setter_updates_palette(void)
     egui_view_tag_t *local;
     egui_color_t surface = EGUI_COLOR_HEX(0xF8F9FA);
     egui_color_t border = EGUI_COLOR_HEX(0xCCD3DA);
-    egui_color_t text = EGUI_COLOR_HEX(0x22303F);
-    egui_color_t secondary = EGUI_COLOR_HEX(0x708091);
+    egui_color_t text = HCW_COLOR_TEXT;
+    egui_color_t secondary = HCW_COLOR_TEXT_MUTED;
     egui_color_t accent = EGUI_COLOR_HEX(0x13579B);
 
     setup_tag();
     local = &test_tag_widget;
 
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xFFFFFF).full, local->surface_color.full);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xD5DDE6).full, local->border_color.full);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x1F2A35).full, local->text_color.full);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x637283).full, local->secondary_color.full);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x0F6CBD).full, local->accent_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_SURFACE.full, local->surface_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_BORDER.full, local->border_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT.full, local->text_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT_MUTED.full, local->secondary_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PRIMARY.full, local->accent_color.full);
 
     egui_view_set_pressed(EGUI_VIEW_OF(local), 1);
     egui_view_tag_set_palette(EGUI_VIEW_OF(local), surface, border, text, secondary, accent);
@@ -279,7 +279,7 @@ static void test_tag_setters_clear_pressed_state_and_update_content(void)
     EGUI_TEST_ASSERT_FALSE(local->dismissible);
 
     egui_view_set_pressed(EGUI_VIEW_OF(local), 1);
-    egui_view_tag_set_palette(EGUI_VIEW_OF(local), EGUI_COLOR_HEX(0xF8F9FA), EGUI_COLOR_HEX(0xCCD3DA), EGUI_COLOR_HEX(0x22303F), EGUI_COLOR_HEX(0x708091),
+    egui_view_tag_set_palette(EGUI_VIEW_OF(local), EGUI_COLOR_HEX(0xF8F9FA), EGUI_COLOR_HEX(0xCCD3DA), HCW_COLOR_TEXT, HCW_COLOR_TEXT_MUTED,
                               EGUI_COLOR_HEX(0x13579B));
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(local)->is_pressed);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x13579B).full, local->accent_color.full);

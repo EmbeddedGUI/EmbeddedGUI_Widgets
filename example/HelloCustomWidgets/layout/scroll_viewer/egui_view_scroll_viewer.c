@@ -32,7 +32,7 @@
 #define SV_COMPACT_SCROLLBAR_GAP  6
 #define SV_COMPACT_VIEWPORT_PAD   4
 #define SV_COMPACT_FOOTER_H       8
-#define SV_COMPACT_INDICATOR_W    30
+#define SV_COMPACT_INDICATOR_W    22
 #define SV_COMPACT_INDICATOR_H    5
 #define SV_COMPACT_TRACK_PAD_Y    1
 #define SV_COMPACT_THUMB_MIN_H    12
@@ -276,7 +276,7 @@ static egui_dim_t scroll_viewer_get_badge_height(egui_view_scroll_viewer_t *loca
 
 static egui_color_t scroll_viewer_mix_disabled(egui_color_t color)
 {
-    return egui_rgb_mix(color, EGUI_COLOR_DARK_GREY, 68);
+    return egui_rgb_mix(color, HCW_COLOR_SURFACE_SUBTLE, EGUI_ALPHA_MAKE(44));
 }
 
 static const egui_view_scroll_viewer_snapshot_t *scroll_viewer_get_snapshot(egui_view_scroll_viewer_t *local)
@@ -398,10 +398,12 @@ static egui_dim_t scroll_viewer_get_horizontal_step_inner(egui_view_scroll_viewe
 static uint8_t scroll_viewer_clear_pressed_state(egui_view_t *self, egui_view_scroll_viewer_t *local)
 {
     uint8_t had_pressed =
-            self->is_pressed || local->pressed_part != EGUI_VIEW_SCROLL_VIEWER_PART_NONE || local->thumb_dragging || local->track_direction != 0;
+            self->is_pressed || local->pressed_part != EGUI_VIEW_SCROLL_VIEWER_PART_NONE || local->thumb_dragging || local->surface_dragging ||
+            local->track_direction != 0;
 
     local->pressed_part = EGUI_VIEW_SCROLL_VIEWER_PART_NONE;
     local->thumb_dragging = 0;
+    local->surface_dragging = 0;
     local->track_direction = 0;
     egui_view_set_pressed(self, false);
     return had_pressed;
@@ -458,12 +460,14 @@ static void scroll_viewer_normalize_state(egui_view_scroll_viewer_t *local)
         local->current_part = EGUI_VIEW_SCROLL_VIEWER_PART_SURFACE;
         local->pressed_part = EGUI_VIEW_SCROLL_VIEWER_PART_NONE;
         local->thumb_dragging = 0;
+        local->surface_dragging = 0;
         local->track_direction = 0;
     }
     if (local->compact_mode || local->read_only_mode)
     {
         local->pressed_part = EGUI_VIEW_SCROLL_VIEWER_PART_NONE;
         local->thumb_dragging = 0;
+        local->surface_dragging = 0;
         local->track_direction = 0;
         if (local->current_part != EGUI_VIEW_SCROLL_VIEWER_PART_SURFACE)
         {
@@ -529,11 +533,11 @@ static egui_color_t scroll_viewer_tone_color(egui_view_scroll_viewer_t *local, u
     switch (tone)
     {
     case EGUI_VIEW_SCROLL_VIEWER_TONE_SUCCESS:
-        return egui_rgb_mix(EGUI_COLOR_HEX(0x0F9D58), local->preview_color, 18);
+        return egui_rgb_mix(HCW_COLOR_SUCCESS, local->preview_color, EGUI_ALPHA_MAKE(18));
     case EGUI_VIEW_SCROLL_VIEWER_TONE_WARNING:
-        return egui_rgb_mix(EGUI_COLOR_HEX(0xF59E0B), local->accent_color, 10);
+        return egui_rgb_mix(HCW_COLOR_WARNING, local->accent_color, EGUI_ALPHA_MAKE(10));
     case EGUI_VIEW_SCROLL_VIEWER_TONE_NEUTRAL:
-        return egui_rgb_mix(local->border_color, local->preview_color, 18);
+        return egui_rgb_mix(local->border_color, local->preview_color, EGUI_ALPHA_MAKE(18));
     default:
         return local->accent_color;
     }
@@ -550,6 +554,13 @@ static void scroll_viewer_draw_text(const egui_font_t *font, egui_view_t *self, 
     }
     draw_region = *region;
     egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, font, text, &draw_region, align, color, self->alpha);
+}
+
+static void scroll_viewer_get_screen_region(egui_view_t *self, const egui_region_t *local_region, egui_region_t *screen_region)
+{
+    *screen_region = *local_region;
+    screen_region->location.x += self->region_screen.location.x;
+    screen_region->location.y += self->region_screen.location.y;
 }
 
 static void scroll_viewer_draw_focus(egui_view_t *self, const egui_region_t *region, egui_dim_t radius, egui_color_t color, egui_alpha_t alpha)
@@ -835,6 +846,7 @@ static void scroll_viewer_draw_block(egui_view_t *self, egui_view_scroll_viewer_
     {
         return;
     }
+    EGUI_UNUSED(surface_color);
 
     block_region.location.x = viewport_content_region->location.x + block->origin_x - local->horizontal_offset;
     block_region.location.y = viewport_content_region->location.y + block->origin_y - local->vertical_offset;
@@ -854,8 +866,8 @@ static void scroll_viewer_draw_block(egui_view_t *self, egui_view_scroll_viewer_
     }
 
     tone_color = scroll_viewer_tone_color(local, block->tone);
-    fill_color = egui_rgb_mix(surface_color, tone_color, block->emphasized ? 18 : 12);
-    line_color = egui_rgb_mix(border_color, tone_color, 22);
+    fill_color = egui_rgb_mix(HCW_COLOR_PANEL, tone_color, EGUI_ALPHA_MAKE(block->emphasized ? 8 : 3));
+    line_color = egui_rgb_mix(border_color, tone_color, EGUI_ALPHA_MAKE(22));
     show_badge = scroll_viewer_has_text(block->badge);
 
     required_h = top_pad + bottom_pad + title_h + meta_h + text_gap;
@@ -906,9 +918,9 @@ static void scroll_viewer_draw_block(egui_view_t *self, egui_view_scroll_viewer_
     }
 
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, block_region.location.x, block_region.location.y, block_region.size.width, block_region.size.height, 7, fill_color,
-                                          egui_color_alpha_mix(self->alpha, 96));
+                                          egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(96)));
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, block_region.location.x, block_region.location.y, block_region.size.width, block_region.size.height, 7, 1, line_color,
-                                     egui_color_alpha_mix(self->alpha, 74));
+                                     egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(74)));
 
     badge_region.location.x = block_region.location.x + pad_x;
     badge_region.location.y = block_region.location.y + top_pad;
@@ -947,16 +959,17 @@ static void scroll_viewer_draw_block(egui_view_t *self, egui_view_scroll_viewer_
             pill_region.size.width = block_region.size.width - pad_x * 2;
         }
         egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, pill_region.location.x, pill_region.location.y, pill_region.size.width, pill_region.size.height, 4,
-                                              egui_rgb_mix(tone_color, EGUI_COLOR_WHITE, 20), egui_color_alpha_mix(self->alpha, 92));
+                                              egui_rgb_mix(tone_color, EGUI_COLOR_WHITE, EGUI_ALPHA_MAKE(20)),
+                                              egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(92)));
         scroll_viewer_fit_text_to_width(local->meta_font, block->badge, badge_label, sizeof(badge_label), pill_region.size.width - 4, meta_char_width);
-        scroll_viewer_draw_text(local->meta_font, self, badge_label, &pill_region, EGUI_ALIGN_CENTER, EGUI_COLOR_HEX(0xFFFFFF));
+        scroll_viewer_draw_text(local->meta_font, self, badge_label, &pill_region, EGUI_ALIGN_CENTER, HCW_COLOR_SURFACE);
     }
 
     scroll_viewer_fit_text_to_width(local->font, block->title, title_label, sizeof(title_label), title_region.size.width, title_char_width);
     scroll_viewer_draw_text(local->font, self, title_label, &title_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, text_color);
     scroll_viewer_fit_text_to_width(local->meta_font, block->meta, meta_label, sizeof(meta_label), meta_region.size.width, meta_char_width);
     scroll_viewer_draw_text(local->meta_font, self, meta_label, &meta_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER,
-                            egui_rgb_mix(text_color, muted_color, 34));
+                            egui_rgb_mix(text_color, muted_color, EGUI_ALPHA_MAKE(34)));
 }
 
 static void scroll_viewer_draw_surface(egui_view_t *self, egui_view_scroll_viewer_t *local, const egui_view_scroll_viewer_metrics_t *metrics,
@@ -966,8 +979,11 @@ static void scroll_viewer_draw_surface(egui_view_t *self, egui_view_scroll_viewe
     char footer_label[40];
     char empty_label[24];
     const egui_view_scroll_viewer_snapshot_t *snapshot = scroll_viewer_get_snapshot(local);
+    egui_canvas_t *canvas = &uicode_get_core()->canvas;
     const egui_region_t *prev_clip = egui_canvas_get_extra_clip(&uicode_get_core()->canvas);
     const egui_region_t *active_clip = NULL;
+    egui_region_t work_region_before_clip;
+    egui_region_t work_region_clip;
     egui_region_t screen_clip_region;
     egui_region_t clip_region;
     egui_region_t view_pill_region = metrics->viewport_region;
@@ -979,14 +995,15 @@ static void scroll_viewer_draw_surface(egui_view_t *self, egui_view_scroll_viewe
 
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics->viewport_region.location.x, metrics->viewport_region.location.y, metrics->viewport_region.size.width,
                                           metrics->viewport_region.size.height, local->compact_mode ? 7 : 9, viewport_color,
-                                          egui_color_alpha_mix(self->alpha, 94));
+                                          egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(94)));
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics->viewport_region.location.x, metrics->viewport_region.location.y, metrics->viewport_region.size.width,
                                      metrics->viewport_region.size.height, local->compact_mode ? 7 : 9, 1, border_color,
-                                     egui_color_alpha_mix(self->alpha, 68));
+                                     egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(68)));
 
     if (focus_surface)
     {
-        scroll_viewer_draw_focus(self, &metrics->viewport_region, local->compact_mode ? 8 : 10, egui_rgb_mix(accent_color, EGUI_COLOR_WHITE, 10), 58);
+        scroll_viewer_draw_focus(self, &metrics->viewport_region, local->compact_mode ? 8 : 10, egui_rgb_mix(accent_color, EGUI_COLOR_WHITE, EGUI_ALPHA_MAKE(18)),
+                                 EGUI_ALPHA_MAKE(78));
     }
 
     view_pill_region.location.x += 6;
@@ -998,19 +1015,22 @@ static void scroll_viewer_draw_surface(egui_view_t *self, egui_view_scroll_viewe
     {
         scroll_viewer_fit_text_to_width(local->meta_font, snapshot->footer, footer_label, sizeof(footer_label), view_pill_region.size.width, 4);
         scroll_viewer_draw_text(local->meta_font, self, footer_label, &view_pill_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER,
-                                egui_rgb_mix(text_color, muted_color, 28));
+                                egui_rgb_mix(text_color, muted_color, EGUI_ALPHA_MAKE(28)));
     }
 
-    screen_clip_region = metrics->viewport_content_region;
-    screen_clip_region.location.x += self->region_screen.location.x;
-    screen_clip_region.location.y += self->region_screen.location.y;
+    work_region_before_clip = *egui_canvas_get_base_view_work_region(canvas);
+    scroll_viewer_get_screen_region(self, &metrics->viewport_content_region, &screen_clip_region);
     active_clip = &screen_clip_region;
     if (prev_clip != NULL)
     {
         egui_region_intersect(&screen_clip_region, prev_clip, &clip_region);
         active_clip = &clip_region;
     }
-    egui_canvas_set_extra_clip(&uicode_get_core()->canvas, active_clip);
+    egui_region_copy(&work_region_clip, active_clip);
+    work_region_clip.location.x -= self->region_screen.location.x;
+    work_region_clip.location.y -= self->region_screen.location.y;
+    egui_region_intersect(&work_region_before_clip, &work_region_clip, egui_canvas_get_base_view_work_region(canvas));
+    egui_canvas_set_extra_clip(canvas, active_clip);
 
     for (i = 0; snapshot != NULL && snapshot->blocks != NULL && i < scroll_viewer_clamp_block_count(snapshot->block_count); i++)
     {
@@ -1027,12 +1047,13 @@ static void scroll_viewer_draw_surface(egui_view_t *self, egui_view_scroll_viewe
 
     if (prev_clip != NULL)
     {
-        egui_canvas_set_extra_clip(&uicode_get_core()->canvas, prev_clip);
+        egui_canvas_set_extra_clip(canvas, prev_clip);
     }
     else
     {
-        egui_canvas_clear_extra_clip(&uicode_get_core()->canvas);
+        egui_canvas_clear_extra_clip(canvas);
     }
+    *egui_canvas_get_base_view_work_region(canvas) = work_region_before_clip;
 }
 
 static void scroll_viewer_draw_indicator(egui_view_t *self, egui_view_scroll_viewer_t *local, const egui_view_scroll_viewer_metrics_t *metrics,
@@ -1042,8 +1063,8 @@ static void scroll_viewer_draw_indicator(egui_view_t *self, egui_view_scroll_vie
     egui_dim_t max_horizontal = scroll_viewer_get_max_horizontal_offset_inner(local);
 
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics->indicator_region.location.x, metrics->indicator_region.location.y, metrics->indicator_region.size.width,
-                                          metrics->indicator_region.size.height, 4, egui_rgb_mix(preview_color, border_color, 18),
-                                          egui_color_alpha_mix(self->alpha, 52));
+                                          metrics->indicator_region.size.height, 4, egui_rgb_mix(preview_color, border_color, EGUI_ALPHA_MAKE(18)),
+                                          egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(74)));
 
     if (thumb_region.size.width <= 0)
     {
@@ -1074,7 +1095,8 @@ static void scroll_viewer_draw_indicator(egui_view_t *self, egui_view_scroll_vie
     }
 
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, thumb_region.location.x, thumb_region.location.y, thumb_region.size.width, thumb_region.size.height, 4,
-                                          egui_rgb_mix(accent_color, preview_color, 16), egui_color_alpha_mix(self->alpha, 84));
+                                          egui_rgb_mix(accent_color, preview_color, EGUI_ALPHA_MAKE(16)),
+                                          egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(84)));
 }
 
 static void scroll_viewer_draw_track(egui_view_t *self, egui_view_scroll_viewer_t *local, const egui_view_scroll_viewer_metrics_t *metrics,
@@ -1091,18 +1113,18 @@ static void scroll_viewer_draw_track(egui_view_t *self, egui_view_scroll_viewer_
         return;
     }
 
-    track_fill = egui_rgb_mix(surface_color, border_color, 12);
-    thumb_fill = scroll_viewer_get_max_vertical_offset_inner(local) > 0 ? accent_color : egui_rgb_mix(preview_color, border_color, 30);
-    thumb_border = egui_rgb_mix(thumb_fill, EGUI_COLOR_WHITE, 10);
+    track_fill = egui_rgb_mix(surface_color, border_color, EGUI_ALPHA_MAKE(12));
+    thumb_fill = scroll_viewer_get_max_vertical_offset_inner(local) > 0 ? accent_color : egui_rgb_mix(preview_color, border_color, EGUI_ALPHA_MAKE(30));
+    thumb_border = egui_rgb_mix(thumb_fill, EGUI_COLOR_WHITE, EGUI_ALPHA_MAKE(18));
     thumb_focused =
             (local->current_part == EGUI_VIEW_SCROLL_VIEWER_PART_THUMB && !local->read_only_mode && !local->compact_mode && egui_view_get_enable(self)) ? 1 : 0;
     thumb_pressed = ((local->pressed_part == EGUI_VIEW_SCROLL_VIEWER_PART_THUMB && egui_view_get_pressed(self)) || local->thumb_dragging) ? 1 : 0;
 
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics->track_region.location.x, metrics->track_region.location.y, metrics->track_region.size.width,
-                                          metrics->track_region.size.height, 6, track_fill, egui_color_alpha_mix(self->alpha, 86));
+                                          metrics->track_region.size.height, 6, track_fill, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(86)));
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics->track_region.location.x, metrics->track_region.location.y, metrics->track_region.size.width,
-                                     metrics->track_region.size.height, 6, 1, egui_rgb_mix(border_color, preview_color, 18),
-                                     egui_color_alpha_mix(self->alpha, 50));
+                                     metrics->track_region.size.height, 6, 1, egui_rgb_mix(border_color, preview_color, EGUI_ALPHA_MAKE(18)),
+                                     egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(74)));
 
     if (local->pressed_part == EGUI_VIEW_SCROLL_VIEWER_PART_TRACK && local->track_direction != 0 && egui_view_get_pressed(self))
     {
@@ -1121,7 +1143,8 @@ static void scroll_viewer_draw_track(egui_view_t *self, egui_view_scroll_viewer_
         if (page_region.size.height > 0)
         {
             egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, page_region.location.x + 1, page_region.location.y, page_region.size.width - 2, page_region.size.height, 5,
-                                                  egui_rgb_mix(preview_color, accent_color, 24), egui_color_alpha_mix(self->alpha, 30));
+                                                  egui_rgb_mix(preview_color, accent_color, EGUI_ALPHA_MAKE(34)),
+                                                  egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(68)));
         }
     }
 
@@ -1131,17 +1154,17 @@ static void scroll_viewer_draw_track(egui_view_t *self, egui_view_scroll_viewer_
     }
     if (thumb_focused)
     {
-        scroll_viewer_draw_focus(self, &metrics->thumb_region, 6, egui_rgb_mix(accent_color, EGUI_COLOR_WHITE, 10), 60);
+        scroll_viewer_draw_focus(self, &metrics->thumb_region, 6, egui_rgb_mix(accent_color, EGUI_COLOR_WHITE, EGUI_ALPHA_MAKE(18)), EGUI_ALPHA_MAKE(80));
     }
     if (thumb_pressed)
     {
-        thumb_fill = egui_rgb_mix(thumb_fill, EGUI_COLOR_WHITE, 8);
+        thumb_fill = egui_rgb_mix(thumb_fill, EGUI_COLOR_WHITE, EGUI_ALPHA_MAKE(8));
     }
 
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics->thumb_region.location.x, metrics->thumb_region.location.y, metrics->thumb_region.size.width,
-                                          metrics->thumb_region.size.height, 6, thumb_fill, egui_color_alpha_mix(self->alpha, 94));
+                                          metrics->thumb_region.size.height, 6, thumb_fill, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(94)));
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics->thumb_region.location.x, metrics->thumb_region.location.y, metrics->thumb_region.size.width,
-                                     metrics->thumb_region.size.height, 6, 1, thumb_border, egui_color_alpha_mix(self->alpha, 80));
+                                     metrics->thumb_region.size.height, 6, 1, thumb_border, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(80)));
 }
 
 static void egui_view_scroll_viewer_on_draw(egui_view_t *self)
@@ -1170,6 +1193,7 @@ static void egui_view_scroll_viewer_on_draw(egui_view_t *self)
     char helper_label[40];
     char footer_text[40];
     uint8_t enabled = egui_view_get_enable(self) ? 1 : 0;
+    uint8_t show_helper_label = 0;
 
     scroll_viewer_normalize_state(local);
     snapshot = scroll_viewer_get_snapshot(local);
@@ -1181,45 +1205,45 @@ static void egui_view_scroll_viewer_on_draw(egui_view_t *self)
 
     if (local->read_only_mode)
     {
-        accent_color = egui_rgb_mix(accent_color, muted_color, 62);
-        preview_color = egui_rgb_mix(preview_color, muted_color, 48);
-        surface_color = egui_rgb_mix(surface_color, EGUI_COLOR_HEX(0xFBFCFD), 30);
-        border_color = egui_rgb_mix(border_color, muted_color, 26);
-        viewport_color = egui_rgb_mix(viewport_color, EGUI_COLOR_HEX(0xFBFCFD), 26);
-        text_color = egui_rgb_mix(text_color, muted_color, 32);
+        accent_color = egui_rgb_mix(accent_color, muted_color, EGUI_ALPHA_MAKE(44));
+        preview_color = egui_rgb_mix(preview_color, muted_color, EGUI_ALPHA_MAKE(48));
+        surface_color = HCW_COLOR_PANEL;
+        border_color = egui_rgb_mix(border_color, muted_color, EGUI_ALPHA_MAKE(26));
+        viewport_color = HCW_COLOR_PANEL;
+        text_color = egui_rgb_mix(text_color, muted_color, EGUI_ALPHA_MAKE(32));
     }
     if (!enabled)
     {
         accent_color = scroll_viewer_mix_disabled(accent_color);
         preview_color = scroll_viewer_mix_disabled(preview_color);
-        surface_color = egui_rgb_mix(surface_color, EGUI_COLOR_HEX(0xFBFCFD), 34);
+        surface_color = HCW_COLOR_PANEL;
         border_color = scroll_viewer_mix_disabled(border_color);
-        viewport_color = egui_rgb_mix(viewport_color, EGUI_COLOR_HEX(0xFBFCFD), 36);
+        viewport_color = HCW_COLOR_PANEL;
         text_color = scroll_viewer_mix_disabled(text_color);
         muted_color = scroll_viewer_mix_disabled(muted_color);
     }
 
     scroll_viewer_get_metrics(local, self, &metrics);
-    shadow_color = egui_rgb_mix(border_color, surface_color, 38);
+    shadow_color = egui_rgb_mix(border_color, surface_color, EGUI_ALPHA_MAKE(38));
 
     if (!local->compact_mode)
     {
         egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, region.location.x, region.location.y + 2, region.size.width, region.size.height, SV_STANDARD_RADIUS + 1, shadow_color,
-                                              egui_color_alpha_mix(self->alpha, enabled ? 16 : 10));
+                                              egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(enabled ? 16 : 10)));
     }
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, region.location.x, region.location.y, region.size.width, region.size.height,
                                           local->compact_mode ? SV_COMPACT_RADIUS : SV_STANDARD_RADIUS, surface_color,
-                                          egui_color_alpha_mix(self->alpha, local->compact_mode ? 94 : 96));
+                                          egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(local->compact_mode ? 94 : 96)));
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, region.location.x, region.location.y, region.size.width, region.size.height,
                                      local->compact_mode ? SV_COMPACT_RADIUS : SV_STANDARD_RADIUS, 1, border_color,
-                                     egui_color_alpha_mix(self->alpha, local->compact_mode ? 56 : 60));
+                                     egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(local->compact_mode ? 76 : 80)));
 
     if (metrics.show_eyebrow && snapshot != NULL)
     {
         scroll_viewer_fit_text_to_width(local->meta_font, snapshot->eyebrow, eyebrow_label, sizeof(eyebrow_label), metrics.eyebrow_region.size.width,
                                         meta_char_width);
         scroll_viewer_draw_text(local->meta_font, self, eyebrow_label, &metrics.eyebrow_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER,
-                                egui_rgb_mix(text_color, accent_color, 20));
+                                egui_rgb_mix(text_color, accent_color, EGUI_ALPHA_MAKE(20)));
     }
     if (snapshot != NULL)
     {
@@ -1230,7 +1254,7 @@ static void egui_view_scroll_viewer_on_draw(egui_view_t *self)
             scroll_viewer_fit_text_to_width(local->meta_font, snapshot->summary, summary_label, sizeof(summary_label), metrics.summary_region.size.width,
                                             meta_char_width);
             scroll_viewer_draw_text(local->meta_font, self, summary_label, &metrics.summary_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER,
-                                    egui_rgb_mix(text_color, muted_color, 34));
+                                    egui_rgb_mix(text_color, muted_color, EGUI_ALPHA_MAKE(34)));
         }
     }
     else
@@ -1248,14 +1272,14 @@ static void egui_view_scroll_viewer_on_draw(egui_view_t *self)
         scroll_viewer_fit_text_to_width(local->meta_font, snapshot->footer, footer_label, sizeof(footer_label), metrics.footer_region.size.width,
                                         meta_char_width);
         scroll_viewer_draw_text(local->meta_font, self, footer_label, &metrics.footer_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER,
-                                egui_rgb_mix(text_color, muted_color, 32));
+                                egui_rgb_mix(text_color, muted_color, EGUI_ALPHA_MAKE(32)));
     }
     else
     {
         scroll_viewer_format_pair(scroll_viewer_snapshot_viewport_height(snapshot), scroll_viewer_snapshot_content_height(snapshot), footer_text, (int)sizeof(footer_text));
         scroll_viewer_fit_text_to_width(local->meta_font, footer_text, footer_label, sizeof(footer_label), metrics.footer_region.size.width, meta_char_width);
         scroll_viewer_draw_text(local->meta_font, self, footer_label, &metrics.footer_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER,
-                                egui_rgb_mix(text_color, muted_color, 32));
+                                egui_rgb_mix(text_color, muted_color, EGUI_ALPHA_MAKE(32)));
     }
 
     axes_region = metrics.helper_region;
@@ -1270,30 +1294,35 @@ static void egui_view_scroll_viewer_on_draw(egui_view_t *self)
     {
         helper_region.size.width = 0;
     }
-    if (metrics.show_helper && snapshot != NULL && helper_region.size.width > 8)
+    if (metrics.show_helper && snapshot != NULL && helper_region.size.width >= 150)
     {
         egui_dim_t split_width = helper_region.size.width / 2;
 
         axes_region.size.width = split_width;
         helper_region.location.x += split_width;
         helper_region.size.width -= split_width;
+        show_helper_label = 1;
     }
 
-    scroll_viewer_format_axes(local->vertical_offset, scroll_viewer_get_max_vertical_offset_inner(local), local->horizontal_offset,
-                              scroll_viewer_get_max_horizontal_offset_inner(local), footer_text, (int)sizeof(footer_text));
+    if (local->compact_mode || axes_region.size.width < 56)
+    {
+        scroll_viewer_format_pair(local->vertical_offset, scroll_viewer_get_max_vertical_offset_inner(local), footer_text, (int)sizeof(footer_text));
+    }
+    else
+    {
+        scroll_viewer_format_axes(local->vertical_offset, scroll_viewer_get_max_vertical_offset_inner(local), local->horizontal_offset,
+                                  scroll_viewer_get_max_horizontal_offset_inner(local), footer_text, (int)sizeof(footer_text));
+    }
     scroll_viewer_fit_text_to_width(local->meta_font, footer_text, axes_label, sizeof(axes_label), axes_region.size.width, meta_char_width);
     scroll_viewer_draw_text(local->meta_font, self, axes_label, &axes_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER,
-                            egui_rgb_mix(text_color, muted_color, local->compact_mode ? 26 : 30));
+                            egui_rgb_mix(text_color, muted_color, EGUI_ALPHA_MAKE(local->compact_mode ? 26 : 30)));
 
-    if (metrics.show_helper && snapshot != NULL)
+    if (show_helper_label)
     {
-        if (helper_region.size.width > 8)
-        {
-            scroll_viewer_fit_text_to_width(local->meta_font, snapshot->helper, helper_label, sizeof(helper_label), helper_region.size.width,
-                                            meta_char_width);
-            scroll_viewer_draw_text(local->meta_font, self, helper_label, &helper_region, EGUI_ALIGN_RIGHT | EGUI_ALIGN_VCENTER,
-                                    egui_rgb_mix(text_color, muted_color, 42));
-        }
+        scroll_viewer_fit_text_to_width(local->meta_font, snapshot->helper, helper_label, sizeof(helper_label), helper_region.size.width,
+                                        meta_char_width);
+        scroll_viewer_draw_text(local->meta_font, self, helper_label, &helper_region, EGUI_ALIGN_RIGHT | EGUI_ALIGN_VCENTER,
+                                egui_rgb_mix(text_color, muted_color, EGUI_ALPHA_MAKE(42)));
     }
 }
 
@@ -1358,6 +1387,16 @@ static void scroll_viewer_drag_thumb_to(egui_view_t *self, egui_dim_t screen_y)
     scroll_viewer_apply_vertical_offset_inner(self, target_offset, 1, EGUI_VIEW_SCROLL_VIEWER_PART_THUMB);
 }
 
+static void scroll_viewer_drag_surface_to(egui_view_t *self, egui_dim_t screen_x, egui_dim_t screen_y)
+{
+    EGUI_LOCAL_INIT(egui_view_scroll_viewer_t);
+    egui_dim_t delta_x = screen_x - local->drag_anchor_x;
+    egui_dim_t delta_y = screen_y - local->drag_anchor_y;
+
+    scroll_viewer_apply_horizontal_offset_inner(self, local->drag_anchor_horizontal_offset - delta_x, 1, EGUI_VIEW_SCROLL_VIEWER_PART_SURFACE);
+    scroll_viewer_apply_vertical_offset_inner(self, local->drag_anchor_offset - delta_y, 1, EGUI_VIEW_SCROLL_VIEWER_PART_SURFACE);
+}
+
 #if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
 static int egui_view_scroll_viewer_on_touch_event(egui_view_t *self, egui_motion_event_t *event)
 {
@@ -1394,9 +1433,12 @@ static int egui_view_scroll_viewer_on_touch_event(egui_view_t *self, egui_motion
 #endif
         local->pressed_part = hit_part;
         local->thumb_dragging = hit_part == EGUI_VIEW_SCROLL_VIEWER_PART_THUMB ? 1 : 0;
+        local->surface_dragging = hit_part == EGUI_VIEW_SCROLL_VIEWER_PART_SURFACE ? 1 : 0;
         local->track_direction = hit_part == EGUI_VIEW_SCROLL_VIEWER_PART_TRACK ? scroll_viewer_track_direction_from_point(local, self, event->location.y) : 0;
+        local->drag_anchor_x = event->location.x;
         local->drag_anchor_y = event->location.y;
         local->drag_anchor_offset = local->vertical_offset;
+        local->drag_anchor_horizontal_offset = local->horizontal_offset;
         local->current_part = hit_part == EGUI_VIEW_SCROLL_VIEWER_PART_SURFACE ? EGUI_VIEW_SCROLL_VIEWER_PART_SURFACE : EGUI_VIEW_SCROLL_VIEWER_PART_THUMB;
         egui_view_set_pressed(self, true);
         egui_view_invalidate(self);
@@ -1409,6 +1451,10 @@ static int egui_view_scroll_viewer_on_touch_event(egui_view_t *self, egui_motion
         if (local->thumb_dragging)
         {
             scroll_viewer_drag_thumb_to(self, event->location.y);
+        }
+        else if (local->surface_dragging)
+        {
+            scroll_viewer_drag_surface_to(self, event->location.x, event->location.y);
         }
         else
         {
@@ -1429,6 +1475,10 @@ static int egui_view_scroll_viewer_on_touch_event(egui_view_t *self, egui_motion
         if (local->thumb_dragging)
         {
             scroll_viewer_drag_thumb_to(self, event->location.y);
+        }
+        else if (local->surface_dragging)
+        {
+            scroll_viewer_drag_surface_to(self, event->location.x, event->location.y);
         }
         else if (local->pressed_part == EGUI_VIEW_SCROLL_VIEWER_PART_TRACK && hit_part == EGUI_VIEW_SCROLL_VIEWER_PART_TRACK)
         {
@@ -1965,13 +2015,13 @@ void egui_view_scroll_viewer_init(egui_view_t *self)
     local->font = (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT;
     local->meta_font = (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT;
     local->on_view_changed = NULL;
-    local->surface_color = EGUI_COLOR_HEX(0xFFFFFF);
-    local->border_color = EGUI_COLOR_HEX(0xD6DEE6);
-    local->viewport_color = EGUI_COLOR_HEX(0xF8FBFD);
-    local->text_color = EGUI_COLOR_HEX(0x1B2834);
-    local->muted_text_color = EGUI_COLOR_HEX(0x6C7A88);
-    local->accent_color = EGUI_COLOR_HEX(0x0F6CBD);
-    local->preview_color = EGUI_COLOR_HEX(0x6AA8FF);
+    local->surface_color = HCW_COLOR_SURFACE;
+    local->border_color = HCW_COLOR_BORDER;
+    local->viewport_color = HCW_COLOR_PANEL;
+    local->text_color = HCW_COLOR_TEXT;
+    local->muted_text_color = HCW_COLOR_TEXT_MUTED;
+    local->accent_color = HCW_COLOR_PRIMARY;
+    local->preview_color = HCW_COLOR_PRIMARY_LIGHT;
     local->snapshot_count = 0;
     local->current_snapshot = 0;
     local->current_part = EGUI_VIEW_SCROLL_VIEWER_PART_SURFACE;
@@ -1980,11 +2030,14 @@ void egui_view_scroll_viewer_init(egui_view_t *self)
     local->scrollbar_visibility = 1;
     local->pressed_part = EGUI_VIEW_SCROLL_VIEWER_PART_NONE;
     local->thumb_dragging = 0;
+    local->surface_dragging = 0;
     local->track_direction = 0;
     local->vertical_offset = 0;
     local->horizontal_offset = 0;
+    local->drag_anchor_x = 0;
     local->drag_anchor_y = 0;
     local->drag_anchor_offset = 0;
+    local->drag_anchor_horizontal_offset = 0;
 
     egui_view_set_view_name(self, "egui_view_scroll_viewer");
 }

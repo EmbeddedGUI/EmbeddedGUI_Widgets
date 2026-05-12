@@ -33,10 +33,10 @@ struct egui_view_persona_group_metrics
 };
 
 static const egui_color_t egui_view_persona_group_avatar_palette[] = {
-        EGUI_COLOR_HEX(0x0F6CBD),
-        EGUI_COLOR_HEX(0x0F7B45),
-        EGUI_COLOR_HEX(0x9D5D00),
-        EGUI_COLOR_HEX(0x7A8796),
+        HCW_COLOR_PRIMARY,
+        HCW_COLOR_SUCCESS,
+        HCW_COLOR_WARNING,
+        HCW_COLOR_NEUTRAL,
 };
 
 static uint8_t egui_view_persona_group_clamp_snapshot_count(uint8_t count)
@@ -256,7 +256,7 @@ static egui_dim_t egui_view_persona_group_get_footer_height(egui_view_persona_gr
 
 static egui_color_t egui_view_persona_group_mix_disabled(egui_color_t color)
 {
-    return egui_rgb_mix(color, EGUI_COLOR_DARK_GREY, 66);
+    return egui_rgb_mix(color, HCW_COLOR_TEXT_SOFT, EGUI_ALPHA_MAKE(32));
 }
 
 static uint8_t egui_view_persona_group_clear_pressed_state(egui_view_t *self)
@@ -289,7 +289,7 @@ static egui_color_t egui_view_persona_group_presence_color(egui_view_persona_gro
     case EGUI_VIEW_PERSONA_GROUP_PRESENCE_BUSY:
         return local->warning_color;
     case EGUI_VIEW_PERSONA_GROUP_PRESENCE_AWAY:
-        return egui_rgb_mix(local->warning_color, local->accent_color, 24);
+        return egui_rgb_mix(local->warning_color, local->accent_color, EGUI_ALPHA_MAKE(24));
     case EGUI_VIEW_PERSONA_GROUP_PRESENCE_IDLE:
         return local->neutral_color;
     default:
@@ -687,8 +687,9 @@ static void egui_view_persona_group_draw_avatar(egui_view_t *self, egui_view_per
 {
     egui_region_t text_region;
     egui_color_t fill_color = egui_view_persona_group_avatar_palette[item->tone % 4];
-    egui_color_t ring_color = selected ? egui_rgb_mix(local->border_color, local->accent_color, 38) : egui_rgb_mix(local->border_color, fill_color, 10);
-    egui_color_t text_color = EGUI_COLOR_HEX(0xFFFFFF);
+    egui_color_t ring_color = selected ? egui_rgb_mix(local->border_color, local->accent_color, EGUI_ALPHA_MAKE(48))
+                                       : egui_rgb_mix(local->border_color, fill_color, EGUI_ALPHA_MAKE(20));
+    egui_color_t text_color = HCW_COLOR_SURFACE;
     egui_color_t presence_color = egui_view_persona_group_presence_color(local, item->presence);
     egui_dim_t center_x = region->location.x + region->size.width / 2;
     egui_dim_t center_y = region->location.y + region->size.height / 2;
@@ -696,11 +697,11 @@ static void egui_view_persona_group_draw_avatar(egui_view_t *self, egui_view_per
 
     if (item->emphasized)
     {
-        fill_color = egui_rgb_mix(fill_color, local->surface_color, 18);
+        fill_color = egui_rgb_mix(fill_color, local->surface_color, EGUI_ALPHA_MAKE(10));
     }
     if (pressed)
     {
-        fill_color = egui_rgb_mix(fill_color, EGUI_COLOR_BLACK, 10);
+        fill_color = egui_rgb_mix(fill_color, EGUI_COLOR_BLACK, EGUI_ALPHA_MAKE(10));
     }
     if (!egui_view_get_enable(self))
     {
@@ -712,11 +713,13 @@ static void egui_view_persona_group_draw_avatar(egui_view_t *self, egui_view_per
 
     if (selected)
     {
-        egui_canvas_draw_circle_basic(&uicode_get_core()->canvas, center_x, center_y, radius + 2, 1, ring_color, egui_color_alpha_mix(self->alpha, 56));
+        egui_canvas_draw_circle_hq(&uicode_get_core()->canvas, center_x, center_y, radius + 2, 1, ring_color, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(92)));
     }
 
-    egui_canvas_draw_circle_fill_basic(&uicode_get_core()->canvas, center_x, center_y, radius, fill_color, egui_color_alpha_mix(self->alpha, 84));
-    egui_canvas_draw_circle_basic(&uicode_get_core()->canvas, center_x, center_y, radius, 1, egui_rgb_mix(fill_color, local->surface_color, 24), egui_color_alpha_mix(self->alpha, 24));
+    egui_canvas_draw_circle_fill_hq(&uicode_get_core()->canvas, center_x, center_y, radius, fill_color, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(92)));
+    egui_canvas_draw_circle_hq(&uicode_get_core()->canvas, center_x, center_y, radius, 1,
+                               egui_rgb_mix(fill_color, local->surface_color, EGUI_ALPHA_MAKE(18)),
+                               egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(88)));
 
     text_region.location.x = region->location.x;
     text_region.location.y = region->location.y;
@@ -724,17 +727,17 @@ static void egui_view_persona_group_draw_avatar(egui_view_t *self, egui_view_per
     text_region.size.height = region->size.height;
     egui_view_persona_group_draw_text(local->meta_font, self, item->initials, &text_region, EGUI_ALIGN_CENTER, text_color);
 
-    egui_canvas_draw_circle_fill_basic(&uicode_get_core()->canvas, region->location.x + region->size.width - 4, region->location.y + region->size.height - 4, 3, EGUI_COLOR_HEX(0xFFFFFF),
-                                       egui_color_alpha_mix(self->alpha, 88));
-    egui_canvas_draw_circle_fill_basic(&uicode_get_core()->canvas, region->location.x + region->size.width - 4, region->location.y + region->size.height - 4, 2, presence_color,
-                                       egui_color_alpha_mix(self->alpha, 86));
+    egui_canvas_draw_circle_fill_hq(&uicode_get_core()->canvas, region->location.x + region->size.width - 4, region->location.y + region->size.height - 4, 3, HCW_COLOR_SURFACE,
+                                    egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(96)));
+    egui_canvas_draw_circle_fill_hq(&uicode_get_core()->canvas, region->location.x + region->size.width - 4, region->location.y + region->size.height - 4, 2, presence_color,
+                                    egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(96)));
 }
 
 static void egui_view_persona_group_draw_overflow(egui_view_t *self, egui_view_persona_group_t *local, const egui_region_t *region, uint8_t overflow_count)
 {
     egui_region_t text_region;
-    egui_color_t fill_color = egui_rgb_mix(local->surface_color, local->section_color, 12);
-    egui_color_t border_color = egui_rgb_mix(local->border_color, local->section_color, 12);
+    egui_color_t fill_color = egui_rgb_mix(local->surface_color, local->section_color, EGUI_ALPHA_MAKE(20));
+    egui_color_t border_color = egui_rgb_mix(local->border_color, local->section_color, EGUI_ALPHA_MAKE(22));
     egui_color_t text_color = local->muted_text_color;
     char text[4];
     egui_dim_t center_x = region->location.x + region->size.width / 2;
@@ -756,8 +759,8 @@ static void egui_view_persona_group_draw_overflow(egui_view_t *self, egui_view_p
         text_color = egui_view_persona_group_mix_disabled(text_color);
     }
 
-    egui_canvas_draw_circle_fill_basic(&uicode_get_core()->canvas, center_x, center_y, radius, fill_color, egui_color_alpha_mix(self->alpha, 84));
-    egui_canvas_draw_circle_basic(&uicode_get_core()->canvas, center_x, center_y, radius, 1, border_color, egui_color_alpha_mix(self->alpha, 24));
+    egui_canvas_draw_circle_fill_hq(&uicode_get_core()->canvas, center_x, center_y, radius, fill_color, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(92)));
+    egui_canvas_draw_circle_hq(&uicode_get_core()->canvas, center_x, center_y, radius, 1, border_color, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(88)));
 
     text_region.location.x = region->location.x;
     text_region.location.y = region->location.y;
@@ -804,30 +807,30 @@ static void egui_view_persona_group_on_draw(egui_view_t *self)
 
     item_count = egui_view_persona_group_clamp_item_count(snapshot->item_count);
     card_radius = metrics.dense_layout ? EGUI_VIEW_PERSONA_GROUP_DENSE_RADIUS : EGUI_VIEW_PERSONA_GROUP_STANDARD_RADIUS;
-    card_fill = egui_rgb_mix(local->surface_color, local->section_color, metrics.dense_layout ? 4 : 6);
-    card_border = egui_rgb_mix(local->border_color, local->section_color, metrics.dense_layout ? 14 : 18);
-    eyebrow_color = egui_rgb_mix(local->muted_text_color, local->accent_color, metrics.dense_layout ? 14 : 18);
+    card_fill = HCW_COLOR_PANEL;
+    card_border = egui_rgb_mix(local->border_color, local->section_color, EGUI_ALPHA_MAKE(metrics.dense_layout ? 8 : 10));
+    eyebrow_color = egui_rgb_mix(local->muted_text_color, local->accent_color, EGUI_ALPHA_MAKE(metrics.dense_layout ? 20 : 24));
     title_color = local->text_color;
     role_color = local->muted_text_color;
-    footer_fill = egui_rgb_mix(local->surface_color, local->accent_color, metrics.dense_layout ? 4 : 6);
-    footer_border = egui_rgb_mix(local->border_color, local->accent_color, metrics.dense_layout ? 6 : 8);
-    footer_text = egui_rgb_mix(local->muted_text_color, local->accent_color, metrics.dense_layout ? 12 : 16);
+    footer_fill = HCW_COLOR_PANEL;
+    footer_border = egui_rgb_mix(local->border_color, local->accent_color, EGUI_ALPHA_MAKE(metrics.dense_layout ? 16 : 20));
+    footer_text = egui_rgb_mix(local->muted_text_color, local->accent_color, EGUI_ALPHA_MAKE(metrics.dense_layout ? 20 : 24));
     if (!egui_view_get_enable(self))
     {
-        card_fill = egui_view_persona_group_mix_disabled(card_fill);
+        card_fill = HCW_COLOR_PANEL;
         card_border = egui_view_persona_group_mix_disabled(card_border);
         eyebrow_color = egui_view_persona_group_mix_disabled(eyebrow_color);
         title_color = egui_view_persona_group_mix_disabled(title_color);
         role_color = egui_view_persona_group_mix_disabled(role_color);
-        footer_fill = egui_view_persona_group_mix_disabled(footer_fill);
+        footer_fill = HCW_COLOR_PANEL;
         footer_border = egui_view_persona_group_mix_disabled(footer_border);
         footer_text = egui_view_persona_group_mix_disabled(footer_text);
     }
 
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.content_region.location.x - 2, metrics.content_region.location.y - 2, metrics.content_region.size.width + 4,
-                                          metrics.content_region.size.height + 4, card_radius, card_fill, egui_color_alpha_mix(self->alpha, 94));
+                                          metrics.content_region.size.height + 4, card_radius, card_fill, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(94)));
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics.content_region.location.x - 2, metrics.content_region.location.y - 2, metrics.content_region.size.width + 4,
-                                     metrics.content_region.size.height + 4, card_radius, 1, card_border, egui_color_alpha_mix(self->alpha, 34));
+                                     metrics.content_region.size.height + 4, card_radius, 1, card_border, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(90)));
 
     if (!metrics.dense_layout)
     {
@@ -873,9 +876,9 @@ static void egui_view_persona_group_on_draw(egui_view_t *self)
     text_region.location.x = metrics.content_region.location.x + (metrics.content_region.size.width - footer_w) / 2;
     text_region.size.width = footer_w;
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, text_region.location.x, text_region.location.y, text_region.size.width, text_region.size.height,
-                                          text_region.size.height / 2, footer_fill, egui_color_alpha_mix(self->alpha, 80));
+                                          text_region.size.height / 2, footer_fill, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(90)));
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, text_region.location.x, text_region.location.y, text_region.size.width, text_region.size.height,
-                                     text_region.size.height / 2, 1, footer_border, egui_color_alpha_mix(self->alpha, 20));
+                                     text_region.size.height / 2, 1, footer_border, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(88)));
     egui_view_persona_group_fit_text_to_width(local->meta_font, snapshot->summary, summary_label, sizeof(summary_label), text_region.size.width - 4,
                                               metrics.dense_layout ? 4 : 5);
     egui_view_persona_group_draw_text(local->meta_font, self, summary_label, &text_region, EGUI_ALIGN_CENTER, footer_text);
@@ -1072,15 +1075,15 @@ void egui_view_persona_group_init(egui_view_t *self)
     local->font = (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT;
     local->meta_font = (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT;
     local->on_focus_changed = NULL;
-    local->surface_color = EGUI_COLOR_HEX(0xFFFFFF);
-    local->border_color = EGUI_COLOR_HEX(0xD2DBE3);
-    local->section_color = EGUI_COLOR_HEX(0xEEF3F7);
-    local->text_color = EGUI_COLOR_HEX(0x1A2734);
-    local->muted_text_color = EGUI_COLOR_HEX(0x6B7A89);
-    local->accent_color = EGUI_COLOR_HEX(0x0F6CBD);
-    local->success_color = EGUI_COLOR_HEX(0x0F7B45);
-    local->warning_color = EGUI_COLOR_HEX(0x9D5D00);
-    local->neutral_color = EGUI_COLOR_HEX(0x7A8796);
+    local->surface_color = HCW_COLOR_PANEL;
+    local->border_color = HCW_COLOR_BORDER;
+    local->section_color = HCW_COLOR_PANEL;
+    local->text_color = HCW_COLOR_TEXT;
+    local->muted_text_color = HCW_COLOR_TEXT_MUTED;
+    local->accent_color = HCW_COLOR_PRIMARY;
+    local->success_color = HCW_COLOR_SUCCESS;
+    local->warning_color = HCW_COLOR_WARNING;
+    local->neutral_color = HCW_COLOR_NEUTRAL;
     local->snapshot_count = 0;
     local->current_snapshot = 0;
     local->current_index = 0;

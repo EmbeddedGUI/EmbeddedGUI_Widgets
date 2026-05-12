@@ -15,9 +15,9 @@ static uint8_t g_changed_reveal = 0xFF;
 static uint8_t g_changed_part = EGUI_VIEW_SWIPE_CONTROL_PART_NONE;
 
 static const egui_view_swipe_control_item_t unit_item = {
-        "Mail", "Inbox row", "Single row with reveal actions", "Ready", EGUI_COLOR_HEX(0xE9F4FF), EGUI_COLOR_HEX(0x2563EB)};
-static const egui_view_swipe_control_action_t unit_start_action = {"Pin", "Keep", EGUI_COLOR_HEX(0x0F766E), EGUI_COLOR_HEX(0xFFFFFF)};
-static const egui_view_swipe_control_action_t unit_end_action = {"Delete", "Remove", EGUI_COLOR_HEX(0xDC2626), EGUI_COLOR_HEX(0xFFFFFF)};
+        "Mail", "Inbox row", "Single row with reveal actions", "Ready", EGUI_COLOR_HEX(0xE9F4FF), HCW_COLOR_PRIMARY};
+static const egui_view_swipe_control_action_t unit_start_action = {"Pin", "Keep", HCW_COLOR_PRIMARY, HCW_COLOR_SURFACE};
+static const egui_view_swipe_control_action_t unit_end_action = {"Delete", "Remove", HCW_COLOR_DANGER, HCW_COLOR_SURFACE};
 
 static void reset_changed_state(void)
 {
@@ -150,6 +150,11 @@ static void assert_changed_state(uint8_t count, uint8_t reveal_state, uint8_t cu
 static void test_swipe_control_default_state(void)
 {
     setup_swipe_control();
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_SURFACE.full, test_swipe_control.surface_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_BORDER_STRONG.full, test_swipe_control.border_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT_STRONG.full, test_swipe_control.text_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT_SOFT.full, test_swipe_control.muted_text_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT_SOFT.full, test_swipe_control.inactive_color.full);
     EGUI_TEST_ASSERT_TRUE(egui_view_swipe_control_get_item(EGUI_VIEW_OF(&test_swipe_control)) != NULL);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_SWIPE_CONTROL_REVEAL_NONE, egui_view_swipe_control_get_reveal_state(EGUI_VIEW_OF(&test_swipe_control)));
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_SWIPE_CONTROL_PART_SURFACE, egui_view_swipe_control_get_current_part(EGUI_VIEW_OF(&test_swipe_control)));
@@ -476,6 +481,26 @@ static void test_swipe_control_static_preview_consumes_input_and_clears_pressed_
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_SWIPE_CONTROL_PART_SURFACE, egui_view_swipe_control_get_current_part(EGUI_VIEW_OF(&preview_swipe_control)));
 }
 
+static void test_swipe_control_standard_mode_uses_surface_as_primary_frame(void)
+{
+    egui_view_swipe_control_metrics_t metrics;
+
+    setup_swipe_control();
+    layout_swipe_control(0, 0, 160, 92);
+    swipe_control_get_metrics(&test_swipe_control, EGUI_VIEW_OF(&test_swipe_control), &metrics);
+    EGUI_TEST_ASSERT_FALSE(test_swipe_control.compact_mode);
+    EGUI_TEST_ASSERT_TRUE(metrics.surface_region.location.x > 0);
+    EGUI_TEST_ASSERT_TRUE(metrics.surface_region.location.y > 0);
+    EGUI_TEST_ASSERT_TRUE(metrics.surface_region.size.width < EGUI_VIEW_OF(&test_swipe_control)->region.size.width);
+    EGUI_TEST_ASSERT_TRUE(metrics.surface_region.size.height < EGUI_VIEW_OF(&test_swipe_control)->region.size.height);
+
+    egui_view_swipe_control_set_compact_mode(EGUI_VIEW_OF(&test_swipe_control), 1);
+    layout_swipe_control(0, 0, 160, 92);
+    swipe_control_get_metrics(&test_swipe_control, EGUI_VIEW_OF(&test_swipe_control), &metrics);
+    EGUI_TEST_ASSERT_TRUE(test_swipe_control.compact_mode);
+    EGUI_TEST_ASSERT_TRUE(metrics.surface_region.location.x > 0);
+}
+
 void test_swipe_control_run(void)
 {
     EGUI_TEST_SUITE_BEGIN(swipe_control);
@@ -490,5 +515,6 @@ void test_swipe_control_run(void)
     EGUI_TEST_RUN(test_swipe_control_touch_cancel_clears_pressed_state_without_notify);
     EGUI_TEST_RUN(test_swipe_control_compact_read_only_and_disabled_guards_clear_pressed_state);
     EGUI_TEST_RUN(test_swipe_control_static_preview_consumes_input_and_clears_pressed_state);
+    EGUI_TEST_RUN(test_swipe_control_standard_mode_uses_surface_as_primary_frame);
     EGUI_TEST_SUITE_END();
 }

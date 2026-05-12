@@ -40,17 +40,17 @@ static egui_view_api_t thin_preview_api;
 static egui_view_api_t muted_preview_api;
 static uint8_t ui_ready;
 
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, HCW_COLOR_PAGE_BG, EGUI_ALPHA_100, 14);
 EGUI_BACKGROUND_PARAM_INIT(bg_page_panel_params, &bg_page_panel_param, NULL, NULL);
 EGUI_BACKGROUND_COLOR_STATIC_CONST_INIT(bg_page_panel, &bg_page_panel_params);
 
 static const char *title_text = "Rectangle";
 
 static const rectangle_snapshot_t primary_snapshots[] = {
-        {"Standard / fill + stroke", EGUI_COLOR_HEX(0x0F6CBD), 0},
-        {"Accent / rounded", EGUI_COLOR_HEX(0x0F6CBD), 1},
-        {"Thin stroke", EGUI_COLOR_HEX(0x0C7C73), 2},
-        {"Muted palette", EGUI_COLOR_HEX(0x65717E), 3},
+        {"Standard / fill + stroke", HCW_COLOR_PRIMARY, 0},
+        {"Accent / rounded", HCW_COLOR_PRIMARY, 1},
+        {"Thin stroke", HCW_COLOR_PRIMARY, 2},
+        {"Muted palette", HCW_COLOR_TEXT_MUTED, 3},
 };
 
 static void layout_page(void);
@@ -68,7 +68,7 @@ static void init_text_label(egui_view_label_t *label, egui_dim_t width, egui_dim
 
 static void apply_rectangle_thin_style(egui_view_t *view)
 {
-    egui_view_rectangle_set_palette(view, EGUI_COLOR_HEX(0xF8FBFD), EGUI_COLOR_HEX(0x0C7C73), EGUI_COLOR_HEX(0xD9E7E5));
+    egui_view_rectangle_set_palette(view, HCW_COLOR_SURFACE_PRESS, HCW_COLOR_PRIMARY, HCW_COLOR_PRIMARY_TINT);
     egui_view_rectangle_set_stroke_width(view, 1);
     egui_view_rectangle_set_corner_radius(view, 5);
     egui_view_rectangle_set_fill_enabled(view, 1);
@@ -76,7 +76,7 @@ static void apply_rectangle_thin_style(egui_view_t *view)
 
 static void apply_rectangle_muted_style(egui_view_t *view)
 {
-    egui_view_rectangle_set_palette(view, EGUI_COLOR_HEX(0xF5F7FA), EGUI_COLOR_HEX(0x687684), EGUI_COLOR_HEX(0xE1E6EB));
+    egui_view_rectangle_set_palette(view, HCW_COLOR_SURFACE_SUBTLE, HCW_COLOR_TEXT_SOFT, HCW_COLOR_BORDER_STRONG);
     egui_view_rectangle_set_stroke_width(view, 1);
     egui_view_rectangle_set_corner_radius(view, 5);
     egui_view_rectangle_set_fill_enabled(view, 1);
@@ -162,7 +162,7 @@ void test_init_ui(void)
     egui_view_set_background(EGUI_VIEW_OF(&root_layout), EGUI_BG_OF(&bg_page_panel));
 
     init_text_label(&title_label, RECTANGLE_ROOT_WIDTH, 18, title_text, (const egui_font_t *)&egui_res_font_montserrat_12_4,
-                    EGUI_COLOR_HEX(0x21303F), EGUI_ALIGN_CENTER);
+                    HCW_COLOR_TEXT, EGUI_ALIGN_CENTER);
     egui_view_set_margin(EGUI_VIEW_OF(&title_label), 0, 8, 0, 10);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label));
 
@@ -172,7 +172,7 @@ void test_init_ui(void)
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&primary_control));
 
     init_text_label(&caption_label, RECTANGLE_ROOT_WIDTH, 12, "Standard / fill + stroke",
-                    (const egui_font_t *)&egui_res_font_montserrat_8_4, EGUI_COLOR_HEX(0x0F6CBD), EGUI_ALIGN_CENTER);
+                    (const egui_font_t *)&egui_res_font_montserrat_8_4, HCW_COLOR_PRIMARY, EGUI_ALIGN_CENTER);
     egui_view_set_margin(EGUI_VIEW_OF(&caption_label), 0, 0, 0, 16);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&caption_label));
 

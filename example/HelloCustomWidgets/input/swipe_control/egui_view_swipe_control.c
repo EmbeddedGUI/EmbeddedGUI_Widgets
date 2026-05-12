@@ -437,7 +437,7 @@ static void swipe_control_draw_text(const egui_font_t *font, egui_view_t *self, 
 static void swipe_control_draw_focus(egui_view_t *self, const egui_region_t *region, egui_dim_t radius, egui_color_t color)
 {
     swipe_control_draw_round_stroke_safe(region->location.x - 1, region->location.y - 1, region->size.width + 2, region->size.height + 2, radius, 1, color,
-                                         egui_color_alpha_mix(self->alpha, 76));
+                                         egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(76)));
 }
 
 static void swipe_control_draw_action(egui_view_t *self, egui_view_swipe_control_t *local, const egui_region_t *region,
@@ -457,24 +457,24 @@ static void swipe_control_draw_action(egui_view_t *self, egui_view_swipe_control
     }
 
     fill_color = action->fill_color;
-    border_color = egui_rgb_mix(action->fill_color, local->border_color, 18);
+    border_color = egui_rgb_mix(action->fill_color, local->border_color, EGUI_ALPHA_MAKE(18));
     text_color = action->text_color;
 
     if (local->read_only_mode)
     {
-        fill_color = egui_rgb_mix(fill_color, local->inactive_color, 34);
-        border_color = egui_rgb_mix(border_color, local->inactive_color, 24);
-        text_color = egui_rgb_mix(text_color, local->inactive_color, 38);
+        fill_color = egui_rgb_mix(fill_color, local->inactive_color, EGUI_ALPHA_MAKE(34));
+        border_color = egui_rgb_mix(border_color, local->inactive_color, EGUI_ALPHA_MAKE(24));
+        text_color = egui_rgb_mix(text_color, local->inactive_color, EGUI_ALPHA_MAKE(38));
     }
     else if (is_pressed)
     {
-        fill_color = egui_rgb_mix(fill_color, EGUI_COLOR_HEX(0x0A1724), 18);
+        fill_color = egui_rgb_mix(fill_color, EGUI_COLOR_BLACK, EGUI_ALPHA_MAKE(18));
     }
 
     swipe_control_draw_round_fill_safe(region->location.x, region->location.y, region->size.width, region->size.height, radius, fill_color,
-                                       egui_color_alpha_mix(self->alpha, 94));
+                                       egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(94)));
     swipe_control_draw_round_stroke_safe(region->location.x, region->location.y, region->size.width, region->size.height, radius, 1, border_color,
-                                         egui_color_alpha_mix(self->alpha, 58));
+                                         egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(78)));
 
     text_region.location.x = region->location.x + 4;
     text_region.location.y = region->location.y + (local->compact_mode ? 10 : 12);
@@ -486,7 +486,8 @@ static void swipe_control_draw_action(egui_view_t *self, egui_view_swipe_control
     {
         text_region.location.y = region->location.y + region->size.height - hint_h - 8;
         text_region.size.height = hint_h;
-        swipe_control_draw_text(local->meta_font, self, action->hint, &text_region, EGUI_ALIGN_CENTER, egui_rgb_mix(text_color, EGUI_COLOR_HEX(0xFFFFFF), 24));
+        swipe_control_draw_text(local->meta_font, self, action->hint, &text_region, EGUI_ALIGN_CENTER,
+                                egui_rgb_mix(text_color, HCW_COLOR_SURFACE, EGUI_ALPHA_MAKE(24)));
     }
 }
 
@@ -531,11 +532,12 @@ static void swipe_control_draw_state_pill(egui_view_t *self, egui_view_swipe_con
     region.size.width = pill_w;
     region.size.height = pill_h;
 
-    fill_color = egui_rgb_mix(item->accent_color, local->surface_color, local->read_only_mode ? 42 : 18);
+    fill_color = egui_rgb_mix(item->accent_color, local->surface_color, EGUI_ALPHA_MAKE(local->read_only_mode ? 42 : 18));
     swipe_control_draw_round_fill_safe(region.location.x, region.location.y, region.size.width, region.size.height, region.size.height / 2, fill_color,
-                                       egui_color_alpha_mix(self->alpha, 88));
+                                       egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(88)));
     swipe_control_draw_round_stroke_safe(region.location.x, region.location.y, region.size.width, region.size.height, region.size.height / 2, 1,
-                                         egui_rgb_mix(item->accent_color, local->border_color, 18), egui_color_alpha_mix(self->alpha, 54));
+                                         egui_rgb_mix(item->accent_color, local->border_color, EGUI_ALPHA_MAKE(30)),
+                                         egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(76)));
     swipe_control_draw_text(local->meta_font, self, state_text, &region, EGUI_ALIGN_CENTER, local->text_color);
 }
 
@@ -545,26 +547,29 @@ static void swipe_control_draw_surface(egui_view_t *self, egui_view_swipe_contro
     egui_region_t text_region;
     egui_region_t badge_region;
     egui_dim_t radius = local->compact_mode ? 10 : 12;
-    egui_color_t shell_color = egui_rgb_mix(item->surface_color, local->surface_color, local->read_only_mode ? 42 : 14);
-    egui_color_t accent_color = local->read_only_mode ? egui_rgb_mix(item->accent_color, local->inactive_color, 44) : item->accent_color;
-    egui_color_t title_color = local->read_only_mode ? egui_rgb_mix(local->text_color, local->inactive_color, 30) : local->text_color;
-    egui_color_t body_color = local->read_only_mode ? egui_rgb_mix(local->muted_text_color, local->inactive_color, 26)
-                                                    : egui_rgb_mix(local->text_color, local->muted_text_color, 28);
+    egui_color_t shell_color = egui_rgb_mix(local->surface_color, item->surface_color, EGUI_ALPHA_MAKE(local->read_only_mode ? 8 : 6));
+    egui_color_t accent_color = local->read_only_mode ? egui_rgb_mix(item->accent_color, local->inactive_color, EGUI_ALPHA_MAKE(44))
+                                                      : item->accent_color;
+    egui_color_t title_color = local->read_only_mode ? egui_rgb_mix(local->text_color, local->inactive_color, EGUI_ALPHA_MAKE(30)) : local->text_color;
+    egui_color_t body_color = local->read_only_mode ? egui_rgb_mix(local->muted_text_color, local->inactive_color, EGUI_ALPHA_MAKE(26))
+                                                    : egui_rgb_mix(local->text_color, local->muted_text_color, EGUI_ALPHA_MAKE(28));
     egui_dim_t badge_w;
     egui_dim_t badge_h = swipe_control_resolve_line_height(local->meta_font, local->compact_mode ? 11 : 12);
     egui_dim_t footer_h = swipe_control_resolve_line_height(local->meta_font, 10);
 
     swipe_control_draw_round_fill_safe(metrics->surface_region.location.x + SWC_STD_SHADOW_X, metrics->surface_region.location.y + SWC_STD_SHADOW_Y,
                                        metrics->surface_region.size.width, metrics->surface_region.size.height, radius,
-                                       egui_rgb_mix(local->border_color, EGUI_COLOR_HEX(0x081018), 56), egui_color_alpha_mix(self->alpha, 24));
+                                       egui_rgb_mix(local->border_color, EGUI_COLOR_BLACK, EGUI_ALPHA_MAKE(56)),
+                                       egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(44)));
     swipe_control_draw_round_fill_safe(metrics->surface_region.location.x, metrics->surface_region.location.y, metrics->surface_region.size.width,
-                                       metrics->surface_region.size.height, radius, shell_color, egui_color_alpha_mix(self->alpha, 100));
+                                       metrics->surface_region.size.height, radius, shell_color, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_100));
     swipe_control_draw_round_stroke_safe(metrics->surface_region.location.x, metrics->surface_region.location.y, metrics->surface_region.size.width,
-                                         metrics->surface_region.size.height, radius, 1, egui_rgb_mix(accent_color, local->border_color, 24),
-                                         egui_color_alpha_mix(self->alpha, 62));
+                                         metrics->surface_region.size.height, radius, 1,
+                                         egui_rgb_mix(accent_color, local->border_color, EGUI_ALPHA_MAKE(24)),
+                                         egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(62)));
 
     swipe_control_draw_round_fill_safe(metrics->surface_region.location.x + 10, metrics->surface_region.location.y + 11, 10,
-                                       metrics->surface_region.size.height - 22, 5, accent_color, egui_color_alpha_mix(self->alpha, 86));
+                                       metrics->surface_region.size.height - 22, 5, accent_color, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(86)));
 
     badge_w = 22 + swipe_control_measure_text_width(local->meta_font, item->eyebrow);
     if (badge_w <= 22)
@@ -584,8 +589,9 @@ static void swipe_control_draw_surface(egui_view_t *self, egui_view_swipe_contro
     badge_region.size.width = badge_w;
     badge_region.size.height = badge_h;
     swipe_control_draw_round_fill_safe(badge_region.location.x, badge_region.location.y, badge_region.size.width, badge_region.size.height,
-                                       badge_region.size.height / 2, accent_color, egui_color_alpha_mix(self->alpha, local->read_only_mode ? 58 : 84));
-    swipe_control_draw_text(local->meta_font, self, item->eyebrow, &badge_region, EGUI_ALIGN_CENTER, EGUI_COLOR_HEX(0xFFFFFF));
+                                       badge_region.size.height / 2, accent_color,
+                                       egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(local->read_only_mode ? 58 : 84)));
+    swipe_control_draw_text(local->meta_font, self, item->eyebrow, &badge_region, EGUI_ALIGN_CENTER, HCW_COLOR_SURFACE);
 
     swipe_control_draw_state_pill(self, local, item, &metrics->surface_region);
 
@@ -604,17 +610,20 @@ static void swipe_control_draw_surface(egui_view_t *self, egui_view_swipe_contro
         egui_canvas_draw_line(&uicode_get_core()->canvas, metrics->surface_region.location.x + 12, metrics->surface_region.location.y + metrics->surface_region.size.height - footer_h - 18,
                               metrics->surface_region.location.x + metrics->surface_region.size.width - 12,
                               metrics->surface_region.location.y + metrics->surface_region.size.height - footer_h - 18, 1,
-                              egui_rgb_mix(accent_color, local->surface_color, 34), egui_color_alpha_mix(self->alpha, 62));
+                              egui_rgb_mix(accent_color, local->surface_color, EGUI_ALPHA_MAKE(34)),
+                              egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(62)));
 
         text_region.location.y = metrics->surface_region.location.y + metrics->surface_region.size.height - footer_h - 10;
         text_region.size.height = footer_h;
-        swipe_control_draw_text(local->meta_font, self, item->footer, &text_region, EGUI_ALIGN_LEFT, egui_rgb_mix(body_color, accent_color, 20));
+        swipe_control_draw_text(local->meta_font, self, item->footer, &text_region, EGUI_ALIGN_LEFT,
+                                egui_rgb_mix(body_color, accent_color, EGUI_ALPHA_MAKE(20)));
     }
     else
     {
         text_region.location.y = metrics->surface_region.location.y + metrics->surface_region.size.height - footer_h - 6;
         text_region.size.height = footer_h;
-        swipe_control_draw_text(local->meta_font, self, item->footer, &text_region, EGUI_ALIGN_LEFT, egui_rgb_mix(body_color, accent_color, 22));
+        swipe_control_draw_text(local->meta_font, self, item->footer, &text_region, EGUI_ALIGN_LEFT,
+                                egui_rgb_mix(body_color, accent_color, EGUI_ALPHA_MAKE(22)));
     }
 }
 
@@ -872,15 +881,19 @@ static void egui_view_swipe_control_on_draw(egui_view_t *self)
 
     if (local->read_only_mode)
     {
-        surface_color = egui_rgb_mix(surface_color, EGUI_COLOR_HEX(0xF0F3F7), 50);
-        border_color = egui_rgb_mix(border_color, EGUI_COLOR_HEX(0xA7B1BD), 42);
-        muted_text_color = egui_rgb_mix(muted_text_color, EGUI_COLOR_HEX(0x96A3AF), 34);
+        surface_color = egui_rgb_mix(surface_color, HCW_COLOR_SURFACE_DISABLED, EGUI_ALPHA_MAKE(34));
+        border_color = egui_rgb_mix(border_color, HCW_COLOR_TEXT_SOFT, EGUI_ALPHA_MAKE(42));
+        muted_text_color = egui_rgb_mix(muted_text_color, HCW_COLOR_TEXT_SOFT, EGUI_ALPHA_MAKE(34));
     }
 
-    swipe_control_draw_round_fill_safe(self->region_screen.location.x, self->region_screen.location.y, self->region_screen.size.width,
-                                       self->region_screen.size.height, radius, surface_color, egui_color_alpha_mix(self->alpha, 100));
-    swipe_control_draw_round_stroke_safe(self->region_screen.location.x, self->region_screen.location.y, self->region_screen.size.width,
-                                         self->region_screen.size.height, radius, 1, border_color, egui_color_alpha_mix(self->alpha, 58));
+    if (local->compact_mode)
+    {
+        swipe_control_draw_round_fill_safe(self->region_screen.location.x, self->region_screen.location.y, self->region_screen.size.width,
+                                           self->region_screen.size.height, radius, surface_color, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_100));
+        swipe_control_draw_round_stroke_safe(self->region_screen.location.x, self->region_screen.location.y, self->region_screen.size.width,
+                                             self->region_screen.size.height, radius, 1, border_color,
+                                             egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(78)));
+    }
 
     swipe_control_draw_text(local->meta_font, self, local->title, &metrics.title_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, muted_text_color);
 
@@ -1154,11 +1167,11 @@ void egui_view_swipe_control_init(egui_view_t *self)
     local->meta_font = (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT;
     local->title = NULL;
     local->helper = NULL;
-    local->surface_color = EGUI_COLOR_HEX(0xFFFFFF);
-    local->border_color = EGUI_COLOR_HEX(0xD6DEE7);
-    local->text_color = EGUI_COLOR_HEX(0x172331);
-    local->muted_text_color = EGUI_COLOR_HEX(0x6E7C8B);
-    local->inactive_color = EGUI_COLOR_HEX(0xA6B0BD);
+    local->surface_color = HCW_COLOR_SURFACE;
+    local->border_color = HCW_COLOR_BORDER_STRONG;
+    local->text_color = HCW_COLOR_TEXT_STRONG;
+    local->muted_text_color = HCW_COLOR_TEXT_SOFT;
+    local->inactive_color = HCW_COLOR_TEXT_SOFT;
     local->current_part = EGUI_VIEW_SWIPE_CONTROL_PART_SURFACE;
     local->reveal_state = EGUI_VIEW_SWIPE_CONTROL_REVEAL_NONE;
     local->compact_mode = 0;

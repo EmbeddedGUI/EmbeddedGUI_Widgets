@@ -213,8 +213,8 @@ static void test_figure_init_defaults(void)
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_FIGURE_ANCHOR_LEFT, egui_view_figure_get_anchor(EGUI_VIEW_OF(&test_control)));
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_figure_get_compact_mode(EGUI_VIEW_OF(&test_control)));
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_figure_get_read_only_mode(EGUI_VIEW_OF(&test_control)));
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xFFFFFF).full, test_control.surface_color.full);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x0F6CBD).full, test_control.accent_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_SURFACE.full, test_control.surface_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PRIMARY.full, test_control.accent_color.full);
 }
 
 static void test_figure_child_regions_and_layout(void)
@@ -240,7 +240,7 @@ static void test_figure_child_regions_and_layout(void)
     EGUI_TEST_ASSERT_EQUAL_INT(34, figure_region.size.height);
     EGUI_TEST_ASSERT_EQUAL_INT(73, wrap_region.location.x);
     EGUI_TEST_ASSERT_EQUAL_INT(87, wrap_region.size.width);
-    EGUI_TEST_ASSERT_EQUAL_INT(68, trailing_region.location.y);
+    EGUI_TEST_ASSERT_EQUAL_INT(66, trailing_region.location.y);
     EGUI_TEST_ASSERT_EQUAL_INT(14, EGUI_VIEW_OF(&test_child)->region.location.x);
     EGUI_TEST_ASSERT_EQUAL_INT(26, EGUI_VIEW_OF(&test_child)->region.location.y);
 
@@ -297,7 +297,7 @@ static void test_figure_styles_palette_text_and_clamps(void)
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_FIGURE_ANCHOR_CENTER, egui_view_figure_get_anchor(EGUI_VIEW_OF(&test_control)));
     EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_figure_get_compact_mode(EGUI_VIEW_OF(&test_control)));
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_figure_get_read_only_mode(EGUI_VIEW_OF(&test_control)));
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x0C7C73).full, test_control.accent_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PRIMARY.full, test_control.accent_color.full);
 
     egui_view_figure_apply_read_only_style(EGUI_VIEW_OF(&test_control));
     EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_figure_get_compact_mode(EGUI_VIEW_OF(&test_control)));

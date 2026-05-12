@@ -5,9 +5,9 @@
 - 官方语义参考：`WinUI 3 / ScrollViewer`
 - 对应组件：`ScrollViewer`
 - 当前保留形态：`Release pane`、`Diagnostics lane`、`Backlog feed`、`Compact`、`Read only`
-- 当前保留交互：主区保留真实 `track same-target release`、`thumb drag` 与键盘 `Tab / Up / Down / Left / Right / Home / End / + / - / Enter / Space` 闭环；底部 `Compact / Read only` preview 保持静态 reference 对照
+- 当前保留交互：主区保留真实 `surface drag`、`track same-target release`、`thumb drag` 与键盘 `Tab / Up / Down / Left / Right / Home / End / + / - / Enter / Space` 闭环；底部 `Compact / Read only` preview 保持静态 reference 对照
 - 当前移除内容：preview 点击清主控件焦点桥接、`compact` 第二条 preview 轨道、录制里的 `preview dismiss` 收尾
-- EGUI 适配说明：继续在 custom 层维护轻量 `egui_view_scroll_viewer`；本轮只收口 README、reference 录制说明、static preview 语义与验收记录，不修改 `sdk/EmbeddedGUI`
+- EGUI 适配说明：继续在 custom 层维护轻量 `egui_view_scroll_viewer`；本轮修正 surface drag 的 offset clamp 与 viewport 内容裁切，不修改 `sdk/EmbeddedGUI`
 
 ## 1. 为什么需要这个控件
 `scroll_viewer` 用来表达“内容区域本身可滚动，同时保留显式滚动条 chrome”的语义，适合长设置页、诊断摘要、富文本说明、卡片列表等内容超过单屏高度、但又不想绑定到特定数据容器的场景。
@@ -68,7 +68,7 @@
 | 快照 2 | `Diagnostics lane` | 保持不变 | 保持不变 |
 | 快照 3 | `Backlog feed` | 保持不变 | 保持不变 |
 | 录制最终稳定帧 | 回到 `Release pane` | 保持不变 | 保持不变 |
-| track release / thumb drag / 键盘滚动 / Tab 焦点切换 | 是 | 否 | 否 |
+| surface drag / track release / thumb drag / 键盘滚动 / Tab 焦点切换 | 是 | 否 | 否 |
 | static preview 吞掉 `touch / key` 且不改状态 | 否 | 是 | 是 |
 
 ## 7. 交互语义与单测口径
@@ -77,7 +77,7 @@
 1. `set_snapshots()` 的 clamp、默认 offset 回落、空快照 reset，以及默认 `scrollbar_visibility` 校验。
 2. `set_font()`、`set_meta_font()`、`set_compact_mode()`、`set_read_only_mode()`、`set_palette()`、`set_current_snapshot()`、`set_vertical_offset()`、`set_horizontal_offset()`、`set_scrollbar_visibility()` 的 `pressed / pressed_part / dragging_thumb` 清理与状态更新。
 3. `get_part_region()`、`scroll_page()`、`scroll_line()` 与 `on_view_changed` listener 行为。
-4. 触摸轨道 same-target release、移出取消与 thumb drag 行为，验证 `pressed` 清理和滚动位置更新。
+4. surface drag 上下界夹紧、触摸轨道 same-target release、移出取消与 thumb drag 行为，验证 `pressed` 清理和滚动位置更新。
 5. 键盘 `Tab / Enter / Home / End / Left / Right / - / Escape` 行为，覆盖 `surface / thumb` 焦点切换、滚动与当前部位回落。
 6. `read_only` 与 `!enable` 守卫，保持 `current_snapshot / vertical_offset / horizontal_offset` 不变并清理 `pressed / dragging_thumb`；恢复后继续验证 `End` 导航。
 7. static preview 吞掉 `touch / key`，并保持 `current_snapshot / vertical_offset / horizontal_offset / scrollbar_visibility / current_part / compact_mode / read_only_mode` 不变，同时不触发 `on_view_changed`。
@@ -94,7 +94,7 @@
 7. 通过最终抓帧输出稳定的默认态，并继续等待 `SCROLL_VIEWER_RECORD_FINAL_WAIT`。
 
 说明：
-- 主区继续保留真实轨道 same-target release、thumb drag、键盘导航与 `on_view_changed` 语义，供手动复核和单测覆盖。
+- 主区继续保留真实 surface drag、轨道 same-target release、thumb drag、键盘导航与 `on_view_changed` 语义，供手动复核和单测覆盖。
 - runtime 录制阶段不再真实发送底部 preview 输入，也不再保留第二条 `compact` preview 轨道。
 - `request_page_snapshot()` 统一走 `layout_page() + invalidate + recording_request_snapshot()`，保证主区 `3` 组快照和最终稳定帧的布局口径一致。
 - 当前 `test.c` 已对齐统一的 `ui_ready + layout_page + request_page_snapshot` 模板：初始化、主状态切换、preview 重放和最终抓帧都走同一条显式布局路径；README 这里按当前实现如实保留第 `6` 步使用 `SCROLL_VIEWER_RECORD_WAIT` 的等待口径。
@@ -121,7 +121,7 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
 ## 10. 验收重点
 - 主区与底部双 preview 必须完整可见，不能黑屏、白屏或被裁切。
 - 主区录制只允许出现 `Release pane`、`Diagnostics lane`、`Backlog feed` `3` 组可识别状态，最终稳定帧必须回到默认态。
-- 主区真实交互仍需保留轨道 same-target release、thumb drag、键盘导航与 `on_view_changed` 语义。
+- 主区真实交互仍需保留 surface drag、轨道 same-target release、thumb drag、键盘导航与 `on_view_changed` 语义。
 - 底部 `Compact / Read only` preview 必须在全部 runtime 帧里保持静态一致。
 - static preview 收到输入后，不能改写 `current_snapshot / vertical_offset / horizontal_offset / scrollbar_visibility / current_part / compact_mode / read_only_mode`，也不能触发 `on_view_changed`。
 - WASM demo 必须能够以 `HelloCustomWidgets_layout_scroll_viewer` 正常加载。
@@ -150,6 +150,7 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
   - `Compact`
   - `Read only`
 - 保留的交互：
+  - surface drag
   - 轨道 same-target release
   - thumb drag
   - 键盘 `Tab / Up / Down / Left / Right / Home / End / + / - / Enter / Space`

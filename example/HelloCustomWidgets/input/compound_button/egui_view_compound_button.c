@@ -1,4 +1,5 @@
 #include "egui_view_compound_button.h"
+#include "../../hcw_text_center.h"
 
 #define EGUI_VIEW_COMPOUND_BUTTON_STANDARD_RADIUS    8
 #define EGUI_VIEW_COMPOUND_BUTTON_STANDARD_PAD_X     10
@@ -186,7 +187,7 @@ static void egui_view_compound_button_fit_text_to_width(const egui_font_t *font,
 
 static egui_color_t egui_view_compound_button_mix_disabled(egui_color_t color)
 {
-    return egui_rgb_mix(color, EGUI_COLOR_DARK_GREY, 66);
+    return egui_rgb_mix(color, HCW_COLOR_SURFACE_SUBTLE, EGUI_ALPHA_MAKE(44));
 }
 
 static uint8_t egui_view_compound_button_clear_pressed_state(egui_view_t *self, egui_view_compound_button_t *local)
@@ -209,33 +210,33 @@ static void egui_view_compound_button_apply_style_palette(egui_view_compound_but
     switch (style)
     {
     case EGUI_VIEW_COMPOUND_BUTTON_STYLE_PRIMARY:
-        local->surface_color = EGUI_COLOR_HEX(0x0F6CBD);
-        local->pressed_color = EGUI_COLOR_HEX(0x0A5DA3);
-        local->border_color = EGUI_COLOR_HEX(0x09579A);
-        local->focus_color = EGUI_COLOR_HEX(0x98C8F5);
+        local->surface_color = HCW_COLOR_PRIMARY_DARK;
+        local->pressed_color = HCW_COLOR_PRIMARY_DARK;
+        local->border_color = HCW_COLOR_PRIMARY_DARK;
+        local->focus_color = HCW_COLOR_PRIMARY_LIGHT;
         local->title_color = EGUI_COLOR_WHITE;
-        local->subtitle_color = EGUI_COLOR_HEX(0xD8EBFB);
+        local->subtitle_color = HCW_COLOR_SURFACE;
         local->icon_color = EGUI_COLOR_WHITE;
         break;
     case EGUI_VIEW_COMPOUND_BUTTON_STYLE_SUBTLE:
-        local->surface_color = EGUI_COLOR_HEX(0xF7F9FC);
-        local->pressed_color = EGUI_COLOR_HEX(0xEEF3F8);
-        local->border_color = EGUI_COLOR_HEX(0xD8E0E8);
-        local->focus_color = EGUI_COLOR_HEX(0x9FB6CC);
-        local->title_color = EGUI_COLOR_HEX(0x1F2C38);
-        local->subtitle_color = EGUI_COLOR_HEX(0x657486);
-        local->icon_color = EGUI_COLOR_HEX(0x687484);
+        local->surface_color = HCW_COLOR_PANEL;
+        local->pressed_color = HCW_COLOR_SURFACE_DISABLED;
+        local->border_color = HCW_COLOR_BORDER_STRONG;
+        local->focus_color = HCW_COLOR_PRIMARY_DARK;
+        local->title_color = HCW_COLOR_TEXT_STRONG;
+        local->subtitle_color = HCW_COLOR_TEXT_SOFT;
+        local->icon_color = HCW_COLOR_PRIMARY_DARK;
         break;
     case EGUI_VIEW_COMPOUND_BUTTON_STYLE_DEFAULT:
     default:
         local->style = EGUI_VIEW_COMPOUND_BUTTON_STYLE_DEFAULT;
-        local->surface_color = EGUI_COLOR_HEX(0xFFFFFF);
-        local->pressed_color = EGUI_COLOR_HEX(0xEDF5FF);
-        local->border_color = EGUI_COLOR_HEX(0xC8D1DA);
-        local->focus_color = EGUI_COLOR_HEX(0x78B7F2);
-        local->title_color = EGUI_COLOR_HEX(0x182331);
-        local->subtitle_color = EGUI_COLOR_HEX(0x647587);
-        local->icon_color = EGUI_COLOR_HEX(0x0F6CBD);
+        local->surface_color = HCW_COLOR_PANEL;
+        local->pressed_color = HCW_COLOR_SURFACE_PRESS;
+        local->border_color = HCW_COLOR_BORDER_STRONG;
+        local->focus_color = HCW_COLOR_PRIMARY_DARK;
+        local->title_color = HCW_COLOR_TEXT_STRONG;
+        local->subtitle_color = HCW_COLOR_TEXT_SOFT;
+        local->icon_color = HCW_COLOR_PRIMARY_DARK;
         break;
     }
 }
@@ -309,6 +310,7 @@ static void egui_view_compound_button_draw_text(const egui_font_t *font, egui_vi
     {
         return;
     }
+    draw_region.location.y += hcw_text_center_get_delta(font, text, region, align);
     egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, font, text, &draw_region, align, color, self->alpha);
 }
 
@@ -332,7 +334,11 @@ static void egui_view_compound_button_on_draw(egui_view_t *self)
     }
 
     fill = self->is_pressed ? local->pressed_color : local->surface_color;
-    border = local->border_color;
+    if (self->is_pressed && local->style != EGUI_VIEW_COMPOUND_BUTTON_STYLE_PRIMARY)
+    {
+        fill = egui_rgb_mix(fill, local->icon_color, EGUI_ALPHA_MAKE(local->compact_mode ? 6 : 8));
+    }
+    border = egui_rgb_mix(local->border_color, local->icon_color, EGUI_ALPHA_MAKE(local->read_only_mode || !egui_view_get_enable(self) ? 34 : 44));
     title = local->title_color;
     subtitle = local->subtitle_color;
     icon = local->icon_color;
@@ -346,25 +352,32 @@ static void egui_view_compound_button_on_draw(egui_view_t *self)
     }
     else if (local->read_only_mode)
     {
-        fill = egui_rgb_mix(fill, EGUI_COLOR_WHITE, 35);
-        border = egui_rgb_mix(border, local->subtitle_color, 28);
-        title = egui_rgb_mix(title, local->subtitle_color, 35);
-        subtitle = egui_rgb_mix(subtitle, local->title_color, 10);
-        icon = egui_rgb_mix(icon, local->subtitle_color, 45);
+        fill = egui_rgb_mix(fill, local->surface_color, EGUI_ALPHA_MAKE(6));
+        border = egui_rgb_mix(border, local->border_color, EGUI_ALPHA_MAKE(28));
+        title = egui_rgb_mix(title, HCW_COLOR_TEXT_STRONG, EGUI_ALPHA_MAKE(32));
+        subtitle = egui_rgb_mix(subtitle, HCW_COLOR_TEXT_STRONG, EGUI_ALPHA_MAKE(46));
+        icon = egui_rgb_mix(icon, HCW_COLOR_TEXT_STRONG, EGUI_ALPHA_MAKE(18));
+    }
+    else
+    {
+        title = egui_rgb_mix(title, HCW_COLOR_TEXT_STRONG, EGUI_ALPHA_MAKE(local->compact_mode ? 14 : 10));
+        subtitle = egui_rgb_mix(subtitle, title, EGUI_ALPHA_MAKE(48));
     }
 
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.region.location.x, metrics.region.location.y, metrics.region.size.width,
-                                          metrics.region.size.height, radius, fill, egui_color_alpha_mix(self->alpha, 96));
+                                          metrics.region.size.height, radius, fill, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(100)));
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics.region.location.x, metrics.region.location.y, metrics.region.size.width,
                                      metrics.region.size.height, radius, self->is_focused ? 2 : 1, self->is_focused ? local->focus_color : border,
-                                     egui_color_alpha_mix(self->alpha, self->is_focused ? 82 : 58));
+                                     egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(self->is_focused ? 100 : 98)));
 
     if (metrics.icon_region.size.width > 0)
     {
         egui_canvas_draw_circle_fill(&uicode_get_core()->canvas, metrics.icon_region.location.x + metrics.icon_region.size.width / 2,
                                      metrics.icon_region.location.y + metrics.icon_region.size.height / 2, metrics.icon_region.size.width / 2,
-                                     egui_rgb_mix(fill, icon, local->style == EGUI_VIEW_COMPOUND_BUTTON_STYLE_PRIMARY ? 18 : 8),
-                                     egui_color_alpha_mix(self->alpha, 70));
+                                     local->style == EGUI_VIEW_COMPOUND_BUTTON_STYLE_PRIMARY
+                                             ? egui_rgb_mix(fill, icon, EGUI_ALPHA_MAKE(74))
+                                             : egui_rgb_mix(fill, icon, EGUI_ALPHA_MAKE(local->read_only_mode || !egui_view_get_enable(self) ? 30 : 38)),
+                                     egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(100)));
         egui_view_compound_button_draw_text(local->icon_font, self, local->icon, &metrics.icon_region, EGUI_ALIGN_CENTER, icon);
     }
 

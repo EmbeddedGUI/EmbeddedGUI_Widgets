@@ -338,19 +338,26 @@ static void test_combo_box_style_helpers(void)
     EGUI_TEST_ASSERT_EQUAL_INT(34, local->collapsed_height);
     EGUI_TEST_ASSERT_EQUAL_INT(24, local->item_height);
     EGUI_TEST_ASSERT_EQUAL_INT(4, local->max_visible_items);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x5B7FD6).full, local->highlight_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_BORDER_STRONG.full, local->border_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT_STRONG.full, local->text_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT_SOFT.full, local->arrow_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PRIMARY_DARK.full, local->highlight_color.full);
 
     hcw_combo_box_apply_compact_style(EGUI_VIEW_OF(&test_box));
     EGUI_TEST_ASSERT_EQUAL_INT(28, local->collapsed_height);
     EGUI_TEST_ASSERT_EQUAL_INT(21, local->item_height);
     EGUI_TEST_ASSERT_EQUAL_INT(3, local->max_visible_items);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x657789).full, local->arrow_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_BORDER_STRONG.full, local->border_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT_STRONG.full, local->text_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT_SOFT.full, local->arrow_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PRIMARY_DARK.full, local->highlight_color.full);
 
     hcw_combo_box_apply_read_only_style(EGUI_VIEW_OF(&test_box));
     EGUI_TEST_ASSERT_EQUAL_INT(28, local->collapsed_height);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xFBFCFD).full, local->bg_color.full);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x546474).full, local->text_color.full);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xDCE2E8).full, local->border_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PANEL.full, local->bg_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT_STRONG.full, local->text_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT_SOFT.full, local->arrow_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_BORDER_STRONG.full, local->border_color.full);
 
     egui_view_combobox_set_max_visible_items(EGUI_VIEW_OF(&test_box), 0);
     EGUI_TEST_ASSERT_EQUAL_INT(1, local->max_visible_items);

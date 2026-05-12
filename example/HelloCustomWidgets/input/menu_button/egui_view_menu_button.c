@@ -1,4 +1,5 @@
 #include "egui_view_menu_button.h"
+#include "../../hcw_text_center.h"
 
 #define EGUI_VIEW_MENU_BUTTON_RADIUS             9
 #define EGUI_VIEW_MENU_BUTTON_COMPACT_RADIUS     7
@@ -13,6 +14,18 @@
 #define EGUI_VIEW_MENU_BUTTON_ITEM_GAP           2
 #define EGUI_VIEW_MENU_BUTTON_ICON_SIZE          16
 #define EGUI_VIEW_MENU_BUTTON_SHORTCUT_WIDTH     34
+#define EGUI_VIEW_MENU_BUTTON_TRIGGER_PAD_X      7
+#define EGUI_VIEW_MENU_BUTTON_TRIGGER_TEXT_GAP   5
+#define EGUI_VIEW_MENU_BUTTON_TRIGGER_END_GAP    4
+#define EGUI_VIEW_MENU_BUTTON_CHEVRON_SIZE       16
+#define EGUI_VIEW_MENU_BUTTON_STATUS_INSET_X     2
+#define EGUI_VIEW_MENU_BUTTON_STATUS_ICON_SIZE   12
+#define EGUI_VIEW_MENU_BUTTON_STATUS_ICON_SLOT   22
+#define EGUI_VIEW_MENU_BUTTON_STATUS_END_GAP     4
+#define EGUI_VIEW_MENU_BUTTON_ITEM_ICON_SLOT     26
+#define EGUI_VIEW_MENU_BUTTON_ITEM_CHECK_SIZE    14
+#define EGUI_VIEW_MENU_BUTTON_ITEM_CHECK_END_GAP 4
+#define EGUI_VIEW_MENU_BUTTON_ITEM_TEXT_GAP      2
 
 typedef struct egui_view_menu_button_metrics egui_view_menu_button_metrics_t;
 struct egui_view_menu_button_metrics
@@ -25,7 +38,13 @@ struct egui_view_menu_button_metrics
     egui_region_t menu_region;
     egui_region_t menu_title_region;
     egui_region_t item_regions[EGUI_VIEW_MENU_BUTTON_MAX_ITEMS];
+    egui_region_t item_icon_regions[EGUI_VIEW_MENU_BUTTON_MAX_ITEMS];
+    egui_region_t item_label_regions[EGUI_VIEW_MENU_BUTTON_MAX_ITEMS];
+    egui_region_t item_shortcut_regions[EGUI_VIEW_MENU_BUTTON_MAX_ITEMS];
+    egui_region_t item_check_regions[EGUI_VIEW_MENU_BUTTON_MAX_ITEMS];
     egui_region_t status_region;
+    egui_region_t status_icon_region;
+    egui_region_t status_label_region;
     uint8_t show_menu_title;
 };
 
@@ -53,7 +72,7 @@ static egui_color_t egui_view_menu_button_tone_color(egui_view_menu_button_t *lo
 
 static egui_color_t egui_view_menu_button_mix_disabled(egui_color_t color)
 {
-    return egui_rgb_mix(color, EGUI_COLOR_DARK_GREY, 66);
+    return egui_rgb_mix(color, HCW_COLOR_DISABLED, EGUI_ALPHA_MAKE(52));
 }
 
 static uint8_t egui_view_menu_button_is_valid_index(egui_view_menu_button_t *local, uint8_t index)
@@ -159,6 +178,7 @@ static void egui_view_menu_button_draw_text(const egui_font_t *font, egui_view_t
     {
         return;
     }
+    draw_region.location.y += hcw_text_center_get_delta(font, text, region, align);
     egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, font, text, &draw_region, align, color, egui_color_alpha_mix(self->alpha, alpha));
 }
 
@@ -169,13 +189,13 @@ static void egui_view_menu_button_draw_chevron(egui_view_t *self, const egui_reg
 
     if (is_open)
     {
-        egui_canvas_draw_line(&uicode_get_core()->canvas, cx - 3, cy + 1, cx, cy - 2, 1, color, egui_color_alpha_mix(self->alpha, 88));
-        egui_canvas_draw_line(&uicode_get_core()->canvas, cx, cy - 2, cx + 3, cy + 1, 1, color, egui_color_alpha_mix(self->alpha, 88));
+        egui_canvas_draw_line(&uicode_get_core()->canvas, cx - 3, cy + 1, cx, cy - 2, 1, color, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_100));
+        egui_canvas_draw_line(&uicode_get_core()->canvas, cx, cy - 2, cx + 3, cy + 1, 1, color, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_100));
     }
     else
     {
-        egui_canvas_draw_line(&uicode_get_core()->canvas, cx - 3, cy - 1, cx, cy + 2, 1, color, egui_color_alpha_mix(self->alpha, 88));
-        egui_canvas_draw_line(&uicode_get_core()->canvas, cx, cy + 2, cx + 3, cy - 1, 1, color, egui_color_alpha_mix(self->alpha, 88));
+        egui_canvas_draw_line(&uicode_get_core()->canvas, cx - 3, cy - 1, cx, cy + 2, 1, color, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_100));
+        egui_canvas_draw_line(&uicode_get_core()->canvas, cx, cy + 2, cx + 3, cy - 1, 1, color, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_100));
     }
 }
 
@@ -187,6 +207,9 @@ static void egui_view_menu_button_get_metrics(egui_view_menu_button_t *local, eg
     egui_dim_t menu_y;
     egui_dim_t menu_h;
     egui_dim_t label_x;
+    egui_dim_t label_right;
+    egui_dim_t item_x;
+    egui_dim_t item_w;
     uint8_t index;
 
     egui_view_get_work_region(self, &region);
@@ -198,20 +221,31 @@ static void egui_view_menu_button_get_metrics(egui_view_menu_button_t *local, eg
     metrics->trigger_region = metrics->content_region;
     metrics->trigger_region.size.height = trigger_h;
 
-    metrics->trigger_icon_region.location.x = metrics->trigger_region.location.x + 7;
+    metrics->trigger_icon_region.location.x = metrics->trigger_region.location.x + EGUI_VIEW_MENU_BUTTON_TRIGGER_PAD_X;
     metrics->trigger_icon_region.location.y = metrics->trigger_region.location.y + (trigger_h - EGUI_VIEW_MENU_BUTTON_ICON_SIZE) / 2;
     metrics->trigger_icon_region.size.width = EGUI_VIEW_MENU_BUTTON_ICON_SIZE;
     metrics->trigger_icon_region.size.height = EGUI_VIEW_MENU_BUTTON_ICON_SIZE;
 
-    metrics->trigger_chevron_region.location.x = metrics->trigger_region.location.x + metrics->trigger_region.size.width - 23;
-    metrics->trigger_chevron_region.location.y = metrics->trigger_region.location.y + (trigger_h - 16) / 2;
-    metrics->trigger_chevron_region.size.width = 16;
-    metrics->trigger_chevron_region.size.height = 16;
+    metrics->trigger_chevron_region.size.width = EGUI_VIEW_MENU_BUTTON_CHEVRON_SIZE;
+    metrics->trigger_chevron_region.size.height = EGUI_VIEW_MENU_BUTTON_CHEVRON_SIZE;
+    metrics->trigger_chevron_region.location.x = metrics->trigger_region.location.x + metrics->trigger_region.size.width -
+                                                 EGUI_VIEW_MENU_BUTTON_TRIGGER_PAD_X - metrics->trigger_chevron_region.size.width;
+    metrics->trigger_chevron_region.location.y =
+            metrics->trigger_region.location.y + (trigger_h - metrics->trigger_chevron_region.size.height) / 2;
 
-    label_x = metrics->trigger_region.location.x + (egui_view_menu_button_has_text(local->button_icon) && !local->compact_mode ? 28 : 9);
+    label_x = metrics->trigger_region.location.x + EGUI_VIEW_MENU_BUTTON_TRIGGER_PAD_X;
+    if (egui_view_menu_button_has_text(local->button_icon) && !local->compact_mode)
+    {
+        label_x = metrics->trigger_icon_region.location.x + metrics->trigger_icon_region.size.width + EGUI_VIEW_MENU_BUTTON_TRIGGER_TEXT_GAP;
+    }
+    label_right = metrics->trigger_chevron_region.location.x - EGUI_VIEW_MENU_BUTTON_TRIGGER_END_GAP;
+    if (label_right < label_x)
+    {
+        label_right = label_x;
+    }
     metrics->trigger_label_region.location.x = label_x;
     metrics->trigger_label_region.location.y = metrics->trigger_region.location.y;
-    metrics->trigger_label_region.size.width = metrics->trigger_chevron_region.location.x - label_x - 4;
+    metrics->trigger_label_region.size.width = label_right - label_x;
     metrics->trigger_label_region.size.height = trigger_h;
 
     metrics->show_menu_title = (uint8_t)(!local->compact_mode && egui_view_menu_button_has_text(local->menu_title));
@@ -227,9 +261,9 @@ static void egui_view_menu_button_get_metrics(egui_view_menu_button_t *local, eg
                   (egui_dim_t)(local->item_count - 1U) * EGUI_VIEW_MENU_BUTTON_ITEM_GAP;
     }
 
-    metrics->menu_region.location.x = metrics->content_region.location.x;
+    metrics->menu_region.location.x = metrics->trigger_region.location.x;
     metrics->menu_region.location.y = menu_y;
-    metrics->menu_region.size.width = metrics->content_region.size.width;
+    metrics->menu_region.size.width = metrics->trigger_region.size.width;
     metrics->menu_region.size.height = menu_h;
 
     metrics->menu_title_region.location.x = metrics->menu_region.location.x + EGUI_VIEW_MENU_BUTTON_MENU_PAD;
@@ -244,16 +278,68 @@ static void egui_view_menu_button_get_metrics(egui_view_menu_button_t *local, eg
     }
     for (index = 0; index < EGUI_VIEW_MENU_BUTTON_MAX_ITEMS; ++index)
     {
-        metrics->item_regions[index].location.x = metrics->menu_region.location.x + EGUI_VIEW_MENU_BUTTON_MENU_PAD;
+        item_x = metrics->menu_region.location.x + EGUI_VIEW_MENU_BUTTON_MENU_PAD;
+        item_w = metrics->menu_region.size.width - EGUI_VIEW_MENU_BUTTON_MENU_PAD * 2;
+        metrics->item_regions[index].location.x = item_x;
         metrics->item_regions[index].location.y = row_y + index * (EGUI_VIEW_MENU_BUTTON_ITEM_HEIGHT + EGUI_VIEW_MENU_BUTTON_ITEM_GAP);
-        metrics->item_regions[index].size.width = metrics->menu_region.size.width - EGUI_VIEW_MENU_BUTTON_MENU_PAD * 2;
+        metrics->item_regions[index].size.width = item_w;
         metrics->item_regions[index].size.height = index < local->item_count ? EGUI_VIEW_MENU_BUTTON_ITEM_HEIGHT : 0;
+
+        metrics->item_icon_regions[index].location.x =
+                item_x + (EGUI_VIEW_MENU_BUTTON_ITEM_ICON_SLOT - EGUI_VIEW_MENU_BUTTON_ICON_SIZE) / 2;
+        metrics->item_icon_regions[index].location.y =
+                metrics->item_regions[index].location.y + (EGUI_VIEW_MENU_BUTTON_ITEM_HEIGHT - EGUI_VIEW_MENU_BUTTON_ICON_SIZE) / 2;
+        metrics->item_icon_regions[index].size.width = EGUI_VIEW_MENU_BUTTON_ICON_SIZE;
+        metrics->item_icon_regions[index].size.height = index < local->item_count ? EGUI_VIEW_MENU_BUTTON_ICON_SIZE : 0;
+
+        metrics->item_check_regions[index].size.width = EGUI_VIEW_MENU_BUTTON_ITEM_CHECK_SIZE;
+        metrics->item_check_regions[index].size.height = index < local->item_count ? EGUI_VIEW_MENU_BUTTON_ITEM_CHECK_SIZE : 0;
+        metrics->item_check_regions[index].location.x =
+                item_x + item_w - EGUI_VIEW_MENU_BUTTON_ITEM_CHECK_END_GAP - metrics->item_check_regions[index].size.width;
+        metrics->item_check_regions[index].location.y =
+                metrics->item_regions[index].location.y +
+                (EGUI_VIEW_MENU_BUTTON_ITEM_HEIGHT - metrics->item_check_regions[index].size.height) / 2;
+
+        metrics->item_shortcut_regions[index].location.x =
+                metrics->item_check_regions[index].location.x - EGUI_VIEW_MENU_BUTTON_SHORTCUT_WIDTH;
+        metrics->item_shortcut_regions[index].location.y = metrics->item_regions[index].location.y;
+        metrics->item_shortcut_regions[index].size.width =
+                EGUI_VIEW_MENU_BUTTON_SHORTCUT_WIDTH > EGUI_VIEW_MENU_BUTTON_ITEM_TEXT_GAP
+                        ? EGUI_VIEW_MENU_BUTTON_SHORTCUT_WIDTH - EGUI_VIEW_MENU_BUTTON_ITEM_TEXT_GAP
+                        : EGUI_VIEW_MENU_BUTTON_SHORTCUT_WIDTH;
+        metrics->item_shortcut_regions[index].size.height = metrics->item_regions[index].size.height;
+
+        metrics->item_label_regions[index].location.x =
+                item_x + EGUI_VIEW_MENU_BUTTON_ITEM_ICON_SLOT + EGUI_VIEW_MENU_BUTTON_ITEM_TEXT_GAP;
+        metrics->item_label_regions[index].location.y = metrics->item_regions[index].location.y;
+        label_right = metrics->item_shortcut_regions[index].location.x - EGUI_VIEW_MENU_BUTTON_ITEM_TEXT_GAP;
+        if (label_right < metrics->item_label_regions[index].location.x)
+        {
+            label_right = metrics->item_label_regions[index].location.x;
+        }
+        metrics->item_label_regions[index].size.width = label_right - metrics->item_label_regions[index].location.x;
+        metrics->item_label_regions[index].size.height = metrics->item_regions[index].size.height;
     }
 
-    metrics->status_region.location.x = metrics->content_region.location.x + 2;
+    metrics->status_region.location.x = metrics->content_region.location.x + EGUI_VIEW_MENU_BUTTON_STATUS_INSET_X;
     metrics->status_region.location.y = metrics->trigger_region.location.y + metrics->trigger_region.size.height + 6;
-    metrics->status_region.size.width = metrics->content_region.size.width - 4;
+    metrics->status_region.size.width = metrics->content_region.size.width - EGUI_VIEW_MENU_BUTTON_STATUS_INSET_X * 2;
     metrics->status_region.size.height = 18;
+    metrics->status_icon_region.location.x =
+            metrics->status_region.location.x + (EGUI_VIEW_MENU_BUTTON_STATUS_ICON_SLOT - EGUI_VIEW_MENU_BUTTON_STATUS_ICON_SIZE) / 2;
+    metrics->status_icon_region.location.y =
+            metrics->status_region.location.y + (metrics->status_region.size.height - EGUI_VIEW_MENU_BUTTON_STATUS_ICON_SIZE) / 2;
+    metrics->status_icon_region.size.width = EGUI_VIEW_MENU_BUTTON_STATUS_ICON_SIZE;
+    metrics->status_icon_region.size.height = EGUI_VIEW_MENU_BUTTON_STATUS_ICON_SIZE;
+    metrics->status_label_region.location.x = metrics->status_region.location.x + EGUI_VIEW_MENU_BUTTON_STATUS_ICON_SLOT;
+    metrics->status_label_region.location.y = metrics->status_region.location.y;
+    label_right = metrics->status_region.location.x + metrics->status_region.size.width - EGUI_VIEW_MENU_BUTTON_STATUS_END_GAP;
+    if (label_right < metrics->status_label_region.location.x)
+    {
+        label_right = metrics->status_label_region.location.x;
+    }
+    metrics->status_label_region.size.width = label_right - metrics->status_label_region.location.x;
+    metrics->status_label_region.size.height = metrics->status_region.size.height;
 }
 
 static uint8_t egui_view_menu_button_hit_target(egui_view_menu_button_t *local, egui_view_t *self, egui_dim_t screen_x, egui_dim_t screen_y)
@@ -524,11 +610,9 @@ uint8_t egui_view_menu_button_get_item_region(egui_view_t *self, uint8_t index, 
 static void egui_view_menu_button_draw_closed_status(egui_view_t *self, egui_view_menu_button_t *local, const egui_view_menu_button_metrics_t *metrics)
 {
     const char *selected_label = "";
-    egui_color_t status_fill = egui_rgb_mix(local->surface_color, local->accent_color, 6);
-    egui_color_t status_border = egui_rgb_mix(local->border_color, local->accent_color, 12);
-    egui_color_t status_text = egui_rgb_mix(local->muted_text_color, local->accent_color, 10);
-    egui_region_t label_region = metrics->status_region;
-    egui_region_t icon_region;
+    egui_color_t status_fill = egui_rgb_mix(local->surface_color, local->accent_color, EGUI_ALPHA_MAKE(22));
+    egui_color_t status_border = egui_rgb_mix(local->border_color, local->accent_color, EGUI_ALPHA_MAKE(38));
+    egui_color_t status_text = egui_rgb_mix(local->text_color, local->accent_color, EGUI_ALPHA_MAKE(28));
 
     if (local->selected_index < local->item_count)
     {
@@ -537,34 +621,30 @@ static void egui_view_menu_button_draw_closed_status(egui_view_t *self, egui_vie
 
     if (local->read_only_mode)
     {
-        status_fill = egui_rgb_mix(status_fill, local->muted_text_color, 22);
-        status_border = egui_rgb_mix(status_border, local->muted_text_color, 30);
-        status_text = egui_rgb_mix(status_text, local->muted_text_color, 34);
+        status_fill = HCW_COLOR_SURFACE_DISABLED;
+        status_border = egui_rgb_mix(local->border_color, local->muted_text_color, EGUI_ALPHA_MAKE(22));
+        status_text = local->muted_text_color;
     }
 
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics->status_region.location.x, metrics->status_region.location.y,
                                           metrics->status_region.size.width, metrics->status_region.size.height, 6, status_fill,
-                                          egui_color_alpha_mix(self->alpha, 78));
+                                          egui_color_alpha_mix(self->alpha, EGUI_ALPHA_100));
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics->status_region.location.x, metrics->status_region.location.y,
                                      metrics->status_region.size.width, metrics->status_region.size.height, 6, 1, status_border,
-                                     egui_color_alpha_mix(self->alpha, 42));
+                                     egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(86)));
 
-    icon_region = metrics->status_region;
-    icon_region.location.x += 6;
-    icon_region.size.width = 12;
-    egui_view_menu_button_draw_text(local->icon_font, self, EGUI_ICON_MS_DONE, &icon_region, EGUI_ALIGN_CENTER, status_text, 78);
-
-    label_region.location.x += 22;
-    label_region.size.width -= 26;
-    egui_view_menu_button_draw_text(local->meta_font, self, selected_label, &label_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, status_text, 92);
+    egui_view_menu_button_draw_text(local->icon_font, self, EGUI_ICON_MS_DONE, &metrics->status_icon_region, EGUI_ALIGN_CENTER, status_text,
+                                    EGUI_ALPHA_100);
+    egui_view_menu_button_draw_text(local->meta_font, self, selected_label, &metrics->status_label_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER,
+                                    status_text, EGUI_ALPHA_100);
 }
 
 static void egui_view_menu_button_draw_trigger(egui_view_t *self, egui_view_menu_button_t *local, const egui_view_menu_button_metrics_t *metrics)
 {
-    egui_color_t fill = egui_rgb_mix(local->surface_color, local->accent_color, local->is_open ? 13 : 5);
-    egui_color_t border = egui_rgb_mix(local->border_color, local->accent_color, local->is_open ? 30 : 16);
-    egui_color_t text = local->text_color;
-    egui_color_t icon = egui_rgb_mix(local->text_color, local->accent_color, local->is_open ? 22 : 10);
+    egui_color_t fill = local->is_open ? egui_rgb_mix(local->accent_color, EGUI_COLOR_BLACK, EGUI_ALPHA_MAKE(10)) : local->accent_color;
+    egui_color_t border = egui_rgb_mix(local->accent_color, EGUI_COLOR_BLACK, EGUI_ALPHA_MAKE(local->is_open ? 18 : 12));
+    egui_color_t text = HCW_COLOR_ON_PRIMARY;
+    egui_color_t icon = HCW_COLOR_ON_PRIMARY;
     egui_dim_t radius = local->compact_mode ? EGUI_VIEW_MENU_BUTTON_COMPACT_RADIUS : EGUI_VIEW_MENU_BUTTON_RADIUS;
     uint8_t is_active = (uint8_t)(local->active_target == EGUI_VIEW_MENU_BUTTON_TARGET_TRIGGER && self->is_pressed);
     uint8_t is_focused = 0;
@@ -575,72 +655,71 @@ static void egui_view_menu_button_draw_trigger(egui_view_t *self, egui_view_menu
 
     if (is_active)
     {
-        fill = egui_rgb_mix(fill, local->accent_color, 24);
-        border = egui_rgb_mix(border, local->accent_color, 30);
+        fill = egui_rgb_mix(fill, EGUI_COLOR_BLACK, EGUI_ALPHA_MAKE(14));
+        border = egui_rgb_mix(border, EGUI_COLOR_BLACK, EGUI_ALPHA_MAKE(18));
     }
     if (!egui_view_get_enable(self) || local->read_only_mode)
     {
-        fill = egui_view_menu_button_mix_disabled(fill);
-        border = egui_view_menu_button_mix_disabled(border);
-        text = egui_view_menu_button_mix_disabled(text);
-        icon = egui_view_menu_button_mix_disabled(icon);
+        fill = HCW_COLOR_SURFACE_DISABLED;
+        border = egui_rgb_mix(local->border_color, local->muted_text_color, EGUI_ALPHA_MAKE(24));
+        text = local->muted_text_color;
+        icon = local->muted_text_color;
     }
 
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics->trigger_region.location.x, metrics->trigger_region.location.y,
                                           metrics->trigger_region.size.width, metrics->trigger_region.size.height, radius, fill,
-                                          egui_color_alpha_mix(self->alpha, 96));
+                                          egui_color_alpha_mix(self->alpha, EGUI_ALPHA_100));
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics->trigger_region.location.x, metrics->trigger_region.location.y,
                                      metrics->trigger_region.size.width, metrics->trigger_region.size.height, radius, is_focused ? 2 : 1, border,
-                                     egui_color_alpha_mix(self->alpha, is_focused ? 84 : 56));
+                                     egui_color_alpha_mix(self->alpha, EGUI_ALPHA_100));
 
     if (egui_view_menu_button_has_text(local->button_icon) && !local->compact_mode)
     {
-        egui_view_menu_button_draw_text(local->icon_font, self, local->button_icon, &metrics->trigger_icon_region, EGUI_ALIGN_CENTER, icon, 96);
+        egui_view_menu_button_draw_text(local->icon_font, self, local->button_icon, &metrics->trigger_icon_region, EGUI_ALIGN_CENTER, icon,
+                                        EGUI_ALPHA_100);
     }
     egui_view_menu_button_draw_text(local->label_font, self, local->button_label, &metrics->trigger_label_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER,
-                                    text, 100);
+                                    text, EGUI_ALPHA_100);
     egui_view_menu_button_draw_chevron(self, &metrics->trigger_chevron_region, icon, local->is_open);
 }
 
 static void egui_view_menu_button_draw_menu(egui_view_t *self, egui_view_menu_button_t *local, const egui_view_menu_button_metrics_t *metrics)
 {
-    egui_color_t menu_fill = egui_rgb_mix(local->menu_color, local->accent_color, 4);
-    egui_color_t menu_border = egui_rgb_mix(local->border_color, local->accent_color, 18);
-    egui_color_t title_text = egui_rgb_mix(local->muted_text_color, local->accent_color, 12);
+    egui_color_t menu_fill = egui_rgb_mix(local->menu_color, local->accent_color, EGUI_ALPHA_MAKE(26));
+    egui_color_t menu_border = egui_rgb_mix(local->border_color, local->accent_color, EGUI_ALPHA_MAKE(52));
+    egui_color_t title_text = egui_rgb_mix(local->text_color, local->accent_color, EGUI_ALPHA_MAKE(24));
     uint8_t index;
 
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics->menu_region.location.x, metrics->menu_region.location.y,
                                           metrics->menu_region.size.width, metrics->menu_region.size.height, 8, menu_fill,
-                                          egui_color_alpha_mix(self->alpha, 98));
+                                          egui_color_alpha_mix(self->alpha, EGUI_ALPHA_100));
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics->menu_region.location.x, metrics->menu_region.location.y,
                                      metrics->menu_region.size.width, metrics->menu_region.size.height, 8, 1, menu_border,
-                                     egui_color_alpha_mix(self->alpha, 56));
+                                     egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(90)));
 
     if (metrics->show_menu_title)
     {
         egui_view_menu_button_draw_text(local->meta_font, self, local->menu_title, &metrics->menu_title_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER,
-                                        title_text, 86);
+                                        title_text, EGUI_ALPHA_100);
     }
 
     for (index = 0; index < local->item_count; ++index)
     {
         egui_view_menu_button_item_t *item = &local->items[index];
         egui_region_t item_region = metrics->item_regions[index];
-        egui_region_t icon_region;
-        egui_region_t label_region;
-        egui_region_t shortcut_region;
-        egui_region_t check_region;
         egui_color_t tone = egui_view_menu_button_tone_color(local, item->tone);
-        egui_color_t row_fill = index == local->focus_index ? egui_rgb_mix(local->surface_color, tone, 16) : egui_rgb_mix(local->surface_color, tone, 5);
-        egui_color_t row_border = index == local->focus_index ? egui_rgb_mix(local->border_color, tone, 26) : egui_rgb_mix(local->border_color, tone, 8);
+        egui_color_t row_fill = index == local->focus_index ? egui_rgb_mix(local->surface_color, tone, EGUI_ALPHA_MAKE(42))
+                                                            : egui_rgb_mix(local->surface_color, tone, EGUI_ALPHA_MAKE(26));
+        egui_color_t row_border = index == local->focus_index ? egui_rgb_mix(local->border_color, tone, EGUI_ALPHA_MAKE(58))
+                                                              : egui_rgb_mix(local->border_color, tone, EGUI_ALPHA_MAKE(38));
         egui_color_t label = index == local->selected_index ? tone : local->text_color;
-        egui_color_t meta = egui_rgb_mix(local->muted_text_color, tone, item->checked ? 18 : 8);
+        egui_color_t meta = egui_rgb_mix(local->muted_text_color, tone, EGUI_ALPHA_MAKE(item->checked ? 28 : 12));
         uint8_t item_pressed = (uint8_t)(local->active_target == index && self->is_pressed);
 
         if (item_pressed)
         {
-            row_fill = egui_rgb_mix(row_fill, tone, 24);
-            row_border = egui_rgb_mix(row_border, tone, 24);
+            row_fill = egui_rgb_mix(row_fill, tone, EGUI_ALPHA_MAKE(32));
+            row_border = egui_rgb_mix(row_border, tone, EGUI_ALPHA_MAKE(32));
         }
         if (item->disabled)
         {
@@ -651,32 +730,22 @@ static void egui_view_menu_button_draw_menu(egui_view_t *self, egui_view_menu_bu
         }
 
         egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, item_region.location.x, item_region.location.y, item_region.size.width,
-                                              item_region.size.height, 6, row_fill, egui_color_alpha_mix(self->alpha, 92));
+                                              item_region.size.height, 6, row_fill, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_100));
         egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, item_region.location.x, item_region.location.y, item_region.size.width,
-                                         item_region.size.height, 6, 1, row_border, egui_color_alpha_mix(self->alpha, 38));
+                                         item_region.size.height, 6, 1, row_border, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(92)));
 
-        icon_region = item_region;
-        icon_region.location.x += 5;
-        icon_region.size.width = EGUI_VIEW_MENU_BUTTON_ICON_SIZE;
-        egui_view_menu_button_draw_text(local->icon_font, self, item->icon, &icon_region, EGUI_ALIGN_CENTER, meta, 92);
-
-        check_region = item_region;
-        check_region.location.x = item_region.location.x + item_region.size.width - 18;
-        check_region.size.width = 14;
+        egui_view_menu_button_draw_text(local->icon_font, self, item->icon, &metrics->item_icon_regions[index], EGUI_ALIGN_CENTER, meta,
+                                        EGUI_ALPHA_100);
         if (item->checked || index == local->selected_index)
         {
-            egui_view_menu_button_draw_text(local->icon_font, self, EGUI_ICON_MS_DONE, &check_region, EGUI_ALIGN_CENTER, tone, 96);
+            egui_view_menu_button_draw_text(local->icon_font, self, EGUI_ICON_MS_DONE, &metrics->item_check_regions[index], EGUI_ALIGN_CENTER, tone,
+                                            EGUI_ALPHA_100);
         }
 
-        shortcut_region = item_region;
-        shortcut_region.location.x = check_region.location.x - EGUI_VIEW_MENU_BUTTON_SHORTCUT_WIDTH;
-        shortcut_region.size.width = EGUI_VIEW_MENU_BUTTON_SHORTCUT_WIDTH - 2;
-        egui_view_menu_button_draw_text(local->meta_font, self, item->shortcut, &shortcut_region, EGUI_ALIGN_RIGHT | EGUI_ALIGN_VCENTER, meta, 82);
-
-        label_region = item_region;
-        label_region.location.x = icon_region.location.x + icon_region.size.width + 5;
-        label_region.size.width = shortcut_region.location.x - label_region.location.x - 2;
-        egui_view_menu_button_draw_text(local->label_font, self, item->label, &label_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, label, 100);
+        egui_view_menu_button_draw_text(local->meta_font, self, item->shortcut, &metrics->item_shortcut_regions[index],
+                                        EGUI_ALIGN_RIGHT | EGUI_ALIGN_VCENTER, meta, EGUI_ALPHA_MAKE(96));
+        egui_view_menu_button_draw_text(local->label_font, self, item->label, &metrics->item_label_regions[index],
+                                        EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, label, EGUI_ALPHA_100);
     }
 }
 
@@ -974,16 +1043,16 @@ void egui_view_menu_button_init(egui_view_t *self)
     local->meta_font = (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT;
     local->icon_font = EGUI_FONT_ICON_MS_16;
     local->on_action = NULL;
-    local->surface_color = EGUI_COLOR_HEX(0xFFFFFF);
-    local->menu_color = EGUI_COLOR_HEX(0xF8FAFC);
-    local->border_color = EGUI_COLOR_HEX(0xCAD4DF);
-    local->text_color = EGUI_COLOR_HEX(0x182433);
-    local->muted_text_color = EGUI_COLOR_HEX(0x637181);
-    local->accent_color = EGUI_COLOR_HEX(0x0F6CBD);
-    local->success_color = EGUI_COLOR_HEX(0x178454);
-    local->warning_color = EGUI_COLOR_HEX(0xB7791F);
-    local->danger_color = EGUI_COLOR_HEX(0xB3261E);
-    local->neutral_color = EGUI_COLOR_HEX(0x708090);
+    local->surface_color = HCW_COLOR_SURFACE;
+    local->menu_color = HCW_COLOR_SURFACE_SUBTLE;
+    local->border_color = HCW_COLOR_BORDER_STRONG;
+    local->text_color = HCW_COLOR_TEXT_STRONG;
+    local->muted_text_color = HCW_COLOR_TEXT_SOFT;
+    local->accent_color = HCW_COLOR_PRIMARY_DARK;
+    local->success_color = HCW_COLOR_SUCCESS;
+    local->warning_color = HCW_COLOR_WARNING;
+    local->danger_color = HCW_COLOR_DANGER_DARK;
+    local->neutral_color = HCW_COLOR_TEXT_SOFT;
     local->item_count = 0;
     local->selected_index = EGUI_VIEW_MENU_BUTTON_INDEX_NONE;
     local->focus_index = EGUI_VIEW_MENU_BUTTON_INDEX_NONE;

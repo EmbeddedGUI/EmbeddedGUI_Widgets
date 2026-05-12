@@ -184,9 +184,9 @@ static void test_content_presenter_init_defaults(void)
     EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_content_presenter_get_guide_width(EGUI_VIEW_OF(&test_presenter)));
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_content_presenter_get_compact_mode(EGUI_VIEW_OF(&test_presenter)));
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_content_presenter_get_read_only_mode(EGUI_VIEW_OF(&test_presenter)));
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xFFFFFF).full, test_presenter.surface_color.full);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xC7D3DE).full, test_presenter.guide_color.full);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x0F6CBD).full, test_presenter.accent_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_SURFACE.full, test_presenter.surface_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_BORDER_STRONG.full, test_presenter.guide_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PRIMARY.full, test_presenter.accent_color.full);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_MARGIN_PADDING
     EGUI_TEST_ASSERT_EQUAL_INT(12, EGUI_VIEW_OF(&test_presenter)->padding.left);
     EGUI_TEST_ASSERT_EQUAL_INT(12, EGUI_VIEW_OF(&test_presenter)->padding.right);

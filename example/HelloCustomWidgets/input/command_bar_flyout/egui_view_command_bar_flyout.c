@@ -156,7 +156,7 @@ static uint8_t egui_view_command_bar_flyout_secondary_index(uint8_t part)
 
 static egui_color_t egui_view_command_bar_flyout_mix_disabled(egui_color_t color)
 {
-    return egui_rgb_mix(color, EGUI_COLOR_DARK_GREY, 68);
+    return egui_rgb_mix(color, HCW_COLOR_TEXT_SOFT, EGUI_ALPHA_MAKE(28));
 }
 
 static egui_color_t egui_view_command_bar_flyout_tone_color(egui_view_command_bar_flyout_t *local, uint8_t tone)
@@ -517,9 +517,9 @@ static void egui_view_command_bar_flyout_get_metrics(egui_view_command_bar_flyou
         return;
     }
 
-    metrics->panel_region.location.x = region.location.x;
+    metrics->panel_region.location.x = metrics->trigger_region.location.x;
     metrics->panel_region.location.y = metrics->trigger_region.location.y + metrics->trigger_region.size.height + section_gap;
-    metrics->panel_region.size.width = region.size.width;
+    metrics->panel_region.size.width = metrics->trigger_region.size.width;
     metrics->panel_region.size.height = region.size.height - metrics->trigger_region.size.height - section_gap;
     if (metrics->panel_region.size.height <= 0)
     {
@@ -880,10 +880,10 @@ static void egui_view_command_bar_flyout_draw_trigger(egui_view_t *self, egui_vi
 {
     egui_region_t text_region;
     egui_color_t tone = local->accent_color;
-    egui_color_t fill = egui_rgb_mix(local->surface_color, tone, local->open_state ? 10 : 4);
-    egui_color_t border = egui_rgb_mix(local->border_color, tone, local->current_part == EGUI_VIEW_COMMAND_BAR_FLYOUT_PART_TRIGGER ? 24 : 14);
+    egui_color_t fill = egui_rgb_mix(local->surface_color, tone, EGUI_ALPHA_MAKE(local->open_state ? 6 : 4));
+    egui_color_t border = egui_rgb_mix(local->border_color, tone, EGUI_ALPHA_MAKE(local->current_part == EGUI_VIEW_COMMAND_BAR_FLYOUT_PART_TRIGGER ? 44 : 32));
     egui_color_t title = local->text_color;
-    egui_color_t meta = egui_rgb_mix(local->muted_text_color, tone, 10);
+    egui_color_t meta = egui_rgb_mix(local->text_color, tone, EGUI_ALPHA_MAKE(24));
     egui_dim_t eyebrow_w = egui_view_command_bar_flyout_measure_eyebrow_width(local->meta_font, local->compact_mode, snapshot->eyebrow,
                                                                               metrics->trigger_region.size.width / 3);
     egui_dim_t meta_line_height = egui_view_command_bar_flyout_measure_font_line_height(local->meta_font);
@@ -894,15 +894,15 @@ static void egui_view_command_bar_flyout_draw_trigger(egui_view_t *self, egui_vi
     if (local->pressed_part == EGUI_VIEW_COMMAND_BAR_FLYOUT_PART_TRIGGER &&
         egui_view_command_bar_flyout_part_data_enabled(snapshot, local->open_state, EGUI_VIEW_COMMAND_BAR_FLYOUT_PART_TRIGGER))
     {
-        fill = egui_rgb_mix(fill, tone, 14);
+        fill = egui_rgb_mix(fill, tone, EGUI_ALPHA_MAKE(12));
     }
 
     if (local->disabled_mode)
     {
-        fill = egui_rgb_mix(fill, local->surface_color, 32);
-        border = egui_rgb_mix(border, local->neutral_color, 20);
-        title = egui_rgb_mix(title, local->muted_text_color, 18);
-        meta = egui_rgb_mix(meta, local->muted_text_color, 20);
+        fill = egui_rgb_mix(fill, local->surface_color, EGUI_ALPHA_MAKE(14));
+        border = egui_rgb_mix(border, local->border_color, EGUI_ALPHA_MAKE(24));
+        title = egui_rgb_mix(title, HCW_COLOR_TEXT_STRONG, EGUI_ALPHA_MAKE(32));
+        meta = egui_rgb_mix(meta, HCW_COLOR_TEXT_STRONG, EGUI_ALPHA_MAKE(32));
     }
 
     if (!egui_view_get_enable(self))
@@ -914,9 +914,9 @@ static void egui_view_command_bar_flyout_draw_trigger(egui_view_t *self, egui_vi
     }
 
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics->trigger_region.location.x, metrics->trigger_region.location.y, metrics->trigger_region.size.width,
-                                          metrics->trigger_region.size.height, radius, fill, egui_color_alpha_mix(self->alpha, 100));
+                                          metrics->trigger_region.size.height, radius, fill, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(100)));
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics->trigger_region.location.x, metrics->trigger_region.location.y, metrics->trigger_region.size.width,
-                                     metrics->trigger_region.size.height, radius, 1, border, egui_color_alpha_mix(self->alpha, 42));
+                                     metrics->trigger_region.size.height, radius, 1, border, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(98)));
 
     if (eyebrow_w > 0)
     {
@@ -930,8 +930,8 @@ static void egui_view_command_bar_flyout_draw_trigger(egui_view_t *self, egui_vi
             pill_y = metrics->trigger_region.location.y + (metrics->trigger_region.size.height - pill_h) / 2;
         }
 
-        egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, pill_x, pill_y, eyebrow_w, pill_h, pill_h / 2, egui_rgb_mix(fill, tone, 20),
-                                              egui_color_alpha_mix(self->alpha, 96));
+        egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, pill_x, pill_y, eyebrow_w, pill_h, pill_h / 2, egui_rgb_mix(fill, tone, EGUI_ALPHA_MAKE(8)),
+                                              egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(100)));
         text_region.location.x = pill_x;
         text_region.location.y = pill_y;
         text_region.size.width = eyebrow_w;
@@ -946,9 +946,9 @@ static void egui_view_command_bar_flyout_draw_trigger(egui_view_t *self, egui_vi
     egui_view_command_bar_flyout_draw_text(local->font, self, snapshot->trigger_label, &text_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, title);
 
     egui_canvas_draw_line(&uicode_get_core()->canvas, chevron_x - 3, chevron_y - (local->open_state ? -1 : 1), chevron_x, chevron_y + (local->open_state ? -2 : 2), 1, meta,
-                          egui_color_alpha_mix(self->alpha, 96));
+                          egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(98)));
     egui_canvas_draw_line(&uicode_get_core()->canvas, chevron_x, chevron_y + (local->open_state ? -2 : 2), chevron_x + 3, chevron_y - (local->open_state ? -1 : 1), 1, meta,
-                          egui_color_alpha_mix(self->alpha, 96));
+                          egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(98)));
 }
 
 static void egui_view_command_bar_flyout_draw_primary_item(egui_view_t *self, egui_view_command_bar_flyout_t *local,
@@ -957,20 +957,20 @@ static void egui_view_command_bar_flyout_draw_primary_item(egui_view_t *self, eg
 {
     egui_region_t text_region;
     egui_color_t tone = egui_view_command_bar_flyout_tone_color(local, item->tone);
-    egui_color_t fill = item->emphasized ? tone : egui_rgb_mix(local->surface_color, tone, part == local->current_part ? 14 : 8);
-    egui_color_t border = egui_rgb_mix(local->border_color, tone, part == local->current_part ? 22 : 16);
+    egui_color_t fill = item->emphasized ? tone : egui_rgb_mix(local->surface_color, tone, EGUI_ALPHA_MAKE(part == local->current_part ? 10 : 4));
+    egui_color_t border = egui_rgb_mix(local->border_color, tone, EGUI_ALPHA_MAKE(part == local->current_part ? 44 : 30));
     egui_color_t text = item->emphasized ? EGUI_COLOR_WHITE : (item->tone == EGUI_VIEW_COMMAND_BAR_FLYOUT_TONE_DANGER ? tone : local->text_color);
 
     if (local->pressed_part == part && item->enabled)
     {
-        fill = egui_rgb_mix(fill, tone, 16);
+        fill = egui_rgb_mix(fill, tone, EGUI_ALPHA_MAKE(12));
     }
 
     if (!item->enabled || local->disabled_mode)
     {
-        fill = egui_rgb_mix(fill, local->surface_color, 28);
-        border = egui_rgb_mix(border, local->muted_text_color, 26);
-        text = egui_rgb_mix(text, local->muted_text_color, 32);
+        fill = egui_rgb_mix(fill, local->surface_color, EGUI_ALPHA_MAKE(10));
+        border = egui_rgb_mix(border, local->border_color, EGUI_ALPHA_MAKE(24));
+        text = egui_rgb_mix(text, local->text_color, EGUI_ALPHA_MAKE(20));
     }
 
     if (!egui_view_get_enable(self))
@@ -981,11 +981,19 @@ static void egui_view_command_bar_flyout_draw_primary_item(egui_view_t *self, eg
     }
 
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, item_region->location.x, item_region->location.y, item_region->size.width, item_region->size.height,
-                                          local->compact_mode ? 5 : 6, fill, egui_color_alpha_mix(self->alpha, 100));
+                                          local->compact_mode ? 5 : 6, fill, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(100)));
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, item_region->location.x, item_region->location.y, item_region->size.width, item_region->size.height,
-                                     local->compact_mode ? 5 : 6, 1, border, egui_color_alpha_mix(self->alpha, 30));
+                                     local->compact_mode ? 5 : 6, 1, border, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(98)));
 
-    if (!local->compact_mode && item->glyph != NULL && item->glyph[0] != '\0' && item_region->size.width > 24)
+    if (local->compact_mode && item->glyph != NULL && item->glyph[0] != '\0')
+    {
+        text_region.location.x = item_region->location.x + 2;
+        text_region.location.y = item_region->location.y;
+        text_region.size.width = item_region->size.width - 4;
+        text_region.size.height = item_region->size.height;
+        egui_view_command_bar_flyout_draw_text(local->meta_font, self, item->glyph, &text_region, EGUI_ALIGN_CENTER, text);
+    }
+    else if (!local->compact_mode && item->glyph != NULL && item->glyph[0] != '\0' && item_region->size.width > 24)
     {
         text_region.location.x = item_region->location.x + 4;
         text_region.location.y = item_region->location.y + (item_region->size.height - EGUI_VIEW_COMMAND_BAR_FLYOUT_STANDARD_GLYPH_H) / 2;
@@ -1015,26 +1023,26 @@ static void egui_view_command_bar_flyout_draw_secondary_row(egui_view_t *self, e
 {
     egui_region_t text_region;
     egui_color_t tone = egui_view_command_bar_flyout_tone_color(local, item->tone);
-    egui_color_t row_fill = egui_rgb_mix(local->surface_color, tone, part == local->current_part ? 8 : (item->emphasized ? 6 : 3));
-    egui_color_t title = item->tone == EGUI_VIEW_COMMAND_BAR_FLYOUT_TONE_DANGER ? egui_rgb_mix(local->text_color, tone, 44) : local->text_color;
-    egui_color_t meta = egui_rgb_mix(local->muted_text_color, tone, 8);
-    egui_color_t icon_fill = egui_rgb_mix(local->section_color, tone, 10);
-    egui_dim_t icon_size = local->compact_mode ? 9 : 11;
+    egui_color_t row_fill = egui_rgb_mix(local->surface_color, tone, EGUI_ALPHA_MAKE(part == local->current_part ? 10 : (item->emphasized ? 8 : 2)));
+    egui_color_t title = item->tone == EGUI_VIEW_COMMAND_BAR_FLYOUT_TONE_DANGER ? egui_rgb_mix(local->text_color, tone, EGUI_ALPHA_MAKE(44)) : local->text_color;
+    egui_color_t meta = egui_rgb_mix(local->text_color, tone, EGUI_ALPHA_MAKE(22));
+    egui_color_t icon_fill = egui_rgb_mix(local->section_color, tone, EGUI_ALPHA_MAKE(8));
+    egui_dim_t icon_size = local->compact_mode ? 12 : 11;
     egui_dim_t icon_x = row_region->location.x + (local->compact_mode ? 5 : 7);
     egui_dim_t icon_y = row_region->location.y + (row_region->size.height - icon_size) / 2;
     egui_dim_t meta_w = row_region->size.width / 3;
 
     if (local->pressed_part == part && item->enabled)
     {
-        row_fill = egui_rgb_mix(row_fill, tone, 12);
+        row_fill = egui_rgb_mix(row_fill, tone, EGUI_ALPHA_MAKE(12));
     }
 
     if (!item->enabled || local->disabled_mode)
     {
-        row_fill = egui_rgb_mix(row_fill, local->surface_color, 34);
-        title = egui_rgb_mix(title, local->muted_text_color, 32);
-        meta = egui_rgb_mix(meta, local->muted_text_color, 38);
-        icon_fill = egui_rgb_mix(icon_fill, local->surface_color, 34);
+        row_fill = egui_rgb_mix(row_fill, local->surface_color, EGUI_ALPHA_MAKE(10));
+        title = egui_rgb_mix(title, local->text_color, EGUI_ALPHA_MAKE(28));
+        meta = egui_rgb_mix(meta, local->text_color, EGUI_ALPHA_MAKE(30));
+        icon_fill = egui_rgb_mix(icon_fill, local->border_color, EGUI_ALPHA_MAKE(24));
     }
 
     if (!egui_view_get_enable(self))
@@ -1048,12 +1056,14 @@ static void egui_view_command_bar_flyout_draw_secondary_row(egui_view_t *self, e
     if (item->separator_before)
     {
         egui_canvas_draw_line(&uicode_get_core()->canvas, row_region->location.x + 4, row_region->location.y - 1, row_region->location.x + row_region->size.width - 4,
-                              row_region->location.y - 1, 1, egui_rgb_mix(local->border_color, local->surface_color, 22), egui_color_alpha_mix(self->alpha, 36));
+                              row_region->location.y - 1, 1, egui_rgb_mix(local->border_color, tone, EGUI_ALPHA_MAKE(56)), egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(100)));
     }
 
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, row_region->location.x, row_region->location.y, row_region->size.width, row_region->size.height,
-                                          local->compact_mode ? 5 : 6, row_fill, egui_color_alpha_mix(self->alpha, part == local->current_part ? 100 : 82));
-    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, icon_x, icon_y, icon_size, icon_size, 3, icon_fill, egui_color_alpha_mix(self->alpha, 96));
+                                          local->compact_mode ? 5 : 6, row_fill,
+                                          egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(part == local->current_part ? 100 : 98)));
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, icon_x, icon_y, icon_size, icon_size, 3, icon_fill,
+                                          egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(100)));
 
     text_region.location.x = icon_x;
     text_region.location.y = icon_y;
@@ -1105,20 +1115,24 @@ static void egui_view_command_bar_flyout_on_draw(egui_view_t *self)
     }
 
     panel_fill = local->surface_color;
-    panel_border = local->border_color;
-    rail_fill = egui_rgb_mix(local->section_color, local->accent_color, 5);
-    rail_border = egui_rgb_mix(local->border_color, local->accent_color, 10);
+    panel_border = egui_rgb_mix(local->border_color, local->accent_color, EGUI_ALPHA_MAKE(32));
+    rail_fill = egui_rgb_mix(local->section_color, HCW_COLOR_SURFACE_SUBTLE, EGUI_ALPHA_MAKE(18));
+    rail_border = egui_rgb_mix(local->border_color, local->accent_color, EGUI_ALPHA_MAKE(34));
     header_text = local->text_color;
     helper_text = local->muted_text_color;
 
     if (local->disabled_mode)
     {
-        panel_fill = egui_rgb_mix(panel_fill, EGUI_COLOR_HEX(0xF4F7FA), 38);
-        panel_border = egui_rgb_mix(panel_border, local->neutral_color, 18);
-        rail_fill = egui_rgb_mix(rail_fill, panel_fill, 42);
-        rail_border = egui_rgb_mix(rail_border, local->neutral_color, 18);
-        header_text = egui_rgb_mix(header_text, helper_text, 18);
-        helper_text = egui_rgb_mix(helper_text, local->neutral_color, 22);
+        panel_fill = egui_rgb_mix(panel_fill, HCW_COLOR_SURFACE_SUBTLE, EGUI_ALPHA_MAKE(10));
+        panel_border = egui_rgb_mix(panel_border, local->border_color, EGUI_ALPHA_MAKE(28));
+        rail_fill = egui_rgb_mix(rail_fill, panel_fill, EGUI_ALPHA_MAKE(12));
+        rail_border = egui_rgb_mix(rail_border, local->border_color, EGUI_ALPHA_MAKE(26));
+        header_text = egui_rgb_mix(header_text, HCW_COLOR_TEXT_STRONG, EGUI_ALPHA_MAKE(24));
+        helper_text = egui_rgb_mix(helper_text, local->text_color, EGUI_ALPHA_MAKE(34));
+    }
+    else
+    {
+        helper_text = egui_rgb_mix(helper_text, local->text_color, EGUI_ALPHA_MAKE(44));
     }
 
     if (!egui_view_get_enable(self))
@@ -1132,12 +1146,12 @@ static void egui_view_command_bar_flyout_on_draw(egui_view_t *self)
     }
 
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.panel_region.location.x, metrics.panel_region.location.y + 2, metrics.panel_region.size.width,
-                                          metrics.panel_region.size.height, radius, egui_rgb_mix(local->shadow_color, EGUI_COLOR_HEX(0x0F172A), 12),
-                                          egui_color_alpha_mix(self->alpha, local->compact_mode ? 8 : 11));
+                                          metrics.panel_region.size.height, radius, egui_rgb_mix(local->shadow_color, EGUI_COLOR_BLACK, EGUI_ALPHA_MAKE(18)),
+                                          egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(local->compact_mode ? 18 : 24)));
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.panel_region.location.x, metrics.panel_region.location.y, metrics.panel_region.size.width,
-                                          metrics.panel_region.size.height, radius, panel_fill, egui_color_alpha_mix(self->alpha, 100));
+                                          metrics.panel_region.size.height, radius, panel_fill, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(100)));
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics.panel_region.location.x, metrics.panel_region.location.y, metrics.panel_region.size.width,
-                                     metrics.panel_region.size.height, radius, 1, panel_border, egui_color_alpha_mix(self->alpha, 42));
+                                     metrics.panel_region.size.height, radius, 1, panel_border, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(100)));
 
     if (metrics.header_region.size.height > 0)
     {
@@ -1156,13 +1170,14 @@ static void egui_view_command_bar_flyout_on_draw(egui_view_t *self)
             }
 
             egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, pill_x, pill_y, eyebrow_w, pill_h, pill_h / 2,
-                                                  egui_rgb_mix(local->section_color, local->accent_color, 16), egui_color_alpha_mix(self->alpha, 96));
+                                                  egui_rgb_mix(local->section_color, local->accent_color, EGUI_ALPHA_MAKE(8)),
+                                                  egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(100)));
             text_region.location.x = pill_x;
             text_region.location.y = pill_y;
             text_region.size.width = eyebrow_w;
             text_region.size.height = pill_h;
-            egui_view_command_bar_flyout_draw_text(local->meta_font, self, snapshot->eyebrow, &text_region, EGUI_ALIGN_CENTER,
-                                                   egui_rgb_mix(local->muted_text_color, local->accent_color, 24));
+        egui_view_command_bar_flyout_draw_text(local->meta_font, self, snapshot->eyebrow, &text_region, EGUI_ALIGN_CENTER,
+                                                   egui_rgb_mix(local->text_color, local->accent_color, EGUI_ALPHA_MAKE(22)));
         }
         else
         {
@@ -1180,10 +1195,10 @@ static void egui_view_command_bar_flyout_on_draw(egui_view_t *self)
     {
         egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.rail_region.location.x, metrics.rail_region.location.y, metrics.rail_region.size.width,
                                               metrics.rail_region.size.height, local->compact_mode ? 6 : 7, rail_fill,
-                                              egui_color_alpha_mix(self->alpha, 92));
+                                              egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(100)));
         egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics.rail_region.location.x, metrics.rail_region.location.y, metrics.rail_region.size.width,
-                                         metrics.rail_region.size.height, local->compact_mode ? 6 : 7, 1, rail_border,
-                                         egui_color_alpha_mix(self->alpha, 34));
+                                          metrics.rail_region.size.height, local->compact_mode ? 6 : 7, 1, rail_border,
+                                          egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(100)));
         for (i = 0; i < metrics.primary_count; ++i)
         {
             if (metrics.primary_regions[i].size.width > 0)
@@ -1738,17 +1753,17 @@ void egui_view_command_bar_flyout_init(egui_view_t *self)
     local->font = (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT;
     local->meta_font = (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT;
     local->on_action = NULL;
-    local->surface_color = EGUI_COLOR_HEX(0xFFFFFF);
-    local->section_color = EGUI_COLOR_HEX(0xF4F7FA);
-    local->border_color = EGUI_COLOR_HEX(0xD6DEE7);
-    local->text_color = EGUI_COLOR_HEX(0x18222D);
-    local->muted_text_color = EGUI_COLOR_HEX(0x6C7B89);
-    local->accent_color = EGUI_COLOR_HEX(0x2563EB);
-    local->success_color = EGUI_COLOR_HEX(0x178454);
-    local->warning_color = EGUI_COLOR_HEX(0xB77719);
-    local->danger_color = EGUI_COLOR_HEX(0xBA3C36);
-    local->neutral_color = EGUI_COLOR_HEX(0x7B8897);
-    local->shadow_color = EGUI_COLOR_HEX(0xD0D8E0);
+    local->surface_color = HCW_COLOR_PANEL;
+    local->section_color = HCW_COLOR_SURFACE_PRESS;
+    local->border_color = HCW_COLOR_BORDER_STRONG;
+    local->text_color = HCW_COLOR_TEXT_STRONG;
+    local->muted_text_color = HCW_COLOR_TEXT_SOFT;
+    local->accent_color = HCW_COLOR_PRIMARY_DARK;
+    local->success_color = HCW_COLOR_SUCCESS;
+    local->warning_color = HCW_COLOR_WARNING_DARK;
+    local->danger_color = HCW_COLOR_DANGER_DARK;
+    local->neutral_color = HCW_COLOR_TEXT_SOFT;
+    local->shadow_color = HCW_COLOR_BORDER_STRONG;
     local->snapshot_count = 0;
     local->current_snapshot = 0;
     local->current_part = EGUI_VIEW_COMMAND_BAR_FLYOUT_PART_TRIGGER;

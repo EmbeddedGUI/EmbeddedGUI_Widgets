@@ -180,9 +180,9 @@ static void test_border_init_defaults(void)
     EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_border_get_border_width(EGUI_VIEW_OF(&test_border)));
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_border_get_compact_mode(EGUI_VIEW_OF(&test_border)));
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_border_get_read_only_mode(EGUI_VIEW_OF(&test_border)));
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xFFFFFF).full, test_border.background_color.full);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xC6D2DE).full, test_border.border_color.full);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x0F6CBD).full, test_border.accent_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_SURFACE.full, test_border.background_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_BORDER.full, test_border.border_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PRIMARY.full, test_border.accent_color.full);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_MARGIN_PADDING
     EGUI_TEST_ASSERT_EQUAL_INT(14, EGUI_VIEW_OF(&test_border)->padding.left);
     EGUI_TEST_ASSERT_EQUAL_INT(14, EGUI_VIEW_OF(&test_border)->padding.right);

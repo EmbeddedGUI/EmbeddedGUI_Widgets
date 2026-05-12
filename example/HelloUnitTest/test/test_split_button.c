@@ -317,6 +317,15 @@ static void test_split_button_font_modes_and_palette(void)
 {
     setup_button();
 
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PANEL.full, test_button.surface_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_BORDER_STRONG.full, test_button.border_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT_SOFT.full, test_button.muted_text_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PRIMARY_DARK.full, test_button.accent_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_WARNING_DARK.full, test_button.warning_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT_SOFT.full, test_button.neutral_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(HCW_COLOR_PRIMARY_DARK, HCW_COLOR_TEXT_SOFT, EGUI_ALPHA_MAKE(30)).full,
+                               egui_view_split_button_mix_disabled(HCW_COLOR_PRIMARY_DARK).full);
+
     test_button.pressed_part = EGUI_VIEW_SPLIT_BUTTON_PART_PRIMARY;
     EGUI_VIEW_OF(&test_button)->is_pressed = true;
     egui_view_split_button_set_font(EGUI_VIEW_OF(&test_button), NULL);

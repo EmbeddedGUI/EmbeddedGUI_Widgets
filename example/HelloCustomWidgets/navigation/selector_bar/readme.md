@@ -65,7 +65,7 @@
 - 底部对照行尺寸：`216 x 72`
 - 单个 preview 面板尺寸：`104 x 72`
 - 单个 preview 控件尺寸：`84 x 42`
-- 页面风格：浅灰 `page panel`、白色主 panel、低噪音边框和轻量 active fill + underline；`compact` 与 `icon only` 继续复用同一套控件语义，只改变内容密度和展示方式
+- 页面风格：浅灰 `page panel`、白色主 panel、低噪音边框和轻量 active fill；`compact` 与 `icon only` 继续复用同一套控件语义，只改变内容密度和展示方式
 
 ## 6. 状态矩阵
 

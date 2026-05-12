@@ -1,11 +1,12 @@
 #include <stdlib.h>
 
 #include "egui_view_number_box.h"
+#include "../../hcw_text_center.h"
 #include "utils/egui_sprintf.h"
 
 #define EGUI_VIEW_NUMBER_BOX_STANDARD_RADIUS              8
-#define EGUI_VIEW_NUMBER_BOX_STANDARD_FILL_ALPHA          94
-#define EGUI_VIEW_NUMBER_BOX_STANDARD_BORDER_ALPHA        66
+#define EGUI_VIEW_NUMBER_BOX_STANDARD_FILL_ALPHA          EGUI_ALPHA_MAKE(98)
+#define EGUI_VIEW_NUMBER_BOX_STANDARD_BORDER_ALPHA        EGUI_ALPHA_MAKE(96)
 #define EGUI_VIEW_NUMBER_BOX_STANDARD_CONTENT_PAD_X       10
 #define EGUI_VIEW_NUMBER_BOX_STANDARD_CONTENT_PAD_Y       8
 #define EGUI_VIEW_NUMBER_BOX_STANDARD_LABEL_HEIGHT        10
@@ -16,25 +17,25 @@
 #define EGUI_VIEW_NUMBER_BOX_STANDARD_BUTTON_WIDTH        24
 #define EGUI_VIEW_NUMBER_BOX_STANDARD_BUTTON_GAP          5
 #define EGUI_VIEW_NUMBER_BOX_STANDARD_FIELD_RADIUS        6
-#define EGUI_VIEW_NUMBER_BOX_STANDARD_FIELD_FILL_ALPHA    44
-#define EGUI_VIEW_NUMBER_BOX_STANDARD_FIELD_BORDER_ALPHA  56
-#define EGUI_VIEW_NUMBER_BOX_STANDARD_BUTTON_FILL_ALPHA   36
-#define EGUI_VIEW_NUMBER_BOX_STANDARD_BUTTON_BORDER_ALPHA 50
+#define EGUI_VIEW_NUMBER_BOX_STANDARD_FIELD_FILL_ALPHA    EGUI_ALPHA_MAKE(96)
+#define EGUI_VIEW_NUMBER_BOX_STANDARD_FIELD_BORDER_ALPHA  EGUI_ALPHA_100
+#define EGUI_VIEW_NUMBER_BOX_STANDARD_BUTTON_FILL_ALPHA   EGUI_ALPHA_MAKE(96)
+#define EGUI_VIEW_NUMBER_BOX_STANDARD_BUTTON_BORDER_ALPHA EGUI_ALPHA_100
 #define EGUI_VIEW_NUMBER_BOX_STANDARD_ICON_SIZE           4
 
 #define EGUI_VIEW_NUMBER_BOX_COMPACT_RADIUS              6
-#define EGUI_VIEW_NUMBER_BOX_COMPACT_FILL_ALPHA          90
-#define EGUI_VIEW_NUMBER_BOX_COMPACT_BORDER_ALPHA        62
+#define EGUI_VIEW_NUMBER_BOX_COMPACT_FILL_ALPHA          EGUI_ALPHA_MAKE(96)
+#define EGUI_VIEW_NUMBER_BOX_COMPACT_BORDER_ALPHA        EGUI_ALPHA_MAKE(94)
 #define EGUI_VIEW_NUMBER_BOX_COMPACT_CONTENT_PAD_X       7
 #define EGUI_VIEW_NUMBER_BOX_COMPACT_CONTENT_PAD_Y       6
 #define EGUI_VIEW_NUMBER_BOX_COMPACT_ROW_HEIGHT          20
 #define EGUI_VIEW_NUMBER_BOX_COMPACT_BUTTON_WIDTH        18
 #define EGUI_VIEW_NUMBER_BOX_COMPACT_BUTTON_GAP          4
 #define EGUI_VIEW_NUMBER_BOX_COMPACT_FIELD_RADIUS        5
-#define EGUI_VIEW_NUMBER_BOX_COMPACT_FIELD_FILL_ALPHA    40
-#define EGUI_VIEW_NUMBER_BOX_COMPACT_FIELD_BORDER_ALPHA  50
-#define EGUI_VIEW_NUMBER_BOX_COMPACT_BUTTON_FILL_ALPHA   32
-#define EGUI_VIEW_NUMBER_BOX_COMPACT_BUTTON_BORDER_ALPHA 42
+#define EGUI_VIEW_NUMBER_BOX_COMPACT_FIELD_FILL_ALPHA    EGUI_ALPHA_MAKE(94)
+#define EGUI_VIEW_NUMBER_BOX_COMPACT_FIELD_BORDER_ALPHA  EGUI_ALPHA_MAKE(98)
+#define EGUI_VIEW_NUMBER_BOX_COMPACT_BUTTON_FILL_ALPHA   EGUI_ALPHA_MAKE(94)
+#define EGUI_VIEW_NUMBER_BOX_COMPACT_BUTTON_BORDER_ALPHA EGUI_ALPHA_MAKE(98)
 #define EGUI_VIEW_NUMBER_BOX_COMPACT_ICON_SIZE           3
 
 #define EGUI_VIEW_NUMBER_BOX_PART_NONE 0
@@ -56,7 +57,7 @@ struct egui_view_number_box_metrics
 
 static egui_color_t egui_view_number_box_mix_disabled(egui_color_t color)
 {
-    return egui_rgb_mix(color, EGUI_COLOR_DARK_GREY, 64);
+    return egui_rgb_mix(color, HCW_COLOR_TEXT_SOFT, EGUI_ALPHA_MAKE(40));
 }
 
 static egui_dim_t egui_view_number_box_measure_font_line_height(const egui_font_t *font)
@@ -389,6 +390,7 @@ static void egui_view_number_box_draw_text(const egui_font_t *font, egui_view_t 
 {
     egui_region_t draw_region = *region;
 
+    draw_region.location.y += hcw_text_center_get_delta(font, text, region, align);
     egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, font, text, &draw_region, align, color, self->alpha);
 }
 
@@ -464,25 +466,25 @@ static void egui_view_number_box_on_draw(egui_view_t *self)
     text_color = local->text_color;
     muted_text_color = local->muted_text_color;
     accent_color = local->accent_color;
-    field_fill = egui_rgb_mix(surface_color, EGUI_COLOR_HEX(0xFFFFFF), local->compact_mode ? 16 : 22);
-    field_border = egui_rgb_mix(border_color, accent_color, local->compact_mode ? 10 : 12);
-    button_fill = egui_rgb_mix(surface_color, accent_color, local->compact_mode ? 8 : 10);
-    button_border = egui_rgb_mix(border_color, accent_color, local->compact_mode ? 12 : 16);
+    field_fill = egui_rgb_mix(surface_color, accent_color, EGUI_ALPHA_MAKE(local->compact_mode ? 6 : 8));
+    field_border = egui_rgb_mix(border_color, accent_color, EGUI_ALPHA_MAKE(local->compact_mode ? 66 : 74));
+    button_fill = egui_rgb_mix(surface_color, accent_color, EGUI_ALPHA_MAKE(local->compact_mode ? 18 : 22));
+    button_border = egui_rgb_mix(border_color, accent_color, EGUI_ALPHA_MAKE(local->compact_mode ? 74 : 80));
     button_icon = accent_color;
     is_enabled = egui_view_get_enable(self) ? 1 : 0;
 
     if (local->read_only_mode)
     {
-        surface_color = egui_rgb_mix(surface_color, EGUI_COLOR_HEX(0xFCFDFE), 26);
-        border_color = egui_rgb_mix(border_color, muted_text_color, 24);
-        text_color = egui_rgb_mix(text_color, muted_text_color, 72);
-        muted_text_color = egui_rgb_mix(muted_text_color, surface_color, 14);
-        accent_color = egui_rgb_mix(accent_color, muted_text_color, 88);
-        field_fill = egui_rgb_mix(field_fill, surface_color, 40);
-        field_border = egui_rgb_mix(field_border, muted_text_color, 24);
-        button_fill = egui_rgb_mix(button_fill, surface_color, 56);
-        button_border = egui_rgb_mix(button_border, muted_text_color, 42);
-        button_icon = egui_rgb_mix(button_icon, muted_text_color, 86);
+        surface_color = egui_rgb_mix(surface_color, HCW_COLOR_SURFACE_SUBTLE, EGUI_ALPHA_MAKE(12));
+        border_color = egui_rgb_mix(border_color, HCW_COLOR_BORDER_STRONG, EGUI_ALPHA_MAKE(38));
+        text_color = egui_rgb_mix(text_color, HCW_COLOR_TEXT_STRONG, EGUI_ALPHA_MAKE(54));
+        muted_text_color = egui_rgb_mix(muted_text_color, HCW_COLOR_TEXT_STRONG, EGUI_ALPHA_MAKE(36));
+        accent_color = egui_rgb_mix(accent_color, HCW_COLOR_TEXT_STRONG, EGUI_ALPHA_MAKE(36));
+        field_fill = egui_rgb_mix(field_fill, surface_color, EGUI_ALPHA_MAKE(16));
+        field_border = egui_rgb_mix(field_border, HCW_COLOR_BORDER_STRONG, EGUI_ALPHA_MAKE(50));
+        button_fill = egui_rgb_mix(button_fill, surface_color, EGUI_ALPHA_MAKE(28));
+        button_border = egui_rgb_mix(button_border, HCW_COLOR_BORDER_STRONG, EGUI_ALPHA_MAKE(50));
+        button_icon = egui_rgb_mix(button_icon, HCW_COLOR_TEXT_STRONG, EGUI_ALPHA_MAKE(44));
     }
 
     if (!is_enabled)
@@ -531,11 +533,11 @@ static void egui_view_number_box_on_draw(egui_view_t *self)
 
         if (local->pressed_part == EGUI_VIEW_NUMBER_BOX_PART_DEC)
         {
-            dec_fill = egui_rgb_mix(button_fill, accent_color, 12);
+            dec_fill = egui_rgb_mix(button_fill, accent_color, EGUI_ALPHA_MAKE(34));
         }
         if (local->pressed_part == EGUI_VIEW_NUMBER_BOX_PART_INC)
         {
-            inc_fill = egui_rgb_mix(button_fill, accent_color, 12);
+            inc_fill = egui_rgb_mix(button_fill, accent_color, EGUI_ALPHA_MAKE(34));
         }
 
         egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.dec_region.location.x, metrics.dec_region.location.y, metrics.dec_region.size.width,
@@ -543,20 +545,20 @@ static void egui_view_number_box_on_draw(egui_view_t *self)
         egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics.dec_region.location.x, metrics.dec_region.location.y, metrics.dec_region.size.width,
                                          metrics.dec_region.size.height, field_radius, 1, button_border,
                                          egui_color_alpha_mix(self->alpha, button_border_alpha));
-        egui_view_number_box_draw_icon(self, &metrics.dec_region, EGUI_VIEW_NUMBER_BOX_PART_DEC, button_icon, 86, icon_size);
+        egui_view_number_box_draw_icon(self, &metrics.dec_region, EGUI_VIEW_NUMBER_BOX_PART_DEC, button_icon, EGUI_ALPHA_100, icon_size);
 
         egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.inc_region.location.x, metrics.inc_region.location.y, metrics.inc_region.size.width,
                                               metrics.inc_region.size.height, field_radius, inc_fill, egui_color_alpha_mix(self->alpha, button_fill_alpha));
         egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics.inc_region.location.x, metrics.inc_region.location.y, metrics.inc_region.size.width,
                                          metrics.inc_region.size.height, field_radius, 1, button_border,
                                          egui_color_alpha_mix(self->alpha, button_border_alpha));
-        egui_view_number_box_draw_icon(self, &metrics.inc_region, EGUI_VIEW_NUMBER_BOX_PART_INC, button_icon, 86, icon_size);
+        egui_view_number_box_draw_icon(self, &metrics.inc_region, EGUI_VIEW_NUMBER_BOX_PART_INC, button_icon, EGUI_ALPHA_100, icon_size);
     }
 
     if (metrics.show_meta && local->helper != NULL)
     {
         egui_view_number_box_draw_text(local->meta_font, self, local->helper, &metrics.helper_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER,
-                                       local->read_only_mode ? egui_rgb_mix(muted_text_color, text_color, 12) : muted_text_color);
+                                       local->read_only_mode ? egui_rgb_mix(muted_text_color, text_color, EGUI_ALPHA_MAKE(12)) : muted_text_color);
     }
 }
 
@@ -716,11 +718,11 @@ void egui_view_number_box_init(egui_view_t *self)
     local->label = NULL;
     local->suffix = NULL;
     local->helper = NULL;
-    local->surface_color = EGUI_COLOR_HEX(0xFFFFFF);
-    local->border_color = EGUI_COLOR_HEX(0xD7DEE7);
-    local->text_color = EGUI_COLOR_HEX(0x1B2430);
-    local->muted_text_color = EGUI_COLOR_HEX(0x697789);
-    local->accent_color = EGUI_COLOR_HEX(0x2563EB);
+    local->surface_color = HCW_COLOR_PANEL;
+    local->border_color = HCW_COLOR_BORDER_STRONG;
+    local->text_color = HCW_COLOR_TEXT_STRONG;
+    local->muted_text_color = HCW_COLOR_TEXT_SOFT;
+    local->accent_color = HCW_COLOR_PRIMARY_DARK;
     local->value = 0;
     local->min_value = 0;
     local->max_value = 100;

@@ -1,4 +1,4 @@
-﻿#include <string.h>
+#include <string.h>
 
 #include "egui.h"
 #include "test/egui_test.h"
@@ -130,8 +130,8 @@ static void setup_preview_calendar_date_picker(void)
     egui_view_calendar_date_picker_set_date(EGUI_VIEW_OF(&preview_calendar_date_picker), 2026, 4, 5);
     egui_view_calendar_date_picker_set_display_month(EGUI_VIEW_OF(&preview_calendar_date_picker), 2026, 4);
     egui_view_calendar_date_picker_set_compact_mode(EGUI_VIEW_OF(&preview_calendar_date_picker), 1);
-    egui_view_calendar_date_picker_set_palette(EGUI_VIEW_OF(&preview_calendar_date_picker), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD5DCE4), EGUI_COLOR_HEX(0x1A2734),
-                                      EGUI_COLOR_HEX(0x6B7A89), EGUI_COLOR_HEX(0x0F6CBD), EGUI_COLOR_HEX(0x0F6CBD));
+    egui_view_calendar_date_picker_set_palette(EGUI_VIEW_OF(&preview_calendar_date_picker), HCW_COLOR_PANEL, HCW_COLOR_BORDER_STRONG, HCW_COLOR_TEXT_STRONG,
+                                      HCW_COLOR_TEXT_SOFT, HCW_COLOR_PRIMARY_DARK, HCW_COLOR_PRIMARY_DARK);
     egui_view_calendar_date_picker_set_on_date_changed_listener(EGUI_VIEW_OF(&preview_calendar_date_picker), on_date_changed);
     egui_view_calendar_date_picker_set_on_open_changed_listener(EGUI_VIEW_OF(&preview_calendar_date_picker), on_open_changed);
     egui_view_calendar_date_picker_set_on_display_month_changed_listener(EGUI_VIEW_OF(&preview_calendar_date_picker), on_display_month_changed);
@@ -534,6 +534,12 @@ static void test_calendar_date_picker_font_palette_and_internal_helpers(void)
     char buffer[16];
 
     setup_calendar_date_picker();
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PANEL.full, test_calendar_date_picker.surface_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_BORDER_STRONG.full, test_calendar_date_picker.border_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT_STRONG.full, test_calendar_date_picker.text_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT_SOFT.full, test_calendar_date_picker.muted_text_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PRIMARY_DARK.full, test_calendar_date_picker.accent_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PRIMARY_DARK.full, test_calendar_date_picker.today_color.full);
 
     egui_view_calendar_date_picker_set_font(EGUI_VIEW_OF(&test_calendar_date_picker), NULL);
     egui_view_calendar_date_picker_set_meta_font(EGUI_VIEW_OF(&test_calendar_date_picker), NULL);
@@ -585,7 +591,7 @@ static void test_calendar_date_picker_font_palette_and_internal_helpers(void)
     test_calendar_date_picker.panel_month = 3;
     EGUI_TEST_ASSERT_EQUAL_INT(0, calendar_date_picker_get_display_anchor_day(&test_calendar_date_picker));
 
-    EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(sample, EGUI_COLOR_DARK_GREY, 68).full, calendar_date_picker_mix_disabled(sample).full);
+    EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(sample, HCW_COLOR_TEXT_SOFT, EGUI_ALPHA_MAKE(40)).full, calendar_date_picker_mix_disabled(sample).full);
 }
 
 static void test_calendar_date_picker_metrics_and_hit_testing(void)

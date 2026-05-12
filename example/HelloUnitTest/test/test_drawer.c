@@ -140,6 +140,27 @@ static void setup_widget(void)
     reset_listener_state();
 }
 
+static void assert_open_toggle_outside_drawer(uint8_t anchor)
+{
+    egui_view_drawer_metrics_t metrics;
+
+    setup_widget();
+    egui_view_drawer_set_anchor(EGUI_VIEW_OF(&test_widget), anchor);
+    egui_view_drawer_set_open(EGUI_VIEW_OF(&test_widget), 1);
+    layout_view(EGUI_VIEW_OF(&test_widget), 10, 16, 180, 112);
+    drawer_get_metrics(&test_widget, EGUI_VIEW_OF(&test_widget), &metrics);
+
+    EGUI_TEST_ASSERT_TRUE(metrics.show_drawer);
+    if (anchor == EGUI_VIEW_DRAWER_ANCHOR_END)
+    {
+        EGUI_TEST_ASSERT_TRUE(metrics.toggle_region.location.x + metrics.toggle_region.size.width <= metrics.drawer_region.location.x);
+    }
+    else
+    {
+        EGUI_TEST_ASSERT_TRUE(metrics.toggle_region.location.x >= metrics.drawer_region.location.x + metrics.drawer_region.size.width);
+    }
+}
+
 static void setup_preview_widget(void)
 {
     egui_view_drawer_init(EGUI_VIEW_OF(&preview_widget));
@@ -168,7 +189,7 @@ static void test_drawer_defaults_and_setters_clear_pressed_state(void)
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_DRAWER_MODE_INLINE, egui_view_drawer_get_presentation_mode(EGUI_VIEW_OF(&test_widget)));
     EGUI_TEST_ASSERT_FALSE(egui_view_drawer_get_compact_mode(EGUI_VIEW_OF(&test_widget)));
     EGUI_TEST_ASSERT_FALSE(egui_view_drawer_get_read_only_mode(EGUI_VIEW_OF(&test_widget)));
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xFFFFFF).full, test_widget.surface_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_SURFACE.full, test_widget.surface_color.full);
     EGUI_TEST_ASSERT_EQUAL_INT(0, drawer_text_len(NULL));
     EGUI_TEST_ASSERT_EQUAL_INT(7, drawer_text_len("Preview"));
     EGUI_TEST_ASSERT_EQUAL_INT(0, drawer_measure_text_width(NULL, "Open"));
@@ -182,6 +203,9 @@ static void test_drawer_defaults_and_setters_clear_pressed_state(void)
     EGUI_TEST_ASSERT_TRUE(strcmp("...", label) == 0);
     drawer_fit_text_to_width(NULL, "Pinned", label, sizeof(label), 24, 4);
     EGUI_TEST_ASSERT_TRUE(strcmp("Pinned", label) == 0);
+
+    assert_open_toggle_outside_drawer(EGUI_VIEW_DRAWER_ANCHOR_START);
+    assert_open_toggle_outside_drawer(EGUI_VIEW_DRAWER_ANCHOR_END);
 
     seed_pressed_state(&test_widget, EGUI_VIEW_DRAWER_PART_TOGGLE);
     egui_view_drawer_set_title(EGUI_VIEW_OF(&test_widget), "Review notes");

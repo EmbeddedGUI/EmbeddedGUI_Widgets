@@ -1,10 +1,15 @@
 #include "egui_view_spin_button.h"
+#include "../../hcw_text_center.h"
 #include "utils/egui_sprintf.h"
 
 #define EGUI_VIEW_SPIN_BUTTON_RADIUS              9
 #define EGUI_VIEW_SPIN_BUTTON_COMPACT_RADIUS      7
-#define EGUI_VIEW_SPIN_BUTTON_FILL_ALPHA          96
-#define EGUI_VIEW_SPIN_BUTTON_BORDER_ALPHA        62
+#define EGUI_VIEW_SPIN_BUTTON_FILL_ALPHA          EGUI_ALPHA_MAKE(96)
+#define EGUI_VIEW_SPIN_BUTTON_BORDER_ALPHA        EGUI_ALPHA_MAKE(96)
+#define EGUI_VIEW_SPIN_BUTTON_FIELD_FILL_ALPHA    EGUI_ALPHA_MAKE(98)
+#define EGUI_VIEW_SPIN_BUTTON_FIELD_BORDER_ALPHA  EGUI_ALPHA_MAKE(98)
+#define EGUI_VIEW_SPIN_BUTTON_STEPPER_FILL_ALPHA  EGUI_ALPHA_MAKE(98)
+#define EGUI_VIEW_SPIN_BUTTON_STEPPER_BORDER_ALPHA EGUI_ALPHA_MAKE(98)
 #define EGUI_VIEW_SPIN_BUTTON_PAD_X               10
 #define EGUI_VIEW_SPIN_BUTTON_PAD_Y               8
 #define EGUI_VIEW_SPIN_BUTTON_COMPACT_PAD_X       7
@@ -36,7 +41,7 @@ struct egui_view_spin_button_metrics
 
 static egui_color_t egui_view_spin_button_mix_disabled(egui_color_t color)
 {
-    return egui_rgb_mix(color, EGUI_COLOR_DARK_GREY, 66);
+    return egui_rgb_mix(color, HCW_COLOR_SURFACE_SUBTLE, EGUI_ALPHA_MAKE(44));
 }
 
 static egui_dim_t egui_view_spin_button_measure_font_line_height(const egui_font_t *font)
@@ -381,7 +386,9 @@ static void egui_view_spin_button_draw_text(const egui_font_t *font, egui_view_t
     {
         return;
     }
-    egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, font, text, &draw_region, align, color, egui_color_alpha_mix(self->alpha, alpha));
+    draw_region.location.y += hcw_text_center_get_delta(font, text, region, align);
+    egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, font, text, &draw_region, align, color,
+                                  egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(alpha)));
 }
 
 static void egui_view_spin_button_draw_arrow(egui_view_t *self, const egui_region_t *region, egui_color_t color, uint8_t up, egui_alpha_t alpha)
@@ -391,13 +398,17 @@ static void egui_view_spin_button_draw_arrow(egui_view_t *self, const egui_regio
 
     if (up)
     {
-        egui_canvas_draw_line(&uicode_get_core()->canvas, cx - 3, cy + 1, cx, cy - 2, 1, color, egui_color_alpha_mix(self->alpha, alpha));
-        egui_canvas_draw_line(&uicode_get_core()->canvas, cx, cy - 2, cx + 3, cy + 1, 1, color, egui_color_alpha_mix(self->alpha, alpha));
+        egui_canvas_draw_line(&uicode_get_core()->canvas, cx - 3, cy + 1, cx, cy - 2, 1, color,
+                              egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(alpha)));
+        egui_canvas_draw_line(&uicode_get_core()->canvas, cx, cy - 2, cx + 3, cy + 1, 1, color,
+                              egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(alpha)));
     }
     else
     {
-        egui_canvas_draw_line(&uicode_get_core()->canvas, cx - 3, cy - 1, cx, cy + 2, 1, color, egui_color_alpha_mix(self->alpha, alpha));
-        egui_canvas_draw_line(&uicode_get_core()->canvas, cx, cy + 2, cx + 3, cy - 1, 1, color, egui_color_alpha_mix(self->alpha, alpha));
+        egui_canvas_draw_line(&uicode_get_core()->canvas, cx - 3, cy - 1, cx, cy + 2, 1, color,
+                              egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(alpha)));
+        egui_canvas_draw_line(&uicode_get_core()->canvas, cx, cy + 2, cx + 3, cy - 1, 1, color,
+                              egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(alpha)));
     }
 }
 
@@ -409,6 +420,7 @@ static void egui_view_spin_button_on_draw(egui_view_t *self)
     egui_color_t surface;
     egui_color_t field;
     egui_color_t border;
+    egui_color_t field_border;
     egui_color_t text;
     egui_color_t muted;
     egui_color_t accent;
@@ -437,25 +449,29 @@ static void egui_view_spin_button_on_draw(egui_view_t *self)
     text = local->text_color;
     muted = local->muted_text_color;
     accent = local->accent_color;
-    stepper_fill = egui_rgb_mix(surface, accent, 8);
-    stepper_border = egui_rgb_mix(border, accent, 18);
+    field = egui_rgb_mix(field, accent, EGUI_ALPHA_MAKE(local->compact_mode ? 6 : 8));
+    field_border = egui_rgb_mix(border, accent, EGUI_ALPHA_MAKE(local->compact_mode ? 62 : 72));
+    stepper_fill = egui_rgb_mix(surface, accent, EGUI_ALPHA_MAKE(local->compact_mode ? 18 : 22));
+    stepper_border = egui_rgb_mix(border, accent, EGUI_ALPHA_MAKE(local->compact_mode ? 72 : 78));
 
     if (local->read_only_mode)
     {
-        surface = egui_rgb_mix(surface, EGUI_COLOR_HEX(0xFCFDFE), 32);
-        field = egui_rgb_mix(field, surface, 50);
-        border = egui_rgb_mix(border, muted, 28);
-        text = egui_rgb_mix(text, muted, 48);
-        muted = egui_rgb_mix(muted, surface, 16);
-        accent = egui_rgb_mix(accent, muted, 68);
-        stepper_fill = egui_rgb_mix(stepper_fill, surface, 55);
-        stepper_border = egui_rgb_mix(stepper_border, muted, 38);
+        surface = egui_rgb_mix(surface, HCW_COLOR_SURFACE_SUBTLE, EGUI_ALPHA_MAKE(12));
+        field = egui_rgb_mix(field, surface, EGUI_ALPHA_MAKE(16));
+        border = egui_rgb_mix(border, HCW_COLOR_BORDER_STRONG, EGUI_ALPHA_MAKE(38));
+        field_border = egui_rgb_mix(field_border, HCW_COLOR_BORDER_STRONG, EGUI_ALPHA_MAKE(50));
+        text = egui_rgb_mix(text, HCW_COLOR_TEXT_STRONG, EGUI_ALPHA_MAKE(54));
+        muted = egui_rgb_mix(muted, HCW_COLOR_TEXT_STRONG, EGUI_ALPHA_MAKE(36));
+        accent = egui_rgb_mix(accent, HCW_COLOR_TEXT_STRONG, EGUI_ALPHA_MAKE(36));
+        stepper_fill = egui_rgb_mix(stepper_fill, surface, EGUI_ALPHA_MAKE(28));
+        stepper_border = egui_rgb_mix(stepper_border, HCW_COLOR_BORDER_STRONG, EGUI_ALPHA_MAKE(50));
     }
     if (!is_enabled)
     {
         surface = egui_view_spin_button_mix_disabled(surface);
         field = egui_view_spin_button_mix_disabled(field);
         border = egui_view_spin_button_mix_disabled(border);
+        field_border = egui_view_spin_button_mix_disabled(field_border);
         text = egui_view_spin_button_mix_disabled(text);
         muted = egui_view_spin_button_mix_disabled(muted);
         accent = egui_view_spin_button_mix_disabled(accent);
@@ -467,20 +483,22 @@ static void egui_view_spin_button_on_draw(egui_view_t *self)
                                           surface, egui_color_alpha_mix(self->alpha, EGUI_VIEW_SPIN_BUTTON_FILL_ALPHA));
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, region.location.x, region.location.y, region.size.width, region.size.height, radius, 1,
                                      is_focused ? accent : border,
-                                     egui_color_alpha_mix(self->alpha, is_focused ? 74 : EGUI_VIEW_SPIN_BUTTON_BORDER_ALPHA));
+                                     egui_color_alpha_mix(self->alpha, is_focused ? EGUI_ALPHA_MAKE(98) : EGUI_VIEW_SPIN_BUTTON_BORDER_ALPHA));
 
     if (metrics.show_meta)
     {
-        egui_view_spin_button_draw_text(local->meta_font, self, local->label, &metrics.label_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, muted, 92);
+        egui_view_spin_button_draw_text(local->meta_font, self, local->label, &metrics.label_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, muted, 96);
     }
 
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.field_region.location.x, metrics.field_region.location.y,
                                           metrics.field_region.size.width, metrics.field_region.size.height, radius - 2, field,
-                                          egui_color_alpha_mix(self->alpha, 94));
+                                          egui_color_alpha_mix(self->alpha, EGUI_VIEW_SPIN_BUTTON_FIELD_FILL_ALPHA));
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics.field_region.location.x, metrics.field_region.location.y,
                                      metrics.field_region.size.width, metrics.field_region.size.height, radius - 2, 1,
-                                     local->focus_part == EGUI_VIEW_SPIN_BUTTON_PART_FIELD ? accent : border,
-                                     egui_color_alpha_mix(self->alpha, local->focus_part == EGUI_VIEW_SPIN_BUTTON_PART_FIELD ? 58 : 42));
+                                     local->focus_part == EGUI_VIEW_SPIN_BUTTON_PART_FIELD ? accent : field_border,
+                                     egui_color_alpha_mix(self->alpha,
+                                                          local->focus_part == EGUI_VIEW_SPIN_BUTTON_PART_FIELD ? EGUI_ALPHA_100
+                                                                                                               : EGUI_VIEW_SPIN_BUTTON_FIELD_BORDER_ALPHA));
     egui_view_spin_button_draw_text(local->value_font, self, local->value_buffer, &metrics.field_region, EGUI_ALIGN_CENTER, text, 100);
 
     if (metrics.show_steppers)
@@ -490,35 +508,41 @@ static void egui_view_spin_button_on_draw(egui_view_t *self)
 
         if (local->active_part == EGUI_VIEW_SPIN_BUTTON_PART_INCREMENT && self->is_pressed)
         {
-            inc_fill = egui_rgb_mix(inc_fill, accent, 22);
+            inc_fill = egui_rgb_mix(inc_fill, accent, EGUI_ALPHA_MAKE(42));
         }
         if (local->active_part == EGUI_VIEW_SPIN_BUTTON_PART_DECREMENT && self->is_pressed)
         {
-            dec_fill = egui_rgb_mix(dec_fill, accent, 22);
+            dec_fill = egui_rgb_mix(dec_fill, accent, EGUI_ALPHA_MAKE(42));
         }
 
         egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.inc_region.location.x, metrics.inc_region.location.y,
                                               metrics.inc_region.size.width, metrics.inc_region.size.height, radius - 3, inc_fill,
-                                              egui_color_alpha_mix(self->alpha, 90));
+                                              egui_color_alpha_mix(self->alpha, EGUI_VIEW_SPIN_BUTTON_STEPPER_FILL_ALPHA));
         egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics.inc_region.location.x, metrics.inc_region.location.y,
                                          metrics.inc_region.size.width, metrics.inc_region.size.height, radius - 3, 1,
                                          local->focus_part == EGUI_VIEW_SPIN_BUTTON_PART_INCREMENT ? accent : stepper_border,
-                                         egui_color_alpha_mix(self->alpha, local->focus_part == EGUI_VIEW_SPIN_BUTTON_PART_INCREMENT ? 64 : 46));
-        egui_view_spin_button_draw_arrow(self, &metrics.inc_region, accent, 1, 92);
+                                         egui_color_alpha_mix(self->alpha,
+                                                              local->focus_part == EGUI_VIEW_SPIN_BUTTON_PART_INCREMENT
+                                                                      ? EGUI_ALPHA_100
+                                                                      : EGUI_VIEW_SPIN_BUTTON_STEPPER_BORDER_ALPHA));
+        egui_view_spin_button_draw_arrow(self, &metrics.inc_region, accent, 1, 100);
 
         egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.dec_region.location.x, metrics.dec_region.location.y,
                                               metrics.dec_region.size.width, metrics.dec_region.size.height, radius - 3, dec_fill,
-                                              egui_color_alpha_mix(self->alpha, 90));
+                                              egui_color_alpha_mix(self->alpha, EGUI_VIEW_SPIN_BUTTON_STEPPER_FILL_ALPHA));
         egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics.dec_region.location.x, metrics.dec_region.location.y,
                                          metrics.dec_region.size.width, metrics.dec_region.size.height, radius - 3, 1,
                                          local->focus_part == EGUI_VIEW_SPIN_BUTTON_PART_DECREMENT ? accent : stepper_border,
-                                         egui_color_alpha_mix(self->alpha, local->focus_part == EGUI_VIEW_SPIN_BUTTON_PART_DECREMENT ? 64 : 46));
-        egui_view_spin_button_draw_arrow(self, &metrics.dec_region, accent, 0, 92);
+                                         egui_color_alpha_mix(self->alpha,
+                                                              local->focus_part == EGUI_VIEW_SPIN_BUTTON_PART_DECREMENT
+                                                                      ? EGUI_ALPHA_100
+                                                                      : EGUI_VIEW_SPIN_BUTTON_STEPPER_BORDER_ALPHA));
+        egui_view_spin_button_draw_arrow(self, &metrics.dec_region, accent, 0, 100);
     }
 
     if (metrics.show_meta)
     {
-        egui_view_spin_button_draw_text(local->meta_font, self, local->helper, &metrics.helper_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, muted, 88);
+        egui_view_spin_button_draw_text(local->meta_font, self, local->helper, &metrics.helper_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, muted, 94);
     }
 }
 
@@ -762,12 +786,12 @@ void egui_view_spin_button_init(egui_view_t *self)
     local->label = NULL;
     local->suffix = NULL;
     local->helper = NULL;
-    local->surface_color = EGUI_COLOR_HEX(0xFFFFFF);
-    local->field_color = EGUI_COLOR_HEX(0xF8FAFC);
-    local->border_color = EGUI_COLOR_HEX(0xD4DDE7);
-    local->text_color = EGUI_COLOR_HEX(0x182433);
-    local->muted_text_color = EGUI_COLOR_HEX(0x667587);
-    local->accent_color = EGUI_COLOR_HEX(0x0F6CBD);
+    local->surface_color = HCW_COLOR_PANEL;
+    local->field_color = HCW_COLOR_SURFACE;
+    local->border_color = HCW_COLOR_BORDER_STRONG;
+    local->text_color = HCW_COLOR_TEXT_STRONG;
+    local->muted_text_color = HCW_COLOR_TEXT_SOFT;
+    local->accent_color = HCW_COLOR_PRIMARY_DARK;
     local->value = 0;
     local->min_value = 0;
     local->max_value = 100;

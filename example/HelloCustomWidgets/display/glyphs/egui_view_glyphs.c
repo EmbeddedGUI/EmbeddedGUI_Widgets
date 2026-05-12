@@ -41,7 +41,7 @@ static egui_dim_t egui_view_glyphs_resolve_axis(egui_dim_t origin, egui_dim_t le
 
 static egui_color_t egui_view_glyphs_mix_disabled(egui_color_t color)
 {
-    return egui_rgb_mix(color, EGUI_COLOR_HEX(0x8A97A5), 58);
+    return egui_rgb_mix(color, HCW_COLOR_TEXT_SOFT, EGUI_ALPHA_MAKE(38));
 }
 
 static uint8_t egui_view_glyphs_has_text(const char *text)
@@ -57,7 +57,9 @@ static void egui_view_glyphs_on_draw(egui_view_t *self)
     egui_color_t fill_color = local->fill_color;
     egui_color_t accent_color = local->accent_color;
     egui_alpha_t text_alpha = EGUI_ALPHA_100;
-    egui_alpha_t marker_alpha = 46;
+    egui_alpha_t marker_alpha = EGUI_ALPHA_MAKE(46);
+    egui_alpha_t marker_cross_alpha = EGUI_ALPHA_MAKE(23);
+    egui_alpha_t marker_tick_alpha = EGUI_ALPHA_MAKE(56);
     const egui_font_t *font = local->font != NULL ? local->font : egui_view_glyphs_default_font();
     const char *text = egui_view_glyphs_has_text(local->unicode_string) ? local->unicode_string : egui_view_glyphs_default_text();
     egui_dim_t origin_x;
@@ -73,12 +75,14 @@ static void egui_view_glyphs_on_draw(egui_view_t *self)
     {
         fill_color = egui_view_glyphs_mix_disabled(fill_color);
         accent_color = egui_view_glyphs_mix_disabled(accent_color);
-        text_alpha = 42;
-        marker_alpha = 22;
+        text_alpha = EGUI_ALPHA_MAKE(58);
+        marker_alpha = EGUI_ALPHA_MAKE(34);
+        marker_cross_alpha = EGUI_ALPHA_MAKE(17);
+        marker_tick_alpha = EGUI_ALPHA_MAKE(44);
     }
     if (egui_view_get_pressed(self))
     {
-        fill_color = egui_rgb_mix(fill_color, accent_color, 18);
+        fill_color = egui_rgb_mix(fill_color, accent_color, EGUI_ALPHA_MAKE(18));
     }
 
     origin_x = egui_view_glyphs_resolve_axis(region.location.x, region.size.width, local->origin_x_percent);
@@ -90,9 +94,9 @@ static void egui_view_glyphs_on_draw(egui_view_t *self)
         egui_canvas_draw_line(&uicode_get_core()->canvas, origin_x, region.location.y + 1, origin_x, region.location.y + region.size.height - 2, 1,
                               accent_color, egui_color_alpha_mix(self->alpha, marker_alpha));
         egui_canvas_draw_line(&uicode_get_core()->canvas, region.location.x + 1, origin_y, region.location.x + region.size.width - 2, origin_y, 1,
-                              accent_color, egui_color_alpha_mix(self->alpha, marker_alpha / 2));
+                              accent_color, egui_color_alpha_mix(self->alpha, marker_cross_alpha));
         egui_canvas_draw_line(&uicode_get_core()->canvas, origin_x, origin_y, origin_x + marker_w, origin_y, 1, accent_color,
-                              egui_color_alpha_mix(self->alpha, marker_alpha + 10));
+                              egui_color_alpha_mix(self->alpha, marker_tick_alpha));
     }
 
     draw_region.location.x = origin_x;
@@ -272,8 +276,8 @@ void egui_view_glyphs_init(egui_view_t *self)
     local->unicode_string = egui_view_glyphs_default_text();
     local->font = (const egui_font_t *)&egui_res_font_montserrat_16_4;
     local->font_rendering_em_size = 16;
-    local->fill_color = EGUI_COLOR_HEX(0x21303F);
-    local->accent_color = EGUI_COLOR_HEX(0xBBD7F0);
+    local->fill_color = HCW_COLOR_TEXT;
+    local->accent_color = HCW_COLOR_PRIMARY_SOFT;
     local->origin_x_percent = 8;
     local->origin_y_percent = 18;
     egui_view_set_view_name(self, "egui_view_glyphs");

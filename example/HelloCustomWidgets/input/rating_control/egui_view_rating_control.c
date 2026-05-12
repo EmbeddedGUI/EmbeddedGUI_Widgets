@@ -1,24 +1,25 @@
 #include "egui_view_rating_control.h"
+#include "../../hcw_text_center.h"
+#include "resource/egui_icon_rating_control.h"
 
 #define RC_STD_RADIUS      10
 #define RC_STD_PAD_X       10
 #define RC_STD_PAD_Y       8
-#define RC_STD_ITEM_SIZE   24
-#define RC_STD_ITEM_GAP    6
+#define RC_STD_ITEM_SIZE   26
+#define RC_STD_ITEM_GAP    7
 #define RC_STD_CLEAR_W     34
 #define RC_STD_CLEAR_H     16
 #define RC_STD_TITLE_H     10
-#define RC_STD_ITEM_Y      27
-#define RC_STD_EMPTY_MIX   8
-#define RC_STD_EMPTY_ALPHA 84
+#define RC_STD_EMPTY_MIX   EGUI_ALPHA_MAKE(24)
+#define RC_STD_EMPTY_ALPHA EGUI_ALPHA_MAKE(96)
 
 #define RC_COMPACT_RADIUS      8
 #define RC_COMPACT_PAD_X       7
 #define RC_COMPACT_PAD_Y       6
-#define RC_COMPACT_ITEM_SIZE   16
+#define RC_COMPACT_ITEM_SIZE   18
 #define RC_COMPACT_ITEM_GAP    4
-#define RC_COMPACT_EMPTY_MIX   10
-#define RC_COMPACT_EMPTY_ALPHA 82
+#define RC_COMPACT_EMPTY_MIX   EGUI_ALPHA_MAKE(28)
+#define RC_COMPACT_EMPTY_ALPHA EGUI_ALPHA_MAKE(94)
 
 typedef struct egui_view_rating_control_metrics egui_view_rating_control_metrics_t;
 struct egui_view_rating_control_metrics
@@ -166,11 +167,12 @@ static void rating_draw_text(const egui_font_t *font, egui_view_t *self, const c
 {
     egui_region_t draw_region = *region;
 
-    if (!rating_has_text(text))
+    if (!rating_has_text(text) || font == NULL || region == NULL || region->size.width <= 0 || region->size.height <= 0)
     {
         return;
     }
 
+    draw_region.location.y += hcw_text_center_get_delta(font, text, &draw_region, align);
     egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, font, text, &draw_region, align, color, self->alpha);
 }
 
@@ -187,6 +189,11 @@ static void rating_get_metrics(egui_view_rating_control_t *local, egui_view_t *s
     egui_dim_t title_h = rating_resolve_line_height(local->font, RC_STD_TITLE_H);
     egui_dim_t caption_h = rating_resolve_line_height(local->meta_font, 10);
     egui_dim_t label_h = rating_resolve_line_height(local->meta_font, 8);
+    egui_dim_t row_top_gap = local->compact_mode ? 0 : 9;
+    egui_dim_t caption_gap = 6;
+    egui_dim_t label_gap = 8;
+    egui_dim_t row_area_top;
+    egui_dim_t row_area_bottom;
     egui_dim_t row_x;
     egui_dim_t row_y;
     uint8_t index;
@@ -252,7 +259,26 @@ static void rating_get_metrics(egui_view_rating_control_t *local, egui_view_t *s
     }
     else
     {
-        row_y = region.location.y + (metrics->show_title ? (pad_y + title_h + 9) : (RC_STD_ITEM_Y - 6));
+        row_area_top = region.location.y + pad_y;
+        if (metrics->show_title)
+        {
+            row_area_top = metrics->title_region.location.y + metrics->title_region.size.height + row_top_gap;
+        }
+
+        row_area_bottom = region.location.y + region.size.height - pad_y;
+        if (metrics->show_labels)
+        {
+            row_area_bottom -= label_gap + label_h;
+        }
+        if (metrics->show_caption)
+        {
+            row_area_bottom -= caption_gap + caption_h;
+        }
+        if (row_area_bottom < row_area_top + item_size)
+        {
+            row_area_bottom = row_area_top + item_size;
+        }
+        row_y = row_area_top + (row_area_bottom - row_area_top - item_size) / 2;
     }
 
     for (index = 0; index < local->item_count; index++)
@@ -271,12 +297,13 @@ static void rating_get_metrics(egui_view_rating_control_t *local, egui_view_t *s
     }
 
     metrics->caption_region.location.x = region.location.x + pad_x;
-    metrics->caption_region.location.y = row_y + item_size + 6;
+    metrics->caption_region.location.y = row_y + item_size + caption_gap;
     metrics->caption_region.size.width = region.size.width - pad_x * 2;
     metrics->caption_region.size.height = metrics->show_caption ? caption_h : 0;
 
     metrics->low_region.location.x = metrics->item_regions[0].location.x;
-    metrics->low_region.location.y = row_y + item_size + (metrics->show_caption ? (6 + caption_h + 1) : 8);
+    metrics->low_region.location.y =
+            row_y + item_size + (metrics->show_caption ? (caption_gap + caption_h + 1) : label_gap);
     metrics->low_region.size.width = item_size * 2;
     metrics->low_region.size.height = metrics->show_labels ? label_h : 0;
 
@@ -292,20 +319,28 @@ static void rating_draw_focus(egui_view_t *self, const egui_region_t *region, eg
                                      egui_color_alpha_mix(self->alpha, alpha));
 }
 
-static void rating_draw_star(egui_view_t *self, egui_dim_t center_x, egui_dim_t center_y, egui_dim_t radius, egui_color_t fill_color, egui_color_t border_color,
-                             egui_alpha_t fill_alpha, egui_alpha_t border_alpha)
+static const egui_font_t *rating_resolve_star_font(egui_dim_t item_size)
 {
-    static const int8_t points_template[20] = {0, -10, 3, -3, 10, -3, 4, 2, 6, 10, 0, 5, -6, 10, -4, 2, -10, -3, -3, -3};
-    egui_dim_t points[20];
-    uint8_t index;
-
-    for (index = 0; index < 10; index++)
+    if (item_size <= 18)
     {
-        points[index * 2] = center_x + (points_template[index * 2] * radius) / 10;
-        points[index * 2 + 1] = center_y + (points_template[index * 2 + 1] * radius) / 10;
+        return EGUI_FONT_RATING_CONTROL_ICON_16;
     }
-    egui_canvas_draw_polygon_fill(&uicode_get_core()->canvas, points, 10, fill_color, egui_color_alpha_mix(self->alpha, fill_alpha));
-    egui_canvas_draw_polygon(&uicode_get_core()->canvas, points, 10, 1, border_color, egui_color_alpha_mix(self->alpha, border_alpha));
+    return item_size <= 22 ? EGUI_FONT_RATING_CONTROL_ICON_20 : EGUI_FONT_RATING_CONTROL_ICON_24;
+}
+
+static void rating_draw_star(egui_view_t *self, const egui_region_t *region, const egui_font_t *icon_font, egui_color_t color, egui_alpha_t alpha)
+{
+    egui_region_t draw_region;
+
+    if (region == NULL || icon_font == NULL || region->size.width <= 0 || region->size.height <= 0)
+    {
+        return;
+    }
+
+    draw_region = *region;
+    draw_region.location.y += hcw_text_center_get_delta(icon_font, EGUI_ICON_RATING_CONTROL_STAR, &draw_region, EGUI_ALIGN_CENTER);
+    egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, icon_font, EGUI_ICON_RATING_CONTROL_STAR, &draw_region, EGUI_ALIGN_CENTER, color,
+                                  egui_color_alpha_mix(self->alpha, alpha));
 }
 
 static void rating_notify_changed(egui_view_t *self, uint8_t part)
@@ -554,18 +589,18 @@ static void rating_draw_clear(egui_view_t *self, egui_view_rating_control_t *loc
 {
     uint8_t focused = (self->is_focused && local->current_part == EGUI_VIEW_RATING_CONTROL_PART_CLEAR && egui_view_get_enable(self) && !local->read_only_mode) ? 1 : 0;
     uint8_t pressed = local->pressed_part == EGUI_VIEW_RATING_CONTROL_PART_CLEAR ? 1 : 0;
-    egui_color_t fill_color = egui_rgb_mix(local->surface_color, focused ? local->accent_color : local->muted_text_color, pressed ? 18 : (focused ? 12 : 8));
-    egui_color_t border_color = egui_rgb_mix(local->border_color, focused ? local->accent_color : local->muted_text_color, pressed ? 34 : (focused ? 28 : 16));
-    egui_color_t text_color = egui_rgb_mix(local->text_color, focused ? local->accent_color : local->muted_text_color, focused ? 22 : 34);
+    egui_color_t fill_color = egui_rgb_mix(local->surface_color, focused ? local->accent_color : local->muted_text_color, EGUI_ALPHA_MAKE(pressed ? 28 : (focused ? 22 : 14)));
+    egui_color_t border_color = egui_rgb_mix(local->border_color, focused ? local->accent_color : local->muted_text_color, EGUI_ALPHA_MAKE(pressed ? 48 : (focused ? 42 : 32)));
+    egui_color_t text_color = egui_rgb_mix(local->text_color, focused ? local->accent_color : local->muted_text_color, EGUI_ALPHA_MAKE(focused ? 16 : 24));
 
     if (focused)
     {
-        rating_draw_focus(self, region, 5, egui_rgb_mix(local->accent_color, EGUI_COLOR_WHITE, 6), 60);
+        rating_draw_focus(self, region, 5, egui_rgb_mix(local->accent_color, EGUI_COLOR_WHITE, EGUI_ALPHA_MAKE(6)), EGUI_ALPHA_MAKE(82));
     }
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, region->location.x, region->location.y, region->size.width, region->size.height, 5, fill_color,
-                                          egui_color_alpha_mix(self->alpha, focused ? 96 : 92));
+                                          egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(focused ? 98 : 96)));
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, region->location.x, region->location.y, region->size.width, region->size.height, 5, 1, border_color,
-                                     egui_color_alpha_mix(self->alpha, focused ? 68 : 54));
+                                     egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(focused ? 88 : 78)));
     rating_draw_text(local->meta_font, self, "Clear", region, EGUI_ALIGN_CENTER, text_color);
 }
 
@@ -595,20 +630,21 @@ static void egui_view_rating_control_on_draw(egui_view_t *self)
 
     if (local->read_only_mode)
     {
-        accent_color = egui_rgb_mix(accent_color, muted_color, 64);
-        surface_color = egui_rgb_mix(surface_color, EGUI_COLOR_HEX(0xFBFCFD), 34);
-        border_color = egui_rgb_mix(border_color, muted_color, 28);
-        text_color = egui_rgb_mix(text_color, muted_color, 34);
-        shadow_color = egui_rgb_mix(shadow_color, surface_color, 40);
+        accent_color = egui_rgb_mix(accent_color, HCW_COLOR_WARNING_DARK, EGUI_ALPHA_MAKE(28));
+        surface_color = egui_rgb_mix(surface_color, HCW_COLOR_PANEL, EGUI_ALPHA_MAKE(10));
+        border_color = egui_rgb_mix(border_color, HCW_COLOR_BORDER_STRONG, EGUI_ALPHA_MAKE(36));
+        text_color = egui_rgb_mix(text_color, HCW_COLOR_TEXT_STRONG, EGUI_ALPHA_MAKE(24));
+        muted_color = egui_rgb_mix(muted_color, HCW_COLOR_TEXT_STRONG, EGUI_ALPHA_MAKE(16));
+        shadow_color = egui_rgb_mix(shadow_color, border_color, EGUI_ALPHA_MAKE(28));
     }
     if (!enabled)
     {
-        accent_color = egui_rgb_mix(accent_color, muted_color, 64);
-        surface_color = egui_rgb_mix(surface_color, EGUI_COLOR_HEX(0xFBFCFD), 28);
-        border_color = egui_rgb_mix(border_color, muted_color, 30);
-        text_color = egui_rgb_mix(text_color, muted_color, 40);
-        muted_color = egui_rgb_mix(muted_color, surface_color, 12);
-        shadow_color = egui_rgb_mix(shadow_color, surface_color, 36);
+        accent_color = egui_rgb_mix(accent_color, muted_color, EGUI_ALPHA_MAKE(52));
+        surface_color = egui_rgb_mix(surface_color, HCW_COLOR_SURFACE_SUBTLE, EGUI_ALPHA_MAKE(28));
+        border_color = egui_rgb_mix(border_color, muted_color, EGUI_ALPHA_MAKE(30));
+        text_color = egui_rgb_mix(text_color, muted_color, EGUI_ALPHA_MAKE(40));
+        muted_color = egui_rgb_mix(muted_color, surface_color, EGUI_ALPHA_MAKE(12));
+        shadow_color = egui_rgb_mix(shadow_color, surface_color, EGUI_ALPHA_MAKE(36));
     }
 
     rating_get_metrics(local, self, &metrics);
@@ -619,14 +655,14 @@ static void egui_view_rating_control_on_draw(egui_view_t *self)
     if (!local->compact_mode)
     {
         egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, region.location.x, region.location.y + 2, region.size.width, region.size.height, RC_STD_RADIUS + 1, shadow_color,
-                                              egui_color_alpha_mix(self->alpha, enabled ? 18 : 10));
+                                              egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(enabled ? 18 : 10)));
     }
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, region.location.x, region.location.y, region.size.width, region.size.height,
                                           local->compact_mode ? RC_COMPACT_RADIUS : RC_STD_RADIUS, surface_color,
-                                          egui_color_alpha_mix(self->alpha, local->compact_mode ? 94 : 96));
+                                          egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(local->compact_mode ? 96 : 98)));
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, region.location.x, region.location.y, region.size.width, region.size.height,
                                      local->compact_mode ? RC_COMPACT_RADIUS : RC_STD_RADIUS, 1, border_color,
-                                     egui_color_alpha_mix(self->alpha, local->compact_mode ? 54 : 58));
+                                     egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(local->compact_mode ? 82 : 86)));
 
     if (metrics.show_title)
     {
@@ -643,38 +679,30 @@ static void egui_view_rating_control_on_draw(egui_view_t *self)
         uint8_t selected = (index + 1 <= preview_value) ? 1 : 0;
         uint8_t focused = (self->is_focused && local->current_part == (uint8_t)(index + 1) && enabled && !local->read_only_mode) ? 1 : 0;
         uint8_t pressed = local->pressed_part == (uint8_t)(index + 1) ? 1 : 0;
-        egui_color_t fill_color =
-                selected ? accent_color : egui_rgb_mix(surface_color, muted_color, local->compact_mode ? RC_COMPACT_EMPTY_MIX : RC_STD_EMPTY_MIX);
-        egui_color_t item_border = selected ? egui_rgb_mix(accent_color, EGUI_COLOR_WHITE, 10) : egui_rgb_mix(border_color, muted_color, 24);
-        egui_alpha_t fill_alpha = selected ? 94 : (local->compact_mode ? RC_COMPACT_EMPTY_ALPHA : RC_STD_EMPTY_ALPHA);
-        egui_alpha_t border_alpha = selected ? 94 : 56;
-        egui_dim_t star_radius = metrics.item_size / 2 - (local->compact_mode ? 3 : 4);
-
-        if (star_radius < 4)
-        {
-            star_radius = 4;
-        }
+        egui_color_t star_color = selected ? accent_color : egui_rgb_mix(muted_color, border_color, local->compact_mode ? RC_COMPACT_EMPTY_MIX : RC_STD_EMPTY_MIX);
+        egui_alpha_t star_alpha = selected ? EGUI_ALPHA_100 : (local->compact_mode ? RC_COMPACT_EMPTY_ALPHA : RC_STD_EMPTY_ALPHA);
+        const egui_font_t *star_font = rating_resolve_star_font(metrics.item_size);
 
         if (focused)
         {
-            fill_color = selected ? egui_rgb_mix(fill_color, EGUI_COLOR_WHITE, 8) : egui_rgb_mix(fill_color, accent_color, 18);
-            item_border = egui_rgb_mix(item_border, accent_color, selected ? 16 : 28);
-            rating_draw_focus(self, item_region, local->compact_mode ? 5 : 6, egui_rgb_mix(accent_color, EGUI_COLOR_WHITE, 8), local->compact_mode ? 48 : 56);
+            star_color = selected ? egui_rgb_mix(star_color, EGUI_COLOR_WHITE, EGUI_ALPHA_MAKE(6)) : egui_rgb_mix(star_color, accent_color, EGUI_ALPHA_MAKE(22));
+            star_alpha = EGUI_ALPHA_100;
+            rating_draw_focus(self, item_region, local->compact_mode ? 5 : 6, egui_rgb_mix(accent_color, EGUI_COLOR_WHITE, EGUI_ALPHA_MAKE(8)),
+                              EGUI_ALPHA_MAKE(local->compact_mode ? 72 : 82));
         }
         if (pressed)
         {
-            fill_color = egui_rgb_mix(fill_color, accent_color, selected ? 16 : 24);
-            item_border = egui_rgb_mix(item_border, accent_color, 16);
+            star_color = egui_rgb_mix(star_color, accent_color, EGUI_ALPHA_MAKE(selected ? 12 : 24));
+            star_alpha = EGUI_ALPHA_100;
         }
 
-        rating_draw_star(self, item_region->location.x + item_region->size.width / 2, item_region->location.y + item_region->size.height / 2, star_radius,
-                         fill_color, item_border, fill_alpha, border_alpha);
+        rating_draw_star(self, item_region, star_font, star_color, star_alpha);
     }
 
     if (metrics.show_caption)
     {
         rating_draw_text(local->meta_font, self, preview_label, &metrics.caption_region, EGUI_ALIGN_CENTER,
-                         egui_rgb_mix(text_color, muted_color, preview_active ? 52 : 38));
+                         egui_rgb_mix(text_color, muted_color, EGUI_ALPHA_MAKE(preview_active ? 42 : 24)));
     }
     if (metrics.show_labels)
     {
@@ -1159,12 +1187,12 @@ void egui_view_rating_control_init(egui_view_t *self)
     local->low_label = NULL;
     local->high_label = NULL;
     local->value_labels = NULL;
-    local->surface_color = EGUI_COLOR_HEX(0xFFFFFF);
-    local->border_color = EGUI_COLOR_HEX(0xD7DFE7);
-    local->text_color = EGUI_COLOR_HEX(0x1D2732);
-    local->muted_text_color = EGUI_COLOR_HEX(0x6E7C8B);
-    local->accent_color = EGUI_COLOR_HEX(0xD6A12A);
-    local->shadow_color = EGUI_COLOR_HEX(0xDCE4EC);
+    local->surface_color = HCW_COLOR_SURFACE;
+    local->border_color = HCW_COLOR_BORDER_STRONG;
+    local->text_color = HCW_COLOR_TEXT_STRONG;
+    local->muted_text_color = HCW_COLOR_TEXT_SOFT;
+    local->accent_color = HCW_COLOR_WARNING;
+    local->shadow_color = HCW_COLOR_TRACK_STRONG;
     local->label_count = 0;
     local->item_count = 5;
     local->current_value = 0;

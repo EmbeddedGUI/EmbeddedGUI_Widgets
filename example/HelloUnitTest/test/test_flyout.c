@@ -329,7 +329,7 @@ static void test_flyout_internal_helpers_cover_text_fitting_and_tones(void)
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x777777).full, egui_view_flyout_tone_color(&test_widget, EGUI_VIEW_FLYOUT_TONE_WARNING).full);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x888888).full, egui_view_flyout_tone_color(&test_widget, EGUI_VIEW_FLYOUT_TONE_NEUTRAL).full);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x555555).full, egui_view_flyout_tone_color(&test_widget, 99).full);
-    EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(sample, EGUI_COLOR_DARK_GREY, 68).full, mixed.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(sample, EGUI_COLOR_DARK_GREY, EGUI_ALPHA_MAKE(52)).full, mixed.full);
 }
 
 static void test_flyout_setters_clamp_and_clear_pressed_state(void)

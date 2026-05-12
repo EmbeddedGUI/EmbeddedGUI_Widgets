@@ -45,7 +45,7 @@ static egui_view_api_t compact_api;
 static egui_view_api_t read_only_api;
 static uint8_t ui_ready;
 
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, HCW_COLOR_PAGE_BG, EGUI_ALPHA_100, 14);
 EGUI_BACKGROUND_PARAM_INIT(bg_page_panel_params, &bg_page_panel_param, NULL, NULL);
 EGUI_BACKGROUND_COLOR_STATIC_CONST_INIT(bg_page_panel, &bg_page_panel_params);
 
@@ -113,10 +113,10 @@ static void apply_preview_states(void)
 {
     static const drawer_demo_snapshot_t compact_snapshot = {
             "C", "Quick", "Open rail.", "", "Preview", "",
-            EGUI_VIEW_DRAWER_ANCHOR_START, EGUI_VIEW_DRAWER_MODE_OVERLAY, 1};
+            EGUI_VIEW_DRAWER_ANCHOR_START, EGUI_VIEW_DRAWER_MODE_OVERLAY, 0};
     static const drawer_demo_snapshot_t read_only_snapshot = {
             "RO", "Read", "Muted shell.", "", "Static", "",
-            EGUI_VIEW_DRAWER_ANCHOR_END, EGUI_VIEW_DRAWER_MODE_INLINE, 1};
+            EGUI_VIEW_DRAWER_ANCHOR_END, EGUI_VIEW_DRAWER_MODE_INLINE, 0};
 
     apply_snapshot(EGUI_VIEW_OF(&compact_drawer), &compact_snapshot);
     egui_view_drawer_set_compact_mode(EGUI_VIEW_OF(&compact_drawer), 1);
@@ -149,7 +149,7 @@ void test_init_ui(void)
     egui_view_linearlayout_set_align_type(EGUI_VIEW_OF(&root_layout), EGUI_ALIGN_HCENTER);
     egui_view_set_background(EGUI_VIEW_OF(&root_layout), EGUI_BG_OF(&bg_page_panel));
 
-    init_text_label(&title_label, DRAWER_ROOT_W, 18, title_text, (const egui_font_t *)&egui_res_font_montserrat_12_4, EGUI_COLOR_HEX(0x21303F),
+    init_text_label(&title_label, DRAWER_ROOT_W, 18, title_text, (const egui_font_t *)&egui_res_font_montserrat_12_4, HCW_COLOR_TEXT,
                     EGUI_ALIGN_CENTER);
     egui_view_set_margin(EGUI_VIEW_OF(&title_label), 0, 8, 0, 6);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label));
@@ -266,4 +266,3 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     }
 }
 #endif
-

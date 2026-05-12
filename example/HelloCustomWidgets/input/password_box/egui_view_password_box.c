@@ -1,7 +1,8 @@
-﻿#include "egui_view_password_box.h"
+#include "egui_view_password_box.h"
 
 #include <string.h>
 
+#include "../../hcw_text_center.h"
 #include "resource/egui_icon_material_symbols.h"
 
 #define PASSWORD_BOX_STD_RADIUS           10
@@ -17,10 +18,10 @@
 #define PASSWORD_BOX_STD_REVEAL_GAP       6
 #define PASSWORD_BOX_STD_FIELD_PAD_X      9
 #define PASSWORD_BOX_STD_FIELD_PAD_Y      4
-#define PASSWORD_BOX_STD_FILL_ALPHA       94
-#define PASSWORD_BOX_STD_BORDER_ALPHA     66
-#define PASSWORD_BOX_STD_ROW_FILL_ALPHA   44
-#define PASSWORD_BOX_STD_ROW_BORDER_ALPHA 58
+#define PASSWORD_BOX_STD_FILL_ALPHA       EGUI_ALPHA_MAKE(98)
+#define PASSWORD_BOX_STD_BORDER_ALPHA     EGUI_ALPHA_MAKE(98)
+#define PASSWORD_BOX_STD_ROW_FILL_ALPHA   EGUI_ALPHA_MAKE(98)
+#define PASSWORD_BOX_STD_ROW_BORDER_ALPHA EGUI_ALPHA_MAKE(100)
 
 #define PASSWORD_BOX_COMPACT_RADIUS           8
 #define PASSWORD_BOX_COMPACT_PAD_X            7
@@ -31,10 +32,10 @@
 #define PASSWORD_BOX_COMPACT_REVEAL_GAP       4
 #define PASSWORD_BOX_COMPACT_FIELD_PAD_X      7
 #define PASSWORD_BOX_COMPACT_FIELD_PAD_Y      3
-#define PASSWORD_BOX_COMPACT_FILL_ALPHA       90
-#define PASSWORD_BOX_COMPACT_BORDER_ALPHA     60
-#define PASSWORD_BOX_COMPACT_ROW_FILL_ALPHA   38
-#define PASSWORD_BOX_COMPACT_ROW_BORDER_ALPHA 52
+#define PASSWORD_BOX_COMPACT_FILL_ALPHA       EGUI_ALPHA_MAKE(96)
+#define PASSWORD_BOX_COMPACT_BORDER_ALPHA     EGUI_ALPHA_MAKE(96)
+#define PASSWORD_BOX_COMPACT_ROW_FILL_ALPHA   EGUI_ALPHA_MAKE(96)
+#define PASSWORD_BOX_COMPACT_ROW_BORDER_ALPHA EGUI_ALPHA_MAKE(98)
 
 #define PASSWORD_BOX_CURSOR_W 1
 
@@ -595,6 +596,7 @@ static void password_box_draw_text(const egui_font_t *font, egui_view_t *self, c
         return;
     }
 
+    draw_region.location.y += hcw_text_center_get_delta(font, text, region, align);
     egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, font, text, &draw_region, align, color, egui_color_alpha_mix(self->alpha, alpha));
 }
 
@@ -713,8 +715,8 @@ uint8_t egui_view_password_box_get_part_region(egui_view_t *self, uint8_t part, 
 }
 static void password_box_draw_row(egui_view_password_box_t *local, egui_view_t *self, const egui_view_password_box_metrics_t *metrics)
 {
-    egui_color_t row_border = local->border_color;
-    egui_color_t row_fill = egui_rgb_mix(local->surface_color, EGUI_COLOR_WHITE, local->read_only_mode ? 10 : 16);
+    egui_color_t row_border = egui_rgb_mix(local->border_color, local->accent_color, EGUI_ALPHA_MAKE(local->read_only_mode ? 52 : 62));
+    egui_color_t row_fill = egui_rgb_mix(local->surface_color, local->accent_color, EGUI_ALPHA_MAKE(local->read_only_mode ? 6 : 8));
     egui_color_t text_color = local->text_color;
     egui_color_t helper_color = local->muted_text_color;
     egui_region_t text_region = metrics->field_region;
@@ -732,17 +734,18 @@ static void password_box_draw_row(egui_view_password_box_t *local, egui_view_t *
 
     if (self->is_focused && !local->compact_mode && local->current_part == EGUI_VIEW_PASSWORD_BOX_PART_FIELD)
     {
-        row_border = egui_rgb_mix(local->accent_color, local->border_color, 8);
+        row_border = egui_rgb_mix(local->accent_color, local->border_color, EGUI_ALPHA_MAKE(18));
     }
     if (local->pressed_part == EGUI_VIEW_PASSWORD_BOX_PART_FIELD)
     {
-        row_fill = egui_rgb_mix(row_fill, local->accent_color, 8);
+        row_fill = egui_rgb_mix(row_fill, local->accent_color, EGUI_ALPHA_MAKE(34));
     }
     if (local->read_only_mode)
     {
-        row_border = egui_rgb_mix(row_border, helper_color, 14);
-        row_fill = egui_rgb_mix(row_fill, EGUI_COLOR_HEX(0xF7F9FB), 12);
-        text_color = egui_rgb_mix(text_color, helper_color, 24);
+        row_border = egui_rgb_mix(row_border, HCW_COLOR_BORDER_STRONG, EGUI_ALPHA_MAKE(62));
+        row_fill = egui_rgb_mix(row_fill, HCW_COLOR_SURFACE_DISABLED, EGUI_ALPHA_MAKE(6));
+        text_color = egui_rgb_mix(text_color, HCW_COLOR_TEXT_STRONG, EGUI_ALPHA_MAKE(76));
+        helper_color = egui_rgb_mix(helper_color, HCW_COLOR_TEXT_STRONG, EGUI_ALPHA_MAKE(48));
     }
 
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, 
@@ -763,11 +766,12 @@ static void password_box_draw_row(egui_view_password_box_t *local, egui_view_t *
     }
     text_x = text_region.location.x - local->scroll_offset_x;
     text_y = text_region.location.y + (text_region.size.height - text_h) / 2;
+    text_y += hcw_text_center_get_delta(local->font, display_text, &text_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER);
 
     if (local->text_len == 0)
     {
         password_box_draw_text(local->font, self, local->placeholder, &text_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, helper_color,
-                               local->read_only_mode ? 88 : 100);
+                               local->read_only_mode ? 96 : 100);
     }
     else
     {
@@ -784,32 +788,32 @@ static void password_box_draw_row(egui_view_password_box_t *local, egui_view_t *
         }
         cursor_y = text_region.location.y + (text_region.size.height - cursor_h) / 2;
         egui_canvas_draw_rectangle_fill(&uicode_get_core()->canvas, cursor_x, cursor_y, PASSWORD_BOX_CURSOR_W, cursor_h > 0 ? cursor_h : (text_region.size.height - 2), local->accent_color,
-                                        egui_color_alpha_mix(self->alpha, 100));
+                                        egui_color_alpha_mix(self->alpha, EGUI_ALPHA_100));
     }
 
     if (metrics->show_reveal)
     {
-        egui_color_t reveal_fill = egui_rgb_mix(row_fill, local->surface_color, 14);
-        egui_color_t reveal_border = egui_rgb_mix(row_border, local->border_color, 12);
-        egui_color_t reveal_text = egui_rgb_mix(local->text_color, local->accent_color, local->revealed ? 18 : 10);
+        egui_color_t reveal_fill = egui_rgb_mix(row_fill, local->accent_color, EGUI_ALPHA_MAKE(local->revealed ? 24 : 16));
+        egui_color_t reveal_border = egui_rgb_mix(row_border, local->accent_color, EGUI_ALPHA_MAKE(local->revealed ? 72 : 60));
+        egui_color_t reveal_text = egui_rgb_mix(local->text_color, local->accent_color, EGUI_ALPHA_MAKE(local->revealed ? 68 : 56));
         const char *glyph = local->revealed ? EGUI_ICON_MS_VISIBILITY_OFF : EGUI_ICON_MS_VISIBILITY;
 
         if (self->is_focused && !local->compact_mode && local->current_part == EGUI_VIEW_PASSWORD_BOX_PART_REVEAL)
         {
-            reveal_fill = egui_rgb_mix(reveal_fill, local->accent_color, 10);
-            reveal_border = egui_rgb_mix(reveal_border, local->accent_color, 10);
+            reveal_fill = egui_rgb_mix(reveal_fill, local->accent_color, EGUI_ALPHA_MAKE(34));
+            reveal_border = egui_rgb_mix(reveal_border, local->accent_color, EGUI_ALPHA_MAKE(44));
         }
         if (local->pressed_part == EGUI_VIEW_PASSWORD_BOX_PART_REVEAL)
         {
-            reveal_fill = egui_rgb_mix(reveal_fill, local->accent_color, 16);
+            reveal_fill = egui_rgb_mix(reveal_fill, local->accent_color, EGUI_ALPHA_MAKE(34));
         }
 
         egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics->reveal_region.location.x, metrics->reveal_region.location.y, metrics->reveal_region.size.width,
                                               metrics->reveal_region.size.height, row_radius, reveal_fill,
-                                              egui_color_alpha_mix(self->alpha, local->compact_mode ? 32 : 38));
+                                              egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(local->compact_mode ? 96 : 98)));
         egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics->reveal_region.location.x, metrics->reveal_region.location.y, metrics->reveal_region.size.width,
                                          metrics->reveal_region.size.height, row_radius, 1, reveal_border,
-                                         egui_color_alpha_mix(self->alpha, local->compact_mode ? 48 : 54));
+                                         egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(local->compact_mode ? 98 : 100)));
         password_box_draw_text(local->icon_font, self, glyph, &metrics->reveal_region, EGUI_ALIGN_CENTER, reveal_text, 100);
     }
 }
@@ -822,6 +826,8 @@ void egui_view_password_box_on_draw(egui_view_t *self)
     egui_color_t border_color = local->border_color;
     egui_color_t text_color = local->text_color;
     egui_color_t muted_color = local->muted_text_color;
+    egui_color_t label_color;
+    egui_color_t helper_color;
     egui_dim_t radius = local->compact_mode ? PASSWORD_BOX_COMPACT_RADIUS : PASSWORD_BOX_STD_RADIUS;
 
     password_box_normalize_state(local);
@@ -830,9 +836,10 @@ void egui_view_password_box_on_draw(egui_view_t *self)
 
     if (local->read_only_mode)
     {
-        surface_color = egui_rgb_mix(surface_color, EGUI_COLOR_HEX(0xFBFCFD), 14);
-        border_color = egui_rgb_mix(border_color, muted_color, 18);
-        text_color = egui_rgb_mix(text_color, muted_color, 24);
+        surface_color = egui_rgb_mix(surface_color, HCW_COLOR_SURFACE_SUBTLE, EGUI_ALPHA_MAKE(6));
+        border_color = egui_rgb_mix(border_color, HCW_COLOR_BORDER_STRONG, EGUI_ALPHA_MAKE(54));
+        text_color = egui_rgb_mix(text_color, HCW_COLOR_TEXT_STRONG, EGUI_ALPHA_MAKE(68));
+        muted_color = egui_rgb_mix(muted_color, HCW_COLOR_TEXT_STRONG, EGUI_ALPHA_MAKE(46));
     }
 
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, 
@@ -844,10 +851,11 @@ void egui_view_password_box_on_draw(egui_view_t *self)
 
     if (metrics.show_meta)
     {
-        password_box_draw_text(local->meta_font, self, local->label, &metrics.label_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER,
-                               egui_rgb_mix(text_color, local->accent_color, 8), 100);
-        password_box_draw_text(local->meta_font, self, local->helper, &metrics.helper_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, muted_color,
-                               local->read_only_mode ? 84 : 100);
+        label_color = egui_rgb_mix(text_color, local->accent_color, EGUI_ALPHA_MAKE(local->read_only_mode ? 10 : 16));
+        helper_color = local->read_only_mode ? muted_color : egui_rgb_mix(muted_color, text_color, EGUI_ALPHA_MAKE(24));
+        password_box_draw_text(local->meta_font, self, local->label, &metrics.label_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, label_color, 100);
+        password_box_draw_text(local->meta_font, self, local->helper, &metrics.helper_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, helper_color,
+                               local->read_only_mode ? 98 : 100);
     }
 
     password_box_draw_row(local, self, &metrics);
@@ -1156,11 +1164,11 @@ void egui_view_password_box_init(egui_view_t *self)
     local->label = "Password";
     local->helper = "Use at least 8 chars";
     local->placeholder = "Enter password";
-    local->surface_color = EGUI_COLOR_HEX(0xFFFFFF);
-    local->border_color = EGUI_COLOR_HEX(0xD8E0E7);
-    local->text_color = EGUI_COLOR_HEX(0x1F2A35);
-    local->muted_text_color = EGUI_COLOR_HEX(0x7A8794);
-    local->accent_color = EGUI_COLOR_HEX(0x2563EB);
+    local->surface_color = HCW_COLOR_SURFACE;
+    local->border_color = HCW_COLOR_BORDER_STRONG;
+    local->text_color = HCW_COLOR_TEXT_STRONG;
+    local->muted_text_color = HCW_COLOR_TEXT_SOFT;
+    local->accent_color = HCW_COLOR_PRIMARY_DARK;
     local->current_part = EGUI_VIEW_PASSWORD_BOX_PART_FIELD;
     local->pressed_part = EGUI_VIEW_PASSWORD_BOX_PART_NONE;
     local->cursor_visible = 0;

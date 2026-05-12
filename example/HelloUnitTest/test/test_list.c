@@ -187,7 +187,7 @@ static void test_list_setters_clamp_getters_and_helpers(void)
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_ARRAY_SIZE(g_items), egui_view_reference_list_get_item_count(EGUI_VIEW_OF(&test_widget)));
     assert_widget_state(&test_widget, 0, 0, 0);
     assert_listener_state(0, EGUI_VIEW_REFERENCE_LIST_INDEX_NONE);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xFFFFFF).full, test_widget.surface_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_SURFACE.full, test_widget.surface_color.full);
 
     seed_pressed_state(&test_widget, 1);
     egui_view_reference_list_set_items(EGUI_VIEW_OF(&test_widget), g_overflow_items, EGUI_ARRAY_SIZE(g_overflow_items));
@@ -247,7 +247,7 @@ static void test_list_setters_clamp_getters_and_helpers(void)
     EGUI_TEST_ASSERT_TRUE(strcmp("Owne...", label) == 0);
     egui_view_reference_list_fit_text_to_width(NULL, "Muted", label, sizeof(label), 20, 4);
     EGUI_TEST_ASSERT_TRUE(strcmp("Muted", label) == 0);
-    EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(sample, EGUI_COLOR_DARK_GREY, 68).full, egui_view_reference_list_mix_disabled(sample).full);
+    EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(sample, EGUI_COLOR_DARK_GREY, EGUI_ALPHA_MAKE(52)).full, egui_view_reference_list_mix_disabled(sample).full);
 }
 
 static void test_list_selection_regions_and_internal_helpers(void)
@@ -266,13 +266,13 @@ static void test_list_selection_regions_and_internal_helpers(void)
     EGUI_TEST_ASSERT_FALSE(egui_view_reference_list_get_item_region(EGUI_VIEW_OF(&test_widget), 7, &region));
     EGUI_TEST_ASSERT_TRUE(egui_view_reference_list_get_item(&test_widget, 0) == &g_items[0]);
     EGUI_TEST_ASSERT_NULL(egui_view_reference_list_get_item(&test_widget, 7));
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x0F6CBD).full,
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PRIMARY.full,
                                egui_view_reference_list_tone_color(&test_widget, EGUI_VIEW_REFERENCE_LIST_TONE_ACCENT).full);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x0F7B45).full,
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_SUCCESS.full,
                                egui_view_reference_list_tone_color(&test_widget, EGUI_VIEW_REFERENCE_LIST_TONE_SUCCESS).full);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xA55A00).full,
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_WARNING.full,
                                egui_view_reference_list_tone_color(&test_widget, EGUI_VIEW_REFERENCE_LIST_TONE_WARNING).full);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x7A8796).full,
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_NEUTRAL.full,
                                egui_view_reference_list_tone_color(&test_widget, EGUI_VIEW_REFERENCE_LIST_TONE_NEUTRAL).full);
 
     get_item_center(EGUI_VIEW_OF(&test_widget), 1, &x1, &y1);

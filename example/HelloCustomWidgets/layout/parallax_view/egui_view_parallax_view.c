@@ -230,7 +230,7 @@ static egui_dim_t parallax_view_clamp_offset_value(const egui_view_parallax_view
 
 static egui_color_t parallax_view_mix_disabled(egui_color_t color)
 {
-    return egui_rgb_mix(color, EGUI_COLOR_HEX(0xA8B4BF), 54);
+    return egui_rgb_mix(color, HCW_COLOR_TEXT_SOFT, EGUI_ALPHA_MAKE(38));
 }
 
 static uint8_t parallax_view_clear_pressed_state(egui_view_t *self)
@@ -497,7 +497,7 @@ static void parallax_view_get_metrics(egui_view_parallax_view_t *local, egui_vie
     metrics->footer_region.location.x = metrics->content_region.location.x;
     metrics->footer_region.location.y = metrics->content_region.location.y + metrics->content_region.size.height - footer_height;
 
-    rows_start_y = metrics->hero_region.location.y + metrics->hero_region.size.height - overlap;
+    rows_start_y = metrics->hero_region.location.y + metrics->hero_region.size.height + (local->compact_mode ? -overlap : 3);
     rows_limit_y = metrics->footer_region.location.y - footer_gap;
     available_rows_height = rows_limit_y - rows_start_y;
     total_rows_height = local->row_count > 0 ? (egui_dim_t)(local->row_count * row_height + (local->row_count - 1) * row_gap) : 0;
@@ -561,18 +561,18 @@ static void parallax_view_draw_hero_layers(egui_view_t *self, egui_view_parallax
 {
     egui_dim_t max_offset = parallax_view_get_max_offset_inner(local);
     egui_dim_t shift = max_offset == 0 ? 0 : (egui_dim_t)((local->offset * local->vertical_shift) / max_offset);
-    egui_color_t layer_color_0 = egui_rgb_mix(local->panel_color, tone_color, 4);
-    egui_color_t layer_color_1 = egui_rgb_mix(local->panel_color, tone_color, 7);
-    egui_color_t layer_color_2 = egui_rgb_mix(local->panel_color, tone_color, 10);
+    egui_color_t layer_color_0 = egui_rgb_mix(HCW_COLOR_PANEL, tone_color, EGUI_ALPHA_MAKE(3));
+    egui_color_t layer_color_1 = egui_rgb_mix(HCW_COLOR_PANEL, tone_color, EGUI_ALPHA_MAKE(4));
+    egui_color_t layer_color_2 = egui_rgb_mix(HCW_COLOR_PANEL, tone_color, EGUI_ALPHA_MAKE(5));
     egui_dim_t y0 = hero_region->location.y + (local->compact_mode ? 7 : 10) - shift / 3;
     egui_dim_t y1 = hero_region->location.y + (local->compact_mode ? 13 : 18) - shift / 2;
     egui_dim_t y2 = hero_region->location.y + (local->compact_mode ? 18 : 25) - shift;
 
     if (local->read_only_mode)
     {
-        layer_color_0 = egui_rgb_mix(layer_color_0, local->surface_color, 40);
-        layer_color_1 = egui_rgb_mix(layer_color_1, local->surface_color, 44);
-        layer_color_2 = egui_rgb_mix(layer_color_2, local->surface_color, 48);
+        layer_color_0 = egui_rgb_mix(layer_color_0, local->surface_color, EGUI_ALPHA_MAKE(40));
+        layer_color_1 = egui_rgb_mix(layer_color_1, local->surface_color, EGUI_ALPHA_MAKE(44));
+        layer_color_2 = egui_rgb_mix(layer_color_2, local->surface_color, EGUI_ALPHA_MAKE(48));
     }
     if (!egui_view_get_enable(self))
     {
@@ -582,11 +582,11 @@ static void parallax_view_draw_hero_layers(egui_view_t *self, egui_view_parallax
     }
 
     parallax_view_draw_round_fill_safe(hero_region->location.x + (local->compact_mode ? 8 : 12), y0, hero_region->size.width - (local->compact_mode ? 20 : 30),
-                                       local->compact_mode ? 4 : 6, local->compact_mode ? 3 : 4, layer_color_0, egui_color_alpha_mix(self->alpha, 42));
+                                       local->compact_mode ? 4 : 6, local->compact_mode ? 3 : 4, layer_color_0, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(78)));
     parallax_view_draw_round_fill_safe(hero_region->location.x + (local->compact_mode ? 14 : 22), y1, hero_region->size.width - (local->compact_mode ? 34 : 54),
-                                       local->compact_mode ? 5 : 8, local->compact_mode ? 3 : 4, layer_color_1, egui_color_alpha_mix(self->alpha, 50));
+                                       local->compact_mode ? 5 : 8, local->compact_mode ? 3 : 4, layer_color_1, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(76)));
     parallax_view_draw_round_fill_safe(hero_region->location.x + (local->compact_mode ? 20 : 34), y2, hero_region->size.width - (local->compact_mode ? 50 : 82),
-                                       local->compact_mode ? 6 : 10, local->compact_mode ? 3 : 5, layer_color_2, egui_color_alpha_mix(self->alpha, 58));
+                                       local->compact_mode ? 6 : 10, local->compact_mode ? 3 : 5, layer_color_2, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(78)));
 }
 
 static void parallax_view_draw_row(egui_view_t *self, egui_view_parallax_view_t *local, const egui_region_t *row_region,
@@ -596,12 +596,12 @@ static void parallax_view_draw_row(egui_view_t *self, egui_view_parallax_view_t 
     char meta_label[16];
     egui_region_t text_region;
     egui_color_t tone_color = parallax_view_tone_color(local, row->tone);
-    egui_color_t fill_color = egui_rgb_mix(local->surface_color, tone_color, active ? (local->compact_mode ? 4 : 6) : 2);
-    egui_color_t border_color = egui_rgb_mix(local->border_color, tone_color, active ? (local->compact_mode ? 10 : 14) : 5);
-    egui_color_t title_color = active ? egui_rgb_mix(local->text_color, tone_color, 4) : local->text_color;
-    egui_color_t meta_fill = egui_rgb_mix(local->panel_color, tone_color, active ? (local->compact_mode ? 5 : 7) : 3);
-    egui_color_t meta_border = egui_rgb_mix(local->border_color, tone_color, active ? (local->compact_mode ? 7 : 9) : 5);
-    egui_color_t meta_color = egui_rgb_mix(local->muted_text_color, tone_color, active ? (local->compact_mode ? 7 : 9) : 5);
+    egui_color_t fill_color = active ? egui_rgb_mix(HCW_COLOR_PANEL, tone_color, EGUI_ALPHA_MAKE(local->compact_mode ? 3 : 4)) : HCW_COLOR_PANEL;
+    egui_color_t border_color = egui_rgb_mix(local->border_color, tone_color, EGUI_ALPHA_MAKE(active ? (local->compact_mode ? 18 : 22) : 14));
+    egui_color_t title_color = active ? egui_rgb_mix(local->text_color, tone_color, EGUI_ALPHA_MAKE(12)) : local->text_color;
+    egui_color_t meta_fill = egui_rgb_mix(HCW_COLOR_PANEL, tone_color, EGUI_ALPHA_MAKE(active ? (local->compact_mode ? 4 : 5) : 1));
+    egui_color_t meta_border = egui_rgb_mix(local->border_color, tone_color, EGUI_ALPHA_MAKE(active ? (local->compact_mode ? 18 : 20) : 12));
+    egui_color_t meta_color = egui_rgb_mix(local->muted_text_color, tone_color, EGUI_ALPHA_MAKE(active ? (local->compact_mode ? 14 : 18) : 10));
     egui_dim_t radius = local->compact_mode ? 5 : 7;
     egui_dim_t meta_height = parallax_view_resolve_line_height(local->meta_font, local->compact_mode ? 7 : 9);
     egui_dim_t meta_padding_x = local->compact_mode ? 10 : 14;
@@ -629,13 +629,13 @@ static void parallax_view_draw_row(egui_view_t *self, egui_view_parallax_view_t 
 
     if (local->read_only_mode)
     {
-        fill_color = egui_rgb_mix(fill_color, local->surface_color, 30);
-        border_color = egui_rgb_mix(border_color, local->muted_text_color, 16);
-        title_color = egui_rgb_mix(title_color, local->muted_text_color, 24);
-        meta_fill = egui_rgb_mix(meta_fill, local->surface_color, 34);
-        meta_border = egui_rgb_mix(meta_border, local->muted_text_color, 16);
-        meta_color = egui_rgb_mix(meta_color, local->muted_text_color, 28);
-        tone_color = egui_rgb_mix(tone_color, local->muted_text_color, 36);
+        fill_color = egui_rgb_mix(fill_color, HCW_COLOR_PANEL, EGUI_ALPHA_MAKE(34));
+        border_color = egui_rgb_mix(border_color, local->muted_text_color, EGUI_ALPHA_MAKE(16));
+        title_color = egui_rgb_mix(title_color, local->muted_text_color, EGUI_ALPHA_MAKE(24));
+        meta_fill = egui_rgb_mix(meta_fill, HCW_COLOR_PANEL, EGUI_ALPHA_MAKE(34));
+        meta_border = egui_rgb_mix(meta_border, local->muted_text_color, EGUI_ALPHA_MAKE(16));
+        meta_color = egui_rgb_mix(meta_color, local->muted_text_color, EGUI_ALPHA_MAKE(28));
+        tone_color = egui_rgb_mix(tone_color, local->muted_text_color, EGUI_ALPHA_MAKE(36));
     }
     if (!egui_view_get_enable(self))
     {
@@ -649,18 +649,16 @@ static void parallax_view_draw_row(egui_view_t *self, egui_view_parallax_view_t 
     }
 
     parallax_view_draw_round_fill_safe(row_region->location.x, row_region->location.y, row_region->size.width, row_region->size.height, radius, fill_color,
-                                       egui_color_alpha_mix(self->alpha, pressed ? 82 : 92));
+                                       egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(pressed ? 82 : 92)));
     parallax_view_draw_round_stroke_safe(row_region->location.x, row_region->location.y, row_region->size.width, row_region->size.height, radius, 1,
-                                         border_color, egui_color_alpha_mix(self->alpha, active ? 38 : 24));
-    parallax_view_draw_round_fill_safe(row_region->location.x + 3, row_region->location.y + 3, local->compact_mode ? 2 : 3, row_region->size.height - 6, 1,
-                                       tone_color, egui_color_alpha_mix(self->alpha, active ? 78 : 42));
+                                         border_color, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(active ? 78 : 72)));
 
     if (meta_width > 0)
     {
         parallax_view_draw_round_fill_safe(meta_x, row_region->location.y + (row_region->size.height - meta_height) / 2, meta_width, meta_height,
-                                           meta_height / 2, meta_fill, egui_color_alpha_mix(self->alpha, 82));
+                                           meta_height / 2, meta_fill, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(82)));
         parallax_view_draw_round_stroke_safe(meta_x, row_region->location.y + (row_region->size.height - meta_height) / 2, meta_width, meta_height,
-                                             meta_height / 2, 1, meta_border, egui_color_alpha_mix(self->alpha, 28));
+                                             meta_height / 2, 1, meta_border, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(76)));
         text_region.location.x = meta_x;
         text_region.location.y = row_region->location.y + (row_region->size.height - meta_height) / 2;
         text_region.size.width = meta_width;
@@ -864,26 +862,26 @@ static void egui_view_parallax_view_on_draw(egui_view_t *self)
         active = &local->rows[active_row];
     }
     tone_color = active == NULL ? local->accent_color : parallax_view_tone_color(local, active->tone);
-    card_fill = egui_rgb_mix(local->surface_color, tone_color, local->compact_mode ? 2 : 3);
-    card_border = egui_rgb_mix(local->border_color, tone_color, local->compact_mode ? 3 : 5);
-    hero_fill = egui_rgb_mix(local->panel_color, tone_color, local->compact_mode ? 4 : 6);
-    hero_border = egui_rgb_mix(local->border_color, tone_color, local->compact_mode ? 6 : 9);
-    footer_fill = egui_rgb_mix(local->panel_color, tone_color, local->compact_mode ? 3 : 5);
-    footer_border = egui_rgb_mix(local->border_color, tone_color, local->compact_mode ? 6 : 9);
-    footer_color = egui_rgb_mix(local->text_color, tone_color, local->compact_mode ? 2 : 4);
+    card_fill = HCW_COLOR_PANEL;
+    card_border = egui_rgb_mix(local->border_color, tone_color, EGUI_ALPHA_MAKE(local->compact_mode ? 18 : 22));
+    hero_fill = HCW_COLOR_PANEL;
+    hero_border = egui_rgb_mix(local->border_color, tone_color, EGUI_ALPHA_MAKE(local->compact_mode ? 16 : 20));
+    footer_fill = HCW_COLOR_PANEL;
+    footer_border = egui_rgb_mix(local->border_color, tone_color, EGUI_ALPHA_MAKE(local->compact_mode ? 14 : 18));
+    footer_color = egui_rgb_mix(local->text_color, tone_color, EGUI_ALPHA_MAKE(local->compact_mode ? 10 : 14));
 
     if (local->read_only_mode)
     {
-        tone_color = egui_rgb_mix(tone_color, local->muted_text_color, 38);
-        card_fill = egui_rgb_mix(card_fill, local->surface_color, 24);
-        card_border = egui_rgb_mix(card_border, local->muted_text_color, 16);
-        hero_fill = egui_rgb_mix(hero_fill, local->surface_color, 28);
-        hero_border = egui_rgb_mix(hero_border, local->muted_text_color, 16);
-        footer_fill = egui_rgb_mix(footer_fill, local->surface_color, 30);
-        footer_border = egui_rgb_mix(footer_border, local->muted_text_color, 16);
-        title_color = egui_rgb_mix(title_color, local->muted_text_color, 22);
-        subtitle_color = egui_rgb_mix(subtitle_color, local->muted_text_color, 24);
-        footer_color = egui_rgb_mix(footer_color, local->muted_text_color, 28);
+        tone_color = egui_rgb_mix(tone_color, local->muted_text_color, EGUI_ALPHA_MAKE(38));
+        card_fill = egui_rgb_mix(card_fill, HCW_COLOR_PANEL, EGUI_ALPHA_MAKE(34));
+        card_border = egui_rgb_mix(card_border, local->muted_text_color, EGUI_ALPHA_MAKE(16));
+        hero_fill = egui_rgb_mix(hero_fill, HCW_COLOR_PANEL, EGUI_ALPHA_MAKE(34));
+        hero_border = egui_rgb_mix(hero_border, local->muted_text_color, EGUI_ALPHA_MAKE(16));
+        footer_fill = egui_rgb_mix(footer_fill, HCW_COLOR_PANEL, EGUI_ALPHA_MAKE(34));
+        footer_border = egui_rgb_mix(footer_border, local->muted_text_color, EGUI_ALPHA_MAKE(16));
+        title_color = egui_rgb_mix(title_color, local->muted_text_color, EGUI_ALPHA_MAKE(22));
+        subtitle_color = egui_rgb_mix(subtitle_color, local->muted_text_color, EGUI_ALPHA_MAKE(24));
+        footer_color = egui_rgb_mix(footer_color, local->muted_text_color, EGUI_ALPHA_MAKE(28));
     }
     if (!egui_view_get_enable(self))
     {
@@ -901,23 +899,23 @@ static void egui_view_parallax_view_on_draw(egui_view_t *self)
 
     parallax_view_get_metrics(local, self, &metrics);
     parallax_view_draw_round_fill_safe(region.location.x, region.location.y, region.size.width, region.size.height, radius, card_fill,
-                                       egui_color_alpha_mix(self->alpha, 96));
+                                       egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(96)));
     parallax_view_draw_round_stroke_safe(region.location.x, region.location.y, region.size.width, region.size.height, radius, 1, card_border,
-                                         egui_color_alpha_mix(self->alpha, 40));
+                                         egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(76)));
 
     parallax_view_draw_round_fill_safe(metrics.hero_region.location.x, metrics.hero_region.location.y, metrics.hero_region.size.width,
-                                       metrics.hero_region.size.height, local->compact_mode ? 7 : 9, hero_fill, egui_color_alpha_mix(self->alpha, 92));
+                                       metrics.hero_region.size.height, local->compact_mode ? 7 : 9, hero_fill, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(92)));
     parallax_view_draw_round_stroke_safe(metrics.hero_region.location.x, metrics.hero_region.location.y, metrics.hero_region.size.width,
-                                         metrics.hero_region.size.height, local->compact_mode ? 7 : 9, 1, hero_border, egui_color_alpha_mix(self->alpha, 28));
+                                         metrics.hero_region.size.height, local->compact_mode ? 7 : 9, 1, hero_border, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(80)));
     parallax_view_draw_hero_layers(self, local, &metrics.hero_region, tone_color);
 
     parallax_view_format_progress(progress_text, sizeof(progress_text), local->offset, parallax_view_get_max_offset_inner(local));
     parallax_view_draw_round_fill_safe(metrics.progress_region.location.x, metrics.progress_region.location.y, metrics.progress_region.size.width,
                                        metrics.progress_region.size.height, metrics.progress_region.size.height / 2,
-                                       egui_rgb_mix(local->surface_color, tone_color, 8), egui_color_alpha_mix(self->alpha, 84));
+                                       egui_rgb_mix(HCW_COLOR_PANEL, tone_color, EGUI_ALPHA_MAKE(8)), egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(92)));
     parallax_view_draw_round_stroke_safe(metrics.progress_region.location.x, metrics.progress_region.location.y, metrics.progress_region.size.width,
                                          metrics.progress_region.size.height, metrics.progress_region.size.height / 2, 1,
-                                         egui_rgb_mix(local->border_color, tone_color, 10), egui_color_alpha_mix(self->alpha, 26));
+                                         egui_rgb_mix(local->border_color, tone_color, EGUI_ALPHA_MAKE(26)), egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(78)));
     parallax_view_fit_text_to_width(local->meta_font, progress_text, progress_label, sizeof(progress_label), metrics.progress_region.size.width - 4,
                                     local->compact_mode ? 4 : 5);
     parallax_view_draw_text(local->meta_font, self, progress_label, &metrics.progress_region, EGUI_ALIGN_CENTER, tone_color);
@@ -956,9 +954,9 @@ static void egui_view_parallax_view_on_draw(egui_view_t *self)
     {
         thumb_x = track_x + (egui_dim_t)(((track_width - thumb_width) * local->offset) / max_offset);
     }
-    parallax_view_draw_round_fill_safe(track_x, track_y, track_width, local->compact_mode ? 2 : 3, 1, egui_rgb_mix(local->surface_color, tone_color, 4),
-                                       egui_color_alpha_mix(self->alpha, 44));
-    parallax_view_draw_round_fill_safe(thumb_x, track_y, thumb_width, local->compact_mode ? 2 : 3, 1, tone_color, egui_color_alpha_mix(self->alpha, 76));
+    parallax_view_draw_round_fill_safe(track_x, track_y, track_width, local->compact_mode ? 2 : 3, 1, egui_rgb_mix(HCW_COLOR_PANEL, tone_color, EGUI_ALPHA_MAKE(6)),
+                                       egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(80)));
+    parallax_view_draw_round_fill_safe(thumb_x, track_y, thumb_width, local->compact_mode ? 2 : 3, 1, tone_color, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(88)));
 
     for (i = 0; i < local->row_count; i++)
     {
@@ -967,10 +965,10 @@ static void egui_view_parallax_view_on_draw(egui_view_t *self)
 
     parallax_view_draw_round_fill_safe(metrics.footer_region.location.x, metrics.footer_region.location.y, metrics.footer_region.size.width,
                                        metrics.footer_region.size.height, metrics.footer_region.size.height / 2, footer_fill,
-                                       egui_color_alpha_mix(self->alpha, 84));
+                                       egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(84)));
     parallax_view_draw_round_stroke_safe(metrics.footer_region.location.x, metrics.footer_region.location.y, metrics.footer_region.size.width,
                                          metrics.footer_region.size.height, metrics.footer_region.size.height / 2, 1, footer_border,
-                                         egui_color_alpha_mix(self->alpha, 24));
+                                         egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(78)));
     parallax_view_format_footer(local, footer_text, sizeof(footer_text), active_row == EGUI_VIEW_PARALLAX_VIEW_INDEX_NONE ? 0 : active_row);
     text_region.location.x = metrics.footer_region.location.x + (local->compact_mode ? 4 : 6);
     text_region.location.y = metrics.footer_region.location.y;
@@ -1146,15 +1144,15 @@ void egui_view_parallax_view_init(egui_view_t *self)
     local->title = "Parallax";
     local->subtitle = "Hero depth";
     local->footer_prefix = "Active";
-    local->surface_color = EGUI_COLOR_HEX(0xFFFFFF);
-    local->panel_color = EGUI_COLOR_HEX(0xF7F8FA);
-    local->border_color = EGUI_COLOR_HEX(0xD2DBE3);
-    local->text_color = EGUI_COLOR_HEX(0x1B2734);
-    local->muted_text_color = EGUI_COLOR_HEX(0x6B7A89);
-    local->accent_color = EGUI_COLOR_HEX(0x0F6CBD);
-    local->success_color = EGUI_COLOR_HEX(0x0F7B45);
-    local->warning_color = EGUI_COLOR_HEX(0x9D5D00);
-    local->neutral_color = EGUI_COLOR_HEX(0x7A8796);
+    local->surface_color = HCW_COLOR_SURFACE;
+    local->panel_color = HCW_COLOR_PANEL;
+    local->border_color = HCW_COLOR_BORDER;
+    local->text_color = HCW_COLOR_TEXT;
+    local->muted_text_color = HCW_COLOR_TEXT_MUTED;
+    local->accent_color = HCW_COLOR_PRIMARY;
+    local->success_color = HCW_COLOR_SUCCESS;
+    local->warning_color = HCW_COLOR_WARNING;
+    local->neutral_color = HCW_COLOR_NEUTRAL;
     local->content_length = 720;
     local->viewport_length = 160;
     local->offset = 0;

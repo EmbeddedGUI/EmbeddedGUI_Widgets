@@ -23,6 +23,10 @@ struct egui_view_group_box
     egui_dim_t border_width;
     egui_dim_t header_gap;
     egui_dim_t header_indent;
+    egui_dim_margin_padding_t content_padding_left;
+    egui_dim_margin_padding_t content_padding_right;
+    egui_dim_margin_padding_t content_padding_top;
+    egui_dim_margin_padding_t content_padding_bottom;
     uint8_t header_align_type;
     uint8_t content_align_type;
     uint8_t compact_mode;

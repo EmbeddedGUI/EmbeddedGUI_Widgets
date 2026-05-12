@@ -169,11 +169,11 @@ static void test_presence_badge_init_uses_defaults(void)
     setup_presence_badge();
 
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_PRESENCE_BADGE_STATUS_AVAILABLE, egui_view_presence_badge_get_status(EGUI_VIEW_OF(&test_badge_widget)));
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xFFFFFF).full, test_badge_widget.surface_color.full);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xD5DEE6).full, test_badge_widget.outline_color.full);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x107C41).full, test_badge_widget.available_color.full);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xC4314B).full, test_badge_widget.busy_color.full);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x7A8796).full, test_badge_widget.offline_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_SURFACE.full, test_badge_widget.surface_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_BORDER.full, test_badge_widget.outline_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_SUCCESS.full, test_badge_widget.available_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_DANGER_DARK.full, test_badge_widget.busy_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_NEUTRAL.full, test_badge_widget.offline_color.full);
 }
 
 static void test_presence_badge_setters_clear_pressed_state_and_update_palette(void)
@@ -236,7 +236,7 @@ static void test_presence_badge_helpers_compute_regions_and_status_colors(void)
                                egui_view_presence_badge_resolve_status_color(&test_badge_widget, EGUI_VIEW_PRESENCE_BADGE_STATUS_DO_NOT_DISTURB).full);
     EGUI_TEST_ASSERT_EQUAL_INT(test_badge_widget.offline_color.full,
                                egui_view_presence_badge_resolve_status_color(&test_badge_widget, EGUI_VIEW_PRESENCE_BADGE_STATUS_OFFLINE).full);
-    EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(sample, EGUI_COLOR_HEX(0x83909D), 54).full, egui_view_presence_badge_mix_disabled(sample).full);
+    EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(sample, HCW_COLOR_TEXT_SOFT, EGUI_ALPHA_MAKE(38)).full, egui_view_presence_badge_mix_disabled(sample).full);
 
     egui_view_set_size(EGUI_VIEW_OF(&test_badge_widget), 18, 18);
     layout_badge(EGUI_VIEW_OF(&test_badge_widget), 4, 6, 18, 18);

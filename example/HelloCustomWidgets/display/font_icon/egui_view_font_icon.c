@@ -42,17 +42,17 @@ static void egui_view_font_icon_apply_color(egui_view_t *self, egui_color_t icon
 
 void egui_view_font_icon_apply_standard_style(egui_view_t *self)
 {
-    egui_view_font_icon_apply_color(self, EGUI_COLOR_HEX(0x0F6CBD));
+    egui_view_font_icon_apply_color(self, HCW_COLOR_PRIMARY);
 }
 
 void egui_view_font_icon_apply_subtle_style(egui_view_t *self)
 {
-    egui_view_font_icon_apply_color(self, EGUI_COLOR_HEX(0x6F7C8A));
+    egui_view_font_icon_apply_color(self, HCW_COLOR_TEXT_SOFT);
 }
 
 void egui_view_font_icon_apply_accent_style(egui_view_t *self)
 {
-    egui_view_font_icon_apply_color(self, EGUI_COLOR_HEX(0xA15C00));
+    egui_view_font_icon_apply_color(self, HCW_COLOR_WARNING);
 }
 
 void egui_view_font_icon_set_glyph(egui_view_t *self, const char *glyph)

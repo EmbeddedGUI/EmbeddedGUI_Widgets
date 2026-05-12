@@ -45,7 +45,7 @@ static egui_dim_t egui_view_arc_clamp_stroke_width(egui_dim_t stroke_width)
 
 static egui_color_t egui_view_arc_mix_disabled(egui_color_t color)
 {
-    return egui_rgb_mix(color, EGUI_COLOR_DARK_GREY, 65);
+    return egui_rgb_mix(color, HCW_COLOR_SURFACE_SUBTLE, EGUI_ALPHA_MAKE(44));
 }
 
 static void egui_view_arc_apply_style(egui_view_t *self, egui_dim_t stroke_width, int16_t start_angle, int16_t sweep_angle, egui_color_t track_color,
@@ -68,17 +68,17 @@ static void egui_view_arc_apply_style(egui_view_t *self, egui_dim_t stroke_width
 
 void egui_view_arc_apply_standard_style(egui_view_t *self)
 {
-    egui_view_arc_apply_style(self, 8, 140, 260, EGUI_COLOR_HEX(0xD9E2EA), EGUI_COLOR_HEX(0x0F6CBD));
+    egui_view_arc_apply_style(self, 8, 140, 260, HCW_COLOR_TRACK, HCW_COLOR_PRIMARY);
 }
 
 void egui_view_arc_apply_subtle_style(egui_view_t *self)
 {
-    egui_view_arc_apply_style(self, 6, 140, 260, EGUI_COLOR_HEX(0xE5EBF0), EGUI_COLOR_HEX(0x8A9AA9));
+    egui_view_arc_apply_style(self, 6, 140, 260, HCW_COLOR_TRACK, HCW_COLOR_TEXT_SOFT);
 }
 
 void egui_view_arc_apply_attention_style(egui_view_t *self)
 {
-    egui_view_arc_apply_style(self, 8, 140, 260, EGUI_COLOR_HEX(0xEFD8D4), EGUI_COLOR_HEX(0xC42B1C));
+    egui_view_arc_apply_style(self, 8, 140, 260, HCW_COLOR_DANGER_SOFT, HCW_COLOR_DANGER);
 }
 
 void egui_view_arc_set_value(egui_view_t *self, uint8_t value)
@@ -250,8 +250,8 @@ void egui_view_arc_init(egui_view_t *self)
     local->start_angle = 140;
     local->sweep_angle = 260;
     local->stroke_width = 8;
-    local->track_color = EGUI_COLOR_HEX(0xD9E2EA);
-    local->active_color = EGUI_COLOR_HEX(0x0F6CBD);
+    local->track_color = HCW_COLOR_TRACK;
+    local->active_color = HCW_COLOR_PRIMARY;
 
     egui_view_set_view_name(self, "egui_view_arc");
 }

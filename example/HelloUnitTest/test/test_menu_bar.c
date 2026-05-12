@@ -356,9 +356,9 @@ static void test_menu_bar_setters_clear_pressed_state(void)
     assert_pressed_cleared();
 
     seed_pressed_state(0, EGUI_VIEW_MENU_BAR_ITEM_NONE);
-    egui_view_menu_bar_set_palette(EGUI_VIEW_OF(&test_menu_bar), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD9E0E6), EGUI_COLOR_HEX(0x18222D),
-                                   EGUI_COLOR_HEX(0x6A7683), EGUI_COLOR_HEX(0x2A60C7), EGUI_COLOR_HEX(0x178454), EGUI_COLOR_HEX(0xB77719),
-                                   EGUI_COLOR_HEX(0xB13A32), EGUI_COLOR_HEX(0xD7DEE5));
+    egui_view_menu_bar_set_palette(EGUI_VIEW_OF(&test_menu_bar), HCW_COLOR_SURFACE, HCW_COLOR_BORDER, EGUI_COLOR_HEX(0x18222D),
+                                   HCW_COLOR_TEXT_MUTED, HCW_COLOR_PRIMARY, HCW_COLOR_SUCCESS, HCW_COLOR_WARNING,
+                                   HCW_COLOR_DANGER_DARK, HCW_COLOR_SHADOW);
     assert_pressed_cleared();
 
     seed_pressed_state(0, EGUI_VIEW_MENU_BAR_ITEM_NONE);

@@ -239,7 +239,12 @@ static void test_search_box_style_helpers_apply_expected_state(void)
     EGUI_TEST_ASSERT_EQUAL_INT(28, EGUI_VIEW_OF(&test_search_box)->padding.left);
     EGUI_TEST_ASSERT_EQUAL_INT(26, EGUI_VIEW_OF(&test_search_box)->padding.right);
 #endif
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x5C6B79).full, test_search_box.icon_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT_STRONG.full, test_search_box.textinput.text_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT_SOFT.full, test_search_box.textinput.placeholder_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PRIMARY_DARK.full, test_search_box.textinput.cursor_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT_SOFT.full, test_search_box.icon_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PRIMARY_DARK.full, test_search_box.clear_fill_pressed_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT_SOFT.full, test_search_box.clear_icon_color.full);
 
     egui_view_search_box_apply_compact_style(EGUI_VIEW_OF(&test_search_box));
     EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&test_search_box)->is_enable);
@@ -247,11 +252,18 @@ static void test_search_box_style_helpers_apply_expected_state(void)
     EGUI_TEST_ASSERT_EQUAL_INT(24, EGUI_VIEW_OF(&test_search_box)->padding.left);
     EGUI_TEST_ASSERT_EQUAL_INT(22, EGUI_VIEW_OF(&test_search_box)->padding.right);
 #endif
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x55716D).full, test_search_box.icon_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT_STRONG.full, test_search_box.textinput.text_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT_SOFT.full, test_search_box.textinput.placeholder_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PRIMARY_DARK.full, test_search_box.textinput.cursor_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT_SOFT.full, test_search_box.icon_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PRIMARY_DARK.full, test_search_box.clear_fill_pressed_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT_SOFT.full, test_search_box.clear_icon_color.full);
 
     egui_view_search_box_apply_read_only_style(EGUI_VIEW_OF(&test_search_box));
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_search_box)->is_enable);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x8A97A5).full, test_search_box.icon_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT_STRONG.full, test_search_box.textinput.text_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT.full, test_search_box.icon_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT.full, test_search_box.clear_icon_color.full);
 }
 
 static void test_search_box_insert_delete_and_submit_via_keyboard(void)

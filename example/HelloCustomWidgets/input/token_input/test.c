@@ -24,17 +24,6 @@
 
 #define PRIMARY_SNAPSHOT_COUNT ((uint8_t)EGUI_ARRAY_SIZE(primary_snapshots))
 
-#define TOKEN_INPUT_STANDARD_BORDER 0xD5DCE4
-#define TOKEN_INPUT_STANDARD_TEXT   0x1A2734
-#define TOKEN_INPUT_STANDARD_MUTED  0x6B7A89
-#define TOKEN_INPUT_STANDARD_ACCENT 0x0F6CBD
-#define TOKEN_INPUT_STANDARD_SHADOW 0xEAF0F6
-
-#define TOKEN_INPUT_READ_ONLY_TEXT   0x6B7A89
-#define TOKEN_INPUT_READ_ONLY_MUTED  0x7A8796
-#define TOKEN_INPUT_READ_ONLY_ACCENT 0x7A8796
-#define TOKEN_INPUT_READ_ONLY_SHADOW 0xEEF3F8
-
 typedef struct token_input_snapshot token_input_snapshot_t;
 struct token_input_snapshot
 {
@@ -53,7 +42,7 @@ static egui_view_api_t editor_compact_api;
 static egui_view_api_t editor_read_only_api;
 static uint8_t ui_ready;
 
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, HCW_COLOR_PAGE_BG, EGUI_ALPHA_100, 14);
 EGUI_BACKGROUND_PARAM_INIT(bg_page_panel_params, &bg_page_panel_param, NULL, NULL);
 EGUI_BACKGROUND_COLOR_STATIC_CONST_INIT(bg_page_panel, &bg_page_panel_params);
 
@@ -156,7 +145,7 @@ void test_init_ui(void)
     egui_view_label_set_text(EGUI_VIEW_OF(&title_label), title_text);
     egui_view_label_set_align_type(EGUI_VIEW_OF(&title_label), EGUI_ALIGN_CENTER);
     hello_custom_widgets_demo_set_label_font_with_min_height(EGUI_VIEW_OF(&title_label), (const egui_font_t *)&egui_res_font_montserrat_12_4);
-    egui_view_label_set_font_color(EGUI_VIEW_OF(&title_label), EGUI_COLOR_HEX(0x21303F), EGUI_ALPHA_100);
+    egui_view_label_set_font_color(EGUI_VIEW_OF(&title_label), HCW_COLOR_TEXT, EGUI_ALPHA_100);
     egui_view_set_margin(EGUI_VIEW_OF(&title_label), 0, 8, 0, 6);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label));
 
@@ -164,9 +153,8 @@ void test_init_ui(void)
     egui_view_set_size(EGUI_VIEW_OF(&editor_primary), TOKEN_INPUT_PRIMARY_WIDTH, TOKEN_INPUT_PRIMARY_HEIGHT);
     egui_view_token_input_set_font(EGUI_VIEW_OF(&editor_primary), (const egui_font_t *)&egui_res_font_montserrat_10_4);
     egui_view_token_input_set_meta_font(EGUI_VIEW_OF(&editor_primary), (const egui_font_t *)&egui_res_font_montserrat_8_4);
-    egui_view_token_input_set_palette(EGUI_VIEW_OF(&editor_primary), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(TOKEN_INPUT_STANDARD_BORDER),
-                                      EGUI_COLOR_HEX(TOKEN_INPUT_STANDARD_TEXT), EGUI_COLOR_HEX(TOKEN_INPUT_STANDARD_MUTED),
-                                      EGUI_COLOR_HEX(TOKEN_INPUT_STANDARD_ACCENT), EGUI_COLOR_HEX(TOKEN_INPUT_STANDARD_SHADOW));
+    egui_view_token_input_set_palette(EGUI_VIEW_OF(&editor_primary), HCW_COLOR_PANEL, HCW_COLOR_BORDER_STRONG, HCW_COLOR_TEXT_STRONG,
+                                      HCW_COLOR_TEXT_SOFT, HCW_COLOR_PRIMARY_DARK, HCW_COLOR_TRACK_STRONG);
     egui_view_set_margin(EGUI_VIEW_OF(&editor_primary), 0, 0, 0, 8);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&editor_primary));
 
@@ -181,9 +169,8 @@ void test_init_ui(void)
     egui_view_token_input_set_font(EGUI_VIEW_OF(&editor_compact), (const egui_font_t *)&egui_res_font_montserrat_8_4);
     egui_view_token_input_set_meta_font(EGUI_VIEW_OF(&editor_compact), (const egui_font_t *)&egui_res_font_montserrat_8_4);
     egui_view_token_input_set_compact_mode(EGUI_VIEW_OF(&editor_compact), 1);
-    egui_view_token_input_set_palette(EGUI_VIEW_OF(&editor_compact), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(TOKEN_INPUT_STANDARD_BORDER),
-                                      EGUI_COLOR_HEX(TOKEN_INPUT_STANDARD_TEXT), EGUI_COLOR_HEX(TOKEN_INPUT_STANDARD_MUTED),
-                                      EGUI_COLOR_HEX(TOKEN_INPUT_STANDARD_ACCENT), EGUI_COLOR_HEX(TOKEN_INPUT_STANDARD_SHADOW));
+    egui_view_token_input_set_palette(EGUI_VIEW_OF(&editor_compact), HCW_COLOR_PANEL, HCW_COLOR_BORDER_STRONG, HCW_COLOR_TEXT_STRONG,
+                                      HCW_COLOR_TEXT_SOFT, HCW_COLOR_PRIMARY_DARK, HCW_COLOR_TRACK_STRONG);
     egui_view_token_input_override_static_preview_api(EGUI_VIEW_OF(&editor_compact), &editor_compact_api);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&editor_compact), false);
@@ -197,9 +184,8 @@ void test_init_ui(void)
     egui_view_token_input_set_meta_font(EGUI_VIEW_OF(&editor_read_only), (const egui_font_t *)&egui_res_font_montserrat_8_4);
     egui_view_token_input_set_compact_mode(EGUI_VIEW_OF(&editor_read_only), 1);
     egui_view_token_input_set_read_only_mode(EGUI_VIEW_OF(&editor_read_only), 1);
-    egui_view_token_input_set_palette(EGUI_VIEW_OF(&editor_read_only), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(TOKEN_INPUT_STANDARD_BORDER),
-                                      EGUI_COLOR_HEX(TOKEN_INPUT_READ_ONLY_TEXT), EGUI_COLOR_HEX(TOKEN_INPUT_READ_ONLY_MUTED),
-                                      EGUI_COLOR_HEX(TOKEN_INPUT_READ_ONLY_ACCENT), EGUI_COLOR_HEX(TOKEN_INPUT_READ_ONLY_SHADOW));
+    egui_view_token_input_set_palette(EGUI_VIEW_OF(&editor_read_only), HCW_COLOR_PANEL, HCW_COLOR_TRACK_STRONG, HCW_COLOR_TEXT_SOFT,
+                                      HCW_COLOR_TEXT_SOFT, HCW_COLOR_PRIMARY_SOFT, HCW_COLOR_TRACK_STRONG);
     egui_view_token_input_override_static_preview_api(EGUI_VIEW_OF(&editor_read_only), &editor_read_only_api);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&editor_read_only), false);
@@ -281,4 +267,3 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     }
 }
 #endif
-

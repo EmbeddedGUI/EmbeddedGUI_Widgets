@@ -47,11 +47,11 @@ static egui_view_api_t disabled_preview_api;
 static uint8_t current_primary_snapshot;
 static uint8_t ui_ready;
 
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, HCW_COLOR_PAGE_BG, EGUI_ALPHA_100, 14);
 EGUI_BACKGROUND_PARAM_INIT(bg_page_panel_params, &bg_page_panel_param, NULL, NULL);
 EGUI_BACKGROUND_COLOR_STATIC_CONST_INIT(bg_page_panel, &bg_page_panel_params);
 
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_surface_panel_param, EGUI_COLOR_HEX(0xFFFFFF), EGUI_ALPHA_100, 12);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_surface_panel_param, HCW_COLOR_SURFACE, EGUI_ALPHA_100, 12);
 EGUI_BACKGROUND_PARAM_INIT(bg_surface_panel_params, &bg_surface_panel_param, NULL, NULL);
 EGUI_BACKGROUND_COLOR_STATIC_CONST_INIT(bg_surface_panel, &bg_surface_panel_params);
 
@@ -116,7 +116,7 @@ static void apply_preview_states(void)
     hcw_hyperlink_button_set_text(EGUI_VIEW_OF(&inline_preview_button), "Inline article");
 
     hcw_hyperlink_button_set_text(EGUI_VIEW_OF(&disabled_preview_button), "Archived link");
-    egui_view_set_enable(EGUI_VIEW_OF(&disabled_preview_button), 0);
+    egui_view_set_enable(EGUI_VIEW_OF(&disabled_preview_button), 1);
 
     if (ui_ready)
     {
@@ -169,7 +169,7 @@ void test_init_ui(void)
     egui_view_linearlayout_set_align_type(EGUI_VIEW_OF(&root_layout), EGUI_ALIGN_HCENTER);
     egui_view_set_background(EGUI_VIEW_OF(&root_layout), EGUI_BG_OF(&bg_page_panel));
 
-    init_text_label(&title_label, HYPERLINK_ROOT_WIDTH, 18, title_text, (const egui_font_t *)&egui_res_font_montserrat_12_4, EGUI_COLOR_HEX(0x21303F),
+    init_text_label(&title_label, HYPERLINK_ROOT_WIDTH, 18, title_text, (const egui_font_t *)&egui_res_font_montserrat_12_4, HCW_COLOR_TEXT,
                     EGUI_ALIGN_CENTER);
     egui_view_set_margin(EGUI_VIEW_OF(&title_label), 0, 8, 0, 6);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label));
@@ -183,7 +183,7 @@ void test_init_ui(void)
     egui_view_set_margin(EGUI_VIEW_OF(&primary_panel), 0, 0, 0, 10);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&primary_panel));
 
-    init_text_label(&panel_heading_label, 172, 12, "Project updates", (const egui_font_t *)&egui_res_font_montserrat_8_4, EGUI_COLOR_HEX(0x51606F),
+    init_text_label(&panel_heading_label, 172, 12, "Project updates", (const egui_font_t *)&egui_res_font_montserrat_8_4, HCW_COLOR_TEXT_SOFT,
                     EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER);
     egui_view_set_margin(EGUI_VIEW_OF(&panel_heading_label), 0, 0, 0, 8);
     egui_view_group_add_child(EGUI_VIEW_OF(&primary_panel), EGUI_VIEW_OF(&panel_heading_label));
@@ -201,7 +201,7 @@ void test_init_ui(void)
     egui_view_group_add_child(EGUI_VIEW_OF(&primary_panel), EGUI_VIEW_OF(&primary_link_button));
 
     init_text_label(&note_label, 172, 20, "Primary action keeps the lighter link affordance.", (const egui_font_t *)&egui_res_font_montserrat_8_4,
-                    EGUI_COLOR_HEX(0x6B7A89), EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER);
+                    HCW_COLOR_TEXT_SOFT, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER);
     egui_view_group_add_child(EGUI_VIEW_OF(&primary_panel), EGUI_VIEW_OF(&note_label));
 
     egui_view_linearlayout_init(EGUI_VIEW_OF(&bottom_row), uicode_get_core());
@@ -310,4 +310,3 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     }
 }
 #endif
-

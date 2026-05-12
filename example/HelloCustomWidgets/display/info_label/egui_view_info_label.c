@@ -3,8 +3,8 @@
 #include <string.h>
 
 #define HCW_INFO_LABEL_STANDARD_PANEL_RADIUS        10
-#define HCW_INFO_LABEL_STANDARD_FILL_ALPHA          92
-#define HCW_INFO_LABEL_STANDARD_BORDER_ALPHA        56
+#define HCW_INFO_LABEL_STANDARD_FILL_ALPHA          EGUI_ALPHA_MAKE(92)
+#define HCW_INFO_LABEL_STANDARD_BORDER_ALPHA        EGUI_ALPHA_MAKE(80)
 #define HCW_INFO_LABEL_STANDARD_PAD_X               10
 #define HCW_INFO_LABEL_STANDARD_PAD_Y               8
 #define HCW_INFO_LABEL_STANDARD_ROW_HEIGHT          22
@@ -18,8 +18,8 @@
 #define HCW_INFO_LABEL_STANDARD_BUBBLE_PAD_Y        8
 #define HCW_INFO_LABEL_STANDARD_ARROW_WIDTH         12
 #define HCW_INFO_LABEL_STANDARD_ARROW_HEIGHT        6
-#define HCW_INFO_LABEL_STANDARD_ACTIVE_FILL_ALPHA   18
-#define HCW_INFO_LABEL_STANDARD_BUBBLE_BORDER_ALPHA 54
+#define HCW_INFO_LABEL_STANDARD_ACTIVE_FILL_ALPHA   EGUI_ALPHA_MAKE(58)
+#define HCW_INFO_LABEL_STANDARD_BUBBLE_BORDER_ALPHA EGUI_ALPHA_MAKE(82)
 
 typedef struct hcw_info_label_metrics hcw_info_label_metrics_t;
 struct hcw_info_label_metrics
@@ -69,7 +69,7 @@ static uint8_t hcw_info_label_text_len(const char *text)
 
 static egui_color_t hcw_info_label_mix_disabled(egui_color_t color)
 {
-    return egui_rgb_mix(color, EGUI_COLOR_HEX(0x7D8894), 58);
+    return egui_rgb_mix(color, HCW_COLOR_TEXT_SOFT, EGUI_ALPHA_MAKE(38));
 }
 
 static uint8_t hcw_info_label_clear_pressed_state(egui_view_t *self)
@@ -172,7 +172,7 @@ static egui_alpha_t hcw_info_label_border_alpha(void)
 
 static egui_alpha_t hcw_info_label_active_fill_alpha(void)
 {
-    return HCW_INFO_LABEL_STANDARD_ACTIVE_FILL_ALPHA;
+    return EGUI_ALPHA_MAKE(30);
 }
 
 static egui_alpha_t hcw_info_label_bubble_border_alpha(void)
@@ -493,9 +493,9 @@ static void hcw_info_label_draw_bubble_arrow(egui_view_t *self, hcw_info_label_t
     top_y = metrics->bubble_region.location.y;
 
     egui_canvas_draw_triangle_fill(&uicode_get_core()->canvas, center_x - arrow_w / 2, top_y + 1, center_x + arrow_w / 2, top_y + 1, center_x, top_y - arrow_h, fill_color,
-                                   egui_color_alpha_mix(self->alpha, 96));
+                                   egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(96)));
     egui_canvas_draw_triangle(&uicode_get_core()->canvas, center_x - arrow_w / 2, top_y + 1, center_x + arrow_w / 2, top_y + 1, center_x, top_y - arrow_h, border_color,
-                              egui_color_alpha_mix(self->alpha, 42));
+                              egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(68)));
 }
 
 static void hcw_info_label_on_draw(egui_view_t *self)
@@ -524,8 +524,8 @@ static void hcw_info_label_on_draw(egui_view_t *self)
         return;
     }
 
-    surface_color = egui_rgb_mix(surface_color, EGUI_COLOR_HEX(0xFFFFFF), 16);
-    bubble_surface_color = egui_rgb_mix(bubble_surface_color, EGUI_COLOR_HEX(0xFFFFFF), 14);
+    surface_color = egui_rgb_mix(surface_color, HCW_COLOR_SURFACE, EGUI_ALPHA_MAKE(16));
+    bubble_surface_color = egui_rgb_mix(bubble_surface_color, HCW_COLOR_SURFACE, EGUI_ALPHA_MAKE(14));
     if (!egui_view_get_enable(self))
     {
         surface_color = hcw_info_label_mix_disabled(surface_color);
@@ -539,9 +539,9 @@ static void hcw_info_label_on_draw(egui_view_t *self)
 
     panel_radius = hcw_info_label_panel_radius();
     icon_radius = hcw_info_label_icon_radius();
-    icon_fill = egui_rgb_mix(surface_color, accent_color, local->open ? 7 : 4);
-    icon_border = egui_rgb_mix(border_color, accent_color, local->open ? 14 : 8);
-    icon_text = egui_rgb_mix(accent_color, text_color, local->open ? 6 : 14);
+    icon_fill = egui_rgb_mix(surface_color, accent_color, EGUI_ALPHA_MAKE(local->open ? 18 : 12));
+    icon_border = egui_rgb_mix(border_color, accent_color, EGUI_ALPHA_MAKE(local->open ? 28 : 20));
+    icon_text = egui_rgb_mix(accent_color, text_color, EGUI_ALPHA_MAKE(local->open ? 10 : 18));
 
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.region.location.x, metrics.region.location.y, metrics.region.size.width, metrics.region.size.height,
                                           panel_radius, surface_color, egui_color_alpha_mix(self->alpha, hcw_info_label_fill_alpha()));
@@ -552,7 +552,7 @@ static void hcw_info_label_on_draw(egui_view_t *self)
     {
         egui_canvas_draw_line(&uicode_get_core()->canvas, metrics.row_region.location.x, metrics.row_region.location.y + metrics.row_region.size.height + 2,
                               metrics.row_region.location.x + metrics.row_region.size.width, metrics.row_region.location.y + metrics.row_region.size.height + 2, 1,
-                              border_color, egui_color_alpha_mix(self->alpha, 18));
+                              border_color, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(72)));
     }
 
     hcw_info_label_fit_text_to_width(hcw_info_label_get_font(local), local->label, fitted_label, sizeof(fitted_label), metrics.label_region.size.width, 5);
@@ -561,7 +561,7 @@ static void hcw_info_label_on_draw(egui_view_t *self)
 
     if (self->is_focused && egui_view_get_enable(self))
     {
-        hcw_info_label_draw_focus_ring(self, &metrics.icon_region, icon_radius, EGUI_THEME_FOCUS, 68);
+        hcw_info_label_draw_focus_ring(self, &metrics.icon_region, icon_radius, EGUI_THEME_FOCUS, EGUI_ALPHA_MAKE(68));
     }
 
     if (egui_view_get_enable(self) && local->pressed_part == HCW_INFO_LABEL_PART_ICON)
@@ -576,7 +576,7 @@ static void hcw_info_label_on_draw(egui_view_t *self)
                                               egui_color_alpha_mix(self->alpha, hcw_info_label_active_fill_alpha()));
     }
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics.icon_region.location.x, metrics.icon_region.location.y, metrics.icon_region.size.width, metrics.icon_region.size.height,
-                                     icon_radius, 1, icon_border, egui_color_alpha_mix(self->alpha, 56));
+                                     icon_radius, 1, icon_border, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(82)));
     hcw_info_label_draw_text(self, hcw_info_label_get_icon_font(local), EGUI_ICON_MS_INFO, &metrics.icon_region, EGUI_ALIGN_CENTER, icon_text, EGUI_ALPHA_100);
 
     if (!metrics.show_bubble)
@@ -586,17 +586,17 @@ static void hcw_info_label_on_draw(egui_view_t *self)
 
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.bubble_region.location.x + 1, metrics.bubble_region.location.y + 2, metrics.bubble_region.size.width,
                                           metrics.bubble_region.size.height, hcw_info_label_bubble_radius(), shadow_color,
-                                          egui_color_alpha_mix(self->alpha, 16));
+                                          egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(56)));
     hcw_info_label_draw_bubble_arrow(self, local, &metrics, bubble_surface_color, border_color);
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.bubble_region.location.x, metrics.bubble_region.location.y, metrics.bubble_region.size.width,
                                           metrics.bubble_region.size.height, hcw_info_label_bubble_radius(), bubble_surface_color,
-                                          egui_color_alpha_mix(self->alpha, 96));
+                                          egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(96)));
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics.bubble_region.location.x, metrics.bubble_region.location.y, metrics.bubble_region.size.width,
                                      metrics.bubble_region.size.height, hcw_info_label_bubble_radius(), 1, border_color,
                                      egui_color_alpha_mix(self->alpha, hcw_info_label_bubble_border_alpha()));
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.bubble_region.location.x + hcw_info_label_bubble_pad_x(),
                                           metrics.bubble_region.location.y + 6, 16, 2, 1, accent_color,
-                                          egui_color_alpha_mix(self->alpha, 70));
+                                          egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(86)));
 
     hcw_info_label_fit_text_to_width(hcw_info_label_get_font(local), local->info_title, fitted_title, sizeof(fitted_title), metrics.title_region.size.width, 5);
     hcw_info_label_draw_text(self, hcw_info_label_get_font(local), fitted_title, &metrics.title_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, text_color,
@@ -961,13 +961,13 @@ void hcw_info_label_init(egui_view_t *self)
     local->meta_font = hcw_info_label_default_font();
     local->icon_font = hcw_info_label_default_icon_font();
     local->on_open_changed = NULL;
-    local->surface_color = EGUI_COLOR_HEX(0xFFFFFF);
-    local->border_color = EGUI_COLOR_HEX(0xD4DDE5);
-    local->text_color = EGUI_COLOR_HEX(0x1B2835);
-    local->muted_text_color = EGUI_COLOR_HEX(0x697A8B);
-    local->accent_color = EGUI_COLOR_HEX(0x0F6CBD);
-    local->bubble_surface_color = EGUI_COLOR_HEX(0xF9FBFD);
-    local->shadow_color = EGUI_COLOR_HEX(0xDCE4EA);
+    local->surface_color = HCW_COLOR_SURFACE;
+    local->border_color = HCW_COLOR_BORDER;
+    local->text_color = HCW_COLOR_TEXT_STRONG;
+    local->muted_text_color = HCW_COLOR_TEXT_MUTED;
+    local->accent_color = HCW_COLOR_PRIMARY;
+    local->bubble_surface_color = HCW_COLOR_PANEL;
+    local->shadow_color = HCW_COLOR_BORDER;
     local->open = 0;
     local->pressed_part = HCW_INFO_LABEL_PART_NONE;
 

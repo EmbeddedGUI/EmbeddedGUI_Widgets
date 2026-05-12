@@ -52,7 +52,7 @@ static void hcw_switch_on_draw(egui_view_t *self)
     }
 
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, region.location.x - 1, region.location.y - 1, region.size.width + 2, region.size.height + 2, radius + 1, 1,
-                                     local->bk_color_on, egui_color_alpha_mix(local->alpha, 56));
+                                     local->bk_color_on, egui_color_alpha_mix(local->alpha, EGUI_ALPHA_MAKE(78)));
 #else
     EGUI_UNUSED(local);
 #endif
@@ -60,7 +60,7 @@ static void hcw_switch_on_draw(egui_view_t *self)
 
 void hcw_switch_apply_standard_style(egui_view_t *self)
 {
-    hcw_switch_apply_palette(self, EGUI_COLOR_HEX(0x2563EB), EGUI_COLOR_HEX(0xD8E0E9), EGUI_COLOR_WHITE, EGUI_COLOR_WHITE, EGUI_ALPHA_100);
+    hcw_switch_apply_palette(self, HCW_COLOR_PRIMARY, HCW_COLOR_BORDER, EGUI_COLOR_WHITE, EGUI_COLOR_WHITE, EGUI_ALPHA_100);
 }
 
 void hcw_switch_set_checked(egui_view_t *self, uint8_t is_checked)

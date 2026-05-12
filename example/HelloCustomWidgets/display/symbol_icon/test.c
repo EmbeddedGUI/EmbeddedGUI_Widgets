@@ -3,17 +3,18 @@
 #include "uicode_disp0.h"
 #include "demo_scaffold.h"
 #include "resource/egui_icon_material_symbols.h"
+#include "resource/egui_icon_symbol_icon.h"
 
 #if EGUI_CONFIG_RECORDING_TEST
 #include "core/egui_input_simulator.h"
 #endif
 
 #define SYMBOL_ICON_ROOT_WIDTH        224
-#define SYMBOL_ICON_ROOT_HEIGHT       164
+#define SYMBOL_ICON_ROOT_HEIGHT       172
 #define SYMBOL_ICON_PRIMARY_SIZE      64
-#define SYMBOL_ICON_PREVIEW_SIZE      32
-#define SYMBOL_ICON_BOTTOM_ROW_WIDTH  72
-#define SYMBOL_ICON_BOTTOM_ROW_HEIGHT 32
+#define SYMBOL_ICON_PREVIEW_SIZE      40
+#define SYMBOL_ICON_BOTTOM_ROW_WIDTH  88
+#define SYMBOL_ICON_BOTTOM_ROW_HEIGHT 40
 #define SYMBOL_ICON_RECORD_WAIT       90
 #define SYMBOL_ICON_RECORD_FRAME_WAIT 170
 #define SYMBOL_ICON_RECORD_FINAL_WAIT 280
@@ -41,7 +42,7 @@ static egui_view_api_t subtle_icon_api;
 static egui_view_api_t accent_icon_api;
 static uint8_t ui_ready;
 
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, HCW_COLOR_PAGE_BG, EGUI_ALPHA_100, 14);
 EGUI_BACKGROUND_PARAM_INIT(bg_page_panel_params, &bg_page_panel_param, NULL, NULL);
 EGUI_BACKGROUND_COLOR_STATIC_CONST_INIT(bg_page_panel, &bg_page_panel_params);
 
@@ -50,21 +51,21 @@ static const char *title_text = "SymbolIcon";
 static const symbol_icon_snapshot_t primary_snapshots[] = {
         {
                 EGUI_ICON_MS_HOME,
-                EGUI_COLOR_HEX(0x0F6CBD),
+                HCW_COLOR_PRIMARY,
                 "Home / standard",
-                EGUI_COLOR_HEX(0x0F6CBD),
+                HCW_COLOR_PRIMARY,
         },
         {
                 EGUI_ICON_MS_NOTIFICATIONS,
-                EGUI_COLOR_HEX(0xA15C00),
+                HCW_COLOR_WARNING,
                 "Notifications / accent",
-                EGUI_COLOR_HEX(0xA15C00),
+                HCW_COLOR_WARNING,
         },
         {
                 EGUI_ICON_MS_SETTINGS,
-                EGUI_COLOR_HEX(0x0F7B45),
+                HCW_COLOR_SUCCESS,
                 "Settings / success",
-                EGUI_COLOR_HEX(0x0F7B45),
+                HCW_COLOR_SUCCESS,
         },
 };
 
@@ -144,7 +145,7 @@ void test_init_ui(void)
     egui_view_linearlayout_set_align_type(EGUI_VIEW_OF(&root_layout), EGUI_ALIGN_HCENTER);
     egui_view_set_background(EGUI_VIEW_OF(&root_layout), EGUI_BG_OF(&bg_page_panel));
 
-    init_text_label(&title_label, SYMBOL_ICON_ROOT_WIDTH, 18, title_text, (const egui_font_t *)&egui_res_font_montserrat_12_4, EGUI_COLOR_HEX(0x21303F),
+    init_text_label(&title_label, SYMBOL_ICON_ROOT_WIDTH, 18, title_text, (const egui_font_t *)&egui_res_font_montserrat_12_4, HCW_COLOR_TEXT,
                     EGUI_ALIGN_CENTER);
     egui_view_set_margin(EGUI_VIEW_OF(&title_label), 0, 8, 0, 8);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label));
@@ -152,12 +153,12 @@ void test_init_ui(void)
     egui_view_symbol_icon_init(EGUI_VIEW_OF(&primary_icon));
     egui_view_set_size(EGUI_VIEW_OF(&primary_icon), SYMBOL_ICON_PRIMARY_SIZE, SYMBOL_ICON_PRIMARY_SIZE);
     egui_view_symbol_icon_apply_standard_style(EGUI_VIEW_OF(&primary_icon));
-    egui_view_symbol_icon_set_icon_font(EGUI_VIEW_OF(&primary_icon), EGUI_FONT_ICON_MS_24);
+    egui_view_symbol_icon_set_icon_font(EGUI_VIEW_OF(&primary_icon), EGUI_FONT_SYMBOL_ICON_SYMBOLS_32);
     egui_view_set_margin(EGUI_VIEW_OF(&primary_icon), 0, 0, 0, 8);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&primary_icon));
 
     init_text_label(&primary_status_label, SYMBOL_ICON_ROOT_WIDTH, 12, "Home / standard", (const egui_font_t *)&egui_res_font_montserrat_10_4,
-                    EGUI_COLOR_HEX(0x0F6CBD), EGUI_ALIGN_CENTER);
+                    HCW_COLOR_PRIMARY, EGUI_ALIGN_CENTER);
     egui_view_set_margin(EGUI_VIEW_OF(&primary_status_label), 0, 0, 0, 10);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&primary_status_label));
 
@@ -169,14 +170,14 @@ void test_init_ui(void)
 
     egui_view_symbol_icon_init(EGUI_VIEW_OF(&subtle_icon));
     egui_view_set_size(EGUI_VIEW_OF(&subtle_icon), SYMBOL_ICON_PREVIEW_SIZE, SYMBOL_ICON_PREVIEW_SIZE);
-    egui_view_symbol_icon_set_icon_font(EGUI_VIEW_OF(&subtle_icon), EGUI_FONT_ICON_MS_20);
+    egui_view_symbol_icon_set_icon_font(EGUI_VIEW_OF(&subtle_icon), EGUI_FONT_SYMBOL_ICON_SYMBOLS_32);
     egui_view_symbol_icon_override_static_preview_api(EGUI_VIEW_OF(&subtle_icon), &subtle_icon_api);
     egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&subtle_icon));
 
     egui_view_symbol_icon_init(EGUI_VIEW_OF(&accent_icon));
     egui_view_set_size(EGUI_VIEW_OF(&accent_icon), SYMBOL_ICON_PREVIEW_SIZE, SYMBOL_ICON_PREVIEW_SIZE);
     egui_view_set_margin(EGUI_VIEW_OF(&accent_icon), 8, 0, 0, 0);
-    egui_view_symbol_icon_set_icon_font(EGUI_VIEW_OF(&accent_icon), EGUI_FONT_ICON_MS_20);
+    egui_view_symbol_icon_set_icon_font(EGUI_VIEW_OF(&accent_icon), EGUI_FONT_SYMBOL_ICON_SYMBOLS_32);
     egui_view_symbol_icon_override_static_preview_api(EGUI_VIEW_OF(&accent_icon), &accent_icon_api);
     egui_view_group_add_child(EGUI_VIEW_OF(&bottom_row), EGUI_VIEW_OF(&accent_icon));
 
@@ -258,4 +259,3 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     }
 }
 #endif
-

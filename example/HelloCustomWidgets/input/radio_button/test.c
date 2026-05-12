@@ -57,7 +57,7 @@ static egui_view_radio_group_t disabled_group;
 static egui_view_api_t disabled_button_api[2];
 static uint8_t ui_ready;
 
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, HCW_COLOR_PAGE_BG, EGUI_ALPHA_100, 14);
 EGUI_BACKGROUND_PARAM_INIT(bg_page_panel_params, &bg_page_panel_param, NULL, NULL);
 EGUI_BACKGROUND_COLOR_STATIC_CONST_INIT(bg_page_panel, &bg_page_panel_params);
 
@@ -125,17 +125,17 @@ static void apply_preview_states(void)
 
 static void apply_secondary_preview_palette(egui_view_radio_button_t *button)
 {
-    button->circle_color = EGUI_COLOR_HEX(0xC7D8CE);
-    button->dot_color = EGUI_COLOR_HEX(0x0C7C73);
-    button->text_color = EGUI_COLOR_HEX(0x21303F);
+    button->circle_color = HCW_COLOR_BORDER;
+    button->dot_color = HCW_COLOR_PRIMARY;
+    button->text_color = HCW_COLOR_TEXT;
     button->text_gap = 6;
 }
 
 static void apply_disabled_preview_palette(egui_view_radio_button_t *button)
 {
-    button->circle_color = EGUI_COLOR_HEX(0xD8E0E8);
-    button->dot_color = EGUI_COLOR_HEX(0xAFB8C3);
-    button->text_color = EGUI_COLOR_HEX(0x546474);
+    button->circle_color = HCW_COLOR_BORDER_STRONG;
+    button->dot_color = HCW_COLOR_TEXT;
+    button->text_color = HCW_COLOR_TEXT;
     button->text_gap = 6;
 }
 
@@ -217,7 +217,7 @@ void test_init_ui(void)
     egui_view_label_set_text(EGUI_VIEW_OF(&title_label), title_text);
     egui_view_label_set_align_type(EGUI_VIEW_OF(&title_label), EGUI_ALIGN_CENTER);
     hello_custom_widgets_demo_set_label_font_with_min_height(EGUI_VIEW_OF(&title_label), (const egui_font_t *)&egui_res_font_montserrat_12_4);
-    egui_view_label_set_font_color(EGUI_VIEW_OF(&title_label), EGUI_COLOR_HEX(0x21303F), EGUI_ALPHA_100);
+    egui_view_label_set_font_color(EGUI_VIEW_OF(&title_label), HCW_COLOR_TEXT, EGUI_ALPHA_100);
     egui_view_set_margin(EGUI_VIEW_OF(&title_label), 0, 8, 0, 8);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label));
 
@@ -280,7 +280,6 @@ void test_init_ui(void)
         init_radio_button(&disabled_buttons[i], &disabled_button_api[i], RADIO_BUTTON_PREVIEW_ITEM_WIDTH, RADIO_BUTTON_PREVIEW_ITEM_HEIGHT,
                           (const egui_font_t *)&egui_res_font_montserrat_10_4, 0, 1);
         apply_disabled_preview_palette(&disabled_buttons[i]);
-        egui_view_set_enable(EGUI_VIEW_OF(&disabled_buttons[i]), 0);
         if (i + 1 < disabled_button_count)
         {
             egui_view_set_margin(EGUI_VIEW_OF(&disabled_buttons[i]), 0, 0, 0, 4);

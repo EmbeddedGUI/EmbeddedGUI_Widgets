@@ -1,4 +1,5 @@
 #include "egui_view_access_text.h"
+#include "../../hcw_selection_marker.h"
 
 #include <string.h>
 
@@ -230,13 +231,13 @@ static void egui_view_access_text_fit_text_to_width(const egui_font_t *font, con
 
 static egui_color_t egui_view_access_text_mix_disabled(egui_color_t color)
 {
-    return egui_rgb_mix(color, EGUI_COLOR_HEX(0x8A97A5), 58);
+    return egui_rgb_mix(color, HCW_COLOR_TEXT_SOFT, EGUI_ALPHA_MAKE(38));
 }
 
 static void egui_view_access_text_get_text_region(egui_view_t *self, egui_view_access_text_t *local, egui_region_t *text_region)
 {
     egui_region_t work_region;
-    egui_dim_t h_gap = 10;
+    egui_dim_t h_gap = 14;
     egui_dim_t v_gap = 4;
 
     EGUI_UNUSED(local);
@@ -329,7 +330,7 @@ static void egui_view_access_text_draw_access_underline(egui_view_t *self, egui_
 
     underline_y = text_region->location.y + text_region->size.height - 4;
     egui_canvas_draw_rectangle_fill(&uicode_get_core()->canvas, underline_x, underline_y, char_width, 1, color,
-                                    egui_color_alpha_mix(self->alpha, 90));
+                                    egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(90)));
 }
 
 static void egui_view_access_text_draw_text(const egui_font_t *font, egui_view_t *self, const char *text, const egui_region_t *region,
@@ -373,20 +374,19 @@ static void egui_view_access_text_on_draw(egui_view_t *self)
     }
 
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, region.location.x, region.location.y, region.size.width, region.size.height, radius,
-                                          surface_color, egui_color_alpha_mix(self->alpha, 88));
-    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, region.location.x, region.location.y, region.size.width, region.size.height, radius, 1,
-                                     border_color, egui_color_alpha_mix(self->alpha, 42));
+                                          surface_color, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(88)));
 
     if (local->keyboard_cue_visible && local->access_key_index != EGUI_VIEW_ACCESS_TEXT_ACCESS_NONE)
     {
-        egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, region.location.x + 4, region.location.y + 5, 3, region.size.height - 10, 1,
-                                              cue_color, egui_color_alpha_mix(self->alpha, 54));
+        hcw_selection_marker_draw_left(&region, radius, radius, cue_color, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(78)));
     }
     else
     {
         egui_canvas_draw_rectangle_fill(&uicode_get_core()->canvas, region.location.x + 8, region.location.y + region.size.height - 4,
-                                        region.size.width - 16, 1, accent_color, egui_color_alpha_mix(self->alpha, 28));
+                                        region.size.width - 16, 1, accent_color, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(64)));
     }
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, region.location.x, region.location.y, region.size.width, region.size.height, radius, 1,
+                                     border_color, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(74)));
 
     egui_view_access_text_get_text_region(self, local, &text_region);
     egui_view_access_text_fit_text_to_width(local->text_font, local->display_text, draw_text, sizeof(draw_text), text_region.size.width, 6);
@@ -594,11 +594,11 @@ void egui_view_access_text_init(egui_view_t *self)
     local->align_type = EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER;
     local->access_key_index = EGUI_VIEW_ACCESS_TEXT_ACCESS_NONE;
     local->keyboard_cue_visible = 1;
-    local->surface_color = EGUI_COLOR_HEX(0xFFFFFF);
-    local->border_color = EGUI_COLOR_HEX(0xD6DFE8);
-    local->text_color = EGUI_COLOR_HEX(0x1F2A36);
-    local->accent_color = EGUI_COLOR_HEX(0xD7E3EE);
-    local->cue_color = EGUI_COLOR_HEX(0x0F6CBD);
+    local->surface_color = HCW_COLOR_SURFACE;
+    local->border_color = HCW_COLOR_BORDER;
+    local->text_color = HCW_COLOR_TEXT;
+    local->accent_color = HCW_COLOR_PRIMARY_TINT;
+    local->cue_color = HCW_COLOR_PRIMARY;
     egui_view_access_text_copy_text(local->markup_text, sizeof(local->markup_text), "_Save");
     egui_view_access_text_parse_markup(local->markup_text, local->display_text, sizeof(local->display_text), &local->access_key_index);
     egui_view_set_view_name(self, "egui_view_access_text");

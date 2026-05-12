@@ -80,11 +80,14 @@ struct egui_view_scroll_viewer
     uint8_t scrollbar_visibility;
     uint8_t pressed_part;
     uint8_t thumb_dragging;
+    uint8_t surface_dragging;
     uint8_t track_direction;
     egui_dim_t vertical_offset;
     egui_dim_t horizontal_offset;
+    egui_dim_t drag_anchor_x;
     egui_dim_t drag_anchor_y;
     egui_dim_t drag_anchor_offset;
+    egui_dim_t drag_anchor_horizontal_offset;
 };
 
 void egui_view_scroll_viewer_init(egui_view_t *self);

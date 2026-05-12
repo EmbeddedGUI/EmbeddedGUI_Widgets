@@ -43,24 +43,24 @@ static egui_view_api_t button_secondary_api;
 static egui_view_api_t button_disabled_api;
 static uint8_t ui_ready;
 
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, HCW_COLOR_PAGE_BG, EGUI_ALPHA_100, 14);
 EGUI_BACKGROUND_PARAM_INIT(bg_page_panel_params, &bg_page_panel_param, NULL, NULL);
 EGUI_BACKGROUND_COLOR_STATIC_CONST_INIT(bg_page_panel, &bg_page_panel_params);
 
 static const char *title_text = "Toggle Button";
 
 static const toggle_button_snapshot_t primary_snapshots[] = {
-        {"Alerts", EGUI_ICON_MS_NOTIFICATIONS, EGUI_COLOR_HEX(0x0F6CBD), EGUI_COLOR_HEX(0xE9F1FB), 1},
-        {"Visible", EGUI_ICON_MS_VISIBILITY, EGUI_COLOR_HEX(0x0F766E), EGUI_COLOR_HEX(0xE5F3F1), 0},
-        {"Favorite", EGUI_ICON_MS_FAVORITE, EGUI_COLOR_HEX(0xB146C2), EGUI_COLOR_HEX(0xF5E9F8), 1},
+        {"Alerts", EGUI_ICON_MS_NOTIFICATIONS, HCW_COLOR_PRIMARY, HCW_COLOR_PRIMARY_TINT, 1},
+        {"Visible", EGUI_ICON_MS_VISIBILITY, HCW_COLOR_PRIMARY, HCW_COLOR_PRIMARY_TINT, 0},
+        {"Favorite", EGUI_ICON_MS_FAVORITE, HCW_COLOR_PRIMARY, HCW_COLOR_PRIMARY_TINT, 1},
 };
 
 static const toggle_button_snapshot_t secondary_snapshot = {
-        "Visible", EGUI_ICON_MS_VISIBILITY, EGUI_COLOR_HEX(0x0F766E), EGUI_COLOR_HEX(0xE4F2EF), 1,
+        "Visible", EGUI_ICON_MS_VISIBILITY, HCW_COLOR_PRIMARY, HCW_COLOR_PRIMARY_TINT, 1,
 };
 
 static const toggle_button_snapshot_t disabled_snapshot = {
-        "Pinned", EGUI_ICON_MS_FAVORITE, EGUI_COLOR_HEX(0xA5AFBA), EGUI_COLOR_HEX(0xEEF2F6), 1,
+        "Pinned", EGUI_ICON_MS_FAVORITE, HCW_COLOR_SURFACE_DISABLED, HCW_COLOR_SURFACE_DISABLED, 1,
 };
 
 static void layout_page(void);
@@ -109,7 +109,7 @@ static void apply_disabled_preview_style(egui_view_toggle_button_t *button)
 {
     button->corner_radius = 7;
     button->icon_text_gap = 3;
-    button->text_color = EGUI_COLOR_HEX(0xF7F9FB);
+    button->text_color = egui_rgb_mix(HCW_COLOR_TEXT_SOFT, HCW_COLOR_TEXT_STRONG, EGUI_ALPHA_MAKE(44));
 }
 
 static void layout_local_views(void)
@@ -155,7 +155,7 @@ void test_init_ui(void)
     egui_view_label_set_text(EGUI_VIEW_OF(&title_label), title_text);
     egui_view_label_set_align_type(EGUI_VIEW_OF(&title_label), EGUI_ALIGN_CENTER);
     hello_custom_widgets_demo_set_label_font_with_min_height(EGUI_VIEW_OF(&title_label), (const egui_font_t *)&egui_res_font_montserrat_12_4);
-    egui_view_label_set_font_color(EGUI_VIEW_OF(&title_label), EGUI_COLOR_HEX(0x21303F), EGUI_ALPHA_100);
+    egui_view_label_set_font_color(EGUI_VIEW_OF(&title_label), HCW_COLOR_TEXT, EGUI_ALPHA_100);
     egui_view_set_margin(EGUI_VIEW_OF(&title_label), 0, 8, 0, 6);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label));
 
@@ -200,7 +200,6 @@ void test_init_ui(void)
     apply_disabled_preview_style(&button_disabled);
     egui_view_set_padding(EGUI_VIEW_OF(&button_disabled), 1, 1, 0, 0);
     hcw_toggle_button_override_static_preview_api(EGUI_VIEW_OF(&button_disabled), &button_disabled_api);
-    egui_view_set_enable(EGUI_VIEW_OF(&button_disabled), 0);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&button_disabled), false);
 #endif

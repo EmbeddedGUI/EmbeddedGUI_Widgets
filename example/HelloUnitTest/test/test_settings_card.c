@@ -502,7 +502,8 @@ static void test_settings_card_internal_helpers(void)
     EGUI_TEST_ASSERT_TRUE(strcmp("Review", label) == 0);
     EGUI_TEST_ASSERT_TRUE(egui_view_settings_card_part_exists(&g_snapshots[0], EGUI_VIEW_SETTINGS_CARD_PART_CARD));
     EGUI_TEST_ASSERT_FALSE(egui_view_settings_card_part_exists(NULL, EGUI_VIEW_SETTINGS_CARD_PART_CARD));
-    EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(sample, EGUI_COLOR_DARK_GREY, 68).full, egui_view_settings_card_mix_disabled(sample).full);
+    EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(sample, EGUI_COLOR_DARK_GREY, EGUI_ALPHA_MAKE(52)).full,
+                               egui_view_settings_card_mix_disabled(sample).full);
 }
 
 void test_settings_card_run(void)

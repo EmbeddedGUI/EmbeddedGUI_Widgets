@@ -41,7 +41,7 @@ static egui_view_api_t button_read_only_api;
 static uint8_t current_primary_snapshot;
 static uint8_t ui_ready;
 
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, HCW_COLOR_PAGE_BG, EGUI_ALPHA_100, 14);
 EGUI_BACKGROUND_PARAM_INIT(bg_page_panel_params, &bg_page_panel_param, NULL, NULL);
 EGUI_BACKGROUND_COLOR_STATIC_CONST_INIT(bg_page_panel, &bg_page_panel_params);
 
@@ -85,8 +85,12 @@ static void apply_preview_states(void)
 {
     apply_snapshot_to_button(&button_compact, &compact_snapshot);
     egui_view_compound_button_set_compact_mode(EGUI_VIEW_OF(&button_compact), 1);
+    egui_view_compound_button_set_palette(EGUI_VIEW_OF(&button_compact), HCW_COLOR_SURFACE, HCW_COLOR_PANEL, HCW_COLOR_PRIMARY_DARK,
+                                          HCW_COLOR_PRIMARY_DARK, HCW_COLOR_TEXT_STRONG, HCW_COLOR_TEXT, HCW_COLOR_PRIMARY_DARK);
     apply_snapshot_to_button(&button_read_only, &read_only_snapshot);
     egui_view_compound_button_set_read_only_mode(EGUI_VIEW_OF(&button_read_only), 1);
+    egui_view_compound_button_set_palette(EGUI_VIEW_OF(&button_read_only), HCW_COLOR_SURFACE, HCW_COLOR_PANEL, HCW_COLOR_PRIMARY_DARK,
+                                          HCW_COLOR_PRIMARY_DARK, HCW_COLOR_TEXT_STRONG, HCW_COLOR_TEXT, HCW_COLOR_PRIMARY_DARK);
     if (ui_ready)
     {
         layout_page();
@@ -142,7 +146,7 @@ void test_init_ui(void)
     egui_view_label_set_text(EGUI_VIEW_OF(&title_label), title_text);
     egui_view_label_set_align_type(EGUI_VIEW_OF(&title_label), EGUI_ALIGN_CENTER);
     hello_custom_widgets_demo_set_label_font_with_min_height(EGUI_VIEW_OF(&title_label), (const egui_font_t *)&egui_res_font_montserrat_12_4);
-    egui_view_label_set_font_color(EGUI_VIEW_OF(&title_label), EGUI_COLOR_HEX(0x21303F), EGUI_ALPHA_100);
+    egui_view_label_set_font_color(EGUI_VIEW_OF(&title_label), HCW_COLOR_TEXT, EGUI_ALPHA_100);
     egui_view_set_margin(EGUI_VIEW_OF(&title_label), 0, 8, 0, 6);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label));
 

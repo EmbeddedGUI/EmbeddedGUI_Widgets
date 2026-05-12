@@ -350,7 +350,7 @@ static void test_expander_font_palette_helpers_and_expand_listener(void)
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x808182).full, expander_tone_color(&test_expander, EGUI_VIEW_EXPANDER_TONE_WARNING).full);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x909192).full, expander_tone_color(&test_expander, EGUI_VIEW_EXPANDER_TONE_NEUTRAL).full);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x606162).full, expander_tone_color(&test_expander, 99).full);
-    EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(sample, EGUI_COLOR_DARK_GREY, 68).full, expander_mix_disabled(sample).full);
+    EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(sample, EGUI_COLOR_DARK_GREY, EGUI_ALPHA_MAKE(52)).full, expander_mix_disabled(sample).full);
 
     egui_view_expander_toggle_current(EGUI_VIEW_OF(&test_expander));
     assert_widget_state(&test_expander, 0, 0, 0, 0);

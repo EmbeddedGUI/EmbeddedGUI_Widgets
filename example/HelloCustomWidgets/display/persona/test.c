@@ -45,7 +45,7 @@ static egui_view_api_t secondary_persona_api;
 static egui_view_api_t muted_persona_api;
 static uint8_t ui_ready;
 
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, HCW_COLOR_PAGE_BG, EGUI_ALPHA_100, 14);
 EGUI_BACKGROUND_PARAM_INIT(bg_page_panel_params, &bg_page_panel_param, NULL, NULL);
 EGUI_BACKGROUND_COLOR_STATIC_CONST_INIT(bg_page_panel, &bg_page_panel_params);
 
@@ -61,7 +61,7 @@ static const persona_snapshot_t primary_snapshots[] = {
                 EGUI_VIEW_PERSONA_TONE_ACCENT,
                 EGUI_VIEW_PERSONA_STATUS_AVAILABLE,
                 "Lena Marsh / available",
-                EGUI_COLOR_HEX(0x0F6CBD),
+                HCW_COLOR_PRIMARY,
         },
         {
                 "Aria Rowan",
@@ -72,7 +72,7 @@ static const persona_snapshot_t primary_snapshots[] = {
                 EGUI_VIEW_PERSONA_TONE_SUCCESS,
                 EGUI_VIEW_PERSONA_STATUS_BUSY,
                 "Aria Rowan / busy",
-                EGUI_COLOR_HEX(0x9D5D00),
+                HCW_COLOR_WARNING,
         },
         {
                 "Mina Brooks",
@@ -83,7 +83,7 @@ static const persona_snapshot_t primary_snapshots[] = {
                 EGUI_VIEW_PERSONA_TONE_NEUTRAL,
                 EGUI_VIEW_PERSONA_STATUS_OFFLINE,
                 "Mina Brooks / offline",
-                EGUI_COLOR_HEX(0x6B7A89),
+                HCW_COLOR_TEXT_SOFT,
         },
 };
 
@@ -140,7 +140,7 @@ static void apply_preview_states(void)
             EGUI_VIEW_PERSONA_TONE_WARNING,
             EGUI_VIEW_PERSONA_STATUS_AWAY,
             NULL,
-            EGUI_COLOR_HEX(0x000000),
+            EGUI_COLOR_BLACK,
     };
     static const persona_snapshot_t muted_snapshot = {
             "Jin Park",
@@ -151,17 +151,17 @@ static void apply_preview_states(void)
             EGUI_VIEW_PERSONA_TONE_NEUTRAL,
             EGUI_VIEW_PERSONA_STATUS_DO_NOT_DISTURB,
             NULL,
-            EGUI_COLOR_HEX(0x000000),
+            EGUI_COLOR_BLACK,
     };
 
     apply_snapshot(&secondary_persona, &secondary_snapshot);
     egui_view_set_enable(EGUI_VIEW_OF(&secondary_persona), 1);
 
     apply_snapshot(&muted_persona, &muted_snapshot);
-    egui_view_persona_set_palette(EGUI_VIEW_OF(&muted_persona), EGUI_COLOR_HEX(0xFBFCFD), EGUI_COLOR_HEX(0xD8DFE6), EGUI_COLOR_HEX(0xEEF2F6),
-                                  EGUI_COLOR_HEX(0x6B7A89), EGUI_COLOR_HEX(0x99A6B2), EGUI_COLOR_HEX(0xA7B4C1), EGUI_COLOR_HEX(0xB2C4BA),
-                                  EGUI_COLOR_HEX(0xC4B8A4), EGUI_COLOR_HEX(0xB4BDC8));
-    egui_view_set_enable(EGUI_VIEW_OF(&muted_persona), 0);
+    egui_view_persona_set_palette(EGUI_VIEW_OF(&muted_persona), HCW_COLOR_PANEL, HCW_COLOR_BORDER_STRONG, HCW_COLOR_PANEL,
+                                  HCW_COLOR_TEXT_SOFT, HCW_COLOR_TEXT_SOFT, HCW_COLOR_TEXT_SOFT, HCW_COLOR_TEXT_SOFT,
+                                  HCW_COLOR_TEXT_SOFT, HCW_COLOR_TEXT_SOFT);
+    egui_view_set_enable(EGUI_VIEW_OF(&muted_persona), 1);
 
     if (ui_ready)
     {
@@ -199,7 +199,7 @@ void test_init_ui(void)
     egui_view_linearlayout_set_align_type(EGUI_VIEW_OF(&root_layout), EGUI_ALIGN_HCENTER);
     egui_view_set_background(EGUI_VIEW_OF(&root_layout), EGUI_BG_OF(&bg_page_panel));
 
-    init_text_label(&title_label, PERSONA_ROOT_WIDTH, 18, title_text, (const egui_font_t *)&egui_res_font_montserrat_12_4, EGUI_COLOR_HEX(0x21303F),
+    init_text_label(&title_label, PERSONA_ROOT_WIDTH, 18, title_text, (const egui_font_t *)&egui_res_font_montserrat_12_4, HCW_COLOR_TEXT,
                     EGUI_ALIGN_CENTER);
     egui_view_set_margin(EGUI_VIEW_OF(&title_label), 0, 8, 0, 6);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label));
@@ -215,7 +215,7 @@ void test_init_ui(void)
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&primary_persona));
 
     init_text_label(&primary_status_label, PERSONA_ROOT_WIDTH, 12, "Lena Marsh / available", (const egui_font_t *)&egui_res_font_montserrat_10_4,
-                    EGUI_COLOR_HEX(0x0F6CBD), EGUI_ALIGN_CENTER);
+                    HCW_COLOR_PRIMARY, EGUI_ALIGN_CENTER);
     egui_view_set_margin(EGUI_VIEW_OF(&primary_status_label), 0, 0, 0, 6);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&primary_status_label));
 

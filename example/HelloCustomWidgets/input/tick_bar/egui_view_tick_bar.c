@@ -80,7 +80,7 @@ static void egui_view_tick_bar_normalize_model(egui_view_tick_bar_t *local)
 
 static egui_color_t egui_view_tick_bar_disabled_mix(egui_color_t color)
 {
-    return egui_rgb_mix(color, EGUI_COLOR_HEX(0x8A97A5), 58);
+    return egui_rgb_mix(color, HCW_COLOR_TEXT_SOFT, EGUI_ALPHA_MAKE(38));
 }
 
 static egui_dim_t egui_view_tick_bar_abs_dim(egui_dim_t value)
@@ -189,8 +189,8 @@ static void egui_view_tick_bar_draw_tick(egui_view_t *self, const tick_bar_metri
 {
     egui_view_tick_bar_t *local = egui_view_tick_bar_local(self);
     egui_dim_t pos = egui_view_tick_bar_resolve_position(local, metrics, tick_value);
-    egui_dim_t length = major ? (local->compact_mode ? 9 : 12) : (local->compact_mode ? 5 : 7);
-    egui_dim_t stroke = major && !local->compact_mode ? 2 : 1;
+    egui_dim_t length = major ? (local->compact_mode ? 10 : 13) : (local->compact_mode ? 6 : 8);
+    egui_dim_t stroke = major ? 2 : 1;
 
     if (metrics->vertical)
     {
@@ -251,7 +251,7 @@ static void egui_view_tick_bar_draw_value_marker(egui_view_t *self, const tick_b
 {
     egui_view_tick_bar_t *local = egui_view_tick_bar_local(self);
     egui_dim_t pos = egui_view_tick_bar_resolve_position(local, metrics, local->value);
-    egui_dim_t radius = local->compact_mode ? 3 : 4;
+    egui_dim_t radius = local->compact_mode ? 4 : 5;
 
     if (metrics->vertical)
     {
@@ -275,24 +275,27 @@ static void egui_view_tick_bar_on_draw(egui_view_t *self)
     egui_color_t tick_color = local->tick_color;
     egui_color_t selected_tick_color = local->selected_tick_color;
     egui_color_t value_color = local->value_color;
-    egui_alpha_t rail_alpha = local->compact_mode ? 74 : 88;
-    egui_alpha_t tick_alpha = local->compact_mode ? 78 : 94;
-    egui_alpha_t value_alpha = local->compact_mode ? 82 : EGUI_ALPHA_100;
+    egui_alpha_t rail_alpha = EGUI_ALPHA_100;
+    egui_alpha_t tick_alpha = EGUI_ALPHA_100;
+    egui_alpha_t selected_alpha = EGUI_ALPHA_100;
+    egui_alpha_t value_alpha = EGUI_ALPHA_100;
 
     if (!egui_view_tick_bar_build_metrics(self, &metrics))
     {
         return;
     }
 
+    rail_color = egui_rgb_mix(rail_color, HCW_COLOR_BORDER_STRONG, EGUI_ALPHA_MAKE(local->compact_mode ? 82 : 76));
+    tick_color = egui_rgb_mix(tick_color, HCW_COLOR_TEXT_STRONG, EGUI_ALPHA_MAKE(local->compact_mode ? 82 : 76));
+    selected_tick_color = egui_rgb_mix(selected_tick_color, HCW_COLOR_PRIMARY_DARK, EGUI_ALPHA_MAKE(54));
+    value_color = egui_rgb_mix(value_color, HCW_COLOR_PRIMARY_DARK, EGUI_ALPHA_MAKE(64));
+
     if (local->read_only_mode)
     {
-        rail_color = egui_rgb_mix(rail_color, EGUI_COLOR_HEX(0x8A97A5), 46);
-        tick_color = egui_rgb_mix(tick_color, EGUI_COLOR_HEX(0x8A97A5), 52);
-        selected_tick_color = egui_rgb_mix(selected_tick_color, EGUI_COLOR_HEX(0x8A97A5), 58);
-        value_color = egui_rgb_mix(value_color, EGUI_COLOR_HEX(0x7B8794), 48);
-        rail_alpha = 56;
-        tick_alpha = 58;
-        value_alpha = 62;
+        rail_color = egui_rgb_mix(rail_color, HCW_COLOR_BORDER_STRONG, EGUI_ALPHA_MAKE(72));
+        tick_color = egui_rgb_mix(tick_color, HCW_COLOR_TEXT_STRONG, EGUI_ALPHA_MAKE(50));
+        selected_tick_color = egui_rgb_mix(selected_tick_color, HCW_COLOR_PRIMARY_DARK, EGUI_ALPHA_MAKE(42));
+        value_color = egui_rgb_mix(value_color, HCW_COLOR_TEXT_STRONG, EGUI_ALPHA_MAKE(44));
     }
     if (!egui_view_get_enable(self))
     {
@@ -300,14 +303,15 @@ static void egui_view_tick_bar_on_draw(egui_view_t *self)
         tick_color = egui_view_tick_bar_disabled_mix(tick_color);
         selected_tick_color = egui_view_tick_bar_disabled_mix(selected_tick_color);
         value_color = egui_view_tick_bar_disabled_mix(value_color);
-        rail_alpha = 42;
-        tick_alpha = 46;
-        value_alpha = 48;
+        rail_alpha = EGUI_ALPHA_MAKE(68);
+        tick_alpha = EGUI_ALPHA_MAKE(70);
+        selected_alpha = EGUI_ALPHA_MAKE(68);
+        value_alpha = EGUI_ALPHA_MAKE(74);
     }
 
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.rail_x, metrics.rail_y, metrics.rail_w, metrics.rail_h, 2, rail_color,
                                           egui_color_alpha_mix(self->alpha, rail_alpha));
-    egui_view_tick_bar_draw_selected_range(self, &metrics, selected_tick_color, egui_color_alpha_mix(self->alpha, local->compact_mode ? 72 : 88));
+    egui_view_tick_bar_draw_selected_range(self, &metrics, selected_tick_color, egui_color_alpha_mix(self->alpha, selected_alpha));
     egui_view_tick_bar_draw_ticks(self, &metrics, tick_color, selected_tick_color, value_color, egui_color_alpha_mix(self->alpha, tick_alpha));
     egui_view_tick_bar_draw_value_marker(self, &metrics, value_color, egui_color_alpha_mix(self->alpha, value_alpha));
 }
@@ -480,7 +484,7 @@ void egui_view_tick_bar_apply_standard_style(egui_view_t *self)
     egui_view_tick_bar_set_show_selected_range(self, 1);
     egui_view_tick_bar_set_compact_mode(self, 0);
     egui_view_tick_bar_set_read_only_mode(self, 0);
-    egui_view_tick_bar_set_colors(self, EGUI_COLOR_HEX(0xD8E0E9), EGUI_COLOR_HEX(0x667689), EGUI_COLOR_HEX(0x2563EB), EGUI_COLOR_HEX(0x1D4ED8));
+    egui_view_tick_bar_set_colors(self, HCW_COLOR_TRACK_STRONG, HCW_COLOR_TEXT_SOFT, HCW_COLOR_PRIMARY, HCW_COLOR_PRIMARY_DARK);
 }
 
 void egui_view_tick_bar_apply_accent_style(egui_view_t *self)
@@ -494,7 +498,7 @@ void egui_view_tick_bar_apply_accent_style(egui_view_t *self)
     egui_view_tick_bar_set_show_selected_range(self, 1);
     egui_view_tick_bar_set_compact_mode(self, 0);
     egui_view_tick_bar_set_read_only_mode(self, 0);
-    egui_view_tick_bar_set_colors(self, EGUI_COLOR_HEX(0xDCE7F5), EGUI_COLOR_HEX(0x556879), EGUI_COLOR_HEX(0x0F6CBD), EGUI_COLOR_HEX(0x0B5CAD));
+    egui_view_tick_bar_set_colors(self, HCW_COLOR_PRIMARY_TINT, HCW_COLOR_TEXT_SOFT, HCW_COLOR_PRIMARY, HCW_COLOR_PRIMARY_DARK);
 }
 
 void egui_view_tick_bar_apply_vertical_style(egui_view_t *self)
@@ -508,7 +512,7 @@ void egui_view_tick_bar_apply_vertical_style(egui_view_t *self)
     egui_view_tick_bar_set_show_selected_range(self, 1);
     egui_view_tick_bar_set_compact_mode(self, 0);
     egui_view_tick_bar_set_read_only_mode(self, 0);
-    egui_view_tick_bar_set_colors(self, EGUI_COLOR_HEX(0xD9E5DE), EGUI_COLOR_HEX(0x5F716C), EGUI_COLOR_HEX(0x0C7C73), EGUI_COLOR_HEX(0x087168));
+    egui_view_tick_bar_set_colors(self, HCW_COLOR_TRACK, HCW_COLOR_TEXT_SOFT, HCW_COLOR_PRIMARY, HCW_COLOR_PRIMARY_DARK);
 }
 
 void egui_view_tick_bar_apply_compact_style(egui_view_t *self)
@@ -522,7 +526,7 @@ void egui_view_tick_bar_apply_compact_style(egui_view_t *self)
     egui_view_tick_bar_set_show_selected_range(self, 1);
     egui_view_tick_bar_set_compact_mode(self, 1);
     egui_view_tick_bar_set_read_only_mode(self, 0);
-    egui_view_tick_bar_set_colors(self, EGUI_COLOR_HEX(0xD7E7E4), EGUI_COLOR_HEX(0x667A76), EGUI_COLOR_HEX(0x0C7C73), EGUI_COLOR_HEX(0x087168));
+    egui_view_tick_bar_set_colors(self, HCW_COLOR_TRACK_STRONG, HCW_COLOR_TEXT_SOFT, HCW_COLOR_PRIMARY, HCW_COLOR_PRIMARY_DARK);
 }
 
 void egui_view_tick_bar_apply_read_only_style(egui_view_t *self)
@@ -536,7 +540,7 @@ void egui_view_tick_bar_apply_read_only_style(egui_view_t *self)
     egui_view_tick_bar_set_show_selected_range(self, 1);
     egui_view_tick_bar_set_compact_mode(self, 1);
     egui_view_tick_bar_set_read_only_mode(self, 1);
-    egui_view_tick_bar_set_colors(self, EGUI_COLOR_HEX(0xE4E9EE), EGUI_COLOR_HEX(0x73808E), EGUI_COLOR_HEX(0xAFB8C3), EGUI_COLOR_HEX(0x65717E));
+    egui_view_tick_bar_set_colors(self, HCW_COLOR_BORDER_STRONG, HCW_COLOR_TEXT_SOFT, HCW_COLOR_PRIMARY_SOFT, HCW_COLOR_TEXT_SOFT);
 }
 
 #if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH

@@ -59,7 +59,7 @@
 - 底部对照行尺寸：`216 x 36`
 - 单个 preview 尺寸：`104 x 36`
 - 页面结构：标题 -> 主 `tab_strip` -> 底部 `compact / read only`
-- 页面风格：浅灰 `page panel`、白色页签容器、低噪音边框、variable-width tab 自然留白，以及克制的 active fill / underline 层级
+- 页面风格：浅灰 `page panel`、白色页签容器、低噪音边框、variable-width tab 自然留白，以及克制的 active fill / label 层级
 
 ## 6. 状态矩阵
 | 状态 / 区域 | 主控件 | Compact preview | Read only preview |
@@ -129,7 +129,7 @@ python scripts/web/web_smoke_check.py --web-root web --manifest web/demos/demos.
 ## 10. 验收重点
 - 主控件和底部 `compact / read only` preview 都必须完整可见，不能重新长出旧 preview 壳层。
 - variable-width tab 必须保持自然留白，不能退化成均分按钮。
-- 当前项 fill、divider 和 underline 需要可辨识，但整体不能回到高噪音 showcase 风格。
+- 当前项 fill 与 label 对比需要可辨识，但整体不能回到高噪音 showcase 风格。
 - `DOWN(A) -> MOVE(B) -> UP(B)` 不能误提交，只有回到 `A` 才能提交。
 - `ACTION_CANCEL` 只能清理 `pressed`，不能误改 `current_index` 或误触发监听器。
 - `read_only_mode / !enable / static preview` 不仅要忽略后续输入，还要先清理残留 `pressed`。

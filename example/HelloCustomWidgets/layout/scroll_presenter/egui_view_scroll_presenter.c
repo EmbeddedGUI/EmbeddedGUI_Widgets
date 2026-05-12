@@ -24,7 +24,7 @@
 #define SP_COMPACT_BODY_GAP     4
 #define SP_COMPACT_VIEWPORT_PAD 4
 #define SP_COMPACT_FOOTER_H     8
-#define SP_COMPACT_MINIMAP_W    34
+#define SP_COMPACT_MINIMAP_W    28
 #define SP_COMPACT_MINIMAP_H    14
 
 typedef struct egui_view_scroll_presenter_metrics egui_view_scroll_presenter_metrics_t;
@@ -270,7 +270,7 @@ static egui_dim_t scroll_presenter_get_minimap_height(egui_view_scroll_presenter
 
 static egui_color_t scroll_presenter_mix_disabled(egui_color_t color)
 {
-    return egui_rgb_mix(color, EGUI_COLOR_DARK_GREY, 68);
+    return egui_rgb_mix(color, HCW_COLOR_SURFACE_SUBTLE, EGUI_ALPHA_MAKE(44));
 }
 
 static const egui_view_scroll_presenter_snapshot_t *scroll_presenter_get_snapshot(egui_view_scroll_presenter_t *local)
@@ -494,11 +494,11 @@ static egui_color_t scroll_presenter_tone_color(egui_view_scroll_presenter_t *lo
     switch (tone)
     {
     case EGUI_VIEW_SCROLL_PRESENTER_TONE_SUCCESS:
-        return egui_rgb_mix(EGUI_COLOR_HEX(0x0F9D58), local->preview_color, 18);
+        return egui_rgb_mix(HCW_COLOR_SUCCESS, local->preview_color, EGUI_ALPHA_MAKE(18));
     case EGUI_VIEW_SCROLL_PRESENTER_TONE_WARNING:
-        return egui_rgb_mix(EGUI_COLOR_HEX(0xF59E0B), local->accent_color, 10);
+        return egui_rgb_mix(HCW_COLOR_WARNING, local->accent_color, EGUI_ALPHA_MAKE(10));
     case EGUI_VIEW_SCROLL_PRESENTER_TONE_NEUTRAL:
-        return egui_rgb_mix(local->border_color, local->preview_color, 18);
+        return egui_rgb_mix(local->border_color, local->preview_color, EGUI_ALPHA_MAKE(18));
     default:
         return local->accent_color;
     }
@@ -769,14 +769,14 @@ static void scroll_presenter_draw_item(egui_view_t *self, egui_view_scroll_prese
     }
 
     tone_color = scroll_presenter_tone_color(local, item->tone);
-    fill_color = egui_rgb_mix(surface_color, tone_color, item->emphasized ? 18 : 10);
-    line_color = egui_rgb_mix(border_color, tone_color, 22);
+    fill_color = egui_rgb_mix(surface_color, tone_color, EGUI_ALPHA_MAKE(item->emphasized ? 7 : 3));
+    line_color = egui_rgb_mix(border_color, tone_color, EGUI_ALPHA_MAKE(22));
     show_badge = scroll_presenter_has_text(item->badge);
 
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, item_region.location.x, item_region.location.y, item_region.size.width, item_region.size.height, 7, fill_color,
-                                          egui_color_alpha_mix(self->alpha, item->emphasized ? 98 : 90));
+                                          egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(item->emphasized ? 98 : 90)));
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, item_region.location.x, item_region.location.y, item_region.size.width, item_region.size.height, 7, 1, line_color,
-                                     egui_color_alpha_mix(self->alpha, 76));
+                                     egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(76)));
 
     badge_region.location.x = item_region.location.x + pad_x;
     badge_region.location.y = item_region.location.y + top_pad;
@@ -815,23 +815,24 @@ static void scroll_presenter_draw_item(egui_view_t *self, egui_view_scroll_prese
             pill_region.size.width = item_region.size.width - pad_x * 2;
         }
         egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, pill_region.location.x, pill_region.location.y, pill_region.size.width, pill_region.size.height, 4,
-                                              egui_rgb_mix(tone_color, EGUI_COLOR_WHITE, 20), egui_color_alpha_mix(self->alpha, 92));
+                                              egui_rgb_mix(tone_color, EGUI_COLOR_WHITE, EGUI_ALPHA_MAKE(20)),
+                                              egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(92)));
         scroll_presenter_fit_text_to_width(local->meta_font, item->badge, badge_label, sizeof(badge_label), pill_region.size.width - 4, meta_char_width);
-        scroll_presenter_draw_text(local->meta_font, self, badge_label, &pill_region, EGUI_ALIGN_CENTER, EGUI_COLOR_HEX(0xFFFFFF));
+        scroll_presenter_draw_text(local->meta_font, self, badge_label, &pill_region, EGUI_ALIGN_CENTER, HCW_COLOR_SURFACE);
     }
 
     scroll_presenter_fit_text_to_width(local->font, item->title, title_label, sizeof(title_label), title_region.size.width, title_char_width);
     scroll_presenter_draw_text(local->font, self, title_label, &title_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, text_color);
     scroll_presenter_fit_text_to_width(local->meta_font, item->meta, meta_label, sizeof(meta_label), meta_region.size.width, meta_char_width);
     scroll_presenter_draw_text(local->meta_font, self, meta_label, &meta_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER,
-                               egui_rgb_mix(text_color, muted_color, 34));
+                               egui_rgb_mix(text_color, muted_color, EGUI_ALPHA_MAKE(34)));
 }
 
 static void scroll_presenter_draw_connectors(egui_view_t *self, egui_view_scroll_presenter_t *local, const egui_region_t *viewport_content_region,
                                              egui_color_t border_color, egui_color_t preview_color)
 {
     const egui_view_scroll_presenter_snapshot_t *snapshot = scroll_presenter_get_snapshot(local);
-    egui_color_t connector_color = egui_rgb_mix(border_color, preview_color, 22);
+    egui_color_t connector_color = egui_rgb_mix(border_color, preview_color, EGUI_ALPHA_MAKE(22));
     uint8_t item_count = snapshot == NULL ? 0 : scroll_presenter_clamp_item_count(snapshot->item_count);
     uint8_t i;
 
@@ -849,7 +850,7 @@ static void scroll_presenter_draw_connectors(egui_view_t *self, egui_view_scroll
         egui_dim_t item_x = viewport_content_region->location.x + item->origin_x + item->width / 2 - local->horizontal_offset;
         egui_dim_t item_y = viewport_content_region->location.y + item->origin_y + item->height / 2 - local->vertical_offset;
 
-        egui_canvas_draw_line(&uicode_get_core()->canvas, prev_x, prev_y, item_x, item_y, 1, connector_color, egui_color_alpha_mix(self->alpha, 54));
+        egui_canvas_draw_line(&uicode_get_core()->canvas, prev_x, prev_y, item_x, item_y, 1, connector_color, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(62)));
     }
 }
 
@@ -860,15 +861,13 @@ static void scroll_presenter_draw_surface(egui_view_t *self, egui_view_scroll_pr
     char minimap_label[32];
     char empty_label[24];
     const egui_view_scroll_presenter_snapshot_t *snapshot = scroll_presenter_get_snapshot(local);
-    const egui_region_t *prev_clip = egui_canvas_get_extra_clip(&uicode_get_core()->canvas);
+    egui_canvas_t *canvas = &uicode_get_core()->canvas;
+    const egui_region_t *prev_clip = egui_canvas_get_extra_clip(canvas);
     const egui_region_t *active_clip = NULL;
+    egui_region_t work_region_before_clip;
+    egui_region_t work_region_clip;
     egui_region_t screen_clip_region;
     egui_region_t clip_region;
-    egui_color_t grid_color = egui_rgb_mix(border_color, preview_color, 16);
-    egui_dim_t grid_step_x = local->compact_mode ? 30 : 38;
-    egui_dim_t grid_step_y = local->compact_mode ? 24 : 30;
-    egui_dim_t x;
-    egui_dim_t y;
     char minimap_text[32];
     uint8_t focus_surface = (local->current_part == EGUI_VIEW_SCROLL_PRESENTER_PART_SURFACE && !local->read_only_mode && !local->compact_mode &&
                              egui_view_get_enable(self)) ?
@@ -879,16 +878,18 @@ static void scroll_presenter_draw_surface(egui_view_t *self, egui_view_scroll_pr
 
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics->viewport_region.location.x, metrics->viewport_region.location.y, metrics->viewport_region.size.width,
                                           metrics->viewport_region.size.height, local->compact_mode ? 7 : 9, viewport_color,
-                                          egui_color_alpha_mix(self->alpha, 96));
+                                          egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(96)));
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics->viewport_region.location.x, metrics->viewport_region.location.y, metrics->viewport_region.size.width,
                                      metrics->viewport_region.size.height, local->compact_mode ? 7 : 9, 1, border_color,
-                                     egui_color_alpha_mix(self->alpha, 72));
+                                     egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(72)));
 
     if (focus_surface)
     {
-        scroll_presenter_draw_focus(self, &metrics->viewport_region, local->compact_mode ? 8 : 10, egui_rgb_mix(accent_color, EGUI_COLOR_WHITE, 10), 58);
+        scroll_presenter_draw_focus(self, &metrics->viewport_region, local->compact_mode ? 8 : 10, egui_rgb_mix(accent_color, EGUI_COLOR_WHITE, EGUI_ALPHA_MAKE(18)),
+                                    EGUI_ALPHA_MAKE(78));
     }
 
+    work_region_before_clip = *egui_canvas_get_base_view_work_region(canvas);
     screen_clip_region = metrics->viewport_content_region;
     screen_clip_region.location.x += self->region_screen.location.x;
     screen_clip_region.location.y += self->region_screen.location.y;
@@ -898,24 +899,11 @@ static void scroll_presenter_draw_surface(egui_view_t *self, egui_view_scroll_pr
         egui_region_intersect(&screen_clip_region, prev_clip, &clip_region);
         active_clip = &clip_region;
     }
-    egui_canvas_set_extra_clip(&uicode_get_core()->canvas, active_clip);
-
-    for (x = metrics->viewport_content_region.location.x - (local->horizontal_offset % grid_step_x); x < metrics->viewport_content_region.location.x +
-                                                                                                           metrics->viewport_content_region.size.width;
-         x += grid_step_x)
-    {
-        egui_canvas_draw_line(&uicode_get_core()->canvas, x, metrics->viewport_content_region.location.y, x,
-                              metrics->viewport_content_region.location.y + metrics->viewport_content_region.size.height, 1, grid_color,
-                              egui_color_alpha_mix(self->alpha, 28));
-    }
-    for (y = metrics->viewport_content_region.location.y - (local->vertical_offset % grid_step_y); y < metrics->viewport_content_region.location.y +
-                                                                                                       metrics->viewport_content_region.size.height;
-         y += grid_step_y)
-    {
-        egui_canvas_draw_line(&uicode_get_core()->canvas, metrics->viewport_content_region.location.x, y,
-                              metrics->viewport_content_region.location.x + metrics->viewport_content_region.size.width, y, 1, grid_color,
-                              egui_color_alpha_mix(self->alpha, 24));
-    }
+    egui_region_copy(&work_region_clip, active_clip);
+    work_region_clip.location.x -= self->region_screen.location.x;
+    work_region_clip.location.y -= self->region_screen.location.y;
+    egui_region_intersect(&work_region_before_clip, &work_region_clip, egui_canvas_get_base_view_work_region(canvas));
+    egui_canvas_set_extra_clip(canvas, active_clip);
 
     scroll_presenter_draw_connectors(self, local, &metrics->viewport_content_region, border_color, preview_color);
     for (i = 0; snapshot != NULL && snapshot->items != NULL && i < item_count; i++)
@@ -932,50 +920,50 @@ static void scroll_presenter_draw_surface(egui_view_t *self, egui_view_scroll_pr
 
     if (prev_clip != NULL)
     {
-        egui_canvas_set_extra_clip(&uicode_get_core()->canvas, prev_clip);
+        egui_canvas_set_extra_clip(canvas, prev_clip);
     }
     else
     {
-        egui_canvas_clear_extra_clip(&uicode_get_core()->canvas);
+        egui_canvas_clear_extra_clip(canvas);
     }
+    *egui_canvas_get_base_view_work_region(canvas) = work_region_before_clip;
 
     if (local->horizontal_offset > 0)
     {
         egui_canvas_draw_rectangle_fill(&uicode_get_core()->canvas, metrics->viewport_region.location.x + 1, metrics->viewport_region.location.y + 1, 3,
-                                        metrics->viewport_region.size.height - 2, egui_rgb_mix(accent_color, preview_color, 18),
-                                        egui_color_alpha_mix(self->alpha, 32));
+                                        metrics->viewport_region.size.height - 2, egui_rgb_mix(accent_color, preview_color, EGUI_ALPHA_MAKE(18)),
+                                        egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(62)));
     }
     if (local->horizontal_offset < scroll_presenter_get_max_horizontal_offset_inner(local))
     {
         egui_canvas_draw_rectangle_fill(&uicode_get_core()->canvas, metrics->viewport_region.location.x + metrics->viewport_region.size.width - 4,
                                         metrics->viewport_region.location.y + 1, 3, metrics->viewport_region.size.height - 2,
-                                        egui_rgb_mix(accent_color, preview_color, 18), egui_color_alpha_mix(self->alpha, 28));
+                                        egui_rgb_mix(accent_color, preview_color, EGUI_ALPHA_MAKE(18)), egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(62)));
     }
     if (local->vertical_offset > 0)
     {
         egui_canvas_draw_rectangle_fill(&uicode_get_core()->canvas, metrics->viewport_region.location.x + 1, metrics->viewport_region.location.y + 1,
-                                        metrics->viewport_region.size.width - 2, 3, egui_rgb_mix(accent_color, preview_color, 18),
-                                        egui_color_alpha_mix(self->alpha, 32));
+                                        metrics->viewport_region.size.width - 2, 3, egui_rgb_mix(accent_color, preview_color, EGUI_ALPHA_MAKE(18)),
+                                        egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(62)));
     }
     if (local->vertical_offset < scroll_presenter_get_max_vertical_offset_inner(local))
     {
         egui_canvas_draw_rectangle_fill(&uicode_get_core()->canvas, metrics->viewport_region.location.x + 1, metrics->viewport_region.location.y + metrics->viewport_region.size.height - 4,
-                                        metrics->viewport_region.size.width - 2, 3, egui_rgb_mix(accent_color, preview_color, 18),
-                                        egui_color_alpha_mix(self->alpha, 28));
+                                        metrics->viewport_region.size.width - 2, 3, egui_rgb_mix(accent_color, preview_color, EGUI_ALPHA_MAKE(18)),
+                                        egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(62)));
     }
 
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics->minimap_region.location.x, metrics->minimap_region.location.y, metrics->minimap_region.size.width,
                                           metrics->minimap_region.size.height, metrics->minimap_region.size.height / 2,
-                                          egui_rgb_mix(surface_color, preview_color, 10), egui_color_alpha_mix(self->alpha, 92));
+                                          egui_rgb_mix(surface_color, preview_color, EGUI_ALPHA_MAKE(5)), egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(92)));
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics->minimap_region.location.x, metrics->minimap_region.location.y, metrics->minimap_region.size.width,
                                      metrics->minimap_region.size.height, metrics->minimap_region.size.height / 2, 1,
-                                     egui_rgb_mix(border_color, preview_color, 14), egui_color_alpha_mix(self->alpha, 54));
+                                     egui_rgb_mix(border_color, preview_color, EGUI_ALPHA_MAKE(26)), egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(80)));
 
-    scroll_presenter_format_axes(local->vertical_offset, scroll_presenter_get_max_vertical_offset_inner(local), local->horizontal_offset,
-                                 scroll_presenter_get_max_horizontal_offset_inner(local), minimap_text, (int)sizeof(minimap_text));
+    scroll_presenter_format_pair(local->vertical_offset, scroll_presenter_get_max_vertical_offset_inner(local), minimap_text, (int)sizeof(minimap_text));
     scroll_presenter_fit_text_to_width(local->meta_font, minimap_text, minimap_label, sizeof(minimap_label), metrics->minimap_region.size.width - 4, 4);
     scroll_presenter_draw_text(local->meta_font, self, minimap_label, &metrics->minimap_region, EGUI_ALIGN_CENTER,
-                               egui_rgb_mix(text_color, muted_color, 28));
+                               egui_rgb_mix(text_color, muted_color, EGUI_ALPHA_MAKE(28)));
 }
 
 static void egui_view_scroll_presenter_on_draw(egui_view_t *self)
@@ -1004,6 +992,7 @@ static void egui_view_scroll_presenter_on_draw(egui_view_t *self)
     char helper_label[40];
     char text_buffer[40];
     uint8_t enabled = egui_view_get_enable(self) ? 1 : 0;
+    uint8_t show_helper_label = 0;
 
     scroll_presenter_normalize_state(local);
     snapshot = scroll_presenter_get_snapshot(local);
@@ -1015,45 +1004,45 @@ static void egui_view_scroll_presenter_on_draw(egui_view_t *self)
 
     if (local->read_only_mode)
     {
-        accent_color = egui_rgb_mix(accent_color, muted_color, 62);
-        preview_color = egui_rgb_mix(preview_color, muted_color, 48);
-        surface_color = egui_rgb_mix(surface_color, EGUI_COLOR_HEX(0xFBFCFD), 30);
-        border_color = egui_rgb_mix(border_color, muted_color, 26);
-        viewport_color = egui_rgb_mix(viewport_color, EGUI_COLOR_HEX(0xFBFCFD), 26);
-        text_color = egui_rgb_mix(text_color, muted_color, 32);
+        accent_color = egui_rgb_mix(accent_color, muted_color, EGUI_ALPHA_MAKE(44));
+        preview_color = egui_rgb_mix(preview_color, muted_color, EGUI_ALPHA_MAKE(48));
+        surface_color = egui_rgb_mix(surface_color, HCW_COLOR_SURFACE_SUBTLE, EGUI_ALPHA_MAKE(30));
+        border_color = egui_rgb_mix(border_color, muted_color, EGUI_ALPHA_MAKE(26));
+        viewport_color = egui_rgb_mix(viewport_color, HCW_COLOR_SURFACE_SUBTLE, EGUI_ALPHA_MAKE(26));
+        text_color = egui_rgb_mix(text_color, muted_color, EGUI_ALPHA_MAKE(32));
     }
     if (!enabled)
     {
         accent_color = scroll_presenter_mix_disabled(accent_color);
         preview_color = scroll_presenter_mix_disabled(preview_color);
-        surface_color = egui_rgb_mix(surface_color, EGUI_COLOR_HEX(0xFBFCFD), 34);
+        surface_color = egui_rgb_mix(surface_color, HCW_COLOR_SURFACE_SUBTLE, EGUI_ALPHA_MAKE(34));
         border_color = scroll_presenter_mix_disabled(border_color);
-        viewport_color = egui_rgb_mix(viewport_color, EGUI_COLOR_HEX(0xFBFCFD), 36);
+        viewport_color = egui_rgb_mix(viewport_color, HCW_COLOR_SURFACE_SUBTLE, EGUI_ALPHA_MAKE(36));
         text_color = scroll_presenter_mix_disabled(text_color);
         muted_color = scroll_presenter_mix_disabled(muted_color);
     }
 
     scroll_presenter_get_metrics(local, self, &metrics);
-    shadow_color = egui_rgb_mix(border_color, surface_color, 38);
+    shadow_color = egui_rgb_mix(border_color, surface_color, EGUI_ALPHA_MAKE(38));
 
     if (!local->compact_mode)
     {
         egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, region.location.x, region.location.y + 2, region.size.width, region.size.height, SP_STANDARD_RADIUS + 1, shadow_color,
-                                              egui_color_alpha_mix(self->alpha, enabled ? 16 : 10));
+                                              egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(enabled ? 16 : 10)));
     }
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, region.location.x, region.location.y, region.size.width, region.size.height,
                                           local->compact_mode ? SP_COMPACT_RADIUS : SP_STANDARD_RADIUS, surface_color,
-                                          egui_color_alpha_mix(self->alpha, local->compact_mode ? 94 : 96));
+                                          egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(local->compact_mode ? 94 : 96)));
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, region.location.x, region.location.y, region.size.width, region.size.height,
                                      local->compact_mode ? SP_COMPACT_RADIUS : SP_STANDARD_RADIUS, 1, border_color,
-                                     egui_color_alpha_mix(self->alpha, local->compact_mode ? 56 : 60));
+                                     egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(local->compact_mode ? 64 : 66)));
 
     if (metrics.show_eyebrow && snapshot != NULL)
     {
         scroll_presenter_fit_text_to_width(local->meta_font, snapshot->eyebrow, eyebrow_label, sizeof(eyebrow_label), metrics.eyebrow_region.size.width,
                                            meta_char_width);
         scroll_presenter_draw_text(local->meta_font, self, eyebrow_label, &metrics.eyebrow_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER,
-                                   egui_rgb_mix(text_color, accent_color, 20));
+                                   egui_rgb_mix(text_color, accent_color, EGUI_ALPHA_MAKE(20)));
     }
     if (snapshot != NULL)
     {
@@ -1064,7 +1053,7 @@ static void egui_view_scroll_presenter_on_draw(egui_view_t *self)
             scroll_presenter_fit_text_to_width(local->meta_font, snapshot->summary, summary_label, sizeof(summary_label), metrics.summary_region.size.width,
                                                meta_char_width);
             scroll_presenter_draw_text(local->meta_font, self, summary_label, &metrics.summary_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER,
-                                       egui_rgb_mix(text_color, muted_color, 34));
+                                       egui_rgb_mix(text_color, muted_color, EGUI_ALPHA_MAKE(34)));
         }
     }
     else
@@ -1080,7 +1069,7 @@ static void egui_view_scroll_presenter_on_draw(egui_view_t *self)
         scroll_presenter_fit_text_to_width(local->meta_font, snapshot->footer, footer_label, sizeof(footer_label), metrics.footer_region.size.width,
                                            meta_char_width);
         scroll_presenter_draw_text(local->meta_font, self, footer_label, &metrics.footer_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER,
-                                   egui_rgb_mix(text_color, muted_color, 32));
+                                   egui_rgb_mix(text_color, muted_color, EGUI_ALPHA_MAKE(32)));
     }
     else
     {
@@ -1089,35 +1078,40 @@ static void egui_view_scroll_presenter_on_draw(egui_view_t *self)
         scroll_presenter_fit_text_to_width(local->meta_font, text_buffer, footer_label, sizeof(footer_label), metrics.footer_region.size.width,
                                            meta_char_width);
         scroll_presenter_draw_text(local->meta_font, self, footer_label, &metrics.footer_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER,
-                                   egui_rgb_mix(text_color, muted_color, 32));
+                                   egui_rgb_mix(text_color, muted_color, EGUI_ALPHA_MAKE(32)));
     }
 
     axes_region = metrics.helper_region;
     helper_region = metrics.helper_region;
-    if (!local->compact_mode && snapshot != NULL && scroll_presenter_has_text(snapshot->helper))
+    if (!local->compact_mode && snapshot != NULL && scroll_presenter_has_text(snapshot->helper) && helper_region.size.width >= 150)
     {
         egui_dim_t split_width = metrics.helper_region.size.width / 2;
 
         axes_region.size.width = split_width;
         helper_region.location.x += split_width;
         helper_region.size.width -= split_width;
+        show_helper_label = 1;
     }
 
-    scroll_presenter_format_axes(local->vertical_offset, scroll_presenter_get_max_vertical_offset_inner(local), local->horizontal_offset,
-                                 scroll_presenter_get_max_horizontal_offset_inner(local), text_buffer, (int)sizeof(text_buffer));
+    if (local->compact_mode || axes_region.size.width < 120)
+    {
+        scroll_presenter_format_pair(local->vertical_offset, scroll_presenter_get_max_vertical_offset_inner(local), text_buffer, (int)sizeof(text_buffer));
+    }
+    else
+    {
+        scroll_presenter_format_axes(local->vertical_offset, scroll_presenter_get_max_vertical_offset_inner(local), local->horizontal_offset,
+                                     scroll_presenter_get_max_horizontal_offset_inner(local), text_buffer, (int)sizeof(text_buffer));
+    }
     scroll_presenter_fit_text_to_width(local->meta_font, text_buffer, axes_label, sizeof(axes_label), axes_region.size.width, meta_char_width);
     scroll_presenter_draw_text(local->meta_font, self, axes_label, &axes_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER,
-                               egui_rgb_mix(text_color, muted_color, local->compact_mode ? 26 : 30));
+                               egui_rgb_mix(text_color, muted_color, EGUI_ALPHA_MAKE(local->compact_mode ? 26 : 30)));
 
-    if (!local->compact_mode && snapshot != NULL && scroll_presenter_has_text(snapshot->helper))
+    if (show_helper_label)
     {
-        if (helper_region.size.width > 8)
-        {
-            scroll_presenter_fit_text_to_width(local->meta_font, snapshot->helper, helper_label, sizeof(helper_label), helper_region.size.width,
-                                               meta_char_width);
-            scroll_presenter_draw_text(local->meta_font, self, helper_label, &helper_region, EGUI_ALIGN_RIGHT | EGUI_ALIGN_VCENTER,
-                                       egui_rgb_mix(text_color, muted_color, 42));
-        }
+        scroll_presenter_fit_text_to_width(local->meta_font, snapshot->helper, helper_label, sizeof(helper_label), helper_region.size.width,
+                                           meta_char_width);
+        scroll_presenter_draw_text(local->meta_font, self, helper_label, &helper_region, EGUI_ALIGN_RIGHT | EGUI_ALIGN_VCENTER,
+                                   egui_rgb_mix(text_color, muted_color, EGUI_ALPHA_MAKE(42)));
     }
 }
 
@@ -1631,13 +1625,13 @@ void egui_view_scroll_presenter_init(egui_view_t *self)
     local->font = (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT;
     local->meta_font = (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT;
     local->on_view_changed = NULL;
-    local->surface_color = EGUI_COLOR_HEX(0xFFFFFF);
-    local->border_color = EGUI_COLOR_HEX(0xD6DEE6);
-    local->viewport_color = EGUI_COLOR_HEX(0xF8FBFD);
-    local->text_color = EGUI_COLOR_HEX(0x1B2834);
-    local->muted_text_color = EGUI_COLOR_HEX(0x6C7A88);
-    local->accent_color = EGUI_COLOR_HEX(0x0F6CBD);
-    local->preview_color = EGUI_COLOR_HEX(0x6AA8FF);
+    local->surface_color = HCW_COLOR_SURFACE;
+    local->border_color = HCW_COLOR_BORDER;
+    local->viewport_color = HCW_COLOR_PANEL;
+    local->text_color = HCW_COLOR_TEXT;
+    local->muted_text_color = HCW_COLOR_TEXT_MUTED;
+    local->accent_color = HCW_COLOR_PRIMARY;
+    local->preview_color = HCW_COLOR_PRIMARY_LIGHT;
     local->snapshot_count = 0;
     local->current_snapshot = 0;
     local->current_part = EGUI_VIEW_SCROLL_PRESENTER_PART_SURFACE;

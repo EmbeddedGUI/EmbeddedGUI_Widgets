@@ -18,6 +18,9 @@ struct egui_view_search_box
     egui_color_t clear_fill_color;
     egui_color_t clear_fill_pressed_color;
     egui_color_t clear_icon_color;
+    egui_dim_t content_pad_left;
+    egui_dim_t content_pad_right;
+    egui_dim_t content_pad_y;
     uint8_t clear_pressed;
 };
 

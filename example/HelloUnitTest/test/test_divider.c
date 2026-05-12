@@ -30,7 +30,7 @@ static egui_view_divider_t preview_divider;
 static egui_view_api_t preview_api;
 static uint8_t g_click_count;
 
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_test_panel_param, EGUI_COLOR_HEX(0xFFFFFF), EGUI_ALPHA_100, 4);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_test_panel_param, HCW_COLOR_SURFACE, EGUI_ALPHA_100, 4);
 EGUI_BACKGROUND_PARAM_INIT(bg_test_panel_params, &bg_test_panel_param, NULL, NULL);
 EGUI_BACKGROUND_COLOR_STATIC_CONST_INIT(bg_test_panel, &bg_test_panel_params);
 
@@ -153,19 +153,19 @@ static void test_divider_style_helpers_apply_expected_palette_and_clear_pressed_
     setup_divider();
 
     EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&test_divider)->background == NULL);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xC7D1DB).full, test_divider.color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_BORDER.full, test_divider.color.full);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_ALPHA_100, test_divider.alpha);
 
     egui_view_set_pressed(EGUI_VIEW_OF(&test_divider), 1);
     hcw_divider_apply_subtle_style(EGUI_VIEW_OF(&test_divider));
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_divider)->is_pressed);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xD9E1E8).full, test_divider.color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_BORDER.full, test_divider.color.full);
     EGUI_TEST_ASSERT_EQUAL_INT(72, test_divider.alpha);
 
     egui_view_set_pressed(EGUI_VIEW_OF(&test_divider), 1);
     hcw_divider_apply_accent_style(EGUI_VIEW_OF(&test_divider));
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_divider)->is_pressed);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x0F6CBD).full, test_divider.color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PRIMARY.full, test_divider.color.full);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_ALPHA_100, test_divider.alpha);
 }
 

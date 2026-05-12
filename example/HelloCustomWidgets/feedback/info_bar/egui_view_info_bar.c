@@ -1,4 +1,6 @@
 #include "egui_view_info_bar.h"
+#include "../../hcw_text_center.h"
+#include "../../hcw_selection_marker.h"
 
 #define EGUI_VIEW_INFO_BAR_PART_NONE   0
 #define EGUI_VIEW_INFO_BAR_PART_ACTION 1
@@ -216,7 +218,7 @@ static egui_dim_t egui_view_info_bar_resolve_line_height(const egui_font_t *font
 
 static egui_color_t egui_view_info_bar_mix_disabled(egui_color_t color)
 {
-    return egui_rgb_mix(color, EGUI_COLOR_DARK_GREY, 65);
+    return egui_rgb_mix(color, HCW_COLOR_SURFACE_SUBTLE, EGUI_ALPHA_MAKE(44));
 }
 
 static egui_color_t egui_view_info_bar_severity_color(egui_view_info_bar_t *local, uint8_t severity)
@@ -462,6 +464,7 @@ static void egui_view_info_bar_get_metrics(egui_view_info_bar_t *local, egui_vie
     egui_dim_t text_right;
     egui_dim_t title_h;
     egui_dim_t message_h;
+    egui_dim_t leading_center_y;
 
     egui_view_get_work_region(self, &region);
     pad_x = local->compact_mode ? 9 : 12;
@@ -476,16 +479,7 @@ static void egui_view_info_bar_get_metrics(egui_view_info_bar_t *local, egui_vie
     metrics->content_region.size.width = region.size.width - pad_x * 2 - (local->compact_mode ? 2 : 4);
     metrics->content_region.size.height = region.size.height - pad_y * 2;
 
-    metrics->icon_region.location.x = metrics->content_region.location.x;
-    metrics->icon_region.location.y = metrics->content_region.location.y + (local->compact_mode ? 1 : 2);
-    metrics->icon_region.size.width = icon_size;
-    metrics->icon_region.size.height = icon_size;
-
     metrics->show_close = (uint8_t)(snapshot != NULL && snapshot->closable && !local->compact_mode && !local->read_only_mode && egui_view_get_enable(self));
-    metrics->close_region.location.x = metrics->content_region.location.x + metrics->content_region.size.width - close_size;
-    metrics->close_region.location.y = metrics->content_region.location.y + 1;
-    metrics->close_region.size.width = metrics->show_close ? close_size : 0;
-    metrics->close_region.size.height = metrics->show_close ? close_size : 0;
 
     metrics->show_action = (uint8_t)(egui_view_info_bar_snapshot_has_action(snapshot) && !local->read_only_mode && egui_view_get_enable(self));
     if (snapshot != NULL && snapshot->action != NULL)
@@ -510,6 +504,20 @@ static void egui_view_info_bar_get_metrics(egui_view_info_bar_t *local, egui_vie
     metrics->action_region.location.x = metrics->content_region.location.x + metrics->content_region.size.width - action_w;
     metrics->action_region.location.y = metrics->content_region.location.y + metrics->content_region.size.height - action_h;
 
+    title_h = egui_view_info_bar_resolve_line_height(local->font, local->compact_mode ? 10 : 12);
+    message_h = egui_view_info_bar_resolve_line_height(local->meta_font, local->compact_mode ? 9 : 11);
+
+    leading_center_y = metrics->content_region.location.y + title_h / 2;
+    metrics->icon_region.location.x = metrics->content_region.location.x;
+    metrics->icon_region.location.y = leading_center_y - icon_size / 2;
+    metrics->icon_region.size.width = icon_size;
+    metrics->icon_region.size.height = icon_size;
+
+    metrics->close_region.location.x = metrics->content_region.location.x + metrics->content_region.size.width - close_size;
+    metrics->close_region.location.y = leading_center_y - close_size / 2;
+    metrics->close_region.size.width = metrics->show_close ? close_size : 0;
+    metrics->close_region.size.height = metrics->show_close ? close_size : 0;
+
     text_x = metrics->icon_region.location.x + icon_size + (local->compact_mode ? 5 : 7);
     text_right = metrics->content_region.location.x + metrics->content_region.size.width - (metrics->show_close ? close_size + 4 : 0);
     if (metrics->show_action && metrics->action_region.location.y < metrics->content_region.location.y + metrics->content_region.size.height)
@@ -521,8 +529,6 @@ static void egui_view_info_bar_get_metrics(egui_view_info_bar_t *local, egui_vie
         text_right = metrics->content_region.location.x + metrics->content_region.size.width;
     }
 
-    title_h = egui_view_info_bar_resolve_line_height(local->font, local->compact_mode ? 10 : 12);
-    message_h = egui_view_info_bar_resolve_line_height(local->meta_font, local->compact_mode ? 9 : 11);
     metrics->title_region.location.x = text_x;
     metrics->title_region.location.y = metrics->content_region.location.y;
     metrics->title_region.size.width = text_right - text_x;
@@ -542,6 +548,7 @@ static void egui_view_info_bar_draw_text(const egui_font_t *font, egui_view_t *s
         return;
     }
 
+    draw_region.location.y += hcw_text_center_get_delta(font, text, region, align);
     egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, font, text, &draw_region, align, color, self->alpha);
 }
 
@@ -561,8 +568,8 @@ static void egui_view_info_bar_draw_close(egui_view_t *self, const egui_region_t
     y0 = region->location.y + 3;
     x1 = region->location.x + region->size.width - 4;
     y1 = region->location.y + region->size.height - 4;
-    egui_canvas_draw_line(&uicode_get_core()->canvas, x0, y0, x1, y1, 1, color, egui_color_alpha_mix(self->alpha, 72));
-    egui_canvas_draw_line(&uicode_get_core()->canvas, x1, y0, x0, y1, 1, color, egui_color_alpha_mix(self->alpha, 72));
+    egui_canvas_draw_line(&uicode_get_core()->canvas, x0, y0, x1, y1, 1, color, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(88)));
+    egui_canvas_draw_line(&uicode_get_core()->canvas, x1, y0, x0, y1, 1, color, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(88)));
 }
 
 static void egui_view_info_bar_on_draw(egui_view_t *self)
@@ -594,8 +601,8 @@ static void egui_view_info_bar_on_draw(egui_view_t *self)
     }
 
     severity_color = egui_view_info_bar_severity_color(local, snapshot->severity);
-    fill_color = egui_rgb_mix(local->surface_color, severity_color, local->compact_mode ? 2 : 5);
-    border_color = egui_rgb_mix(local->border_color, severity_color, local->compact_mode ? 4 : 7);
+    fill_color = egui_rgb_mix(local->surface_color, HCW_COLOR_SURFACE_SUBTLE, EGUI_ALPHA_MAKE(local->compact_mode ? 4 : 6));
+    border_color = egui_rgb_mix(local->border_color, severity_color, EGUI_ALPHA_MAKE(local->compact_mode ? 12 : 16));
     title_color = local->text_color;
     message_color = local->muted_text_color;
     glyph_color = EGUI_COLOR_WHITE;
@@ -611,27 +618,25 @@ static void egui_view_info_bar_on_draw(egui_view_t *self)
     }
     else if (local->read_only_mode)
     {
-        severity_color = egui_rgb_mix(severity_color, local->muted_text_color, 60);
-        fill_color = egui_rgb_mix(fill_color, local->surface_color, 26);
-        border_color = egui_rgb_mix(border_color, local->muted_text_color, 32);
-        title_color = egui_rgb_mix(title_color, local->muted_text_color, 34);
-        message_color = egui_rgb_mix(message_color, local->text_color, 8);
-        glyph_color = egui_rgb_mix(glyph_color, local->muted_text_color, 34);
+        severity_color = egui_rgb_mix(severity_color, local->muted_text_color, EGUI_ALPHA_MAKE(38));
+        fill_color = egui_rgb_mix(fill_color, local->surface_color, EGUI_ALPHA_MAKE(32));
+        border_color = egui_rgb_mix(border_color, local->muted_text_color, EGUI_ALPHA_MAKE(18));
+        title_color = egui_rgb_mix(title_color, local->muted_text_color, EGUI_ALPHA_MAKE(18));
+        message_color = egui_rgb_mix(message_color, local->text_color, EGUI_ALPHA_MAKE(14));
+        glyph_color = egui_rgb_mix(glyph_color, local->muted_text_color, EGUI_ALPHA_MAKE(22));
     }
 
     radius = local->compact_mode ? 6 : 7;
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, region.location.x, region.location.y, region.size.width, region.size.height, radius, fill_color,
-                                          egui_color_alpha_mix(self->alpha, 96));
+                                          egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(96)));
+    hcw_selection_marker_draw_left(&region, radius, radius, severity_color, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(local->read_only_mode ? 56 : 96)));
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, region.location.x, region.location.y, region.size.width, region.size.height, radius, 1, border_color,
-                                     egui_color_alpha_mix(self->alpha, 88));
-    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, region.location.x + 1, region.location.y + 1, local->compact_mode ? 2 : 3,
-                                          region.size.height - 2, radius > 2 ? radius - 2 : radius, severity_color,
-                                          egui_color_alpha_mix(self->alpha, local->read_only_mode ? 38 : 78));
+                                     egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(88)));
 
     egui_view_info_bar_get_metrics(local, self, &metrics);
     icon_radius = metrics.icon_region.size.width / 2;
     egui_canvas_draw_circle_fill(&uicode_get_core()->canvas, metrics.icon_region.location.x + icon_radius, metrics.icon_region.location.y + icon_radius, icon_radius,
-                                 severity_color, egui_color_alpha_mix(self->alpha, local->read_only_mode ? 42 : 82));
+                                 severity_color, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(local->read_only_mode ? 64 : 96)));
     egui_view_info_bar_draw_text(local->font, self, egui_view_info_bar_severity_glyph(snapshot->severity), &metrics.icon_region, EGUI_ALIGN_CENTER, glyph_color);
 
     egui_view_info_bar_fit_text_to_width(local->font, snapshot->title, title_label, sizeof(title_label), metrics.title_region.size.width, local->compact_mode ? 4 : 5);
@@ -643,14 +648,16 @@ static void egui_view_info_bar_on_draw(egui_view_t *self)
 
     if (metrics.show_action)
     {
-        action_fill = egui_rgb_mix(local->surface_color, local->accent_color, self->is_pressed && local->pressed_part == EGUI_VIEW_INFO_BAR_PART_ACTION ? 12 : 4);
-        action_border = egui_rgb_mix(local->border_color, local->accent_color, self->is_pressed && local->pressed_part == EGUI_VIEW_INFO_BAR_PART_ACTION ? 20 : 8);
-        action_text = egui_rgb_mix(local->accent_color, local->text_color, 18);
+        action_fill = egui_rgb_mix(local->surface_color, local->accent_color,
+                                   EGUI_ALPHA_MAKE(self->is_pressed && local->pressed_part == EGUI_VIEW_INFO_BAR_PART_ACTION ? 16 : 8));
+        action_border = egui_rgb_mix(local->border_color, local->accent_color,
+                                     EGUI_ALPHA_MAKE(self->is_pressed && local->pressed_part == EGUI_VIEW_INFO_BAR_PART_ACTION ? 30 : 22));
+        action_text = egui_rgb_mix(local->accent_color, local->text_color, EGUI_ALPHA_MAKE(18));
         egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.action_region.location.x, metrics.action_region.location.y,
                                               metrics.action_region.size.width, metrics.action_region.size.height, 6, action_fill,
-                                              egui_color_alpha_mix(self->alpha, 42));
+                                              egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(92)));
         egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics.action_region.location.x, metrics.action_region.location.y, metrics.action_region.size.width,
-                                         metrics.action_region.size.height, 6, 1, action_border, egui_color_alpha_mix(self->alpha, 52));
+                                         metrics.action_region.size.height, 6, 1, action_border, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(92)));
         egui_view_info_bar_fit_text_to_width(local->font, snapshot->action, action_label, sizeof(action_label), metrics.action_region.size.width - 6,
                                              local->compact_mode ? 4 : 5);
         egui_view_info_bar_draw_text(local->font, self, action_label, &metrics.action_region, EGUI_ALIGN_CENTER, action_text);
@@ -661,8 +668,9 @@ static void egui_view_info_bar_on_draw(egui_view_t *self)
         if (self->is_pressed && local->pressed_part == EGUI_VIEW_INFO_BAR_PART_CLOSE)
         {
             egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.close_region.location.x, metrics.close_region.location.y,
-                                                  metrics.close_region.size.width, metrics.close_region.size.height, 4, egui_rgb_mix(fill_color, severity_color, 10),
-                                                  egui_color_alpha_mix(self->alpha, 44));
+                                                  metrics.close_region.size.width, metrics.close_region.size.height, 4,
+                                                  egui_rgb_mix(fill_color, severity_color, EGUI_ALPHA_MAKE(18)),
+                                                  egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(88)));
         }
         egui_view_info_bar_draw_close(self, &metrics.close_region, message_color);
     }
@@ -884,15 +892,15 @@ void egui_view_info_bar_init(egui_view_t *self)
     local->on_open_changed = NULL;
     local->font = (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT;
     local->meta_font = (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT;
-    local->surface_color = EGUI_COLOR_HEX(0xFFFFFF);
-    local->border_color = EGUI_COLOR_HEX(0xD4DCE5);
-    local->text_color = EGUI_COLOR_HEX(0x182331);
-    local->muted_text_color = EGUI_COLOR_HEX(0x5F6F7F);
-    local->accent_color = EGUI_COLOR_HEX(0x0F6CBD);
-    local->info_color = EGUI_COLOR_HEX(0x0F6CBD);
-    local->success_color = EGUI_COLOR_HEX(0x107C41);
-    local->warning_color = EGUI_COLOR_HEX(0xA15C07);
-    local->error_color = EGUI_COLOR_HEX(0xC42B1C);
+    local->surface_color = HCW_COLOR_SURFACE;
+    local->border_color = HCW_COLOR_BORDER;
+    local->text_color = HCW_COLOR_TEXT_STRONG;
+    local->muted_text_color = HCW_COLOR_TEXT_MUTED;
+    local->accent_color = HCW_COLOR_PRIMARY;
+    local->info_color = HCW_COLOR_PRIMARY;
+    local->success_color = HCW_COLOR_SUCCESS;
+    local->warning_color = HCW_COLOR_WARNING;
+    local->error_color = HCW_COLOR_DANGER;
     local->snapshot_count = 0;
     local->current_snapshot = 0;
     local->compact_mode = 0;

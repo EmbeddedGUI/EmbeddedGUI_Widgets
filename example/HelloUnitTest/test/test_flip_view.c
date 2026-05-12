@@ -16,9 +16,9 @@ static uint8_t last_changed_item_count;
 static uint8_t last_changed_part;
 
 static const egui_view_flip_view_item_t unit_items[] = {
-        {"One", "North deck", "Primary hero card", "Step 1", EGUI_COLOR_HEX(0xE4F0FF), EGUI_COLOR_HEX(0x2563EB)},
-        {"Two", "South deck", "Secondary hero card", "Step 2", EGUI_COLOR_HEX(0xE8F5EE), EGUI_COLOR_HEX(0x0F766E)},
-        {"Three", "Review deck", "Third hero card", "Step 3", EGUI_COLOR_HEX(0xF8ECDC), EGUI_COLOR_HEX(0xD97706)},
+        {"One", "North deck", "Primary hero card", "Step 1", EGUI_COLOR_HEX(0xE4F0FF), HCW_COLOR_PRIMARY},
+        {"Two", "South deck", "Secondary hero card", "Step 2", HCW_COLOR_PRIMARY_TINT, HCW_COLOR_PRIMARY},
+        {"Three", "Review deck", "Third hero card", "Step 3", EGUI_COLOR_HEX(0xF8ECDC), HCW_COLOR_WARNING},
         {"Four", "Archive deck", "Fourth hero card", "Step 4", EGUI_COLOR_HEX(0xF3E8FF), EGUI_COLOR_HEX(0x8B5CF6)},
 };
 

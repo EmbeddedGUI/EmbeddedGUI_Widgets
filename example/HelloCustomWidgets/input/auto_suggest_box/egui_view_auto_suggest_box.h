@@ -35,6 +35,9 @@ struct egui_view_auto_suggest_box
     egui_dim_t collapsed_height;
     egui_dim_t item_height;
     egui_dim_t icon_text_gap;
+    egui_dim_t content_pad_left;
+    egui_dim_t content_pad_right;
+    egui_dim_t content_pad_y;
     egui_color_t bg_color;
     egui_color_t border_color;
     egui_color_t popup_color;

@@ -41,7 +41,7 @@ static egui_view_api_t recorder_compact_api;
 static egui_view_api_t recorder_read_only_api;
 static uint8_t ui_ready;
 
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, HCW_COLOR_PAGE_BG, EGUI_ALPHA_100, 14);
 EGUI_BACKGROUND_PARAM_INIT(bg_page_panel_params, &bg_page_panel_param, NULL, NULL);
 EGUI_BACKGROUND_COLOR_STATIC_CONST_INIT(bg_page_panel, &bg_page_panel_params);
 
@@ -180,7 +180,7 @@ void test_init_ui(void)
     egui_view_label_set_text(EGUI_VIEW_OF(&title_label), title_text);
     egui_view_label_set_align_type(EGUI_VIEW_OF(&title_label), EGUI_ALIGN_CENTER);
     hello_custom_widgets_demo_set_label_font_with_min_height(EGUI_VIEW_OF(&title_label), (const egui_font_t *)&egui_res_font_montserrat_12_4);
-    egui_view_label_set_font_color(EGUI_VIEW_OF(&title_label), EGUI_COLOR_HEX(0x22313F), EGUI_ALPHA_100);
+    egui_view_label_set_font_color(EGUI_VIEW_OF(&title_label), HCW_COLOR_TEXT_STRONG, EGUI_ALPHA_100);
     egui_view_set_margin(EGUI_VIEW_OF(&title_label), 0, 8, 0, 8);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label));
 
@@ -209,9 +209,9 @@ void test_init_ui(void)
     egui_view_shortcut_recorder_set_header(EGUI_VIEW_OF(&recorder_compact), "Compact", "Preset preview", "Peek");
     egui_view_shortcut_recorder_set_presets(EGUI_VIEW_OF(&recorder_compact), compact_presets, EGUI_ARRAY_SIZE(compact_presets));
     egui_view_shortcut_recorder_set_compact_mode(EGUI_VIEW_OF(&recorder_compact), 1);
-    egui_view_shortcut_recorder_set_palette(EGUI_VIEW_OF(&recorder_compact), EGUI_COLOR_HEX(0xFCFFFE), EGUI_COLOR_HEX(0xCBE4DE), EGUI_COLOR_HEX(0x12463F),
-                                            EGUI_COLOR_HEX(0x5B7D77), EGUI_COLOR_HEX(0x0F766E), EGUI_COLOR_HEX(0xD97706), EGUI_COLOR_HEX(0x0F766E),
-                                            EGUI_COLOR_HEX(0xBE5168));
+    egui_view_shortcut_recorder_set_palette(EGUI_VIEW_OF(&recorder_compact), HCW_COLOR_PANEL, HCW_COLOR_BORDER_STRONG, HCW_COLOR_TEXT_STRONG,
+                                            HCW_COLOR_TEXT_SOFT, HCW_COLOR_PRIMARY_DARK, HCW_COLOR_WARNING, HCW_COLOR_PRIMARY_DARK,
+                                            HCW_COLOR_DANGER);
     egui_view_shortcut_recorder_override_static_preview_api(EGUI_VIEW_OF(&recorder_compact), &recorder_compact_api);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&recorder_compact), 0);
@@ -227,9 +227,9 @@ void test_init_ui(void)
     egui_view_shortcut_recorder_set_compact_mode(EGUI_VIEW_OF(&recorder_read_only), 1);
     egui_view_shortcut_recorder_set_read_only_mode(EGUI_VIEW_OF(&recorder_read_only), 1);
     egui_view_shortcut_recorder_set_binding(EGUI_VIEW_OF(&recorder_read_only), EGUI_KEY_CODE_S, 0, 1);
-    egui_view_shortcut_recorder_set_palette(EGUI_VIEW_OF(&recorder_read_only), EGUI_COLOR_HEX(0xFBFCFD), EGUI_COLOR_HEX(0xD7DFE6), EGUI_COLOR_HEX(0x54616D),
-                                            EGUI_COLOR_HEX(0x8A97A3), EGUI_COLOR_HEX(0x93A3B4), EGUI_COLOR_HEX(0xD97706), EGUI_COLOR_HEX(0x93A3B4),
-                                            EGUI_COLOR_HEX(0xBE5168));
+    egui_view_shortcut_recorder_set_palette(EGUI_VIEW_OF(&recorder_read_only), HCW_COLOR_PANEL, HCW_COLOR_TRACK_STRONG, HCW_COLOR_TEXT,
+                                            HCW_COLOR_TEXT_SOFT, HCW_COLOR_PRIMARY_DARK, HCW_COLOR_WARNING, HCW_COLOR_PRIMARY_DARK,
+                                            HCW_COLOR_DANGER);
     egui_view_shortcut_recorder_override_static_preview_api(EGUI_VIEW_OF(&recorder_read_only), &recorder_read_only_api);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&recorder_read_only), 0);
@@ -349,4 +349,3 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     }
 }
 #endif
-

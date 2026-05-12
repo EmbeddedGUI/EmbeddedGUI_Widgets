@@ -211,20 +211,20 @@ static void test_hyperlink_button_style_helpers_update_background_and_clear_pres
     local = &test_button;
 
     EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(local)->background == EGUI_BG_OF(&hcw_hyperlink_button_standard_background));
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x0F6CBD).full, local->base.color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PRIMARY_DARK.full, local->base.color.full);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, local->base.align_type);
 
     egui_view_set_pressed(EGUI_VIEW_OF(local), 1);
     hcw_hyperlink_button_apply_inline_style(EGUI_VIEW_OF(local));
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(local)->is_pressed);
     EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(local)->background == EGUI_BG_OF(&hcw_hyperlink_button_inline_background));
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x24527A).full, local->base.color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PRIMARY_DARK.full, local->base.color.full);
 
     egui_view_set_pressed(EGUI_VIEW_OF(local), 1);
     hcw_hyperlink_button_apply_disabled_style(EGUI_VIEW_OF(local));
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(local)->is_pressed);
     EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(local)->background == EGUI_BG_OF(&hcw_hyperlink_button_disabled_background));
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x8A96A3).full, local->base.color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT_SOFT.full, local->base.color.full);
 }
 
 static void test_hyperlink_button_setters_clear_pressed_state_and_update_content(void)

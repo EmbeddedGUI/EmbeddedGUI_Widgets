@@ -7,7 +7,7 @@
 - 当前保留形态：`Home / Alerts / Privacy`、`Email / Push / SMS`、`Daily / Weekly / Monthly`、`secondary`、`disabled`
 - 当前保留交互：主区保留标准互斥选择、`touch` 与 `Space / Enter` 选中；底部 `secondary / disabled` 仅作为静态 preview 对照
 - 当前移除内容：控件 helper 层的独立紧凑 / 只读样式 API、旧 preview 快照轮换、preview 清焦桥接、键盘驱动录制切换、额外收尾态、说明文案和场景化装饰，以及旧版 finalize README 章节结构
-- EGUI 适配说明：目录和 demo 继续使用 `input/radio_button`，底层仍复用仓库内现有 `hcw_radio_button` 实现；小尺寸和禁用预览由 APP 侧尺寸、palette、gap 与 enable 配置，不修改 `sdk/EmbeddedGUI`
+- EGUI 适配说明：目录和 demo 继续使用 `input/radio_button`，底层仍复用仓库内现有 `hcw_radio_button` 实现；小尺寸和 disabled 风格预览由 APP 侧尺寸、静态 preview API、palette 与 gap 配置，不修改 `sdk/EmbeddedGUI`
 
 ## 1. 为什么需要这个控件
 `radio_button` 用于表达“多个候选项中只能选一个”的标准表单语义，适合通知方式、同步策略、频率模式和终端形态这类互斥配置。它强调组内互斥和最终选择结果，而不是单个布尔开关。
@@ -58,7 +58,7 @@
 - 单个 preview 列：`104 x 52`
 - 单个 preview 项：`104 x 24`
 - 页面结构：标题 -> 主区 3 个 `radio_button` -> 底部 `secondary / disabled`
-- 风格约束：浅色 `page panel`、低噪音描边、标准 `RadioButton` 比例和轻量 focus ring，不回退到旧 demo 的说明型 chrome；`secondary` 与 `disabled` 预览只由 APP 侧尺寸、palette、gap 与 enable 配置
+- 风格约束：浅色 `page panel`、低噪音描边、标准 `RadioButton` 比例和轻量 focus ring，不回退到旧 demo 的说明型 chrome；`secondary` 与 `disabled` 预览只由 APP 侧尺寸、静态 preview API、palette 与 gap 配置
 
 ## 6. 状态矩阵
 | 状态 | 主控件 | Secondary preview | Disabled preview |

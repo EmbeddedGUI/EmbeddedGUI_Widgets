@@ -1,4 +1,5 @@
 #include "egui_view_symbol_icon.h"
+#include "../../hcw_text_center.h"
 
 #include "resource/egui_icon_material_symbols.h"
 #include "../../../../sdk/EmbeddedGUI/src/widget/egui_view_icon_font.h"
@@ -48,17 +49,17 @@ static void egui_view_symbol_icon_apply_color(egui_view_t *self, egui_color_t ic
 
 void egui_view_symbol_icon_apply_standard_style(egui_view_t *self)
 {
-    egui_view_symbol_icon_apply_color(self, EGUI_COLOR_HEX(0x0F6CBD));
+    egui_view_symbol_icon_apply_color(self, HCW_COLOR_PRIMARY);
 }
 
 void egui_view_symbol_icon_apply_subtle_style(egui_view_t *self)
 {
-    egui_view_symbol_icon_apply_color(self, EGUI_COLOR_HEX(0x6F7C8A));
+    egui_view_symbol_icon_apply_color(self, HCW_COLOR_TEXT_SOFT);
 }
 
 void egui_view_symbol_icon_apply_accent_style(egui_view_t *self)
 {
-    egui_view_symbol_icon_apply_color(self, EGUI_COLOR_HEX(0xA15C00));
+    egui_view_symbol_icon_apply_color(self, HCW_COLOR_WARNING);
 }
 
 void egui_view_symbol_icon_set_symbol(egui_view_t *self, const char *symbol)
@@ -99,6 +100,7 @@ static void egui_view_symbol_icon_on_draw(egui_view_t *self)
 {
     egui_view_symbol_icon_t *local = egui_view_symbol_icon_local(self);
     egui_region_t region;
+    egui_region_t draw_region;
     const egui_font_t *font;
     egui_color_t icon_color = local->icon_color;
 
@@ -116,10 +118,12 @@ static void egui_view_symbol_icon_on_draw(egui_view_t *self)
 
     if (!egui_view_get_enable(self))
     {
-        icon_color = egui_rgb_mix(icon_color, EGUI_COLOR_HEX(0x97A4B1), 58);
+        icon_color = egui_rgb_mix(icon_color, HCW_COLOR_TEXT_SOFT, EGUI_ALPHA_MAKE(36));
     }
 
-    egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, font, local->symbol, &region, EGUI_ALIGN_CENTER, icon_color, self->alpha);
+    draw_region = region;
+    draw_region.location.y += hcw_text_center_get_delta(font, local->symbol, &region, EGUI_ALIGN_CENTER);
+    egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, font, local->symbol, &draw_region, EGUI_ALIGN_CENTER, icon_color, self->alpha);
 }
 
 #if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
@@ -185,7 +189,7 @@ void egui_view_symbol_icon_init(egui_view_t *self)
 
     local->symbol = egui_view_symbol_icon_default_symbol();
     local->icon_font = NULL;
-    local->icon_color = EGUI_COLOR_HEX(0x0F6CBD);
+    local->icon_color = HCW_COLOR_PRIMARY;
 
     egui_view_set_view_name(self, "egui_view_symbol_icon");
 }

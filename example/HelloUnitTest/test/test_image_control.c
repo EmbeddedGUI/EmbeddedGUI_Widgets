@@ -68,8 +68,8 @@ static void setup_preview_image_control(void)
 {
     egui_view_image_control_init(EGUI_VIEW_OF(&preview_image));
     egui_view_set_size(EGUI_VIEW_OF(&preview_image), 92, 50);
-    egui_view_image_control_set_palette(EGUI_VIEW_OF(&preview_image), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD0D9E2),
-                                        EGUI_COLOR_HEX(0x0F7B45), EGUI_COLOR_HEX(0x7E8A97));
+    egui_view_image_control_set_palette(EGUI_VIEW_OF(&preview_image), HCW_COLOR_SURFACE, HCW_COLOR_BORDER,
+                                        HCW_COLOR_SUCCESS, HCW_COLOR_TEXT_MUTED);
     egui_view_image_control_set_source(EGUI_VIEW_OF(&preview_image), egui_view_image_control_get_square_image(), "Square");
     egui_view_image_control_set_stretch(EGUI_VIEW_OF(&preview_image), EGUI_VIEW_IMAGE_CONTROL_STRETCH_FILL);
     egui_view_set_on_click_listener(EGUI_VIEW_OF(&preview_image), on_preview_click);

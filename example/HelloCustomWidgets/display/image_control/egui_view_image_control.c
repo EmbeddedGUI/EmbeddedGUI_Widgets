@@ -161,7 +161,7 @@ static uint8_t egui_view_image_control_clear_pressed_state(egui_view_t *self)
 
 static egui_color_t egui_view_image_control_mix_disabled(egui_color_t color)
 {
-    return egui_rgb_mix(color, EGUI_COLOR_HEX(0x8A97A5), 58);
+    return egui_rgb_mix(color, HCW_COLOR_TEXT_SOFT, EGUI_ALPHA_MAKE(38));
 }
 
 static void egui_view_image_control_draw_placeholder(egui_view_t *self, const egui_region_t *region, egui_color_t color)
@@ -169,7 +169,7 @@ static void egui_view_image_control_draw_placeholder(egui_view_t *self, const eg
     egui_canvas_t *canvas = &uicode_get_core()->canvas;
     egui_alpha_t alpha = egui_color_alpha_mix(self->alpha, EGUI_ALPHA_100);
 
-    egui_canvas_draw_rectangle_fill(canvas, region->location.x, region->location.y, region->size.width, region->size.height, color, egui_color_alpha_mix(self->alpha, 42));
+    egui_canvas_draw_rectangle_fill(canvas, region->location.x, region->location.y, region->size.width, region->size.height, color, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(70)));
     egui_canvas_draw_line(canvas, region->location.x + 3, region->location.y + region->size.height - 4,
                           region->location.x + region->size.width / 2, region->location.y + region->size.height / 2, 1, color, alpha);
     egui_canvas_draw_line(canvas, region->location.x + region->size.width / 2, region->location.y + region->size.height / 2,
@@ -315,11 +315,11 @@ static void egui_view_image_control_on_draw(egui_view_t *self)
     if (!egui_view_get_enable(self))
     {
         egui_canvas_draw_rectangle_fill(&uicode_get_core()->canvas, content_region.location.x, content_region.location.y, content_region.size.width,
-                                        content_region.size.height, surface_color, egui_color_alpha_mix(self->alpha, 34));
+                                        content_region.size.height, surface_color, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(48)));
     }
 
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, region.location.x, region.location.y, region.size.width, region.size.height, radius, 1,
-                                     border_color, egui_color_alpha_mix(self->alpha, 64));
+                                     border_color, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(78)));
 }
 
 #if EGUI_CONFIG_FUNCTION_SUPPORT_TOUCH
@@ -467,10 +467,10 @@ void egui_view_image_control_init(egui_view_t *self)
     local->image = egui_view_image_control_get_default_image();
     local->source_name = "Landscape";
     local->stretch = EGUI_VIEW_IMAGE_CONTROL_STRETCH_UNIFORM;
-    local->surface_color = EGUI_COLOR_HEX(0xFFFFFF);
-    local->border_color = EGUI_COLOR_HEX(0xB8C7D7);
-    local->placeholder_color = EGUI_COLOR_HEX(0x0F6CBD);
-    local->muted_color = EGUI_COLOR_HEX(0x798694);
+    local->surface_color = HCW_COLOR_SURFACE;
+    local->border_color = HCW_COLOR_BORDER_STRONG;
+    local->placeholder_color = HCW_COLOR_PRIMARY;
+    local->muted_color = HCW_COLOR_TEXT_SOFT;
 
     egui_view_set_view_name(self, "egui_view_image_control");
 }

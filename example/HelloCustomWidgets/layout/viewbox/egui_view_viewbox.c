@@ -321,7 +321,7 @@ static uint8_t viewbox_has_text(const char *text)
 
 static egui_color_t viewbox_mix_disabled(egui_color_t color)
 {
-    return egui_rgb_mix(color, EGUI_COLOR_DARK_GREY, 68);
+    return egui_rgb_mix(color, HCW_COLOR_SURFACE_SUBTLE, EGUI_ALPHA_MAKE(44));
 }
 
 static egui_dim_t viewbox_resolve_source_dim(egui_dim_t source_dim, egui_dim_t fallback_dim)
@@ -788,26 +788,20 @@ static void viewbox_draw_content_block(egui_view_t *self, egui_view_viewbox_t *l
     char title_label[32];
     char meta_label[24];
     char footer_label[24];
-    egui_color_t fill_color = egui_rgb_mix(local->surface_color, local->accent_color, 10);
-    egui_color_t border_color = egui_rgb_mix(local->border_color, local->accent_color, 28);
-    egui_color_t band_color = local->accent_color;
-    egui_color_t title_color = egui_rgb_mix(local->text_color, local->accent_color, 12);
-    egui_color_t meta_color = egui_rgb_mix(local->muted_text_color, local->accent_color, 16);
-    egui_color_t line_color = egui_rgb_mix(local->section_color, local->accent_color, 36);
+    egui_color_t fill_color = egui_rgb_mix(HCW_COLOR_PANEL, local->accent_color, EGUI_ALPHA_MAKE(2));
+    egui_color_t border_color = egui_rgb_mix(local->border_color, local->accent_color, EGUI_ALPHA_MAKE(28));
+    egui_color_t title_color = egui_rgb_mix(local->text_color, local->accent_color, EGUI_ALPHA_MAKE(18));
+    egui_color_t meta_color = egui_rgb_mix(local->muted_text_color, local->accent_color, EGUI_ALPHA_MAKE(16));
     egui_dim_t radius = local->compact_mode ? 5 : 6;
     egui_dim_t pad_x = local->compact_mode ? 4 : 6;
     egui_dim_t pad_y = local->compact_mode ? 3 : 4;
     egui_dim_t title_h = viewbox_get_content_title_height(local);
     egui_dim_t meta_h = viewbox_get_content_meta_height(local);
     egui_dim_t footer_h = local->compact_mode ? 0 : viewbox_get_detail_height(local);
-    egui_dim_t bar_h = local->compact_mode ? 2 : 3;
     egui_dim_t top_y;
-    egui_region_t band_region;
     egui_region_t title_region;
     egui_region_t meta_region;
     egui_region_t footer_region;
-    egui_region_t line_region;
-    uint8_t line_index;
 
     if (!viewbox_region_has_size(content_region))
     {
@@ -815,50 +809,36 @@ static void viewbox_draw_content_block(egui_view_t *self, egui_view_viewbox_t *l
     }
     if (local->stretch_mode == EGUI_VIEW_VIEWBOX_STRETCH_FILL)
     {
-        fill_color = egui_rgb_mix(local->surface_color, local->accent_color, 14);
-        border_color = egui_rgb_mix(local->border_color, local->accent_color, 34);
+        fill_color = egui_rgb_mix(HCW_COLOR_PANEL, local->accent_color, EGUI_ALPHA_MAKE(3));
+        border_color = egui_rgb_mix(local->border_color, local->accent_color, EGUI_ALPHA_MAKE(34));
     }
     else if (local->stretch_mode == EGUI_VIEW_VIEWBOX_STRETCH_DOWNSCALE_ONLY)
     {
-        fill_color = egui_rgb_mix(local->surface_color, local->accent_color, 7);
-        border_color = egui_rgb_mix(local->border_color, local->accent_color, 20);
+        fill_color = HCW_COLOR_PANEL;
+        border_color = egui_rgb_mix(local->border_color, local->accent_color, EGUI_ALPHA_MAKE(20));
     }
 
     if (local->read_only_mode)
     {
-        fill_color = egui_rgb_mix(fill_color, local->surface_color, 26);
-        border_color = egui_rgb_mix(border_color, local->muted_text_color, 18);
-        band_color = egui_rgb_mix(band_color, local->muted_text_color, 22);
-        title_color = egui_rgb_mix(title_color, local->muted_text_color, 20);
-        meta_color = egui_rgb_mix(meta_color, local->muted_text_color, 24);
-        line_color = egui_rgb_mix(line_color, local->muted_text_color, 20);
+        fill_color = egui_rgb_mix(fill_color, HCW_COLOR_PANEL, EGUI_ALPHA_MAKE(34));
+        border_color = egui_rgb_mix(border_color, local->muted_text_color, EGUI_ALPHA_MAKE(18));
+        title_color = egui_rgb_mix(title_color, local->muted_text_color, EGUI_ALPHA_MAKE(20));
+        meta_color = egui_rgb_mix(meta_color, local->muted_text_color, EGUI_ALPHA_MAKE(24));
     }
     if (!egui_view_get_enable(self))
     {
         fill_color = viewbox_mix_disabled(fill_color);
         border_color = viewbox_mix_disabled(border_color);
-        band_color = viewbox_mix_disabled(band_color);
         title_color = viewbox_mix_disabled(title_color);
         meta_color = viewbox_mix_disabled(meta_color);
-        line_color = viewbox_mix_disabled(line_color);
     }
 
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, content_region->location.x, content_region->location.y, content_region->size.width, content_region->size.height, radius,
-                                          fill_color, egui_color_alpha_mix(self->alpha, 98));
+                                          fill_color, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(98)));
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, content_region->location.x, content_region->location.y, content_region->size.width, content_region->size.height, radius, 1,
-                                     border_color, egui_color_alpha_mix(self->alpha, 56));
+                                     border_color, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(78)));
 
-    band_region.location.x = content_region->location.x + 1;
-    band_region.location.y = content_region->location.y + 1;
-    band_region.size.width = content_region->size.width - 2;
-    band_region.size.height = local->compact_mode ? 3 : 4;
-    if (band_region.size.width > 0)
-    {
-        egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, band_region.location.x, band_region.location.y, band_region.size.width, band_region.size.height, radius, band_color,
-                                              egui_color_alpha_mix(self->alpha, 92));
-    }
-
-    top_y = content_region->location.y + pad_y + band_region.size.height + 1;
+    top_y = content_region->location.y + pad_y;
     title_region.location.x = content_region->location.x + pad_x;
     title_region.location.y = top_y;
     title_region.size.width = content_region->size.width - pad_x * 2;
@@ -890,24 +870,6 @@ static void viewbox_draw_content_block(egui_view_t *self, egui_view_viewbox_t *l
         viewbox_draw_text(local->meta_font, self, footer_label, &footer_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, meta_color);
     }
 
-    if (content_region->size.height > (local->compact_mode ? 18 : 26))
-    {
-        line_region.location.x = content_region->location.x + pad_x;
-        line_region.location.y = content_region->location.y + content_region->size.height - pad_y - (local->compact_mode ? 9 : 16);
-        line_region.size.height = bar_h;
-        for (line_index = 0; line_index < 3; ++line_index)
-        {
-            egui_dim_t shrink = (egui_dim_t)(line_index * (local->compact_mode ? 5 : 7));
-
-            line_region.size.width = content_region->size.width - pad_x * 2 - shrink;
-            if (line_region.size.width <= 0)
-            {
-                continue;
-            }
-            egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, line_region.location.x, line_region.location.y + line_index * (local->compact_mode ? 4 : 5),
-                                                  line_region.size.width, line_region.size.height, 1, line_color, egui_color_alpha_mix(self->alpha, 76));
-        }
-    }
 }
 
 static void viewbox_draw_preset(egui_view_t *self, egui_view_viewbox_t *local, const egui_view_viewbox_preset_t *preset, const egui_region_t *region,
@@ -917,10 +879,10 @@ static void viewbox_draw_preset(egui_view_t *self, egui_view_viewbox_t *local, c
     uint8_t pressed = preset_index == local->pressed_preset && self->is_pressed;
     char label_text[20];
     char meta_text[20];
-    egui_color_t fill_color = egui_rgb_mix(local->surface_color, local->accent_color, selected ? 12 : (pressed ? 8 : 4));
-    egui_color_t border_color = egui_rgb_mix(local->border_color, local->accent_color, selected ? 30 : (pressed ? 22 : 10));
-    egui_color_t label_color = egui_rgb_mix(local->text_color, local->accent_color, selected ? 18 : 4);
-    egui_color_t meta_color = egui_rgb_mix(local->muted_text_color, local->accent_color, selected ? 18 : 8);
+    egui_color_t fill_color = egui_rgb_mix(HCW_COLOR_PANEL, local->accent_color, EGUI_ALPHA_MAKE(selected ? 4 : 0));
+    egui_color_t border_color = egui_rgb_mix(local->border_color, local->accent_color, EGUI_ALPHA_MAKE(selected ? 36 : (pressed ? 28 : 22)));
+    egui_color_t label_color = egui_rgb_mix(local->text_color, local->accent_color, EGUI_ALPHA_MAKE(selected ? 18 : 4));
+    egui_color_t meta_color = egui_rgb_mix(local->muted_text_color, local->accent_color, EGUI_ALPHA_MAKE(selected ? 18 : 8));
     egui_dim_t radius = region->size.height / 2;
     egui_dim_t content_w = region->size.width - 8;
     egui_dim_t meta_w = 0;
@@ -934,10 +896,10 @@ static void viewbox_draw_preset(egui_view_t *self, egui_view_viewbox_t *local, c
 
     if (local->read_only_mode)
     {
-        fill_color = egui_rgb_mix(fill_color, local->surface_color, 28);
-        border_color = egui_rgb_mix(border_color, local->muted_text_color, 20);
-        label_color = egui_rgb_mix(label_color, local->muted_text_color, 22);
-        meta_color = egui_rgb_mix(meta_color, local->muted_text_color, 24);
+        fill_color = egui_rgb_mix(fill_color, HCW_COLOR_PANEL, EGUI_ALPHA_MAKE(34));
+        border_color = egui_rgb_mix(border_color, local->muted_text_color, EGUI_ALPHA_MAKE(20));
+        label_color = egui_rgb_mix(label_color, local->muted_text_color, EGUI_ALPHA_MAKE(22));
+        meta_color = egui_rgb_mix(meta_color, local->muted_text_color, EGUI_ALPHA_MAKE(24));
     }
     if (!egui_view_get_enable(self))
     {
@@ -948,9 +910,9 @@ static void viewbox_draw_preset(egui_view_t *self, egui_view_viewbox_t *local, c
     }
 
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, region->location.x, region->location.y, region->size.width, region->size.height, radius, fill_color,
-                                          egui_color_alpha_mix(self->alpha, 98));
+                                          egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(98)));
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, region->location.x, region->location.y, region->size.width, region->size.height, radius, 1, border_color,
-                                     egui_color_alpha_mix(self->alpha, 48));
+                                     egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(76)));
 
     label_region.location.x += local->compact_mode ? 4 : 5;
     label_region.size.width -= local->compact_mode ? 8 : 10;
@@ -1010,20 +972,19 @@ static void egui_view_viewbox_on_draw(egui_view_t *self)
     const egui_view_viewbox_snapshot_t *snapshot = viewbox_get_snapshot(local);
     egui_view_viewbox_metrics_t metrics;
     egui_view_viewbox_scale_info_t scale_info;
-    egui_color_t card_fill = local->surface_color;
+    egui_color_t card_fill = HCW_COLOR_PANEL;
     egui_color_t card_border = local->border_color;
-    egui_color_t badge_fill = egui_rgb_mix(local->section_color, local->accent_color, 26);
-    egui_color_t badge_text = egui_rgb_mix(local->text_color, local->accent_color, 28);
+    egui_color_t badge_fill = egui_rgb_mix(HCW_COLOR_PANEL, local->accent_color, EGUI_ALPHA_MAKE(6));
+    egui_color_t badge_text = egui_rgb_mix(local->text_color, local->accent_color, EGUI_ALPHA_MAKE(28));
     egui_color_t title_color = local->text_color;
     egui_color_t summary_color = local->muted_text_color;
-    egui_color_t viewport_fill = egui_rgb_mix(local->section_color, local->accent_color, 7);
-    egui_color_t viewport_border = egui_rgb_mix(local->border_color, local->accent_color, 12);
-    egui_color_t guide_border = egui_rgb_mix(local->muted_text_color, local->accent_color, 24);
-    egui_color_t guide_fill = egui_rgb_mix(local->surface_color, local->accent_color, 2);
-    egui_color_t footer_fill = egui_rgb_mix(local->surface_color, local->accent_color, 18);
-    egui_color_t footer_border = egui_rgb_mix(local->border_color, local->accent_color, 20);
-    egui_color_t footer_text = egui_rgb_mix(local->muted_text_color, local->accent_color, 18);
-    egui_color_t detail_text = egui_rgb_mix(local->muted_text_color, local->accent_color, 12);
+    egui_color_t viewport_fill = HCW_COLOR_PANEL;
+    egui_color_t viewport_border = egui_rgb_mix(local->border_color, local->accent_color, EGUI_ALPHA_MAKE(28));
+    egui_color_t guide_border = egui_rgb_mix(local->muted_text_color, local->accent_color, EGUI_ALPHA_MAKE(24));
+    egui_color_t guide_fill = HCW_COLOR_PANEL;
+    egui_color_t footer_fill = HCW_COLOR_PANEL;
+    egui_color_t footer_text = egui_rgb_mix(local->muted_text_color, local->accent_color, EGUI_ALPHA_MAKE(18));
+    egui_color_t detail_text = egui_rgb_mix(local->muted_text_color, local->accent_color, EGUI_ALPHA_MAKE(20));
     char badge_label[16];
     char title_label[32];
     char summary_label[32];
@@ -1052,19 +1013,18 @@ static void egui_view_viewbox_on_draw(egui_view_t *self)
 
     if (local->read_only_mode)
     {
-        badge_fill = egui_rgb_mix(badge_fill, local->surface_color, 28);
-        badge_text = egui_rgb_mix(badge_text, local->muted_text_color, 18);
-        title_color = egui_rgb_mix(title_color, local->muted_text_color, 14);
-        summary_color = egui_rgb_mix(summary_color, local->muted_text_color, 18);
-        viewport_fill = egui_rgb_mix(viewport_fill, local->surface_color, 26);
-        viewport_border = egui_rgb_mix(viewport_border, local->muted_text_color, 16);
-        guide_border = egui_rgb_mix(guide_border, local->muted_text_color, 18);
-        guide_fill = egui_rgb_mix(guide_fill, local->surface_color, 16);
-        footer_fill = egui_rgb_mix(footer_fill, local->surface_color, 18);
-        footer_border = egui_rgb_mix(footer_border, local->muted_text_color, 16);
-        footer_text = egui_rgb_mix(footer_text, local->muted_text_color, 18);
-        detail_text = egui_rgb_mix(detail_text, local->muted_text_color, 18);
-        focus_color = egui_rgb_mix(focus_color, local->muted_text_color, 16);
+        badge_fill = egui_rgb_mix(badge_fill, HCW_COLOR_PANEL, EGUI_ALPHA_MAKE(34));
+        badge_text = egui_rgb_mix(badge_text, local->muted_text_color, EGUI_ALPHA_MAKE(18));
+        title_color = egui_rgb_mix(title_color, local->muted_text_color, EGUI_ALPHA_MAKE(14));
+        summary_color = egui_rgb_mix(summary_color, local->muted_text_color, EGUI_ALPHA_MAKE(18));
+        viewport_fill = egui_rgb_mix(viewport_fill, HCW_COLOR_PANEL, EGUI_ALPHA_MAKE(34));
+        viewport_border = egui_rgb_mix(viewport_border, local->muted_text_color, EGUI_ALPHA_MAKE(16));
+        guide_border = egui_rgb_mix(guide_border, local->muted_text_color, EGUI_ALPHA_MAKE(18));
+        guide_fill = egui_rgb_mix(guide_fill, HCW_COLOR_PANEL, EGUI_ALPHA_MAKE(34));
+        footer_fill = egui_rgb_mix(footer_fill, HCW_COLOR_PANEL, EGUI_ALPHA_MAKE(34));
+        footer_text = egui_rgb_mix(footer_text, local->muted_text_color, EGUI_ALPHA_MAKE(18));
+        detail_text = egui_rgb_mix(detail_text, local->muted_text_color, EGUI_ALPHA_MAKE(18));
+        focus_color = egui_rgb_mix(focus_color, local->muted_text_color, EGUI_ALPHA_MAKE(16));
     }
     if (!egui_view_get_enable(self))
     {
@@ -1079,28 +1039,27 @@ static void egui_view_viewbox_on_draw(egui_view_t *self)
         guide_border = viewbox_mix_disabled(guide_border);
         guide_fill = viewbox_mix_disabled(guide_fill);
         footer_fill = viewbox_mix_disabled(footer_fill);
-        footer_border = viewbox_mix_disabled(footer_border);
         footer_text = viewbox_mix_disabled(footer_text);
         detail_text = viewbox_mix_disabled(detail_text);
         focus_color = viewbox_mix_disabled(focus_color);
     }
 
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.content_region.location.x, metrics.content_region.location.y, metrics.content_region.size.width,
-                                          metrics.content_region.size.height, radius, card_fill, egui_color_alpha_mix(self->alpha, 96));
+                                          metrics.content_region.size.height, radius, card_fill, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(96)));
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics.content_region.location.x, metrics.content_region.location.y, metrics.content_region.size.width,
-                                     metrics.content_region.size.height, radius, 1, card_border, egui_color_alpha_mix(self->alpha, 54));
+                                     metrics.content_region.size.height, radius, 1, card_border, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(76)));
 
     if (self->is_focused && egui_view_get_enable(self) && !local->read_only_mode)
     {
         egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics.content_region.location.x, metrics.content_region.location.y, metrics.content_region.size.width,
-                                         metrics.content_region.size.height, radius, 2, focus_color, egui_color_alpha_mix(self->alpha, 56));
+                                         metrics.content_region.size.height, radius, 2, focus_color, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(82)));
     }
 
     if (snapshot != NULL && viewbox_region_has_size(&metrics.badge_region))
     {
         egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.badge_region.location.x, metrics.badge_region.location.y, metrics.badge_region.size.width,
                                               metrics.badge_region.size.height, metrics.badge_region.size.height / 2, badge_fill,
-                                              egui_color_alpha_mix(self->alpha, 98));
+                                              egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(98)));
         viewbox_fit_text_to_width(local->meta_font, snapshot->header, badge_label, sizeof(badge_label), metrics.badge_region.size.width - 4, 4);
         viewbox_draw_text(local->meta_font, self, badge_label, &metrics.badge_region, EGUI_ALIGN_CENTER, badge_text);
     }
@@ -1120,18 +1079,18 @@ static void egui_view_viewbox_on_draw(egui_view_t *self)
         viewbox_compute_scale_info(&metrics.viewport_region, source_width, source_height, viewbox_clamp_stretch_mode(local->stretch_mode), &scale_info);
 
         egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.viewport_region.location.x, metrics.viewport_region.location.y, metrics.viewport_region.size.width,
-                                              metrics.viewport_region.size.height, viewport_radius, viewport_fill, egui_color_alpha_mix(self->alpha, 98));
+                                              metrics.viewport_region.size.height, viewport_radius, viewport_fill, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(98)));
         egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics.viewport_region.location.x, metrics.viewport_region.location.y, metrics.viewport_region.size.width,
-                                         metrics.viewport_region.size.height, viewport_radius, 1, viewport_border, egui_color_alpha_mix(self->alpha, 42));
+                                         metrics.viewport_region.size.height, viewport_radius, 1, viewport_border, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(80)));
 
         if (viewbox_region_has_size(&scale_info.guide_region))
         {
             egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, scale_info.guide_region.location.x, scale_info.guide_region.location.y, scale_info.guide_region.size.width,
                                                   scale_info.guide_region.size.height, local->compact_mode ? 5 : 6, guide_fill,
-                                                  egui_color_alpha_mix(self->alpha, 36));
+                                                  egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(74)));
             egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, scale_info.guide_region.location.x, scale_info.guide_region.location.y, scale_info.guide_region.size.width,
                                              scale_info.guide_region.size.height, local->compact_mode ? 5 : 6, 1, guide_border,
-                                             egui_color_alpha_mix(self->alpha, 54));
+                                             egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(76)));
         }
         if (viewbox_region_has_size(&scale_info.content_region))
         {
@@ -1185,10 +1144,7 @@ static void egui_view_viewbox_on_draw(egui_view_t *self)
     {
         egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.footer_region.location.x, metrics.footer_region.location.y, metrics.footer_region.size.width,
                                               metrics.footer_region.size.height, metrics.footer_region.size.height / 2, footer_fill,
-                                              egui_color_alpha_mix(self->alpha, 96));
-        egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics.footer_region.location.x, metrics.footer_region.location.y, metrics.footer_region.size.width,
-                                         metrics.footer_region.size.height, metrics.footer_region.size.height / 2, 1, footer_border,
-                                         egui_color_alpha_mix(self->alpha, 34));
+                                              egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(96)));
         viewbox_fit_text_to_width(local->meta_font, snapshot->footer, footer_label, sizeof(footer_label), metrics.footer_region.size.width - 4, 4);
         viewbox_draw_text(local->meta_font, self, footer_label, &metrics.footer_region, EGUI_ALIGN_CENTER, footer_text);
     }
@@ -1621,12 +1577,12 @@ void egui_view_viewbox_init(egui_view_t *self)
     local->font = (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT;
     local->meta_font = (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT;
     local->on_action = NULL;
-    local->surface_color = EGUI_COLOR_HEX(0xFFFFFF);
-    local->section_color = EGUI_COLOR_HEX(0xF5F8FA);
-    local->border_color = EGUI_COLOR_HEX(0xD4DDE6);
-    local->text_color = EGUI_COLOR_HEX(0x1B2834);
-    local->muted_text_color = EGUI_COLOR_HEX(0x6D7C8A);
-    local->accent_color = EGUI_COLOR_HEX(0x0F6CBD);
+    local->surface_color = HCW_COLOR_SURFACE;
+    local->section_color = HCW_COLOR_SURFACE_PRESS;
+    local->border_color = HCW_COLOR_BORDER;
+    local->text_color = HCW_COLOR_TEXT;
+    local->muted_text_color = HCW_COLOR_TEXT_MUTED;
+    local->accent_color = HCW_COLOR_PRIMARY;
     local->snapshot_count = 0;
     local->current_snapshot = 0;
     local->current_preset = EGUI_VIEW_VIEWBOX_PRESET_NONE;

@@ -36,6 +36,7 @@ TEXT_STRONG = "#111827"
 TEXT_MUTED = "#5b6472"
 SECTION_BG = "#162033"
 SECTION_TEXT = "#ffffff"
+FOREGROUND_THRESHOLD = 36
 
 
 @dataclass
@@ -292,7 +293,7 @@ def resolve_project_path(path_value: str) -> Path:
     return PROJECT_ROOT / path
 
 
-def expand_bbox(bbox: list[int], image_size: tuple[int, int], margin: int = 20) -> tuple[int, int, int, int]:
+def expand_bbox_tuple(bbox: tuple[int, int, int, int], image_size: tuple[int, int], margin: int = 20) -> tuple[int, int, int, int]:
     width, height = image_size
     left, top, right, bottom = bbox
     return (
@@ -301,6 +302,69 @@ def expand_bbox(bbox: list[int], image_size: tuple[int, int], margin: int = 20) 
         min(width, right + margin),
         min(height, bottom + margin),
     )
+
+
+def expand_bbox(bbox: list[int], image_size: tuple[int, int], margin: int = 20) -> tuple[int, int, int, int]:
+    return expand_bbox_tuple((bbox[0], bbox[1], bbox[2], bbox[3]), image_size, margin)
+
+
+def row_runs(row_counts: list[int], min_pixels: int) -> list[tuple[int, int, int]]:
+    runs: list[tuple[int, int, int]] = []
+    start: int | None = None
+    score = 0
+
+    for y, count in enumerate(row_counts):
+        if count >= min_pixels:
+            if start is None:
+                start = y
+                score = 0
+            score += count
+        elif start is not None:
+            runs.append((start, y, score))
+            start = None
+            score = 0
+
+    if start is not None:
+        runs.append((start, len(row_counts), score))
+    return runs
+
+
+def dominant_content_bbox(image: Image.Image) -> tuple[int, int, int, int] | None:
+    pixels = image.convert("RGB")
+    width, height = pixels.size
+    data = pixels.load()
+    row_counts = [0] * height
+    min_x_by_row = [width] * height
+    max_x_by_row = [-1] * height
+
+    for y in range(height):
+        count = 0
+        min_x = width
+        max_x = -1
+        for x in range(width):
+            red, green, blue = data[x, y]
+            if red + green + blue > FOREGROUND_THRESHOLD:
+                count += 1
+                if x < min_x:
+                    min_x = x
+                if x > max_x:
+                    max_x = x
+        row_counts[y] = count
+        min_x_by_row[y] = min_x
+        max_x_by_row[y] = max_x
+
+    min_row_pixels = max(18, width // 16)
+    min_run_height = max(24, height // 30)
+    runs = [run for run in row_runs(row_counts, min_row_pixels) if run[1] - run[0] >= min_run_height]
+    if not runs:
+        return None
+
+    top, bottom, _ = max(runs, key=lambda run: (run[2], run[1] - run[0]))
+    left = min((min_x_by_row[y] for y in range(top, bottom) if max_x_by_row[y] >= 0), default=width)
+    right = max((max_x_by_row[y] for y in range(top, bottom)), default=-1)
+    if left >= width or right < left:
+        return None
+    return (left, top, right + 1, bottom)
 
 
 def fallback_bbox(image: Image.Image) -> tuple[int, int, int, int] | None:
@@ -314,7 +378,7 @@ def fallback_bbox(image: Image.Image) -> tuple[int, int, int, int] | None:
     for y in range(height):
         for x in range(width):
             red, green, blue = pixels.getpixel((x, y))
-            if red + green + blue > 36:
+            if red + green + blue > FOREGROUND_THRESHOLD:
                 min_x = min(min_x, x)
                 min_y = min(min_y, y)
                 max_x = max(max_x, x)
@@ -322,17 +386,22 @@ def fallback_bbox(image: Image.Image) -> tuple[int, int, int, int] | None:
 
     if max_x < min_x or max_y < min_y:
         return None
-    return expand_bbox([min_x, min_y, max_x + 1, max_y + 1], image.size)
+    return expand_bbox_tuple((min_x, min_y, max_x + 1, max_y + 1), image.size)
+
+
+def preview_crop_box(image: Image.Image, bbox: list[int] | None) -> tuple[int, int, int, int] | None:
+    crop_box = dominant_content_bbox(image)
+    if crop_box is not None:
+        return expand_bbox_tuple(crop_box, image.size, margin=28)
+    if bbox and len(bbox) == 4:
+        return expand_bbox([int(value) for value in bbox], image.size)
+    return fallback_bbox(image)
 
 
 def make_thumb(source_path: Path, bbox: list[int] | None, thumb_path: Path, thumb_size: int) -> None:
     with Image.open(source_path) as image:
         rgb = image.convert("RGB")
-        crop_box = None
-        if bbox and len(bbox) == 4:
-            crop_box = expand_bbox([int(value) for value in bbox], rgb.size)
-        if crop_box is None:
-            crop_box = fallback_bbox(rgb)
+        crop_box = preview_crop_box(rgb, bbox)
         cropped = rgb.crop(crop_box) if crop_box else rgb
         preview = ImageOps.contain(cropped, (thumb_size - 24, thumb_size - 24), IMAGE_LANCZOS)
 
@@ -347,11 +416,7 @@ def make_thumb(source_path: Path, bbox: list[int] | None, thumb_path: Path, thum
 def load_cropped_preview(source_path: Path, bbox: list[int] | None, target_size: tuple[int, int]) -> Image.Image:
     with Image.open(source_path) as image:
         rgb = image.convert("RGB")
-        crop_box = None
-        if bbox and len(bbox) == 4:
-            crop_box = expand_bbox([int(value) for value in bbox], rgb.size)
-        if crop_box is None:
-            crop_box = fallback_bbox(rgb)
+        crop_box = preview_crop_box(rgb, bbox)
         cropped = rgb.crop(crop_box) if crop_box else rgb
         return ImageOps.contain(cropped, target_size, IMAGE_LANCZOS)
 

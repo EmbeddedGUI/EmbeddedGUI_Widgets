@@ -114,17 +114,17 @@ static void egui_view_path_icon_apply_color(egui_view_t *self, egui_color_t icon
 
 void egui_view_path_icon_apply_standard_style(egui_view_t *self)
 {
-    egui_view_path_icon_apply_color(self, EGUI_COLOR_HEX(0x0F6CBD));
+    egui_view_path_icon_apply_color(self, HCW_COLOR_PRIMARY);
 }
 
 void egui_view_path_icon_apply_subtle_style(egui_view_t *self)
 {
-    egui_view_path_icon_apply_color(self, EGUI_COLOR_HEX(0x6F7C8A));
+    egui_view_path_icon_apply_color(self, HCW_COLOR_TEXT_MUTED);
 }
 
 void egui_view_path_icon_apply_accent_style(egui_view_t *self)
 {
-    egui_view_path_icon_apply_color(self, EGUI_COLOR_HEX(0xA15C00));
+    egui_view_path_icon_apply_color(self, HCW_COLOR_WARNING);
 }
 
 void egui_view_path_icon_set_data(egui_view_t *self, const egui_view_path_icon_data_t *data)
@@ -345,7 +345,7 @@ static void egui_view_path_icon_on_draw(egui_view_t *self)
 
     if (!egui_view_get_enable(self))
     {
-        icon_color = egui_rgb_mix(icon_color, EGUI_COLOR_HEX(0x97A4B1), 58);
+        icon_color = egui_rgb_mix(icon_color, HCW_COLOR_TEXT_SOFT, EGUI_ALPHA_MAKE(36));
     }
 
     for (uint8_t i = 0; i < data->command_count; ++i)
@@ -495,7 +495,7 @@ void egui_view_path_icon_init(egui_view_t *self)
 #endif
 
     local->data = egui_view_path_icon_default_data();
-    local->icon_color = EGUI_COLOR_HEX(0x0F6CBD);
+    local->icon_color = HCW_COLOR_PRIMARY;
 
     egui_view_set_view_name(self, "egui_view_path_icon");
 }

@@ -41,7 +41,7 @@ static egui_view_api_t subtle_divider_api;
 static egui_view_api_t accent_divider_api;
 static uint8_t ui_ready;
 
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, HCW_COLOR_PAGE_BG, EGUI_ALPHA_100, 14);
 EGUI_BACKGROUND_PARAM_INIT(bg_page_panel_params, &bg_page_panel_param, NULL, NULL);
 EGUI_BACKGROUND_COLOR_STATIC_CONST_INIT(bg_page_panel, &bg_page_panel_params);
 
@@ -51,17 +51,17 @@ static const divider_snapshot_t primary_snapshots[] = {
         {
                 0,
                 "Standard / neutral",
-                EGUI_COLOR_HEX(0x51606F),
+                HCW_COLOR_TEXT_MUTED,
         },
         {
                 1,
                 "Accent / emphasis",
-                EGUI_COLOR_HEX(0x0F6CBD),
+                HCW_COLOR_PRIMARY,
         },
         {
                 2,
                 "Subtle / muted",
-                EGUI_COLOR_HEX(0x6F7C8A),
+                HCW_COLOR_TEXT_MUTED,
         },
 };
 
@@ -149,7 +149,7 @@ void test_init_ui(void)
     egui_view_linearlayout_set_align_type(EGUI_VIEW_OF(&root_layout), EGUI_ALIGN_HCENTER);
     egui_view_set_background(EGUI_VIEW_OF(&root_layout), EGUI_BG_OF(&bg_page_panel));
 
-    init_text_label(&title_label, DIVIDER_ROOT_WIDTH, 18, title_text, (const egui_font_t *)&egui_res_font_montserrat_12_4, EGUI_COLOR_HEX(0x21303F),
+    init_text_label(&title_label, DIVIDER_ROOT_WIDTH, 18, title_text, (const egui_font_t *)&egui_res_font_montserrat_12_4, HCW_COLOR_TEXT,
                     EGUI_ALIGN_CENTER);
     egui_view_set_margin(EGUI_VIEW_OF(&title_label), 0, 8, 0, 18);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label));
@@ -163,7 +163,7 @@ void test_init_ui(void)
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&primary_divider));
 
     init_text_label(&primary_status_label, DIVIDER_ROOT_WIDTH, 12, "Standard / neutral", (const egui_font_t *)&egui_res_font_montserrat_10_4,
-                    EGUI_COLOR_HEX(0x51606F), EGUI_ALIGN_CENTER);
+                    HCW_COLOR_TEXT_MUTED, EGUI_ALIGN_CENTER);
     egui_view_set_margin(EGUI_VIEW_OF(&primary_status_label), 0, 0, 0, 16);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&primary_status_label));
 

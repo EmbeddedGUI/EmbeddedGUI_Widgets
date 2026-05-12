@@ -215,14 +215,23 @@ static void test_shortcut_recorder_setters_clear_pressed_state(void)
 {
     setup_recorder();
 
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_SURFACE.full, test_recorder.surface_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_BORDER_STRONG.full, test_recorder.border_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT_STRONG.full, test_recorder.text_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT_SOFT.full, test_recorder.muted_text_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PRIMARY_DARK.full, test_recorder.accent_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_WARNING.full, test_recorder.listening_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PRIMARY_DARK.full, test_recorder.preview_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_DANGER.full, test_recorder.danger_color.full);
+
     seed_pressed_state(EGUI_VIEW_SHORTCUT_RECORDER_PART_PRESET, 1);
     egui_view_shortcut_recorder_set_header(EGUI_VIEW_OF(&test_recorder), "Quick launch", "Capture a shortcut", "Ready");
     assert_pressed_cleared();
 
     seed_pressed_state(EGUI_VIEW_SHORTCUT_RECORDER_PART_PRESET, 1);
-    egui_view_shortcut_recorder_set_palette(EGUI_VIEW_OF(&test_recorder), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD9E0E7), EGUI_COLOR_HEX(0x1F2933),
-                                            EGUI_COLOR_HEX(0x708090), EGUI_COLOR_HEX(0x2563EB), EGUI_COLOR_HEX(0xD97706), EGUI_COLOR_HEX(0x0F766E),
-                                            EGUI_COLOR_HEX(0xBE5168));
+    egui_view_shortcut_recorder_set_palette(EGUI_VIEW_OF(&test_recorder), EGUI_COLOR_HEX(0x101112), EGUI_COLOR_HEX(0x202122),
+                                            EGUI_COLOR_HEX(0x303132), EGUI_COLOR_HEX(0x404142), EGUI_COLOR_HEX(0x505152),
+                                            EGUI_COLOR_HEX(0x606162), EGUI_COLOR_HEX(0x707172), EGUI_COLOR_HEX(0x808182));
     assert_pressed_cleared();
 
     seed_pressed_state(EGUI_VIEW_SHORTCUT_RECORDER_PART_PRESET, 2);
@@ -412,6 +421,25 @@ static void test_shortcut_recorder_regions_follow_state(void)
     EGUI_TEST_ASSERT_FALSE(egui_view_shortcut_recorder_get_part_region(EGUI_VIEW_OF(&test_recorder), EGUI_VIEW_SHORTCUT_RECORDER_PART_CLEAR, 0, &region));
 }
 
+static void test_shortcut_recorder_standard_mode_uses_field_as_primary_frame(void)
+{
+    egui_view_shortcut_recorder_metrics_t metrics;
+
+    setup_recorder();
+    layout_recorder();
+    shortcut_recorder_get_metrics(&test_recorder, EGUI_VIEW_OF(&test_recorder), &metrics);
+    EGUI_TEST_ASSERT_FALSE(test_recorder.compact_mode);
+    EGUI_TEST_ASSERT_TRUE(metrics.field_region.location.x > 0);
+    EGUI_TEST_ASSERT_TRUE(metrics.field_region.location.y > 0);
+    EGUI_TEST_ASSERT_TRUE(metrics.field_region.size.width < EGUI_VIEW_OF(&test_recorder)->region.size.width);
+
+    egui_view_shortcut_recorder_set_compact_mode(EGUI_VIEW_OF(&test_recorder), 1);
+    layout_recorder();
+    shortcut_recorder_get_metrics(&test_recorder, EGUI_VIEW_OF(&test_recorder), &metrics);
+    EGUI_TEST_ASSERT_TRUE(test_recorder.compact_mode);
+    EGUI_TEST_ASSERT_TRUE(metrics.field_region.location.x > 0);
+}
+
 void test_shortcut_recorder_run(void)
 {
     EGUI_TEST_SUITE_BEGIN(shortcut_recorder);
@@ -425,5 +453,6 @@ void test_shortcut_recorder_run(void)
     EGUI_TEST_RUN(test_shortcut_recorder_compact_read_only_and_disabled_guards_clear_pressed_state);
     EGUI_TEST_RUN(test_shortcut_recorder_static_preview_consumes_input_and_clears_pressed_state);
     EGUI_TEST_RUN(test_shortcut_recorder_regions_follow_state);
+    EGUI_TEST_RUN(test_shortcut_recorder_standard_mode_uses_field_as_primary_frame);
     EGUI_TEST_SUITE_END();
 }

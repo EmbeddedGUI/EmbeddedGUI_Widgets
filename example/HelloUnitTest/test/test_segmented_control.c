@@ -288,7 +288,7 @@ static void test_segmented_control_style_helpers_and_params(void)
     EGUI_TEST_ASSERT_EQUAL_INT(10, test_control.corner_radius);
     EGUI_TEST_ASSERT_EQUAL_INT(2, test_control.segment_gap);
     EGUI_TEST_ASSERT_EQUAL_INT(2, test_control.horizontal_padding);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x2563EB).full, test_control.selected_bg_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PRIMARY.full, test_control.selected_bg_color.full);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_SEGMENTED_CONTROL_PRESSED_NONE, test_control.pressed_index);
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_control)->is_pressed);
 
@@ -298,7 +298,7 @@ static void test_segmented_control_style_helpers_and_params(void)
     EGUI_TEST_ASSERT_EQUAL_INT(8, test_control.corner_radius);
     EGUI_TEST_ASSERT_EQUAL_INT(1, test_control.segment_gap);
     EGUI_TEST_ASSERT_EQUAL_INT(1, test_control.horizontal_padding);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x0C7C73).full, test_control.selected_bg_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PRIMARY.full, test_control.selected_bg_color.full);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_SEGMENTED_CONTROL_PRESSED_NONE, test_control.pressed_index);
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_control)->is_pressed);
 
@@ -306,8 +306,8 @@ static void test_segmented_control_style_helpers_and_params(void)
     EGUI_VIEW_OF(&test_control)->is_pressed = 1;
     hcw_segmented_control_apply_read_only_style(EGUI_VIEW_OF(&test_control));
     EGUI_TEST_ASSERT_EQUAL_INT(8, test_control.corner_radius);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x97A4B4).full, test_control.selected_bg_color.full);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xDBE2E8).full, test_control.border_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT_SOFT.full, test_control.selected_bg_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_BORDER.full, test_control.border_color.full);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_SEGMENTED_CONTROL_PRESSED_NONE, test_control.pressed_index);
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_control)->is_pressed);
 

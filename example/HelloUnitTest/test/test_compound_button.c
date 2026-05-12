@@ -254,6 +254,14 @@ static void test_compound_button_setters_clear_pressed_and_update_state(void)
 {
     setup_widget();
 
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PANEL.full, test_widget.surface_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_SURFACE_PRESS.full, test_widget.pressed_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_BORDER_STRONG.full, test_widget.border_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PRIMARY_DARK.full, test_widget.focus_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT_STRONG.full, test_widget.title_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT_SOFT.full, test_widget.subtitle_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PRIMARY_DARK.full, test_widget.icon_color.full);
+
     seed_pressed_state(&test_widget, 1);
     egui_view_compound_button_set_title(EGUI_VIEW_OF(&test_widget), "Sync changes");
     EGUI_TEST_ASSERT_TRUE(strcmp("Sync changes", test_widget.title) == 0);
@@ -287,7 +295,13 @@ static void test_compound_button_setters_clear_pressed_and_update_state(void)
     seed_pressed_state(&test_widget, 1);
     egui_view_compound_button_set_style(EGUI_VIEW_OF(&test_widget), EGUI_VIEW_COMPOUND_BUTTON_STYLE_PRIMARY);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_COMPOUND_BUTTON_STYLE_PRIMARY, test_widget.style);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x0F6CBD).full, test_widget.surface_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PRIMARY_DARK.full, test_widget.surface_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PRIMARY_DARK.full, test_widget.pressed_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PRIMARY_DARK.full, test_widget.border_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PRIMARY_LIGHT.full, test_widget.focus_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_WHITE.full, test_widget.title_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_SURFACE.full, test_widget.subtitle_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_WHITE.full, test_widget.icon_color.full);
     assert_pressed_cleared(&test_widget);
 
     seed_pressed_state(&test_widget, 1);

@@ -2,6 +2,7 @@
 #include "egui_view_figure.h"
 #include "uicode_disp0.h"
 #include "demo_scaffold.h"
+#include "../../hcw_text_center.h"
 
 #if EGUI_CONFIG_RECORDING_TEST
 #include "core/egui_input_simulator.h"
@@ -47,24 +48,50 @@ static egui_view_figure_t compact_preview;
 static egui_view_label_t compact_child;
 static egui_view_figure_t read_only_preview;
 static egui_view_label_t read_only_child;
+static egui_view_api_t primary_child_api;
+static egui_view_api_t compact_child_api;
+static egui_view_api_t read_only_child_api;
 static egui_view_api_t compact_preview_api;
 static egui_view_api_t read_only_preview_api;
 static uint8_t ui_ready;
 
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, HCW_COLOR_PAGE_BG, EGUI_ALPHA_100, 14);
 EGUI_BACKGROUND_PARAM_INIT(bg_page_panel_params, &bg_page_panel_param, NULL, NULL);
 EGUI_BACKGROUND_COLOR_STATIC_CONST_INIT(bg_page_panel, &bg_page_panel_params);
 
 static const char *title_text = "Figure";
 
 static const figure_snapshot_t primary_snapshots[] = {
-        {"Intro text", "Media", "wrapped text", "after figure", "Left anchored figure", EGUI_COLOR_HEX(0x0F6CBD), 0},
-        {"Anchor right", "Callout", "text wraps left", "after wrap", "Right anchored figure", EGUI_COLOR_HEX(0x0F6CBD), 1},
-        {"Centered", "Card", "below figure", "flow text", "Centered compact", EGUI_COLOR_HEX(0x0C7C73), 2},
-        {"Audit", "Lock", "static figure", "read only", "Read only figure", EGUI_COLOR_HEX(0x65717E), 3},
+        {"Intro text", "Media", "wrapped text", "after figure", "Left anchored figure", HCW_COLOR_PRIMARY, 0},
+        {"Anchor right", "Callout", "text wraps left", "after wrap", "Right anchored figure", HCW_COLOR_PRIMARY, 1},
+        {"Centered", "Card", "below figure", "flow text", "Centered compact", HCW_COLOR_PRIMARY, 2},
+        {"Audit", "Lock", "static figure", "read only", "Read only figure", HCW_COLOR_TEXT_SOFT, 3},
 };
 
 static void layout_page(void);
+
+static void centered_child_label_on_draw(egui_view_t *self)
+{
+    egui_view_label_t *label = EGUI_CAST_TO(egui_view_label_t, self);
+    egui_region_t region;
+
+    if (label->font == NULL || label->text == NULL)
+    {
+        egui_view_label_on_draw(self);
+        return;
+    }
+
+    egui_view_get_work_region(self, &region);
+    region.location.y += hcw_text_center_get_delta(label->font, label->text, &region, label->align_type);
+    egui_canvas_draw_text_in_rect_with_line_space(egui_view_get_canvas(self), label->font, label->text, &region, label->align_type, label->line_space,
+                                                  label->color, label->alpha);
+}
+
+static void apply_centered_child_label_api(egui_view_t *label, egui_view_api_t *api)
+{
+    egui_view_copy_api(label, api);
+    api->on_draw = centered_child_label_on_draw;
+}
 
 static void init_text_label(egui_view_label_t *label, egui_dim_t width, egui_dim_t height, const char *text, const egui_font_t *font, egui_color_t color)
 {
@@ -122,13 +149,13 @@ static void apply_preview_states(void)
     egui_view_figure_apply_compact_style(EGUI_VIEW_OF(&compact_preview));
     egui_view_figure_set_text(EGUI_VIEW_OF(&compact_preview), "Fit", "wrap", "Next");
     egui_view_label_set_text(EGUI_VIEW_OF(&compact_child), "Fig");
-    egui_view_label_set_font_color(EGUI_VIEW_OF(&compact_child), EGUI_COLOR_HEX(0x0C7C73), EGUI_ALPHA_100);
+    egui_view_label_set_font_color(EGUI_VIEW_OF(&compact_child), HCW_COLOR_PRIMARY, EGUI_ALPHA_100);
     egui_view_figure_layout_child(EGUI_VIEW_OF(&compact_preview));
 
     egui_view_figure_apply_read_only_style(EGUI_VIEW_OF(&read_only_preview));
     egui_view_figure_set_text(EGUI_VIEW_OF(&read_only_preview), "RO", "wrap", "Trail");
     egui_view_label_set_text(EGUI_VIEW_OF(&read_only_child), "Lock");
-    egui_view_label_set_font_color(EGUI_VIEW_OF(&read_only_child), EGUI_COLOR_HEX(0x65717E), EGUI_ALPHA_100);
+    egui_view_label_set_font_color(EGUI_VIEW_OF(&read_only_child), HCW_COLOR_TEXT_SOFT, EGUI_ALPHA_100);
     egui_view_figure_layout_child(EGUI_VIEW_OF(&read_only_preview));
 
     if (ui_ready)
@@ -171,7 +198,7 @@ void test_init_ui(void)
     egui_view_linearlayout_set_align_type(EGUI_VIEW_OF(&root_layout), EGUI_ALIGN_HCENTER);
     egui_view_set_background(EGUI_VIEW_OF(&root_layout), EGUI_BG_OF(&bg_page_panel));
 
-    init_text_label(&title_label, FIGURE_ROOT_WIDTH, 18, title_text, (const egui_font_t *)&egui_res_font_montserrat_12_4, EGUI_COLOR_HEX(0x21303F));
+    init_text_label(&title_label, FIGURE_ROOT_WIDTH, 18, title_text, (const egui_font_t *)&egui_res_font_montserrat_12_4, HCW_COLOR_TEXT);
     egui_view_set_margin(EGUI_VIEW_OF(&title_label), 0, 8, 0, 8);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label));
 
@@ -180,12 +207,13 @@ void test_init_ui(void)
     egui_view_set_margin(EGUI_VIEW_OF(&primary_control), 0, 0, 0, 8);
     egui_view_figure_set_font(EGUI_VIEW_OF(&primary_control), (const egui_font_t *)&egui_res_font_montserrat_8_4);
     init_text_label(&primary_child, FIGURE_CHILD_WIDTH, FIGURE_CHILD_HEIGHT, "Media", (const egui_font_t *)&egui_res_font_montserrat_8_4,
-                    EGUI_COLOR_HEX(0x0F6CBD));
+                    HCW_COLOR_PRIMARY);
+    apply_centered_child_label_api(EGUI_VIEW_OF(&primary_child), &primary_child_api);
     egui_view_figure_set_child(EGUI_VIEW_OF(&primary_control), EGUI_VIEW_OF(&primary_child));
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&primary_control));
 
     init_text_label(&caption_label, FIGURE_ROOT_WIDTH, 12, "Left anchored figure", (const egui_font_t *)&egui_res_font_montserrat_8_4,
-                    EGUI_COLOR_HEX(0x0F6CBD));
+                    HCW_COLOR_PRIMARY);
     egui_view_set_margin(EGUI_VIEW_OF(&caption_label), 0, 0, 0, 12);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&caption_label));
 
@@ -199,7 +227,8 @@ void test_init_ui(void)
     egui_view_set_size(EGUI_VIEW_OF(&compact_preview), FIGURE_PREVIEW_WIDTH, FIGURE_PREVIEW_HEIGHT);
     egui_view_figure_set_font(EGUI_VIEW_OF(&compact_preview), (const egui_font_t *)&egui_res_font_montserrat_8_4);
     init_text_label(&compact_child, FIGURE_PREVIEW_CHILD_W, FIGURE_PREVIEW_CHILD_H, "Fig", (const egui_font_t *)&egui_res_font_montserrat_8_4,
-                    EGUI_COLOR_HEX(0x0C7C73));
+                    HCW_COLOR_PRIMARY);
+    apply_centered_child_label_api(EGUI_VIEW_OF(&compact_child), &compact_child_api);
     egui_view_figure_set_child(EGUI_VIEW_OF(&compact_preview), EGUI_VIEW_OF(&compact_child));
     egui_view_figure_override_static_preview_api(EGUI_VIEW_OF(&compact_preview), &compact_preview_api);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
@@ -212,7 +241,8 @@ void test_init_ui(void)
     egui_view_set_margin(EGUI_VIEW_OF(&read_only_preview), 12, 0, 0, 0);
     egui_view_figure_set_font(EGUI_VIEW_OF(&read_only_preview), (const egui_font_t *)&egui_res_font_montserrat_8_4);
     init_text_label(&read_only_child, FIGURE_PREVIEW_CHILD_W, FIGURE_PREVIEW_CHILD_H, "Lock", (const egui_font_t *)&egui_res_font_montserrat_8_4,
-                    EGUI_COLOR_HEX(0x65717E));
+                    HCW_COLOR_TEXT_SOFT);
+    apply_centered_child_label_api(EGUI_VIEW_OF(&read_only_child), &read_only_child_api);
     egui_view_figure_set_child(EGUI_VIEW_OF(&read_only_preview), EGUI_VIEW_OF(&read_only_child));
     egui_view_figure_override_static_preview_api(EGUI_VIEW_OF(&read_only_preview), &read_only_preview_api);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS

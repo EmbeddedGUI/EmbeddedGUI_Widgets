@@ -309,16 +309,26 @@ static void test_auto_suggest_box_style_helpers_and_params(void)
     EGUI_TEST_ASSERT_EQUAL_INT(34, test_box.collapsed_height);
     EGUI_TEST_ASSERT_EQUAL_INT(24, test_box.item_height);
     EGUI_TEST_ASSERT_EQUAL_INT(4, test_box.max_visible_items);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_BORDER_STRONG.full, test_box.popup_border_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PRIMARY_DARK.full, test_box.border_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT_STRONG.full, test_box.textinput.text_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT_SOFT.full, test_box.muted_text_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT_SOFT.full, test_box.icon_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PRIMARY_DARK.full, test_box.highlight_color.full);
 
     hcw_auto_suggest_box_apply_compact_style(EGUI_VIEW_OF(&test_box));
     EGUI_TEST_ASSERT_EQUAL_INT(28, test_box.collapsed_height);
     EGUI_TEST_ASSERT_EQUAL_INT(21, test_box.item_height);
     EGUI_TEST_ASSERT_EQUAL_INT(3, test_box.max_visible_items);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x0C7C73).full, test_box.highlight_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PRIMARY_DARK.full, test_box.highlight_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_BORDER_STRONG.full, test_box.popup_border_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT_SOFT.full, test_box.icon_color.full);
 
     hcw_auto_suggest_box_apply_read_only_style(EGUI_VIEW_OF(&test_box));
     EGUI_TEST_ASSERT_FALSE(egui_view_get_enable(EGUI_VIEW_OF(&test_box)));
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x8A97A5).full, test_box.icon_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT_STRONG.full, test_box.textinput.text_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TRACK_STRONG.full, test_box.popup_border_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT.full, test_box.icon_color.full);
 
     font_before = test_box.textinput.font;
     egui_view_auto_suggest_box_set_font(EGUI_VIEW_OF(&test_box), NULL);

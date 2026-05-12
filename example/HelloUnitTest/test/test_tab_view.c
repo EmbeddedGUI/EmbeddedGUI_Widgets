@@ -306,9 +306,9 @@ static void test_tab_view_setters_clear_pressed_state(void)
     assert_pressed_cleared(&test_tab_view);
 
     seed_pressed_state(&test_tab_view, 1, EGUI_VIEW_TAB_VIEW_PART_CLOSE);
-    egui_view_tab_view_set_palette(EGUI_VIEW_OF(&test_tab_view), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD5DCE4), EGUI_COLOR_HEX(0xF4F7F9),
-                                   EGUI_COLOR_HEX(0x1A2734), EGUI_COLOR_HEX(0x6B7A89), EGUI_COLOR_HEX(0x0F6CBD), EGUI_COLOR_HEX(0x0F7B45),
-                                   EGUI_COLOR_HEX(0x9D5D00), EGUI_COLOR_HEX(0x6B7A89));
+    egui_view_tab_view_set_palette(EGUI_VIEW_OF(&test_tab_view), HCW_COLOR_SURFACE, HCW_COLOR_BORDER, HCW_COLOR_PANEL,
+                                   HCW_COLOR_TEXT, HCW_COLOR_TEXT_MUTED, HCW_COLOR_PRIMARY, HCW_COLOR_SUCCESS,
+                                   HCW_COLOR_WARNING, HCW_COLOR_TEXT_MUTED);
     assert_pressed_cleared(&test_tab_view);
 
     seed_pressed_state(&test_tab_view, 1, EGUI_VIEW_TAB_VIEW_PART_CLOSE);

@@ -5,6 +5,9 @@
 #include <string.h>
 
 #include "../../HelloCustomWidgets/input/rating_control/egui_view_rating_control.h"
+#include "../../HelloCustomWidgets/input/rating_control/resource/font/egui_res_font_rating_control_icons_16_4.c"
+#include "../../HelloCustomWidgets/input/rating_control/resource/font/egui_res_font_rating_control_icons_20_4.c"
+#include "../../HelloCustomWidgets/input/rating_control/resource/font/egui_res_font_rating_control_icons_24_4.c"
 #include "../../HelloCustomWidgets/input/rating_control/egui_view_rating_control.c"
 
 typedef struct rating_control_preview_snapshot rating_control_preview_snapshot_t;
@@ -88,8 +91,8 @@ static void setup_preview_rating_control(uint8_t value)
     egui_view_rating_control_set_value_labels(EGUI_VIEW_OF(&preview_rating_control), preview_value_labels, EGUI_ARRAY_SIZE(preview_value_labels));
     egui_view_rating_control_set_font(EGUI_VIEW_OF(&preview_rating_control), (const egui_font_t *)&egui_res_font_montserrat_10_4);
     egui_view_rating_control_set_meta_font(EGUI_VIEW_OF(&preview_rating_control), (const egui_font_t *)&egui_res_font_montserrat_8_4);
-    egui_view_rating_control_set_palette(EGUI_VIEW_OF(&preview_rating_control), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xDADFE5), EGUI_COLOR_HEX(0x2B3138),
-                                         EGUI_COLOR_HEX(0x74808C), EGUI_COLOR_HEX(0xC78C16), EGUI_COLOR_HEX(0xE0E6EC));
+    egui_view_rating_control_set_palette(EGUI_VIEW_OF(&preview_rating_control), HCW_COLOR_SURFACE, HCW_COLOR_BORDER_STRONG,
+                                         HCW_COLOR_TEXT_STRONG, HCW_COLOR_TEXT_SOFT, HCW_COLOR_WARNING, HCW_COLOR_BORDER_STRONG);
     egui_view_rating_control_set_item_count(EGUI_VIEW_OF(&preview_rating_control), 5);
     egui_view_rating_control_set_clear_enabled(EGUI_VIEW_OF(&preview_rating_control), 1);
     egui_view_rating_control_set_on_changed_listener(EGUI_VIEW_OF(&preview_rating_control), on_rating_changed);
@@ -315,6 +318,11 @@ static void test_rating_control_setters_clear_pressed_state(void)
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_rating_control)->is_pressed);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_RATING_CONTROL_PART_NONE, test_rating_control.pressed_part);
     EGUI_TEST_ASSERT_EQUAL_INT(1, test_rating_control.read_only_mode);
+
+    egui_view_rating_control_init(EGUI_VIEW_OF(&test_rating_control));
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_BORDER_STRONG.full, test_rating_control.border_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT_SOFT.full, test_rating_control.muted_text_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TRACK_STRONG.full, test_rating_control.shadow_color.full);
 }
 
 static void test_rating_control_enter_clear_commits_zero(void)

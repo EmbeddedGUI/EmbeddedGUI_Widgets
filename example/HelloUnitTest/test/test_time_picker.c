@@ -311,6 +311,11 @@ static void test_time_picker_font_palette_and_helpers(void)
     char buffer[8];
 
     setup_time_picker();
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PANEL.full, test_time_picker.surface_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_BORDER_STRONG.full, test_time_picker.border_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT_STRONG.full, test_time_picker.text_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT_SOFT.full, test_time_picker.muted_text_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PRIMARY_DARK.full, test_time_picker.accent_color.full);
 
     egui_view_time_picker_set_font(EGUI_VIEW_OF(&test_time_picker), NULL);
     egui_view_time_picker_set_meta_font(EGUI_VIEW_OF(&test_time_picker), NULL);
@@ -357,7 +362,7 @@ static void test_time_picker_font_palette_and_helpers(void)
     time_picker_get_segment_text(&test_time_picker, EGUI_VIEW_TIME_PICKER_SEGMENT_HOUR, 0, buffer);
     EGUI_TEST_ASSERT_TRUE(strcmp(buffer, "23") == 0);
 
-    EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(sample, EGUI_COLOR_DARK_GREY, 68).full, time_picker_mix_disabled(sample).full);
+    EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(sample, HCW_COLOR_TEXT_SOFT, EGUI_ALPHA_MAKE(40)).full, time_picker_mix_disabled(sample).full);
 }
 
 static void test_time_picker_metrics_and_hit_testing(void)

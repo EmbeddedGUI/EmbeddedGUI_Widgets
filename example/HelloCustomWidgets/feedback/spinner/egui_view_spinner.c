@@ -26,7 +26,7 @@ void hcw_spinner_apply_standard_style(egui_view_t *self)
     local->stroke_width = 4;
     local->arc_length = 104;
     local->rotation_angle = -90;
-    local->color = EGUI_COLOR_HEX(0x0F6CBD);
+    local->color = HCW_COLOR_PRIMARY;
     egui_view_spinner_start(self);
     egui_view_invalidate(self);
 }
@@ -39,7 +39,7 @@ void hcw_spinner_apply_compact_style(egui_view_t *self)
     local->stroke_width = 3;
     local->arc_length = 84;
     local->rotation_angle = -90;
-    local->color = EGUI_COLOR_HEX(0x0F6CBD);
+    local->color = HCW_COLOR_PRIMARY;
     egui_view_spinner_start(self);
     egui_view_invalidate(self);
 }
@@ -52,7 +52,7 @@ void hcw_spinner_apply_muted_style(egui_view_t *self)
     local->stroke_width = 3;
     local->arc_length = 76;
     local->rotation_angle = -90;
-    local->color = EGUI_COLOR_HEX(0x8A96A2);
+    local->color = HCW_COLOR_TEXT_SOFT;
     egui_view_spinner_start(self);
     egui_view_invalidate(self);
 }

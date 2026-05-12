@@ -71,9 +71,9 @@ static void setup_preview_control(void)
 {
     egui_view_status_bar_init(EGUI_VIEW_OF(&preview_control));
     egui_view_set_size(EGUI_VIEW_OF(&preview_control), 94, 28);
-    egui_view_status_bar_set_palette(EGUI_VIEW_OF(&preview_control), EGUI_COLOR_HEX(0xF8FBFD), EGUI_COLOR_HEX(0xD2DCE6),
-                                     EGUI_COLOR_HEX(0xDFE7EF), EGUI_COLOR_HEX(0x21313E), EGUI_COLOR_HEX(0x6E7E8E),
-                                     EGUI_COLOR_HEX(0x0C7C73), EGUI_COLOR_HEX(0x107C41), EGUI_COLOR_HEX(0xA15C00));
+    egui_view_status_bar_set_palette(EGUI_VIEW_OF(&preview_control), HCW_COLOR_SURFACE_PRESS, HCW_COLOR_BORDER,
+                                     HCW_COLOR_BORDER, HCW_COLOR_TEXT_STRONG, HCW_COLOR_TEXT_MUTED,
+                                     HCW_COLOR_PRIMARY, HCW_COLOR_SUCCESS, HCW_COLOR_WARNING);
     egui_view_status_bar_set_items(EGUI_VIEW_OF(&preview_control), standard_items, 2);
     egui_view_status_bar_override_static_preview_api(EGUI_VIEW_OF(&preview_control), &preview_api);
 }
@@ -194,9 +194,9 @@ static void test_status_bar_init_defaults(void)
     EGUI_TEST_ASSERT_EQUAL_INT(0, test_control.item_count);
     EGUI_TEST_ASSERT_TRUE(test_control.label_font == (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT);
     EGUI_TEST_ASSERT_TRUE(test_control.value_font == (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xFFFFFF).full, test_control.surface_color.full);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xCCD6E0).full, test_control.border_color.full);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x0F6CBD).full, test_control.accent_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_SURFACE.full, test_control.surface_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_BORDER.full, test_control.border_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PRIMARY.full, test_control.accent_color.full);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_MARGIN_PADDING
     EGUI_TEST_ASSERT_EQUAL_INT(2, EGUI_VIEW_OF(&test_control)->padding.left);
     EGUI_TEST_ASSERT_EQUAL_INT(2, EGUI_VIEW_OF(&test_control)->padding.right);

@@ -42,7 +42,7 @@ static egui_view_api_t secondary_preview_api;
 static egui_view_api_t muted_preview_api;
 static uint8_t ui_ready;
 
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, HCW_COLOR_PAGE_BG, EGUI_ALPHA_100, 14);
 EGUI_BACKGROUND_PARAM_INIT(bg_page_panel_params, &bg_page_panel_param, NULL, NULL);
 EGUI_BACKGROUND_COLOR_STATIC_CONST_INIT(bg_page_panel, &bg_page_panel_params);
 
@@ -83,10 +83,10 @@ static const egui_view_status_bar_item_t muted_preview_items[] = {
 };
 
 static const status_bar_snapshot_t primary_snapshots[] = {
-        {standard_items, (uint8_t)EGUI_ARRAY_SIZE(standard_items), "Ready / standard", EGUI_COLOR_HEX(0x0F6CBD), 0},
-        {accent_items, (uint8_t)EGUI_ARRAY_SIZE(accent_items), "Running / accent", EGUI_COLOR_HEX(0x0F6CBD), 1},
-        {telemetry_items, (uint8_t)EGUI_ARRAY_SIZE(telemetry_items), "Telemetry / app palette", EGUI_COLOR_HEX(0x0C7C73), 2},
-        {locked_items, (uint8_t)EGUI_ARRAY_SIZE(locked_items), "Locked / app muted", EGUI_COLOR_HEX(0x65717E), 3},
+        {standard_items, (uint8_t)EGUI_ARRAY_SIZE(standard_items), "Ready / standard", HCW_COLOR_PRIMARY, 0},
+        {accent_items, (uint8_t)EGUI_ARRAY_SIZE(accent_items), "Running / accent", HCW_COLOR_PRIMARY, 1},
+        {telemetry_items, (uint8_t)EGUI_ARRAY_SIZE(telemetry_items), "Telemetry / app palette", HCW_COLOR_PRIMARY, 2},
+        {locked_items, (uint8_t)EGUI_ARRAY_SIZE(locked_items), "Locked / app muted", HCW_COLOR_TEXT_MUTED, 3},
 };
 
 static void layout_page(void);
@@ -107,24 +107,24 @@ static void apply_status_bar_palette(egui_view_t *view, uint8_t palette)
     switch (palette)
     {
     case 1:
-        egui_view_status_bar_set_palette(view, EGUI_COLOR_HEX(0xF7FBFF), EGUI_COLOR_HEX(0xB9D6F0), EGUI_COLOR_HEX(0xCDE0F2),
-                                         EGUI_COLOR_HEX(0x173247), EGUI_COLOR_HEX(0x5D7183), EGUI_COLOR_HEX(0x0F6CBD),
-                                         EGUI_COLOR_HEX(0x0F7B45), EGUI_COLOR_HEX(0xA15C00));
+        egui_view_status_bar_set_palette(view, HCW_COLOR_SURFACE_SUBTLE, HCW_COLOR_PRIMARY_SOFT, HCW_COLOR_PRIMARY_TINT,
+                                         HCW_COLOR_TEXT, HCW_COLOR_TEXT_MUTED, HCW_COLOR_PRIMARY,
+                                         HCW_COLOR_SUCCESS, HCW_COLOR_WARNING);
         break;
     case 2:
-        egui_view_status_bar_set_palette(view, EGUI_COLOR_HEX(0xF8FBFD), EGUI_COLOR_HEX(0xD2DCE6), EGUI_COLOR_HEX(0xDFE7EF),
-                                         EGUI_COLOR_HEX(0x21313E), EGUI_COLOR_HEX(0x6E7E8E), EGUI_COLOR_HEX(0x0C7C73),
-                                         EGUI_COLOR_HEX(0x107C41), EGUI_COLOR_HEX(0xA15C00));
+        egui_view_status_bar_set_palette(view, HCW_COLOR_SURFACE_PRESS, HCW_COLOR_BORDER, HCW_COLOR_BORDER,
+                                         HCW_COLOR_TEXT_STRONG, HCW_COLOR_TEXT_MUTED, HCW_COLOR_PRIMARY,
+                                         HCW_COLOR_SUCCESS, HCW_COLOR_WARNING);
         break;
     case 3:
-        egui_view_status_bar_set_palette(view, EGUI_COLOR_HEX(0xF5F7FA), EGUI_COLOR_HEX(0xD7DEE6), EGUI_COLOR_HEX(0xE1E7ED),
-                                         EGUI_COLOR_HEX(0x687684), EGUI_COLOR_HEX(0x8B98A5), EGUI_COLOR_HEX(0x788593),
-                                         EGUI_COLOR_HEX(0x768777), EGUI_COLOR_HEX(0x92765F));
+        egui_view_status_bar_set_palette(view, HCW_COLOR_SURFACE_SUBTLE, HCW_COLOR_BORDER, HCW_COLOR_BORDER,
+                                         HCW_COLOR_TEXT_MUTED, HCW_COLOR_TEXT_SOFT, HCW_COLOR_TEXT_SOFT,
+                                         HCW_COLOR_TEXT_MUTED, HCW_COLOR_WARNING_DARK);
         break;
     default:
-        egui_view_status_bar_set_palette(view, EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xCCD6E0), EGUI_COLOR_HEX(0xDCE4EC),
-                                         EGUI_COLOR_HEX(0x1D2A36), EGUI_COLOR_HEX(0x637283), EGUI_COLOR_HEX(0x0F6CBD),
-                                         EGUI_COLOR_HEX(0x107C41), EGUI_COLOR_HEX(0xB26A00));
+        egui_view_status_bar_set_palette(view, HCW_COLOR_SURFACE, HCW_COLOR_BORDER, HCW_COLOR_BORDER,
+                                         HCW_COLOR_TEXT, HCW_COLOR_TEXT_MUTED, HCW_COLOR_PRIMARY,
+                                         HCW_COLOR_SUCCESS, HCW_COLOR_WARNING);
         break;
     }
 }
@@ -155,7 +155,7 @@ static void apply_preview_states(void)
     apply_status_bar_palette(EGUI_VIEW_OF(&secondary_preview), 2);
     egui_view_status_bar_set_items(EGUI_VIEW_OF(&secondary_preview), secondary_preview_items, (uint8_t)EGUI_ARRAY_SIZE(secondary_preview_items));
 
-    egui_view_set_enable(EGUI_VIEW_OF(&muted_preview), 0);
+    egui_view_set_enable(EGUI_VIEW_OF(&muted_preview), 1);
     apply_status_bar_palette(EGUI_VIEW_OF(&muted_preview), 3);
     egui_view_status_bar_set_items(EGUI_VIEW_OF(&muted_preview), muted_preview_items, (uint8_t)EGUI_ARRAY_SIZE(muted_preview_items));
 
@@ -197,7 +197,7 @@ void test_init_ui(void)
     egui_view_set_background(EGUI_VIEW_OF(&root_layout), EGUI_BG_OF(&bg_page_panel));
 
     init_text_label(&title_label, STATUS_BAR_ROOT_WIDTH, 18, title_text, (const egui_font_t *)&egui_res_font_montserrat_12_4,
-                    EGUI_COLOR_HEX(0x21303F), EGUI_ALIGN_CENTER);
+                    HCW_COLOR_TEXT, EGUI_ALIGN_CENTER);
     egui_view_set_margin(EGUI_VIEW_OF(&title_label), 0, 8, 0, 10);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label));
 
@@ -209,7 +209,7 @@ void test_init_ui(void)
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&primary_control));
 
     init_text_label(&caption_label, STATUS_BAR_ROOT_WIDTH, 12, "Ready / standard", (const egui_font_t *)&egui_res_font_montserrat_8_4,
-                    EGUI_COLOR_HEX(0x0F6CBD), EGUI_ALIGN_CENTER);
+                    HCW_COLOR_PRIMARY, EGUI_ALIGN_CENTER);
     egui_view_set_margin(EGUI_VIEW_OF(&caption_label), 0, 0, 0, 14);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&caption_label));
 

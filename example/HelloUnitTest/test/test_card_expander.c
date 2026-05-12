@@ -221,7 +221,7 @@ static void test_card_expander_internal_helpers_cover_text_fitting_and_tones(voi
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x888888).full, egui_view_card_expander_tone_color(&test_widget, EGUI_VIEW_CARD_EXPANDER_TONE_WARNING).full);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x999999).full, egui_view_card_expander_tone_color(&test_widget, EGUI_VIEW_CARD_EXPANDER_TONE_NEUTRAL).full);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x666666).full, egui_view_card_expander_tone_color(&test_widget, 99).full);
-    EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(sample, EGUI_COLOR_DARK_GREY, 68).full, mixed.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(sample, HCW_COLOR_SURFACE_SUBTLE, EGUI_ALPHA_MAKE(44)).full, mixed.full);
 }
 
 static void test_card_expander_set_snapshots_clamp_and_defaults(void)
@@ -304,12 +304,15 @@ static void test_card_expander_setters_clear_pressed_and_update_state(void)
 
 static void test_card_expander_regions_activate_and_listener(void)
 {
+    egui_view_card_expander_metrics_t metrics;
     egui_dim_t x;
     egui_dim_t y;
 
     setup_widget(g_snapshots, EGUI_ARRAY_SIZE(g_snapshots));
     layout_widget();
     egui_view_card_expander_set_expanded(EGUI_VIEW_OF(&test_widget), 0);
+    egui_view_card_expander_get_metrics(&test_widget, EGUI_VIEW_OF(&test_widget), &g_snapshots[0], &metrics);
+    EGUI_TEST_ASSERT_TRUE(metrics.icon_region.location.x > metrics.header_region.location.x);
 
     EGUI_TEST_ASSERT_TRUE(get_part_center(EGUI_VIEW_OF(&test_widget), EGUI_VIEW_CARD_EXPANDER_PART_HEADER, &x, &y));
     EGUI_TEST_ASSERT_TRUE(egui_view_card_expander_activate_current_part(EGUI_VIEW_OF(&test_widget)));

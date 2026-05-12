@@ -88,8 +88,8 @@ static void setup_preview_password_box(const char *text)
     egui_view_password_box_set_font(EGUI_VIEW_OF(&preview_password_box), (const egui_font_t *)&egui_res_font_montserrat_10_4);
     egui_view_password_box_set_meta_font(EGUI_VIEW_OF(&preview_password_box), (const egui_font_t *)&egui_res_font_montserrat_8_4);
     egui_view_password_box_set_placeholder(EGUI_VIEW_OF(&preview_password_box), "Quick PIN");
-    egui_view_password_box_set_palette(EGUI_VIEW_OF(&preview_password_box), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD5DCE4), EGUI_COLOR_HEX(0x1A2734),
-                                       EGUI_COLOR_HEX(0x6B7A89), EGUI_COLOR_HEX(0x0F6CBD));
+    egui_view_password_box_set_palette(EGUI_VIEW_OF(&preview_password_box), HCW_COLOR_SURFACE, HCW_COLOR_BORDER_STRONG, HCW_COLOR_TEXT_STRONG,
+                                       HCW_COLOR_TEXT_SOFT, HCW_COLOR_PRIMARY_DARK);
     egui_view_password_box_set_text(EGUI_VIEW_OF(&preview_password_box), text);
     egui_view_password_box_set_compact_mode(EGUI_VIEW_OF(&preview_password_box), 1);
     egui_view_password_box_set_on_changed_listener(EGUI_VIEW_OF(&preview_password_box), on_changed);
@@ -294,6 +294,12 @@ static void test_password_box_reveal_toggle_via_keyboard(void)
 static void test_password_box_setters_clear_pressed_state(void)
 {
     setup_password_box("secret");
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_SURFACE.full, test_password_box.surface_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_BORDER_STRONG.full, test_password_box.border_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT_STRONG.full, test_password_box.text_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT_SOFT.full, test_password_box.muted_text_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PRIMARY_DARK.full, test_password_box.accent_color.full);
+
     EGUI_VIEW_OF(&test_password_box)->is_pressed = 1;
     test_password_box.pressed_part = EGUI_VIEW_PASSWORD_BOX_PART_FIELD;
     egui_view_password_box_set_text(EGUI_VIEW_OF(&test_password_box), "deploy-key");
@@ -326,8 +332,8 @@ static void test_password_box_setters_clear_pressed_state(void)
 
     EGUI_VIEW_OF(&test_password_box)->is_pressed = 1;
     test_password_box.pressed_part = EGUI_VIEW_PASSWORD_BOX_PART_FIELD;
-    egui_view_password_box_set_palette(EGUI_VIEW_OF(&test_password_box), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD5DCE4), EGUI_COLOR_HEX(0x1A2734),
-                                       EGUI_COLOR_HEX(0x6B7A89), EGUI_COLOR_HEX(0x0F6CBD));
+    egui_view_password_box_set_palette(EGUI_VIEW_OF(&test_password_box), EGUI_COLOR_HEX(0x101112), EGUI_COLOR_HEX(0x202122), EGUI_COLOR_HEX(0x303132),
+                                       EGUI_COLOR_HEX(0x404142), EGUI_COLOR_HEX(0x505152));
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_password_box)->is_pressed);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_PASSWORD_BOX_PART_NONE, test_password_box.pressed_part);
 

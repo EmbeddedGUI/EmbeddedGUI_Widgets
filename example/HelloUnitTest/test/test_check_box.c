@@ -74,10 +74,10 @@ static void setup_preview_box(uint8_t checked)
     egui_view_set_size(EGUI_VIEW_OF(&preview_box), 104, 28);
     egui_view_checkbox_set_font(EGUI_VIEW_OF(&preview_box), (const egui_font_t *)&egui_res_font_montserrat_10_4);
     hcw_check_box_apply_standard_style(EGUI_VIEW_OF(&preview_box));
-    preview_box.box_color = EGUI_COLOR_HEX(0xC7D8CE);
-    preview_box.box_fill_color = EGUI_COLOR_HEX(0x0C7C73);
+    preview_box.box_color = HCW_COLOR_BORDER;
+    preview_box.box_fill_color = HCW_COLOR_PRIMARY;
     preview_box.check_color = EGUI_COLOR_WHITE;
-    preview_box.text_color = EGUI_COLOR_HEX(0x21303F);
+    preview_box.text_color = HCW_COLOR_TEXT;
     preview_box.text_gap = 6;
     hcw_check_box_set_text(EGUI_VIEW_OF(&preview_box), "Auto");
     hcw_check_box_set_checked(EGUI_VIEW_OF(&preview_box), checked);
@@ -191,9 +191,9 @@ static void test_check_box_style_helper_updates_palette_and_clear_pressed_state(
     egui_view_set_pressed(EGUI_VIEW_OF(&test_box), 1);
     hcw_check_box_apply_standard_style(EGUI_VIEW_OF(&test_box));
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_box)->is_pressed);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xC6D2DE).full, local->box_color.full);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x2563EB).full, local->box_fill_color.full);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x1A2734).full, local->text_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_BORDER.full, local->box_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PRIMARY.full, local->box_fill_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT.full, local->text_color.full);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_WHITE.full, local->check_color.full);
     EGUI_TEST_ASSERT_EQUAL_INT(8, local->text_gap);
 }

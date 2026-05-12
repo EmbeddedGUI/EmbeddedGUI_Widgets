@@ -46,11 +46,11 @@ static egui_view_api_t read_only_preview_api;
 static uint8_t current_snapshot_index = 0;
 static uint8_t ui_ready;
 
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, HCW_COLOR_PAGE_BG, EGUI_ALPHA_100, 14);
 EGUI_BACKGROUND_PARAM_INIT(bg_page_panel_params, &bg_page_panel_param, NULL, NULL);
 EGUI_BACKGROUND_COLOR_STATIC_CONST_INIT(bg_page_panel, &bg_page_panel_params);
 
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_surface_panel_param, EGUI_COLOR_HEX(0xFFFFFF), EGUI_ALPHA_100, 12);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_surface_panel_param, HCW_COLOR_SURFACE, EGUI_ALPHA_100, 12);
 EGUI_BACKGROUND_PARAM_INIT(bg_surface_panel_params, &bg_surface_panel_param, NULL, NULL);
 EGUI_BACKGROUND_COLOR_STATIC_CONST_INIT(bg_surface_panel, &bg_surface_panel_params);
 
@@ -173,7 +173,7 @@ void test_init_ui(void)
     egui_view_linearlayout_set_align_type(EGUI_VIEW_OF(&root_layout), EGUI_ALIGN_HCENTER);
     egui_view_set_background(EGUI_VIEW_OF(&root_layout), EGUI_BG_OF(&bg_page_panel));
 
-    init_text_label(&title_label, THUMB_RATE_ROOT_WIDTH, 18, title_text, (const egui_font_t *)&egui_res_font_montserrat_12_4, EGUI_COLOR_HEX(0x21303F),
+    init_text_label(&title_label, THUMB_RATE_ROOT_WIDTH, 18, title_text, (const egui_font_t *)&egui_res_font_montserrat_12_4, HCW_COLOR_TEXT,
                     EGUI_ALIGN_CENTER);
     egui_view_set_margin(EGUI_VIEW_OF(&title_label), 0, 8, 0, 6);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label));
@@ -181,13 +181,13 @@ void test_init_ui(void)
     egui_view_linearlayout_init(EGUI_VIEW_OF(&primary_panel), uicode_get_core());
     egui_view_set_size(EGUI_VIEW_OF(&primary_panel), THUMB_RATE_PANEL_WIDTH, THUMB_RATE_PANEL_HEIGHT);
     egui_view_linearlayout_set_orientation(EGUI_VIEW_OF(&primary_panel), 0);
-    egui_view_linearlayout_set_align_type(EGUI_VIEW_OF(&primary_panel), EGUI_ALIGN_LEFT);
+    egui_view_linearlayout_set_align_type(EGUI_VIEW_OF(&primary_panel), EGUI_ALIGN_HCENTER);
     egui_view_set_background(EGUI_VIEW_OF(&primary_panel), EGUI_BG_OF(&bg_surface_panel));
     egui_view_set_padding(EGUI_VIEW_OF(&primary_panel), 12, 10, 12, 10);
     egui_view_set_margin(EGUI_VIEW_OF(&primary_panel), 0, 0, 0, 8);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&primary_panel));
 
-    init_text_label(&heading_label, 172, 12, "Release note helpful?", (const egui_font_t *)&egui_res_font_montserrat_8_4, EGUI_COLOR_HEX(0x51606F),
+    init_text_label(&heading_label, 172, 12, "Release note helpful?", (const egui_font_t *)&egui_res_font_montserrat_10_4, HCW_COLOR_TEXT,
                     EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER);
     egui_view_set_margin(EGUI_VIEW_OF(&heading_label), 0, 0, 0, 8);
     egui_view_group_add_child(EGUI_VIEW_OF(&primary_panel), EGUI_VIEW_OF(&heading_label));
@@ -195,13 +195,13 @@ void test_init_ui(void)
     egui_view_thumb_rate_init(EGUI_VIEW_OF(&primary_rate));
     egui_view_set_size(EGUI_VIEW_OF(&primary_rate), THUMB_RATE_PRIMARY_WIDTH, THUMB_RATE_PRIMARY_HEIGHT);
     egui_view_thumb_rate_apply_standard_style(EGUI_VIEW_OF(&primary_rate));
-    egui_view_thumb_rate_set_font(EGUI_VIEW_OF(&primary_rate), (const egui_font_t *)&egui_res_font_montserrat_8_4);
+    egui_view_thumb_rate_set_font(EGUI_VIEW_OF(&primary_rate), (const egui_font_t *)&egui_res_font_montserrat_10_4);
     egui_view_thumb_rate_set_labels(EGUI_VIEW_OF(&primary_rate), "Like", "Dislike");
     egui_view_thumb_rate_set_on_changed_listener(EGUI_VIEW_OF(&primary_rate), on_primary_rate_changed);
     egui_view_set_margin(EGUI_VIEW_OF(&primary_rate), 0, 0, 0, 10);
     egui_view_group_add_child(EGUI_VIEW_OF(&primary_panel), EGUI_VIEW_OF(&primary_rate));
 
-    init_text_label(&note_label, 172, 14, "No vote recorded yet.", (const egui_font_t *)&egui_res_font_montserrat_8_4, EGUI_COLOR_HEX(0x6C7A88),
+    init_text_label(&note_label, 172, 14, "No vote recorded yet.", (const egui_font_t *)&egui_res_font_montserrat_10_4, HCW_COLOR_TEXT_MUTED,
                     EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER);
     egui_view_group_add_child(EGUI_VIEW_OF(&primary_panel), EGUI_VIEW_OF(&note_label));
 
@@ -214,7 +214,7 @@ void test_init_ui(void)
     egui_view_thumb_rate_init(EGUI_VIEW_OF(&compact_preview));
     egui_view_set_size(EGUI_VIEW_OF(&compact_preview), THUMB_RATE_PREVIEW_WIDTH, THUMB_RATE_PREVIEW_HEIGHT);
     egui_view_thumb_rate_apply_compact_style(EGUI_VIEW_OF(&compact_preview));
-    egui_view_thumb_rate_set_font(EGUI_VIEW_OF(&compact_preview), (const egui_font_t *)&egui_res_font_montserrat_8_4);
+    egui_view_thumb_rate_set_font(EGUI_VIEW_OF(&compact_preview), (const egui_font_t *)&egui_res_font_montserrat_10_4);
     egui_view_thumb_rate_set_labels(EGUI_VIEW_OF(&compact_preview), "Like", "Dislike");
     egui_view_thumb_rate_override_static_preview_api(EGUI_VIEW_OF(&compact_preview), &compact_preview_api);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
@@ -226,7 +226,7 @@ void test_init_ui(void)
     egui_view_set_size(EGUI_VIEW_OF(&read_only_preview), THUMB_RATE_PREVIEW_WIDTH, THUMB_RATE_PREVIEW_HEIGHT);
     egui_view_set_margin(EGUI_VIEW_OF(&read_only_preview), 8, 0, 0, 0);
     egui_view_thumb_rate_apply_read_only_style(EGUI_VIEW_OF(&read_only_preview));
-    egui_view_thumb_rate_set_font(EGUI_VIEW_OF(&read_only_preview), (const egui_font_t *)&egui_res_font_montserrat_8_4);
+    egui_view_thumb_rate_set_font(EGUI_VIEW_OF(&read_only_preview), (const egui_font_t *)&egui_res_font_montserrat_10_4);
     egui_view_thumb_rate_set_labels(EGUI_VIEW_OF(&read_only_preview), "Like", "Dislike");
     egui_view_thumb_rate_override_static_preview_api(EGUI_VIEW_OF(&read_only_preview), &read_only_preview_api);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
@@ -379,4 +379,3 @@ bool egui_port_get_recording_action(int action_index, egui_sim_action_t *p_actio
     }
 }
 #endif
-

@@ -369,6 +369,7 @@ static void test_menu_flyout_static_preview_consumes_input_and_keeps_state(void)
 static void test_menu_flyout_internal_helpers_clamp_focus_and_meta(void)
 {
     egui_view_menu_flyout_snapshot_t snapshot = {g_items_a, 3, 9};
+    egui_color_t sample = EGUI_COLOR_HEX(0x123456);
 
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_MENU_FLYOUT_MAX_SNAPSHOTS, egui_view_menu_flyout_clamp_snapshot_count(9));
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_MENU_FLYOUT_MAX_ITEMS, egui_view_menu_flyout_clamp_item_count(9));
@@ -378,6 +379,7 @@ static void test_menu_flyout_internal_helpers_clamp_focus_and_meta(void)
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_menu_flyout_focus_index(&snapshot, 3));
     EGUI_TEST_ASSERT_EQUAL_INT(20, egui_view_menu_flyout_meta_width(NULL, "Ctrl+Shift+P", 0, 20));
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_menu_flyout_meta_width(NULL, NULL, 1, 20));
+    EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(sample, EGUI_COLOR_DARK_GREY, EGUI_ALPHA_MAKE(52)).full, egui_view_menu_flyout_mix_disabled(sample).full);
 }
 
 static void test_menu_flyout_internal_helpers_cover_text_fitting(void)

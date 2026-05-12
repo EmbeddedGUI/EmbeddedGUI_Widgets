@@ -31,7 +31,7 @@ static egui_view_api_t panel_compact_api;
 static egui_view_api_t panel_read_only_api;
 static uint8_t ui_ready;
 
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, HCW_COLOR_PAGE_BG, EGUI_ALPHA_100, 14);
 EGUI_BACKGROUND_PARAM_INIT(bg_page_panel_params, &bg_page_panel_param, NULL, NULL);
 EGUI_BACKGROUND_COLOR_STATIC_CONST_INIT(bg_page_panel, &bg_page_panel_params);
 
@@ -124,7 +124,7 @@ void test_init_ui(void)
     egui_view_label_set_text(EGUI_VIEW_OF(&title_label), title_text);
     egui_view_label_set_align_type(EGUI_VIEW_OF(&title_label), EGUI_ALIGN_CENTER);
     hello_custom_widgets_demo_set_label_font_with_min_height(EGUI_VIEW_OF(&title_label), (const egui_font_t *)&egui_res_font_montserrat_12_4);
-    egui_view_label_set_font_color(EGUI_VIEW_OF(&title_label), EGUI_COLOR_HEX(0x21303F), EGUI_ALPHA_100);
+    egui_view_label_set_font_color(EGUI_VIEW_OF(&title_label), HCW_COLOR_TEXT, EGUI_ALPHA_100);
     egui_view_set_margin(EGUI_VIEW_OF(&title_label), 0, 8, 0, 6);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label));
 
@@ -133,9 +133,9 @@ void test_init_ui(void)
     egui_view_expander_set_font(EGUI_VIEW_OF(&panel_primary), (const egui_font_t *)&egui_res_font_montserrat_10_4);
     egui_view_expander_set_meta_font(EGUI_VIEW_OF(&panel_primary), (const egui_font_t *)&egui_res_font_montserrat_8_4);
     egui_view_expander_set_items(EGUI_VIEW_OF(&panel_primary), primary_items, EGUI_ARRAY_SIZE(primary_items));
-    egui_view_expander_set_palette(EGUI_VIEW_OF(&panel_primary), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD5DCE4), EGUI_COLOR_HEX(0xEAF0F7),
-                                   EGUI_COLOR_HEX(0x1A2734), EGUI_COLOR_HEX(0x6B7A89), EGUI_COLOR_HEX(0x0F6CBD), EGUI_COLOR_HEX(0x0F7B45),
-                                   EGUI_COLOR_HEX(0x9D5D00), EGUI_COLOR_HEX(0x7A8796));
+    egui_view_expander_set_palette(EGUI_VIEW_OF(&panel_primary), HCW_COLOR_SURFACE, HCW_COLOR_BORDER, HCW_COLOR_SURFACE_PRESS,
+                                   HCW_COLOR_TEXT, HCW_COLOR_TEXT_MUTED, HCW_COLOR_PRIMARY, HCW_COLOR_SUCCESS,
+                                   HCW_COLOR_WARNING, HCW_COLOR_NEUTRAL);
     egui_view_set_margin(EGUI_VIEW_OF(&panel_primary), 0, 0, 0, 8);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&panel_primary), true);
@@ -154,9 +154,9 @@ void test_init_ui(void)
     egui_view_expander_set_meta_font(EGUI_VIEW_OF(&panel_compact), (const egui_font_t *)&egui_res_font_montserrat_8_4);
     egui_view_expander_set_items(EGUI_VIEW_OF(&panel_compact), compact_items, EGUI_ARRAY_SIZE(compact_items));
     egui_view_expander_set_compact_mode(EGUI_VIEW_OF(&panel_compact), 1);
-    egui_view_expander_set_palette(EGUI_VIEW_OF(&panel_compact), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD5DCE4), EGUI_COLOR_HEX(0xEAF0F7),
-                                   EGUI_COLOR_HEX(0x1A2734), EGUI_COLOR_HEX(0x6B7A89), EGUI_COLOR_HEX(0x0F6CBD), EGUI_COLOR_HEX(0x0F7B45),
-                                   EGUI_COLOR_HEX(0x9D5D00), EGUI_COLOR_HEX(0x7A8796));
+    egui_view_expander_set_palette(EGUI_VIEW_OF(&panel_compact), HCW_COLOR_SURFACE, HCW_COLOR_BORDER, HCW_COLOR_SURFACE_PRESS,
+                                   HCW_COLOR_TEXT, HCW_COLOR_TEXT_MUTED, HCW_COLOR_PRIMARY, HCW_COLOR_SUCCESS,
+                                   HCW_COLOR_WARNING, HCW_COLOR_NEUTRAL);
     egui_view_expander_override_static_preview_api(EGUI_VIEW_OF(&panel_compact), &panel_compact_api);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&panel_compact), false);
@@ -171,9 +171,9 @@ void test_init_ui(void)
     egui_view_expander_set_items(EGUI_VIEW_OF(&panel_read_only), read_only_items, EGUI_ARRAY_SIZE(read_only_items));
     egui_view_expander_set_compact_mode(EGUI_VIEW_OF(&panel_read_only), 1);
     egui_view_expander_set_read_only_mode(EGUI_VIEW_OF(&panel_read_only), 1);
-    egui_view_expander_set_palette(EGUI_VIEW_OF(&panel_read_only), EGUI_COLOR_HEX(0xFBFCFD), EGUI_COLOR_HEX(0xDBE2E8), EGUI_COLOR_HEX(0xF3F6F9),
-                                   EGUI_COLOR_HEX(0x536474), EGUI_COLOR_HEX(0x8896A4), EGUI_COLOR_HEX(0xB3BFCA), EGUI_COLOR_HEX(0xA7BDB6),
-                                   EGUI_COLOR_HEX(0xC3AE88), EGUI_COLOR_HEX(0x9AA7B3));
+    egui_view_expander_set_palette(EGUI_VIEW_OF(&panel_read_only), HCW_COLOR_PANEL, HCW_COLOR_BORDER, HCW_COLOR_PANEL,
+                                   HCW_COLOR_TEXT_MUTED, HCW_COLOR_TEXT_SOFT, HCW_COLOR_TEXT_SOFT, HCW_COLOR_TEXT_SOFT,
+                                   HCW_COLOR_TEXT_SOFT, HCW_COLOR_TEXT_SOFT);
     egui_view_expander_override_static_preview_api(EGUI_VIEW_OF(&panel_read_only), &panel_read_only_api);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&panel_read_only), false);

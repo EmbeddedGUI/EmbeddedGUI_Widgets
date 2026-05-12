@@ -90,17 +90,17 @@ static void hcw_info_badge_apply_style(egui_view_t *self, egui_view_notification
 
 void hcw_info_badge_apply_count_style(egui_view_t *self)
 {
-    hcw_info_badge_apply_style(self, EGUI_VIEW_NOTIFICATION_BADGE_CONTENT_STYLE_COUNT, EGUI_COLOR_HEX(0xC42B1C), EGUI_COLOR_WHITE, NULL);
+    hcw_info_badge_apply_style(self, EGUI_VIEW_NOTIFICATION_BADGE_CONTENT_STYLE_COUNT, HCW_COLOR_DANGER, EGUI_COLOR_WHITE, NULL);
 }
 
 void hcw_info_badge_apply_icon_style(egui_view_t *self)
 {
-    hcw_info_badge_apply_style(self, EGUI_VIEW_NOTIFICATION_BADGE_CONTENT_STYLE_ICON, EGUI_COLOR_HEX(0x0F6CBD), EGUI_COLOR_WHITE, EGUI_ICON_MS_INFO);
+    hcw_info_badge_apply_style(self, EGUI_VIEW_NOTIFICATION_BADGE_CONTENT_STYLE_ICON, HCW_COLOR_PRIMARY, EGUI_COLOR_WHITE, EGUI_ICON_MS_INFO);
 }
 
 void hcw_info_badge_apply_attention_style(egui_view_t *self)
 {
-    hcw_info_badge_apply_style(self, EGUI_VIEW_NOTIFICATION_BADGE_CONTENT_STYLE_ICON, EGUI_COLOR_HEX(0xC42B1C), EGUI_COLOR_WHITE, NULL);
+    hcw_info_badge_apply_style(self, EGUI_VIEW_NOTIFICATION_BADGE_CONTENT_STYLE_ICON, HCW_COLOR_DANGER, EGUI_COLOR_WHITE, NULL);
 }
 
 void hcw_info_badge_set_count(egui_view_t *self, uint16_t count)

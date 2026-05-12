@@ -1,8 +1,10 @@
 #include "egui_view_drop_down_button.h"
+#include "../../hcw_text_center.h"
 
 #define EGUI_VIEW_DROP_DOWN_BUTTON_STANDARD_RADIUS           10
-#define EGUI_VIEW_DROP_DOWN_BUTTON_STANDARD_FILL_ALPHA       98
-#define EGUI_VIEW_DROP_DOWN_BUTTON_STANDARD_BORDER_ALPHA     72
+#define EGUI_VIEW_DROP_DOWN_BUTTON_STANDARD_FILL_ALPHA       EGUI_ALPHA_MAKE(100)
+#define EGUI_VIEW_DROP_DOWN_BUTTON_STANDARD_BORDER_ALPHA     EGUI_ALPHA_MAKE(100)
+#define EGUI_VIEW_DROP_DOWN_BUTTON_STANDARD_CARD_OUTSET      6
 #define EGUI_VIEW_DROP_DOWN_BUTTON_STANDARD_CONTENT_PAD_X    10
 #define EGUI_VIEW_DROP_DOWN_BUTTON_STANDARD_CONTENT_PAD_Y    7
 #define EGUI_VIEW_DROP_DOWN_BUTTON_STANDARD_TITLE_HEIGHT     10
@@ -11,8 +13,8 @@
 #define EGUI_VIEW_DROP_DOWN_BUTTON_STANDARD_HELPER_GAP       4
 #define EGUI_VIEW_DROP_DOWN_BUTTON_STANDARD_HELPER_HEIGHT    10
 #define EGUI_VIEW_DROP_DOWN_BUTTON_STANDARD_ROW_RADIUS       7
-#define EGUI_VIEW_DROP_DOWN_BUTTON_STANDARD_ROW_FILL_ALPHA   100
-#define EGUI_VIEW_DROP_DOWN_BUTTON_STANDARD_ROW_BORDER_ALPHA 62
+#define EGUI_VIEW_DROP_DOWN_BUTTON_STANDARD_ROW_FILL_ALPHA   EGUI_ALPHA_MAKE(100)
+#define EGUI_VIEW_DROP_DOWN_BUTTON_STANDARD_ROW_BORDER_ALPHA EGUI_ALPHA_MAKE(100)
 #define EGUI_VIEW_DROP_DOWN_BUTTON_STANDARD_GLYPH_WIDTH      16
 #define EGUI_VIEW_DROP_DOWN_BUTTON_STANDARD_GLYPH_HEIGHT     14
 #define EGUI_VIEW_DROP_DOWN_BUTTON_STANDARD_HINT_MIN_WIDTH   18
@@ -20,14 +22,15 @@
 #define EGUI_VIEW_DROP_DOWN_BUTTON_STANDARD_HINT_SIDE_PAD    6
 
 #define EGUI_VIEW_DROP_DOWN_BUTTON_COMPACT_RADIUS           8
-#define EGUI_VIEW_DROP_DOWN_BUTTON_COMPACT_FILL_ALPHA       96
-#define EGUI_VIEW_DROP_DOWN_BUTTON_COMPACT_BORDER_ALPHA     70
+#define EGUI_VIEW_DROP_DOWN_BUTTON_COMPACT_FILL_ALPHA       EGUI_ALPHA_MAKE(100)
+#define EGUI_VIEW_DROP_DOWN_BUTTON_COMPACT_BORDER_ALPHA     EGUI_ALPHA_MAKE(100)
+#define EGUI_VIEW_DROP_DOWN_BUTTON_COMPACT_CARD_OUTSET      5
 #define EGUI_VIEW_DROP_DOWN_BUTTON_COMPACT_CONTENT_PAD_X    7
 #define EGUI_VIEW_DROP_DOWN_BUTTON_COMPACT_CONTENT_PAD_Y    6
 #define EGUI_VIEW_DROP_DOWN_BUTTON_COMPACT_ROW_HEIGHT       22
 #define EGUI_VIEW_DROP_DOWN_BUTTON_COMPACT_ROW_RADIUS       5
-#define EGUI_VIEW_DROP_DOWN_BUTTON_COMPACT_ROW_FILL_ALPHA   98
-#define EGUI_VIEW_DROP_DOWN_BUTTON_COMPACT_ROW_BORDER_ALPHA 58
+#define EGUI_VIEW_DROP_DOWN_BUTTON_COMPACT_ROW_FILL_ALPHA   EGUI_ALPHA_MAKE(100)
+#define EGUI_VIEW_DROP_DOWN_BUTTON_COMPACT_ROW_BORDER_ALPHA EGUI_ALPHA_MAKE(100)
 #define EGUI_VIEW_DROP_DOWN_BUTTON_COMPACT_HINT_MIN_WIDTH   14
 #define EGUI_VIEW_DROP_DOWN_BUTTON_COMPACT_HINT_HEIGHT      14
 #define EGUI_VIEW_DROP_DOWN_BUTTON_COMPACT_HINT_SIDE_PAD    4
@@ -35,6 +38,7 @@
 typedef struct egui_view_drop_down_button_metrics egui_view_drop_down_button_metrics_t;
 struct egui_view_drop_down_button_metrics
 {
+    egui_region_t card_region;
     egui_region_t content_region;
     egui_region_t title_region;
     egui_region_t row_region;
@@ -130,7 +134,7 @@ static egui_color_t egui_view_drop_down_button_tone_color(egui_view_drop_down_bu
 
 static egui_color_t egui_view_drop_down_button_mix_disabled(egui_color_t color)
 {
-    return egui_rgb_mix(color, EGUI_COLOR_DARK_GREY, 68);
+    return egui_rgb_mix(color, HCW_COLOR_TEXT_SOFT, EGUI_ALPHA_MAKE(38));
 }
 
 static uint8_t egui_view_drop_down_button_clear_pressed_state(egui_view_t *self)
@@ -149,19 +153,20 @@ static void egui_view_drop_down_button_draw_text(const egui_font_t *font, egui_v
 {
     egui_region_t draw_region = *region;
 
-    if (text == NULL || text[0] == '\0')
+    if (font == NULL || text == NULL || text[0] == '\0')
     {
         return;
     }
 
+    draw_region.location.y += hcw_text_center_get_delta(font, text, region, align);
     egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, font, text, &draw_region, align, color, self->alpha);
 }
 
-static void egui_view_drop_down_button_draw_chevron(egui_view_t *self, const egui_region_t *region, egui_color_t color, egui_alpha_t alpha)
+static void egui_view_drop_down_button_draw_chevron(egui_view_t *self, const egui_region_t *region, egui_color_t color, uint8_t alpha_percent)
 {
     egui_dim_t cx = region->location.x + region->size.width / 2;
     egui_dim_t cy = region->location.y + region->size.height / 2;
-    egui_alpha_t mixed_alpha = egui_color_alpha_mix(self->alpha, alpha);
+    egui_alpha_t mixed_alpha = egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(alpha_percent));
 
     egui_canvas_draw_line(&uicode_get_core()->canvas, cx - 3, cy - 1, cx, cy + 2, 1, color, mixed_alpha);
     egui_canvas_draw_line(&uicode_get_core()->canvas, cx, cy + 2, cx + 3, cy - 1, 1, color, mixed_alpha);
@@ -194,6 +199,7 @@ static void egui_view_drop_down_button_get_metrics(egui_view_drop_down_button_t 
     egui_region_t region;
     egui_dim_t pad_x = local->compact_mode ? EGUI_VIEW_DROP_DOWN_BUTTON_COMPACT_CONTENT_PAD_X : EGUI_VIEW_DROP_DOWN_BUTTON_STANDARD_CONTENT_PAD_X;
     egui_dim_t pad_y = local->compact_mode ? EGUI_VIEW_DROP_DOWN_BUTTON_COMPACT_CONTENT_PAD_Y : EGUI_VIEW_DROP_DOWN_BUTTON_STANDARD_CONTENT_PAD_Y;
+    egui_dim_t card_outset = local->compact_mode ? EGUI_VIEW_DROP_DOWN_BUTTON_COMPACT_CARD_OUTSET : EGUI_VIEW_DROP_DOWN_BUTTON_STANDARD_CARD_OUTSET;
     egui_dim_t row_h = local->compact_mode ? EGUI_VIEW_DROP_DOWN_BUTTON_COMPACT_ROW_HEIGHT : EGUI_VIEW_DROP_DOWN_BUTTON_STANDARD_ROW_HEIGHT;
     egui_dim_t title_h = EGUI_VIEW_DROP_DOWN_BUTTON_STANDARD_TITLE_HEIGHT;
     egui_dim_t title_gap = EGUI_VIEW_DROP_DOWN_BUTTON_STANDARD_TITLE_GAP;
@@ -238,6 +244,10 @@ static void egui_view_drop_down_button_get_metrics(egui_view_drop_down_button_t 
         metrics->content_region.location.y = region.location.y + pad_y;
         metrics->content_region.size.height = region.size.height - pad_y * 2;
     }
+    metrics->card_region.location.x = metrics->content_region.location.x - card_outset;
+    metrics->card_region.location.y = metrics->content_region.location.y - card_outset;
+    metrics->card_region.size.width = metrics->content_region.size.width + card_outset * 2;
+    metrics->card_region.size.height = metrics->content_region.size.height + card_outset * 2;
 
     block_y = metrics->content_region.location.y;
     if (metrics->content_region.size.height > block_h)
@@ -460,8 +470,8 @@ static void egui_view_drop_down_button_on_draw(egui_view_t *self)
     egui_dim_t radius = local->compact_mode ? EGUI_VIEW_DROP_DOWN_BUTTON_COMPACT_RADIUS : EGUI_VIEW_DROP_DOWN_BUTTON_STANDARD_RADIUS;
     egui_dim_t row_radius = local->compact_mode ? EGUI_VIEW_DROP_DOWN_BUTTON_COMPACT_ROW_RADIUS : EGUI_VIEW_DROP_DOWN_BUTTON_STANDARD_ROW_RADIUS;
     egui_dim_t pressed_offset_y = 0;
-    egui_alpha_t read_only_row_overlay_alpha = 0;
-    egui_alpha_t read_only_hint_overlay_alpha = 0;
+    uint8_t read_only_row_overlay_alpha = 0;
+    uint8_t read_only_hint_overlay_alpha = 0;
     uint8_t is_pressed = egui_view_get_pressed(self) ? 1 : 0;
     uint8_t is_focused = 0;
 
@@ -477,84 +487,84 @@ static void egui_view_drop_down_button_on_draw(egui_view_t *self)
 
     egui_view_drop_down_button_get_metrics(local, self, snapshot, &metrics);
     tone_color = egui_view_drop_down_button_tone_color(local, snapshot->tone);
-    card_fill = egui_rgb_mix(local->surface_color, EGUI_COLOR_HEX(0xEEF3F7), local->compact_mode ? 20 : 12);
-    card_border = egui_rgb_mix(local->border_color, tone_color, snapshot->emphasized ? 34 : 18);
-    row_fill = egui_rgb_mix(EGUI_COLOR_HEX(0xFFFFFF), tone_color, snapshot->emphasized ? 22 : 12);
-    row_border = egui_rgb_mix(local->border_color, tone_color, snapshot->emphasized ? 38 : 24);
-    title_color = egui_rgb_mix(local->muted_text_color, tone_color, 16);
-    label_color = snapshot->emphasized ? tone_color : local->text_color;
-    helper_color = egui_rgb_mix(local->muted_text_color, tone_color, 8);
-    hint_fill = egui_rgb_mix(EGUI_COLOR_HEX(0xF9FBFE), tone_color, snapshot->emphasized ? 24 : 12);
-    hint_border = egui_rgb_mix(local->border_color, tone_color, snapshot->emphasized ? 38 : 24);
-    hint_text = snapshot->emphasized ? tone_color : egui_rgb_mix(local->text_color, tone_color, 14);
-    glyph_fill = egui_rgb_mix(local->surface_color, tone_color, snapshot->emphasized ? 26 : 18);
-    glyph_border = egui_rgb_mix(local->border_color, tone_color, snapshot->emphasized ? 28 : 16);
-    glyph_inner_border = egui_rgb_mix(glyph_border, EGUI_COLOR_WHITE, 18);
-    card_inner_border = egui_rgb_mix(card_border, EGUI_COLOR_WHITE, 20);
-    row_inner_border = egui_rgb_mix(row_border, EGUI_COLOR_WHITE, 16);
-    hint_inner_border = egui_rgb_mix(hint_border, EGUI_COLOR_WHITE, 12);
-    focus_ring_color = egui_rgb_mix(tone_color, EGUI_COLOR_WHITE, 10);
+    card_fill = HCW_COLOR_PANEL;
+    card_border = egui_rgb_mix(local->border_color, tone_color, EGUI_ALPHA_MAKE(snapshot->emphasized ? 30 : 24));
+    row_fill = egui_rgb_mix(HCW_COLOR_PANEL, tone_color, EGUI_ALPHA_MAKE(snapshot->emphasized ? 5 : 0));
+    row_border = egui_rgb_mix(local->border_color, tone_color, EGUI_ALPHA_MAKE(snapshot->emphasized ? 30 : 24));
+    title_color = egui_rgb_mix(local->muted_text_color, tone_color, EGUI_ALPHA_MAKE(16));
+    label_color = snapshot->emphasized ? egui_rgb_mix(local->text_color, tone_color, EGUI_ALPHA_MAKE(28)) : local->text_color;
+    helper_color = egui_rgb_mix(local->muted_text_color, tone_color, EGUI_ALPHA_MAKE(14));
+    hint_fill = egui_rgb_mix(HCW_COLOR_PANEL, tone_color, EGUI_ALPHA_MAKE(snapshot->emphasized ? 4 : 0));
+    hint_border = egui_rgb_mix(local->border_color, tone_color, EGUI_ALPHA_MAKE(snapshot->emphasized ? 30 : 24));
+    hint_text = snapshot->emphasized ? egui_rgb_mix(local->text_color, tone_color, EGUI_ALPHA_MAKE(28)) : egui_rgb_mix(local->text_color, tone_color, EGUI_ALPHA_MAKE(18));
+    glyph_fill = egui_rgb_mix(HCW_COLOR_PANEL, tone_color, EGUI_ALPHA_MAKE(snapshot->emphasized ? 4 : 0));
+    glyph_border = egui_rgb_mix(local->border_color, tone_color, EGUI_ALPHA_MAKE(snapshot->emphasized ? 28 : 22));
+    glyph_inner_border = egui_rgb_mix(glyph_border, EGUI_COLOR_WHITE, EGUI_ALPHA_MAKE(8));
+    card_inner_border = egui_rgb_mix(card_border, EGUI_COLOR_WHITE, EGUI_ALPHA_MAKE(8));
+    row_inner_border = egui_rgb_mix(row_border, EGUI_COLOR_WHITE, EGUI_ALPHA_MAKE(6));
+    hint_inner_border = egui_rgb_mix(hint_border, EGUI_COLOR_WHITE, EGUI_ALPHA_MAKE(8));
+    focus_ring_color = egui_rgb_mix(tone_color, EGUI_COLOR_WHITE, EGUI_ALPHA_MAKE(16));
 
     if (is_pressed)
     {
         pressed_offset_y = 1;
-        card_fill = egui_rgb_mix(card_fill, tone_color, 18);
-        card_border = egui_rgb_mix(card_border, tone_color, 30);
-        row_fill = egui_rgb_mix(row_fill, tone_color, 34);
-        row_border = egui_rgb_mix(row_border, tone_color, 36);
-        hint_fill = egui_rgb_mix(hint_fill, tone_color, 34);
-        hint_border = egui_rgb_mix(hint_border, tone_color, 30);
-        glyph_fill = egui_rgb_mix(glyph_fill, tone_color, 24);
-        glyph_border = egui_rgb_mix(glyph_border, tone_color, 26);
-        glyph_inner_border = egui_rgb_mix(glyph_inner_border, tone_color, 20);
-        card_inner_border = egui_rgb_mix(card_inner_border, tone_color, 18);
-        row_inner_border = egui_rgb_mix(row_inner_border, tone_color, 26);
-        hint_inner_border = egui_rgb_mix(hint_inner_border, tone_color, 24);
+        card_fill = egui_rgb_mix(card_fill, tone_color, EGUI_ALPHA_MAKE(8));
+        card_border = egui_rgb_mix(card_border, tone_color, EGUI_ALPHA_MAKE(12));
+        row_fill = egui_rgb_mix(row_fill, tone_color, EGUI_ALPHA_MAKE(10));
+        row_border = egui_rgb_mix(row_border, tone_color, EGUI_ALPHA_MAKE(12));
+        hint_fill = egui_rgb_mix(hint_fill, tone_color, EGUI_ALPHA_MAKE(10));
+        hint_border = egui_rgb_mix(hint_border, tone_color, EGUI_ALPHA_MAKE(12));
+        glyph_fill = egui_rgb_mix(glyph_fill, tone_color, EGUI_ALPHA_MAKE(10));
+        glyph_border = egui_rgb_mix(glyph_border, tone_color, EGUI_ALPHA_MAKE(12));
+        glyph_inner_border = egui_rgb_mix(glyph_inner_border, tone_color, EGUI_ALPHA_MAKE(8));
+        card_inner_border = egui_rgb_mix(card_inner_border, tone_color, EGUI_ALPHA_MAKE(8));
+        row_inner_border = egui_rgb_mix(row_inner_border, tone_color, EGUI_ALPHA_MAKE(10));
+        hint_inner_border = egui_rgb_mix(hint_inner_border, tone_color, EGUI_ALPHA_MAKE(10));
     }
 
     if (is_focused)
     {
-        card_border = egui_rgb_mix(card_border, tone_color, 36);
-        row_border = egui_rgb_mix(row_border, tone_color, 28);
-        hint_border = egui_rgb_mix(hint_border, tone_color, 26);
-        title_color = egui_rgb_mix(title_color, tone_color, 18);
-        glyph_border = egui_rgb_mix(glyph_border, tone_color, 18);
-        glyph_inner_border = egui_rgb_mix(glyph_inner_border, tone_color, 16);
-        card_inner_border = egui_rgb_mix(card_inner_border, tone_color, 24);
-        row_inner_border = egui_rgb_mix(row_inner_border, tone_color, 22);
-        hint_inner_border = egui_rgb_mix(hint_inner_border, tone_color, 22);
+        card_border = egui_rgb_mix(card_border, tone_color, EGUI_ALPHA_MAKE(14));
+        row_border = egui_rgb_mix(row_border, tone_color, EGUI_ALPHA_MAKE(12));
+        hint_border = egui_rgb_mix(hint_border, tone_color, EGUI_ALPHA_MAKE(12));
+        title_color = egui_rgb_mix(title_color, tone_color, EGUI_ALPHA_MAKE(8));
+        glyph_border = egui_rgb_mix(glyph_border, tone_color, EGUI_ALPHA_MAKE(10));
+        glyph_inner_border = egui_rgb_mix(glyph_inner_border, tone_color, EGUI_ALPHA_MAKE(8));
+        card_inner_border = egui_rgb_mix(card_inner_border, tone_color, EGUI_ALPHA_MAKE(10));
+        row_inner_border = egui_rgb_mix(row_inner_border, tone_color, EGUI_ALPHA_MAKE(10));
+        hint_inner_border = egui_rgb_mix(hint_inner_border, tone_color, EGUI_ALPHA_MAKE(10));
     }
 
     if (local->compact_mode && !local->read_only_mode)
     {
-        card_fill = egui_rgb_mix(card_fill, tone_color, snapshot->emphasized ? 8 : 4);
-        card_border = egui_rgb_mix(card_border, tone_color, snapshot->emphasized ? 8 : 4);
-        row_fill = egui_rgb_mix(row_fill, tone_color, snapshot->emphasized ? 8 : 4);
-        row_border = egui_rgb_mix(row_border, tone_color, snapshot->emphasized ? 6 : 4);
-        hint_fill = egui_rgb_mix(hint_fill, tone_color, snapshot->emphasized ? 6 : 3);
+        card_fill = HCW_COLOR_PANEL;
+        card_border = egui_rgb_mix(card_border, tone_color, EGUI_ALPHA_MAKE(snapshot->emphasized ? 20 : 16));
+        row_fill = egui_rgb_mix(row_fill, tone_color, EGUI_ALPHA_MAKE(snapshot->emphasized ? 5 : 2));
+        row_border = egui_rgb_mix(row_border, tone_color, EGUI_ALPHA_MAKE(snapshot->emphasized ? 18 : 16));
+        hint_fill = egui_rgb_mix(hint_fill, tone_color, EGUI_ALPHA_MAKE(snapshot->emphasized ? 6 : 3));
     }
 
     if (local->read_only_mode)
     {
-        card_fill = egui_rgb_mix(card_fill, EGUI_COLOR_HEX(0xFCFDFE), 42);
-        card_border = egui_rgb_mix(card_border, local->muted_text_color, 30);
-        row_fill = egui_rgb_mix(row_fill, card_fill, 52);
-        row_border = egui_rgb_mix(row_border, local->muted_text_color, 36);
-        title_color = egui_rgb_mix(title_color, local->muted_text_color, 28);
-        label_color = egui_rgb_mix(label_color, local->muted_text_color, 46);
-        helper_color = egui_rgb_mix(helper_color, local->muted_text_color, 40);
-        hint_fill = egui_rgb_mix(hint_fill, card_fill, 60);
-        hint_border = egui_rgb_mix(hint_border, local->muted_text_color, 40);
-        hint_text = egui_rgb_mix(hint_text, local->muted_text_color, 54);
-        glyph_fill = egui_rgb_mix(glyph_fill, card_fill, 44);
-        glyph_border = egui_rgb_mix(glyph_border, local->muted_text_color, 36);
-        glyph_inner_border = egui_rgb_mix(glyph_inner_border, card_fill, 28);
-        card_inner_border = egui_rgb_mix(card_inner_border, local->muted_text_color, 34);
-        row_inner_border = egui_rgb_mix(row_inner_border, local->muted_text_color, 36);
-        hint_inner_border = egui_rgb_mix(hint_inner_border, local->muted_text_color, 40);
-        read_only_overlay_color = egui_rgb_mix(card_fill, EGUI_COLOR_WHITE, 64);
-        read_only_row_overlay_alpha = local->compact_mode ? 18 : 14;
-        read_only_hint_overlay_alpha = local->compact_mode ? 24 : 18;
+        card_fill = egui_rgb_mix(card_fill, local->surface_color, EGUI_ALPHA_MAKE(10));
+        card_border = egui_rgb_mix(card_border, local->border_color, EGUI_ALPHA_MAKE(28));
+        row_fill = egui_rgb_mix(row_fill, local->surface_color, EGUI_ALPHA_MAKE(8));
+        row_border = egui_rgb_mix(row_border, local->border_color, EGUI_ALPHA_MAKE(30));
+        title_color = egui_rgb_mix(title_color, local->text_color, EGUI_ALPHA_MAKE(32));
+        label_color = egui_rgb_mix(label_color, local->text_color, EGUI_ALPHA_MAKE(36));
+        helper_color = egui_rgb_mix(helper_color, local->text_color, EGUI_ALPHA_MAKE(30));
+        hint_fill = egui_rgb_mix(hint_fill, local->surface_color, EGUI_ALPHA_MAKE(8));
+        hint_border = egui_rgb_mix(hint_border, local->border_color, EGUI_ALPHA_MAKE(30));
+        hint_text = egui_rgb_mix(hint_text, local->text_color, EGUI_ALPHA_MAKE(36));
+        glyph_fill = egui_rgb_mix(glyph_fill, row_fill, EGUI_ALPHA_MAKE(8));
+        glyph_border = egui_rgb_mix(glyph_border, local->border_color, EGUI_ALPHA_MAKE(28));
+        glyph_inner_border = egui_rgb_mix(glyph_inner_border, local->border_color, EGUI_ALPHA_MAKE(18));
+        card_inner_border = egui_rgb_mix(card_inner_border, local->border_color, EGUI_ALPHA_MAKE(28));
+        row_inner_border = egui_rgb_mix(row_inner_border, local->border_color, EGUI_ALPHA_MAKE(30));
+        hint_inner_border = egui_rgb_mix(hint_inner_border, local->border_color, EGUI_ALPHA_MAKE(30));
+        read_only_overlay_color = egui_rgb_mix(local->surface_color, EGUI_COLOR_WHITE, EGUI_ALPHA_MAKE(12));
+        read_only_row_overlay_alpha = local->compact_mode ? 2 : 1;
+        read_only_hint_overlay_alpha = local->compact_mode ? 2 : 1;
     }
 
     if (!egui_view_get_enable(self))
@@ -585,23 +595,23 @@ static void egui_view_drop_down_button_on_draw(egui_view_t *self)
         metrics.label_region.location.y += pressed_offset_y;
     }
 
-    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.content_region.location.x - 2, metrics.content_region.location.y - 2, metrics.content_region.size.width + 4,
-                                          metrics.content_region.size.height + 4, radius, card_fill,
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.card_region.location.x, metrics.card_region.location.y, metrics.card_region.size.width,
+                                          metrics.card_region.size.height, radius, card_fill,
                                           egui_color_alpha_mix(self->alpha, local->compact_mode ? EGUI_VIEW_DROP_DOWN_BUTTON_COMPACT_FILL_ALPHA
                                                                                                 : EGUI_VIEW_DROP_DOWN_BUTTON_STANDARD_FILL_ALPHA));
-    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics.content_region.location.x - 2, metrics.content_region.location.y - 2, metrics.content_region.size.width + 4,
-                                     metrics.content_region.size.height + 4, radius, 1, card_border,
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics.card_region.location.x, metrics.card_region.location.y, metrics.card_region.size.width,
+                                     metrics.card_region.size.height, radius, 1, card_border,
                                      egui_color_alpha_mix(self->alpha, local->compact_mode ? EGUI_VIEW_DROP_DOWN_BUTTON_COMPACT_BORDER_ALPHA
                                                                                            : EGUI_VIEW_DROP_DOWN_BUTTON_STANDARD_BORDER_ALPHA));
     if (is_focused)
     {
-        egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics.content_region.location.x - 4, metrics.content_region.location.y - 4, metrics.content_region.size.width + 8,
-                                         metrics.content_region.size.height + 8, radius + 2, 2, focus_ring_color,
-                                         egui_color_alpha_mix(self->alpha, local->compact_mode ? 42 : 46));
+        egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics.card_region.location.x - 2, metrics.card_region.location.y - 2, metrics.card_region.size.width + 4,
+                                         metrics.card_region.size.height + 4, radius + 2, 2, focus_ring_color,
+                                         egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(local->compact_mode ? 90 : 96)));
     }
-    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics.content_region.location.x - 1, metrics.content_region.location.y - 1, metrics.content_region.size.width + 2,
-                                     metrics.content_region.size.height + 2, radius, 1, card_inner_border,
-                                     egui_color_alpha_mix(self->alpha, local->compact_mode ? 24 : 28));
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics.card_region.location.x + 1, metrics.card_region.location.y + 1, metrics.card_region.size.width - 2,
+                                     metrics.card_region.size.height - 2, radius - 1, 1, card_inner_border,
+                                     egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(local->compact_mode ? 88 : 94)));
 
     if (metrics.show_title)
     {
@@ -617,23 +627,25 @@ static void egui_view_drop_down_button_on_draw(egui_view_t *self)
     {
         egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.row_region.location.x + 1, metrics.row_region.location.y + 1, metrics.row_region.size.width - 2,
                                               metrics.row_region.size.height - 2, row_radius, read_only_overlay_color,
-                                              egui_color_alpha_mix(self->alpha, read_only_row_overlay_alpha));
+                                              egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(read_only_row_overlay_alpha)));
     }
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics.row_region.location.x, metrics.row_region.location.y, metrics.row_region.size.width,
                                      metrics.row_region.size.height, row_radius, 1, row_border,
                                      egui_color_alpha_mix(self->alpha, local->compact_mode ? EGUI_VIEW_DROP_DOWN_BUTTON_COMPACT_ROW_BORDER_ALPHA
                                                                                            : EGUI_VIEW_DROP_DOWN_BUTTON_STANDARD_ROW_BORDER_ALPHA));
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics.row_region.location.x + 1, metrics.row_region.location.y + 1, metrics.row_region.size.width - 2,
-                                     metrics.row_region.size.height - 2, row_radius, 1, row_inner_border, egui_color_alpha_mix(self->alpha, 26));
+                                     metrics.row_region.size.height - 2, row_radius, 1, row_inner_border,
+                                     egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(94)));
 
     if (metrics.show_glyph)
     {
         egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.glyph_region.location.x, metrics.glyph_region.location.y, metrics.glyph_region.size.width,
-                                              metrics.glyph_region.size.height, 4, glyph_fill, egui_color_alpha_mix(self->alpha, 96));
+                                              metrics.glyph_region.size.height, 4, glyph_fill, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(96)));
         egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics.glyph_region.location.x, metrics.glyph_region.location.y, metrics.glyph_region.size.width,
-                                         metrics.glyph_region.size.height, 4, 1, glyph_border, egui_color_alpha_mix(self->alpha, 42));
+                                         metrics.glyph_region.size.height, 4, 1, glyph_border, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(96)));
         egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics.glyph_region.location.x + 1, metrics.glyph_region.location.y + 1, metrics.glyph_region.size.width - 2,
-                                         metrics.glyph_region.size.height - 2, 3, 1, glyph_inner_border, egui_color_alpha_mix(self->alpha, 24));
+                                         metrics.glyph_region.size.height - 2, 3, 1, glyph_inner_border,
+                                         egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(94)));
         text_region = metrics.glyph_region;
         egui_view_drop_down_button_draw_text(local->meta_font, self, snapshot->glyph, &text_region, EGUI_ALIGN_CENTER,
                                              snapshot->emphasized ? EGUI_COLOR_WHITE : label_color);
@@ -643,18 +655,20 @@ static void egui_view_drop_down_button_on_draw(egui_view_t *self)
     egui_view_drop_down_button_draw_text(local->font, self, snapshot->label, &text_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, label_color);
 
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.hint_region.location.x, metrics.hint_region.location.y, metrics.hint_region.size.width,
-                                          metrics.hint_region.size.height, local->compact_mode ? 5 : 6, hint_fill, egui_color_alpha_mix(self->alpha, 98));
+                                          metrics.hint_region.size.height, local->compact_mode ? 5 : 6, hint_fill,
+                                          egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(98)));
     if (local->read_only_mode && read_only_hint_overlay_alpha > 0)
     {
         egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.hint_region.location.x + 1, metrics.hint_region.location.y + 1, metrics.hint_region.size.width - 2,
                                               metrics.hint_region.size.height - 2, local->compact_mode ? 4 : 5, read_only_overlay_color,
-                                              egui_color_alpha_mix(self->alpha, read_only_hint_overlay_alpha));
+                                              egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(read_only_hint_overlay_alpha)));
     }
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics.hint_region.location.x, metrics.hint_region.location.y, metrics.hint_region.size.width,
-                                     metrics.hint_region.size.height, local->compact_mode ? 5 : 6, 1, hint_border, egui_color_alpha_mix(self->alpha, 44));
+                                     metrics.hint_region.size.height, local->compact_mode ? 5 : 6, 1, hint_border,
+                                     egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(96)));
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics.hint_region.location.x + 1, metrics.hint_region.location.y + 1, metrics.hint_region.size.width - 2,
                                      metrics.hint_region.size.height - 2, local->compact_mode ? 4 : 5, 1, hint_inner_border,
-                                     egui_color_alpha_mix(self->alpha, 28));
+                                     egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(94)));
 
     if (snapshot->hint != NULL && snapshot->hint[0] != '\0')
     {
@@ -663,7 +677,7 @@ static void egui_view_drop_down_button_on_draw(egui_view_t *self)
     }
     else
     {
-        egui_view_drop_down_button_draw_chevron(self, &metrics.hint_region, hint_text, 92);
+        egui_view_drop_down_button_draw_chevron(self, &metrics.hint_region, hint_text, 96);
     }
 
     if (metrics.show_helper)
@@ -817,15 +831,15 @@ void egui_view_drop_down_button_init(egui_view_t *self)
     local->snapshots = NULL;
     local->font = (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT;
     local->meta_font = (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT;
-    local->surface_color = EGUI_COLOR_HEX(0xFFFFFF);
-    local->border_color = EGUI_COLOR_HEX(0xD6DEE7);
-    local->text_color = EGUI_COLOR_HEX(0x1D2630);
-    local->muted_text_color = EGUI_COLOR_HEX(0x6F7B89);
-    local->accent_color = EGUI_COLOR_HEX(0x2563EB);
-    local->success_color = EGUI_COLOR_HEX(0x178454);
-    local->warning_color = EGUI_COLOR_HEX(0xB87A16);
-    local->danger_color = EGUI_COLOR_HEX(0xB13A35);
-    local->neutral_color = EGUI_COLOR_HEX(0x7A8795);
+    local->surface_color = HCW_COLOR_PANEL;
+    local->border_color = HCW_COLOR_BORDER_STRONG;
+    local->text_color = HCW_COLOR_TEXT_STRONG;
+    local->muted_text_color = HCW_COLOR_TEXT_SOFT;
+    local->accent_color = HCW_COLOR_PRIMARY_DARK;
+    local->success_color = HCW_COLOR_SUCCESS;
+    local->warning_color = HCW_COLOR_WARNING_DARK;
+    local->danger_color = HCW_COLOR_DANGER_DARK;
+    local->neutral_color = HCW_COLOR_TEXT_SOFT;
     local->snapshot_count = 0;
     local->current_snapshot = 0;
     local->compact_mode = 0;

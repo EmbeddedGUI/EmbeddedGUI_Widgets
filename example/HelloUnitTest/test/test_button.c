@@ -169,7 +169,7 @@ static void test_button_style_helpers_update_background_and_clear_pressed_state(
     hcw_button_apply_disabled_style(EGUI_VIEW_OF(local));
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(local)->is_pressed);
     EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(local)->background == EGUI_BG_OF(&hcw_button_disabled_background));
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x708090).full, local->base.color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_NEUTRAL.full, local->base.color.full);
     EGUI_TEST_ASSERT_EQUAL_INT(4, local->icon_text_gap);
 }
 

@@ -380,6 +380,14 @@ static void test_rich_edit_box_setters_clear_pressed_and_update_state(void)
 {
     rich_edit_box_setup_widget(rich_edit_box_documents, EGUI_ARRAY_SIZE(rich_edit_box_documents));
 
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_SURFACE.full, rich_edit_box_test_widget.surface_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_BORDER_STRONG.full, rich_edit_box_test_widget.border_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_SURFACE_PRESS.full, rich_edit_box_test_widget.editor_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT_STRONG.full, rich_edit_box_test_widget.text_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT_SOFT.full, rich_edit_box_test_widget.muted_text_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PRIMARY_DARK.full, rich_edit_box_test_widget.accent_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TRACK_STRONG.full, rich_edit_box_test_widget.shadow_color.full);
+
     rich_edit_box_seed_pressed_state(&rich_edit_box_test_widget, EGUI_VIEW_RICH_EDIT_BOX_PART_PRESET_1, 1);
     egui_view_rich_edit_box_set_font(EGUI_VIEW_OF(&rich_edit_box_test_widget), NULL);
     EGUI_TEST_ASSERT_TRUE(rich_edit_box_test_widget.font == (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT);

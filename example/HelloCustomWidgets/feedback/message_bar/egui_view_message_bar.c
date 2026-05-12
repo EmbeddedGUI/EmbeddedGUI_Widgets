@@ -1,6 +1,8 @@
 #include <stdlib.h>
 
 #include "egui_view_message_bar.h"
+#include "../../hcw_text_center.h"
+#include "../../hcw_selection_marker.h"
 
 static uint8_t egui_view_message_bar_clamp_snapshot_count(uint8_t count)
 {
@@ -13,7 +15,7 @@ static uint8_t egui_view_message_bar_clamp_snapshot_count(uint8_t count)
 
 static egui_color_t egui_view_message_bar_mix_disabled(egui_color_t color)
 {
-    return egui_rgb_mix(color, EGUI_COLOR_DARK_GREY, 65);
+    return egui_rgb_mix(color, HCW_COLOR_SURFACE_SUBTLE, EGUI_ALPHA_MAKE(44));
 }
 
 static egui_color_t egui_view_message_bar_severity_color(egui_view_message_bar_t *local, uint8_t severity)
@@ -342,12 +344,15 @@ static void egui_view_message_bar_draw_text(egui_view_message_bar_t *local, egui
                                             egui_dim_t height, uint8_t align, egui_color_t color)
 {
     egui_region_t text_region;
+    egui_region_t draw_region;
 
     text_region.location.x = x;
     text_region.location.y = y;
     text_region.size.width = width;
     text_region.size.height = height;
-    egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, local->font, text, &text_region, align, color, self->alpha);
+    draw_region = text_region;
+    draw_region.location.y += hcw_text_center_get_delta(local->font, text, &text_region, align);
+    egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, local->font, text, &draw_region, align, color, self->alpha);
 }
 
 static void egui_view_message_bar_on_draw(egui_view_t *self)
@@ -371,7 +376,6 @@ static void egui_view_message_bar_on_draw(egui_view_t *self)
     egui_dim_t content_y;
     egui_dim_t content_w;
     egui_dim_t content_h;
-    egui_dim_t accent_w;
     egui_dim_t icon_size;
     egui_dim_t icon_x;
     egui_dim_t icon_y;
@@ -401,8 +405,8 @@ static void egui_view_message_bar_on_draw(egui_view_t *self)
     snapshot = &local->snapshots[local->current_snapshot];
     is_enabled = egui_view_get_enable(self) ? 1 : 0;
     severity_color = egui_view_message_bar_severity_color(local, snapshot->severity);
-    fill_color = egui_rgb_mix(local->surface_color, severity_color, local->compact_mode ? 2 : 4);
-    border_color = egui_rgb_mix(local->border_color, severity_color, local->compact_mode ? 3 : 5);
+    fill_color = egui_rgb_mix(local->surface_color, HCW_COLOR_SURFACE_SUBTLE, EGUI_ALPHA_MAKE(local->compact_mode ? 6 : 8));
+    border_color = egui_rgb_mix(local->border_color, severity_color, EGUI_ALPHA_MAKE(local->compact_mode ? 18 : 22));
     title_color = local->text_color;
     body_color = local->muted_text_color;
     glyph_color = local->surface_color;
@@ -417,23 +421,20 @@ static void egui_view_message_bar_on_draw(egui_view_t *self)
     }
     else if (local->read_only_mode)
     {
-        severity_color = egui_rgb_mix(severity_color, local->muted_text_color, 58);
-        fill_color = egui_rgb_mix(fill_color, local->surface_color, 28);
-        border_color = egui_rgb_mix(border_color, local->muted_text_color, 32);
-        title_color = egui_rgb_mix(title_color, local->muted_text_color, 38);
-        body_color = egui_rgb_mix(body_color, local->text_color, 6);
-        glyph_color = egui_rgb_mix(glyph_color, local->muted_text_color, 34);
+        severity_color = egui_rgb_mix(severity_color, local->muted_text_color, EGUI_ALPHA_MAKE(38));
+        fill_color = egui_rgb_mix(fill_color, local->surface_color, EGUI_ALPHA_MAKE(34));
+        border_color = egui_rgb_mix(border_color, local->muted_text_color, EGUI_ALPHA_MAKE(24));
+        title_color = egui_rgb_mix(title_color, local->muted_text_color, EGUI_ALPHA_MAKE(18));
+        body_color = egui_rgb_mix(body_color, local->text_color, EGUI_ALPHA_MAKE(14));
+        glyph_color = egui_rgb_mix(glyph_color, local->muted_text_color, EGUI_ALPHA_MAKE(22));
     }
 
     radius = local->compact_mode ? 6 : 8;
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, region.location.x, region.location.y, region.size.width, region.size.height, radius, fill_color,
-                                          egui_color_alpha_mix(self->alpha, 86));
+                                          egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(94)));
+    hcw_selection_marker_draw_left(&region, radius, radius, severity_color, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(local->read_only_mode ? 64 : 92)));
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, region.location.x, region.location.y, region.size.width, region.size.height, radius, 1, border_color,
-                                     egui_color_alpha_mix(self->alpha, 92));
-
-    accent_w = local->compact_mode ? 2 : 3;
-    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, region.location.x + 1, region.location.y + 1, accent_w, region.size.height - 2, radius - 2, severity_color,
-                                          egui_color_alpha_mix(self->alpha, local->read_only_mode ? 36 : 72));
+                                     egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(96)));
 
     content_x = region.location.x + (local->compact_mode ? 8 : 11);
     content_y = region.location.y + (local->compact_mode ? 7 : 10);
@@ -444,8 +445,8 @@ static void egui_view_message_bar_on_draw(egui_view_t *self)
     icon_x = content_x;
     icon_y = content_y;
     egui_canvas_draw_circle_fill(&uicode_get_core()->canvas, icon_x + icon_size / 2, icon_y + icon_size / 2, icon_size / 2, severity_color,
-                                 egui_color_alpha_mix(self->alpha, local->read_only_mode ? 22 : EGUI_ALPHA_70));
-    egui_view_message_bar_draw_text(local, self, egui_view_message_bar_severity_glyph(snapshot->severity), icon_x, icon_y - 1, icon_size, icon_size + 2,
+                                 egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(local->read_only_mode ? 66 : 90)));
+    egui_view_message_bar_draw_text(local, self, egui_view_message_bar_severity_glyph(snapshot->severity), icon_x, icon_y, icon_size, icon_size,
                                     EGUI_ALIGN_CENTER, glyph_color);
 
     show_close = snapshot->closable && !local->compact_mode && !local->read_only_mode && is_enabled;
@@ -453,15 +454,15 @@ static void egui_view_message_bar_on_draw(egui_view_t *self)
     close_x = content_x + content_w - close_w;
     if (show_close)
     {
-        egui_canvas_draw_line(&uicode_get_core()->canvas, close_x + 3, content_y + 3, close_x + 7, content_y + 7, 1, body_color, egui_color_alpha_mix(self->alpha, 64));
-        egui_canvas_draw_line(&uicode_get_core()->canvas, close_x + 7, content_y + 3, close_x + 3, content_y + 7, 1, body_color, egui_color_alpha_mix(self->alpha, 64));
+        egui_canvas_draw_line(&uicode_get_core()->canvas, close_x + 3, content_y + 3, close_x + 7, content_y + 7, 1, body_color, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(88)));
+        egui_canvas_draw_line(&uicode_get_core()->canvas, close_x + 7, content_y + 3, close_x + 3, content_y + 7, 1, body_color, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(88)));
     }
 
     title_x = icon_x + icon_size + 6;
     title_w = content_x + content_w - title_x - (show_close ? 12 : 0);
     title_slot_h = local->compact_mode ? 10 : 12;
     title_h = egui_view_message_bar_resolve_line_height(local->font, title_slot_h);
-    title_y = content_y - 1 + (title_slot_h - title_h) / 2;
+    title_y = content_y + (title_slot_h - title_h) / 2;
     egui_view_message_bar_fit_text_to_width(local->font, snapshot->title, title_label, sizeof(title_label), title_w, local->compact_mode ? 4 : 5);
     egui_view_message_bar_draw_text(local, self, title_label, title_x, title_y, title_w, title_h, EGUI_ALIGN_LEFT, title_color);
 
@@ -509,12 +510,12 @@ static void egui_view_message_bar_on_draw(egui_view_t *self)
 
     if (show_action)
     {
-        egui_color_t action_fill = egui_rgb_mix(local->surface_color, local->accent_color, 4);
-        egui_color_t action_border = egui_rgb_mix(local->border_color, local->accent_color, 8);
-        egui_color_t action_text = egui_rgb_mix(local->accent_color, local->text_color, 18);
+        egui_color_t action_fill = egui_rgb_mix(local->surface_color, local->accent_color, EGUI_ALPHA_MAKE(20));
+        egui_color_t action_border = egui_rgb_mix(local->border_color, local->accent_color, EGUI_ALPHA_MAKE(30));
+        egui_color_t action_text = egui_rgb_mix(local->accent_color, local->text_color, EGUI_ALPHA_MAKE(12));
 
-        egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, action_x, action_y, action_w, action_h, 5, action_fill, egui_color_alpha_mix(self->alpha, 34));
-        egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, action_x, action_y, action_w, action_h, 5, 1, action_border, egui_color_alpha_mix(self->alpha, 40));
+        egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, action_x, action_y, action_w, action_h, 5, action_fill, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(94)));
+        egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, action_x, action_y, action_w, action_h, 5, 1, action_border, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(96)));
         egui_view_message_bar_fit_text_to_width(local->font, snapshot->action, action_label, sizeof(action_label), action_w - 6, local->compact_mode ? 4 : 5);
         egui_view_message_bar_draw_text(local, self, action_label, action_x + 2, action_y, action_w - 4, action_h, EGUI_ALIGN_CENTER, action_text);
     }
@@ -526,8 +527,8 @@ static void egui_view_message_bar_on_draw(egui_view_t *self)
         egui_dim_t pin_h = egui_view_message_bar_resolve_line_height(local->font, local->compact_mode ? 10 : 11);
         egui_dim_t pin_x = content_x + content_w - pin_w;
         egui_dim_t pin_y = content_y + content_h - pin_h - (local->compact_mode ? 2 : 1);
-        egui_color_t pin_fill = egui_rgb_mix(local->surface_color, severity_color, 2);
-        egui_color_t pin_border = egui_rgb_mix(local->border_color, severity_color, 5);
+        egui_color_t pin_fill = egui_rgb_mix(local->surface_color, severity_color, EGUI_ALPHA_MAKE(16));
+        egui_color_t pin_border = egui_rgb_mix(local->border_color, severity_color, EGUI_ALPHA_MAKE(24));
 
         if (pin_w > content_w)
         {
@@ -535,8 +536,8 @@ static void egui_view_message_bar_on_draw(egui_view_t *self)
             pin_x = content_x;
         }
 
-        egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, pin_x, pin_y, pin_w, pin_h, 5, pin_fill, egui_color_alpha_mix(self->alpha, 26));
-        egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, pin_x, pin_y, pin_w, pin_h, 5, 1, pin_border, egui_color_alpha_mix(self->alpha, 30));
+        egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, pin_x, pin_y, pin_w, pin_h, 5, pin_fill, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(76)));
+        egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, pin_x, pin_y, pin_w, pin_h, 5, 1, pin_border, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(84)));
         egui_view_message_bar_fit_text_to_width(local->font, pin_text, pin_label, sizeof(pin_label), pin_w - 4, local->compact_mode ? 4 : 5);
         egui_view_message_bar_draw_text(local, self, pin_label, pin_x + 1, pin_y, pin_w - 2, pin_h, EGUI_ALIGN_CENTER, body_color);
     }
@@ -544,7 +545,7 @@ static void egui_view_message_bar_on_draw(egui_view_t *self)
     if (local->read_only_mode || !is_enabled)
     {
         egui_canvas_draw_line(&uicode_get_core()->canvas, content_x + 1, content_y + content_h - 1, content_x + content_w - 1, content_y + content_h - 1, 1, border_color,
-                              egui_color_alpha_mix(self->alpha, 24));
+                              egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(64)));
     }
 }
 
@@ -646,15 +647,15 @@ void egui_view_message_bar_init(egui_view_t *self)
 
     local->snapshots = NULL;
     local->font = (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT;
-    local->surface_color = EGUI_COLOR_HEX(0xFFFFFF);
-    local->border_color = EGUI_COLOR_HEX(0xD2DBE3);
-    local->text_color = EGUI_COLOR_HEX(0x17212B);
-    local->muted_text_color = EGUI_COLOR_HEX(0x556272);
-    local->accent_color = EGUI_COLOR_HEX(0x0F6CBD);
-    local->info_color = EGUI_COLOR_HEX(0x0F6CBD);
-    local->success_color = EGUI_COLOR_HEX(0x0F9D58);
-    local->warning_color = EGUI_COLOR_HEX(0xC27C12);
-    local->error_color = EGUI_COLOR_HEX(0xC93C37);
+    local->surface_color = HCW_COLOR_SURFACE;
+    local->border_color = HCW_COLOR_BORDER;
+    local->text_color = HCW_COLOR_TEXT_STRONG;
+    local->muted_text_color = HCW_COLOR_TEXT_MUTED;
+    local->accent_color = HCW_COLOR_PRIMARY;
+    local->info_color = HCW_COLOR_PRIMARY;
+    local->success_color = HCW_COLOR_SUCCESS;
+    local->warning_color = HCW_COLOR_WARNING;
+    local->error_color = HCW_COLOR_DANGER;
     local->snapshot_count = 0;
     local->current_snapshot = 0;
     local->compact_mode = 0;

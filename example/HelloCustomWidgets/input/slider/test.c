@@ -41,7 +41,7 @@ static egui_view_api_t slider_secondary_api;
 static egui_view_api_t slider_disabled_api;
 static uint8_t ui_ready;
 
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, HCW_COLOR_PAGE_BG, EGUI_ALPHA_100, 14);
 EGUI_BACKGROUND_PARAM_INIT(bg_page_panel_params, &bg_page_panel_param, NULL, NULL);
 EGUI_BACKGROUND_COLOR_STATIC_CONST_INIT(bg_page_panel, &bg_page_panel_params);
 
@@ -122,7 +122,7 @@ void test_init_ui(void)
     egui_view_label_set_text(EGUI_VIEW_OF(&title_label), title_text);
     egui_view_label_set_align_type(EGUI_VIEW_OF(&title_label), EGUI_ALIGN_CENTER);
     hello_custom_widgets_demo_set_label_font_with_min_height(EGUI_VIEW_OF(&title_label), (const egui_font_t *)&egui_res_font_montserrat_12_4);
-    egui_view_label_set_font_color(EGUI_VIEW_OF(&title_label), EGUI_COLOR_HEX(0x21303F), EGUI_ALPHA_100);
+    egui_view_label_set_font_color(EGUI_VIEW_OF(&title_label), HCW_COLOR_TEXT, EGUI_ALPHA_100);
     egui_view_set_margin(EGUI_VIEW_OF(&title_label), 0, 8, 0, 8);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label));
 
@@ -146,8 +146,8 @@ void test_init_ui(void)
     egui_view_set_size(EGUI_VIEW_OF(&slider_secondary), SLIDER_PREVIEW_WIDTH, SLIDER_PREVIEW_HEIGHT);
     hcw_slider_apply_standard_style(EGUI_VIEW_OF(&slider_secondary));
     egui_view_set_padding(EGUI_VIEW_OF(&slider_secondary), 8, 8, 6, 6);
-    slider_secondary.track_color = EGUI_COLOR_HEX(0xD9E5DE);
-    slider_secondary.active_color = EGUI_COLOR_HEX(0x0C7C73);
+    slider_secondary.track_color = HCW_COLOR_TRACK_STRONG;
+    slider_secondary.active_color = HCW_COLOR_PRIMARY;
     slider_secondary.thumb_color = EGUI_COLOR_WHITE;
     hcw_slider_override_static_preview_api(EGUI_VIEW_OF(&slider_secondary), &slider_secondary_api);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
@@ -160,10 +160,10 @@ void test_init_ui(void)
     egui_view_set_margin(EGUI_VIEW_OF(&slider_disabled), 8, 0, 0, 0);
     hcw_slider_apply_standard_style(EGUI_VIEW_OF(&slider_disabled));
     egui_view_set_padding(EGUI_VIEW_OF(&slider_disabled), 8, 8, 6, 6);
-    slider_disabled.track_color = EGUI_COLOR_HEX(0xE4E9EE);
-    slider_disabled.active_color = EGUI_COLOR_HEX(0xAFB8C3);
-    slider_disabled.thumb_color = EGUI_COLOR_HEX(0xF7F9FB);
-    egui_view_set_enable(EGUI_VIEW_OF(&slider_disabled), 0);
+    slider_disabled.track_color = HCW_COLOR_BORDER_STRONG;
+    slider_disabled.active_color = HCW_COLOR_TEXT_MUTED;
+    slider_disabled.thumb_color = HCW_COLOR_SURFACE_SUBTLE;
+    egui_view_set_enable(EGUI_VIEW_OF(&slider_disabled), 1);
     hcw_slider_override_static_preview_api(EGUI_VIEW_OF(&slider_disabled), &slider_disabled_api);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     egui_view_set_focusable(EGUI_VIEW_OF(&slider_disabled), 0);

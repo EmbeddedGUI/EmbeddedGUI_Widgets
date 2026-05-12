@@ -139,9 +139,9 @@ static void setup_preview_group(void)
     egui_view_badge_group_set_current_snapshot(EGUI_VIEW_OF(&preview_group), 0);
     egui_view_badge_group_set_font(EGUI_VIEW_OF(&preview_group), (const egui_font_t *)&egui_res_font_montserrat_8_4);
     egui_view_badge_group_set_meta_font(EGUI_VIEW_OF(&preview_group), (const egui_font_t *)&egui_res_font_montserrat_8_4);
-    egui_view_badge_group_set_palette(EGUI_VIEW_OF(&preview_group), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD2DBE3), EGUI_COLOR_HEX(0x1A2734),
-                                      EGUI_COLOR_HEX(0x6B7A89), EGUI_COLOR_HEX(0x0F6CBD), EGUI_COLOR_HEX(0x0F7B45), EGUI_COLOR_HEX(0x9D5D00),
-                                      EGUI_COLOR_HEX(0x7A8796));
+    egui_view_badge_group_set_palette(EGUI_VIEW_OF(&preview_group), HCW_COLOR_SURFACE, EGUI_COLOR_HEX(0xD2DBE3), HCW_COLOR_TEXT,
+                                      HCW_COLOR_TEXT_MUTED, HCW_COLOR_PRIMARY, HCW_COLOR_SUCCESS, HCW_COLOR_WARNING,
+                                      HCW_COLOR_NEUTRAL);
     egui_view_set_on_click_listener(EGUI_VIEW_OF(&preview_group), on_group_click);
     egui_view_badge_group_override_static_preview_api(EGUI_VIEW_OF(&preview_group), &preview_api);
     reset_click_count();
@@ -488,7 +488,7 @@ static void test_badge_group_internal_helpers_cover_focus_tone_text_and_width(vo
     EGUI_TEST_ASSERT_TRUE(strcmp("Relea...", label) == 0);
     egui_view_badge_group_fit_text_to_width(NULL, "Summary follows focus.", label, sizeof(label), 24, 4);
     EGUI_TEST_ASSERT_TRUE(strcmp("Sum...", label) == 0);
-    EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(sample, EGUI_COLOR_DARK_GREY, 68).full, mixed.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(sample, HCW_COLOR_TEXT_SOFT, EGUI_ALPHA_MAKE(32)).full, mixed.full);
 }
 
 void test_badge_group_run(void)

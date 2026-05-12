@@ -230,6 +230,12 @@ static void test_radio_buttons_setters_clear_pressed_state_and_clamp_items(void)
 {
     setup_widget();
 
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_SURFACE.full, test_widget.surface_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_BORDER_STRONG.full, test_widget.border_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT.full, test_widget.text_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT_SOFT.full, test_widget.muted_text_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PRIMARY_DARK.full, test_widget.accent_color.full);
+
     test_widget.current_index = EGUI_VIEW_RADIO_BUTTONS_INDEX_NONE;
     seed_pressed_state(&test_widget, 4, 1);
     egui_view_radio_buttons_set_items(EGUI_VIEW_OF(&test_widget), g_items_overflow, 7);
@@ -274,7 +280,7 @@ static void test_radio_buttons_setters_clear_pressed_state_and_clamp_items(void)
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x505152).full, test_widget.accent_color.full);
 
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_RADIO_BUTTONS_MAX_ITEMS, egui_view_radio_buttons_clamp_count(7));
-    EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(EGUI_COLOR_HEX(0x123456), EGUI_COLOR_DARK_GREY, 64).full,
+    EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(EGUI_COLOR_HEX(0x123456), EGUI_COLOR_DARK_GREY, EGUI_ALPHA_MAKE(52)).full,
                                egui_view_radio_buttons_mix_disabled(EGUI_COLOR_HEX(0x123456)).full);
 }
 

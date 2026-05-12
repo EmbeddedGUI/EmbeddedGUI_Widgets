@@ -1,4 +1,5 @@
 #include "egui_view_two_pane_view.h"
+#include "../../hcw_selection_marker.h"
 
 #define TPV_HIT_NONE        0xFF
 #define TPV_HIT_LAYOUT_BASE 0
@@ -209,7 +210,7 @@ static egui_color_t tpv_tone_color(egui_view_two_pane_view_t *local, uint8_t ton
 
 static egui_color_t tpv_mix_disabled(egui_color_t color)
 {
-    return egui_rgb_mix(color, EGUI_COLOR_DARK_GREY, 68);
+    return egui_rgb_mix(color, HCW_COLOR_SURFACE_SUBTLE, EGUI_ALPHA_MAKE(44));
 }
 
 static uint8_t tpv_clear_pressed_state(egui_view_t *self)
@@ -367,27 +368,27 @@ static void tpv_draw_text(const egui_font_t *font, egui_view_t *self, const char
 static void tpv_draw_chip(egui_view_t *self, egui_view_two_pane_view_t *local, const egui_region_t *region, const char *label, uint8_t selected,
                           uint8_t pressed)
 {
-    egui_color_t fill = selected ? local->accent_color : local->section_color;
+    egui_color_t fill = selected ? local->accent_color : HCW_COLOR_PANEL;
     egui_color_t border = selected ? local->accent_color : local->border_color;
     egui_color_t text = selected ? EGUI_COLOR_WHITE : local->muted_text_color;
-    uint8_t alpha = selected ? 96 : 78;
+    egui_alpha_t alpha = EGUI_ALPHA_MAKE(selected ? 96 : 96);
 
     if (local->read_only_mode || !egui_view_get_enable(self))
     {
         fill = tpv_mix_disabled(fill);
         border = tpv_mix_disabled(border);
         text = tpv_mix_disabled(text);
-        alpha = selected ? 42 : 54;
+        alpha = EGUI_ALPHA_MAKE(selected ? 42 : 54);
     }
     if (pressed)
     {
-        fill = egui_rgb_mix(fill, EGUI_COLOR_DARK_GREY, 16);
+        fill = egui_rgb_mix(fill, HCW_COLOR_SURFACE_SUBTLE, EGUI_ALPHA_MAKE(16));
     }
 
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, region->location.x, region->location.y, region->size.width, region->size.height,
                                           region->size.height / 2, fill, egui_color_alpha_mix(self->alpha, alpha));
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, region->location.x, region->location.y, region->size.width, region->size.height,
-                                     region->size.height / 2, 1, border, egui_color_alpha_mix(self->alpha, selected ? 78 : 42));
+                                     region->size.height / 2, 1, border, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(selected ? 78 : 42)));
     tpv_draw_text(local->meta_font, self, label, region, EGUI_ALIGN_CENTER, text);
 }
 
@@ -398,6 +399,7 @@ static void tpv_draw_pane(egui_view_t *self, egui_view_two_pane_view_t *local, c
     egui_dim_t pad_y = local->compact_mode ? TPV_COMPACT_PANE_PAD_Y : TPV_STD_PANE_PAD_Y;
     egui_dim_t action_h = local->compact_mode ? TPV_COMPACT_ACTION_H : TPV_STD_ACTION_H;
     egui_dim_t radius = local->compact_mode ? TPV_COMPACT_PANE_RAD : TPV_STD_PANE_RAD;
+    egui_dim_t marker_pad_x;
     egui_dim_t fallback_char_width = local->compact_mode ? 4 : 5;
     egui_color_t tone;
     egui_color_t fill;
@@ -418,8 +420,8 @@ static void tpv_draw_pane(egui_view_t *self, egui_view_two_pane_view_t *local, c
     tiny_compact_pane = (uint8_t)(local->compact_mode && region->size.height < 50);
 
     tone = tpv_tone_color(local, pane->tone);
-    fill = pane->emphasized || active_pane ? egui_rgb_mix(local->section_color, tone, 10) : local->surface_color;
-    border = pane->emphasized || active_pane ? egui_rgb_mix(local->border_color, tone, 18) : local->border_color;
+    fill = HCW_COLOR_PANEL;
+    border = pane->emphasized || active_pane ? egui_rgb_mix(local->border_color, tone, EGUI_ALPHA_MAKE(28)) : local->border_color;
     text = local->text_color;
     muted = local->muted_text_color;
 
@@ -431,13 +433,17 @@ static void tpv_draw_pane(egui_view_t *self, egui_view_two_pane_view_t *local, c
         text = tpv_mix_disabled(text);
         muted = tpv_mix_disabled(muted);
     }
+    marker_pad_x = radius + (local->compact_mode ? 3 : 4);
+    if (pad_x < marker_pad_x)
+    {
+        pad_x = marker_pad_x;
+    }
 
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, region->location.x, region->location.y, region->size.width, region->size.height,
-                                          radius, fill, egui_color_alpha_mix(self->alpha, 98));
+                                          radius, fill, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(98)));
+    hcw_selection_marker_draw_left(region, radius, radius, tone, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(active_pane ? 96 : 82)));
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, region->location.x, region->location.y, region->size.width, region->size.height, radius, 1,
-                                     border, egui_color_alpha_mix(self->alpha, 54));
-    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, region->location.x + 2, region->location.y + 2, local->compact_mode ? 2 : 3,
-                                          region->size.height - 4, 1, tone, egui_color_alpha_mix(self->alpha, active_pane ? 88 : 64));
+                                     border, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(78)));
 
     text_region.location.x = region->location.x + pad_x;
     text_region.location.y = region->location.y + pad_y;
@@ -495,11 +501,11 @@ static void tpv_draw_pane(egui_view_t *self, egui_view_two_pane_view_t *local, c
     text_region.size.width = action_w;
     text_region.size.height = action_h;
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, text_region.location.x, text_region.location.y, text_region.size.width,
-                                          text_region.size.height, text_region.size.height / 2, egui_rgb_mix(local->surface_color, tone, 8),
-                                          egui_color_alpha_mix(self->alpha, 96));
+                                          text_region.size.height, text_region.size.height / 2, egui_rgb_mix(HCW_COLOR_PANEL, tone, EGUI_ALPHA_MAKE(10)),
+                                          egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(96)));
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, text_region.location.x, text_region.location.y, text_region.size.width,
-                                     text_region.size.height, text_region.size.height / 2, 1, egui_rgb_mix(local->border_color, tone, 22),
-                                     egui_color_alpha_mix(self->alpha, 48));
+                                     text_region.size.height, text_region.size.height / 2, 1, egui_rgb_mix(local->border_color, tone, EGUI_ALPHA_MAKE(22)),
+                                     egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(78)));
     tpv_fit_text_to_width(local->meta_font, pane->action, label, sizeof(label), text_region.size.width - 4, fallback_char_width);
     tpv_draw_text(local->meta_font, self, label, &text_region, EGUI_ALIGN_CENTER, tone);
 }
@@ -511,7 +517,7 @@ static void egui_view_two_pane_view_on_draw(egui_view_t *self)
     egui_region_t work;
     egui_color_t outer_fill = local->surface_color;
     egui_color_t outer_border = local->border_color;
-    egui_color_t divider_color = egui_rgb_mix(local->border_color, local->muted_text_color, 18);
+    egui_color_t divider_color = egui_rgb_mix(local->border_color, local->muted_text_color, EGUI_ALPHA_MAKE(18));
     uint8_t radius = local->compact_mode ? TPV_COMPACT_RADIUS : TPV_STD_RADIUS;
     uint8_t i;
 
@@ -526,16 +532,16 @@ static void egui_view_two_pane_view_on_draw(egui_view_t *self)
     egui_view_get_work_region(self, &work);
 
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, work.location.x, work.location.y, work.size.width, work.size.height, radius, outer_fill,
-                                          egui_color_alpha_mix(self->alpha, 98));
+                                          egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(98)));
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, work.location.x, work.location.y, work.size.width, work.size.height, radius, 1, outer_border,
-                                     egui_color_alpha_mix(self->alpha, 58));
+                                     egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(78)));
 
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
     if (self->is_focused)
     {
         egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, work.location.x + 1, work.location.y + 1, work.size.width - 2, work.size.height - 2,
                                          radius, 1, local->accent_color,
-                                         egui_color_alpha_mix(self->alpha, 45));
+                                         egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(78)));
     }
 #endif
 
@@ -553,7 +559,7 @@ static void egui_view_two_pane_view_on_draw(egui_view_t *self)
     if (metrics.divider.size.width > 0 && metrics.divider.size.height > 0)
     {
         egui_canvas_draw_rectangle_fill(&uicode_get_core()->canvas, metrics.divider.location.x, metrics.divider.location.y, metrics.divider.size.width,
-                                        metrics.divider.size.height, divider_color, egui_color_alpha_mix(self->alpha, 42));
+                                        metrics.divider.size.height, divider_color, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(76)));
     }
 
     if (metrics.show_first_pane)
@@ -829,15 +835,15 @@ void egui_view_two_pane_view_init(egui_view_t *self)
     local->meta_font = (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT;
     local->on_layout_changed = NULL;
     local->on_pane_changed = NULL;
-    local->surface_color = EGUI_COLOR_HEX(0xFFFFFF);
-    local->border_color = EGUI_COLOR_HEX(0xD6DEE7);
-    local->section_color = EGUI_COLOR_HEX(0xF6F8FA);
-    local->text_color = EGUI_COLOR_HEX(0x1E2933);
-    local->muted_text_color = EGUI_COLOR_HEX(0x708090);
-    local->accent_color = EGUI_COLOR_HEX(0x2563EB);
-    local->success_color = EGUI_COLOR_HEX(0x178454);
-    local->warning_color = EGUI_COLOR_HEX(0xB87A16);
-    local->neutral_color = EGUI_COLOR_HEX(0x7A8795);
+    local->surface_color = HCW_COLOR_SURFACE;
+    local->border_color = HCW_COLOR_BORDER;
+    local->section_color = HCW_COLOR_SURFACE_SUBTLE;
+    local->text_color = HCW_COLOR_TEXT;
+    local->muted_text_color = HCW_COLOR_NEUTRAL;
+    local->accent_color = HCW_COLOR_PRIMARY;
+    local->success_color = HCW_COLOR_SUCCESS;
+    local->warning_color = HCW_COLOR_WARNING;
+    local->neutral_color = HCW_COLOR_TEXT_MUTED;
     local->layout_mode = EGUI_VIEW_TWO_PANE_VIEW_LAYOUT_WIDE;
     local->single_pane = EGUI_VIEW_TWO_PANE_VIEW_PANE_FIRST;
     local->compact_mode = 0;

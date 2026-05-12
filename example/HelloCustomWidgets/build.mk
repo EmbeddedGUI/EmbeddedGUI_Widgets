@@ -24,7 +24,11 @@ HCW_WIDGET_SRC_FILES := $(filter-out $(EGUI_APP_PATH)/layout/items_repeater/egui
 EGUI_CODE_SRC		+= $(EGUI_APP_SUB_PATH)
 EGUI_CODE_SRC		+= $(EGUI_APP_SUB_PATH)/generated
 EGUI_CODE_SRC		+= $(EGUI_APP_PATH)/display/bitmap_icon/resource/img
+EGUI_CODE_SRC		+= $(EGUI_APP_PATH)/display/font_icon/resource/font
 EGUI_CODE_SRC		+= $(EGUI_APP_PATH)/display/image_icon/resource/img
+EGUI_CODE_SRC		+= $(EGUI_APP_PATH)/display/symbol_icon/resource/font
+EGUI_CODE_SRC		+= $(EGUI_APP_PATH)/input/rating_control/resource/font
+EGUI_CODE_SRC		+= $(EGUI_APP_PATH)/input/thumb_rate/resource/font
 EGUI_CODE_SRC_FILES += $(HCW_WIDGET_SRC_FILES)
 
 EGUI_CODE_INCLUDE	+= $(EGUI_APP_SUB_PATH)
@@ -32,8 +36,10 @@ EGUI_CODE_INCLUDE	+= $(EGUI_APP_SUB_PATH)/generated
 EGUI_CODE_INCLUDE	+= $(HCW_WIDGET_DIRS)
 EGUI_CODE_INCLUDE	+= $(EGUI_APP_PATH)/display/bitmap_icon
 EGUI_CODE_INCLUDE	+= $(EGUI_APP_PATH)/display/bitmap_icon/resource
+EGUI_CODE_INCLUDE	+= $(EGUI_APP_PATH)/display/font_icon/resource
 EGUI_CODE_INCLUDE	+= $(EGUI_APP_PATH)/display/image_icon
 EGUI_CODE_INCLUDE	+= $(EGUI_APP_PATH)/display/image_icon/resource
+EGUI_CODE_INCLUDE	+= $(EGUI_APP_PATH)/display/symbol_icon/resource
 else
 EGUI_CODE_SRC		+= $(EGUI_APP_SUB_PATH)
 EGUI_CODE_SRC		+= $(EGUI_APP_SUB_PATH)/resource

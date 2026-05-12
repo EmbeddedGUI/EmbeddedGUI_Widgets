@@ -136,9 +136,9 @@ static void setup_preview_group(void)
     egui_view_persona_group_set_current_index(EGUI_VIEW_OF(&preview_group), 0);
     egui_view_persona_group_set_font(EGUI_VIEW_OF(&preview_group), (const egui_font_t *)&egui_res_font_montserrat_8_4);
     egui_view_persona_group_set_meta_font(EGUI_VIEW_OF(&preview_group), (const egui_font_t *)&egui_res_font_montserrat_8_4);
-    egui_view_persona_group_set_palette(EGUI_VIEW_OF(&preview_group), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xD2DBE3), EGUI_COLOR_HEX(0xEEF3F7),
-                                        EGUI_COLOR_HEX(0x1A2734), EGUI_COLOR_HEX(0x6B7A89), EGUI_COLOR_HEX(0x0F6CBD), EGUI_COLOR_HEX(0x0F7B45),
-                                        EGUI_COLOR_HEX(0x9D5D00), EGUI_COLOR_HEX(0x7A8796));
+    egui_view_persona_group_set_palette(EGUI_VIEW_OF(&preview_group), HCW_COLOR_SURFACE, EGUI_COLOR_HEX(0xD2DBE3), HCW_COLOR_SURFACE_DISABLED,
+                                        HCW_COLOR_TEXT, HCW_COLOR_TEXT_MUTED, HCW_COLOR_PRIMARY, HCW_COLOR_SUCCESS,
+                                        HCW_COLOR_WARNING, HCW_COLOR_NEUTRAL);
     egui_view_persona_group_set_on_focus_changed_listener(EGUI_VIEW_OF(&preview_group), on_focus_changed);
     egui_view_persona_group_override_static_preview_api(EGUI_VIEW_OF(&preview_group), &preview_api);
     reset_listener_state();
@@ -451,13 +451,13 @@ static void test_persona_group_metrics_hit_testing_and_helpers(void)
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_persona_group_measure_text_width(NULL, "Lena"));
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_persona_group_focus_index(&g_invalid_focus_snapshot, 3));
     EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_persona_group_focus_index(&g_snapshots[1], 4));
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x0F7B45).full,
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_SUCCESS.full,
                                egui_view_persona_group_presence_color(&test_group, EGUI_VIEW_PERSONA_GROUP_PRESENCE_LIVE).full);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x9D5D00).full,
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_WARNING.full,
                                egui_view_persona_group_presence_color(&test_group, EGUI_VIEW_PERSONA_GROUP_PRESENCE_BUSY).full);
-    EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(EGUI_COLOR_HEX(0x9D5D00), EGUI_COLOR_HEX(0x0F6CBD), 24).full,
+    EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(HCW_COLOR_WARNING, HCW_COLOR_PRIMARY, EGUI_ALPHA_MAKE(24)).full,
                                egui_view_persona_group_presence_color(&test_group, EGUI_VIEW_PERSONA_GROUP_PRESENCE_AWAY).full);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x7A8796).full,
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_NEUTRAL.full,
                                egui_view_persona_group_presence_color(&test_group, EGUI_VIEW_PERSONA_GROUP_PRESENCE_IDLE).full);
     EGUI_TEST_ASSERT_EQUAL_INT(54, egui_view_persona_group_footer_width(NULL, "Design", 0, 60));
     EGUI_TEST_ASSERT_EQUAL_INT(34, egui_view_persona_group_footer_width(NULL, "Team", 1, 40));
@@ -470,7 +470,7 @@ static void test_persona_group_metrics_hit_testing_and_helpers(void)
     EGUI_TEST_ASSERT_TRUE(strcmp("Des...", label) == 0);
     egui_view_persona_group_fit_text_to_width(NULL, "Archive sweep", short_label, sizeof(short_label), 20, 4);
     EGUI_TEST_ASSERT_TRUE(strcmp("Ar...", short_label) == 0);
-    EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(sample, EGUI_COLOR_DARK_GREY, 66).full, egui_view_persona_group_mix_disabled(sample).full);
+    EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(sample, EGUI_COLOR_DARK_GREY, EGUI_ALPHA_MAKE(52)).full, egui_view_persona_group_mix_disabled(sample).full);
     EGUI_TEST_ASSERT_TRUE(metrics.content_region.size.width > 0);
     EGUI_TEST_ASSERT_TRUE(metrics.avatar_regions[0].size.width > 0);
     EGUI_TEST_ASSERT_TRUE(metrics.avatar_regions[1].location.x > metrics.avatar_regions[0].location.x);

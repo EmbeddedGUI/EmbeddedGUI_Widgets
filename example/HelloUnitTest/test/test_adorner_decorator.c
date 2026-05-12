@@ -193,12 +193,12 @@ static void test_adorner_decorator_init_defaults(void)
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_ADORNER_DECORATOR_ADORNER_FOCUS, egui_view_adorner_decorator_get_adorner_flags(EGUI_VIEW_OF(&test_decorator)));
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_adorner_decorator_get_compact_mode(EGUI_VIEW_OF(&test_decorator)));
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_adorner_decorator_get_read_only_mode(EGUI_VIEW_OF(&test_decorator)));
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xF5F8FB).full, test_decorator.surface_color.full);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xFFFFFF).full, test_decorator.child_surface_color.full);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xC6D2DE).full, test_decorator.child_border_color.full);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x2563EB).full, test_decorator.focus_color.full);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xC42B1C).full, test_decorator.validation_color.full);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x0F6CBD).full, test_decorator.resize_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PANEL.full, test_decorator.surface_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_SURFACE.full, test_decorator.child_surface_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_BORDER.full, test_decorator.child_border_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PRIMARY.full, test_decorator.focus_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_DANGER.full, test_decorator.validation_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PRIMARY.full, test_decorator.resize_color.full);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_MARGIN_PADDING
     EGUI_TEST_ASSERT_EQUAL_INT(18, EGUI_VIEW_OF(&test_decorator)->padding.left);
     EGUI_TEST_ASSERT_EQUAL_INT(18, EGUI_VIEW_OF(&test_decorator)->padding.right);

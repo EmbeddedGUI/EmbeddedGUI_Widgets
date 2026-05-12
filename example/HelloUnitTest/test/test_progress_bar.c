@@ -203,23 +203,23 @@ static void test_progress_bar_style_helpers_apply_expected_palette(void)
     setup_progress_bar();
 
     EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&test_progress_bar)->background == NULL);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xD8E1EA).full, test_progress_bar.bk_color.full);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x0F6CBD).full, test_progress_bar.progress_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TRACK.full, test_progress_bar.bk_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PRIMARY.full, test_progress_bar.progress_color.full);
     EGUI_TEST_ASSERT_EQUAL_INT(0, test_progress_bar.is_show_control);
     EGUI_TEST_ASSERT_FALSE(hcw_progress_bar_get_indeterminate_mode(EGUI_VIEW_OF(&test_progress_bar)));
 
     egui_view_set_pressed(EGUI_VIEW_OF(&test_progress_bar), 1);
     hcw_progress_bar_apply_paused_style(EGUI_VIEW_OF(&test_progress_bar));
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_progress_bar)->is_pressed);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xE7DDCA).full, test_progress_bar.bk_color.full);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xB95A00).full, test_progress_bar.progress_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_WARNING_SOFT.full, test_progress_bar.bk_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_WARNING.full, test_progress_bar.progress_color.full);
     EGUI_TEST_ASSERT_FALSE(hcw_progress_bar_get_indeterminate_mode(EGUI_VIEW_OF(&test_progress_bar)));
 
     egui_view_set_pressed(EGUI_VIEW_OF(&test_progress_bar), 1);
     hcw_progress_bar_apply_error_style(EGUI_VIEW_OF(&test_progress_bar));
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_progress_bar)->is_pressed);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xEED6DA).full, test_progress_bar.bk_color.full);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xC42B1C).full, test_progress_bar.progress_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_DANGER_SOFT.full, test_progress_bar.bk_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_DANGER.full, test_progress_bar.progress_color.full);
 
     egui_view_set_pressed(EGUI_VIEW_OF(&test_progress_bar), 1);
     hcw_progress_bar_apply_indeterminate_style(EGUI_VIEW_OF(&test_progress_bar));

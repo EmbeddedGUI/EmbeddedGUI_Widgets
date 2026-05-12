@@ -402,7 +402,7 @@ static void test_settings_panel_internal_helpers_cover_focus_tone_and_spacing(vo
     EGUI_TEST_ASSERT_EQUAL_INT(6, egui_view_settings_panel_trailing_inset(0));
     EGUI_TEST_ASSERT_EQUAL_INT(6, egui_view_settings_panel_title_gap(1));
     EGUI_TEST_ASSERT_EQUAL_INT(4, egui_view_settings_panel_title_gap(0));
-    EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(sample, EGUI_COLOR_DARK_GREY, 68).full, mixed.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(sample, HCW_COLOR_SURFACE_SUBTLE, EGUI_ALPHA_MAKE(44)).full, mixed.full);
 }
 
 static void test_settings_panel_static_preview_consumes_input_and_keeps_state(void)

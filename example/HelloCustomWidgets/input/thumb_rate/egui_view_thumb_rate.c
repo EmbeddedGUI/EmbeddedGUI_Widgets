@@ -1,18 +1,23 @@
 #include "egui_view_thumb_rate.h"
+#include "../../hcw_text_center.h"
+#include "resource/egui_icon_thumb_rate.h"
 
-#define THUMB_RATE_STD_RADIUS   10
-#define THUMB_RATE_STD_PAD_X    8
-#define THUMB_RATE_STD_PAD_Y    6
-#define THUMB_RATE_STD_GAP      8
-#define THUMB_RATE_STD_ICON     16
-#define THUMB_RATE_STD_LABEL_H  10
+#define THUMB_RATE_STD_RADIUS    10
+#define THUMB_RATE_STD_PAD_X     8
+#define THUMB_RATE_STD_PAD_Y     6
+#define THUMB_RATE_STD_GAP       8
+#define THUMB_RATE_STD_ICON      24
+#define THUMB_RATE_STD_LABEL_H   10
+#define THUMB_RATE_STD_STACK_GAP 2
+#define THUMB_RATE_STD_LABEL_NUDGE_X 1
 
-#define THUMB_RATE_COMPACT_RADIUS   8
-#define THUMB_RATE_COMPACT_PAD_X    5
-#define THUMB_RATE_COMPACT_PAD_Y    5
-#define THUMB_RATE_COMPACT_GAP      6
-#define THUMB_RATE_COMPACT_ICON     14
-#define THUMB_RATE_COMPACT_LABEL_H  0
+#define THUMB_RATE_COMPACT_RADIUS    8
+#define THUMB_RATE_COMPACT_PAD_X     5
+#define THUMB_RATE_COMPACT_PAD_Y     5
+#define THUMB_RATE_COMPACT_GAP       6
+#define THUMB_RATE_COMPACT_ICON      20
+#define THUMB_RATE_COMPACT_LABEL_H   0
+#define THUMB_RATE_COMPACT_STACK_GAP 0
 
 typedef struct egui_view_thumb_rate_metrics egui_view_thumb_rate_metrics_t;
 struct egui_view_thumb_rate_metrics
@@ -185,13 +190,15 @@ static void egui_view_thumb_rate_get_metrics(egui_view_thumb_rate_t *local, egui
 
 static void egui_view_thumb_rate_draw_text(const egui_font_t *font, egui_view_t *self, const char *text, const egui_region_t *region, egui_color_t color)
 {
-    egui_region_t draw_region = *region;
+    egui_region_t draw_region;
 
-    if (!egui_view_thumb_rate_has_text(text) || font == NULL || region->size.width <= 0 || region->size.height <= 0)
+    if (!egui_view_thumb_rate_has_text(text) || font == NULL || region == NULL || region->size.width <= 0 || region->size.height <= 0)
     {
         return;
     }
 
+    draw_region = *region;
+    draw_region.location.y += hcw_text_center_get_delta(font, text, &draw_region, EGUI_ALIGN_CENTER);
     egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, font, text, &draw_region, EGUI_ALIGN_CENTER, color, self->alpha);
 }
 
@@ -201,47 +208,33 @@ static void egui_view_thumb_rate_draw_focus(egui_view_t *self, const egui_region
                                      egui_color_alpha_mix(self->alpha, alpha));
 }
 
-static void egui_view_thumb_rate_draw_thumb_icon(egui_view_t *self, egui_dim_t x, egui_dim_t y, egui_dim_t size, uint8_t is_down, egui_color_t fill_color,
-                                                 egui_color_t border_color, egui_alpha_t fill_alpha, egui_alpha_t border_alpha)
+static const egui_font_t *egui_view_thumb_rate_resolve_icon_font(egui_dim_t icon_size)
 {
-    static const int8_t template_points[13][2] = {
-            {0, 12},
-            {4, 12},
-            {4, 6},
-            {8, 1},
-            {11, 1},
-            {12, 2},
-            {11, 7},
-            {19, 7},
-            {20, 8},
-            {20, 16},
-            {5, 16},
-            {5, 20},
-            {0, 20},
-    };
-    egui_dim_t points[26];
-    uint8_t index;
+    if (icon_size <= 16)
+    {
+        return EGUI_FONT_THUMB_RATE_ICON_16;
+    }
+    return icon_size <= 20 ? EGUI_FONT_THUMB_RATE_ICON_20 : EGUI_FONT_THUMB_RATE_ICON_24;
+}
 
-    if (size <= 0)
+static const char *egui_view_thumb_rate_resolve_icon_glyph(uint8_t part)
+{
+    return part == EGUI_VIEW_THUMB_RATE_PART_DISLIKE ? EGUI_ICON_THUMB_RATE_DOWN : EGUI_ICON_THUMB_RATE_UP;
+}
+
+static void egui_view_thumb_rate_draw_thumb_icon(egui_view_t *self, const egui_region_t *region, const egui_font_t *font, const char *glyph, egui_color_t color,
+                                                 egui_alpha_t alpha)
+{
+    egui_region_t draw_region;
+
+    if (font == NULL || glyph == NULL || glyph[0] == '\0' || region == NULL || region->size.width <= 0 || region->size.height <= 0)
     {
         return;
     }
 
-    for (index = 0; index < 13; index++)
-    {
-        egui_dim_t px = template_points[index][0];
-        egui_dim_t py = template_points[index][1];
-
-        if (is_down)
-        {
-            py = 21 - py;
-        }
-        points[index * 2] = x + (px * size) / 20;
-        points[index * 2 + 1] = y + (py * size) / 20;
-    }
-
-    egui_canvas_draw_polygon_fill(&uicode_get_core()->canvas, points, 13, fill_color, egui_color_alpha_mix(self->alpha, fill_alpha));
-    egui_canvas_draw_polygon(&uicode_get_core()->canvas, points, 13, 1, border_color, egui_color_alpha_mix(self->alpha, border_alpha));
+    draw_region = *region;
+    draw_region.location.y += hcw_text_center_get_delta(font, glyph, &draw_region, EGUI_ALIGN_CENTER);
+    egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, font, glyph, &draw_region, EGUI_ALIGN_CENTER, color, egui_color_alpha_mix(self->alpha, alpha));
 }
 
 static void egui_view_thumb_rate_draw_part(egui_view_t *self, egui_view_thumb_rate_t *local, egui_view_thumb_rate_metrics_t *metrics, uint8_t part,
@@ -259,41 +252,66 @@ static void egui_view_thumb_rate_draw_part(egui_view_t *self, egui_view_thumb_ra
     egui_color_t part_border_color;
     egui_color_t icon_color;
     egui_color_t label_color;
-    egui_dim_t icon_x;
-    egui_dim_t icon_y;
+    egui_region_t icon_slot_region;
+    egui_dim_t content_center_x;
+    egui_dim_t content_height;
+    egui_dim_t content_y;
+    egui_dim_t stack_gap = local->compact_mode ? THUMB_RATE_COMPACT_STACK_GAP : THUMB_RATE_STD_STACK_GAP;
+    const egui_font_t *icon_font;
+    const char *icon_glyph;
 
-    fill_color = selected ? accent : egui_rgb_mix(surface_color, accent, focused ? 12 : (pressed ? 10 : 4));
-    part_border_color = selected ? egui_rgb_mix(accent, EGUI_COLOR_WHITE, 10) : egui_rgb_mix(border_color, accent, focused ? 26 : 10);
-    icon_color = selected ? EGUI_COLOR_WHITE : egui_rgb_mix(accent, text_color, 18);
-    label_color = selected ? EGUI_COLOR_WHITE : egui_rgb_mix(text_color, muted_text_color, 18);
+    fill_color = selected ? egui_rgb_mix(surface_color, accent, EGUI_ALPHA_MAKE(32))
+                          : egui_rgb_mix(surface_color, HCW_COLOR_SURFACE_SUBTLE, EGUI_ALPHA_MAKE(focused ? 44 : (pressed ? 38 : 30)));
+    part_border_color = selected ? egui_rgb_mix(border_color, accent, EGUI_ALPHA_MAKE(62))
+                                 : egui_rgb_mix(border_color, accent, EGUI_ALPHA_MAKE(focused ? 18 : 4));
+    icon_color = selected ? egui_rgb_mix(accent, EGUI_COLOR_BLACK, EGUI_ALPHA_MAKE(12))
+                          : egui_rgb_mix(text_color, accent, EGUI_ALPHA_MAKE(focused ? 22 : 10));
+    label_color = selected ? egui_rgb_mix(text_color, accent, EGUI_ALPHA_MAKE(34))
+                           : egui_rgb_mix(text_color, muted_text_color, EGUI_ALPHA_MAKE(focused ? 12 : 28));
 
     if (pressed)
     {
-        fill_color = egui_rgb_mix(fill_color, accent, selected ? 14 : 18);
-        part_border_color = egui_rgb_mix(part_border_color, accent, 18);
+        fill_color = selected ? egui_rgb_mix(fill_color, accent, EGUI_ALPHA_MAKE(10))
+                              : egui_rgb_mix(fill_color, HCW_COLOR_SURFACE_SUBTLE, EGUI_ALPHA_MAKE(18));
+        part_border_color = egui_rgb_mix(part_border_color, accent, EGUI_ALPHA_MAKE(selected ? 16 : 10));
     }
     if (focused)
     {
-        egui_view_thumb_rate_draw_focus(self, part_region, metrics->part_radius, egui_rgb_mix(accent, EGUI_COLOR_WHITE, 12), local->compact_mode ? 44 : 54);
+        egui_view_thumb_rate_draw_focus(self, part_region, metrics->part_radius, egui_rgb_mix(accent, EGUI_COLOR_WHITE, EGUI_ALPHA_MAKE(26)),
+                                        EGUI_ALPHA_MAKE(local->compact_mode ? 42 : 50));
     }
 
-    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, part_region->location.x, part_region->location.y, part_region->size.width, part_region->size.height, metrics->part_radius,
-                                          fill_color, egui_color_alpha_mix(self->alpha, selected ? 96 : 94));
-    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, part_region->location.x, part_region->location.y, part_region->size.width, part_region->size.height, metrics->part_radius, 1,
-                                     part_border_color, egui_color_alpha_mix(self->alpha, selected ? 82 : 58));
+    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, part_region->location.x, part_region->location.y, part_region->size.width,
+                                          part_region->size.height, metrics->part_radius, fill_color,
+                                          egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(selected ? 98 : 96)));
+    egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, part_region->location.x, part_region->location.y, part_region->size.width,
+                                     part_region->size.height, metrics->part_radius, 1, part_border_color,
+                                     egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(selected ? 88 : 62)));
 
-    icon_x = part_region->location.x + (part_region->size.width - metrics->icon_size) / 2;
+    icon_slot_region = *part_region;
+    content_center_x = part_region->location.x + part_region->size.width / 2 + THUMB_RATE_STD_LABEL_NUDGE_X;
     if (metrics->show_labels)
     {
-        icon_y = part_region->location.y + 7;
+        content_height = metrics->icon_size + stack_gap + label_region->size.height;
+        if (content_height > part_region->size.height)
+        {
+            content_height = part_region->size.height;
+        }
+        content_y = part_region->location.y + (part_region->size.height - content_height) / 2;
+        icon_slot_region.location.y = content_y;
+        icon_slot_region.size.height = metrics->icon_size;
+        label_region->location.y = content_y + metrics->icon_size + stack_gap;
     }
     else
     {
-        icon_y = part_region->location.y + (part_region->size.height - metrics->icon_size) / 2;
+        icon_slot_region.location.y = part_region->location.y + (part_region->size.height - metrics->icon_size) / 2;
+        icon_slot_region.size.height = metrics->icon_size;
     }
-
-    egui_view_thumb_rate_draw_thumb_icon(self, icon_x, icon_y, metrics->icon_size, part == EGUI_VIEW_THUMB_RATE_PART_DISLIKE, icon_color,
-                                         egui_rgb_mix(part_border_color, icon_color, 28), selected ? 100 : 96, selected ? 92 : 76);
+    icon_slot_region.location.x = content_center_x - icon_slot_region.size.width / 2;
+    label_region->location.x = content_center_x - label_region->size.width / 2;
+    icon_font = egui_view_thumb_rate_resolve_icon_font(metrics->icon_size);
+    icon_glyph = egui_view_thumb_rate_resolve_icon_glyph(part);
+    egui_view_thumb_rate_draw_thumb_icon(self, &icon_slot_region, icon_font, icon_glyph, icon_color, EGUI_ALPHA_100);
 
     if (metrics->show_labels)
     {
@@ -433,13 +451,13 @@ void egui_view_thumb_rate_apply_standard_style(egui_view_t *self)
 
     local->compact_mode = 0;
     local->read_only_mode = 0;
-    local->surface_color = EGUI_COLOR_HEX(0xFFFFFF);
-    local->border_color = EGUI_COLOR_HEX(0xD7DFE7);
-    local->text_color = EGUI_COLOR_HEX(0x233140);
-    local->muted_text_color = EGUI_COLOR_HEX(0x6F7C8A);
-    local->like_color = EGUI_COLOR_HEX(0x0F6CBD);
-    local->dislike_color = EGUI_COLOR_HEX(0xC42B1C);
-    local->shadow_color = EGUI_COLOR_HEX(0xDBE3EB);
+    local->surface_color = HCW_COLOR_SURFACE;
+    local->border_color = HCW_COLOR_BORDER_STRONG;
+    local->text_color = HCW_COLOR_TEXT_STRONG;
+    local->muted_text_color = HCW_COLOR_TEXT_SOFT;
+    local->like_color = HCW_COLOR_PRIMARY_DARK;
+    local->dislike_color = HCW_COLOR_DANGER;
+    local->shadow_color = HCW_COLOR_SHADOW;
     egui_view_set_background(self, NULL);
     egui_view_set_shadow(self, NULL);
     egui_view_set_padding_all(self, 0);
@@ -457,13 +475,13 @@ void egui_view_thumb_rate_apply_compact_style(egui_view_t *self)
 
     local->compact_mode = 1;
     local->read_only_mode = 0;
-    local->surface_color = EGUI_COLOR_HEX(0xFFFFFF);
-    local->border_color = EGUI_COLOR_HEX(0xD7DFE7);
-    local->text_color = EGUI_COLOR_HEX(0x263242);
-    local->muted_text_color = EGUI_COLOR_HEX(0x73808D);
-    local->like_color = EGUI_COLOR_HEX(0x0F766E);
-    local->dislike_color = EGUI_COLOR_HEX(0xC42B1C);
-    local->shadow_color = EGUI_COLOR_HEX(0xE1E8EF);
+    local->surface_color = HCW_COLOR_SURFACE;
+    local->border_color = HCW_COLOR_BORDER_STRONG;
+    local->text_color = HCW_COLOR_TEXT_STRONG;
+    local->muted_text_color = HCW_COLOR_TEXT_SOFT;
+    local->like_color = HCW_COLOR_PRIMARY_DARK;
+    local->dislike_color = HCW_COLOR_DANGER;
+    local->shadow_color = HCW_COLOR_SHADOW;
     egui_view_set_background(self, NULL);
     egui_view_set_shadow(self, NULL);
     egui_view_set_padding_all(self, 0);
@@ -481,13 +499,13 @@ void egui_view_thumb_rate_apply_read_only_style(egui_view_t *self)
 
     local->compact_mode = 1;
     local->read_only_mode = 1;
-    local->surface_color = EGUI_COLOR_HEX(0xFBFCFD);
-    local->border_color = EGUI_COLOR_HEX(0xDCE4EB);
-    local->text_color = EGUI_COLOR_HEX(0x617180);
-    local->muted_text_color = EGUI_COLOR_HEX(0x8B97A3);
-    local->like_color = EGUI_COLOR_HEX(0x9FB3C1);
-    local->dislike_color = EGUI_COLOR_HEX(0xC3A59F);
-    local->shadow_color = EGUI_COLOR_HEX(0xE5EBF0);
+    local->surface_color = HCW_COLOR_SURFACE_SUBTLE;
+    local->border_color = HCW_COLOR_TRACK_STRONG;
+    local->text_color = HCW_COLOR_TEXT_SOFT;
+    local->muted_text_color = HCW_COLOR_TEXT_SOFT;
+    local->like_color = HCW_COLOR_TEXT_SOFT;
+    local->dislike_color = HCW_COLOR_TEXT_SOFT;
+    local->shadow_color = HCW_COLOR_TRACK;
     egui_view_set_background(self, NULL);
     egui_view_set_shadow(self, NULL);
     egui_view_set_padding_all(self, 0);
@@ -672,33 +690,33 @@ static void egui_view_thumb_rate_on_draw(egui_view_t *self)
 
     if (!enabled)
     {
-        surface_color = egui_rgb_mix(surface_color, EGUI_COLOR_HEX(0xF6F8FA), 34);
-        border_color = egui_rgb_mix(border_color, muted_text_color, 28);
-        text_color = egui_rgb_mix(text_color, muted_text_color, 48);
-        muted_text_color = egui_rgb_mix(muted_text_color, surface_color, 16);
-        shadow_color = egui_rgb_mix(shadow_color, surface_color, 40);
+        surface_color = egui_rgb_mix(surface_color, HCW_COLOR_SURFACE_SUBTLE, EGUI_ALPHA_MAKE(34));
+        border_color = egui_rgb_mix(border_color, muted_text_color, EGUI_ALPHA_MAKE(28));
+        text_color = egui_rgb_mix(text_color, muted_text_color, EGUI_ALPHA_MAKE(48));
+        muted_text_color = egui_rgb_mix(muted_text_color, surface_color, EGUI_ALPHA_MAKE(16));
+        shadow_color = egui_rgb_mix(shadow_color, surface_color, EGUI_ALPHA_MAKE(40));
     }
     else if (local->read_only_mode)
     {
-        surface_color = egui_rgb_mix(surface_color, EGUI_COLOR_HEX(0xFBFCFD), 24);
-        border_color = egui_rgb_mix(border_color, muted_text_color, 20);
-        text_color = egui_rgb_mix(text_color, muted_text_color, 32);
-        muted_text_color = egui_rgb_mix(muted_text_color, surface_color, 12);
-        shadow_color = egui_rgb_mix(shadow_color, surface_color, 36);
+        surface_color = egui_rgb_mix(surface_color, HCW_COLOR_SURFACE_SUBTLE, EGUI_ALPHA_MAKE(18));
+        border_color = egui_rgb_mix(border_color, muted_text_color, EGUI_ALPHA_MAKE(14));
+        text_color = egui_rgb_mix(text_color, muted_text_color, EGUI_ALPHA_MAKE(18));
+        muted_text_color = egui_rgb_mix(muted_text_color, surface_color, EGUI_ALPHA_MAKE(8));
+        shadow_color = egui_rgb_mix(shadow_color, surface_color, EGUI_ALPHA_MAKE(28));
     }
 
     if (!local->compact_mode)
     {
         egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.surface_region.location.x, metrics.surface_region.location.y + 2, metrics.surface_region.size.width,
                                               metrics.surface_region.size.height, THUMB_RATE_STD_RADIUS + 1, shadow_color,
-                                              egui_color_alpha_mix(self->alpha, enabled ? 18 : 10));
+                                              egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(enabled ? 18 : 10)));
     }
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics.surface_region.location.x, metrics.surface_region.location.y, metrics.surface_region.size.width,
                                           metrics.surface_region.size.height, local->compact_mode ? THUMB_RATE_COMPACT_RADIUS : THUMB_RATE_STD_RADIUS, surface_color,
-                                          egui_color_alpha_mix(self->alpha, local->compact_mode ? 94 : 96));
+                                          egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(local->compact_mode ? 96 : 98)));
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics.surface_region.location.x, metrics.surface_region.location.y, metrics.surface_region.size.width,
                                      metrics.surface_region.size.height, local->compact_mode ? THUMB_RATE_COMPACT_RADIUS : THUMB_RATE_STD_RADIUS, 1, border_color,
-                                     egui_color_alpha_mix(self->alpha, local->compact_mode ? 56 : 60));
+                                     egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(local->compact_mode ? 66 : 70)));
 
     egui_view_thumb_rate_draw_part(self, local, &metrics, EGUI_VIEW_THUMB_RATE_PART_LIKE, surface_color, border_color, text_color, muted_text_color);
     egui_view_thumb_rate_draw_part(self, local, &metrics, EGUI_VIEW_THUMB_RATE_PART_DISLIKE, surface_color, border_color, text_color, muted_text_color);
@@ -894,13 +912,13 @@ void egui_view_thumb_rate_init(egui_view_t *self)
     local->on_changed = NULL;
     local->like_label = "Like";
     local->dislike_label = "Dislike";
-    local->surface_color = EGUI_COLOR_HEX(0xFFFFFF);
-    local->border_color = EGUI_COLOR_HEX(0xD7DFE7);
-    local->text_color = EGUI_COLOR_HEX(0x233140);
-    local->muted_text_color = EGUI_COLOR_HEX(0x6F7C8A);
-    local->like_color = EGUI_COLOR_HEX(0x0F6CBD);
-    local->dislike_color = EGUI_COLOR_HEX(0xC42B1C);
-    local->shadow_color = EGUI_COLOR_HEX(0xDBE3EB);
+    local->surface_color = HCW_COLOR_SURFACE;
+    local->border_color = HCW_COLOR_BORDER_STRONG;
+    local->text_color = HCW_COLOR_TEXT_STRONG;
+    local->muted_text_color = HCW_COLOR_TEXT_SOFT;
+    local->like_color = HCW_COLOR_PRIMARY_DARK;
+    local->dislike_color = HCW_COLOR_DANGER;
+    local->shadow_color = HCW_COLOR_SHADOW;
     local->current_state = EGUI_VIEW_THUMB_RATE_STATE_NONE;
     local->current_part = EGUI_VIEW_THUMB_RATE_PART_LIKE;
     local->compact_mode = 0;

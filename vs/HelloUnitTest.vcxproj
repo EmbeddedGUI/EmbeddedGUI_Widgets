@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>17.0</VCProjectVersion>
+    <Keyword>MakeFileProj</Keyword>
+    <ProjectGuid>{D3D7235D-5BEA-404E-97C5-C7919E681752}</ProjectGuid>
+    <RootNamespace>HelloUnitTest</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup>
+    <PlatformToolset Condition="'$(PlatformToolset)'=='' And Exists('$(VCTargetsPath)\Platforms\$(Platform)\PlatformToolsets\v145\Toolset.props')">v145</PlatformToolset>
+    <PlatformToolset Condition="'$(PlatformToolset)'=='' And Exists('$(VCTargetsPath)\Platforms\$(Platform)\PlatformToolsets\v143\Toolset.props')">v143</PlatformToolset>
+    <PlatformToolset Condition="'$(PlatformToolset)'=='' And Exists('$(VCTargetsPath)\Platforms\$(Platform)\PlatformToolsets\v142\Toolset.props')">v142</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings" />
+  <ImportGroup Label="Shared" />
+  <ImportGroup Label="PropertySheets" Condition="'$(Platform)'=='x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <EguiRepoRoot>$(MSBuildThisFileDirectory)..\</EguiRepoRoot>
+    <EguiSdkRoot>$(EguiRepoRoot)sdk\EmbeddedGUI\</EguiSdkRoot>
+    <EguiScript>$(EguiRepoRoot)scripts\vs\vs_make.ps1</EguiScript>
+    <EguiApp>HelloUnitTest</EguiApp>
+    <EguiAppSub Condition="'$(EguiAppSub)'==''"></EguiAppSub>
+    <EguiPort>pc_test</EguiPort>
+    <EguiOutputSuffix Condition="'$(EguiOutputSuffix)'==''">default</EguiOutputSuffix>
+    <EguiOutputDir>$(EguiRepoRoot)output\vs\$(EguiApp)\$(EguiOutputSuffix)\$(Configuration)\</EguiOutputDir>
+    <EguiAppPath>$(EguiRepoRoot)example\HelloUnitTest</EguiAppPath>
+    <OutDir>$(EguiOutputDir)</OutDir>
+    <IntDir>$(EguiRepoRoot)output\vs\obj\$(EguiApp)\$(EguiOutputSuffix)\$(Configuration)\</IntDir>
+    <NMakeBuildCommandLine>powershell -NoProfile -ExecutionPolicy Bypass -File &quot;$(EguiScript)&quot; -Action build -App $(EguiApp) -Port $(EguiPort) -Configuration $(Configuration)</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>powershell -NoProfile -ExecutionPolicy Bypass -File &quot;$(EguiScript)&quot; -Action rebuild -App $(EguiApp) -Port $(EguiPort) -Configuration $(Configuration)</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>powershell -NoProfile -ExecutionPolicy Bypass -File &quot;$(EguiScript)&quot; -Action clean -App $(EguiApp) -Port $(EguiPort) -Configuration $(Configuration)</NMakeCleanCommandLine>
+    <NMakeOutput>$(EguiOutputDir)main.exe</NMakeOutput>
+    <NMakeIncludeSearchPath>$(EguiRepoRoot)example;$(EguiAppPath);$(EguiAppPath)\resource;$(EguiAppPath)\test;$(EguiSdkRoot)src;$(EguiSdkRoot)src\test;$(EguiSdkRoot)src\widget;$(EguiSdkRoot)driver\bus;$(EguiSdkRoot)driver\lcd;$(EguiSdkRoot)driver\touch;$(EguiSdkRoot)porting\pc_test</NMakeIncludeSearchPath>
+    <NMakePreprocessorDefinitions Condition="'$(Configuration)'=='Debug'">_DEBUG;_CRT_SECURE_NO_WARNINGS;EGUI_APP=&quot;HelloUnitTest&quot;;EGUI_PORT=EGUI_PORT_TYPE_PC</NMakePreprocessorDefinitions>
+    <NMakePreprocessorDefinitions Condition="'$(Configuration)'=='Release'">NDEBUG;_CRT_SECURE_NO_WARNINGS;EGUI_APP=&quot;HelloUnitTest&quot;;EGUI_PORT=EGUI_PORT_TYPE_PC</NMakePreprocessorDefinitions>
+    <LocalDebuggerCommand>$(NMakeOutput)</LocalDebuggerCommand>
+    <LocalDebuggerWorkingDirectory>$(EguiOutputDir)</LocalDebuggerWorkingDirectory>
+    <LocalDebuggerDebuggerType>NativeOnly</LocalDebuggerDebuggerType>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Include="..\Makefile" />
+    <None Include="..\example\HelloUnitTest\build.mk" />
+    <None Include="..\scripts\vs\vs_make.ps1" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets" />
+</Project>

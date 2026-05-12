@@ -2,6 +2,7 @@
 
 #include "egui.h"
 #include "egui_view_search_box.h"
+#include "../../hcw_text_center.h"
 
 #include "../../../../sdk/EmbeddedGUI/src/resource/egui_icon_material_symbols.h"
 #include "../../../../sdk/EmbeddedGUI/src/widget/egui_view_icon_font.h"
@@ -10,15 +11,15 @@
 #define HCW_SEARCH_BOX_COMPACT_RADIUS  8
 #define HCW_SEARCH_BOX_CURSOR_WIDTH    1
 
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_search_box_standard_bg_normal_param, EGUI_COLOR_HEX(0xFFFFFF), EGUI_ALPHA_100,
-                                                        HCW_SEARCH_BOX_STANDARD_RADIUS, 1, EGUI_COLOR_HEX(0xD5DCE4), EGUI_ALPHA_100);
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_search_box_standard_bg_pressed_param, EGUI_COLOR_HEX(0xF8FBFE), EGUI_ALPHA_100,
-                                                        HCW_SEARCH_BOX_STANDARD_RADIUS, 1, EGUI_COLOR_HEX(0xC4D5E7), EGUI_ALPHA_100);
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_search_box_standard_bg_disabled_param, EGUI_COLOR_HEX(0xF1F4F7), EGUI_ALPHA_100,
-                                                        HCW_SEARCH_BOX_STANDARD_RADIUS, 1, EGUI_COLOR_HEX(0xD8E0E7), EGUI_ALPHA_100);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_search_box_standard_bg_normal_param, HCW_COLOR_SURFACE, EGUI_ALPHA_100,
+                                                        HCW_SEARCH_BOX_STANDARD_RADIUS, 1, HCW_COLOR_BORDER_STRONG, EGUI_ALPHA_100);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_search_box_standard_bg_pressed_param, HCW_COLOR_SURFACE_PRESS, EGUI_ALPHA_100,
+                                                        HCW_SEARCH_BOX_STANDARD_RADIUS, 1, HCW_COLOR_PRIMARY_DARK, EGUI_ALPHA_100);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_search_box_standard_bg_disabled_param, HCW_COLOR_SURFACE_DISABLED, EGUI_ALPHA_100,
+                                                        HCW_SEARCH_BOX_STANDARD_RADIUS, 1, HCW_COLOR_BORDER_STRONG, EGUI_ALPHA_100);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_search_box_standard_bg_focused_param, EGUI_COLOR_HEX(0xFFFFFF), EGUI_ALPHA_100,
-                                                        HCW_SEARCH_BOX_STANDARD_RADIUS, 2, EGUI_COLOR_HEX(0x0F6CBD), EGUI_ALPHA_100);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_search_box_standard_bg_focused_param, HCW_COLOR_SURFACE, EGUI_ALPHA_100,
+                                                        HCW_SEARCH_BOX_STANDARD_RADIUS, 2, HCW_COLOR_PRIMARY_DARK, EGUI_ALPHA_100);
 EGUI_BACKGROUND_PARAM_INIT_WITH_FOCUS(hcw_search_box_standard_bg_params, &hcw_search_box_standard_bg_normal_param,
                                       &hcw_search_box_standard_bg_pressed_param, &hcw_search_box_standard_bg_disabled_param,
                                       &hcw_search_box_standard_bg_focused_param);
@@ -28,15 +29,15 @@ EGUI_BACKGROUND_PARAM_INIT(hcw_search_box_standard_bg_params, &hcw_search_box_st
 #endif
 EGUI_BACKGROUND_COLOR_STATIC_CONST_INIT(hcw_search_box_standard_background, &hcw_search_box_standard_bg_params);
 
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_search_box_compact_bg_normal_param, EGUI_COLOR_HEX(0xF7FBFB), EGUI_ALPHA_100,
-                                                        HCW_SEARCH_BOX_COMPACT_RADIUS, 1, EGUI_COLOR_HEX(0xC9D9D7), EGUI_ALPHA_100);
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_search_box_compact_bg_pressed_param, EGUI_COLOR_HEX(0xEEF7F5), EGUI_ALPHA_100,
-                                                        HCW_SEARCH_BOX_COMPACT_RADIUS, 1, EGUI_COLOR_HEX(0xBDD0CD), EGUI_ALPHA_100);
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_search_box_compact_bg_disabled_param, EGUI_COLOR_HEX(0xEDF4F3), EGUI_ALPHA_100,
-                                                        HCW_SEARCH_BOX_COMPACT_RADIUS, 1, EGUI_COLOR_HEX(0xD4DFDE), EGUI_ALPHA_100);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_search_box_compact_bg_normal_param, HCW_COLOR_SURFACE_SUBTLE, EGUI_ALPHA_100,
+                                                        HCW_SEARCH_BOX_COMPACT_RADIUS, 1, HCW_COLOR_BORDER_STRONG, EGUI_ALPHA_100);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_search_box_compact_bg_pressed_param, HCW_COLOR_SURFACE_SUBTLE, EGUI_ALPHA_100,
+                                                        HCW_SEARCH_BOX_COMPACT_RADIUS, 1, HCW_COLOR_BORDER_STRONG, EGUI_ALPHA_100);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_search_box_compact_bg_disabled_param, HCW_COLOR_SURFACE_SUBTLE, EGUI_ALPHA_100,
+                                                        HCW_SEARCH_BOX_COMPACT_RADIUS, 1, HCW_COLOR_BORDER_STRONG, EGUI_ALPHA_100);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_search_box_compact_bg_focused_param, EGUI_COLOR_HEX(0xF7FBFB), EGUI_ALPHA_100,
-                                                        HCW_SEARCH_BOX_COMPACT_RADIUS, 2, EGUI_COLOR_HEX(0x0C7C73), EGUI_ALPHA_100);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_search_box_compact_bg_focused_param, HCW_COLOR_SURFACE_SUBTLE, EGUI_ALPHA_100,
+                                                        HCW_SEARCH_BOX_COMPACT_RADIUS, 2, HCW_COLOR_PRIMARY_DARK, EGUI_ALPHA_100);
 EGUI_BACKGROUND_PARAM_INIT_WITH_FOCUS(hcw_search_box_compact_bg_params, &hcw_search_box_compact_bg_normal_param, &hcw_search_box_compact_bg_pressed_param,
                                       &hcw_search_box_compact_bg_disabled_param, &hcw_search_box_compact_bg_focused_param);
 #else
@@ -45,15 +46,15 @@ EGUI_BACKGROUND_PARAM_INIT(hcw_search_box_compact_bg_params, &hcw_search_box_com
 #endif
 EGUI_BACKGROUND_COLOR_STATIC_CONST_INIT(hcw_search_box_compact_background, &hcw_search_box_compact_bg_params);
 
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_search_box_read_only_bg_normal_param, EGUI_COLOR_HEX(0xF5F7FA), EGUI_ALPHA_100,
-                                                        HCW_SEARCH_BOX_COMPACT_RADIUS, 1, EGUI_COLOR_HEX(0xD7DEE6), EGUI_ALPHA_100);
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_search_box_read_only_bg_pressed_param, EGUI_COLOR_HEX(0xF5F7FA), EGUI_ALPHA_100,
-                                                        HCW_SEARCH_BOX_COMPACT_RADIUS, 1, EGUI_COLOR_HEX(0xD7DEE6), EGUI_ALPHA_100);
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_search_box_read_only_bg_disabled_param, EGUI_COLOR_HEX(0xF5F7FA), EGUI_ALPHA_100,
-                                                        HCW_SEARCH_BOX_COMPACT_RADIUS, 1, EGUI_COLOR_HEX(0xD7DEE6), EGUI_ALPHA_100);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_search_box_read_only_bg_normal_param, HCW_COLOR_SURFACE_SUBTLE, EGUI_ALPHA_100,
+                                                        HCW_SEARCH_BOX_COMPACT_RADIUS, 1, HCW_COLOR_BORDER_STRONG, EGUI_ALPHA_100);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_search_box_read_only_bg_pressed_param, HCW_COLOR_SURFACE_SUBTLE, EGUI_ALPHA_100,
+                                                        HCW_SEARCH_BOX_COMPACT_RADIUS, 1, HCW_COLOR_BORDER_STRONG, EGUI_ALPHA_100);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_search_box_read_only_bg_disabled_param, HCW_COLOR_SURFACE_SUBTLE, EGUI_ALPHA_100,
+                                                        HCW_SEARCH_BOX_COMPACT_RADIUS, 1, HCW_COLOR_BORDER_STRONG, EGUI_ALPHA_100);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_search_box_read_only_bg_focused_param, EGUI_COLOR_HEX(0xF5F7FA), EGUI_ALPHA_100,
-                                                        HCW_SEARCH_BOX_COMPACT_RADIUS, 1, EGUI_COLOR_HEX(0xD7DEE6), EGUI_ALPHA_100);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_search_box_read_only_bg_focused_param, HCW_COLOR_SURFACE_SUBTLE, EGUI_ALPHA_100,
+                                                        HCW_SEARCH_BOX_COMPACT_RADIUS, 1, HCW_COLOR_BORDER_STRONG, EGUI_ALPHA_100);
 EGUI_BACKGROUND_PARAM_INIT_WITH_FOCUS(hcw_search_box_read_only_bg_params, &hcw_search_box_read_only_bg_normal_param,
                                       &hcw_search_box_read_only_bg_pressed_param, &hcw_search_box_read_only_bg_disabled_param,
                                       &hcw_search_box_read_only_bg_focused_param);
@@ -62,6 +63,59 @@ EGUI_BACKGROUND_PARAM_INIT(hcw_search_box_read_only_bg_params, &hcw_search_box_r
                            &hcw_search_box_read_only_bg_pressed_param, &hcw_search_box_read_only_bg_disabled_param);
 #endif
 EGUI_BACKGROUND_COLOR_STATIC_CONST_INIT(hcw_search_box_read_only_background, &hcw_search_box_read_only_bg_params);
+
+static egui_dim_t hcw_search_box_get_effective_pad_left(egui_view_t *self)
+{
+#if EGUI_CONFIG_FUNCTION_SUPPORT_MARGIN_PADDING
+    return self->padding.left;
+#else
+    egui_view_search_box_t *local = (egui_view_search_box_t *)self;
+    return local->content_pad_left;
+#endif
+}
+
+static egui_dim_t hcw_search_box_get_effective_pad_right(egui_view_t *self)
+{
+#if EGUI_CONFIG_FUNCTION_SUPPORT_MARGIN_PADDING
+    return self->padding.right;
+#else
+    egui_view_search_box_t *local = (egui_view_search_box_t *)self;
+    return local->content_pad_right;
+#endif
+}
+
+static void hcw_search_box_get_text_region(egui_view_t *self, egui_region_t *region)
+{
+    egui_view_get_work_region(self, region);
+
+#if !EGUI_CONFIG_FUNCTION_SUPPORT_MARGIN_PADDING
+    {
+        egui_view_search_box_t *local = (egui_view_search_box_t *)self;
+        egui_dim_t pad_left = local->content_pad_left;
+        egui_dim_t pad_right = local->content_pad_right;
+        egui_dim_t pad_y = local->content_pad_y;
+
+        if (region->size.width > pad_left + pad_right)
+        {
+            region->location.x += pad_left;
+            region->size.width -= pad_left + pad_right;
+        }
+        else
+        {
+            region->size.width = 0;
+        }
+        if (region->size.height > pad_y * 2)
+        {
+            region->location.y += pad_y;
+            region->size.height -= pad_y * 2;
+        }
+        else
+        {
+            region->size.height = 0;
+        }
+    }
+#endif
+}
 
 static egui_dim_t hcw_search_box_get_text_width_to_pos(const egui_view_textinput_t *local, uint8_t pos)
 {
@@ -97,7 +151,7 @@ static int hcw_search_box_get_cursor_region(egui_view_t *self, egui_view_textinp
         return 0;
     }
 
-    egui_view_get_work_region(self, &work_region);
+    hcw_search_box_get_text_region(self, &work_region);
     cursor_x = work_region.location.x + hcw_search_box_get_text_width_to_pos(local, local->cursor_pos) - local->scroll_offset_x;
     local->font->api->get_str_size(local->font, "A", 0, 0, &dummy_width, &cursor_height);
 
@@ -118,7 +172,8 @@ static void hcw_search_box_local_region_to_screen(egui_view_t *self, const egui_
 
 static void hcw_search_box_get_search_icon_region(egui_view_t *self, egui_region_t *region)
 {
-    egui_dim_t size = EGUI_MIN(self->padding.left - 8, self->region.size.height - 10);
+    egui_dim_t pad_left = hcw_search_box_get_effective_pad_left(self);
+    egui_dim_t size = EGUI_MIN(pad_left - 8, self->region.size.height - 10);
 
     if (size < 12)
     {
@@ -140,7 +195,8 @@ static uint8_t hcw_search_box_can_show_clear_button(egui_view_t *self)
 
 static void hcw_search_box_get_clear_region_local(egui_view_t *self, egui_region_t *region)
 {
-    egui_dim_t size = EGUI_MIN(self->padding.right - 8, self->region.size.height - 10);
+    egui_dim_t pad_right = hcw_search_box_get_effective_pad_right(self);
+    egui_dim_t size = EGUI_MIN(pad_right - 8, self->region.size.height - 10);
 
     if (size < 12)
     {
@@ -149,7 +205,7 @@ static void hcw_search_box_get_clear_region_local(egui_view_t *self, egui_region
 
     region->size.width = size;
     region->size.height = size;
-    region->location.x = self->region.size.width - self->padding.right + (self->padding.right - size) / 2;
+    region->location.x = self->region.size.width - pad_right + (pad_right - size) / 2;
     region->location.y = (self->region.size.height - size) / 2;
 }
 
@@ -181,6 +237,9 @@ static void hcw_search_box_apply_style(egui_view_t *self, egui_background_t *bac
     egui_view_set_shadow(self, NULL);
     egui_view_set_background(self, background);
     egui_view_set_padding(self, pad_left, pad_right, pad_y, pad_y);
+    local->content_pad_left = pad_left;
+    local->content_pad_right = pad_right;
+    local->content_pad_y = pad_y;
     egui_view_textinput_set_text_color(self, text_color, EGUI_ALPHA_100);
     egui_view_textinput_set_placeholder_color(self, placeholder_color, EGUI_ALPHA_100);
     egui_view_textinput_set_cursor_color(self, cursor_color);
@@ -201,23 +260,23 @@ static void hcw_search_box_apply_style(egui_view_t *self, egui_background_t *bac
 
 void egui_view_search_box_apply_standard_style(egui_view_t *self)
 {
-    hcw_search_box_apply_style(self, EGUI_BG_OF(&hcw_search_box_standard_background), EGUI_COLOR_HEX(0x1A2734), EGUI_COLOR_HEX(0x6B7A89),
-                               EGUI_COLOR_HEX(0x0F6CBD), EGUI_COLOR_HEX(0x5C6B79), EGUI_COLOR_HEX(0xE9EEF3), EGUI_COLOR_HEX(0xD7E2EC),
-                               EGUI_COLOR_HEX(0x4B5967), 28, 26, 8, 1);
+    hcw_search_box_apply_style(self, EGUI_BG_OF(&hcw_search_box_standard_background), HCW_COLOR_TEXT_STRONG, HCW_COLOR_TEXT_SOFT,
+                               HCW_COLOR_PRIMARY_DARK, HCW_COLOR_TEXT_SOFT, HCW_COLOR_PANEL, HCW_COLOR_PRIMARY_DARK,
+                               HCW_COLOR_TEXT_SOFT, 28, 26, 8, 1);
 }
 
 void egui_view_search_box_apply_compact_style(egui_view_t *self)
 {
-    hcw_search_box_apply_style(self, EGUI_BG_OF(&hcw_search_box_compact_background), EGUI_COLOR_HEX(0x183235), EGUI_COLOR_HEX(0x66817E),
-                               EGUI_COLOR_HEX(0x0C7C73), EGUI_COLOR_HEX(0x55716D), EGUI_COLOR_HEX(0xE4EFEE), EGUI_COLOR_HEX(0xD2E4E2),
-                               EGUI_COLOR_HEX(0x45605C), 24, 22, 6, 1);
+    hcw_search_box_apply_style(self, EGUI_BG_OF(&hcw_search_box_compact_background), HCW_COLOR_TEXT_STRONG, HCW_COLOR_TEXT_SOFT,
+                               HCW_COLOR_PRIMARY_DARK, HCW_COLOR_TEXT_SOFT, HCW_COLOR_PANEL, HCW_COLOR_PRIMARY_DARK,
+                               HCW_COLOR_TEXT_SOFT, 24, 22, 6, 1);
 }
 
 void egui_view_search_box_apply_read_only_style(egui_view_t *self)
 {
-    hcw_search_box_apply_style(self, EGUI_BG_OF(&hcw_search_box_read_only_background), EGUI_COLOR_HEX(0x7A8796), EGUI_COLOR_HEX(0x95A1AE),
-                               EGUI_COLOR_HEX(0x7A8796), EGUI_COLOR_HEX(0x8A97A5), EGUI_COLOR_HEX(0xEDF2F6), EGUI_COLOR_HEX(0xEDF2F6),
-                               EGUI_COLOR_HEX(0x8A97A5), 24, 18, 6, 0);
+    hcw_search_box_apply_style(self, EGUI_BG_OF(&hcw_search_box_read_only_background), HCW_COLOR_TEXT_STRONG, HCW_COLOR_TEXT_SOFT,
+                               HCW_COLOR_TEXT_SOFT, HCW_COLOR_TEXT, HCW_COLOR_SURFACE_DISABLED, HCW_COLOR_SURFACE_DISABLED,
+                               HCW_COLOR_TEXT, 24, 18, 6, 0);
 }
 
 void egui_view_search_box_set_text(egui_view_t *self, const char *text)
@@ -297,6 +356,7 @@ static void hcw_search_box_draw_icon(egui_view_t *self, const egui_region_t *reg
     }
 
     draw_region = *region;
+    draw_region.location.y += hcw_text_center_get_delta(icon_font, icon, region, EGUI_ALIGN_CENTER);
     egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, icon_font, icon, &draw_region, EGUI_ALIGN_CENTER, color, EGUI_ALPHA_100);
 }
 
@@ -327,7 +387,7 @@ static void hcw_search_box_on_draw(egui_view_t *self)
         {
             egui_dim_t radius = EGUI_MAX(EGUI_MIN(clear_region.size.width, clear_region.size.height) / 2 - 1, 4);
             egui_color_t fill_color = local->clear_pressed ? local->clear_fill_pressed_color : local->clear_fill_color;
-            egui_alpha_t fill_alpha = local->clear_pressed ? 64 : 36;
+            egui_alpha_t fill_alpha = local->clear_pressed ? 78 : 52;
 
             egui_canvas_draw_circle_fill_basic(&uicode_get_core()->canvas, clear_region.location.x + clear_region.size.width / 2, clear_region.location.y + clear_region.size.height / 2,
                                                radius, fill_color, fill_alpha);
@@ -335,7 +395,7 @@ static void hcw_search_box_on_draw(egui_view_t *self)
         hcw_search_box_draw_icon(self, &clear_region, EGUI_ICON_MS_CLOSE, local->clear_icon_color);
     }
 
-    egui_view_get_work_region(self, &work_region);
+    hcw_search_box_get_text_region(self, &work_region);
     hcw_search_box_local_region_to_screen(self, &work_region, &text_screen_region);
     if (!egui_canvas_is_region_active(&uicode_get_core()->canvas, &text_screen_region))
     {
@@ -344,7 +404,10 @@ static void hcw_search_box_on_draw(egui_view_t *self)
 
     if (input->text_len == 0 && !self->is_focused && input->placeholder != NULL)
     {
-        egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, input->font, input->placeholder, &work_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, input->placeholder_color,
+        egui_region_t placeholder_region = work_region;
+
+        placeholder_region.location.y += hcw_text_center_get_delta(input->font, input->placeholder, &work_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER);
+        egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, input->font, input->placeholder, &placeholder_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, input->placeholder_color,
                                       input->placeholder_alpha);
     }
     else if (input->text_len > 0)
@@ -352,6 +415,7 @@ static void hcw_search_box_on_draw(egui_view_t *self)
         input->font->api->get_str_size(input->font, input->text, 0, 0, &text_width, &text_height);
         text_x = work_region.location.x - input->scroll_offset_x;
         text_y = work_region.location.y + (work_region.size.height - text_height) / 2;
+        text_y += hcw_text_center_get_delta(input->font, input->text, &work_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER);
         egui_canvas_draw_text(&uicode_get_core()->canvas, input->font, input->text, text_x, text_y, input->text_color, input->text_alpha);
     }
 
@@ -477,10 +541,13 @@ void egui_view_search_box_init(egui_view_t *self)
     local->api.on_touch = hcw_search_box_on_touch;
 #endif
     local->icon_font = NULL;
-    local->icon_color = EGUI_COLOR_HEX(0x5C6B79);
-    local->clear_fill_color = EGUI_COLOR_HEX(0xE9EEF3);
-    local->clear_fill_pressed_color = EGUI_COLOR_HEX(0xD7E2EC);
-    local->clear_icon_color = EGUI_COLOR_HEX(0x4B5967);
+    local->icon_color = HCW_COLOR_TEXT_SOFT;
+    local->clear_fill_color = HCW_COLOR_SURFACE_DISABLED;
+    local->clear_fill_pressed_color = HCW_COLOR_PRIMARY_DARK;
+    local->clear_icon_color = HCW_COLOR_TEXT_SOFT;
+    local->content_pad_left = 0;
+    local->content_pad_right = 0;
+    local->content_pad_y = 0;
     local->clear_pressed = 0;
     egui_view_set_view_name(self, "egui_view_search_box");
 }

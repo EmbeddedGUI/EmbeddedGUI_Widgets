@@ -386,6 +386,17 @@ static void test_command_bar_font_modes_listener_and_palette(void)
 {
     setup_bar();
 
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_SURFACE.full, test_bar.surface_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PANEL.full, test_bar.section_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_BORDER_STRONG.full, test_bar.border_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT_STRONG.full, test_bar.text_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT_SOFT.full, test_bar.muted_text_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PRIMARY_DARK.full, test_bar.accent_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_SUCCESS.full, test_bar.success_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_WARNING.full, test_bar.warning_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_DANGER.full, test_bar.danger_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT_SOFT.full, test_bar.neutral_color.full);
+
     egui_view_command_bar_set_font(EGUI_VIEW_OF(&test_bar), NULL);
     egui_view_command_bar_set_meta_font(EGUI_VIEW_OF(&test_bar), NULL);
     EGUI_TEST_ASSERT_TRUE(test_bar.font == (const egui_font_t *)EGUI_CONFIG_FONT_DEFAULT);
@@ -442,6 +453,8 @@ static void test_command_bar_touch_updates_selection_and_hit_testing(void)
     EGUI_TEST_ASSERT_TRUE(metrics.content_region.size.width > 0);
     EGUI_TEST_ASSERT_TRUE(metrics.rail_region.size.width > 0);
     EGUI_TEST_ASSERT_TRUE(metrics.footer_region.size.width > 0);
+    EGUI_TEST_ASSERT_TRUE(metrics.content_region.location.y + metrics.content_region.size.height -
+                          (metrics.footer_region.location.y + metrics.footer_region.size.height) >= EGUI_VIEW_COMMAND_BAR_STANDARD_FOOTER_BOTTOM_INSET);
     EGUI_TEST_ASSERT_TRUE(metrics.scope_region.size.width > 0);
     EGUI_TEST_ASSERT_EQUAL_INT(4, metrics.visible_item_count);
     EGUI_TEST_ASSERT_TRUE(metrics.item_regions[0].size.width > 0);
@@ -731,10 +744,12 @@ static void test_command_bar_internal_helpers_cover_metrics_measurements_and_sta
     get_metrics(&metrics);
     EGUI_TEST_ASSERT_EQUAL_INT(14, metrics.scope_region.size.height);
     EGUI_TEST_ASSERT_EQUAL_INT(18, metrics.item_regions[0].size.height);
+    EGUI_TEST_ASSERT_TRUE(metrics.content_region.location.y + metrics.content_region.size.height -
+                          (metrics.footer_region.location.y + metrics.footer_region.size.height) >= EGUI_VIEW_COMMAND_BAR_COMPACT_FOOTER_BOTTOM_INSET);
     egui_view_command_bar_set_current_snapshot(EGUI_VIEW_OF(&test_bar), 2);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_COMMAND_BAR_INDEX_NONE, egui_view_command_bar_find_home_index(&test_bar, EGUI_VIEW_OF(&test_bar), 0));
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_COMMAND_BAR_INDEX_NONE, egui_view_command_bar_find_home_index(&test_bar, EGUI_VIEW_OF(&test_bar), 1));
-    EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(sample, EGUI_COLOR_DARK_GREY, 68).full, mixed.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(sample, HCW_COLOR_SURFACE_SUBTLE, EGUI_ALPHA_MAKE(44)).full, mixed.full);
 }
 
 static void test_command_bar_static_preview_consumes_input_and_keeps_state(void)

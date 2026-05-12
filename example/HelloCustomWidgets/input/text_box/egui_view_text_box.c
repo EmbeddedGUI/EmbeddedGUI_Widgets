@@ -2,20 +2,26 @@
 
 #include "egui.h"
 #include "egui_view_text_box.h"
+#include "../../hcw_text_center.h"
 
 #define HCW_TEXT_BOX_STANDARD_RADIUS 10
 #define HCW_TEXT_BOX_COMPACT_RADIUS  8
 #define HCW_TEXT_BOX_CURSOR_WIDTH    1
+#define HCW_TEXT_BOX_STANDARD_PAD_X  10
+#define HCW_TEXT_BOX_STANDARD_PAD_Y  8
+#define HCW_TEXT_BOX_COMPACT_PAD_X   8
+#define HCW_TEXT_BOX_COMPACT_PAD_Y   6
+#define HCW_TEXT_BOX_COMPACT_HEIGHT  32
 
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_text_box_standard_bg_normal_param, EGUI_COLOR_HEX(0xFFFFFF), EGUI_ALPHA_100,
-                                                        HCW_TEXT_BOX_STANDARD_RADIUS, 1, EGUI_COLOR_HEX(0xD5DCE4), EGUI_ALPHA_100);
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_text_box_standard_bg_pressed_param, EGUI_COLOR_HEX(0xF8FBFE), EGUI_ALPHA_100,
-                                                        HCW_TEXT_BOX_STANDARD_RADIUS, 1, EGUI_COLOR_HEX(0xC4D5E7), EGUI_ALPHA_100);
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_text_box_standard_bg_disabled_param, EGUI_COLOR_HEX(0xF1F4F7), EGUI_ALPHA_100,
-                                                        HCW_TEXT_BOX_STANDARD_RADIUS, 1, EGUI_COLOR_HEX(0xD8E0E7), EGUI_ALPHA_100);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_text_box_standard_bg_normal_param, HCW_COLOR_SURFACE, EGUI_ALPHA_100,
+                                                        HCW_TEXT_BOX_STANDARD_RADIUS, 1, HCW_COLOR_BORDER_STRONG, EGUI_ALPHA_100);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_text_box_standard_bg_pressed_param, HCW_COLOR_SURFACE_PRESS, EGUI_ALPHA_100,
+                                                        HCW_TEXT_BOX_STANDARD_RADIUS, 1, HCW_COLOR_PRIMARY_DARK, EGUI_ALPHA_100);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_text_box_standard_bg_disabled_param, HCW_COLOR_SURFACE_DISABLED, EGUI_ALPHA_100,
+                                                        HCW_TEXT_BOX_STANDARD_RADIUS, 1, HCW_COLOR_BORDER_STRONG, EGUI_ALPHA_100);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_text_box_standard_bg_focused_param, EGUI_COLOR_HEX(0xFFFFFF), EGUI_ALPHA_100,
-                                                        HCW_TEXT_BOX_STANDARD_RADIUS, 2, EGUI_COLOR_HEX(0x0F6CBD), EGUI_ALPHA_100);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_text_box_standard_bg_focused_param, HCW_COLOR_SURFACE, EGUI_ALPHA_100,
+                                                        HCW_TEXT_BOX_STANDARD_RADIUS, 2, HCW_COLOR_PRIMARY_DARK, EGUI_ALPHA_100);
 EGUI_BACKGROUND_PARAM_INIT_WITH_FOCUS(hcw_text_box_standard_bg_params, &hcw_text_box_standard_bg_normal_param, &hcw_text_box_standard_bg_pressed_param,
                                       &hcw_text_box_standard_bg_disabled_param, &hcw_text_box_standard_bg_focused_param);
 #else
@@ -24,15 +30,15 @@ EGUI_BACKGROUND_PARAM_INIT(hcw_text_box_standard_bg_params, &hcw_text_box_standa
 #endif
 EGUI_BACKGROUND_COLOR_STATIC_CONST_INIT(hcw_text_box_standard_background, &hcw_text_box_standard_bg_params);
 
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_text_box_compact_bg_normal_param, EGUI_COLOR_HEX(0xF7FBFB), EGUI_ALPHA_100,
-                                                        HCW_TEXT_BOX_COMPACT_RADIUS, 1, EGUI_COLOR_HEX(0xC9D9D7), EGUI_ALPHA_100);
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_text_box_compact_bg_pressed_param, EGUI_COLOR_HEX(0xEEF7F5), EGUI_ALPHA_100,
-                                                        HCW_TEXT_BOX_COMPACT_RADIUS, 1, EGUI_COLOR_HEX(0xBDD0CD), EGUI_ALPHA_100);
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_text_box_compact_bg_disabled_param, EGUI_COLOR_HEX(0xEDF4F3), EGUI_ALPHA_100,
-                                                        HCW_TEXT_BOX_COMPACT_RADIUS, 1, EGUI_COLOR_HEX(0xD4DFDE), EGUI_ALPHA_100);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_text_box_compact_bg_normal_param, HCW_COLOR_SURFACE_SUBTLE, EGUI_ALPHA_100,
+                                                        HCW_TEXT_BOX_COMPACT_RADIUS, 1, HCW_COLOR_BORDER_STRONG, EGUI_ALPHA_100);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_text_box_compact_bg_pressed_param, HCW_COLOR_SURFACE_SUBTLE, EGUI_ALPHA_100,
+                                                        HCW_TEXT_BOX_COMPACT_RADIUS, 1, HCW_COLOR_BORDER_STRONG, EGUI_ALPHA_100);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_text_box_compact_bg_disabled_param, HCW_COLOR_SURFACE_SUBTLE, EGUI_ALPHA_100,
+                                                        HCW_TEXT_BOX_COMPACT_RADIUS, 1, HCW_COLOR_BORDER_STRONG, EGUI_ALPHA_100);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_text_box_compact_bg_focused_param, EGUI_COLOR_HEX(0xF7FBFB), EGUI_ALPHA_100,
-                                                        HCW_TEXT_BOX_COMPACT_RADIUS, 2, EGUI_COLOR_HEX(0x0C7C73), EGUI_ALPHA_100);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_text_box_compact_bg_focused_param, HCW_COLOR_SURFACE_SUBTLE, EGUI_ALPHA_100,
+                                                        HCW_TEXT_BOX_COMPACT_RADIUS, 2, HCW_COLOR_PRIMARY_DARK, EGUI_ALPHA_100);
 EGUI_BACKGROUND_PARAM_INIT_WITH_FOCUS(hcw_text_box_compact_bg_params, &hcw_text_box_compact_bg_normal_param, &hcw_text_box_compact_bg_pressed_param,
                                       &hcw_text_box_compact_bg_disabled_param, &hcw_text_box_compact_bg_focused_param);
 #else
@@ -41,15 +47,15 @@ EGUI_BACKGROUND_PARAM_INIT(hcw_text_box_compact_bg_params, &hcw_text_box_compact
 #endif
 EGUI_BACKGROUND_COLOR_STATIC_CONST_INIT(hcw_text_box_compact_background, &hcw_text_box_compact_bg_params);
 
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_text_box_read_only_bg_normal_param, EGUI_COLOR_HEX(0xF5F7FA), EGUI_ALPHA_100,
-                                                        HCW_TEXT_BOX_COMPACT_RADIUS, 1, EGUI_COLOR_HEX(0xD7DEE6), EGUI_ALPHA_100);
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_text_box_read_only_bg_pressed_param, EGUI_COLOR_HEX(0xF5F7FA), EGUI_ALPHA_100,
-                                                        HCW_TEXT_BOX_COMPACT_RADIUS, 1, EGUI_COLOR_HEX(0xD7DEE6), EGUI_ALPHA_100);
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_text_box_read_only_bg_disabled_param, EGUI_COLOR_HEX(0xF5F7FA), EGUI_ALPHA_100,
-                                                        HCW_TEXT_BOX_COMPACT_RADIUS, 1, EGUI_COLOR_HEX(0xD7DEE6), EGUI_ALPHA_100);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_text_box_read_only_bg_normal_param, HCW_COLOR_SURFACE_SUBTLE, EGUI_ALPHA_100,
+                                                        HCW_TEXT_BOX_COMPACT_RADIUS, 1, HCW_COLOR_TRACK_STRONG, EGUI_ALPHA_100);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_text_box_read_only_bg_pressed_param, HCW_COLOR_SURFACE_SUBTLE, EGUI_ALPHA_100,
+                                                        HCW_TEXT_BOX_COMPACT_RADIUS, 1, HCW_COLOR_TRACK_STRONG, EGUI_ALPHA_100);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_text_box_read_only_bg_disabled_param, HCW_COLOR_SURFACE_SUBTLE, EGUI_ALPHA_100,
+                                                        HCW_TEXT_BOX_COMPACT_RADIUS, 1, HCW_COLOR_TRACK_STRONG, EGUI_ALPHA_100);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_FOCUS
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_text_box_read_only_bg_focused_param, EGUI_COLOR_HEX(0xF5F7FA), EGUI_ALPHA_100,
-                                                        HCW_TEXT_BOX_COMPACT_RADIUS, 1, EGUI_COLOR_HEX(0xD7DEE6), EGUI_ALPHA_100);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE_STROKE(hcw_text_box_read_only_bg_focused_param, HCW_COLOR_SURFACE_SUBTLE, EGUI_ALPHA_100,
+                                                        HCW_TEXT_BOX_COMPACT_RADIUS, 1, HCW_COLOR_TRACK_STRONG, EGUI_ALPHA_100);
 EGUI_BACKGROUND_PARAM_INIT_WITH_FOCUS(hcw_text_box_read_only_bg_params, &hcw_text_box_read_only_bg_normal_param, &hcw_text_box_read_only_bg_pressed_param,
                                       &hcw_text_box_read_only_bg_disabled_param, &hcw_text_box_read_only_bg_focused_param);
 #else
@@ -57,6 +63,8 @@ EGUI_BACKGROUND_PARAM_INIT(hcw_text_box_read_only_bg_params, &hcw_text_box_read_
                            &hcw_text_box_read_only_bg_disabled_param);
 #endif
 EGUI_BACKGROUND_COLOR_STATIC_CONST_INIT(hcw_text_box_read_only_background, &hcw_text_box_read_only_bg_params);
+
+static void hcw_text_box_get_text_region(egui_view_t *self, egui_region_t *region);
 
 static egui_dim_t hcw_text_box_get_text_width_to_pos(const egui_view_textinput_t *local, uint8_t pos)
 {
@@ -92,7 +100,7 @@ static int hcw_text_box_get_cursor_region(egui_view_t *self, egui_view_textinput
         return 0;
     }
 
-    egui_view_get_work_region(self, &work_region);
+    hcw_text_box_get_text_region(self, &work_region);
     cursor_x = work_region.location.x + hcw_text_box_get_text_width_to_pos(local, local->cursor_pos) - local->scroll_offset_x;
     local->font->api->get_str_size(local->font, "A", 0, 0, &dummy_width, &cursor_height);
 
@@ -109,6 +117,37 @@ static void hcw_text_box_local_region_to_screen(egui_view_t *self, const egui_re
     screen_region->location.y = self->region_screen.location.y + local_region->location.y;
     screen_region->size.width = local_region->size.width;
     screen_region->size.height = local_region->size.height;
+}
+
+static void hcw_text_box_get_text_region(egui_view_t *self, egui_region_t *region)
+{
+    egui_view_get_work_region(self, region);
+
+#if !EGUI_CONFIG_FUNCTION_SUPPORT_MARGIN_PADDING
+    {
+        egui_dim_t pad_x = self->region.size.height <= HCW_TEXT_BOX_COMPACT_HEIGHT ? HCW_TEXT_BOX_COMPACT_PAD_X : HCW_TEXT_BOX_STANDARD_PAD_X;
+        egui_dim_t pad_y = self->region.size.height <= HCW_TEXT_BOX_COMPACT_HEIGHT ? HCW_TEXT_BOX_COMPACT_PAD_Y : HCW_TEXT_BOX_STANDARD_PAD_Y;
+
+        if (region->size.width > pad_x * 2)
+        {
+            region->location.x += pad_x;
+            region->size.width -= pad_x * 2;
+        }
+        else
+        {
+            region->size.width = 0;
+        }
+        if (region->size.height > pad_y * 2)
+        {
+            region->location.y += pad_y;
+            region->size.height -= pad_y * 2;
+        }
+        else
+        {
+            region->size.height = 0;
+        }
+    }
+#endif
 }
 
 static void hcw_text_box_apply_style(egui_view_t *self, egui_background_t *background, egui_color_t text_color, egui_color_t placeholder_color,
@@ -135,20 +174,20 @@ static void hcw_text_box_apply_style(egui_view_t *self, egui_background_t *backg
 
 void hcw_text_box_apply_standard_style(egui_view_t *self)
 {
-    hcw_text_box_apply_style(self, EGUI_BG_OF(&hcw_text_box_standard_background), EGUI_COLOR_HEX(0x1A2734), EGUI_COLOR_HEX(0x6B7A89),
-                             EGUI_COLOR_HEX(0x0F6CBD), 10, 8, 1);
+    hcw_text_box_apply_style(self, EGUI_BG_OF(&hcw_text_box_standard_background), HCW_COLOR_TEXT_STRONG, HCW_COLOR_TEXT_SOFT,
+                             HCW_COLOR_PRIMARY_DARK, HCW_TEXT_BOX_STANDARD_PAD_X, HCW_TEXT_BOX_STANDARD_PAD_Y, 1);
 }
 
 void hcw_text_box_apply_compact_style(egui_view_t *self)
 {
-    hcw_text_box_apply_style(self, EGUI_BG_OF(&hcw_text_box_compact_background), EGUI_COLOR_HEX(0x183235), EGUI_COLOR_HEX(0x66817E),
-                             EGUI_COLOR_HEX(0x0C7C73), 8, 6, 1);
+    hcw_text_box_apply_style(self, EGUI_BG_OF(&hcw_text_box_compact_background), HCW_COLOR_TEXT_STRONG, HCW_COLOR_TEXT_SOFT,
+                             HCW_COLOR_PRIMARY_DARK, HCW_TEXT_BOX_COMPACT_PAD_X, HCW_TEXT_BOX_COMPACT_PAD_Y, 1);
 }
 
 void hcw_text_box_apply_read_only_style(egui_view_t *self)
 {
-    hcw_text_box_apply_style(self, EGUI_BG_OF(&hcw_text_box_read_only_background), EGUI_COLOR_HEX(0x7A8796), EGUI_COLOR_HEX(0x95A1AE),
-                             EGUI_COLOR_HEX(0x7A8796), 8, 6, 0);
+    hcw_text_box_apply_style(self, EGUI_BG_OF(&hcw_text_box_read_only_background), HCW_COLOR_TEXT_STRONG, HCW_COLOR_TEXT_SOFT,
+                             HCW_COLOR_TEXT_SOFT, HCW_TEXT_BOX_COMPACT_PAD_X, HCW_TEXT_BOX_COMPACT_PAD_Y, 0);
 }
 
 void hcw_text_box_set_text(egui_view_t *self, const char *text)
@@ -186,7 +225,7 @@ static void hcw_text_box_on_draw(egui_view_t *self)
         return;
     }
 
-    egui_view_get_work_region(self, &work_region);
+    hcw_text_box_get_text_region(self, &work_region);
     hcw_text_box_local_region_to_screen(self, &work_region, &text_screen_region);
 
     if (!egui_canvas_is_region_active(&uicode_get_core()->canvas, &text_screen_region))
@@ -196,7 +235,10 @@ static void hcw_text_box_on_draw(egui_view_t *self)
 
     if (local->text_len == 0 && !self->is_focused && local->placeholder != NULL)
     {
-        egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, local->font, local->placeholder, &work_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, local->placeholder_color,
+        egui_region_t placeholder_region = work_region;
+
+        placeholder_region.location.y += hcw_text_center_get_delta(local->font, local->placeholder, &work_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER);
+        egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, local->font, local->placeholder, &placeholder_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, local->placeholder_color,
                                       local->placeholder_alpha);
     }
     else if (local->text_len > 0)
@@ -204,6 +246,7 @@ static void hcw_text_box_on_draw(egui_view_t *self)
         local->font->api->get_str_size(local->font, local->text, 0, 0, &text_width, &text_height);
         text_x = work_region.location.x - local->scroll_offset_x;
         text_y = work_region.location.y + (work_region.size.height - text_height) / 2;
+        text_y += hcw_text_center_get_delta(local->font, local->text, &work_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER);
         egui_canvas_draw_text(&uicode_get_core()->canvas, local->font, local->text, text_x, text_y, local->text_color, local->text_alpha);
     }
 

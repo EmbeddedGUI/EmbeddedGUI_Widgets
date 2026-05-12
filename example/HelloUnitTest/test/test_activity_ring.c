@@ -210,8 +210,8 @@ static void test_activity_ring_style_helpers_apply_expected_geometry_and_palette
     EGUI_TEST_ASSERT_EQUAL_INT(0, test_activity_ring.ring_gap);
     EGUI_TEST_ASSERT_EQUAL_INT(-90, test_activity_ring.start_angle);
     EGUI_TEST_ASSERT_EQUAL_INT(1, test_activity_ring.show_round_cap);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x0F6CBD).full, test_activity_ring.ring_colors[0].full);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xD8E1EA).full, test_activity_ring.ring_bg_colors[0].full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PRIMARY.full, test_activity_ring.ring_colors[0].full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TRACK.full, test_activity_ring.ring_bg_colors[0].full);
     EGUI_TEST_ASSERT_FALSE(hcw_activity_ring_get_indeterminate_mode(EGUI_VIEW_OF(&test_activity_ring)));
 
     egui_view_set_pressed(EGUI_VIEW_OF(&test_activity_ring), 1);
@@ -224,8 +224,8 @@ static void test_activity_ring_style_helpers_apply_expected_geometry_and_palette
     hcw_activity_ring_apply_paused_style(EGUI_VIEW_OF(&test_activity_ring));
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_activity_ring)->is_pressed);
     EGUI_TEST_ASSERT_EQUAL_INT(6, test_activity_ring.stroke_width);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xB95A00).full, test_activity_ring.ring_colors[0].full);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xE7DDCA).full, test_activity_ring.ring_bg_colors[0].full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_WARNING.full, test_activity_ring.ring_colors[0].full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_WARNING_SOFT.full, test_activity_ring.ring_bg_colors[0].full);
     EGUI_TEST_ASSERT_FALSE(hcw_activity_ring_get_indeterminate_mode(EGUI_VIEW_OF(&test_activity_ring)));
 }
 

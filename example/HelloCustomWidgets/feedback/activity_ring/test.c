@@ -36,7 +36,7 @@ static uint8_t ui_ready;
 
 static char primary_status_text[24];
 
-EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, EGUI_COLOR_HEX(0xF5F7F9), EGUI_ALPHA_100, 14);
+EGUI_BACKGROUND_COLOR_PARAM_INIT_ROUND_RECTANGLE(bg_page_panel_param, HCW_COLOR_PAGE_BG, EGUI_ALPHA_100, 14);
 EGUI_BACKGROUND_PARAM_INIT(bg_page_panel_params, &bg_page_panel_param, NULL, NULL);
 EGUI_BACKGROUND_COLOR_STATIC_CONST_INIT(bg_page_panel, &bg_page_panel_params);
 
@@ -134,7 +134,7 @@ void test_init_ui(void)
     egui_view_label_set_text(EGUI_VIEW_OF(&title_label), title_text);
     egui_view_label_set_align_type(EGUI_VIEW_OF(&title_label), EGUI_ALIGN_CENTER);
     hello_custom_widgets_demo_set_label_font_with_min_height(EGUI_VIEW_OF(&title_label), (const egui_font_t *)&egui_res_font_montserrat_12_4);
-    egui_view_label_set_font_color(EGUI_VIEW_OF(&title_label), EGUI_COLOR_HEX(0x21303F), EGUI_ALPHA_100);
+    egui_view_label_set_font_color(EGUI_VIEW_OF(&title_label), HCW_COLOR_TEXT, EGUI_ALPHA_100);
     egui_view_set_margin(EGUI_VIEW_OF(&title_label), 0, 8, 0, 8);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&title_label));
 
@@ -148,7 +148,7 @@ void test_init_ui(void)
     egui_view_set_size(EGUI_VIEW_OF(&activity_ring_status), ACTIVITY_RING_STATUS_WIDTH, ACTIVITY_RING_STATUS_HEIGHT);
     egui_view_label_set_align_type(EGUI_VIEW_OF(&activity_ring_status), EGUI_ALIGN_CENTER);
     hello_custom_widgets_demo_set_label_font_with_min_height(EGUI_VIEW_OF(&activity_ring_status), (const egui_font_t *)&egui_res_font_montserrat_10_4);
-    egui_view_label_set_font_color(EGUI_VIEW_OF(&activity_ring_status), EGUI_COLOR_HEX(0x5F6E7D), EGUI_ALPHA_100);
+    egui_view_label_set_font_color(EGUI_VIEW_OF(&activity_ring_status), HCW_COLOR_TEXT_SOFT, EGUI_ALPHA_100);
     egui_view_set_margin(EGUI_VIEW_OF(&activity_ring_status), 0, 0, 0, 10);
     egui_view_group_add_child(EGUI_VIEW_OF(&root_layout), EGUI_VIEW_OF(&activity_ring_status));
 

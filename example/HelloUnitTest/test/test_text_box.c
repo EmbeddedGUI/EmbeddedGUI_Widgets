@@ -220,23 +220,25 @@ static void test_text_box_style_helpers_apply_expected_state(void)
 #if EGUI_CONFIG_FUNCTION_SUPPORT_MARGIN_PADDING
     EGUI_TEST_ASSERT_EQUAL_INT(10, EGUI_VIEW_OF(&test_text_box)->padding.left);
 #endif
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x1A2734).full, test_text_box.text_color.full);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x0F6CBD).full, test_text_box.cursor_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT_STRONG.full, test_text_box.text_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT_SOFT.full, test_text_box.placeholder_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PRIMARY_DARK.full, test_text_box.cursor_color.full);
 
     hcw_text_box_apply_compact_style(EGUI_VIEW_OF(&test_text_box));
     EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&test_text_box)->is_enable);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_MARGIN_PADDING
     EGUI_TEST_ASSERT_EQUAL_INT(8, EGUI_VIEW_OF(&test_text_box)->padding.left);
 #endif
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x183235).full, test_text_box.text_color.full);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x0C7C73).full, test_text_box.cursor_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT_STRONG.full, test_text_box.text_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT_SOFT.full, test_text_box.placeholder_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PRIMARY_DARK.full, test_text_box.cursor_color.full);
 
     hcw_text_box_apply_read_only_style(EGUI_VIEW_OF(&test_text_box));
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_text_box)->is_enable);
 #if EGUI_CONFIG_FUNCTION_SUPPORT_MARGIN_PADDING
     EGUI_TEST_ASSERT_EQUAL_INT(8, EGUI_VIEW_OF(&test_text_box)->padding.left);
 #endif
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x7A8796).full, test_text_box.text_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT_STRONG.full, test_text_box.text_color.full);
 }
 
 static void test_text_box_insert_delete_and_submit_via_keyboard(void)

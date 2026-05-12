@@ -297,6 +297,13 @@ static void test_menu_button_setters_clear_active_and_normalize(void)
 {
     setup_menu();
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_menu_button_get_selected_index(EGUI_VIEW_OF(&test_menu)));
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_SURFACE.full, test_menu.surface_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_SURFACE_SUBTLE.full, test_menu.menu_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_BORDER_STRONG.full, test_menu.border_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT_STRONG.full, test_menu.text_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT_SOFT.full, test_menu.muted_text_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PRIMARY_DARK.full, test_menu.accent_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT_SOFT.full, test_menu.neutral_color.full);
 
     seed_active_state(&test_menu, EGUI_VIEW_MENU_BUTTON_TARGET_TRIGGER, 1);
     egui_view_menu_button_set_button(EGUI_VIEW_OF(&test_menu), "More actions", EGUI_ICON_MS_ADD);
@@ -328,7 +335,7 @@ static void test_menu_button_setters_clear_active_and_normalize(void)
     assert_active_cleared(&test_menu);
 
     seed_active_state(&test_menu, EGUI_VIEW_MENU_BUTTON_TARGET_TRIGGER, 1);
-    egui_view_menu_button_set_palette(EGUI_VIEW_OF(&test_menu), EGUI_COLOR_HEX(0xFFFFFF), EGUI_COLOR_HEX(0xF8FAFC),
+    egui_view_menu_button_set_palette(EGUI_VIEW_OF(&test_menu), HCW_COLOR_SURFACE, EGUI_COLOR_HEX(0xF8FAFC),
                                       EGUI_COLOR_HEX(0x010203), EGUI_COLOR_HEX(0x111213), EGUI_COLOR_HEX(0x212223),
                                       EGUI_COLOR_HEX(0x313233), EGUI_COLOR_HEX(0x414243), EGUI_COLOR_HEX(0x515253),
                                       EGUI_COLOR_HEX(0x616263), EGUI_COLOR_HEX(0x717273));

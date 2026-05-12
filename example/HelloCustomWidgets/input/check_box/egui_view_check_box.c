@@ -50,7 +50,7 @@ static void hcw_check_box_on_draw(egui_view_t *self)
 
     egui_view_get_work_region(self, &region);
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, region.location.x, region.location.y, region.size.width, region.size.height, 8, 1, local->box_fill_color,
-                                     egui_color_alpha_mix(self->alpha, 56));
+                                     egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(56)));
 #else
     EGUI_UNUSED(local);
 #endif
@@ -58,7 +58,7 @@ static void hcw_check_box_on_draw(egui_view_t *self)
 
 void hcw_check_box_apply_standard_style(egui_view_t *self)
 {
-    hcw_check_box_apply_style(self, EGUI_COLOR_HEX(0xC6D2DE), EGUI_COLOR_HEX(0x2563EB), EGUI_COLOR_WHITE, EGUI_COLOR_HEX(0x1A2734), 8);
+    hcw_check_box_apply_style(self, HCW_COLOR_BORDER, HCW_COLOR_PRIMARY, EGUI_COLOR_WHITE, HCW_COLOR_TEXT, 8);
 }
 
 void hcw_check_box_set_checked(egui_view_t *self, uint8_t is_checked)

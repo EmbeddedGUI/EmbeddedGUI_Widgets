@@ -193,7 +193,7 @@ static void test_animated_icon_init_uses_back_source_normal_state_and_palette(vo
     EGUI_TEST_ASSERT_TRUE(egui_view_animated_icon_get_source(EGUI_VIEW_OF(&test_animated_icon)) == egui_view_animated_icon_get_back_source());
     EGUI_TEST_ASSERT_TRUE(strcmp(egui_view_animated_icon_get_state(EGUI_VIEW_OF(&test_animated_icon)), "Normal") == 0);
     EGUI_TEST_ASSERT_TRUE(strcmp(egui_view_animated_icon_get_fallback_glyph(EGUI_VIEW_OF(&test_animated_icon)), EGUI_ICON_MS_ARROW_BACK) == 0);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x0F6CBD).full, test_animated_icon.icon_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PRIMARY.full, test_animated_icon.icon_color.full);
     EGUI_TEST_ASSERT_EQUAL_INT(0, test_animated_icon.current_progress);
     EGUI_TEST_ASSERT_EQUAL_INT(1, egui_view_animated_icon_get_animation_enabled(EGUI_VIEW_OF(&test_animated_icon)));
     EGUI_TEST_ASSERT_TRUE(egui_view_animated_icon_resolve_font(&test_animated_icon, 16) == EGUI_FONT_ICON_MS_16);
@@ -208,7 +208,7 @@ static void test_animated_icon_setters_and_state_resolution_clear_pressed_state(
     egui_view_set_pressed(EGUI_VIEW_OF(&test_animated_icon), 1);
     egui_view_animated_icon_apply_subtle_style(EGUI_VIEW_OF(&test_animated_icon));
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_animated_icon)->is_pressed);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x6F7C8A).full, test_animated_icon.icon_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT_MUTED.full, test_animated_icon.icon_color.full);
 
     egui_view_set_pressed(EGUI_VIEW_OF(&test_animated_icon), 1);
     egui_view_animated_icon_set_source(EGUI_VIEW_OF(&test_animated_icon), egui_view_animated_icon_get_chevron_down_small_source());

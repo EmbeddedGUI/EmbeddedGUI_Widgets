@@ -26,17 +26,17 @@ static void hcw_divider_apply_style(egui_view_t *self, egui_color_t color, egui_
 
 void hcw_divider_apply_standard_style(egui_view_t *self)
 {
-    hcw_divider_apply_style(self, EGUI_COLOR_HEX(0xC7D1DB), EGUI_ALPHA_100);
+    hcw_divider_apply_style(self, HCW_COLOR_BORDER, EGUI_ALPHA_100);
 }
 
 void hcw_divider_apply_subtle_style(egui_view_t *self)
 {
-    hcw_divider_apply_style(self, EGUI_COLOR_HEX(0xD9E1E8), 72);
+    hcw_divider_apply_style(self, HCW_COLOR_BORDER, 72);
 }
 
 void hcw_divider_apply_accent_style(egui_view_t *self)
 {
-    hcw_divider_apply_style(self, EGUI_COLOR_HEX(0x0F6CBD), EGUI_ALPHA_100);
+    hcw_divider_apply_style(self, HCW_COLOR_PRIMARY, EGUI_ALPHA_100);
 }
 
 void hcw_divider_set_palette(egui_view_t *self, egui_color_t color, egui_alpha_t alpha)

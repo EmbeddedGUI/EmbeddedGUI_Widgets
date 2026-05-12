@@ -68,8 +68,8 @@ static void setup_preview_slider(uint8_t value)
     egui_view_set_size(EGUI_VIEW_OF(&preview_slider), 104, 28);
     hcw_slider_apply_standard_style(EGUI_VIEW_OF(&preview_slider));
     egui_view_set_padding(EGUI_VIEW_OF(&preview_slider), 8, 8, 6, 6);
-    preview_slider.track_color = EGUI_COLOR_HEX(0xD9E5DE);
-    preview_slider.active_color = EGUI_COLOR_HEX(0x0C7C73);
+    preview_slider.track_color = HCW_COLOR_TRACK;
+    preview_slider.active_color = HCW_COLOR_PRIMARY;
     preview_slider.thumb_color = EGUI_COLOR_WHITE;
     hcw_slider_set_value(EGUI_VIEW_OF(&preview_slider), value);
     egui_view_slider_set_on_value_changed_listener(EGUI_VIEW_OF(&preview_slider), on_value_changed);
@@ -171,8 +171,8 @@ static void test_slider_style_helper_updates_palette_and_clear_pressed_state(voi
     hcw_slider_apply_standard_style(EGUI_VIEW_OF(&test_slider));
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_slider)->is_pressed);
     EGUI_TEST_ASSERT_EQUAL_INT(0, test_slider.is_dragging);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0xD8E0E9).full, test_slider.track_color.full);
-    EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x2563EB).full, test_slider.active_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_BORDER.full, test_slider.track_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PRIMARY.full, test_slider.active_color.full);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_WHITE.full, test_slider.thumb_color.full);
 }
 

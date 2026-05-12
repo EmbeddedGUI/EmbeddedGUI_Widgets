@@ -1,10 +1,10 @@
-﻿#include "egui_view_color_picker.h"
+#include "egui_view_color_picker.h"
 
 #include <string.h>
 
 #define COLOR_PICKER_STANDARD_RADIUS         10
-#define COLOR_PICKER_STANDARD_FILL_ALPHA     94
-#define COLOR_PICKER_STANDARD_BORDER_ALPHA   60
+#define COLOR_PICKER_STANDARD_FILL_ALPHA     EGUI_ALPHA_MAKE(100)
+#define COLOR_PICKER_STANDARD_BORDER_ALPHA   EGUI_ALPHA_MAKE(100)
 #define COLOR_PICKER_STANDARD_PAD_X          10
 #define COLOR_PICKER_STANDARD_PAD_Y          8
 #define COLOR_PICKER_STANDARD_LABEL_HEIGHT   10
@@ -19,8 +19,8 @@
 #define COLOR_PICKER_STANDARD_MODE_WIDTH     34
 
 #define COLOR_PICKER_COMPACT_RADIUS         8
-#define COLOR_PICKER_COMPACT_FILL_ALPHA     92
-#define COLOR_PICKER_COMPACT_BORDER_ALPHA   56
+#define COLOR_PICKER_COMPACT_FILL_ALPHA     EGUI_ALPHA_MAKE(100)
+#define COLOR_PICKER_COMPACT_BORDER_ALPHA   EGUI_ALPHA_MAKE(100)
 #define COLOR_PICKER_COMPACT_PAD_X          8
 #define COLOR_PICKER_COMPACT_PAD_Y          6
 #define COLOR_PICKER_COMPACT_PREVIEW_HEIGHT 12
@@ -70,7 +70,7 @@ static uint8_t color_picker_normalize_part(egui_view_color_picker_t *local, uint
 
 static egui_color_t color_picker_mix_disabled(egui_color_t color)
 {
-    return egui_rgb_mix(color, EGUI_COLOR_DARK_GREY, 72);
+    return egui_rgb_mix(color, HCW_COLOR_TEXT_SOFT, EGUI_ALPHA_MAKE(28));
 }
 
 static egui_dim_t color_picker_measure_font_line_height(const egui_font_t *font)
@@ -535,41 +535,42 @@ static void color_picker_draw_text(const egui_font_t *font, egui_view_t *self, c
         return;
     }
 
-    egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, font, text, &draw_region, align, color, egui_color_alpha_mix(self->alpha, alpha));
+    egui_canvas_draw_text_in_rect(&uicode_get_core()->canvas, font, text, &draw_region, align, color,
+                                  egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(alpha)));
 }
 
 static void color_picker_draw_preview(egui_view_t *self, egui_view_color_picker_t *local, const egui_view_color_picker_metrics_t *metrics,
-                                      egui_color_t panel_fill, egui_color_t border_color, egui_color_t text_color, egui_color_t muted_color,
-                                      egui_color_t accent_color)
+                                      egui_color_t panel_fill, egui_color_t border_color, egui_color_t text_color, egui_color_t accent_color)
 {
     const char *mode_text = local->read_only_mode ? "LOCK" : (local->current_part == EGUI_VIEW_COLOR_PICKER_PART_HUE ? "Hue" : "Tone");
-    egui_color_t mode_fill = egui_rgb_mix(local->surface_color, accent_color, local->read_only_mode ? 12 : 16);
-    egui_color_t swatch_border = egui_rgb_mix(border_color, local->selected_color, 24);
+    egui_color_t mode_fill = egui_rgb_mix(local->surface_color, accent_color, EGUI_ALPHA_MAKE(local->read_only_mode ? 8 : 10));
+    egui_color_t swatch_border = egui_rgb_mix(border_color, local->selected_color, EGUI_ALPHA_MAKE(local->read_only_mode ? 68 : 76));
     egui_dim_t radius = local->compact_mode ? COLOR_PICKER_COMPACT_INNER_RADIUS : COLOR_PICKER_STANDARD_INNER_RADIUS;
 
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics->preview_region.location.x, metrics->preview_region.location.y, metrics->preview_region.size.width,
-                                          metrics->preview_region.size.height, radius, panel_fill, egui_color_alpha_mix(self->alpha, 38));
+                                          metrics->preview_region.size.height, radius, panel_fill, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(100)));
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics->preview_region.location.x, metrics->preview_region.location.y, metrics->preview_region.size.width,
-                                     metrics->preview_region.size.height, radius, 1, border_color, egui_color_alpha_mix(self->alpha, 40));
+                                     metrics->preview_region.size.height, radius, 1, border_color, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(100)));
 
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics->swatch_region.location.x, metrics->swatch_region.location.y, metrics->swatch_region.size.width,
-                                          metrics->swatch_region.size.height, 3, local->selected_color, egui_color_alpha_mix(self->alpha, 100));
+                                          metrics->swatch_region.size.height, 3, local->selected_color, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(100)));
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics->swatch_region.location.x, metrics->swatch_region.location.y, metrics->swatch_region.size.width,
-                                     metrics->swatch_region.size.height, 3, 1, swatch_border, egui_color_alpha_mix(self->alpha, 72));
+                                     metrics->swatch_region.size.height, 3, 1, swatch_border, egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(100)));
 
     color_picker_draw_text(local->font, self, local->hex_text, &metrics->hex_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, text_color, 100);
 
     egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics->mode_region.location.x, metrics->mode_region.location.y, metrics->mode_region.size.width,
-                                          metrics->mode_region.size.height, radius, mode_fill, egui_color_alpha_mix(self->alpha, 30));
+                                          metrics->mode_region.size.height, radius, mode_fill,
+                                          egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(local->read_only_mode ? 96 : 100)));
     egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics->mode_region.location.x, metrics->mode_region.location.y, metrics->mode_region.size.width,
-                                     metrics->mode_region.size.height, radius, 1, egui_rgb_mix(border_color, accent_color, 18),
-                                     egui_color_alpha_mix(self->alpha, 36));
+                                     metrics->mode_region.size.height, radius, 1, egui_rgb_mix(border_color, accent_color, EGUI_ALPHA_MAKE(local->read_only_mode ? 48 : 58)),
+                                     egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(100)));
     color_picker_draw_text(local->meta_font != NULL ? local->meta_font : local->font, self, mode_text, &metrics->mode_region, EGUI_ALIGN_CENTER,
-                           local->read_only_mode ? muted_color : accent_color, 100);
+                           local->read_only_mode ? text_color : accent_color, 100);
 }
 
 static void color_picker_draw_palette_cells(egui_view_t *self, egui_view_color_picker_t *local, const egui_view_color_picker_metrics_t *metrics,
-                                            egui_color_t accent_color, egui_color_t border_color, egui_color_t surface_color, uint8_t disabled_mix)
+                                            egui_color_t accent_color, egui_color_t border_color, egui_color_t surface_color, egui_alpha_t disabled_mix)
 {
     egui_dim_t gap = local->compact_mode ? 1 : 2;
     egui_dim_t cell_w = (metrics->palette_region.size.width - gap * (EGUI_VIEW_COLOR_PICKER_SATURATION_COUNT - 1)) / EGUI_VIEW_COLOR_PICKER_SATURATION_COUNT;
@@ -606,21 +607,25 @@ static void color_picker_draw_palette_cells(egui_view_t *self, egui_view_color_p
                 cell_color = egui_rgb_mix(cell_color, surface_color, disabled_mix);
             }
 
-            egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, x, y, cell_w, cell_h, local->compact_mode ? 2 : 3, cell_color, egui_color_alpha_mix(self->alpha, 100));
+            egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, x, y, cell_w, cell_h, local->compact_mode ? 2 : 3, cell_color,
+                                                  egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(100)));
 
             if (selected)
             {
-                outline_color = self->is_focused && local->current_part == EGUI_VIEW_COLOR_PICKER_PART_PALETTE ? accent_color : border_color;
+                outline_color = self->is_focused && local->current_part == EGUI_VIEW_COLOR_PICKER_PART_PALETTE
+                                        ? accent_color
+                                        : egui_rgb_mix(border_color, HCW_COLOR_TEXT_STRONG, EGUI_ALPHA_MAKE(18));
                 egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, x - 1, y - 1, cell_w + 2, cell_h + 2, local->compact_mode ? 2 : 3, 1, outline_color,
-                                                 egui_color_alpha_mix(self->alpha, 92));
-                egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, x, y, cell_w, cell_h, local->compact_mode ? 2 : 3, 1, EGUI_COLOR_WHITE, egui_color_alpha_mix(self->alpha, 70));
+                                                 egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(100)));
+                egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, x, y, cell_w, cell_h, local->compact_mode ? 2 : 3, 1, EGUI_COLOR_WHITE,
+                                                 egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(98)));
             }
         }
     }
 }
 
 static void color_picker_draw_hue_rail(egui_view_t *self, egui_view_color_picker_t *local, const egui_view_color_picker_metrics_t *metrics,
-                                       egui_color_t accent_color, egui_color_t border_color, egui_color_t surface_color, uint8_t disabled_mix)
+                                       egui_color_t accent_color, egui_color_t border_color, egui_color_t surface_color, egui_alpha_t disabled_mix)
 {
     egui_dim_t gap = 1;
     egui_dim_t segment_h = (metrics->hue_region.size.height - gap * (EGUI_VIEW_COLOR_PICKER_HUE_COUNT - 1)) / EGUI_VIEW_COLOR_PICKER_HUE_COUNT;
@@ -648,12 +653,14 @@ static void color_picker_draw_hue_rail(egui_view_t *self, egui_view_color_picker
         }
 
         egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, metrics->hue_region.location.x, y, metrics->hue_region.size.width, segment_h, 2, segment_color,
-                                              egui_color_alpha_mix(self->alpha, 100));
+                                              egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(100)));
         if (selected)
         {
-            egui_color_t outline = self->is_focused && local->current_part == EGUI_VIEW_COLOR_PICKER_PART_HUE ? accent_color : border_color;
+            egui_color_t outline = self->is_focused && local->current_part == EGUI_VIEW_COLOR_PICKER_PART_HUE
+                                           ? accent_color
+                                           : egui_rgb_mix(border_color, HCW_COLOR_TEXT_STRONG, EGUI_ALPHA_MAKE(18));
             egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, metrics->hue_region.location.x - 1, y - 1, metrics->hue_region.size.width + 2, segment_h + 2, 2, 1, outline,
-                                             egui_color_alpha_mix(self->alpha, 92));
+                                             egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(100)));
         }
     }
 }
@@ -671,7 +678,7 @@ static void egui_view_color_picker_on_draw(egui_view_t *self)
     egui_color_t outer_fill;
     egui_color_t outer_border;
     egui_color_t panel_fill;
-    uint8_t disabled_mix = 0;
+    egui_alpha_t disabled_mix = 0;
 
     egui_view_get_work_region(self, &region);
     if (region.size.width <= 0 || region.size.height <= 0)
@@ -683,10 +690,11 @@ static void egui_view_color_picker_on_draw(egui_view_t *self)
 
     if (local->read_only_mode)
     {
-        surface_color = egui_rgb_mix(surface_color, EGUI_COLOR_HEX(0xFBFCFD), 18);
-        border_color = egui_rgb_mix(border_color, muted_color, 18);
-        text_color = egui_rgb_mix(text_color, muted_color, 22);
-        accent_color = egui_rgb_mix(accent_color, muted_color, 96);
+        surface_color = egui_rgb_mix(surface_color, HCW_COLOR_SURFACE_SUBTLE, EGUI_ALPHA_MAKE(6));
+        border_color = egui_rgb_mix(border_color, HCW_COLOR_TEXT_STRONG, EGUI_ALPHA_MAKE(24));
+        text_color = egui_rgb_mix(text_color, HCW_COLOR_TEXT_STRONG, EGUI_ALPHA_MAKE(48));
+        muted_color = egui_rgb_mix(muted_color, HCW_COLOR_TEXT_STRONG, EGUI_ALPHA_MAKE(44));
+        accent_color = egui_rgb_mix(accent_color, muted_color, EGUI_ALPHA_MAKE(8));
     }
 
     if (!egui_view_get_enable(self))
@@ -695,12 +703,16 @@ static void egui_view_color_picker_on_draw(egui_view_t *self)
         text_color = color_picker_mix_disabled(text_color);
         muted_color = color_picker_mix_disabled(muted_color);
         accent_color = color_picker_mix_disabled(accent_color);
-        disabled_mix = 96;
+        disabled_mix = EGUI_ALPHA_MAKE(56);
     }
 
-    outer_fill = egui_rgb_mix(surface_color, accent_color, local->compact_mode ? 4 : 6);
-    outer_border = egui_rgb_mix(border_color, accent_color, local->read_only_mode ? 10 : 18);
-    panel_fill = egui_rgb_mix(surface_color, accent_color, local->read_only_mode ? 4 : 8);
+    outer_fill = surface_color;
+    outer_border = egui_rgb_mix(border_color, accent_color, EGUI_ALPHA_MAKE(local->read_only_mode ? 60 : 76));
+    panel_fill = surface_color;
+    if (!local->read_only_mode)
+    {
+        muted_color = egui_rgb_mix(muted_color, text_color, EGUI_ALPHA_MAKE(64));
+    }
 
     color_picker_get_metrics(local, self, &metrics);
 
@@ -712,16 +724,12 @@ static void egui_view_color_picker_on_draw(egui_view_t *self)
             region.location.x, region.location.y, region.size.width, region.size.height,
             local->compact_mode ? COLOR_PICKER_COMPACT_RADIUS : COLOR_PICKER_STANDARD_RADIUS, 1, outer_border,
             egui_color_alpha_mix(self->alpha, local->compact_mode ? COLOR_PICKER_COMPACT_BORDER_ALPHA : COLOR_PICKER_STANDARD_BORDER_ALPHA));
-    egui_canvas_draw_round_rectangle_fill(&uicode_get_core()->canvas, region.location.x + 2, region.location.y + 2, region.size.width - 4, local->compact_mode ? 3 : 4,
-                                          local->compact_mode ? COLOR_PICKER_COMPACT_RADIUS : COLOR_PICKER_STANDARD_RADIUS, accent_color,
-                                          egui_color_alpha_mix(self->alpha, local->read_only_mode ? 12 : 24));
-
     if (metrics.show_meta)
     {
         color_picker_draw_text(local->meta_font, self, local->label, &metrics.label_region, EGUI_ALIGN_LEFT | EGUI_ALIGN_VCENTER, muted_color, 100);
     }
 
-    color_picker_draw_preview(self, local, &metrics, panel_fill, border_color, text_color, muted_color, accent_color);
+    color_picker_draw_preview(self, local, &metrics, panel_fill, border_color, text_color, accent_color);
     color_picker_draw_palette_cells(self, local, &metrics, accent_color, border_color, surface_color, disabled_mix);
     color_picker_draw_hue_rail(self, local, &metrics, accent_color, border_color, surface_color, disabled_mix);
 
@@ -729,7 +737,8 @@ static void egui_view_color_picker_on_draw(egui_view_t *self)
     {
         const egui_region_t *focus_region = local->current_part == EGUI_VIEW_COLOR_PICKER_PART_HUE ? &metrics.hue_region : &metrics.palette_region;
         egui_canvas_draw_round_rectangle(&uicode_get_core()->canvas, focus_region->location.x - 2, focus_region->location.y - 2, focus_region->size.width + 4,
-                                         focus_region->size.height + 4, local->compact_mode ? 4 : 5, 1, accent_color, egui_color_alpha_mix(self->alpha, 72));
+                                          focus_region->size.height + 4, local->compact_mode ? 4 : 5, 2, accent_color,
+                                          egui_color_alpha_mix(self->alpha, EGUI_ALPHA_MAKE(100)));
     }
 
     if (metrics.show_meta)
@@ -1148,11 +1157,11 @@ void egui_view_color_picker_init(egui_view_t *self)
     local->on_changed = NULL;
     local->label = "Accent color";
     local->helper = "Tap tone grid or hue rail";
-    local->surface_color = EGUI_COLOR_HEX(0xFFFFFF);
-    local->border_color = EGUI_COLOR_HEX(0xD7DFE7);
-    local->text_color = EGUI_COLOR_HEX(0x1B2732);
-    local->muted_text_color = EGUI_COLOR_HEX(0x728190);
-    local->accent_color = EGUI_COLOR_HEX(0x2563EB);
+    local->surface_color = HCW_COLOR_SURFACE;
+    local->border_color = HCW_COLOR_BORDER_STRONG;
+    local->text_color = HCW_COLOR_TEXT_STRONG;
+    local->muted_text_color = HCW_COLOR_TEXT_SOFT;
+    local->accent_color = HCW_COLOR_PRIMARY_DARK;
     local->hue_index = 7;
     local->saturation_index = 4;
     local->value_index = 1;
