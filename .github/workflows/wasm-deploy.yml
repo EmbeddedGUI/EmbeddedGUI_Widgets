@@ -51,6 +51,7 @@ jobs:
         run: |
           python scripts/web/web_smoke_check.py \
             --browser "${{ steps.setup-chrome.outputs.chrome-path }}" \
+            --capture-mode cdp \
             --output-dir output/ci_web_smoke
 
       - name: Generate widget render gallery
