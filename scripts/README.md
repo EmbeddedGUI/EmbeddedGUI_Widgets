@@ -11,9 +11,9 @@ This repository keeps only the scripts needed for standalone custom-widget work.
 - `code_runtime_check.py`
   Runtime screenshot verification for widget demos.
 - `release_check.py`
-  Release-style manual check entrypoint that chains catalog/docs audits, touch audit, compile, unit tests, runtime verification, WASM build verification, browser-side web smoke checks, and render gallery generation.
+  Release-style manual check entrypoint that chains catalog/docs/web artifact audits, touch audit, compile, unit tests, runtime verification, WASM build verification, browser-side web smoke checks, and render gallery generation.
 - `ci_local_check.py`
-  Fast local CI wrapper for one widget category or the full widget set, including catalog and documentation encoding checks.
+  Fast local CI wrapper for one widget category or the full widget set, including catalog, documentation encoding, and web artifact consistency checks.
 
 ## App entry note
 
@@ -35,6 +35,8 @@ This repository keeps only the scripts needed for standalone custom-widget work.
   Validate documentation files decode as UTF-8 and catch obvious README corruption such as repeated `????`.
 - `python scripts/checks/check_widget_catalog.py`
   Validate `widget_catalog.json` coverage, track-to-visibility policy, reference metadata completeness, and replacement targets.
+- `python scripts/checks/check_web_artifacts.py`
+  Validate checked-in `web/demos/` and `web/render-gallery/` artifacts against the published HelloCustomWidgets catalog.
 - `python scripts/sync_widget_catalog.py`
   Rewrite `widget_catalog.json` into canonical order and sync it with actual `HelloCustomWidgets` directories.
 - `python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --refresh-existing`

@@ -15,11 +15,13 @@ on:
       - 'example/HelloUnitTest/**'
       - 'web/**'
       - 'scripts/checks/check_docs_encoding.py'
+      - 'scripts/checks/check_web_artifacts.py'
       - 'scripts/checks/check_widget_catalog.py'
       - 'scripts/checks/check_touch_release_semantics.py'
       - 'scripts/code_compile_check.py'
       - 'scripts/code_runtime_check.py'
       - 'scripts/ci_local_check.py'
+      - 'scripts/web/**'
       - 'scripts/windows_link_rsp.py'
       - 'scripts/widget_catalog.py'
       - 'requirements.txt'
@@ -126,3 +128,6 @@ jobs:
 
       - name: Check widget catalog consistency
         run: python scripts/checks/check_widget_catalog.py
+
+      - name: Check web artifact consistency
+        run: python scripts/checks/check_web_artifacts.py

@@ -15,10 +15,22 @@ import time
 SCRIPT_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = SCRIPT_DIR.parent
 
-ALL_STEP_NAMES = ["catalog", "docs", "touch", "compile", "unit_test", "runtime", "wasm", "web_smoke", "render_gallery"]
+ALL_STEP_NAMES = [
+    "catalog",
+    "docs",
+    "web_artifacts",
+    "touch",
+    "compile",
+    "unit_test",
+    "runtime",
+    "wasm",
+    "web_smoke",
+    "render_gallery",
+]
 STEP_DESCRIPTIONS = {
     "catalog": "Widget catalog consistency check",
     "docs": "Documentation UTF-8 and corruption check",
+    "web_artifacts": "Checked-in web demo and render gallery consistency check",
     "touch": "Custom widget touch release semantics check",
     "compile": "HelloCustomWidgets compile sweep",
     "unit_test": "HelloUnitTest build and run",
@@ -108,6 +120,7 @@ def build_steps(args: argparse.Namespace) -> list[tuple[str, str, list[list[str]
     runtime_job_args = ["--jobs", str(args.runtime_jobs)] if args.runtime_jobs > 0 else []
 
     catalog_cmd = [py, str(SCRIPT_DIR / "checks" / "check_widget_catalog.py")]
+    web_artifacts_cmd = [py, str(SCRIPT_DIR / "checks" / "check_web_artifacts.py")]
     touch_cmd = [py, str(SCRIPT_DIR / "checks" / "check_touch_release_semantics.py"), "--scope", "custom"] + category_args
     compile_cmd = [py, str(SCRIPT_DIR / "code_compile_check.py"), "--custom-widgets"] + category_args + bits64_args + compile_case_args
     unit_test_cmd = [py, str(SCRIPT_DIR / "code_compile_check.py"), "--unit-tests-only"] + bits64_args
@@ -164,6 +177,7 @@ def build_steps(args: argparse.Namespace) -> list[tuple[str, str, list[list[str]
     return [
         ("catalog", STEP_DESCRIPTIONS["catalog"], [catalog_cmd]),
         ("docs", STEP_DESCRIPTIONS["docs"], [docs_cmd]),
+        ("web_artifacts", STEP_DESCRIPTIONS["web_artifacts"], [web_artifacts_cmd]),
         ("touch", STEP_DESCRIPTIONS["touch"], [touch_cmd]),
         ("compile", STEP_DESCRIPTIONS["compile"], [compile_cmd]),
         ("unit_test", STEP_DESCRIPTIONS["unit_test"], [unit_test_cmd]),

@@ -40,7 +40,7 @@ The default SDK resolution order is:
    `make ci CATEGORY=input`
 4. If you prefer a direct Python entrypoint:
    `python scripts/ci_local_check.py --category input`
-   This includes widget catalog policy and documentation encoding checks automatically.
+   This includes widget catalog policy, documentation encoding, and web artifact consistency checks automatically.
 5. Run one release-style manual sweep:
    `python scripts/release_check.py`
 6. Build the web demos when you need the local site:
@@ -93,6 +93,8 @@ The default SDK resolution order is:
   `python scripts/checks/check_widget_catalog.py`
 - Documentation encoding audit:
   `python scripts/checks/check_docs_encoding.py`
+- Web artifact consistency audit:
+  `python scripts/checks/check_web_artifacts.py`
 - Sync widget catalog:
   `python scripts/sync_widget_catalog.py`
 - Build the widgets web bundle:

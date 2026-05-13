@@ -63,6 +63,9 @@ jobs:
             --summary output/ci_web_smoke/summary.json \
             --output-dir web/render-gallery
 
+      - name: Check web artifact consistency
+        run: python scripts/checks/check_web_artifacts.py
+
       - name: Upload web smoke artifact
         if: always()
         uses: actions/upload-artifact@v4
