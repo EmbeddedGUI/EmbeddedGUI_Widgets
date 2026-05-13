@@ -102,6 +102,8 @@ The default SDK resolution order is:
   `python scripts/checks/check_web_artifacts.py --web-root output/release_check_wasm --manifest output/release_check_wasm/demos/demos.json --render-gallery output/release_check_wasm/render-gallery --category input`
 - Python helper syntax audit:
   `python -m py_compile scripts/ci_local_check.py scripts/code_compile_check.py scripts/code_runtime_check.py scripts/release_check.py scripts/run_app.py scripts/setup_env.py scripts/start_app.py scripts/sync_widget_catalog.py scripts/widget_catalog.py scripts/windows_link_rsp.py scripts/checks/check_docs_encoding.py scripts/checks/check_web_artifacts.py scripts/checks/check_widget_catalog.py scripts/checks/check_touch_release_semantics.py`
+- Web publishing helper syntax audit:
+  `python -m py_compile scripts/widget_catalog.py scripts/checks/check_docs_encoding.py scripts/checks/check_web_artifacts.py scripts/web/wasm_build_demos.py scripts/web/web_smoke_check.py scripts/web/widget_render_gallery.py doc/scripts/generate_widget_render_gallery.py`
 - Sync widget catalog:
   `python scripts/sync_widget_catalog.py`
 - Build the widgets web bundle:

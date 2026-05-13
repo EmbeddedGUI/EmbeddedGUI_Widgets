@@ -34,7 +34,7 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Check Python helper syntax
-        run: python -m py_compile scripts/widget_catalog.py scripts/checks/check_docs_encoding.py scripts/checks/check_web_artifacts.py scripts/web/wasm_build_demos.py scripts/web/web_smoke_check.py scripts/web/widget_render_gallery.py
+        run: python -m py_compile scripts/widget_catalog.py scripts/checks/check_docs_encoding.py scripts/checks/check_web_artifacts.py scripts/web/wasm_build_demos.py scripts/web/web_smoke_check.py scripts/web/widget_render_gallery.py doc/scripts/generate_widget_render_gallery.py
 
       - name: Check documentation encoding
         run: python scripts/checks/check_docs_encoding.py

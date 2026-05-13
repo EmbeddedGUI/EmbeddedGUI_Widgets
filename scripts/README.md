@@ -43,6 +43,8 @@ This repository keeps only the scripts needed for standalone custom-widget work.
   Validate a category-scoped release output from `scripts/release_check.py --category input`.
 - `python -m py_compile scripts/ci_local_check.py scripts/code_compile_check.py scripts/code_runtime_check.py scripts/release_check.py scripts/run_app.py scripts/setup_env.py scripts/start_app.py scripts/sync_widget_catalog.py scripts/widget_catalog.py scripts/windows_link_rsp.py scripts/checks/check_docs_encoding.py scripts/checks/check_web_artifacts.py scripts/checks/check_widget_catalog.py scripts/checks/check_touch_release_semantics.py`
   Catch syntax errors in the lightweight CI and release helper scripts before heavier native or web checks start.
+- `python -m py_compile scripts/widget_catalog.py scripts/checks/check_docs_encoding.py scripts/checks/check_web_artifacts.py scripts/web/wasm_build_demos.py scripts/web/web_smoke_check.py scripts/web/widget_render_gallery.py doc/scripts/generate_widget_render_gallery.py`
+  Catch syntax errors in the web publishing and doc-side render gallery helpers.
 - `python scripts/sync_widget_catalog.py`
   Rewrite `widget_catalog.json` into canonical order and sync it with actual `HelloCustomWidgets` directories.
 - `python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --refresh-existing`
