@@ -68,6 +68,16 @@ def load_json(path: Path) -> Any:
         raise ValueError("%s: invalid JSON: %s" % (project_relative(path), exc)) from None
 
 
+def load_text(path: Path, errors: list[str], context: str) -> str:
+    try:
+        return path.read_text(encoding="utf-8")
+    except FileNotFoundError:
+        errors.append("%s missing file: %s" % (context, project_relative(path)))
+    except UnicodeDecodeError as exc:
+        errors.append("%s is not valid UTF-8: %s" % (project_relative(path), exc))
+    return ""
+
+
 def project_relative(path: Path) -> str:
     try:
         return path.resolve().relative_to(ROOT_DIR).as_posix()
@@ -109,6 +119,11 @@ def add_set_diff_errors(
 def require_file(errors: list[str], path: Path, context: str) -> None:
     if not path.is_file():
         errors.append("%s missing file: %s" % (context, project_relative(path)))
+
+
+def require_text_fragment(errors: list[str], text: str, fragment: str, path: Path, context: str) -> None:
+    if fragment not in text:
+        errors.append("%s missing %s in %s" % (context, fragment, project_relative(path)))
 
 
 def validate_bundled_readme(errors: list[str], widget_id: str, bundled_path: Path, context: str) -> None:
@@ -278,6 +293,10 @@ def validate_render_gallery(
         require_file(errors, render_gallery_dir / sheet_value, "render gallery")
     require_file(errors, render_gallery_dir / "index.html", "render gallery")
     require_file(errors, render_gallery_dir / "README.md", "render gallery")
+    html_path = render_gallery_dir / "index.html"
+    markdown_path = render_gallery_dir / "README.md"
+    html_text = load_text(html_path, errors, "render gallery") if html_path.is_file() else ""
+    markdown_text = load_text(markdown_path, errors, "render gallery") if markdown_path.is_file() else ""
 
     entries_by_widget: dict[str, dict] = {}
     duplicate_widgets: set[str] = set()
@@ -322,6 +341,11 @@ def validate_render_gallery(
             errors.append("%s track must match demos manifest value %s" % (context, demo_entry.get("track")))
 
         require_file(errors, render_gallery_dir / expected_thumbnail, expected_name)
+        require_text_fragment(errors, html_text, expected_demo, html_path, expected_name)
+        require_text_fragment(errors, html_text, expected_thumbnail, html_path, expected_name)
+        require_text_fragment(errors, html_text, widget_id, html_path, expected_name)
+        require_text_fragment(errors, markdown_text, expected_demo, markdown_path, expected_name)
+        require_text_fragment(errors, markdown_text, widget_id, markdown_path, expected_name)
 
     for widget_id in sorted(duplicate_widgets):
         errors.append("%s contains duplicate widgetId: %s" % (project_relative(gallery_index_path), widget_id))

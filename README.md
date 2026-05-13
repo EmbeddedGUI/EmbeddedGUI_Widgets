@@ -95,7 +95,7 @@ The default SDK resolution order is:
   `python scripts/checks/check_docs_encoding.py`
 - Web artifact consistency audit:
   `python scripts/checks/check_web_artifacts.py`
-  This also verifies that bundled demo README files match their source widget `readme.md` files.
+  This also verifies bundled demo README synchronization and render-gallery HTML/Markdown links.
 - Web artifact consistency audit for generated release output:
   `python scripts/checks/check_web_artifacts.py --web-root output/release_check_wasm --manifest output/release_check_wasm/demos/demos.json --render-gallery output/release_check_wasm/render-gallery`
 - Web artifact consistency audit for one generated category:
