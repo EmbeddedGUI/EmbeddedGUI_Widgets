@@ -15,7 +15,6 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 SCRIPTS_ROOT = SCRIPT_DIR.parent
 ROOT_DIR = SCRIPTS_ROOT.parent
 DEFAULT_WEB_ROOT = ROOT_DIR / "web"
-DEFAULT_DEMOS_DIR = DEFAULT_WEB_ROOT / "demos"
 DEFAULT_RENDER_GALLERY_DIR = DEFAULT_WEB_ROOT / "render-gallery"
 APP_NAME = "HelloCustomWidgets"
 APP_SOURCE_DIR = ROOT_DIR / "example" / APP_NAME
