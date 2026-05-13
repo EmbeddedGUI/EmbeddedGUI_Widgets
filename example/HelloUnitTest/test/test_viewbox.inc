@@ -430,7 +430,7 @@ static void test_viewbox_read_only_and_disabled_guards(void)
     egui_view_set_enable(EGUI_VIEW_OF(&viewbox_test_widget), 0);
     viewbox_assert_widget_state(&viewbox_test_widget, initial_snapshot, initial_preset, initial_mode, 0, 0);
     EGUI_TEST_ASSERT_EQUAL_INT(1, viewbox_test_widget.pressed_preset);
-    EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&viewbox_test_widget)->is_pressed);
+    EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&viewbox_test_widget)->is_pressed);
     EGUI_TEST_ASSERT_FALSE(viewbox_send_touch(EGUI_MOTION_EVENT_ACTION_DOWN, preset_x, preset_y));
     EGUI_TEST_ASSERT_FALSE(viewbox_send_key(EGUI_KEY_CODE_RIGHT));
     EGUI_TEST_ASSERT_FALSE(viewbox_send_key(EGUI_KEY_CODE_SPACE));

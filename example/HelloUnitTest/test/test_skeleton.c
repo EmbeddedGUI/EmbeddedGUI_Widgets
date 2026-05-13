@@ -451,7 +451,7 @@ static void test_skeleton_attach_detach_and_helper_functions(void)
     EGUI_TEST_ASSERT_EQUAL_INT(12, egui_view_skeleton_get_pulse_mix(0));
     EGUI_TEST_ASSERT_EQUAL_INT(42, egui_view_skeleton_get_pulse_mix(6));
     EGUI_TEST_ASSERT_EQUAL_INT(27, egui_view_skeleton_get_pulse_mix(9));
-    EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(sample, EGUI_COLOR_DARK_GREY, EGUI_ALPHA_MAKE(52)).full, egui_view_skeleton_mix_disabled(sample).full);
+    EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(sample, HCW_COLOR_SURFACE_SUBTLE, EGUI_ALPHA_MAKE(44)).full, egui_view_skeleton_mix_disabled(sample).full);
 
     egui_view_skeleton_set_animation_mode(EGUI_VIEW_OF(&test_skeleton), EGUI_VIEW_SKELETON_ANIM_WAVE);
     egui_view_dispatch_attach_to_window(EGUI_VIEW_OF(&test_skeleton));

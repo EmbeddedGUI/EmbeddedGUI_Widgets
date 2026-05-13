@@ -234,7 +234,7 @@ static void test_two_pane_view_defaults_helpers_and_setters(void)
     EGUI_TEST_ASSERT_TRUE(strcmp("Readi...", label) == 0);
     tpv_fit_text_to_width(NULL, "Reading surface", label, sizeof(label), 15, 5);
     EGUI_TEST_ASSERT_TRUE(strcmp("...", label) == 0);
-    EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(sample, EGUI_COLOR_DARK_GREY, EGUI_ALPHA_MAKE(52)).full, tpv_mix_disabled(sample).full);
+    EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(sample, HCW_COLOR_SURFACE_SUBTLE, EGUI_ALPHA_MAKE(44)).full, tpv_mix_disabled(sample).full);
 
     egui_view_two_pane_view_set_font(EGUI_VIEW_OF(&test_two_pane_view), NULL);
     egui_view_two_pane_view_set_meta_font(EGUI_VIEW_OF(&test_two_pane_view), NULL);

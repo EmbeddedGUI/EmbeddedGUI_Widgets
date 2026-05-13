@@ -470,7 +470,8 @@ static void test_persona_group_metrics_hit_testing_and_helpers(void)
     EGUI_TEST_ASSERT_TRUE(strcmp("Des...", label) == 0);
     egui_view_persona_group_fit_text_to_width(NULL, "Archive sweep", short_label, sizeof(short_label), 20, 4);
     EGUI_TEST_ASSERT_TRUE(strcmp("Ar...", short_label) == 0);
-    EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(sample, EGUI_COLOR_DARK_GREY, EGUI_ALPHA_MAKE(52)).full, egui_view_persona_group_mix_disabled(sample).full);
+    EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(sample, HCW_COLOR_TEXT_SOFT, EGUI_ALPHA_MAKE(32)).full,
+                               egui_view_persona_group_mix_disabled(sample).full);
     EGUI_TEST_ASSERT_TRUE(metrics.content_region.size.width > 0);
     EGUI_TEST_ASSERT_TRUE(metrics.avatar_regions[0].size.width > 0);
     EGUI_TEST_ASSERT_TRUE(metrics.avatar_regions[1].location.x > metrics.avatar_regions[0].location.x);

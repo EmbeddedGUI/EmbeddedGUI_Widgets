@@ -334,7 +334,8 @@ static void test_person_picture_helpers_compute_regions_and_colors(void)
                                egui_view_person_picture_presence_color(&test_picture, EGUI_VIEW_PERSON_PICTURE_PRESENCE_AWAY).full);
     EGUI_TEST_ASSERT_EQUAL_INT(test_picture.neutral_color.full,
                                egui_view_person_picture_presence_color(&test_picture, EGUI_VIEW_PERSON_PICTURE_PRESENCE_OFFLINE).full);
-    EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(sample, EGUI_COLOR_DARK_GREY, EGUI_ALPHA_MAKE(52)).full, egui_view_person_picture_mix_disabled(sample).full);
+    EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(sample, HCW_COLOR_SURFACE_SUBTLE, EGUI_ALPHA_MAKE(44)).full,
+                               egui_view_person_picture_mix_disabled(sample).full);
 
     egui_view_person_picture_set_presence(EGUI_VIEW_OF(&test_picture), EGUI_VIEW_PERSON_PICTURE_PRESENCE_BUSY);
     EGUI_TEST_ASSERT_TRUE(egui_view_person_picture_should_draw_presence(&test_picture));

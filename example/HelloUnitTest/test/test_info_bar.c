@@ -582,7 +582,7 @@ static void test_info_bar_internal_helpers_cover_text_severity_and_metrics(void)
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x888888).full, egui_view_info_bar_severity_color(&test_info_bar, 2).full);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x999999).full, egui_view_info_bar_severity_color(&test_info_bar, 3).full);
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x666666).full, egui_view_info_bar_severity_color(&test_info_bar, 9).full);
-    EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(sample, EGUI_COLOR_DARK_GREY, EGUI_ALPHA_MAKE(52)).full, mixed.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(sample, HCW_COLOR_SURFACE_SUBTLE, EGUI_ALPHA_MAKE(44)).full, mixed.full);
 
     egui_view_info_bar_get_metrics(&test_info_bar, EGUI_VIEW_OF(&test_info_bar), &metrics);
     EGUI_TEST_ASSERT_TRUE(metrics.show_action);

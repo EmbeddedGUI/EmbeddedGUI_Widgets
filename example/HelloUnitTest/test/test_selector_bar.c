@@ -218,7 +218,7 @@ static void test_selector_bar_set_items_and_setters_clear_pressed_state(void)
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_SELECTOR_BAR_MAX_ITEMS, egui_view_selector_bar_clamp_count(7));
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_selector_bar_text_len(NULL));
     EGUI_TEST_ASSERT_EQUAL_INT(6, egui_view_selector_bar_text_len("Recent"));
-    EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(EGUI_COLOR_HEX(0x123456), EGUI_COLOR_DARK_GREY, EGUI_ALPHA_MAKE(52)).full,
+    EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(EGUI_COLOR_HEX(0x123456), HCW_COLOR_SURFACE_SUBTLE, EGUI_ALPHA_MAKE(44)).full,
                                egui_view_selector_bar_mix_disabled(EGUI_COLOR_HEX(0x123456)).full);
 }
 

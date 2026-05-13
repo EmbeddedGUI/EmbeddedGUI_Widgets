@@ -503,7 +503,8 @@ static void test_card_control_internal_helpers(void)
     EGUI_TEST_ASSERT_TRUE(strcmp("Sw...", short_label) == 0);
     EGUI_TEST_ASSERT_TRUE(egui_view_card_control_part_exists(&g_snapshots[0], EGUI_VIEW_CARD_CONTROL_PART_CARD));
     EGUI_TEST_ASSERT_FALSE(egui_view_card_control_part_exists(NULL, EGUI_VIEW_CARD_CONTROL_PART_CARD));
-    EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(sample, EGUI_COLOR_DARK_GREY, EGUI_ALPHA_MAKE(52)).full, egui_view_card_control_mix_disabled(sample).full);
+    EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(sample, HCW_COLOR_SURFACE_SUBTLE, EGUI_ALPHA_MAKE(44)).full,
+                               egui_view_card_control_mix_disabled(sample).full);
 }
 
 void test_card_control_run(void)

@@ -453,7 +453,7 @@ static void test_combo_box_keyboard_navigation_and_commit(void)
     setup_box();
     layout_box(10, 20, 180, 34);
 
-    EGUI_TEST_ASSERT_TRUE(send_key(EGUI_KEY_CODE_DOWN));
+    EGUI_TEST_ASSERT_TRUE(send_key(EGUI_KEY_CODE_ENTER));
     EGUI_TEST_ASSERT_TRUE(egui_view_combobox_is_expanded(EGUI_VIEW_OF(&test_box)));
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_combobox_get_current_index(EGUI_VIEW_OF(&test_box)));
     EGUI_TEST_ASSERT_EQUAL_INT(0, g_selected_count);

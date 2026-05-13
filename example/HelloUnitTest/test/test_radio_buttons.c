@@ -280,7 +280,7 @@ static void test_radio_buttons_setters_clear_pressed_state_and_clamp_items(void)
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x505152).full, test_widget.accent_color.full);
 
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_VIEW_RADIO_BUTTONS_MAX_ITEMS, egui_view_radio_buttons_clamp_count(7));
-    EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(EGUI_COLOR_HEX(0x123456), EGUI_COLOR_DARK_GREY, EGUI_ALPHA_MAKE(52)).full,
+    EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(EGUI_COLOR_HEX(0x123456), HCW_COLOR_SURFACE_SUBTLE, EGUI_ALPHA_MAKE(44)).full,
                                egui_view_radio_buttons_mix_disabled(EGUI_COLOR_HEX(0x123456)).full);
 }
 

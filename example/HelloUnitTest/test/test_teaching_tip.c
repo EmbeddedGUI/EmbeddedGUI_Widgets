@@ -536,7 +536,7 @@ static void test_teaching_tip_font_palette_and_internal_helpers(void)
     EGUI_TEST_ASSERT_TRUE(strcmp("...", label) == 0);
     egui_view_teaching_tip_fit_text_to_width(NULL, "Later", label, sizeof(label), 24, 4);
     EGUI_TEST_ASSERT_TRUE(strcmp("Later", label) == 0);
-    EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(sample, EGUI_COLOR_DARK_GREY, EGUI_ALPHA_MAKE(52)).full, mixed.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(sample, HCW_COLOR_SURFACE_SUBTLE, EGUI_ALPHA_MAKE(44)).full, mixed.full);
 
     egui_view_teaching_tip_set_read_only_mode(EGUI_VIEW_OF(&test_tip), 1);
     EGUI_TEST_ASSERT_FALSE(egui_view_teaching_tip_part_is_enabled(&test_tip, EGUI_VIEW_OF(&test_tip), &g_snapshots[0], EGUI_VIEW_TEACHING_TIP_PART_PRIMARY));

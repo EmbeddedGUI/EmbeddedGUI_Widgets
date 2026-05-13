@@ -379,7 +379,8 @@ static void test_menu_flyout_internal_helpers_clamp_focus_and_meta(void)
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_menu_flyout_focus_index(&snapshot, 3));
     EGUI_TEST_ASSERT_EQUAL_INT(20, egui_view_menu_flyout_meta_width(NULL, "Ctrl+Shift+P", 0, 20));
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_menu_flyout_meta_width(NULL, NULL, 1, 20));
-    EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(sample, EGUI_COLOR_DARK_GREY, EGUI_ALPHA_MAKE(52)).full, egui_view_menu_flyout_mix_disabled(sample).full);
+    EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(sample, HCW_COLOR_TEXT_SOFT, EGUI_ALPHA_MAKE(18)).full,
+                               egui_view_menu_flyout_mix_disabled(sample).full);
 }
 
 static void test_menu_flyout_internal_helpers_cover_text_fitting(void)

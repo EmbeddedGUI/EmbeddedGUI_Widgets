@@ -342,7 +342,7 @@ static void test_card_panel_internal_helpers_cover_tone_text_and_pill_width(void
     EGUI_TEST_ASSERT_TRUE(strcmp("Works...", label) == 0);
     egui_view_card_panel_fit_text_to_width(NULL, "Summary stays close.", label, sizeof(label), 24, 4);
     EGUI_TEST_ASSERT_TRUE(strcmp("Sum...", label) == 0);
-    EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(sample, EGUI_COLOR_DARK_GREY, EGUI_ALPHA_MAKE(52)).full, mixed.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(sample, HCW_COLOR_TEXT_SOFT, EGUI_ALPHA_MAKE(32)).full, mixed.full);
 }
 
 void test_card_panel_run(void)

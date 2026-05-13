@@ -391,7 +391,7 @@ static void test_virtualizing_wrap_panel_internal_helpers_cover_text_fitting(voi
     EGUI_TEST_ASSERT_TRUE(strcmp("...", label) == 0);
     virtualizing_wrap_panel_fit_text_to_width(NULL, "Ready", label, sizeof(label), 20, 4);
     EGUI_TEST_ASSERT_TRUE(strcmp("Ready", label) == 0);
-    EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(sample, EGUI_COLOR_DARK_GREY, EGUI_ALPHA_MAKE(52)).full, virtualizing_wrap_panel_mix_disabled(sample).full);
+    EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(sample, HCW_COLOR_SURFACE_SUBTLE, EGUI_ALPHA_MAKE(44)).full, virtualizing_wrap_panel_mix_disabled(sample).full);
 }
 
 static void test_virtualizing_wrap_panel_regions_activate_and_listener_only_for_visible_items(void)

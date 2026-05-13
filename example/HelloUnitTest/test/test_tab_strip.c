@@ -233,7 +233,7 @@ static void test_tab_strip_current_index_and_setters_clear_pressed_state(void)
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_tab_strip_text_len(NULL));
     EGUI_TEST_ASSERT_EQUAL_INT(5, egui_view_tab_strip_text_len("Usage"));
     EGUI_TEST_ASSERT_EQUAL_INT(0, egui_view_tab_strip_measure_text_width(NULL, "Overview"));
-    EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(sample, EGUI_COLOR_DARK_GREY, EGUI_ALPHA_MAKE(52)).full, egui_view_tab_strip_mix_disabled(sample).full);
+    EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(sample, HCW_COLOR_SURFACE_SUBTLE, EGUI_ALPHA_MAKE(44)).full, egui_view_tab_strip_mix_disabled(sample).full);
 
     memset(items, 0, sizeof(items));
     egui_view_tab_strip_copy_elided(items[0].label, sizeof(items[0].label), "Documents", 6);

@@ -401,7 +401,8 @@ static void test_data_list_panel_font_modes_palette_and_helpers(void)
     EGUI_TEST_ASSERT_TRUE(strcmp("...", label) == 0);
     egui_view_data_list_panel_fit_text_to_width(NULL, "Ready", label, sizeof(label), 20, 4);
     EGUI_TEST_ASSERT_TRUE(strcmp("Ready", label) == 0);
-    EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(sample, EGUI_COLOR_DARK_GREY, EGUI_ALPHA_MAKE(52)).full, egui_view_data_list_panel_mix_disabled(sample).full);
+    EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(sample, HCW_COLOR_SURFACE_SUBTLE, EGUI_ALPHA_MAKE(44)).full,
+                               egui_view_data_list_panel_mix_disabled(sample).full);
 
     EGUI_TEST_ASSERT_TRUE(egui_view_data_list_panel_get_snapshot(&test_panel) == &g_snapshots[0]);
     EGUI_TEST_ASSERT_TRUE(egui_view_data_list_panel_get_item(&test_panel) == &g_items_0[0]);

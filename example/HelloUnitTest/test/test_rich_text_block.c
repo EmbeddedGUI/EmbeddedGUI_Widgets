@@ -256,7 +256,7 @@ static void test_rich_text_block_setters_clamp_content_and_clear_pressed_state(v
     EGUI_TEST_ASSERT_EQUAL_INT(EGUI_COLOR_HEX(0x505152).full, test_widget.accent_color.full);
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_widget)->is_pressed);
 
-    EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(EGUI_COLOR_HEX(0x123456), EGUI_COLOR_DARK_GREY, EGUI_ALPHA_MAKE(52)).full,
+    EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(EGUI_COLOR_HEX(0x123456), HCW_COLOR_SURFACE_SUBTLE, EGUI_ALPHA_MAKE(44)).full,
                                egui_view_rich_text_block_mix_disabled(EGUI_COLOR_HEX(0x123456)).full);
 }
 

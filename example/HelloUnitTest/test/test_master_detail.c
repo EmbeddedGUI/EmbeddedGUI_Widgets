@@ -324,7 +324,8 @@ static void test_master_detail_font_modes_palette_and_helpers(void)
     EGUI_TEST_ASSERT_EQUAL_INT(42, egui_view_master_detail_footer_width(NULL, "Open", 0, 60));
     EGUI_TEST_ASSERT_EQUAL_INT(34, egui_view_master_detail_footer_width(NULL, "Open", 1, 40));
     EGUI_TEST_ASSERT_EQUAL_INT(30, egui_view_master_detail_footer_width(NULL, "Long", 0, 30));
-    EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(sample, EGUI_COLOR_DARK_GREY, EGUI_ALPHA_MAKE(52)).full, egui_view_master_detail_mix_disabled(sample).full);
+    EGUI_TEST_ASSERT_EQUAL_INT(egui_rgb_mix(sample, HCW_COLOR_SURFACE_SUBTLE, EGUI_ALPHA_MAKE(44)).full,
+                               egui_view_master_detail_mix_disabled(sample).full);
 }
 
 static void test_master_detail_metrics_and_hit_testing(void)

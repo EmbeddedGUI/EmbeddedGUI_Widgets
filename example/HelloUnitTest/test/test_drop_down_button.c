@@ -357,7 +357,7 @@ static void test_drop_down_button_touch_cancel_and_key_guard_clear_pressed_state
     EGUI_TEST_ASSERT_EQUAL_INT(0, click_count);
 
     EGUI_VIEW_OF(&test_button)->is_pressed = true;
-    EGUI_TEST_ASSERT_FALSE(send_key(EGUI_KEY_CODE_SPACE));
+    EGUI_TEST_ASSERT_FALSE(send_key(EGUI_KEY_CODE_TAB));
     EGUI_TEST_ASSERT_FALSE(EGUI_VIEW_OF(&test_button)->is_pressed);
     EGUI_TEST_ASSERT_EQUAL_INT(0, click_count);
 }

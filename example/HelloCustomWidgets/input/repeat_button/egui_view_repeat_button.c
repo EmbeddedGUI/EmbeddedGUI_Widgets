@@ -344,7 +344,7 @@ static void egui_view_repeat_button_on_attach_to_window(egui_view_t *self)
 
 static void egui_view_repeat_button_on_detach_from_window(egui_view_t *self)
 {
-    egui_view_repeat_button_stop_timer(self);
+    egui_view_repeat_button_clear_pressed_state(self);
     egui_view_on_detach_from_window(self);
 }
 

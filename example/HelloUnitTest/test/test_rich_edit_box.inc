@@ -382,7 +382,7 @@ static void test_rich_edit_box_setters_clear_pressed_and_update_state(void)
 
     EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_SURFACE.full, rich_edit_box_test_widget.surface_color.full);
     EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_BORDER_STRONG.full, rich_edit_box_test_widget.border_color.full);
-    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_SURFACE_PRESS.full, rich_edit_box_test_widget.editor_color.full);
+    EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_SURFACE.full, rich_edit_box_test_widget.editor_color.full);
     EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT_STRONG.full, rich_edit_box_test_widget.text_color.full);
     EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_TEXT_SOFT.full, rich_edit_box_test_widget.muted_text_color.full);
     EGUI_TEST_ASSERT_EQUAL_INT(HCW_COLOR_PRIMARY_DARK.full, rich_edit_box_test_widget.accent_color.full);

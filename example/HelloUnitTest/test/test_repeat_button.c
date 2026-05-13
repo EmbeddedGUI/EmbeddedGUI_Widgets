@@ -414,7 +414,7 @@ static void test_repeat_button_static_preview_consumes_input_and_keeps_state(voi
     assert_preview_state_unchanged(&initial_snapshot);
 }
 
-static void test_repeat_button_attach_and_detach_restore_repeat_timer(void)
+static void test_repeat_button_detach_clears_repeat_timer_state(void)
 {
     egui_dim_t center_x;
     egui_dim_t center_y;
@@ -423,17 +423,16 @@ static void test_repeat_button_attach_and_detach_restore_repeat_timer(void)
     start_touch_hold(&center_x, &center_y);
     detach_view(EGUI_VIEW_OF(&test_widget));
 
-    EGUI_TEST_ASSERT_TRUE(EGUI_VIEW_OF(&test_widget)->is_pressed);
-    EGUI_TEST_ASSERT_TRUE(test_widget.touch_active);
-    assert_timer_stopped(&test_widget);
+    assert_pressed_state_cleared(&test_widget);
 
     attach_view(EGUI_VIEW_OF(&test_widget));
-    EGUI_TEST_ASSERT_TRUE(test_widget.timer_started);
-    EGUI_TEST_ASSERT_TRUE(egui_timer_check_timer_start(uicode_get_core(), &test_widget.repeat_timer));
+    assert_pressed_state_cleared(&test_widget);
 
     egui_view_repeat_button_tick(&test_widget.repeat_timer);
-    EGUI_TEST_ASSERT_EQUAL_INT(2, g_click_count);
+    EGUI_TEST_ASSERT_EQUAL_INT(1, g_click_count);
 
+    EGUI_TEST_ASSERT_TRUE(send_touch_action(EGUI_VIEW_OF(&test_widget), EGUI_MOTION_EVENT_ACTION_DOWN, center_x, center_y));
+    EGUI_TEST_ASSERT_EQUAL_INT(2, g_click_count);
     EGUI_TEST_ASSERT_TRUE(send_touch_action(EGUI_VIEW_OF(&test_widget), EGUI_MOTION_EVENT_ACTION_UP, center_x, center_y));
     assert_pressed_state_cleared(&test_widget);
 }
@@ -449,6 +448,6 @@ void test_repeat_button_run(void)
     EGUI_TEST_RUN(test_repeat_button_unhandled_key_clears_pressed_state_and_stops_timer);
     EGUI_TEST_RUN(test_repeat_button_disabled_guard_prevents_click_and_clears_state);
     EGUI_TEST_RUN(test_repeat_button_static_preview_consumes_input_and_keeps_state);
-    EGUI_TEST_RUN(test_repeat_button_attach_and_detach_restore_repeat_timer);
+    EGUI_TEST_RUN(test_repeat_button_detach_clears_repeat_timer_state);
     EGUI_TEST_SUITE_END();
 }
