@@ -200,7 +200,7 @@ python scripts/code_runtime_check.py --app HelloCustomWidgets --category <catego
 
 随后执行：
 
-- 如有需要，先运行 `python scripts/code_format.py`
+- 如有需要，先运行 `python scripts/checks/check_docs_encoding.py` / `python scripts/checks/check_widget_catalog.py`
 - 单独创建一次 commit
 - 提交内容只围绕这一个控件或这一组明确的清理动作
 

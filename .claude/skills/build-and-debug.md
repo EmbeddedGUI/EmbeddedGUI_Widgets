@@ -162,7 +162,7 @@ EGUI_LOG_INF("value: %d\n", some_value);
 | `porting/pc/Makefile.base` | 核心构建逻辑 |
 | `scripts/code_compile_check.py` | 全量编译检查（`--full-check` 含示例 icon font 检查） |
 | `scripts/checks/check_example_icon_font.py` | 示例 icon font 显式配置检查 |
-| `scripts/code_format.py` | clang-format 代码格式化 |
+| `scripts/checks/check_docs_encoding.py` | 文档 UTF-8 与明显乱码检查 |
 | `scripts/release_check.py` | 发布前多步骤一键检查 |
 | `example/{APP}/build.mk` | 应用构建模块 |
 | `example/{APP}/app_egui_config.h` | 应用配置（屏幕尺寸、PFB、颜色深度） |
