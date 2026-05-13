@@ -2,7 +2,7 @@ name: Custom Widgets Check
 
 on:
   push:
-    paths:
+    paths: &custom-widget-check-paths
       - '.github/workflows/custom-widgets-check.yml'
       - '.gitmodules'
       - 'Makefile'
@@ -26,6 +26,9 @@ on:
       - 'scripts/windows_link_rsp.py'
       - 'scripts/widget_catalog.py'
       - 'requirements.txt'
+
+  pull_request:
+    paths: *custom-widget-check-paths
 
   schedule:
     - cron: '0 2 * * 1'
