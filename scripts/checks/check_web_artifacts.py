@@ -299,6 +299,7 @@ def validate_render_gallery(
 
     entries_by_widget: dict[str, dict] = {}
     duplicate_widgets: set[str] = set()
+    skipped_entry_count = 0
 
     for index, item in enumerate(entries):
         context = "%s entries[%d]" % (project_relative(gallery_index_path), index)
@@ -311,6 +312,7 @@ def validate_render_gallery(
             errors.append("%s is missing widgetId" % context)
             continue
         if not is_selected_widget(widget_id, category_filter):
+            skipped_entry_count += 1
             continue
         if widget_id in entries_by_widget:
             duplicate_widgets.add(widget_id)
@@ -348,6 +350,14 @@ def validate_render_gallery(
 
     for widget_id in sorted(duplicate_widgets):
         errors.append("%s contains duplicate widgetId: %s" % (project_relative(gallery_index_path), widget_id))
+
+    if category_filter:
+        selected_total = len(entries) - skipped_entry_count
+        if selected_total != len(entries_by_widget):
+            errors.append(
+                "%s selected category %s has %d entries but %d unique widgetIds"
+                % (project_relative(gallery_index_path), category_filter, selected_total, len(entries_by_widget))
+            )
 
     add_set_diff_errors(
         errors,
@@ -429,9 +439,10 @@ def main() -> int:
 
     category_counts = Counter(widget_id.split("/", 1)[0] for widget_id in expected)
     category_text = ", ".join("%s=%d" % (category, category_counts[category]) for category in sorted(category_counts))
+    scope_text = " for category %s" % args.category if args.category else ""
     print(
-        "Web artifact check passed (%d published widgets; %s)"
-        % (len(expected), category_text)
+        "Web artifact check passed%s (%d published widgets; %s)"
+        % (scope_text, len(expected), category_text)
     )
     return 0
 
