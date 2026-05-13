@@ -15,15 +15,17 @@ import time
 SCRIPT_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = SCRIPT_DIR.parent
 
-ALL_STEP_NAMES = ["catalog", "touch", "compile", "unit_test", "runtime", "wasm", "web_smoke"]
+ALL_STEP_NAMES = ["catalog", "docs", "touch", "compile", "unit_test", "runtime", "wasm", "web_smoke", "render_gallery"]
 STEP_DESCRIPTIONS = {
     "catalog": "Widget catalog consistency check",
+    "docs": "Documentation UTF-8 and corruption check",
     "touch": "Custom widget touch release semantics check",
     "compile": "HelloCustomWidgets compile sweep",
     "unit_test": "HelloUnitTest build and run",
     "runtime": "HelloCustomWidgets runtime verification",
     "wasm": "WASM demo build verification",
     "web_smoke": "Headless browser smoke check for built web demos",
+    "render_gallery": "Render gallery generation from web smoke screenshots",
 }
 
 BANNER_WIDTH = 72
@@ -34,6 +36,7 @@ DEFAULT_RUNTIME_JOBS = 2
 DEFAULT_WASM_OUTPUT_DIR = PROJECT_ROOT / "output" / "release_check_wasm" / "demos"
 DEFAULT_WEB_SMOKE_ROOT = PROJECT_ROOT / "output" / "release_check_wasm"
 DEFAULT_WEB_SMOKE_OUTPUT_DIR = DEFAULT_WEB_SMOKE_ROOT / "web_smoke"
+DEFAULT_RENDER_GALLERY_OUTPUT_DIR = DEFAULT_WEB_SMOKE_ROOT / "render-gallery"
 
 
 def banner(text: str) -> None:
@@ -109,6 +112,7 @@ def build_steps(args: argparse.Namespace) -> list[tuple[str, str, list[list[str]
     compile_cmd = [py, str(SCRIPT_DIR / "code_compile_check.py"), "--custom-widgets"] + category_args + bits64_args + compile_case_args
     unit_test_cmd = [py, str(SCRIPT_DIR / "code_compile_check.py"), "--unit-tests-only"] + bits64_args
     runtime_cmd = [py, str(SCRIPT_DIR / "code_runtime_check.py"), "--app", "HelloCustomWidgets"] + category_args + bits64_args + runtime_job_args
+    docs_cmd = [py, str(SCRIPT_DIR / "checks" / "check_docs_encoding.py")]
 
     wasm_common_args = [py, str(SCRIPT_DIR / "web" / "wasm_build_demos.py"), "--output-dir", str(DEFAULT_WASM_OUTPUT_DIR)]
     emsdk_path = find_emsdk_path()
@@ -148,14 +152,25 @@ def build_steps(args: argparse.Namespace) -> list[tuple[str, str, list[list[str]
     if args.web_smoke_max_demos > 0:
         web_smoke_cmd += ["--max-demos", str(args.web_smoke_max_demos)]
 
+    render_gallery_cmd = [
+        py,
+        str(SCRIPT_DIR / "web" / "widget_render_gallery.py"),
+        "--summary",
+        str(DEFAULT_WEB_SMOKE_OUTPUT_DIR / "summary.json"),
+        "--output-dir",
+        str(DEFAULT_RENDER_GALLERY_OUTPUT_DIR),
+    ]
+
     return [
         ("catalog", STEP_DESCRIPTIONS["catalog"], [catalog_cmd]),
+        ("docs", STEP_DESCRIPTIONS["docs"], [docs_cmd]),
         ("touch", STEP_DESCRIPTIONS["touch"], [touch_cmd]),
         ("compile", STEP_DESCRIPTIONS["compile"], [compile_cmd]),
         ("unit_test", STEP_DESCRIPTIONS["unit_test"], [unit_test_cmd]),
         ("runtime", STEP_DESCRIPTIONS["runtime"], [runtime_cmd]),
         ("wasm", STEP_DESCRIPTIONS["wasm"], wasm_commands),
         ("web_smoke", STEP_DESCRIPTIONS["web_smoke"], [web_smoke_cmd]),
+        ("render_gallery", STEP_DESCRIPTIONS["render_gallery"], [render_gallery_cmd]),
     ]
 
 
@@ -203,6 +218,29 @@ def print_web_smoke_details() -> None:
         print("  Web smoke failed demos: " + ", ".join(failed_names), flush=True)
 
 
+def print_render_gallery_details() -> None:
+    index_path = DEFAULT_RENDER_GALLERY_OUTPUT_DIR / "widget-render-gallery.json"
+    html_path = DEFAULT_RENDER_GALLERY_OUTPUT_DIR / "index.html"
+    sheet_path = DEFAULT_RENDER_GALLERY_OUTPUT_DIR / "widget-render-gallery.png"
+    if not index_path.exists():
+        print(f"  Render gallery index not found: {project_relative(index_path)}", flush=True)
+        return
+
+    try:
+        gallery = json.loads(index_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        print(f"  Failed to read render gallery index: {exc}", flush=True)
+        return
+
+    entries = gallery.get("entries") or []
+    print(f"  Render gallery entries: {len(entries)}", flush=True)
+    print(f"  Render gallery index: {project_relative(index_path)}", flush=True)
+    if html_path.exists():
+        print(f"  Render gallery HTML: {project_relative(html_path)}", flush=True)
+    if sheet_path.exists():
+        print(f"  Render gallery contact sheet: {project_relative(sheet_path)}", flush=True)
+
+
 def print_summary(results: list[tuple[str, str, str, float]], total_elapsed: float) -> bool:
     print("\n" + "=" * BANNER_WIDTH, flush=True)
     print("  RELEASE CHECK SUMMARY", flush=True)
@@ -243,8 +281,8 @@ def parse_args() -> argparse.Namespace:
             f"Available steps: {', '.join(ALL_STEP_NAMES)}\n"
             "\nExamples:\n"
             "  python scripts/release_check.py\n"
-            "  python scripts/release_check.py --skip wasm,web_smoke\n"
-            "  python scripts/release_check.py --category input --skip wasm,web_smoke\n"
+            "  python scripts/release_check.py --skip wasm,web_smoke,render_gallery\n"
+            "  python scripts/release_check.py --category input --skip wasm,web_smoke,render_gallery\n"
             "  python scripts/release_check.py --keep-going --skip runtime\n"
             "\n"
             "Entry note:\n"
@@ -279,6 +317,9 @@ def main() -> int:
                 print(f"Error: unknown step '{normalized}'. Available: {', '.join(ALL_STEP_NAMES)}")
                 return 1
             skip_set.add(normalized)
+    if "web_smoke" in skip_set and "render_gallery" not in skip_set:
+        print("Info: skipping render_gallery because web_smoke is skipped.")
+        skip_set.add("render_gallery")
 
     try:
         steps = build_steps(args)
@@ -311,6 +352,8 @@ def main() -> int:
 
         if name == "web_smoke":
             print_web_smoke_details()
+        elif name == "render_gallery":
+            print_render_gallery_details()
 
         if retcode == 0:
             results.append((name, desc, STATUS_PASS, elapsed))

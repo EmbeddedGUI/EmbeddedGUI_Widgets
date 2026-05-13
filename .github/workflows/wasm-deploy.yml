@@ -33,6 +33,9 @@ jobs:
       - name: Install Python dependencies
         run: pip install -r requirements.txt
 
+      - name: Check documentation encoding
+        run: python scripts/checks/check_docs_encoding.py
+
       - name: Setup Chrome
         id: setup-chrome
         uses: browser-actions/setup-chrome@v2

@@ -7,12 +7,19 @@ on:
       - '.gitmodules'
       - 'Makefile'
       - 'CLAUDE.md'
+      - 'README.md'
+      - '.claude/workflow/**'
+      - '.claude/skills/**'
+      - 'doc/**'
       - 'example/HelloCustomWidgets/**'
       - 'example/HelloUnitTest/**'
+      - 'web/**'
+      - 'scripts/checks/check_docs_encoding.py'
       - 'scripts/checks/check_widget_catalog.py'
       - 'scripts/checks/check_touch_release_semantics.py'
       - 'scripts/code_compile_check.py'
       - 'scripts/code_runtime_check.py'
+      - 'scripts/ci_local_check.py'
       - 'scripts/windows_link_rsp.py'
       - 'scripts/widget_catalog.py'
       - 'requirements.txt'
@@ -113,6 +120,9 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: '3.11'
+
+      - name: Check documentation encoding
+        run: python scripts/checks/check_docs_encoding.py
 
       - name: Check widget catalog consistency
         run: python scripts/checks/check_widget_catalog.py
