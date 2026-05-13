@@ -310,8 +310,8 @@ def parse_args() -> argparse.Namespace:
             f"Available steps: {', '.join(ALL_STEP_NAMES)}\n"
             "\nExamples:\n"
             "  python scripts/release_check.py\n"
-            "  python scripts/release_check.py --skip wasm,web_smoke,render_gallery\n"
-            "  python scripts/release_check.py --category input --skip wasm,web_smoke,render_gallery\n"
+            "  python scripts/release_check.py --skip wasm\n"
+            "  python scripts/release_check.py --category input --skip wasm\n"
             "  python scripts/release_check.py --keep-going --skip runtime\n"
             "\n"
             "Entry note:\n"
@@ -346,6 +346,9 @@ def main() -> int:
                 print(f"Error: unknown step '{normalized}'. Available: {', '.join(ALL_STEP_NAMES)}")
                 return 1
             skip_set.add(normalized)
+    if "wasm" in skip_set and "web_smoke" not in skip_set:
+        print("Info: skipping web_smoke because wasm is skipped.")
+        skip_set.add("web_smoke")
     if "web_smoke" in skip_set and "render_gallery" not in skip_set:
         print("Info: skipping render_gallery because web_smoke is skipped.")
         skip_set.add("render_gallery")

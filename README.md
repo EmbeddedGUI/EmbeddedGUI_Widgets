@@ -80,7 +80,7 @@ The default SDK resolution order is:
 - Run the release-style manual check:
   `python scripts/release_check.py`
 - Run the release-style manual check for one category:
-  `python scripts/release_check.py --category input --skip wasm,web_smoke,render_gallery`
+  `python scripts/release_check.py --category input --skip wasm`
 - Compile-check one category:
   `python scripts/code_compile_check.py --custom-widgets --category input --bits64`
 - Runtime-check one widget:
