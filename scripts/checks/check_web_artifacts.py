@@ -14,11 +14,9 @@ from typing import Any
 SCRIPT_DIR = Path(__file__).resolve().parent
 SCRIPTS_ROOT = SCRIPT_DIR.parent
 ROOT_DIR = SCRIPTS_ROOT.parent
-WEB_DIR = ROOT_DIR / "web"
-DEMOS_DIR = WEB_DIR / "demos"
-DEMOS_MANIFEST_PATH = DEMOS_DIR / "demos.json"
-RENDER_GALLERY_DIR = WEB_DIR / "render-gallery"
-RENDER_GALLERY_INDEX_PATH = RENDER_GALLERY_DIR / "widget-render-gallery.json"
+DEFAULT_WEB_ROOT = ROOT_DIR / "web"
+DEFAULT_DEMOS_DIR = DEFAULT_WEB_ROOT / "demos"
+DEFAULT_RENDER_GALLERY_DIR = DEFAULT_WEB_ROOT / "render-gallery"
 APP_NAME = "HelloCustomWidgets"
 
 if str(SCRIPTS_ROOT) not in sys.path:
@@ -36,6 +34,26 @@ def parse_args() -> argparse.Namespace:
             "  HelloCustomWidgets / HelloUnitTest use uicode_disp0.c / uicode_disp0.h\n"
             "  directly as the multi-display SDK entry.\n"
         ),
+    )
+    parser.add_argument(
+        "--web-root",
+        default=str(DEFAULT_WEB_ROOT),
+        help="Web root that contains demos/ and render-gallery/ (default: web).",
+    )
+    parser.add_argument(
+        "--manifest",
+        default="",
+        help="Path to demos.json. Defaults to <web-root>/demos/demos.json.",
+    )
+    parser.add_argument(
+        "--render-gallery",
+        default="",
+        help="Path to render-gallery directory. Defaults to <web-root>/render-gallery.",
+    )
+    parser.add_argument(
+        "--category",
+        default="",
+        help="Only validate one HelloCustomWidgets category, for release_check.py category runs.",
     )
     return parser.parse_args()
 
@@ -60,12 +78,17 @@ def demo_name_for_widget(widget_id: str) -> str:
     return APP_NAME + "_" + widget_id.replace("/", "_")
 
 
-def expected_published_widgets(catalog_map: dict[str, dict]) -> dict[str, dict]:
+def expected_published_widgets(catalog_map: dict[str, dict], category: str = "") -> dict[str, dict]:
     return {
         widget_id: entry
         for widget_id, entry in catalog_map.items()
         if entry["track"] == "reference" and entry["visibility"] == "public"
+        and (not category or widget_id.split("/", 1)[0] == category)
     }
+
+
+def is_selected_widget(widget_id: str, category: str) -> bool:
+    return not category or widget_id.split("/", 1)[0] == category
 
 
 def add_set_diff_errors(
@@ -87,10 +110,16 @@ def require_file(errors: list[str], path: Path, context: str) -> None:
         errors.append("%s missing file: %s" % (context, project_relative(path)))
 
 
-def validate_demo_manifest(expected: dict[str, dict], errors: list[str]) -> dict[str, dict]:
-    data = load_json(DEMOS_MANIFEST_PATH)
+def validate_demo_manifest(
+    expected: dict[str, dict],
+    errors: list[str],
+    demos_dir: Path,
+    manifest_path: Path,
+    category: str,
+) -> dict[str, dict]:
+    data = load_json(manifest_path)
     if not isinstance(data, list):
-        errors.append("%s must be a JSON array" % project_relative(DEMOS_MANIFEST_PATH))
+        errors.append("%s must be a JSON array" % project_relative(manifest_path))
         return {}
 
     demos_by_widget: dict[str, dict] = {}
@@ -99,7 +128,7 @@ def validate_demo_manifest(expected: dict[str, dict], errors: list[str]) -> dict
     duplicate_widgets: set[str] = set()
 
     for index, item in enumerate(data):
-        context = "%s[%d]" % (project_relative(DEMOS_MANIFEST_PATH), index)
+        context = "%s[%d]" % (project_relative(manifest_path), index)
         if not isinstance(item, dict):
             errors.append("%s must be a JSON object" % context)
             continue
@@ -115,6 +144,8 @@ def validate_demo_manifest(expected: dict[str, dict], errors: list[str]) -> dict
 
         if not widget_id:
             errors.append("%s is missing widgetId" % context)
+            continue
+        if not is_selected_widget(widget_id, category):
             continue
         if widget_id in demos_by_widget:
             duplicate_widgets.add(widget_id)
@@ -156,7 +187,7 @@ def validate_demo_manifest(expected: dict[str, dict], errors: list[str]) -> dict
             errors.append("%s height must be a positive integer" % context)
 
         if name:
-            demo_dir = DEMOS_DIR / name
+            demo_dir = demos_dir / name
             require_file(errors, demo_dir / f"{APP_NAME}.html", name)
             require_file(errors, demo_dir / f"{APP_NAME}.js", name)
             require_file(errors, demo_dir / f"{APP_NAME}.wasm", name)
@@ -166,13 +197,13 @@ def validate_demo_manifest(expected: dict[str, dict], errors: list[str]) -> dict
                 errors.append("%s doc must be %s (got %s)" % (context, expected_doc, item.get("doc")))
 
     for name in sorted(duplicate_names):
-        errors.append("%s contains duplicate name: %s" % (project_relative(DEMOS_MANIFEST_PATH), name))
+        errors.append("%s contains duplicate name: %s" % (project_relative(manifest_path), name))
     for widget_id in sorted(duplicate_widgets):
-        errors.append("%s contains duplicate widgetId: %s" % (project_relative(DEMOS_MANIFEST_PATH), widget_id))
+        errors.append("%s contains duplicate widgetId: %s" % (project_relative(manifest_path), widget_id))
 
     add_set_diff_errors(
         errors,
-        project_relative(DEMOS_MANIFEST_PATH),
+        project_relative(manifest_path),
         set(expected),
         set(demos_by_widget),
         "published widget",
@@ -182,12 +213,14 @@ def validate_demo_manifest(expected: dict[str, dict], errors: list[str]) -> dict
     expected_demo_dirs = {demo_name_for_widget(widget_id) for widget_id in expected}
     actual_demo_dirs = {
         path.name
-        for path in DEMOS_DIR.iterdir()
-        if path.is_dir() and path.name.startswith(APP_NAME + "_")
-    }
+        for path in demos_dir.iterdir()
+        if path.is_dir()
+        and path.name.startswith(APP_NAME + "_")
+        and (not category or path.name.startswith(APP_NAME + "_" + category + "_"))
+    } if demos_dir.is_dir() else set()
     add_set_diff_errors(
         errors,
-        project_relative(DEMOS_DIR),
+        project_relative(demos_dir),
         expected_demo_dirs,
         actual_demo_dirs,
         "demo directory",
@@ -197,36 +230,43 @@ def validate_demo_manifest(expected: dict[str, dict], errors: list[str]) -> dict
     return demos_by_widget
 
 
-def validate_render_gallery(expected: dict[str, dict], demos_by_widget: dict[str, dict], errors: list[str]) -> None:
-    data = load_json(RENDER_GALLERY_INDEX_PATH)
+def validate_render_gallery(
+    expected: dict[str, dict],
+    demos_by_widget: dict[str, dict],
+    errors: list[str],
+    render_gallery_dir: Path,
+    category_filter: str,
+) -> None:
+    gallery_index_path = render_gallery_dir / "widget-render-gallery.json"
+    data = load_json(gallery_index_path)
     if not isinstance(data, dict):
-        errors.append("%s must be a JSON object" % project_relative(RENDER_GALLERY_INDEX_PATH))
+        errors.append("%s must be a JSON object" % project_relative(gallery_index_path))
         return
 
     entries = data.get("entries")
     if not isinstance(entries, list):
-        errors.append("%s entries must be a JSON array" % project_relative(RENDER_GALLERY_INDEX_PATH))
+        errors.append("%s entries must be a JSON array" % project_relative(gallery_index_path))
         return
 
     if data.get("total") != len(entries):
         errors.append(
             "%s total must equal entries count %d (got %r)"
-            % (project_relative(RENDER_GALLERY_INDEX_PATH), len(entries), data.get("total"))
+            % (project_relative(gallery_index_path), len(entries), data.get("total"))
         )
 
     sheet_value = str(data.get("sheet", "") or "")
     if not sheet_value:
-        errors.append("%s is missing sheet" % project_relative(RENDER_GALLERY_INDEX_PATH))
+        errors.append("%s is missing sheet" % project_relative(gallery_index_path))
     else:
-        require_file(errors, RENDER_GALLERY_DIR / sheet_value, "render gallery")
-    require_file(errors, RENDER_GALLERY_DIR / "index.html", "render gallery")
-    require_file(errors, RENDER_GALLERY_DIR / "README.md", "render gallery")
+        require_file(errors, render_gallery_dir / sheet_value, "render gallery")
+    require_file(errors, render_gallery_dir / "index.html", "render gallery")
+    require_file(errors, render_gallery_dir / "README.md", "render gallery")
 
     entries_by_widget: dict[str, dict] = {}
     duplicate_widgets: set[str] = set()
 
     for index, item in enumerate(entries):
-        context = "%s entries[%d]" % (project_relative(RENDER_GALLERY_INDEX_PATH), index)
+        context = "%s entries[%d]" % (project_relative(gallery_index_path), index)
         if not isinstance(item, dict):
             errors.append("%s must be a JSON object" % context)
             continue
@@ -234,6 +274,8 @@ def validate_render_gallery(expected: dict[str, dict], demos_by_widget: dict[str
         widget_id = str(item.get("widgetId", "") or "").replace("\\", "/")
         if not widget_id:
             errors.append("%s is missing widgetId" % context)
+            continue
+        if not is_selected_widget(widget_id, category_filter):
             continue
         if widget_id in entries_by_widget:
             duplicate_widgets.add(widget_id)
@@ -262,14 +304,14 @@ def validate_render_gallery(expected: dict[str, dict], demos_by_widget: dict[str
         if demo_entry is not None and item.get("track") != demo_entry.get("track"):
             errors.append("%s track must match demos manifest value %s" % (context, demo_entry.get("track")))
 
-        require_file(errors, RENDER_GALLERY_DIR / expected_thumbnail, expected_name)
+        require_file(errors, render_gallery_dir / expected_thumbnail, expected_name)
 
     for widget_id in sorted(duplicate_widgets):
-        errors.append("%s contains duplicate widgetId: %s" % (project_relative(RENDER_GALLERY_INDEX_PATH), widget_id))
+        errors.append("%s contains duplicate widgetId: %s" % (project_relative(gallery_index_path), widget_id))
 
     add_set_diff_errors(
         errors,
-        project_relative(RENDER_GALLERY_INDEX_PATH),
+        project_relative(gallery_index_path),
         set(expected),
         set(entries_by_widget),
         "published widget",
@@ -279,11 +321,11 @@ def validate_render_gallery(expected: dict[str, dict], demos_by_widget: dict[str
     entry_category_counts = Counter(widget_id.split("/", 1)[0] for widget_id in entries_by_widget)
     category_summary = data.get("categories")
     if not isinstance(category_summary, list):
-        errors.append("%s categories must be a JSON array" % project_relative(RENDER_GALLERY_INDEX_PATH))
+        errors.append("%s categories must be a JSON array" % project_relative(gallery_index_path))
     else:
         summary_counts: dict[str, int] = {}
         for index, item in enumerate(category_summary):
-            context = "%s categories[%d]" % (project_relative(RENDER_GALLERY_INDEX_PATH), index)
+            context = "%s categories[%d]" % (project_relative(gallery_index_path), index)
             if not isinstance(item, dict):
                 errors.append("%s must be a JSON object" % context)
                 continue
@@ -292,6 +334,8 @@ def validate_render_gallery(expected: dict[str, dict], demos_by_widget: dict[str
             if not category_id:
                 errors.append("%s is missing id" % context)
                 continue
+            if category_filter and category_id != category_filter:
+                continue
             if not isinstance(total, int):
                 errors.append("%s total must be an integer" % context)
                 continue
@@ -299,18 +343,19 @@ def validate_render_gallery(expected: dict[str, dict], demos_by_widget: dict[str
         if summary_counts != dict(entry_category_counts):
             errors.append(
                 "%s category totals must match gallery entries (got %r, expected %r)"
-                % (project_relative(RENDER_GALLERY_INDEX_PATH), summary_counts, dict(entry_category_counts))
+                % (project_relative(gallery_index_path), summary_counts, dict(entry_category_counts))
             )
 
     expected_thumbs = {"%s.png" % demo_name_for_widget(widget_id) for widget_id in expected}
     actual_thumbs = {
         path.name
-        for path in (RENDER_GALLERY_DIR / "thumbs").glob("*.png")
+        for path in (render_gallery_dir / "thumbs").glob("*.png")
         if path.is_file()
+        and (not category_filter or path.name.startswith(APP_NAME + "_" + category_filter + "_"))
     }
     add_set_diff_errors(
         errors,
-        project_relative(RENDER_GALLERY_DIR / "thumbs"),
+        project_relative(render_gallery_dir / "thumbs"),
         expected_thumbs,
         actual_thumbs,
         "thumbnail",
@@ -319,14 +364,20 @@ def validate_render_gallery(expected: dict[str, dict], demos_by_widget: dict[str
 
 
 def main() -> int:
-    parse_args()
+    args = parse_args()
     errors: list[str] = []
+    web_root = Path(args.web_root).resolve()
+    demos_dir = Path(args.manifest).resolve().parent if args.manifest else web_root / "demos"
+    manifest_path = Path(args.manifest).resolve() if args.manifest else demos_dir / "demos.json"
+    render_gallery_dir = Path(args.render_gallery).resolve() if args.render_gallery else web_root / "render-gallery"
 
     try:
         catalog_map = build_widget_catalog_map()
-        expected = expected_published_widgets(catalog_map)
-        demos_by_widget = validate_demo_manifest(expected, errors)
-        validate_render_gallery(expected, demos_by_widget, errors)
+        expected = expected_published_widgets(catalog_map, args.category)
+        if args.category and not expected:
+            errors.append("no published widgets found for category: %s" % args.category)
+        demos_by_widget = validate_demo_manifest(expected, errors, demos_dir, manifest_path, args.category)
+        validate_render_gallery(expected, demos_by_widget, errors, render_gallery_dir, args.category)
     except ValueError as exc:
         errors.append(str(exc))
 

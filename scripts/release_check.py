@@ -26,6 +26,7 @@ ALL_STEP_NAMES = [
     "wasm",
     "web_smoke",
     "render_gallery",
+    "generated_web_artifacts",
 ]
 STEP_DESCRIPTIONS = {
     "catalog": "Widget catalog consistency check",
@@ -38,6 +39,7 @@ STEP_DESCRIPTIONS = {
     "wasm": "WASM demo build verification",
     "web_smoke": "Headless browser smoke check for built web demos",
     "render_gallery": "Render gallery generation from web smoke screenshots",
+    "generated_web_artifacts": "Generated web demo and render gallery consistency check",
 }
 
 BANNER_WIDTH = 72
@@ -173,6 +175,18 @@ def build_steps(args: argparse.Namespace) -> list[tuple[str, str, list[list[str]
         "--output-dir",
         str(DEFAULT_RENDER_GALLERY_OUTPUT_DIR),
     ]
+    generated_web_artifacts_cmd = [
+        py,
+        str(SCRIPT_DIR / "checks" / "check_web_artifacts.py"),
+        "--web-root",
+        str(DEFAULT_WEB_SMOKE_ROOT),
+        "--manifest",
+        str(DEFAULT_WASM_OUTPUT_DIR / "demos.json"),
+        "--render-gallery",
+        str(DEFAULT_RENDER_GALLERY_OUTPUT_DIR),
+    ]
+    if args.category:
+        generated_web_artifacts_cmd += ["--category", args.category]
 
     return [
         ("catalog", STEP_DESCRIPTIONS["catalog"], [catalog_cmd]),
@@ -185,6 +199,7 @@ def build_steps(args: argparse.Namespace) -> list[tuple[str, str, list[list[str]
         ("wasm", STEP_DESCRIPTIONS["wasm"], wasm_commands),
         ("web_smoke", STEP_DESCRIPTIONS["web_smoke"], [web_smoke_cmd]),
         ("render_gallery", STEP_DESCRIPTIONS["render_gallery"], [render_gallery_cmd]),
+        ("generated_web_artifacts", STEP_DESCRIPTIONS["generated_web_artifacts"], [generated_web_artifacts_cmd]),
     ]
 
 
@@ -334,6 +349,9 @@ def main() -> int:
     if "web_smoke" in skip_set and "render_gallery" not in skip_set:
         print("Info: skipping render_gallery because web_smoke is skipped.")
         skip_set.add("render_gallery")
+    if "render_gallery" in skip_set and "generated_web_artifacts" not in skip_set:
+        print("Info: skipping generated_web_artifacts because render_gallery is skipped.")
+        skip_set.add("generated_web_artifacts")
 
     try:
         steps = build_steps(args)

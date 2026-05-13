@@ -95,6 +95,10 @@ The default SDK resolution order is:
   `python scripts/checks/check_docs_encoding.py`
 - Web artifact consistency audit:
   `python scripts/checks/check_web_artifacts.py`
+- Web artifact consistency audit for generated release output:
+  `python scripts/checks/check_web_artifacts.py --web-root output/release_check_wasm --manifest output/release_check_wasm/demos/demos.json --render-gallery output/release_check_wasm/render-gallery`
+- Web artifact consistency audit for one generated category:
+  `python scripts/checks/check_web_artifacts.py --web-root output/release_check_wasm --manifest output/release_check_wasm/demos/demos.json --render-gallery output/release_check_wasm/render-gallery --category input`
 - Python helper syntax audit:
   `python -m py_compile scripts/ci_local_check.py scripts/release_check.py scripts/widget_catalog.py scripts/checks/check_docs_encoding.py scripts/checks/check_web_artifacts.py scripts/checks/check_widget_catalog.py scripts/checks/check_touch_release_semantics.py`
 - Sync widget catalog:
