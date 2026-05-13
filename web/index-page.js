@@ -111,6 +111,7 @@
         },
         workflowCompileTitle: { "zh-CN": "Reference 编译检查", "en": "Reference Compile Sweep" },
         workflowRuntimeTitle: { "zh-CN": "Reference 运行检查", "en": "Reference Runtime Sweep" },
+        workflowReleaseTitle: { "zh-CN": "Release 手动检查", "en": "Manual Release Check" },
         workflowManifestTitle: { "zh-CN": "刷新网页 manifest", "en": "Refresh Web Manifest" },
         workflowPolicyTitle: { "zh-CN": "同步 catalog policy", "en": "Sync Catalog Policy" },
         trackReferenceBody: {
@@ -249,6 +250,7 @@
         var items = [
             { title: t("workflowCompileTitle"), command: "python scripts/code_compile_check.py --custom-widgets --track reference" },
             { title: t("workflowRuntimeTitle"), command: "python scripts/code_runtime_check.py --app HelloCustomWidgets --track reference" },
+            { title: t("workflowReleaseTitle"), command: "python scripts/release_check.py" },
             { title: t("workflowManifestTitle"), command: "python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --track reference --refresh-existing" },
             { title: t("workflowPolicyTitle"), command: "python scripts/sync_widget_catalog.py" }
         ];

@@ -11,9 +11,9 @@ This repository keeps only the scripts needed for standalone custom-widget work.
 - `code_runtime_check.py`
   Runtime screenshot verification for widget demos.
 - `release_check.py`
-  Release-style manual check entrypoint that chains touch audit, compile, unit tests, runtime verification, WASM build verification, and browser-side web smoke checks.
+  Release-style manual check entrypoint that chains catalog/docs audits, touch audit, compile, unit tests, runtime verification, WASM build verification, browser-side web smoke checks, and render gallery generation.
 - `ci_local_check.py`
-  Fast local CI wrapper for one widget category or the full widget set.
+  Fast local CI wrapper for one widget category or the full widget set, including catalog and documentation encoding checks.
 
 ## App entry note
 
@@ -43,6 +43,8 @@ This repository keeps only the scripts needed for standalone custom-widget work.
   Run headless browser smoke checks for `web/demos/`, capture one screenshot per demo, and generate `summary.json`, `summary.md`, and a contact sheet for manual visual review. The script auto-adds Linux CI-friendly browser flags on GitHub Actions and also accepts repeatable `--browser-arg`.
 - `python scripts/web/widget_render_gallery.py --summary output/ci_web_smoke/summary.json`
   Compose all smoke-check screenshots into a widget render gallery under `web/render-gallery/`, including a contact sheet, JSON index, Markdown index, and HTML page for GitHub Pages.
+- `python scripts/release_check.py --category input --skip wasm,web_smoke,render_gallery`
+  Run the native release checks for one category while explicitly skipping the heavier web publishing stages.
 - `python doc/scripts/generate_widget_render_gallery.py --build-wasm --run-smoke`
   Build HelloCustomWidgets WASM demos, capture one browser screenshot per widget, and generate the doc-side contact sheet under `doc/source/images/`.
 - `python scripts/web/widget_render_gallery.py --summary output/ci_web_smoke/summary.json --doc-output-dir doc/source/images`

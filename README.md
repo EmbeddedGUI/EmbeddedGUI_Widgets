@@ -40,7 +40,7 @@ The default SDK resolution order is:
    `make ci CATEGORY=input`
 4. If you prefer a direct Python entrypoint:
    `python scripts/ci_local_check.py --category input`
-   This now includes the widget catalog policy check automatically.
+   This includes widget catalog policy and documentation encoding checks automatically.
 5. Run one release-style manual sweep:
    `python scripts/release_check.py`
 6. Build the web demos when you need the local site:
@@ -57,7 +57,7 @@ The default SDK resolution order is:
 - Release-style manual full check:
   `python scripts/release_check.py`
 - GitHub Pages build equivalent:
-  `python scripts/web/wasm_build_demos.py`
+  `python scripts/web/wasm_build_demos.py`, then `python scripts/web/web_smoke_check.py`, then `python scripts/web/widget_render_gallery.py --summary output/ci_web_smoke/summary.json`
 
 ## Common commands
 
@@ -80,7 +80,7 @@ The default SDK resolution order is:
 - Run the release-style manual check:
   `python scripts/release_check.py`
 - Run the release-style manual check for one category:
-  `python scripts/release_check.py --category input --skip wasm`
+  `python scripts/release_check.py --category input --skip wasm,web_smoke,render_gallery`
 - Compile-check one category:
   `python scripts/code_compile_check.py --custom-widgets --category input --bits64`
 - Runtime-check one widget:
@@ -91,6 +91,8 @@ The default SDK resolution order is:
   `python scripts/checks/check_touch_release_semantics.py --scope custom --category input`
 - Widget catalog policy audit:
   `python scripts/checks/check_widget_catalog.py`
+- Documentation encoding audit:
+  `python scripts/checks/check_docs_encoding.py`
 - Sync widget catalog:
   `python scripts/sync_widget_catalog.py`
 - Build the widgets web bundle:
