@@ -37,6 +37,8 @@ This repository keeps only the scripts needed for standalone custom-widget work.
   Validate `widget_catalog.json` coverage, track-to-visibility policy, reference metadata completeness, and replacement targets.
 - `python scripts/checks/check_web_artifacts.py`
   Validate checked-in `web/demos/` and `web/render-gallery/` artifacts against the published HelloCustomWidgets catalog.
+- `python -m py_compile scripts/ci_local_check.py scripts/release_check.py scripts/widget_catalog.py scripts/checks/check_docs_encoding.py scripts/checks/check_web_artifacts.py scripts/checks/check_widget_catalog.py scripts/checks/check_touch_release_semantics.py`
+  Catch syntax errors in the lightweight CI and release helper scripts before heavier native or web checks start.
 - `python scripts/sync_widget_catalog.py`
   Rewrite `widget_catalog.json` into canonical order and sync it with actual `HelloCustomWidgets` directories.
 - `python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --refresh-existing`

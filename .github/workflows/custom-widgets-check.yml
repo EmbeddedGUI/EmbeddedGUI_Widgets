@@ -21,6 +21,7 @@ on:
       - 'scripts/code_compile_check.py'
       - 'scripts/code_runtime_check.py'
       - 'scripts/ci_local_check.py'
+      - 'scripts/release_check.py'
       - 'scripts/web/**'
       - 'scripts/windows_link_rsp.py'
       - 'scripts/widget_catalog.py'
@@ -122,6 +123,9 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: '3.11'
+
+      - name: Check Python helper syntax
+        run: python -m py_compile scripts/ci_local_check.py scripts/release_check.py scripts/widget_catalog.py scripts/checks/check_docs_encoding.py scripts/checks/check_web_artifacts.py scripts/checks/check_widget_catalog.py scripts/checks/check_touch_release_semantics.py
 
       - name: Check documentation encoding
         run: python scripts/checks/check_docs_encoding.py
