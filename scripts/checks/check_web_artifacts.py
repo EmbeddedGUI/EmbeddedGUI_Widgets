@@ -18,6 +18,7 @@ DEFAULT_WEB_ROOT = ROOT_DIR / "web"
 DEFAULT_DEMOS_DIR = DEFAULT_WEB_ROOT / "demos"
 DEFAULT_RENDER_GALLERY_DIR = DEFAULT_WEB_ROOT / "render-gallery"
 APP_NAME = "HelloCustomWidgets"
+APP_SOURCE_DIR = ROOT_DIR / "example" / APP_NAME
 
 if str(SCRIPTS_ROOT) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_ROOT))
@@ -110,6 +111,20 @@ def require_file(errors: list[str], path: Path, context: str) -> None:
         errors.append("%s missing file: %s" % (context, project_relative(path)))
 
 
+def validate_bundled_readme(errors: list[str], widget_id: str, bundled_path: Path, context: str) -> None:
+    source_path = APP_SOURCE_DIR / widget_id / "readme.md"
+    if not source_path.is_file():
+        errors.append("%s missing source README: %s" % (context, project_relative(source_path)))
+        return
+    if not bundled_path.is_file():
+        return
+    if bundled_path.read_bytes() != source_path.read_bytes():
+        errors.append(
+            "%s README is stale; refresh from %s"
+            % (context, project_relative(source_path))
+        )
+
+
 def validate_demo_manifest(
     expected: dict[str, dict],
     errors: list[str],
@@ -191,7 +206,9 @@ def validate_demo_manifest(
             require_file(errors, demo_dir / f"{APP_NAME}.html", name)
             require_file(errors, demo_dir / f"{APP_NAME}.js", name)
             require_file(errors, demo_dir / f"{APP_NAME}.wasm", name)
-            require_file(errors, demo_dir / "README.md", name)
+            readme_path = demo_dir / "README.md"
+            require_file(errors, readme_path, name)
+            validate_bundled_readme(errors, widget_id, readme_path, name)
             expected_doc = "demos/%s/README.md" % name
             if item.get("doc") != expected_doc:
                 errors.append("%s doc must be %s (got %s)" % (context, expected_doc, item.get("doc")))
