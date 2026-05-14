@@ -1,233 +1,162 @@
 ---
 name: github-pages-web
-description: Use when adding new demo apps to the GitHub Pages site, creating new page types, or modifying the web layout
+description: Use when publishing HelloCustomWidgets demos to GitHub Pages, refreshing web artifacts, or checking the render gallery
 ---
 
 # GitHub Pages Web Publishing Skill
 
-EmbeddedGUI 的在线 Demo 站点通过 GitHub Pages 发布，源码在 `web/` 目录，由 CI 自动构建部署。
+EmbeddedGUI Widgets 的在线 demo 站点通过 GitHub Pages 发布，源码和已提交产物在 `web/` 目录。当前站点围绕 `HelloCustomWidgets` catalog 和 Fluent 2 / WPF UI reference 主线组织。
 
 ## 架构概览
 
 ```
 web/
-├── index.html          # 卡片网格页（所有非 HelloBasic 的 demo）
-├── basic.html          # 侧边栏页（HelloBasic 所有子 widget demo）
-├── style.css           # 共享样式（含 CSS 变量布局令牌）
-├── doc-render.js       # Markdown → HTML 渲染工具
-├── lib/marked.min.js   # Markdown 解析库（vendored，无外部依赖）
-└── demos/
-    ├── demos.json      # 所有 demo 的注册表（index/basic.html 的数据源）
-    ├── HelloSimple/    # 每个 demo 一个目录
-    │   ├── HelloSimple.html    # WASM 宿主页（Emscripten 生成）
-    │   ├── HelloSimple.js
-    │   ├── HelloSimple.wasm
-    │   └── README.md           # demo 文档（可选）
-    └── HelloBasic_button/      # HelloBasic 子 demo 命名格式
+├── index.html                 # 站点入口，展示 catalog/policy 摘要
+├── custom.html                # HelloCustomWidgets 交互式目录与 iframe 预览页
+├── custom-page.js             # custom.html 的 manifest 加载、筛选和预览逻辑
+├── index-page.js              # index.html 的统计和入口卡片逻辑
+├── i18n.js                    # 中英文文本工具
+├── style.css                  # 站点样式
+├── doc-render.js              # README Markdown 渲染工具
+├── catalog-policy.json        # 从 widget catalog 同步出的发布策略摘要
+├── demos/
+│   ├── demos.json             # web 目录 manifest
+│   └── HelloCustomWidgets_<category>_<widget>/
+│       ├── HelloCustomWidgets.html
+│       ├── HelloCustomWidgets.js
+│       ├── HelloCustomWidgets.wasm
+│       └── README.md
+└── render-gallery/
+    ├── index.html
+    ├── README.md
+    ├── widget-render-gallery.json
+    ├── widget-render-gallery.png
+    └── thumbs/
 ```
 
-**数据驱动**：两个 HTML 页面都在运行时 fetch `demos/demos.json`，动态渲染内容。**不需要手动编辑 HTML**。
+`custom.html` 运行时读取 `demos/demos.json`，按 `track`、搜索关键词和 hash 选择 demo。一般不要手动编辑 manifest；优先通过脚本刷新。
 
----
+## demos.json 字段
 
-## demos.json 结构
-
-每个 demo 条目字段：
+每个条目由 `scripts/web/wasm_build_demos.py` 从 build 结果和 widget catalog 生成，典型结构：
 
 ```json
 {
-  "name": "HelloSimple",       // 目录名 / URL fragment 标识符
-  "app": "HelloSimple",        // Emscripten 编译产物的 APP 名（.html/.js/.wasm 文件前缀）
-  "category": "Standalone",   // "Standalone" | "HelloBasic"
-  "doc": "demos/HelloSimple/README.md"  // 可选，存在时渲染文档面板
+  "name": "HelloCustomWidgets_input_button",
+  "app": "HelloCustomWidgets",
+  "category": "HelloCustomWidgets",
+  "width": 480,
+  "height": 480,
+  "appSub": "input/button",
+  "doc": "demos/HelloCustomWidgets_input_button/README.md",
+  "widgetId": "input/button",
+  "track": "reference",
+  "visibility": "public",
+  "referenceSystem": "Fluent 2",
+  "referenceLibrary": "WPF UI",
+  "referenceComponent": "Button",
+  "replacement": null
 }
 ```
 
-- `category = "Standalone"` → 出现在 `index.html` 卡片网格
-- `category = "HelloBasic"` → 出现在 `basic.html` 侧边栏列表
-- HelloBasic 子 demo 的 `name` = `HelloBasic_{sub}`，`app` = `"HelloBasic"`
+关键约定：
 
----
+- `name` 是 `web/demos/` 下的目录名，也是 `custom.html#<name>` 的 hash 目标。
+- `appSub` / `widgetId` 使用 `category/widget` 形式。
+- 默认网页目录只发布 catalog 策略允许的 `reference` 条目。
+- bundled `README.md` 必须与 `example/HelloCustomWidgets/<category>/<widget>/readme.md` 保持同步。
 
-## 新增一个独立 Demo（Standalone）
+## 刷新 Web Demo
 
-### 步骤 1：创建示例应用
-```
-example/MyNewApp/
-├── main.c / uicode_disp0.c / uicode_disp0.h
-├── build.mk
-├── app_egui_config.h
-└── readme.md              # 会自动发布为文档面板内容
-```
-
-### 步骤 2：本地测试构建
 ```bash
-# PC 构建验证
-make all APP=MyNewApp
+# 全量构建默认 reference web demo
+python scripts/web/wasm_build_demos.py
 
-# WASM 单独构建（需要 Emscripten 环境）
-python scripts/web/wasm_build_demos.py --app MyNewApp
+# 只构建一个 widget
+python scripts/web/wasm_build_demos.py --app-sub input/auto_suggest_box
+
+# 构建一个显式 track
+python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --track reference
+
+# 不重建 WASM，只用现有 web/demos 产物刷新 demos.json 和 bundled README
+python scripts/web/wasm_build_demos.py --app HelloCustomWidgets --track reference --refresh-existing
 ```
 
-`wasm_build_demos.py` 会自动：
-- 调用 Emscripten 编译
-- 把产物复制到 `web/demos/MyNewApp/`
-- 把 `readme.md` 复制为 `web/demos/MyNewApp/README.md`
-- 在 `web/demos/demos.json` 追加条目
+脚本会：
 
-### 步骤 3：提交 PR / 需要发布时手动触发
-GitHub Actions (`wasm-deploy.yml`) 改为只在手动 `workflow_dispatch` 时执行，由用户主动发起全量构建和 GitHub Pages 部署。
+- 调用 SDK 的 Emscripten 构建。
+- 把产物复制到 `web/demos/HelloCustomWidgets_<category>_<widget>/`。
+- 复制源 README 到 bundled `README.md`。
+- 生成或合并 `web/demos/demos.json`。
+- 默认全站构建时清理不应保留的旧 `HelloCustomWidgets_*` demo 目录。
 
----
+## Web Smoke 和 Render Gallery
 
-## 新增一个 HelloBasic 子 demo
-
-### 步骤 1：创建子应用目录
-```
-example/HelloBasic/my_widget/
-├── hello_basic_my_widget.c
-└── readme.md
-```
-
-并在 `example/HelloBasic/build.mk` 中注册。
-
-### 步骤 2：本地 WASM 构建
 ```bash
-python scripts/web/wasm_build_demos.py --app HelloBasic_my_widget
-# 等价于：
-python scripts/web/wasm_build_demos.py --app-sub my_widget
+# 对已提交 web/demos 运行浏览器 smoke 检查
+python scripts/web/web_smoke_check.py
+
+# 只检查一个 demo
+python scripts/web/web_smoke_check.py --demo HelloCustomWidgets_input_auto_suggest_box
+
+# 从 smoke summary 生成 web/render-gallery
+python scripts/web/widget_render_gallery.py --summary output/ci_web_smoke/summary.json --output-dir web/render-gallery
+
+# 构建 WASM、运行 smoke，并生成 gallery
+python scripts/web/widget_render_gallery.py --build-wasm --run-smoke
 ```
 
-产物目录为 `web/demos/HelloBasic_my_widget/`，条目自动写入 demos.json。
+`web_smoke_check.py` 会启动本地静态服务器，逐个打开 manifest 中的 demo，输出截图、`summary.json`、`summary.md` 和 contact sheet。`widget_render_gallery.py` 使用 smoke 截图生成 `render-gallery` 的 HTML、Markdown、JSON、缩略图和总览图。
 
----
+## Artifact 一致性检查
 
-## 新增一个全新的 Web 页面
+```bash
+# 检查已提交 web/demos 和 web/render-gallery
+python scripts/checks/check_web_artifacts.py
 
-当一组 demo 既不适合卡片网格也不适合 HelloBasic 侧边栏时，可以新建页面类型。
+# 检查 release_check.py 生成的输出目录
+python scripts/checks/check_web_artifacts.py --web-root output/release_check_wasm --manifest output/release_check_wasm/demos/demos.json --render-gallery output/release_check_wasm/render-gallery
 
-### 推荐方式：复用 CSS class
-
-`style.css` 提供两种已有布局 class，直接套用：
-
-| class | 适用场景 | 关键特性 |
-|-------|---------|---------|
-| `page-grid` | demo 卡片展示 | 每行一个 `.demo-section`，居中，max-width 限制 |
-| `page-sidebar` | 左侧导航 + 右侧内容 | sidebar 固定宽，内容区 max-width 居中 |
-
-新页面 HTML 最小模板（以侧边栏页为例）：
-
-```html
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>EmbeddedGUI - My Page</title>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body class="page-sidebar">
-    <aside id="sidebar">
-        <div class="sidebar-header">
-            <h1>My Section</h1>
-        </div>
-        <nav id="demo-list"></nav>
-    </aside>
-    <main id="content">
-        <div id="demo-wrapper" style="display:none">
-            <iframe id="demo-frame"></iframe>
-            <div id="demo-doc" class="doc-panel"></div>
-        </div>
-    </main>
-    <script src="lib/marked.min.js"></script>
-    <script src="doc-render.js"></script>
-    <script>
-        // fetch demos.json, filter by your category, render list
-    </script>
-</body>
-</html>
+# 检查 category-scoped release 输出
+python scripts/checks/check_web_artifacts.py --web-root output/release_check_wasm --manifest output/release_check_wasm/demos/demos.json --render-gallery output/release_check_wasm/render-gallery --category input
 ```
 
-在 `index.html` 或 `basic.html` 的 `.links` 区域添加导航链接即可。
+这个检查会验证 manifest、demo 目录、WASM/JS/HTML 文件、bundled README、render-gallery JSON、缩略图、HTML/Markdown 链接和分类计数是否与 catalog 同步。
 
-### demos.json 新增 category
+## 发布工作流
 
-若使用自定义 category（如 `"Charts"`），在 HTML 的 JS 里按 category 过滤即可：
-
-```js
-demos.forEach(function(d) {
-    if (d.category !== 'Charts') return;
-    // render...
-});
-```
-
----
-
-## 响应式布局令牌
-
-所有尺寸通过 `:root` CSS 变量统一控制，新页面继承后无需重新写媒体查询：
-
-```css
-:root {
-    --content-max-width: 1200px;   /* 内容区最大宽度 */
-    --sidebar-width: 240px;        /* 大屏侧边栏宽度 */
-    --sidebar-width-md: 200px;     /* 平板侧边栏宽度 */
-    --doc-line-width: 72ch;        /* 文档面板最大行宽 */
-}
-```
-
-**三档断点**：
-
-| 档位 | 范围 | 主要行为 |
-|------|------|---------|
-| 桌面（默认） | ≥ 1200px | 内容居中，两侧留白，文档行宽 72ch |
-| 平板 | 769–1199px | sidebar 收窄为 200px，iframe 高 50vh |
-| 移动 | ≤ 768px | sidebar 折叠为顶部横条，垂直堆叠布局 |
-
----
-
-## WASM Demo 注意事项
-
-### 录制功能：已在 WASM 中强制禁用
-
-`porting/emscripten/build.mk` 中固定了：
-```makefile
-COMMON_FLAGS += -DEGUI_CONFIG_RECORDING_TEST=0
-```
-
-**WASM demo 不会自动播放操作序列**，用户直接用鼠标/触摸与 canvas 交互。
-- `egui_port_get_recording_action()` 可以放在 `uicode_disp0.c` 或单个 demo 的 `test.c` 中（由 `#if EGUI_CONFIG_RECORDING_TEST` 包裹），**不影响 WASM 构建**
-- 无需为 WASM 单独实现交互逻辑，SDL 输入事件由 Emscripten 自动转发
-
-### Canvas 尺寸
-
-Demo shell (`porting/emscripten/shell.html`) 中：
-```css
-#canvas {
-    max-width: 100%;
-    max-height: calc(100vh - 24px);
-}
-```
-Canvas 会自动按比例缩放，不需要额外处理。
-
-### 资源文件
-
-有 `resource/` 目录的应用，构建脚本会自动通过 `--preload-file` 把 `.bin` 预加载进 Emscripten 虚拟文件系统，app 代码无需修改。
-
----
-
-## CI/CD 流程
+`.github/workflows/wasm-deploy.yml` 只在 `workflow_dispatch` 手动触发时部署 GitHub Pages。流程为：
 
 ```
-workflow_dispatch
-  └─ wasm-deploy.yml
-       ├─ python scripts/web/wasm_build_demos.py  （全量构建）
-       └─ actions/deploy-pages → GitHub Pages  （部署 web/ 目录）
+checkout + submodules
+  └─ setup emsdk / Python / Chrome
+       ├─ python -m py_compile ...
+       ├─ python scripts/checks/check_docs_encoding.py
+       ├─ python scripts/web/wasm_build_demos.py
+       ├─ python scripts/web/web_smoke_check.py --capture-mode cdp
+       ├─ python scripts/web/widget_render_gallery.py --summary ...
+       ├─ python scripts/checks/check_web_artifacts.py
+       └─ actions/deploy-pages
 ```
 
 本地预览：
+
 ```bash
-cd web
-python -m http.server 8080
-# 浏览器访问 http://localhost:8080
+python web/start_server.py --port 8080
 ```
+
+浏览器访问 `http://localhost:8080`。
+
+## 修改 Web 页面时
+
+- `index.html` 和 `custom.html` 保持数据驱动，新增字段优先从 `demos.json` 或 `catalog-policy.json` 读取。
+- 页面文案在 `index-page.js`、`custom-page.js` 和 `i18n.js` 中维护，保持中英文同时可用。
+- 如果新增 manifest 字段，要同步更新 `scripts/checks/check_web_artifacts.py` 的必要校验。
+- 修改 gallery 输出结构时，同步检查 `scripts/web/widget_render_gallery.py`、`doc/scripts/generate_widget_render_gallery.py` 和 `check_web_artifacts.py`。
+
+## WASM Demo 注意事项
+
+- `HelloCustomWidgets` / `HelloUnitTest` 的 app 根入口直接使用 `uicode_disp0.c` / `uicode_disp0.h`。
+- 录制动作可以放在 demo 的 `test.c` 中，并用 `#if EGUI_CONFIG_RECORDING_TEST` 包裹；WASM demo 不依赖录制自动播放。
+- 有 `resource/` 目录的 widget 由构建系统自动生成和打包资源，demo 代码通常不需要为 WASM 单独处理。
+- 默认 web 目录应保持 reference 主线；历史轨道只在显式 `--track showcase` / `--track deprecated` 构建时回看。
