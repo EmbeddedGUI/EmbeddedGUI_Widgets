@@ -410,7 +410,8 @@ def build_runtime_case_specs(scope, app_sets, sub_app_sets, skipped_apps=None):
 
     case_specs = []
     for app in selected_apps:
-        case_specs.extend(expand_runtime_cases(app, sub_app_sets))
+        if app in SUB_APP_ROOTS or app in app_sets:
+            case_specs.extend(expand_runtime_cases(app, sub_app_sets))
     return case_specs
 
 
@@ -1054,6 +1055,9 @@ def run_scope_check(scope, bits64, explicit_timeout=None,
     print("=" * 60)
     print("Runtime Check Scope: %s shard=%d/%d speed=%dx cases=%d" % (scope, shard_index, shard_count, speed, len(case_specs)))
     print("=" * 60)
+
+    if not case_specs:
+        raise ValueError("scope '%s' selected no runtime cases" % scope)
 
     return run_runtime_case_batch(
         case_specs,
