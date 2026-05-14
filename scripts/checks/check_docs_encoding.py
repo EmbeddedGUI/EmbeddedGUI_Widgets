@@ -242,10 +242,10 @@ def main() -> int:
 
     if decode_failures or quality_failures or legacy_failures:
         total = len(decode_failures) + len(quality_failures) + len(legacy_failures)
-        print("Documentation encoding check FAILED (%d issues)" % total)
+        print("Documentation quality check FAILED (%d issues)" % total)
         return 1
 
-    print("Documentation encoding check passed (%d files)" % len(files))
+    print("Documentation quality check passed (%d files)" % len(files))
     return 0
 
 
