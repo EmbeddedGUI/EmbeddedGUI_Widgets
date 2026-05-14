@@ -91,7 +91,7 @@ The default SDK resolution order is:
   `python scripts/checks/check_touch_release_semantics.py --scope custom --category input`
 - Widget catalog policy audit:
   `python scripts/checks/check_widget_catalog.py`
-- Documentation encoding and active-doc stale reference audit:
+- Documentation quality and stale-reference audit:
   `python scripts/checks/check_docs_encoding.py`
 - Web artifact consistency audit:
   `python scripts/checks/check_web_artifacts.py`
