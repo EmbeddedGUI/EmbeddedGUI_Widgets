@@ -8,7 +8,9 @@ root Makefile.
 
 from __future__ import annotations
 
+import argparse
 import json
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from xml.sax.saxutils import escape
@@ -65,6 +67,11 @@ def all_configurations(cases: list[VsCase]) -> list[tuple[str, str]]:
 def write_text(path: Path, text: str) -> None:
     with path.open("w", encoding="utf-8", newline="\r\n") as handle:
         handle.write(text)
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Generate Visual Studio files for HelloCustomWidgets.")
+    return parser.parse_args()
 
 
 def render_project(cases: list[VsCase]) -> str:
@@ -209,6 +216,7 @@ EndGlobal
 
 
 def main() -> int:
+    parse_args()
     cases = read_cases()
     write_text(PROJECT_PATH, render_project(cases))
     write_text(SOLUTION_PATH, render_solution(cases))
@@ -219,4 +227,8 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    try:
+        raise SystemExit(main())
+    except (FileNotFoundError, ValueError, json.JSONDecodeError) as exc:
+        print(f"Error: {exc}", file=sys.stderr)
+        raise SystemExit(1)
