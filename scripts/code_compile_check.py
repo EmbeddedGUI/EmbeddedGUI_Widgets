@@ -83,6 +83,21 @@ def get_custom_widgets_list(category=None, track="all", include_deprecated=False
     )
 
 
+def fail_if_no_custom_widgets(custom_list, category=None, track="all"):
+    if custom_list:
+        return
+
+    scope_parts = []
+    if category:
+        scope_parts.append("category=%s" % category)
+    if track:
+        scope_parts.append("track=%s" % track)
+
+    scope_text = " (%s)" % ", ".join(scope_parts) if scope_parts else ""
+    print("Error: no HelloCustomWidgets demos selected%s" % scope_text)
+    sys.exit(1)
+
+
 def normalize_user_cflags(user_cflags):
     return " ".join((user_cflags or "").split())
 
@@ -744,6 +759,7 @@ if __name__ == '__main__':
             track=args.track,
             include_deprecated=include_deprecated,
         )
+        fail_if_no_custom_widgets(custom_list, category=args.category, track=args.track)
         custom_cases = [("HelloCustomWidgets", "pc", widget_sub) for widget_sub in custom_list]
         run_compile_cases_parallel(custom_cases, params, bits64=args.bits64, case_jobs=args.case_jobs)
 
@@ -774,6 +790,7 @@ if __name__ == '__main__':
             track=args.track,
             include_deprecated=include_deprecated,
         )
+        fail_if_no_custom_widgets(custom_list, category=args.category, track=args.track)
         full_cases = [("HelloCustomWidgets", "pc", widget_sub) for widget_sub in custom_list]
         run_compile_cases_parallel(full_cases, params, bits64=args.bits64, case_jobs=args.case_jobs)
 
