@@ -495,6 +495,7 @@ def get_group_build_list(app_name, track="all", include_deprecated=False):
 
 def resolve_requested_builds(app_name, app_sub, track="all", include_deprecated=False):
     """Resolve command-line selection into build list entries."""
+    available_apps = set(get_example_list())
     if app_sub:
         if app_name == "HelloCustomWidgets" or "/" in app_sub:
             return [("HelloCustomWidgets", app_sub, "HelloCustomWidgets")]
@@ -504,10 +505,19 @@ def resolve_requested_builds(app_name, app_sub, track="all", include_deprecated=
             return [("HelloVirtual", app_sub, "Standalone")]
         if app_name == "HelloBasic" or not app_name:
             return [("HelloBasic", app_sub, "HelloBasic")]
+        if app_name and app_name not in available_apps:
+            return []
         return [(app_name, app_sub, "Standalone")]
 
     if not app_name:
         return None
+
+    if app_name not in available_apps and not (
+        app_name.startswith("HelloBasic_")
+        or app_name.startswith("HelloCustomWidgets_")
+        or app_name.startswith("HelloVirtual_")
+    ):
+        return []
 
     group_builds = get_group_build_list(app_name, track=track, include_deprecated=include_deprecated)
     if group_builds is not None:
@@ -515,6 +525,8 @@ def resolve_requested_builds(app_name, app_sub, track="all", include_deprecated=
 
     if app_name.startswith("HelloBasic_"):
         sub = app_name[len("HelloBasic_"):]
+        if not (ROOT_DIR / "example" / "HelloBasic" / sub).exists():
+            return []
         return [("HelloBasic", sub, "HelloBasic")]
 
     if app_name.startswith("HelloCustomWidgets_"):
@@ -525,6 +537,8 @@ def resolve_requested_builds(app_name, app_sub, track="all", include_deprecated=
 
     if app_name.startswith("HelloVirtual_"):
         sub = app_name[len("HelloVirtual_"):]
+        if not (ROOT_DIR / "example" / "HelloVirtual" / sub).exists():
+            return []
         return [("HelloVirtual", sub, "Standalone")]
 
     return [(app_name, None, "Standalone")]
@@ -601,7 +615,16 @@ def main():
         track=args.track,
         include_deprecated=args.include_deprecated or args.track == "deprecated",
     )
-    if requested_builds:
+    if requested_builds is not None:
+        if not requested_builds:
+            selection = []
+            if args.app:
+                selection.append(f"--app {args.app}")
+            if args.app_sub:
+                selection.append(f"--app-sub {args.app_sub}")
+            if args.track:
+                selection.append(f"--track {args.track}")
+            parser.error("no WASM demos matched requested selection: %s" % " ".join(selection))
         build_list.extend(requested_builds)
     else:
         app_sets = get_example_list()
