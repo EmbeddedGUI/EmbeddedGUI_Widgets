@@ -378,22 +378,6 @@ def run_unit_tests(params):
     return 0
 
 
-def run_example_icon_font_check():
-    print("=================================================================================")
-    print("Checking Example Icon Fonts")
-    print("=================================================================================")
-
-    cmd = [sys.executable, os.path.join(SCRIPT_DIR, 'checks', 'check_example_icon_font.py')]
-    print(' '.join('"%s"' % part if ' ' in part else part for part in cmd))
-    res = subprocess.call(cmd)
-    if res != 0:
-        print("Example icon font check FAILED!")
-        return res
-
-    print("Example icon font check PASSED!")
-    return 0
-
-
 def run_touch_release_semantics_check(scope='all', category=None):
     print("=================================================================================")
     print("Checking Widget Touch Release Semantics")
