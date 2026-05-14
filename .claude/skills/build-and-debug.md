@@ -165,6 +165,6 @@ EGUI_LOG_INF("value: %d\n", some_value);
 | `scripts/code_compile_check.py` | 批量编译检查和单测入口 |
 | `scripts/code_runtime_check.py` | 运行时截图验证入口 |
 | `scripts/checks/check_touch_release_semantics.py` | widget touch release 语义检查 |
-| `scripts/checks/check_docs_encoding.py` | 文档 UTF-8 与明显乱码检查 |
+| `scripts/checks/check_docs_encoding.py` | 文档 UTF-8、明显乱码与活跃文档旧引用检查 |
 | `scripts/checks/check_web_artifacts.py` | web demo 与 render gallery artifact 一致性检查 |
 | `scripts/release_check.py` | 发布前多步骤一键检查 |

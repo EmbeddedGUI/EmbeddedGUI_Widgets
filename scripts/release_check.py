@@ -30,7 +30,7 @@ ALL_STEP_NAMES = [
 ]
 STEP_DESCRIPTIONS = {
     "catalog": "Widget catalog consistency check",
-    "docs": "Documentation UTF-8 and corruption check",
+    "docs": "Documentation UTF-8, corruption, and active-reference check",
     "web_artifacts": "Checked-in web demo and render gallery consistency check",
     "touch": "Custom widget touch release semantics check",
     "compile": "HelloCustomWidgets compile sweep",

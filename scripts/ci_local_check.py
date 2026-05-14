@@ -31,7 +31,7 @@ def add_category_arg(cmd, category):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Run the local widget CI flow: catalog audit, docs audit, web artifact audit, touch audit, compile, runtime, and HelloUnitTest.",
+        description="Run the local widget CI flow: catalog audit, docs/stale-reference audit, web artifact audit, touch audit, compile, runtime, and HelloUnitTest.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=(
             "Entry note:\n"
@@ -83,7 +83,7 @@ def main():
     run_step("Widget Catalog Policy", catalog_cmd)
 
     docs_cmd = [python, "scripts/checks/check_docs_encoding.py"]
-    run_step("Documentation Encoding", docs_cmd)
+    run_step("Documentation and Active Reference Audit", docs_cmd)
 
     web_artifacts_cmd = [python, "scripts/checks/check_web_artifacts.py"]
     run_step("Web Artifact Consistency", web_artifacts_cmd)

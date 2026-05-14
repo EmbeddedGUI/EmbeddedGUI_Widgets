@@ -13,7 +13,7 @@ This repository keeps only the scripts needed for standalone custom-widget work.
 - `release_check.py`
   Release-style manual check entrypoint that chains catalog/docs/web artifact audits, touch audit, compile, unit tests, runtime verification, WASM build verification, browser-side web smoke checks, and render gallery generation.
 - `ci_local_check.py`
-  Fast local CI wrapper for one widget category or the full widget set, including catalog, documentation encoding, and web artifact consistency checks.
+  Fast local CI wrapper for one widget category or the full widget set, including catalog, documentation/stale-reference, and web artifact consistency checks.
 
 ## App entry note
 
@@ -23,7 +23,7 @@ This repository keeps only the scripts needed for standalone custom-widget work.
 ## Subdirectories
 
 - `checks/`
-  Focused validation helpers such as touch release semantics auditing and documentation encoding checks.
+  Focused validation helpers such as touch release semantics auditing and documentation/stale-reference checks.
 - `web/`
   WASM build and GitHub Pages packaging helpers for the widgets-only site.
 

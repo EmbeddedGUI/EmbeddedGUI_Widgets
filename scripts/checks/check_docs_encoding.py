@@ -194,7 +194,7 @@ def check_legacy_references(scan_paths: list[Path]) -> list[str]:
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Check documentation files for UTF-8 decoding and obvious corruption.")
+    parser = argparse.ArgumentParser(description="Check documentation UTF-8 quality and stale active-doc references.")
     parser.add_argument("paths", nargs="*", help="Optional files or directories to scan. Defaults to repository root.")
     return parser.parse_args()
 
