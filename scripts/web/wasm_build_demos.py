@@ -496,8 +496,14 @@ def get_group_build_list(app_name, track="all", include_deprecated=False):
 def resolve_requested_builds(app_name, app_sub, track="all", include_deprecated=False):
     """Resolve command-line selection into build list entries."""
     available_apps = set(get_example_list())
+    custom_widget_ids = {
+        f"{category}/{widget}"
+        for category, widget in get_custom_widgets_list(track=track, include_deprecated=include_deprecated)
+    }
     if app_sub:
         if app_name == "HelloCustomWidgets" or "/" in app_sub:
+            if app_sub not in custom_widget_ids:
+                return []
             return [("HelloCustomWidgets", app_sub, "HelloCustomWidgets")]
         if app_name == "HelloVirtual":
             return [("HelloVirtual", app_sub, "Standalone")]
@@ -533,7 +539,10 @@ def resolve_requested_builds(app_name, app_sub, track="all", include_deprecated=
         raw = app_name[len("HelloCustomWidgets_"):]
         parts = raw.split("_", 1)
         if len(parts) == 2:
-            return [("HelloCustomWidgets", parts[0] + "/" + parts[1], "HelloCustomWidgets")]
+            widget_id = parts[0] + "/" + parts[1]
+            if widget_id in custom_widget_ids:
+                return [("HelloCustomWidgets", widget_id, "HelloCustomWidgets")]
+        return []
 
     if app_name.startswith("HelloVirtual_"):
         sub = app_name[len("HelloVirtual_"):]
@@ -673,6 +682,7 @@ def main():
 
         elapsed = time.time() - start_time
         json_path = os.path.join(output_dir, "demos.json")
+        refreshed_count = len(demos_built)
         if (args.app or args.app_sub) and os.path.exists(json_path):
             with open(json_path, "r", encoding="utf-8") as f:
                 existing = json.load(f)
@@ -693,7 +703,7 @@ def main():
         print(f"\nGenerated {json_path} with {len(demos_built)} demos", flush=True)
 
         print(f"\n{'='*50}", flush=True)
-        print(f"Refreshed: {len(demos_built)}/{total}  Time: {elapsed:.1f}s", flush=True)
+        print(f"Refreshed: {refreshed_count}/{total}  Manifest: {len(demos_built)}  Time: {elapsed:.1f}s", flush=True)
         if failed:
             print(f"Failed: {', '.join(failed)}", flush=True)
         return 0 if not failed else 1
@@ -793,6 +803,7 @@ def main():
                     demos_built.append(make_demo_entry(root_dir, result, category))
 
     elapsed = time.time() - start_time
+    built_count = len(demos_built)
 
     # Generate demos.json for index.html
     json_path = os.path.join(output_dir, "demos.json")
@@ -819,7 +830,7 @@ def main():
     print(f"\nGenerated {json_path} with {len(demos_built)} demos", flush=True)
 
     print(f"\n{'='*50}", flush=True)
-    print(f"Built: {len(demos_built)}/{total}  Time: {elapsed:.1f}s", flush=True)
+    print(f"Built: {built_count}/{total}  Manifest: {len(demos_built)}  Time: {elapsed:.1f}s", flush=True)
     if failed:
         print(f"Failed: {', '.join(failed)}", flush=True)
 
