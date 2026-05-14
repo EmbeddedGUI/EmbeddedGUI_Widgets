@@ -420,6 +420,14 @@ def main() -> int:
     demos_dir = Path(args.manifest).resolve().parent if args.manifest else web_root / "demos"
     manifest_path = Path(args.manifest).resolve() if args.manifest else demos_dir / "demos.json"
     render_gallery_dir = Path(args.render_gallery).resolve() if args.render_gallery else web_root / "render-gallery"
+    default_checked_in_scope = not args.manifest and not args.render_gallery and web_root == DEFAULT_WEB_ROOT.resolve()
+
+    if default_checked_in_scope and not manifest_path.exists() and not render_gallery_dir.exists():
+        print(
+            "Web artifact check skipped: checked-in web artifacts are not present "
+            "(web/demos and web/render-gallery are generated locally)."
+        )
+        return 0
 
     try:
         catalog_map = build_widget_catalog_map()
