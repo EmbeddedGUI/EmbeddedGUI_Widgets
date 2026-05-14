@@ -152,7 +152,11 @@ def main() -> int:
     sources: list[tuple[str, Path]] = []
 
     if args.scope in ("custom", "all"):
-        sources.extend(("custom", path) for path in iter_custom_widget_files(args.category))
+        custom_sources = iter_custom_widget_files(args.category)
+        if args.category is not None and not custom_sources:
+            print(f"[touch-release-audit] no custom widget sources found for category={args.category}")
+            return 1
+        sources.extend(("custom", path) for path in custom_sources)
     if args.scope in ("core", "all"):
         sources.extend(("core", path) for path in iter_core_widget_files())
 
