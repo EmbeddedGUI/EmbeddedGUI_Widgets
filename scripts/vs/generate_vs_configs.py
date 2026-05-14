@@ -71,7 +71,16 @@ def write_text(path: Path, text: str) -> None:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Generate Visual Studio files for HelloCustomWidgets.")
+    parser.add_argument(
+        "--check",
+        action="store_true",
+        help="Only check whether the Visual Studio files are synchronized; do not rewrite them.",
+    )
     return parser.parse_args()
+
+
+def read_text(path: Path) -> str:
+    return path.read_text(encoding="utf-8")
 
 
 def render_project(cases: list[VsCase]) -> str:
@@ -216,10 +225,27 @@ EndGlobal
 
 
 def main() -> int:
-    parse_args()
+    args = parse_args()
     cases = read_cases()
-    write_text(PROJECT_PATH, render_project(cases))
-    write_text(SOLUTION_PATH, render_solution(cases))
+    project_text = render_project(cases)
+    solution_text = render_solution(cases)
+
+    if args.check:
+        stale_paths = []
+        if not PROJECT_PATH.exists() or read_text(PROJECT_PATH) != project_text:
+            stale_paths.append(PROJECT_PATH)
+        if not SOLUTION_PATH.exists() or read_text(SOLUTION_PATH) != solution_text:
+            stale_paths.append(SOLUTION_PATH)
+        if stale_paths:
+            print("Visual Studio files need regeneration:")
+            for path in stale_paths:
+                print(f"  {path.relative_to(REPO_ROOT)}")
+            return 1
+        print(f"Visual Studio files are synchronized ({len(cases)} HelloCustomWidgets cases)")
+        return 0
+
+    write_text(PROJECT_PATH, project_text)
+    write_text(SOLUTION_PATH, solution_text)
     print(f"Generated {len(cases)} HelloCustomWidgets cases")
     print(f"Wrote {PROJECT_PATH.relative_to(REPO_ROOT)}")
     print(f"Wrote {SOLUTION_PATH.relative_to(REPO_ROOT)}")
