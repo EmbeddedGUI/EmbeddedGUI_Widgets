@@ -143,3 +143,6 @@ jobs:
 
       - name: Check web artifact consistency
         run: python scripts/checks/check_web_artifacts.py
+
+      - name: Check Visual Studio config consistency
+        run: python scripts/vs/generate_vs_configs.py --check
