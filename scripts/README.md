@@ -32,7 +32,7 @@ This repository keeps only the scripts needed for standalone custom-widget work.
 - `python scripts/checks/check_touch_release_semantics.py --scope custom`
   Audit widget touch release behavior.
 - `python scripts/checks/check_docs_encoding.py`
-  Validate documentation files decode as UTF-8 and catch obvious README corruption such as repeated `????`.
+  Validate documentation files decode as UTF-8, catch obvious README corruption such as repeated `????`, and reject stale SDK-repo references in active collaboration docs.
 - `python scripts/checks/check_widget_catalog.py`
   Validate `widget_catalog.json` coverage, track-to-visibility policy, reference metadata completeness, and replacement targets.
 - `python scripts/checks/check_web_artifacts.py`
