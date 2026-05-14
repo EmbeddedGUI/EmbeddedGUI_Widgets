@@ -633,7 +633,7 @@ static void egui_view_two_pane_view_set_single_pane_inner(egui_view_t *self, uin
 
 static void tpv_activate_target(egui_view_t *self, uint8_t target)
 {
-    if (target >= TPV_HIT_LAYOUT_BASE && target < TPV_HIT_LAYOUT_BASE + EGUI_VIEW_TWO_PANE_VIEW_LAYOUT_COUNT)
+    if (target < TPV_HIT_LAYOUT_BASE + EGUI_VIEW_TWO_PANE_VIEW_LAYOUT_COUNT)
     {
         egui_view_two_pane_view_set_layout_mode_inner(self, target - TPV_HIT_LAYOUT_BASE, 1);
     }

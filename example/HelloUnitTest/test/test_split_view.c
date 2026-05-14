@@ -183,12 +183,6 @@ static void assert_pressed_cleared(egui_view_split_view_t *widget, egui_view_t *
     EGUI_TEST_ASSERT_FALSE(view->is_pressed);
 }
 
-static void get_view_center(egui_view_t *view, egui_dim_t *x, egui_dim_t *y)
-{
-    *x = view->region_screen.location.x + view->region_screen.size.width / 2;
-    *y = view->region_screen.location.y + view->region_screen.size.height / 2;
-}
-
 static void get_view_outside_point(egui_view_t *view, egui_dim_t *x, egui_dim_t *y)
 {
     *x = view->region_screen.location.x - 4;
