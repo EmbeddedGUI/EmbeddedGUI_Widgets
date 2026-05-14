@@ -801,6 +801,10 @@ if __name__ == '__main__':
             args.shard_count,
             len(scope_cases),
         ))
+        if not scope_cases:
+            print("Error: scope '%s' selected no compile cases." % args.scope)
+            sys.exit(1)
+
         run_compile_cases_parallel(scope_cases, params, bits64=args.bits64, case_jobs=args.case_jobs)
 
         elapsed = time.time() - start_time
