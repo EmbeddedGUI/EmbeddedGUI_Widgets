@@ -1246,6 +1246,16 @@ Entry note:
             print("Error: --category is only supported with --app HelloCustomWidgets")
             sys.exit(1)
 
+        if args.app in SUB_APP_ROOTS and args.app_sub:
+            known_sub_apps = get_example_sub_list(
+                args.app,
+                track=args.track,
+                include_deprecated=args.include_deprecated or args.track == "deprecated",
+            )
+            if args.app_sub not in known_sub_apps:
+                print("Error: unknown %s sub-app: %s" % (args.app, args.app_sub))
+                sys.exit(1)
+
         results = []
         run_all_sub_apps = args.app in SUB_APP_ROOTS and not args.app_sub
         if run_all_sub_apps:
