@@ -166,6 +166,31 @@ def filter_manifest(entries: list[dict], args: argparse.Namespace) -> list[dict]
     return filtered
 
 
+def format_empty_selection_message(entries: list[dict], args: argparse.Namespace) -> str:
+    if not entries:
+        return "No demos selected: manifest is empty."
+
+    details = []
+    if args.demo:
+        requested = set(args.demo)
+        available = {entry.get("name", "") for entry in entries}
+        missing = sorted(requested - available)
+        if missing:
+            details.append("missing demo(s): %s" % ", ".join(missing))
+        else:
+            details.append("demo filter: %s" % ", ".join(args.demo))
+    if args.name_filter:
+        details.append("name filter: %s" % args.name_filter)
+    if args.category:
+        details.append("category: %s" % args.category)
+    if args.max_demos < 0:
+        details.append("max demos: %d" % args.max_demos)
+
+    if details:
+        return "No demos selected: %s." % "; ".join(details)
+    return "No demos selected."
+
+
 def parse_window_size(window_size: str) -> tuple[int, int]:
     parts = window_size.split(",", 1)
     if len(parts) != 2:
@@ -904,6 +929,12 @@ def main() -> int:
     args = parse_args()
     manifest_path = Path(args.manifest).resolve()
     web_root = Path(args.web_root).resolve()
+    manifest_entries = load_manifest(manifest_path)
+    manifest = filter_manifest(manifest_entries, args)
+    if not manifest:
+        print(format_empty_selection_message(manifest_entries, args))
+        return 1
+
     output_dir = build_output_dir(args.output_dir)
     profiles_dir = output_dir / "profiles"
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -912,10 +943,6 @@ def main() -> int:
     window_dims = parse_window_size(args.window_size)
     browser = find_browser(args.browser)
     browser_args = merge_browser_args(args.browser_arg)
-    manifest = filter_manifest(load_manifest(manifest_path), args)
-    if not manifest:
-        print("No demos selected.")
-        return 1
 
     server, thread = start_server(web_root, args.port)
     try:
